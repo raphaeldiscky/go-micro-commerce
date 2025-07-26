@@ -3,8 +3,8 @@ package sqlite_test
 import (
 	"testing"
 
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
-	"github.com/raphaeldiscky/go-ddd/internal/infrastructure/db/postgres"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )

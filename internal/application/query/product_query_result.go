@@ -1,6 +1,6 @@
 package query
 
-import "github.com/raphaeldiscky/go-ddd/internal/application/common"
+import "github.com/raphaeldiscky/go-ddd-template/internal/application/common"
 
 type ProductQueryResult struct {
 	Result *common.ProductResult

@@ -2,7 +2,7 @@ package command
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-ddd/internal/application/common"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/common"
 )
 
 type CreateProductCommand struct {

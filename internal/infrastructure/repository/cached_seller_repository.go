@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/repositories"
-	"github.com/raphaeldiscky/go-ddd/internal/infrastructure/cache"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/cache"
 )
 
 // CachedSellerRepository decorates a SellerRepository with caching capabilities

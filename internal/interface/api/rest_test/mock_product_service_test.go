@@ -4,10 +4,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-ddd/internal/application/command"
-	"github.com/raphaeldiscky/go-ddd/internal/application/mapper"
-	"github.com/raphaeldiscky/go-ddd/internal/application/query"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/mapper"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/query"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/stretchr/testify/mock"
 )
 

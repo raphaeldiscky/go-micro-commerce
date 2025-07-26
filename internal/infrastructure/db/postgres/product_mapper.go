@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 )
 
 func toDBProduct(product *entities.ValidatedProduct) *Product {

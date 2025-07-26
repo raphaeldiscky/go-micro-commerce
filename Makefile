@@ -115,11 +115,39 @@ infrastructure-reset: ## Reset infrastructure (delete all data)
 	@sleep 10
 
 # Database
-.PHONY: db-migrate
-db-migrate: ## Run database migrations
+.PHONY: migrate-build
+migrate-build: ## Build migration CLI tool
+	@echo "Building migration tool..."
+	go build -o bin/migrate cmd/migrate/main.go
+
+.PHONY: migrate-up
+migrate-up: migrate-build ## Run database migrations up
 	@echo "Running database migrations..."
-	# Add your migration commands here
-	# migrate -path migrations -database "postgres://gorm:gorm@localhost:9920/gorm?sslmode=disable" up
+	./bin/migrate -database-url="$(DATABASE_URL)" -action=up
+
+.PHONY: migrate-down
+migrate-down: migrate-build ## Rollback database migrations
+	@echo "Rolling back database migrations..."
+	./bin/migrate -database-url="$(DATABASE_URL)" -action=down -steps=$(STEPS)
+
+.PHONY: migrate-version
+migrate-version: migrate-build ## Show current migration version
+	@echo "Getting migration version..."
+	./bin/migrate -database-url="$(DATABASE_URL)" -action=version
+
+.PHONY: migrate-create
+migrate-create: ## Create new migration files (usage: make migrate-create NAME=create_users_table)
+	@if [ -z "$(NAME)" ]; then echo "Please provide NAME: make migrate-create NAME=migration_name"; exit 1; fi
+	@echo "Creating migration files for: $(NAME)"
+	@timestamp=$$(date +%s); \
+	seq=$$(printf "%06d" $$timestamp); \
+	touch migrations/$${seq}_$(NAME).up.sql; \
+	touch migrations/$${seq}_$(NAME).down.sql; \
+	echo "Created migrations/$${seq}_$(NAME).up.sql"; \
+	echo "Created migrations/$${seq}_$(NAME).down.sql"
+
+.PHONY: db-migrate
+db-migrate: migrate-up ## Alias for migrate-up
 
 .PHONY: db-seed
 db-seed: ## Seed database with test data

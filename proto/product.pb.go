@@ -670,7 +670,7 @@ const file_proto_product_proto_rawDesc = "" +
 	"GetProduct\x12!.marketplace.v1.GetProductRequest\x1a\".marketplace.v1.GetProductResponse\x12Y\n" +
 	"\fListProducts\x12#.marketplace.v1.ListProductsRequest\x1a$.marketplace.v1.ListProductsResponse\x12\\\n" +
 	"\rUpdateProduct\x12$.marketplace.v1.UpdateProductRequest\x1a%.marketplace.v1.UpdateProductResponse\x12\\\n" +
-	"\rDeleteProduct\x12$.marketplace.v1.DeleteProductRequest\x1a%.marketplace.v1.DeleteProductResponseB@Z>github.com/raphaeldiscky/go-ddd/proto/marketplace/v1;marketplacev1b\x06proto3"
+	"\rDeleteProduct\x12$.marketplace.v1.DeleteProductRequest\x1a%.marketplace.v1.DeleteProductResponseB@Z>github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1;marketplacev1b\x06proto3"
 
 var (
 	file_proto_product_proto_rawDescOnce sync.Once

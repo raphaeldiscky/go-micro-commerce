@@ -2,7 +2,7 @@ package request
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-ddd/internal/application/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 )
 
 type CreateProductRequest struct {

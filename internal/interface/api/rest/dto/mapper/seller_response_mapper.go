@@ -1,8 +1,8 @@
 package mapper
 
 import (
-	"github.com/raphaeldiscky/go-ddd/internal/application/common"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest/dto/response"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/common"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/response"
 )
 
 func ToSellerResponse(product *common.SellerResult) *response.SellerResponse {

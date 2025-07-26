@@ -8,7 +8,7 @@ import (
 	"sync"
 
 	"github.com/IBM/sarama"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/events"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
 )
 
 // KafkaEventSubscriber implements the EventSubscriber interface using Kafka

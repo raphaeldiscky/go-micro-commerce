@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/events"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
 )
 
 // KafkaEventPublisher implements the EventPublisher interface using Kafka

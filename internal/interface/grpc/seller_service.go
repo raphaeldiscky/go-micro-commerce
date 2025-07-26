@@ -9,9 +9,9 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/raphaeldiscky/go-ddd/internal/application/command"
-	"github.com/raphaeldiscky/go-ddd/internal/application/interfaces"
-	marketplacev1 "github.com/raphaeldiscky/go-ddd/proto"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
+	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto"
 )
 
 // SellerServiceServer implements the gRPC SellerService

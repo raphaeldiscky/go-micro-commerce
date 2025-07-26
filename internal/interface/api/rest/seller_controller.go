@@ -5,9 +5,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-ddd/internal/application/interfaces"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest/dto/mapper"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest/dto/request"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/mapper"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/request"
 )
 
 type SellerController struct {

@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-ddd/internal/application/command"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 )
 
 // MockProductRepository is a mock implementation of the ProductRepository interface

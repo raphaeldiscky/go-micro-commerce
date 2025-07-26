@@ -7,23 +7,22 @@ import (
 	"net/http"
 	"time"
 
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/grpc"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	"github.com/raphaeldiscky/go-ddd/internal/application/interfaces"
-	"github.com/raphaeldiscky/go-ddd/internal/application/services"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/events"
-	"github.com/raphaeldiscky/go-ddd/internal/infrastructure/cache"
-	postgres2 "github.com/raphaeldiscky/go-ddd/internal/infrastructure/db/postgres"
-	"github.com/raphaeldiscky/go-ddd/internal/infrastructure/messaging/kafka"
-	"github.com/raphaeldiscky/go-ddd/internal/infrastructure/repository"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest"
-	grpcHandlers "github.com/raphaeldiscky/go-ddd/internal/interface/grpc"
-	marketplacev1 "github.com/raphaeldiscky/go-ddd/proto"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/services"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/cache"
+	postgres2 "github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/postgres"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/messaging/kafka"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/repository"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
+	grpcHandlers "github.com/raphaeldiscky/go-ddd-template/internal/interface/grpc"
+	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto"
 )
 
 type Config struct {
@@ -89,6 +88,17 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+
+	// Run database migrations
+	log.Println("Running database migrations...")
+	migrationConfig := postgres2.MigrationConfig{
+		DatabaseURL:    config.Database.DSN,
+		MigrationsPath: "./migrations",
+	}
+	if err := postgres2.RunMigrations(gormDB, migrationConfig); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+	log.Println("Database migrations completed successfully!")
 
 	// Initialize Redis cache
 	redisCache := cache.NewRedisCache(cache.RedisConfig{

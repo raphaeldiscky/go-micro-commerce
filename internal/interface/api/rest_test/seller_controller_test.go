@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-ddd/internal/application/command"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest/dto/request"
-	"github.com/raphaeldiscky/go-ddd/internal/interface/api/rest/dto/response"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/request"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/response"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package marketplace.v1;
 
-option go_package = "github.com/raphaeldiscky/go-ddd/proto/marketplace/v1;marketplacev1";
+option go_package = "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1;marketplacev1";
 
 import "google/protobuf/timestamp.proto";
 

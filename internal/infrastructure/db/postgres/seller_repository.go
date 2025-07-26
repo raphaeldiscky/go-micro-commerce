@@ -2,8 +2,8 @@ package postgres
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
-	"github.com/raphaeldiscky/go-ddd/internal/domain/repositories"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
 	"gorm.io/gorm"
 )
 
