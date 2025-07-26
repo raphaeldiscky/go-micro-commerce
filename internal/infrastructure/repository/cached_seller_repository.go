@@ -1,0 +1,158 @@
+package repository
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-ddd/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd/internal/domain/repositories"
+	"github.com/raphaeldiscky/go-ddd/internal/infrastructure/cache"
+)
+
+// CachedSellerRepository decorates a SellerRepository with caching capabilities
+type CachedSellerRepository struct {
+	repository repositories.SellerRepository
+	cache      *cache.RedisCache
+	cacheTTL   time.Duration
+}
+
+// NewCachedSellerRepository creates a new cached seller repository
+func NewCachedSellerRepository(
+	repository repositories.SellerRepository,
+	cache *cache.RedisCache,
+	cacheTTL time.Duration,
+) repositories.SellerRepository {
+	return &CachedSellerRepository{
+		repository: repository,
+		cache:      cache,
+		cacheTTL:   cacheTTL,
+	}
+}
+
+// Create creates a new seller and invalidates related cache entries
+func (r *CachedSellerRepository) Create(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+	result, err := r.repository.Create(seller)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the created seller
+	ctx := context.Background()
+	cacheKey := r.buildSellerCacheKey(result.Id)
+	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
+		// Log cache error but don't fail the operation
+		fmt.Printf("Failed to cache seller: %v\n", cacheErr)
+	}
+
+	// Invalidate sellers list cache
+	if invalidateErr := r.cache.Delete(ctx, "sellers:all"); invalidateErr != nil {
+		fmt.Printf("Failed to invalidate sellers list cache: %v\n", invalidateErr)
+	}
+
+	return result, nil
+}
+
+// FindById retrieves a seller by ID, using cache when available
+func (r *CachedSellerRepository) FindById(id uuid.UUID) (*entities.Seller, error) {
+	ctx := context.Background()
+	cacheKey := r.buildSellerCacheKey(id)
+
+	// Try to get from cache first
+	var cachedSeller entities.Seller
+	if err := r.cache.Get(ctx, cacheKey, &cachedSeller); err == nil {
+		return &cachedSeller, nil
+	}
+
+	// If not in cache, get from repository
+	seller, err := r.repository.FindById(id)
+	if err != nil {
+		return nil, err
+	}
+
+	if seller != nil {
+		// Cache the result
+		if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, seller, r.cacheTTL); cacheErr != nil {
+			fmt.Printf("Failed to cache seller: %v\n", cacheErr)
+		}
+	}
+
+	return seller, nil
+}
+
+// FindAll retrieves all sellers, using cache when available
+func (r *CachedSellerRepository) FindAll() ([]*entities.Seller, error) {
+	ctx := context.Background()
+	cacheKey := "sellers:all"
+
+	// Try to get from cache first
+	var cachedSellers []*entities.Seller
+	if err := r.cache.Get(ctx, cacheKey, &cachedSellers); err == nil {
+		return cachedSellers, nil
+	}
+
+	// If not in cache, get from repository
+	sellers, err := r.repository.FindAll()
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the result
+	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, sellers, r.cacheTTL); cacheErr != nil {
+		fmt.Printf("Failed to cache sellers list: %v\n", cacheErr)
+	}
+
+	return sellers, nil
+}
+
+// Update updates a seller and invalidates related cache entries
+func (r *CachedSellerRepository) Update(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+	result, err := r.repository.Update(seller)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+
+	// Update cache with new data
+	cacheKey := r.buildSellerCacheKey(result.Id)
+	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
+		fmt.Printf("Failed to update cached seller: %v\n", cacheErr)
+	}
+
+	// Invalidate sellers list cache
+	if invalidateErr := r.cache.Delete(ctx, "sellers:all"); invalidateErr != nil {
+		fmt.Printf("Failed to invalidate sellers list cache: %v\n", invalidateErr)
+	}
+
+	return result, nil
+}
+
+// Delete deletes a seller and removes it from cache
+func (r *CachedSellerRepository) Delete(id uuid.UUID) error {
+	err := r.repository.Delete(id)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
+
+	// Remove from cache
+	cacheKey := r.buildSellerCacheKey(id)
+	if cacheErr := r.cache.Delete(ctx, cacheKey); cacheErr != nil {
+		fmt.Printf("Failed to remove seller from cache: %v\n", cacheErr)
+	}
+
+	// Invalidate sellers list cache
+	if invalidateErr := r.cache.Delete(ctx, "sellers:all"); invalidateErr != nil {
+		fmt.Printf("Failed to invalidate sellers list cache: %v\n", invalidateErr)
+	}
+
+	return nil
+}
+
+// buildSellerCacheKey builds a cache key for a seller
+func (r *CachedSellerRepository) buildSellerCacheKey(sellerID uuid.UUID) string {
+	return fmt.Sprintf("seller:%s", sellerID.String())
+}

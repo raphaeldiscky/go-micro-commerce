@@ -1,80 +1,156 @@
-# Go-DDD: Domain Driven Design Template in Golang
+# Go-DDD: Domain Driven Design Template
 
-Welcome to `go-ddd`, a reference implementation/template repository demonstrating the [Domain Driven Design (DDD)](https://en.wikipedia.org/wiki/Domain-driven_design) approach in Golang. This project aims to help developers and architects understand the DDD structure, especially in the context of Go, and how it can lead to cleaner, more maintainable, and scalable codebases.
+> A reference implementation demonstrating [Domain Driven Design (DDD)](https://en.wikipedia.org/wiki/Domain-driven_design) patterns in Go, featuring a simple marketplace where sellers can sell products.
 
-## Overview
+## Table of Contents
 
-Domain-Driven Design is a methodology and design pattern used to build complex enterprise software by connecting the implementation to an evolving model. `go-ddd` showcases this by setting up a simple marketplace where `Sellers` can sell `Products`.
+- [Go-DDD: Domain Driven Design Template](#go-ddd-domain-driven-design-template)
+  - [Table of Contents](#table-of-contents)
+  - [Why Domain Driven Design?](#why-domain-driven-design)
+  - [Architecture Overview](#architecture-overview)
+  - [Project Structure](#project-structure)
+  - [Layer Principles](#layer-principles)
+    - [Domain Layer](#domain-layer)
+    - [Application Layer](#application-layer)
+    - [Infrastructure Layer](#infrastructure-layer)
+    - [Interface Layer](#interface-layer)
+  - [Best Practices](#best-practices)
+    - [Repository Patterns](#repository-patterns)
+    - [Data Management](#data-management)
 
-### Why DDD?
+## Why Domain Driven Design?
 
-- **Ubiquitous Language**: Promotes a common language between developers and stakeholders.
-- **Isolation of Domain Logic**: The domain logic is separate from the infrastructure and application layers, promoting SOLID principles.
-- **Scalability**: Allows for easier microservices architecture transitions.
+DDD helps build maintainable enterprise software by connecting implementation to business models:
 
-## Repository Structure
+**Ubiquitous Language**
 
-![ddd-diagram-onion.png](ddd-diagram-onion.png)
+- Common vocabulary between developers and stakeholders
 
-- `domain`: The heart of the software, representing business logic and rules.
-  - `entities`: Fundamental objects within our system, like `Product` and `Seller`. Contains basic validation logic.
-- `application`: Contains use-case specific operations that interact with the domain layer.
-- `infrastructure`: Supports the higher layers with technical capabilities like database access.
-  - `db`: Database access and models.
-  - `repositories`: Concrete implementations of our storage needs.
-- `interface`: The external layer which interacts with the outside world, like API endpoints.
-  - `api/rest`: Handlers or controllers for managing HTTP requests and responses.
+**Clean Architecture**
 
-## Further principles
+- Business logic isolated from infrastructure concerns
 
-- Domain
-  - Must not depend on other layers.
-  - Provides infrastructure with interfaces, but must not access infrastructure.
-  - Implements business logic and rules.
-  - Executes validations on entities. Validated entities are passed to the infrastructure layer.
-  - Domain layer sets defaults of entities (e.g. uuid for ID or creation timestamp). Don't set defaults in the infrastructure layer or even database!
-  - Do not leak domain objects to the outside world.
-- Application
-  - The glue code between the domain and infrastructure layer.
-- Infrastructure
-  - Repositories are responsible for translating a domain entity to a database model and retrieving it. No business logic is executed here.
-  - Implements interfaces defined by the domain layer.
-  - Implements persistence logic like accessing a postgres or mysql database.
-  - When writing to storage, read written data before returning it. This ensures that the data is written correctly.
+**Scalability**
+
+- Easier transition to microservices architecture
+
+## Architecture Overview
+
+This project follows the **Onion Architecture** pattern with clear layer separation:
+
+```
+┌─────────────────────────────────────┐
+│            Interface Layer          │  ← REST APIs, gRPC
+├─────────────────────────────────────┤
+│          Application Layer          │  ← Use cases, Commands, Queries
+├─────────────────────────────────────┤
+│         Infrastructure Layer        │  ← Database, Cache, Messaging
+├─────────────────────────────────────┤
+│            Domain Layer             │  ← Business Logic & Rules
+└─────────────────────────────────────┘
+```
+
+## Project Structure
+
+```
+go-ddd/
+├── cmd/                   # Application entry points
+│   └── marketplace/
+├── internal/
+│   ├── domain/            # Core business logic
+│   │   ├── entities/      # Business entities (Product, Seller)
+│   │   ├── events/        # Domain events
+│   │   └── repositories/  # Repository interfaces
+│   ├── application/       # Use cases and workflows
+│   │   ├── command/       # Commands (Create, Update)
+│   │   ├── query/         # Queries (Read operations)
+│   │   └── services/      # Application services
+│   ├── infrastructure/    # Technical implementations
+│   │   ├── db/            # Database connections
+│   │   ├── cache/         # Redis caching
+│   │   ├── messaging/     # Kafka messaging
+│   │   └── repository/    # Repository implementations
+│   └── interface/         # External interfaces
+│       ├── api/rest/      # REST endpoints
+│       └── grpc/          # gRPC services
+├── proto/                 # Protocol buffer definitions
+└── deployments/           # Docker compositions
+```
+
+## Layer Principles
+
+### Domain Layer
+
+The core of the application containing pure business logic:
+
+- ✅ **Independent**: No dependencies on other layers
+- ✅ **Business Rules**: Implements all business logic and invariants
+- ✅ **Entity Validation**: Validates business rules on creation/updates
+- ✅ **Default Values**: Sets entity defaults (UUIDs, timestamps)
+- ❌ **No Infrastructure**: Never accesses databases or external services
+
+### Application Layer
+
+Orchestrates domain operations and use cases:
+
+- ✅ **Coordination**: Glue between domain and infrastructure
+- ✅ **Use Cases**: Implements application-specific workflows
+- ✅ **Transaction Management**: Handles cross-aggregate transactions
+- ❌ **No Business Logic**: Delegates all business decisions to domain
+
+### Infrastructure Layer
+
+Handles technical concerns and external dependencies:
+
+- ✅ **Repository Implementation**: Concrete data access implementations
+- ✅ **External Services**: Database, cache, messaging integrations
+- ✅ **Data Mapping**: Translates between domain and persistence models
+- ✅ **Read After Write**: Always verify successful persistence
+- ❌ **No Business Logic**: Pure technical implementation
+
+### Interface Layer
+
+Exposes application functionality to external consumers:
+
+- ✅ **API Endpoints**: REST and gRPC service implementations
+- ✅ **Input Validation**: Request format and basic validation
+- ✅ **Response Mapping**: Converts domain results to API formats
+- ❌ **No Domain Logic**: Thin layer that delegates to application services
 
 ## Best Practices
 
-- Don't return validated entities from read methods in the repository. Instead, return the domain entity type directly.
-  - Validations will change over time. You don't want to migrate all the data in your database. Instead, you should guarantee you can always load historical data, regardless of how your validation logic has evolved.
-  - Otherwise, you won't be able to read data from the database that was written with a different validation logic. You will have to handle errors at runtime.
-  - Push validation to the write side-creation (NewX) and update methods - where you must enforce invariants anyway.
-- Don't put default values (e.g current timestamp or ID) in the database. Set them in the domain layer (factory!) for several reasons:
-  - It's quite dangerous to have two sources of truth.
-  - It's easier to test the domain layer.
-  - Databases can get replaced, and you don't want to have to change all your default values.
-- Always read the entity after write in the infrastructure layer.
-  - This ensures that the data is written correctly, and we are never operating on stale data.
-- `find` vs `get`:
-  - `find` methods can return null or an empty list.
-  - `get` methods must return a value. If the value is not found, throw an error.
-- Deletion: Always use soft deletion. Create a `deleted_at` column in your database and set it to the current timestamp when deleting an entity. This way, you can always restore the entity if needed.
+### Repository Patterns
 
-## Getting Started
+**Read Operations**
 
-1. Clone this repository:
+- **Rule**: Return domain entities, not validated entities
+- **Why**: Historical data compatibility - validations evolve over time
 
-```bash
-git clone https://github.com/raphaeldiscky/go-ddd.git
-cd go-ddd
-go mod download
-go run ./...
-```
+**Method Naming**
 
-### Contributions
+- **Rule**: `Find()` can return nil, `Get()` must return value or error
+- **Why**: Clear contract expectations for callers
 
-Contributions, issues, and feature requests are welcome! Feel free to check the issues page.
+**After Write**
 
-### License
+- **Rule**: Always read entity after persistence in the
+- **Why**: Ensures data integrity and consistency
 
-Distributed under the MIT License. See LICENSE for more information.
-# go-ddd
+### Data Management
+
+**Default Values**
+
+- **Implementation**: Set in domain layer, never in database
+- **Benefits**: Single source of truth, database independence
+
+**Soft Deletion**
+
+- **Implementation**: Use `deleted_at` timestamp column
+- **Benefits**: Data recovery capability, audit trails
+
+**Validation Timing**
+
+- **Implementation**: Only on write operations (create/update)
+- **Benefits**: Performance and backward compatibility
+
+> 💡 **Pro Tip**: Start by exploring the `domain/entities` to understand the business model, then follow the data flow through application services to infrastructure implementations.

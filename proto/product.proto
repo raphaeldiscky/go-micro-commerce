@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package marketplace.v1;
+
+option go_package = "github.com/raphaeldiscky/go-ddd/proto/marketplace/v1;marketplacev1";
+
+import "google/protobuf/timestamp.proto";
+
+// Product service definition
+service ProductService {
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+}
+
+// Product messages
+message Product {
+  string id = 1;
+  string name = 2;
+  double price = 3;
+  string seller_id = 4;
+  string seller_name = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message CreateProductRequest {
+  string name = 1;
+  double price = 2;
+  string seller_id = 3;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+message GetProductRequest {
+  string id = 1;
+}
+
+message GetProductResponse {
+  Product product = 1;
+}
+
+message ListProductsRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message UpdateProductRequest {
+  string id = 1;
+  string name = 2;
+  double price = 3;
+}
+
+message UpdateProductResponse {
+  Product product = 1;
+}
+
+message DeleteProductRequest {
+  string id = 1;
+}
+
+message DeleteProductResponse {
+  bool success = 1;
+}
