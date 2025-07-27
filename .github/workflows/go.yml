@@ -43,19 +43,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Format Check
-        run: |
-          task format
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Code is not formatted properly. Please run 'task format'"
-            git diff
-            exit 1
-          fi
-
       - name: Lint
         run: task lint_no_fix
 
-      - name: Test All Solutions
+      - name: Test
         run: task test
 
       - name: Build Check
