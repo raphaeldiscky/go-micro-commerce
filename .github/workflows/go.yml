@@ -56,7 +56,7 @@ jobs:
         run: task lint-no-fix
 
       - name: Test All Solutions
-        run: task test-all-solutions
+        run: task test
 
       - name: Build Check
         run: |

@@ -178,6 +178,20 @@ tasks:
         fi
     deps: ["format"]
 
+  lint_no_fix:
+    desc: Run linters without fixing
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running linters without fixing for all services..."
+          sh ./scripts/lint-no-fix.sh
+        else
+          echo "Running linters without fixing for {{.SERVICE}}..."
+          sh ./scripts/lint-no-fix.sh {{.SERVICE}}
+        fi
+
   mock:
     desc: Generate mock
     vars:
