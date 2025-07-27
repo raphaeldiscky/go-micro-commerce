@@ -139,7 +139,7 @@ func getCreateProductCommand(product *entities.Product) *command.CreateProductCo
 }
 
 func createPersistedSeller(t *testing.T, sellerRepo *MockSellerRepository) *entities.ValidatedSeller {
-	seller := entities.NewSeller("John Doe")
+	seller := entities.NewSeller("John Doe", "john@example.com")
 	validatedSeller, err := entities.NewValidatedSeller(seller)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)

@@ -17,6 +17,7 @@ func NewSellerResultFromEntity(seller *entities.Seller) *common.SellerResult {
 	return &common.SellerResult{
 		Id:        seller.Id,
 		Name:      seller.Name,
+		Email:     seller.Email,
 		CreatedAt: seller.CreatedAt,
 		UpdatedAt: seller.UpdatedAt,
 	}

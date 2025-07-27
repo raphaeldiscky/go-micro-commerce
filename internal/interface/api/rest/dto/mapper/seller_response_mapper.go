@@ -9,6 +9,7 @@ func ToSellerResponse(product *common.SellerResult) *response.SellerResponse {
 	return &response.SellerResponse{
 		Id:        product.Id.String(),
 		Name:      product.Name,
+		Email:     product.Email,
 		CreatedAt: product.CreatedAt,
 		UpdatedAt: product.UpdatedAt,
 	}

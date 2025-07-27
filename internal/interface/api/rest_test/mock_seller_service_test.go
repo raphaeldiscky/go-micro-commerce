@@ -24,7 +24,7 @@ func NewMockSellerService() interfaces.SellerService {
 func (m *MockSellerService) CreateSeller(seller *command.CreateSellerCommand) (*command.CreateSellerCommandResult, error) {
 	var result command.CreateSellerCommandResult
 
-	newSeller := entities.NewSeller(seller.Name)
+	newSeller := entities.NewSeller(seller.Name, seller.Email)
 
 	validatedSeller, err := entities.NewValidatedSeller(newSeller)
 	if err != nil {

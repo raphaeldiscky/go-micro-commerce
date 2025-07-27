@@ -30,7 +30,7 @@ func NewSellerService(repo repositories.SellerRepository, eventPublisher events.
 
 // CreateSeller saves a new seller
 func (s *SellerService) CreateSeller(sellerCommand *command.CreateSellerCommand) (*command.CreateSellerCommandResult, error) {
-	var newSeller = entities.NewSeller(sellerCommand.Name)
+	var newSeller = entities.NewSeller(sellerCommand.Name, sellerCommand.Email)
 
 	validatedSeller, err := entities.NewValidatedSeller(newSeller)
 	if err != nil {

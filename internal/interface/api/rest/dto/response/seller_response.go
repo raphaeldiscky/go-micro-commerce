@@ -5,6 +5,7 @@ import "time"
 type SellerResponse struct {
 	Id        string
 	Name      string
+	Email     string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

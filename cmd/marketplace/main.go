@@ -10,8 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/grpc"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/services"
@@ -61,7 +59,7 @@ func main() {
 	// Configuration - in production, load from environment variables or config files
 	config := Config{
 		Database: DatabaseConfig{
-			DSN: "host=localhost user=gorm password=gorm dbname=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai",
+			DSN: "host=localhost user=marketplace password=marketplace dbname=marketplace port=9920 sslmode=disable TimeZone=Asia/Shanghai",
 		},
 		Redis: RedisConfig{
 			Host:       "localhost",
@@ -83,11 +81,12 @@ func main() {
 		},
 	}
 
-	// Initialize database
-	gormDB, err := gorm.Open(postgres.Open(config.Database.DSN), &gorm.Config{})
+	// Initialize database connection pool
+	dbPool, err := postgres2.NewConnection(config.Database.DSN)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	defer dbPool.Close()
 
 	// Run database migrations
 	log.Println("Running database migrations...")
@@ -95,7 +94,7 @@ func main() {
 		DatabaseURL:    config.Database.DSN,
 		MigrationsPath: "./migrations",
 	}
-	if err := postgres2.RunMigrations(gormDB, migrationConfig); err != nil {
+	if err := postgres2.RunMigrations(dbPool, migrationConfig); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 	log.Println("Database migrations completed successfully!")
@@ -133,8 +132,8 @@ func main() {
 	}
 
 	// Initialize repositories
-	baseProductRepo := postgres2.NewGormProductRepository(gormDB)
-	baseSellerRepo := postgres2.NewGormSellerRepository(gormDB)
+	baseProductRepo := postgres2.NewSqlcProductRepository(dbPool)
+	baseSellerRepo := postgres2.NewSqlcSellerRepository(dbPool)
 
 	// Decorate repositories with caching if Redis is available
 	var productRepo = baseProductRepo

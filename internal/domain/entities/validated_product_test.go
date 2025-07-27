@@ -26,7 +26,7 @@ func TestProductValidation(t *testing.T) {
 
 func TestNewValidatedProduct(t *testing.T) {
 	// Test valid product
-	seller := NewSeller("Example Seller")
+	seller := NewSeller("Example Seller", "seller@example.com")
 	validatedSeller, err := NewValidatedSeller(seller)
 	if err != nil {
 		t.Fatalf("Expected no error, but got %s", err.Error())

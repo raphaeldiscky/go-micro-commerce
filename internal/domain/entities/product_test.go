@@ -1,12 +1,13 @@
 package entities
 
 import (
-	"github.com/google/uuid"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestNewProduct(t *testing.T) {
-	seller := NewSeller("Example Seller")
+	seller := NewSeller("Example Seller", "seller@example.com")
 	validatedSeller, err := NewValidatedSeller(seller)
 	if err != nil {
 		t.Fatalf("Expected no error, but got %s", err.Error())

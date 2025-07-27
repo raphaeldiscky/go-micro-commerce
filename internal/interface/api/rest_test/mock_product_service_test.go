@@ -23,6 +23,7 @@ func (m *MockProductService) CreateProduct(productCommand *command.CreateProduct
 	var seller = &entities.Seller{
 		Id:        productCommand.SellerId,
 		Name:      "Test Seller",
+		Email:     "test@example.com",
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

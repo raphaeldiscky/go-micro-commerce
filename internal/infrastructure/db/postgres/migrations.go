@@ -6,7 +6,8 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"gorm.io/gorm"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 )
 
 type MigrationConfig struct {
@@ -15,12 +16,10 @@ type MigrationConfig struct {
 }
 
 // RunMigrations executes database migrations
-func RunMigrations(db *gorm.DB, config MigrationConfig) error {
-	// Get underlying sql.DB from GORM
-	sqlDB, err := db.DB()
-	if err != nil {
-		return fmt.Errorf("failed to get sql.DB from GORM: %w", err)
-	}
+func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
+	// Convert pgx pool to sql.DB for migrate
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	defer sqlDB.Close()
 
 	// Create postgres driver instance
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
@@ -48,11 +47,9 @@ func RunMigrations(db *gorm.DB, config MigrationConfig) error {
 }
 
 // RollbackMigrations rolls back database migrations by N steps
-func RollbackMigrations(db *gorm.DB, config MigrationConfig, steps int) error {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return fmt.Errorf("failed to get sql.DB from GORM: %w", err)
-	}
+func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) error {
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	defer sqlDB.Close()
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
@@ -77,11 +74,9 @@ func RollbackMigrations(db *gorm.DB, config MigrationConfig, steps int) error {
 }
 
 // GetMigrationVersion returns the current migration version
-func GetMigrationVersion(db *gorm.DB, config MigrationConfig) (uint, bool, error) {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return 0, false, fmt.Errorf("failed to get sql.DB from GORM: %w", err)
-	}
+func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool, error) {
+	sqlDB := stdlib.OpenDBFromPool(pool)
+	defer sqlDB.Close()
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {

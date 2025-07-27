@@ -5,7 +5,8 @@ import "github.com/raphaeldiscky/go-ddd-template/internal/application/common"
 type CreateSellerCommand struct {
 	// TODO: Implement idempotency key
 
-	Name string
+	Name  string
+	Email string
 }
 
 type CreateSellerCommandResult struct {

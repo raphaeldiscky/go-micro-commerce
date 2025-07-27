@@ -23,9 +23,12 @@ func TestCreateSeller(t *testing.T) {
 	controller := rest.NewSellerController(echo.New(), mockService)
 
 	// Create a seller for testing
-	seller := entities.NewSeller("TestSeller")
+	sellerRequest := request.CreateSellerRequest{
+		Name:  "TestSeller",
+		Email: "test@example.com",
+	}
 
-	sellerJSON, _ := json.Marshal(seller)
+	sellerJSON, _ := json.Marshal(sellerRequest)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/sellers", bytes.NewReader(sellerJSON))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
@@ -43,7 +46,8 @@ func TestCreateSeller(t *testing.T) {
 
 	var createdSeller entities.Seller
 	_ = json.Unmarshal(rec.Body.Bytes(), &createdSeller)
-	assert.Equal(t, seller.Name, createdSeller.Name)
+	assert.Equal(t, sellerRequest.Name, createdSeller.Name)
+	assert.Equal(t, sellerRequest.Email, createdSeller.Email)
 }
 
 func TestPutSeller(t *testing.T) {
@@ -51,7 +55,10 @@ func TestPutSeller(t *testing.T) {
 	mockService := NewMockSellerService()
 	controller := rest.NewSellerController(echo.New(), mockService)
 
-	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{Name: "TestSeller"})
+	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{
+		Name:  "TestSeller",
+		Email: "test@example.com",
+	})
 	assert.NoError(t, err)
 
 	updateRequest := request.UpdateSellerRequest{
@@ -85,7 +92,10 @@ func TestDeleteSeller(t *testing.T) {
 	mockService := NewMockSellerService()
 	controller := rest.NewSellerController(echo.New(), mockService)
 
-	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{Name: "TestSeller"})
+	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{
+		Name:  "TestSeller",
+		Email: "test@example.com",
+	})
 	assert.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.Id), nil)
@@ -106,7 +116,10 @@ func TestGetSellerById(t *testing.T) {
 	mockService := NewMockSellerService()
 	controller := rest.NewSellerController(echo.New(), mockService)
 
-	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{Name: "TestSeller"})
+	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{
+		Name:  "TestSeller",
+		Email: "test@example.com",
+	})
 	assert.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.Id), nil)
@@ -134,10 +147,16 @@ func TestGetAllSellers(t *testing.T) {
 	mockService := NewMockSellerService()
 	controller := rest.NewSellerController(echo.New(), mockService)
 
-	_, err := mockService.CreateSeller(&command.CreateSellerCommand{Name: "TestSeller1"})
+	_, err := mockService.CreateSeller(&command.CreateSellerCommand{
+		Name:  "TestSeller1",
+		Email: "test1@example.com",
+	})
 	assert.NoError(t, err)
 
-	_, err = mockService.CreateSeller(&command.CreateSellerCommand{Name: "TestSeller2"})
+	_, err = mockService.CreateSeller(&command.CreateSellerCommand{
+		Name:  "TestSeller2",
+		Email: "test2@example.com",
+	})
 	assert.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/sellers", nil)

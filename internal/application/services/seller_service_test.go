@@ -141,6 +141,7 @@ func TestSellerService_UpdateSeller(t *testing.T) {
 
 func getCreateSellerCommand(name string) *command.CreateSellerCommand {
 	return &command.CreateSellerCommand{
-		Name: name,
+		Name:  name,
+		Email: name + "@example.com",
 	}
 }
