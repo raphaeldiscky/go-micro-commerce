@@ -1,28 +1,70 @@
 # This workflow will build a golang project
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
-name: Go
+name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+
+env:
+  GO_VERSION: "1.23"
+  NODE_VERSION: "20"
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.22.x'
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
 
-    - name: Build
-      run: go build -v ./...
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
 
-    - name: Test
-      run: go test -v ./...
+      - name: Install Go Dependencies
+        run: task install_tools
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Format Check
+        run: |
+          task format
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Code is not formatted properly. Please run 'task format'"
+            git diff
+            exit 1
+          fi
+
+      - name: Lint
+        run: task lint-no-fix
+
+      - name: Test All Solutions
+        run: task test-all-solutions
+
+      - name: Build Check
+        run: |
+          for dir in */; do
+            if [ -f "${dir}task.go" ]; then
+              echo "Building ${dir}..."
+              cd "${dir}"
+              go build -v ./... || echo "Build failed for ${dir}"
+              cd ..
+            fi
+          done
