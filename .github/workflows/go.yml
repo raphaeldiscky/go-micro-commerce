@@ -53,7 +53,7 @@ jobs:
           fi
 
       - name: Lint
-        run: task lint-no-fix
+        run: task lint_no_fix
 
       - name: Test All Solutions
         run: task test
