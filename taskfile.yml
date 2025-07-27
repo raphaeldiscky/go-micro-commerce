@@ -60,7 +60,7 @@ tasks:
   run:
     desc: Run a specific service with air
     vars:
-      SERVICE: '{{.SERVICE | default "catalogwriteservice"}}'
+      SERVICE: '{{.SERVICE | default ""}}'
     cmds:
       - |
         if [ -z "{{.SERVICE}}" ]; then
@@ -143,10 +143,7 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Running unit tests for all services..."
-          for service in catalogwriteservice catalogreadservice orderservice; do
-            echo "Testing $service..."
-            sh ./scripts/test.sh $service unit
-          done
+          sh ./scripts/test.sh $service unit
         else
           echo "Running unit tests for {{.SERVICE}}..."
           sh ./scripts/test.sh {{.SERVICE}} unit

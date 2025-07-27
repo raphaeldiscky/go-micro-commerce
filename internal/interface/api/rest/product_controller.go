@@ -25,7 +25,7 @@ func NewProductController(e *echo.Echo, service interfaces.ProductService) *Prod
 
 	e.POST("/api/v1/products", controller.CreateProductController)
 	e.GET("/api/v1/products", controller.GetAllProductsController)
-	e.GET("/api/v1/products/:id", controller.GetProductByIdController)
+	e.GET("/api/v1/products/:id", controller.GetProductByIDController)
 	e.Use(middleware.Recover())
 
 	return controller
@@ -73,8 +73,8 @@ func (pc *ProductController) GetAllProductsController(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-// GetProductByIdController retrieves a product by ID.
-func (pc *ProductController) GetProductByIdController(c echo.Context) error {
+// GetProductByIDController retrieves a product by ID.
+func (pc *ProductController) GetProductByIDController(c echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -82,7 +82,7 @@ func (pc *ProductController) GetProductByIdController(c echo.Context) error {
 		})
 	}
 
-	product, err := pc.service.FindProductById(id)
+	product, err := pc.service.FindProductByID(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to fetch product",

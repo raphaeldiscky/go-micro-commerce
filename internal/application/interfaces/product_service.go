@@ -16,5 +16,5 @@ type ProductService interface {
 		productCommand *command.CreateProductCommand,
 	) (*command.CreateProductCommandResult, error)
 	FindAllProducts() (*query.ProductQueryListResult, error)
-	FindProductById(id uuid.UUID) (*query.ProductQueryResult, error)
+	FindProductByID(id uuid.UUID) (*query.ProductQueryResult, error)
 }

@@ -63,8 +63,8 @@ func (repo *SqlcProductRepository) Create(
 	return fromSqlcProduct(&dbProduct)
 }
 
-// FindById retrieves a product by ID.
-func (repo *SqlcProductRepository) FindById(id uuid.UUID) (*entities.Product, error) {
+// FindByID retrieves a product by ID.
+func (repo *SqlcProductRepository) FindByID(id uuid.UUID) (*entities.Product, error) {
 	ctx := context.Background()
 
 	dbProduct, err := repo.queries.GetProductByID(ctx, id)

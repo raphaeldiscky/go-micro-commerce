@@ -251,7 +251,7 @@ func startKafkaConsumer(config KafkaConfig) {
 	err = consumer.Subscribe(
 		ctx,
 		"ProductCreated",
-		func(ctx context.Context, event events.DomainEvent) error {
+		func(_ context.Context, event events.DomainEvent) error {
 			log.Printf("Received ProductCreated event: %+v", event)
 			// Add your business logic here (e.g., update search index, send notifications, etc.)
 			return nil
@@ -264,7 +264,7 @@ func startKafkaConsumer(config KafkaConfig) {
 	err = consumer.Subscribe(
 		ctx,
 		"SellerCreated",
-		func(ctx context.Context, event events.DomainEvent) error {
+		func(_ context.Context, event events.DomainEvent) error {
 			log.Printf("Received SellerCreated event: %+v", event)
 			// Add your business logic here
 			return nil

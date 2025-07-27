@@ -1,3 +1,4 @@
+// Package kafka provides an implementation of the EventPublisher interface using Kafka.
 package kafka
 
 import (

@@ -59,7 +59,7 @@ func (m *MockProductRepository) Delete(id uuid.UUID) error {
 	return errors.New("product not found for delete")
 }
 
-func (m *MockProductRepository) FindById(id uuid.UUID) (*entities.Product, error) {
+func (m *MockProductRepository) FindByID(id uuid.UUID) (*entities.Product, error) {
 	for _, p := range m.products {
 		if p.Id == id {
 			return &p.Product, nil
@@ -141,7 +141,7 @@ func TestProductService_FindProductById(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	foundProduct, err := service.FindProductById(result.Result.Id)
+	foundProduct, err := service.FindProductByID(result.Result.Id)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -150,7 +150,7 @@ func TestProductService_FindProductById(t *testing.T) {
 		t.Errorf("Expected product name 'Example', but got %s", foundProduct.Result.Name)
 	}
 
-	_, err = service.FindProductById(uuid.New()) // some non-existent Id
+	_, err = service.FindProductByID(uuid.New()) // some non-existent Id
 	if err == nil {
 		t.Error("Expected error for non-existent product, but got none")
 	}

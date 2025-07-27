@@ -151,10 +151,10 @@ func TestDeleteSeller(t *testing.T) {
 	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
 
-	sellerId := uuid.New()
+	sellerID := uuid.New()
 	createResult := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    sellerId,
+			Id:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -197,10 +197,10 @@ func TestGetSellerById(t *testing.T) {
 	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
 
-	sellerId := uuid.New()
+	sellerID := uuid.New()
 	createResult := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    sellerId,
+			Id:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -208,7 +208,7 @@ func TestGetSellerById(t *testing.T) {
 
 	findResult := &query.SellerQueryResult{
 		Result: &common.SellerResult{
-			Id:    sellerId,
+			Id:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},

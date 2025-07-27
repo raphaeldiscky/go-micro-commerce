@@ -58,8 +58,8 @@ func (r *CachedProductRepository) Create(
 	return result, nil
 }
 
-// FindById retrieves a product by ID, using cache when available.
-func (r *CachedProductRepository) FindById(id uuid.UUID) (*entities.Product, error) {
+// FindByID retrieves a product by ID, using cache when available.
+func (r *CachedProductRepository) FindByID(id uuid.UUID) (*entities.Product, error) {
 	ctx := context.Background()
 	cacheKey := r.buildProductCacheKey(id)
 
@@ -70,7 +70,7 @@ func (r *CachedProductRepository) FindById(id uuid.UUID) (*entities.Product, err
 	}
 
 	// If not in cache, get from repository
-	product, err := r.repository.FindById(id)
+	product, err := r.repository.FindByID(id)
 	if err != nil {
 		return nil, err
 	}

@@ -12,6 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
+// MigrationConfig holds the configuration for database migrations.
 type MigrationConfig struct {
 	DatabaseURL    string
 	MigrationsPath string

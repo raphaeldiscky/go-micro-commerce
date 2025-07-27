@@ -94,7 +94,7 @@ func (s *ProductService) CreateProduct(
 	return &result, nil
 }
 
-// UpdateProduct updates an existing product.
+// FindAllProducts finds all products.
 func (s *ProductService) FindAllProducts() (*query.ProductQueryListResult, error) {
 	storedProducts, err := s.productRepository.FindAll()
 	if err != nil {
@@ -112,9 +112,9 @@ func (s *ProductService) FindAllProducts() (*query.ProductQueryListResult, error
 	return &queryListResult, nil
 }
 
-// FindProductById retrieves a product by its ID.
-func (s *ProductService) FindProductById(id uuid.UUID) (*query.ProductQueryResult, error) {
-	storedProduct, err := s.productRepository.FindById(id)
+// FindProductByID retrieves a product by its ID.
+func (s *ProductService) FindProductByID(id uuid.UUID) (*query.ProductQueryResult, error) {
+	storedProduct, err := s.productRepository.FindByID(id)
 	if err != nil {
 		return nil, err
 	}

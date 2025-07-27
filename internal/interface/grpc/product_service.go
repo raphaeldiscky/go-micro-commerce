@@ -73,7 +73,7 @@ func (s *ProductServiceServer) CreateProduct(
 
 // GetProduct retrieves a product by ID.
 func (s *ProductServiceServer) GetProduct(
-	ctx context.Context,
+	_ context.Context,
 	req *marketplacev1.GetProductRequest,
 ) (*marketplacev1.GetProductResponse, error) {
 	if req.Id == "" {
@@ -85,7 +85,7 @@ func (s *ProductServiceServer) GetProduct(
 		return nil, status.Error(codes.InvalidArgument, "invalid product ID format")
 	}
 
-	result, err := s.productService.FindProductById(productID)
+	result, err := s.productService.FindProductByID(productID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get product: %v", err))
 	}
@@ -111,7 +111,7 @@ func (s *ProductServiceServer) GetProduct(
 
 // ListProducts lists all products with pagination.
 func (s *ProductServiceServer) ListProducts(
-	ctx context.Context,
+	_ context.Context,
 	req *marketplacev1.ListProductsRequest,
 ) (*marketplacev1.ListProductsResponse, error) {
 	result, err := s.productService.FindAllProducts()

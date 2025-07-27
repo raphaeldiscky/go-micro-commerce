@@ -50,7 +50,7 @@ func NewKafkaEventSubscriber(
 
 // Subscribe subscribes to an event type with a handler.
 func (s *KafkaEventSubscriber) Subscribe(
-	ctx context.Context,
+	_ context.Context,
 	eventType string,
 	handler events.EventHandler,
 ) error {
@@ -64,7 +64,7 @@ func (s *KafkaEventSubscriber) Subscribe(
 }
 
 // Unsubscribe removes the handler for an event type.
-func (s *KafkaEventSubscriber) Unsubscribe(ctx context.Context, eventType string) error {
+func (s *KafkaEventSubscriber) Unsubscribe(_ context.Context, eventType string) error {
 	s.handlersMutex.Lock()
 	delete(s.handlers, eventType)
 	s.handlersMutex.Unlock()

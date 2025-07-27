@@ -143,23 +143,27 @@ func TestSellerService_UpdateSeller(t *testing.T) {
 	repo := &MockSellerRepository{}
 	service := NewSellerService(repo, nil) // nil for eventPublisher in tests
 
-	createdSellerResult, _ := service.CreateSeller(getCreateSellerCommand("John Doe"))
-	sellerId := createdSellerResult.Result.Id
+	createdSellerResult, err := service.CreateSeller(getCreateSellerCommand("John Doe"))
+	if err != nil {
+		t.Errorf("Unexpected error: %s", err)
+	}
+
+	sellerID := createdSellerResult.Result.Id
 
 	updatableSeller := entities.Seller{
-		Id:   sellerId,
+		Id:   sellerID,
 		Name: "Doe Johnny",
 	}
 
-	_, err := service.UpdateSeller(&command.UpdateSellerCommand{
-		Id:   sellerId,
+	_, err = service.UpdateSeller(&command.UpdateSellerCommand{
+		Id:   sellerID,
 		Name: updatableSeller.Name,
 	})
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	updatedSeller, err := service.FindSellerByID(sellerId)
+	updatedSeller, err := service.FindSellerByID(sellerID)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}

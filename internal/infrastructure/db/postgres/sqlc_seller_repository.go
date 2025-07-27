@@ -48,8 +48,8 @@ func (repo *SellerRepository) Create(seller *entities.ValidatedSeller) (*entitie
 	return fromSqlcSeller(&dbSeller), nil
 }
 
-// FindById retrieves a seller by its ID.
-func (repo *SellerRepository) FindById(id uuid.UUID) (*entities.Seller, error) {
+// FindByID retrieves a seller by its ID.
+func (repo *SellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
 	ctx := context.Background()
 
 	dbSeller, err := repo.queries.GetSellerByID(ctx, id)

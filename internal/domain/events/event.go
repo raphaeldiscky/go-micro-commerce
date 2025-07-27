@@ -1,3 +1,4 @@
+// Package events defines the structure and behavior of domain events in the system.
 package events
 
 import (

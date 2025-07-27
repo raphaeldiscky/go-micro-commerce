@@ -1,3 +1,4 @@
+// Package request provides the DTO for creating a product.
 package request
 
 import (

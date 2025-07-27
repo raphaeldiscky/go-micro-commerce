@@ -1,3 +1,4 @@
+// Package entities defines the core domain entities and their behaviors.
 package entities
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// ValidatedProduct represents a product that has been validated.
+// Product represents a product that has been validated.
 type Product struct {
 	Id        uuid.UUID
 	CreatedAt time.Time
@@ -17,7 +18,7 @@ type Product struct {
 	Seller    Seller
 }
 
-// IsValid checks if the Product is valid.
+// validate checks if the Product is valid.
 func (p *Product) validate() error {
 	if p.Name == "" {
 		return errors.New("name must not be empty")
