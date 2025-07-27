@@ -1,3 +1,4 @@
+// Package entities defines the Seller entity and its methods.
 package entities
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// Seller represents a seller entity.
 type Seller struct {
 	Id        uuid.UUID
 	CreatedAt time.Time
@@ -15,6 +17,7 @@ type Seller struct {
 	Email     string
 }
 
+// NewSeller creates a new Seller with the provided name and email.
 func NewSeller(name string, email string) *Seller {
 	return &Seller{
 		Id:        uuid.New(),
@@ -25,13 +28,16 @@ func NewSeller(name string, email string) *Seller {
 	}
 }
 
+// NewValidatedSeller creates a new Seller and validates it.
 func (s *Seller) validate() error {
 	if s.Name == "" {
 		return errors.New("name must not be empty")
 	}
+
 	if s.Email == "" {
 		return errors.New("email must not be empty")
 	}
+
 	if s.CreatedAt.After(s.UpdatedAt) {
 		return errors.New("created_at must be before updated_at")
 	}
@@ -39,6 +45,7 @@ func (s *Seller) validate() error {
 	return nil
 }
 
+// UpdateName updates the seller's name and validates it.
 func (s *Seller) UpdateName(name string) error {
 	s.Name = name
 	s.UpdatedAt = time.Now()
@@ -46,6 +53,7 @@ func (s *Seller) UpdateName(name string) error {
 	return s.validate()
 }
 
+// UpdateEmail updates the seller's email and validates it.
 func (s *Seller) UpdateEmail(email string) error {
 	s.Email = email
 	s.UpdatedAt = time.Now()

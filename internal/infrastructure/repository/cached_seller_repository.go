@@ -6,33 +6,36 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/cache"
 )
 
-// CachedSellerRepository decorates a SellerRepository with caching capabilities
+// CachedSellerRepository decorates a SellerRepository with caching capabilities.
 type CachedSellerRepository struct {
 	repository repositories.SellerRepository
 	cache      *cache.RedisCache
 	cacheTTL   time.Duration
 }
 
-// NewCachedSellerRepository creates a new cached seller repository
+// NewCachedSellerRepository creates a new cached seller repository.
 func NewCachedSellerRepository(
 	repository repositories.SellerRepository,
-	cache *cache.RedisCache,
+	cch *cache.RedisCache,
 	cacheTTL time.Duration,
 ) repositories.SellerRepository {
 	return &CachedSellerRepository{
 		repository: repository,
-		cache:      cache,
+		cache:      cch,
 		cacheTTL:   cacheTTL,
 	}
 }
 
-// Create creates a new seller and invalidates related cache entries
-func (r *CachedSellerRepository) Create(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+// Create creates a new seller and invalidates related cache entries.
+func (r *CachedSellerRepository) Create(
+	seller *entities.ValidatedSeller,
+) (*entities.Seller, error) {
 	result, err := r.repository.Create(seller)
 	if err != nil {
 		return nil, err
@@ -41,6 +44,7 @@ func (r *CachedSellerRepository) Create(seller *entities.ValidatedSeller) (*enti
 	// Cache the created seller
 	ctx := context.Background()
 	cacheKey := r.buildSellerCacheKey(result.Id)
+
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		// Log cache error but don't fail the operation
 		fmt.Printf("Failed to cache seller: %v\n", cacheErr)
@@ -54,8 +58,8 @@ func (r *CachedSellerRepository) Create(seller *entities.ValidatedSeller) (*enti
 	return result, nil
 }
 
-// FindById retrieves a seller by ID, using cache when available
-func (r *CachedSellerRepository) FindById(id uuid.UUID) (*entities.Seller, error) {
+// FindByID retrieves a seller by ID, using cache when available.
+func (r *CachedSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
 	ctx := context.Background()
 	cacheKey := r.buildSellerCacheKey(id)
 
@@ -66,7 +70,7 @@ func (r *CachedSellerRepository) FindById(id uuid.UUID) (*entities.Seller, error
 	}
 
 	// If not in cache, get from repository
-	seller, err := r.repository.FindById(id)
+	seller, err := r.repository.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +85,7 @@ func (r *CachedSellerRepository) FindById(id uuid.UUID) (*entities.Seller, error
 	return seller, nil
 }
 
-// FindAll retrieves all sellers, using cache when available
+// FindAll retrieves all sellers, using cache when available.
 func (r *CachedSellerRepository) FindAll() ([]*entities.Seller, error) {
 	ctx := context.Background()
 	cacheKey := "sellers:all"
@@ -106,8 +110,10 @@ func (r *CachedSellerRepository) FindAll() ([]*entities.Seller, error) {
 	return sellers, nil
 }
 
-// Update updates a seller and invalidates related cache entries
-func (r *CachedSellerRepository) Update(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+// Update updates a seller and invalidates related cache entries.
+func (r *CachedSellerRepository) Update(
+	seller *entities.ValidatedSeller,
+) (*entities.Seller, error) {
 	result, err := r.repository.Update(seller)
 	if err != nil {
 		return nil, err
@@ -129,7 +135,7 @@ func (r *CachedSellerRepository) Update(seller *entities.ValidatedSeller) (*enti
 	return result, nil
 }
 
-// Delete deletes a seller and removes it from cache
+// Delete deletes a seller and removes it from cache.
 func (r *CachedSellerRepository) Delete(id uuid.UUID) error {
 	err := r.repository.Delete(id)
 	if err != nil {
@@ -152,7 +158,7 @@ func (r *CachedSellerRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-// buildSellerCacheKey builds a cache key for a seller
+// buildSellerCacheKey builds a cache key for a seller.
 func (r *CachedSellerRepository) buildSellerCacheKey(sellerID uuid.UUID) string {
 	return fmt.Sprintf("seller:%s", sellerID.String())
 }

@@ -3,20 +3,21 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisCache implements a Redis-based cache
+// RedisCache implements a Redis-based cache.
 type RedisCache struct {
 	client     *redis.Client
 	keyPrefix  string
 	defaultTTL time.Duration
 }
 
-// RedisConfig holds Redis configuration
+// RedisConfig holds Redis configuration.
 type RedisConfig struct {
 	Host       string
 	Port       int
@@ -26,7 +27,7 @@ type RedisConfig struct {
 	DefaultTTL time.Duration
 }
 
-// NewRedisCache creates a new Redis cache instance
+// NewRedisCache creates a new Redis cache instance.
 func NewRedisCache(config RedisConfig) *RedisCache {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%d", config.Host, config.Port),
@@ -41,13 +42,18 @@ func NewRedisCache(config RedisConfig) *RedisCache {
 	}
 }
 
-// Set stores a value in the cache with the default TTL
+// Set stores a value in the cache with the default TTL.
 func (c *RedisCache) Set(ctx context.Context, key string, value interface{}) error {
 	return c.SetWithTTL(ctx, key, value, c.defaultTTL)
 }
 
-// SetWithTTL stores a value in the cache with a custom TTL
-func (c *RedisCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
+// SetWithTTL stores a value in the cache with a custom TTL.
+func (c *RedisCache) SetWithTTL(
+	ctx context.Context,
+	key string,
+	value interface{},
+	ttl time.Duration,
+) error {
 	fullKey := c.buildKey(key)
 
 	data, err := json.Marshal(value)
@@ -63,15 +69,16 @@ func (c *RedisCache) SetWithTTL(ctx context.Context, key string, value interface
 	return nil
 }
 
-// Get retrieves a value from the cache
+// Get retrieves a value from the cache.
 func (c *RedisCache) Get(ctx context.Context, key string, dest interface{}) error {
 	fullKey := c.buildKey(key)
 
 	data, err := c.client.Get(ctx, fullKey).Result()
 	if err != nil {
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return ErrCacheMiss
 		}
+
 		return fmt.Errorf("failed to get cache value: %w", err)
 	}
 
@@ -83,7 +90,7 @@ func (c *RedisCache) Get(ctx context.Context, key string, dest interface{}) erro
 	return nil
 }
 
-// Delete removes a value from the cache
+// Delete removes a value from the cache.
 func (c *RedisCache) Delete(ctx context.Context, key string) error {
 	fullKey := c.buildKey(key)
 
@@ -95,7 +102,7 @@ func (c *RedisCache) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-// Exists checks if a key exists in the cache
+// Exists checks if a key exists in the cache.
 func (c *RedisCache) Exists(ctx context.Context, key string) (bool, error) {
 	fullKey := c.buildKey(key)
 
@@ -107,7 +114,7 @@ func (c *RedisCache) Exists(ctx context.Context, key string) (bool, error) {
 	return count > 0, nil
 }
 
-// Clear removes all keys with the configured prefix
+// Clear removes all keys with the configured prefix.
 func (c *RedisCache) Clear(ctx context.Context) error {
 	pattern := c.buildKey("*")
 
@@ -128,27 +135,29 @@ func (c *RedisCache) Clear(ctx context.Context) error {
 	return nil
 }
 
-// Ping checks if Redis is reachable
+// Ping checks if Redis is reachable.
 func (c *RedisCache) Ping(ctx context.Context) error {
 	err := c.client.Ping(ctx).Err()
 	if err != nil {
 		return fmt.Errorf("failed to ping Redis: %w", err)
 	}
+
 	return nil
 }
 
-// Close closes the Redis connection
+// Close closes the Redis connection.
 func (c *RedisCache) Close() error {
 	return c.client.Close()
 }
 
-// buildKey builds the full cache key with prefix
+// buildKey builds the full cache key with prefix.
 func (c *RedisCache) buildKey(key string) string {
 	if c.keyPrefix != "" {
 		return fmt.Sprintf("%s:%s", c.keyPrefix, key)
 	}
+
 	return key
 }
 
-// ErrCacheMiss is returned when a cache key is not found
+// ErrCacheMiss is returned when a cache key is not found.
 var ErrCacheMiss = fmt.Errorf("cache miss")

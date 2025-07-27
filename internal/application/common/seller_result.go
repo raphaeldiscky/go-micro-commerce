@@ -1,3 +1,4 @@
+// Package common defines the SellerResult structure used in application responses.
 package common
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// SellerResult represents the result of a seller query.
 type SellerResult struct {
 	Id        uuid.UUID
 	Name      string

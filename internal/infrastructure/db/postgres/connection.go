@@ -1,3 +1,4 @@
+// Package postgres provides a PostgreSQL database connection and configuration.
 package postgres
 
 import (
@@ -7,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// NewConnection creates a new PostgreSQL connection pool.
 func NewConnection(databaseURL string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
@@ -25,6 +27,7 @@ func NewConnection(databaseURL string) (*pgxpool.Pool, error) {
 	// Test the connection
 	if err := pool.Ping(context.Background()); err != nil {
 		pool.Close()
+
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 

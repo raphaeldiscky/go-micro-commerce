@@ -8,16 +8,19 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/sqlc"
 )
 
+// SqlcProductRepository implements the repositories.ProductRepository interface using SQLC.
 type SqlcProductRepository struct {
 	pool    *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
+// NewSqlcProductRepository creates a new instance of SqlcProductRepository.
 func NewSqlcProductRepository(pool *pgxpool.Pool) repositories.ProductRepository {
 	return &SqlcProductRepository{
 		pool:    pool,
@@ -25,7 +28,10 @@ func NewSqlcProductRepository(pool *pgxpool.Pool) repositories.ProductRepository
 	}
 }
 
-func (repo *SqlcProductRepository) Create(product *entities.ValidatedProduct) (*entities.Product, error) {
+// Create adds a new product to the database.
+func (repo *SqlcProductRepository) Create(
+	product *entities.ValidatedProduct,
+) (*entities.Product, error) {
 	ctx := context.Background()
 
 	now := time.Now()
@@ -33,6 +39,7 @@ func (repo *SqlcProductRepository) Create(product *entities.ValidatedProduct) (*
 	// Convert price to pgtype.Numeric
 	priceStr := fmt.Sprintf("%.2f", product.Price)
 	priceNumeric := pgtype.Numeric{}
+
 	if err := priceNumeric.Scan(priceStr); err != nil {
 		return nil, fmt.Errorf("failed to convert price: %w", err)
 	}
@@ -56,6 +63,7 @@ func (repo *SqlcProductRepository) Create(product *entities.ValidatedProduct) (*
 	return fromSqlcProduct(&dbProduct)
 }
 
+// FindById retrieves a product by ID.
 func (repo *SqlcProductRepository) FindById(id uuid.UUID) (*entities.Product, error) {
 	ctx := context.Background()
 
@@ -67,6 +75,7 @@ func (repo *SqlcProductRepository) FindById(id uuid.UUID) (*entities.Product, er
 	return fromSqlcProduct(&dbProduct)
 }
 
+// FindAll retrieves all products.
 func (repo *SqlcProductRepository) FindAll() ([]*entities.Product, error) {
 	ctx := context.Background()
 
@@ -76,23 +85,29 @@ func (repo *SqlcProductRepository) FindAll() ([]*entities.Product, error) {
 	}
 
 	products := make([]*entities.Product, len(dbProducts))
+
 	for i, dbProduct := range dbProducts {
 		product, err := fromSqlcProduct(&dbProduct)
 		if err != nil {
 			return nil, err
 		}
+
 		products[i] = product
 	}
 
 	return products, nil
 }
 
-func (repo *SqlcProductRepository) Update(product *entities.ValidatedProduct) (*entities.Product, error) {
+// Update modifies an existing product.
+func (repo *SqlcProductRepository) Update(
+	product *entities.ValidatedProduct,
+) (*entities.Product, error) {
 	ctx := context.Background()
 
 	// Convert price to pgtype.Numeric
 	priceStr := fmt.Sprintf("%.2f", product.Price)
 	priceNumeric := pgtype.Numeric{}
+
 	if err := priceNumeric.Scan(priceStr); err != nil {
 		return nil, fmt.Errorf("failed to convert price: %w", err)
 	}
@@ -114,21 +129,25 @@ func (repo *SqlcProductRepository) Update(product *entities.ValidatedProduct) (*
 	return fromSqlcProduct(&dbProduct)
 }
 
+// Delete removes a product by ID.
 func (repo *SqlcProductRepository) Delete(id uuid.UUID) error {
 	ctx := context.Background()
+
 	return repo.queries.DeleteProduct(ctx, id)
 }
 
-// Helper function to convert sqlc model to domain entity
+// fromSqlcProduct converts a sqlc.Product to an entities.Product.
 func fromSqlcProduct(dbProduct *sqlc.Product) (*entities.Product, error) {
 	// Convert pgtype.Numeric to float64
 	var price float64
+
 	if dbProduct.Price.Valid {
 		// Get the float64 value from pgtype.Numeric
 		f64, err := dbProduct.Price.Float64Value()
 		if err != nil {
 			return nil, fmt.Errorf("failed to parse price: %w", err)
 		}
+
 		price = f64.Float64
 	}
 

@@ -6,15 +6,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/mapper"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/request"
 )
 
+// ProductController handles HTTP requests related to products.
 type ProductController struct {
 	service interfaces.ProductService
 }
 
+// NewProductController initializes a new ProductController.
 func NewProductController(e *echo.Echo, service interfaces.ProductService) *ProductController {
 	controller := &ProductController{
 		service: service,
@@ -56,6 +59,7 @@ func (pc *ProductController) CreateProductController(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
+// GetAllProductsController retrieves all products.
 func (pc *ProductController) GetAllProductsController(c echo.Context) error {
 	products, err := pc.service.FindAllProducts()
 	if err != nil {
@@ -69,6 +73,7 @@ func (pc *ProductController) GetAllProductsController(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// GetProductByIdController retrieves a product by ID.
 func (pc *ProductController) GetProductByIdController(c echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

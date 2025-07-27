@@ -1,13 +1,15 @@
 package postgres
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
+
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 type MigrationConfig struct {
@@ -15,7 +17,7 @@ type MigrationConfig struct {
 	MigrationsPath string
 }
 
-// RunMigrations executes database migrations
+// RunMigrations executes database migrations.
 func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	// Convert pgx pool to sql.DB for migrate
 	sqlDB := stdlib.OpenDBFromPool(pool)
@@ -39,14 +41,14 @@ func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	defer m.Close()
 
 	// Run migrations
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return nil
 }
 
-// RollbackMigrations rolls back database migrations by N steps
+// RollbackMigrations rolls back database migrations by N steps.
 func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer sqlDB.Close()
@@ -73,7 +75,7 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 	return nil
 }
 
-// GetMigrationVersion returns the current migration version
+// GetMigrationVersion returns the current migration version.
 func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool, error) {
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer sqlDB.Close()

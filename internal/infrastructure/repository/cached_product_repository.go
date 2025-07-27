@@ -6,33 +6,36 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/cache"
 )
 
-// CachedProductRepository decorates a ProductRepository with caching capabilities
+// CachedProductRepository decorates a ProductRepository with caching capabilities.
 type CachedProductRepository struct {
 	repository repositories.ProductRepository
 	cache      *cache.RedisCache
 	cacheTTL   time.Duration
 }
 
-// NewCachedProductRepository creates a new cached product repository
+// NewCachedProductRepository creates a new cached product repository.
 func NewCachedProductRepository(
 	repository repositories.ProductRepository,
-	cache *cache.RedisCache,
+	cch *cache.RedisCache,
 	cacheTTL time.Duration,
 ) repositories.ProductRepository {
 	return &CachedProductRepository{
 		repository: repository,
-		cache:      cache,
+		cache:      cch,
 		cacheTTL:   cacheTTL,
 	}
 }
 
-// Create creates a new product and invalidates related cache entries
-func (r *CachedProductRepository) Create(product *entities.ValidatedProduct) (*entities.Product, error) {
+// Create creates a new product and invalidates related cache entries.
+func (r *CachedProductRepository) Create(
+	product *entities.ValidatedProduct,
+) (*entities.Product, error) {
 	result, err := r.repository.Create(product)
 	if err != nil {
 		return nil, err
@@ -41,6 +44,7 @@ func (r *CachedProductRepository) Create(product *entities.ValidatedProduct) (*e
 	// Cache the created product
 	ctx := context.Background()
 	cacheKey := r.buildProductCacheKey(result.Id)
+
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		// Log cache error but don't fail the operation
 		fmt.Printf("Failed to cache product: %v\n", cacheErr)
@@ -54,7 +58,7 @@ func (r *CachedProductRepository) Create(product *entities.ValidatedProduct) (*e
 	return result, nil
 }
 
-// FindById retrieves a product by ID, using cache when available
+// FindById retrieves a product by ID, using cache when available.
 func (r *CachedProductRepository) FindById(id uuid.UUID) (*entities.Product, error) {
 	ctx := context.Background()
 	cacheKey := r.buildProductCacheKey(id)
@@ -81,7 +85,7 @@ func (r *CachedProductRepository) FindById(id uuid.UUID) (*entities.Product, err
 	return product, nil
 }
 
-// FindAll retrieves all products, using cache when available
+// FindAll retrieves all products, using cache when available.
 func (r *CachedProductRepository) FindAll() ([]*entities.Product, error) {
 	ctx := context.Background()
 	cacheKey := "products:all"
@@ -106,8 +110,10 @@ func (r *CachedProductRepository) FindAll() ([]*entities.Product, error) {
 	return products, nil
 }
 
-// Update updates a product and invalidates related cache entries
-func (r *CachedProductRepository) Update(product *entities.ValidatedProduct) (*entities.Product, error) {
+// Update updates a product and invalidates related cache entries.
+func (r *CachedProductRepository) Update(
+	product *entities.ValidatedProduct,
+) (*entities.Product, error) {
 	result, err := r.repository.Update(product)
 	if err != nil {
 		return nil, err
@@ -129,7 +135,7 @@ func (r *CachedProductRepository) Update(product *entities.ValidatedProduct) (*e
 	return result, nil
 }
 
-// Delete deletes a product and removes it from cache
+// Delete deletes a product and removes it from cache.
 func (r *CachedProductRepository) Delete(id uuid.UUID) error {
 	err := r.repository.Delete(id)
 	if err != nil {
@@ -152,7 +158,7 @@ func (r *CachedProductRepository) Delete(id uuid.UUID) error {
 	return nil
 }
 
-// buildProductCacheKey builds a cache key for a product
+// buildProductCacheKey builds a cache key for a product.
 func (r *CachedProductRepository) buildProductCacheKey(productID uuid.UUID) string {
 	return fmt.Sprintf("product:%s", productID.String())
 }

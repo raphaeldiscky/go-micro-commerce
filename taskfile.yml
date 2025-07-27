@@ -1,0 +1,224 @@
+#https://taskfile.dev/#/installation
+#https://github.com/go-task/task/issues/1115
+version: "3"
+
+vars:
+  GOOS: "{{default OS .GOOS}}"
+  DC_DIR: "deployments/docker-compose"
+  INFRA_DC_FILE: "{{.DC_DIR}}/infra.yaml"
+  MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
+  SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
+
+tasks:
+  install_tools:
+    desc: Install all dependencies for the project
+    cmds:
+      - sh ./scripts/install-tools.sh
+
+  install_dependencies:
+    desc: Install project dependencies
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Installing dependencies for all services... (go mod tidy)"
+          sh ./scripts/install-dependencies.sh
+        else
+          echo "Installing dependencies for {{.SERVICE}}... (go mod tidy)"
+          sh ./scripts/install-dependencies.sh {{.SERVICE}}
+        fi
+
+  migrateup:
+    desc: Run database migrations
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running migrations for all services..."
+          sh ./scripts/migrate.sh up
+        else
+          echo "Running migrations for {{.SERVICE}}..."
+          sh ./scripts/migrate.sh up {{.SERVICE}}
+        fi
+
+  migratedown:
+    desc: Rollback database migrations
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Rolling back migrations for all services..."
+          sh ./scripts/migrate.sh down
+        else
+          echo "Rolling back migrations for {{.SERVICE}}..."
+          sh ./scripts/migrate.sh down {{.SERVICE}}
+        fi
+
+  run:
+    desc: Run a specific service with air
+    vars:
+      SERVICE: '{{.SERVICE | default "catalogwriteservice"}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running all services with air..."
+          sh ./scripts/run.sh
+        else
+          echo "Running {{.SERVICE}} with air..."
+          sh ./scripts/run.sh {{.SERVICE}}
+        fi
+
+  sleep:
+    vars:
+      DURATION: "{{default 5 .DURATION}}"
+    cmds:
+      - "{{.SLEEP_CMD}} {{.DURATION}}"
+
+  build:
+    desc: Build project components
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Building all services..."
+          sh ./scripts/build.sh
+        else
+          echo "Building {{.SERVICE}}..."
+          sh ./scripts/build.sh {{.SERVICE}}
+        fi
+
+  start_infra:
+    desc: Start infrastructure using docker-compose
+    cmds:
+      - docker compose -f {{.INFRA_DC_FILE}} up -d
+
+  start_monitoring:
+    desc: Start monitoring using docker-compose
+    cmds:
+      - docker compose -f {{.MONITORING_DC_FILE}} up -d
+
+  stop_infra:
+    desc: Stop infrastructure using docker-compose
+    cmds:
+      - docker compose -f {{.INFRA_DC_FILE}} stop
+      - docker compose -f {{.INFRA_DC_FILE}} rm -f
+
+  stop_monitoring:
+    desc: Stop monitoring using docker-compose
+    cmds:
+      - docker compose -f {{.MONITORING_DC_FILE}} stop
+      - docker compose -f {{.MONITORING_DC_FILE}} rm -f
+
+  restart_infra:
+    desc: Restart infrastructure using docker-compose
+    cmds:
+      - task: stop_infra
+      - task: sleep
+      - task: start_infra
+
+  restart_monitoring:
+    desc: Restart monitoring using docker-compose
+    cmds:
+      - task: stop_monitoring
+      - task: sleep
+      - task: start_monitoring
+
+  test_file:
+    desc: Run individual test file
+    vars:
+      FILE: "{{.FILE}}"
+      TEST_TYPE: '{{default "unit" .TEST_TYPE}}'
+    cmds:
+      - sh ./scripts/test-file.sh {{.FILE}} {{.TEST_TYPE}}
+
+  test:
+    desc: Run unit tests
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running unit tests for all services..."
+          for service in catalogwriteservice catalogreadservice orderservice; do
+            echo "Testing $service..."
+            sh ./scripts/test.sh $service unit
+          done
+        else
+          echo "Running unit tests for {{.SERVICE}}..."
+          sh ./scripts/test.sh {{.SERVICE}} unit
+        fi
+
+  format:
+    desc: Run formatters
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running formatters for all services..."
+          sh ./scripts/format.sh
+        else
+          echo "Formatting {{.SERVICE}}..."
+          sh ./scripts/format.sh {{.SERVICE}}
+        fi
+
+  lint:
+    desc: Run formatters and linters
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running linters for all services..."
+          sh ./scripts/lint.sh
+        else
+          echo "Running linters for {{.SERVICE}}..."
+          sh ./scripts/lint.sh {{.SERVICE}}
+        fi
+    deps: ["format"]
+
+  mock:
+    desc: Generate mock
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating mocks for all services..."
+          sh ./scripts/mock.sh
+        else
+          echo "Generating mocks for {{.SERVICE}}..."
+          sh ./scripts/mock.sh {{.SERVICE}}
+        fi
+
+  proto:
+    desc: Generate protobuf files
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating protobuf files for all services..."
+          sh ./scripts/proto.sh
+        else
+          echo "Generating protobuf files for {{.SERVICE}}..."
+          sh ./scripts/proto.sh {{.SERVICE}}
+        fi
+
+  sqlc:
+    desc: Generate SQLC files
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating SQLC files for all services..."
+          sh ./scripts/sqlc.sh
+        else
+          echo "Generating SQLC files for {{.SERVICE}}..."
+          sh ./scripts/sqlc.sh {{.SERVICE}}
+        fi

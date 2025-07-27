@@ -6,16 +6,19 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/sqlc"
 )
 
+// SellerRepository implements the repositories.SellerRepository interface using SQLC.
 type SellerRepository struct {
 	pool    *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
+// NewSqlcSellerRepository creates a new instance of SellerRepository.
 func NewSqlcSellerRepository(pool *pgxpool.Pool) repositories.SellerRepository {
 	return &SellerRepository{
 		pool:    pool,
@@ -23,6 +26,7 @@ func NewSqlcSellerRepository(pool *pgxpool.Pool) repositories.SellerRepository {
 	}
 }
 
+// Create adds a new seller to the database.
 func (repo *SellerRepository) Create(seller *entities.ValidatedSeller) (*entities.Seller, error) {
 	ctx := context.Background()
 
@@ -44,6 +48,7 @@ func (repo *SellerRepository) Create(seller *entities.ValidatedSeller) (*entitie
 	return fromSqlcSeller(&dbSeller), nil
 }
 
+// FindById retrieves a seller by its ID.
 func (repo *SellerRepository) FindById(id uuid.UUID) (*entities.Seller, error) {
 	ctx := context.Background()
 
@@ -55,6 +60,7 @@ func (repo *SellerRepository) FindById(id uuid.UUID) (*entities.Seller, error) {
 	return fromSqlcSeller(&dbSeller), nil
 }
 
+// FindAll retrieves all sellers.
 func (repo *SellerRepository) FindAll() ([]*entities.Seller, error) {
 	ctx := context.Background()
 
@@ -71,6 +77,7 @@ func (repo *SellerRepository) FindAll() ([]*entities.Seller, error) {
 	return sellers, nil
 }
 
+// Update updates an existing seller.
 func (repo *SellerRepository) Update(seller *entities.ValidatedSeller) (*entities.Seller, error) {
 	ctx := context.Background()
 
@@ -89,12 +96,14 @@ func (repo *SellerRepository) Update(seller *entities.ValidatedSeller) (*entitie
 	return fromSqlcSeller(&dbSeller), nil
 }
 
+// Delete removes a seller from the database.
 func (repo *SellerRepository) Delete(id uuid.UUID) error {
 	ctx := context.Background()
+
 	return repo.queries.DeleteSeller(ctx, id)
 }
 
-// Helper function to convert sqlc model to domain entity
+// Helper function to convert sqlc model to domain entity.
 func fromSqlcSeller(dbSeller *sqlc.Seller) *entities.Seller {
 	return &entities.Seller{
 		Id:        dbSeller.ID,

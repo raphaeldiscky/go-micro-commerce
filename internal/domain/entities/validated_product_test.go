@@ -27,25 +27,31 @@ func TestProductValidation(t *testing.T) {
 func TestNewValidatedProduct(t *testing.T) {
 	// Test valid product
 	seller := NewSeller("Example Seller", "seller@example.com")
+
 	validatedSeller, err := NewValidatedSeller(seller)
 	if err != nil {
 		t.Fatalf("Expected no error, but got %s", err.Error())
 	}
+
 	product := NewProduct("Example Product", 10.0, *validatedSeller)
+
 	validatedProduct, err := NewValidatedProduct(product)
 	if err != nil {
 		t.Errorf("Expected product to be valid, but got error: %s", err)
 	}
+
 	if !validatedProduct.IsValid() {
 		t.Error("Expected ValidatedProduct to be valid")
 	}
 
 	// Test invalid product
 	invalidProduct := NewProduct("", -10.0, *validatedSeller)
+
 	validatedProduct, err = NewValidatedProduct(invalidProduct)
 	if err == nil {
 		t.Error("Expected error when validating invalid product, but got none")
 	}
+
 	if validatedProduct != nil {
 		t.Error("Expected ValidatedProduct to be nil for invalid input")
 	}

@@ -86,19 +86,19 @@ func (mr *MockSellerServiceMockRecorder) FindAllSellers() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllSellers", reflect.TypeOf((*MockSellerService)(nil).FindAllSellers))
 }
 
-// FindSellerById mocks base method.
-func (m *MockSellerService) FindSellerById(id uuid.UUID) (*query.SellerQueryResult, error) {
+// FindSellerByID mocks base method.
+func (m *MockSellerService) FindSellerByID(id uuid.UUID) (*query.SellerQueryResult, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindSellerById", id)
+	ret := m.ctrl.Call(m, "FindSellerByID", id)
 	ret0, _ := ret[0].(*query.SellerQueryResult)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FindSellerById indicates an expected call of FindSellerById.
-func (mr *MockSellerServiceMockRecorder) FindSellerById(id any) *gomock.Call {
+// FindSellerByID indicates an expected call of FindSellerByID.
+func (mr *MockSellerServiceMockRecorder) FindSellerByID(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindSellerById", reflect.TypeOf((*MockSellerService)(nil).FindSellerById), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindSellerByID", reflect.TypeOf((*MockSellerService)(nil).FindSellerByID), id)
 }
 
 // UpdateSeller mocks base method.

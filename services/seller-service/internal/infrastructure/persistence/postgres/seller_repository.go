@@ -51,7 +51,6 @@ func (r *SellerRepositoryPostgres) Create(ctx context.Context, seller *entities.
 		&createdSeller.CreatedAt,
 		&createdSeller.UpdatedAt,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create seller: %w", err)
 	}
@@ -79,7 +78,6 @@ func (r *SellerRepositoryPostgres) FindById(ctx context.Context, id uuid.UUID) (
 		&seller.CreatedAt,
 		&seller.UpdatedAt,
 	)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -110,7 +108,6 @@ func (r *SellerRepositoryPostgres) FindByEmail(ctx context.Context, email string
 		&seller.CreatedAt,
 		&seller.UpdatedAt,
 	)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil
@@ -231,7 +228,6 @@ func (r *SellerRepositoryPostgres) Update(ctx context.Context, seller *entities.
 		&updatedSeller.CreatedAt,
 		&updatedSeller.UpdatedAt,
 	)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("seller not found")

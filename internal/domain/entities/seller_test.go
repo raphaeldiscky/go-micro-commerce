@@ -1,3 +1,4 @@
+// Package entities defines the Seller entity.
 package entities
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// TestNewSeller tests the creation of a new Seller.
 func TestNewSeller(t *testing.T) {
 	seller := NewSeller("Example Seller", "seller@example.com")
 

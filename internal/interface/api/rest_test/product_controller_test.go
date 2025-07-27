@@ -8,17 +8,17 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/common"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/query"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
+	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/response"
 	"github.com/raphaeldiscky/go-ddd-template/internal/mocks"
-	"go.uber.org/mock/gomock"
-
-	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateProduct(t *testing.T) {
@@ -28,10 +28,20 @@ func TestCreateProduct(t *testing.T) {
 
 	e := echo.New()
 	mockService := mocks.NewMockProductService(ctrl)
-	reqBody := map[string]interface{}{"Name": "TestProduct", "Price": 9.99, "SellerId": "123e4567-e89b-12d3-a456-426614174000"}
-	reqBodyBytes, _ := json.Marshal(reqBody)
+	reqBody := map[string]interface{}{
+		"Name":     "TestProduct",
+		"Price":    9.99,
+		"SellerId": "123e4567-e89b-12d3-a456-426614174000",
+	}
+
+	reqBodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		t.Fatalf("Failed to marshal request body: %v", err)
+	}
+
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/products", bytes.NewReader(reqBodyBytes))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 	restCtrl := rest.NewProductController(e, mockService)
@@ -44,14 +54,18 @@ func TestCreateProduct(t *testing.T) {
 		},
 	}
 
-	mockService.EXPECT().CreateProduct(gomock.Any()).Return(createProductCommandResult, nil).Times(1)
+	mockService.EXPECT().
+		CreateProduct(gomock.Any()).
+		Return(createProductCommandResult, nil).
+		Times(1)
 
 	// Execute
-	err := restCtrl.CreateProductController(c)
+	err = restCtrl.CreateProductController(c)
 	assert.NoError(t, err)
 
 	// Deserialize the response body
 	var responseBody map[string]interface{}
+
 	err = json.Unmarshal(rec.Body.Bytes(), &responseBody)
 	if err != nil {
 		t.Fatalf("Failed to decode response body: %v", err)
@@ -105,7 +119,7 @@ func TestGetAllProducts(t *testing.T) {
 		},
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/products", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/products", http.NoBody)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -127,6 +141,7 @@ func TestGetAllProducts(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var receivedListResponse response.ListProductsResponse
+
 		err := json.Unmarshal(rec.Body.Bytes(), &receivedListResponse)
 		if assert.NoError(t, err) {
 			assert.ElementsMatch(t, expectedListResponse.Products, receivedListResponse.Products)

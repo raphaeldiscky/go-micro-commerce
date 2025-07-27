@@ -50,7 +50,6 @@ func (r *ProductRepositoryPostgres) Create(ctx context.Context, product *entitie
 		&savedProduct.CreatedAt,
 		&savedProduct.UpdatedAt,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create product: %w", err)
 	}
@@ -84,7 +83,6 @@ func (r *ProductRepositoryPostgres) Update(ctx context.Context, product *entitie
 		&updatedProduct.CreatedAt,
 		&updatedProduct.UpdatedAt,
 	)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, fmt.Errorf("product not found")
@@ -130,7 +128,6 @@ func (r *ProductRepositoryPostgres) FindById(ctx context.Context, id uuid.UUID) 
 		&product.CreatedAt,
 		&product.UpdatedAt,
 	)
-
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return nil, nil

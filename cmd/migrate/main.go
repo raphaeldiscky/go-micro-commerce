@@ -17,13 +17,16 @@ func main() {
 		action         = flag.String("action", "up", "Migration action: up, down, version")
 		steps          = flag.Int("steps", 1, "Number of migration steps for rollback")
 	)
+
 	flag.Parse()
 
 	if *databaseURL == "" {
 		// Try to get from environment
 		*databaseURL = os.Getenv("DATABASE_URL")
 		if *databaseURL == "" {
-			log.Fatal("Database URL is required. Use -database-url flag or DATABASE_URL environment variable")
+			log.Fatal(
+				"Database URL is required. Use -database-url flag or DATABASE_URL environment variable",
+			)
 		}
 	}
 
@@ -48,16 +51,20 @@ func main() {
 	switch *action {
 	case "up":
 		fmt.Println("Running migrations...")
+
 		if err := postgresInfra.RunMigrations(pool, config); err != nil {
 			log.Fatalf("Failed to run migrations: %v", err)
 		}
+
 		fmt.Println("Migrations completed successfully!")
 
 	case "down":
 		fmt.Printf("Rolling back %d migration(s)...\n", *steps)
+
 		if err := postgresInfra.RollbackMigrations(pool, config, *steps); err != nil {
 			log.Fatalf("Failed to rollback migrations: %v", err)
 		}
+
 		fmt.Println("Rollback completed successfully!")
 
 	case "version":
@@ -65,7 +72,9 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to get migration version: %v", err)
 		}
+
 		fmt.Printf("Current migration version: %d\n", version)
+
 		if dirty {
 			fmt.Println("Warning: Database is in dirty state")
 		}

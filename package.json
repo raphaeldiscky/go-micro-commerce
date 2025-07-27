@@ -1,0 +1,23 @@
+{
+  "name": "go-ddd-template",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raphaeldiscky/go-ddd-template.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/raphaeldiscky/go-ddd-template/issues"
+  },
+  "homepage": "https://github.com/raphaeldiscky/go-ddd-template#readme",
+  "devDependencies": {
+    "@commitlint/cli": "19.8.1",
+    "@commitlint/config-conventional": "19.8.1",
+    "husky": "9.1.7"
+  }
+}

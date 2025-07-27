@@ -8,10 +8,11 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
 )
 
-// KafkaEventPublisher implements the EventPublisher interface using Kafka
+// KafkaEventPublisher implements the EventPublisher interface using Kafka.
 type KafkaEventPublisher struct {
 	producer      sarama.SyncProducer
 	topicPrefix   string
@@ -19,7 +20,7 @@ type KafkaEventPublisher struct {
 	retryDelay    time.Duration
 }
 
-// KafkaConfig holds configuration for Kafka
+// KafkaConfig holds configuration for Kafka.
 type KafkaConfig struct {
 	Brokers       []string
 	TopicPrefix   string
@@ -27,7 +28,7 @@ type KafkaConfig struct {
 	RetryDelay    time.Duration
 }
 
-// NewKafkaEventPublisher creates a new Kafka event publisher
+// NewKafkaEventPublisher creates a new Kafka event publisher.
 func NewKafkaEventPublisher(config KafkaConfig) (*KafkaEventPublisher, error) {
 	saramaConfig := sarama.NewConfig()
 	saramaConfig.Producer.RequiredAcks = sarama.WaitForAll
@@ -51,23 +52,30 @@ func NewKafkaEventPublisher(config KafkaConfig) (*KafkaEventPublisher, error) {
 	}, nil
 }
 
-// Publish publishes a single domain event to Kafka
+// Publish publishes a single domain event to Kafka.
 func (p *KafkaEventPublisher) Publish(ctx context.Context, event events.DomainEvent) error {
 	return p.publishWithRetry(ctx, event)
 }
 
-// PublishBatch publishes multiple domain events to Kafka
-func (p *KafkaEventPublisher) PublishBatch(ctx context.Context, eventList []events.DomainEvent) error {
+// PublishBatch publishes multiple domain events to Kafka.
+func (p *KafkaEventPublisher) PublishBatch(
+	ctx context.Context,
+	eventList []events.DomainEvent,
+) error {
 	for _, event := range eventList {
 		if err := p.publishWithRetry(ctx, event); err != nil {
 			return fmt.Errorf("failed to publish event %s: %w", event.EventID(), err)
 		}
 	}
+
 	return nil
 }
 
-// publishWithRetry publishes an event with retry logic
-func (p *KafkaEventPublisher) publishWithRetry(ctx context.Context, event events.DomainEvent) error {
+// publishWithRetry publishes an event with retry logic.
+func (p *KafkaEventPublisher) publishWithRetry(
+	ctx context.Context,
+	event events.DomainEvent,
+) error {
 	var lastErr error
 
 	for attempt := 0; attempt <= p.retryAttempts; attempt++ {
@@ -81,7 +89,13 @@ func (p *KafkaEventPublisher) publishWithRetry(ctx context.Context, event events
 
 		if err := p.publishEvent(ctx, event); err != nil {
 			lastErr = err
-			log.Printf("Failed to publish event (attempt %d/%d): %v", attempt+1, p.retryAttempts+1, err)
+			log.Printf(
+				"Failed to publish event (attempt %d/%d): %v",
+				attempt+1,
+				p.retryAttempts+1,
+				err,
+			)
+
 			continue
 		}
 
@@ -91,8 +105,8 @@ func (p *KafkaEventPublisher) publishWithRetry(ctx context.Context, event events
 	return fmt.Errorf("failed to publish event after %d attempts: %w", p.retryAttempts+1, lastErr)
 }
 
-// publishEvent publishes a single event to Kafka
-func (p *KafkaEventPublisher) publishEvent(ctx context.Context, event events.DomainEvent) error {
+// publishEvent publishes a single event to Kafka.
+func (p *KafkaEventPublisher) publishEvent(_ context.Context, event events.DomainEvent) error {
 	topic := p.getTopicName(event.EventType())
 
 	eventData, err := json.Marshal(event)
@@ -135,15 +149,16 @@ func (p *KafkaEventPublisher) publishEvent(ctx context.Context, event events.Dom
 	return nil
 }
 
-// getTopicName generates the topic name for an event type
+// getTopicName generates the topic name for an event type.
 func (p *KafkaEventPublisher) getTopicName(eventType string) string {
 	if p.topicPrefix != "" {
 		return fmt.Sprintf("%s.%s", p.topicPrefix, eventType)
 	}
+
 	return eventType
 }
 
-// Close closes the Kafka producer
+// Close closes the Kafka producer.
 func (p *KafkaEventPublisher) Close() error {
 	return p.producer.Close()
 }

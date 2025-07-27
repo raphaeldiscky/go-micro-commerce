@@ -2,9 +2,11 @@ package repositories
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 )
 
+// ProductRepository defines the interface for product repository operations.
 type ProductRepository interface {
 	Create(product *entities.ValidatedProduct) (*entities.Product, error)
 	FindById(id uuid.UUID) (*entities.Product, error)

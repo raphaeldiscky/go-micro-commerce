@@ -1,3 +1,4 @@
+// Package mapper contains functions to convert domain entities to application DTOs.
 package mapper
 
 import (
@@ -5,10 +6,12 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 )
 
+// NewProductResultFromValidatedEntity converts a ValidatedProduct entity to a ProductResult DTO.
 func NewProductResultFromValidatedEntity(product *entities.ValidatedProduct) *common.ProductResult {
 	return NewProductResultFromEntity(&product.Product)
 }
 
+// NewProductResultFromEntity converts a Product entity to a ProductResult DTO.
 func NewProductResultFromEntity(product *entities.Product) *common.ProductResult {
 	if product == nil {
 		return nil
