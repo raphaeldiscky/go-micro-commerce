@@ -21,7 +21,7 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/repository"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
 	grpcHandlers "github.com/raphaeldiscky/go-ddd-template/internal/interface/grpc"
-	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto"
+	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1"
 )
 
 // Config holds the application configuration.

@@ -2,18 +2,17 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v6.31.1
-// source: proto/seller.proto
+// source: seller.proto
 
 package marketplacev1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -36,7 +35,7 @@ type Seller struct {
 
 func (x *Seller) Reset() {
 	*x = Seller{}
-	mi := &file_proto_seller_proto_msgTypes[0]
+	mi := &file_seller_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -48,7 +47,7 @@ func (x *Seller) String() string {
 func (*Seller) ProtoMessage() {}
 
 func (x *Seller) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[0]
+	mi := &file_seller_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -61,7 +60,7 @@ func (x *Seller) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Seller.ProtoReflect.Descriptor instead.
 func (*Seller) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{0}
+	return file_seller_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *Seller) GetId() string {
@@ -101,7 +100,7 @@ type CreateSellerRequest struct {
 
 func (x *CreateSellerRequest) Reset() {
 	*x = CreateSellerRequest{}
-	mi := &file_proto_seller_proto_msgTypes[1]
+	mi := &file_seller_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -113,7 +112,7 @@ func (x *CreateSellerRequest) String() string {
 func (*CreateSellerRequest) ProtoMessage() {}
 
 func (x *CreateSellerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[1]
+	mi := &file_seller_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -126,7 +125,7 @@ func (x *CreateSellerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSellerRequest.ProtoReflect.Descriptor instead.
 func (*CreateSellerRequest) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{1}
+	return file_seller_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *CreateSellerRequest) GetName() string {
@@ -145,7 +144,7 @@ type CreateSellerResponse struct {
 
 func (x *CreateSellerResponse) Reset() {
 	*x = CreateSellerResponse{}
-	mi := &file_proto_seller_proto_msgTypes[2]
+	mi := &file_seller_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -157,7 +156,7 @@ func (x *CreateSellerResponse) String() string {
 func (*CreateSellerResponse) ProtoMessage() {}
 
 func (x *CreateSellerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[2]
+	mi := &file_seller_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -170,7 +169,7 @@ func (x *CreateSellerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateSellerResponse.ProtoReflect.Descriptor instead.
 func (*CreateSellerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{2}
+	return file_seller_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateSellerResponse) GetSeller() *Seller {
@@ -189,7 +188,7 @@ type GetSellerRequest struct {
 
 func (x *GetSellerRequest) Reset() {
 	*x = GetSellerRequest{}
-	mi := &file_proto_seller_proto_msgTypes[3]
+	mi := &file_seller_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +200,7 @@ func (x *GetSellerRequest) String() string {
 func (*GetSellerRequest) ProtoMessage() {}
 
 func (x *GetSellerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[3]
+	mi := &file_seller_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +213,7 @@ func (x *GetSellerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSellerRequest.ProtoReflect.Descriptor instead.
 func (*GetSellerRequest) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{3}
+	return file_seller_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetSellerRequest) GetId() string {
@@ -233,7 +232,7 @@ type GetSellerResponse struct {
 
 func (x *GetSellerResponse) Reset() {
 	*x = GetSellerResponse{}
-	mi := &file_proto_seller_proto_msgTypes[4]
+	mi := &file_seller_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -245,7 +244,7 @@ func (x *GetSellerResponse) String() string {
 func (*GetSellerResponse) ProtoMessage() {}
 
 func (x *GetSellerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[4]
+	mi := &file_seller_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -258,7 +257,7 @@ func (x *GetSellerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSellerResponse.ProtoReflect.Descriptor instead.
 func (*GetSellerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{4}
+	return file_seller_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetSellerResponse) GetSeller() *Seller {
@@ -278,7 +277,7 @@ type ListSellersRequest struct {
 
 func (x *ListSellersRequest) Reset() {
 	*x = ListSellersRequest{}
-	mi := &file_proto_seller_proto_msgTypes[5]
+	mi := &file_seller_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -290,7 +289,7 @@ func (x *ListSellersRequest) String() string {
 func (*ListSellersRequest) ProtoMessage() {}
 
 func (x *ListSellersRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[5]
+	mi := &file_seller_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -303,7 +302,7 @@ func (x *ListSellersRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSellersRequest.ProtoReflect.Descriptor instead.
 func (*ListSellersRequest) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{5}
+	return file_seller_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ListSellersRequest) GetPage() int32 {
@@ -332,7 +331,7 @@ type ListSellersResponse struct {
 
 func (x *ListSellersResponse) Reset() {
 	*x = ListSellersResponse{}
-	mi := &file_proto_seller_proto_msgTypes[6]
+	mi := &file_seller_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -344,7 +343,7 @@ func (x *ListSellersResponse) String() string {
 func (*ListSellersResponse) ProtoMessage() {}
 
 func (x *ListSellersResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[6]
+	mi := &file_seller_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -357,7 +356,7 @@ func (x *ListSellersResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListSellersResponse.ProtoReflect.Descriptor instead.
 func (*ListSellersResponse) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{6}
+	return file_seller_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ListSellersResponse) GetSellers() []*Seller {
@@ -398,7 +397,7 @@ type UpdateSellerRequest struct {
 
 func (x *UpdateSellerRequest) Reset() {
 	*x = UpdateSellerRequest{}
-	mi := &file_proto_seller_proto_msgTypes[7]
+	mi := &file_seller_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -410,7 +409,7 @@ func (x *UpdateSellerRequest) String() string {
 func (*UpdateSellerRequest) ProtoMessage() {}
 
 func (x *UpdateSellerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[7]
+	mi := &file_seller_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -423,7 +422,7 @@ func (x *UpdateSellerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSellerRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSellerRequest) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{7}
+	return file_seller_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *UpdateSellerRequest) GetId() string {
@@ -449,7 +448,7 @@ type UpdateSellerResponse struct {
 
 func (x *UpdateSellerResponse) Reset() {
 	*x = UpdateSellerResponse{}
-	mi := &file_proto_seller_proto_msgTypes[8]
+	mi := &file_seller_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -461,7 +460,7 @@ func (x *UpdateSellerResponse) String() string {
 func (*UpdateSellerResponse) ProtoMessage() {}
 
 func (x *UpdateSellerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[8]
+	mi := &file_seller_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -474,7 +473,7 @@ func (x *UpdateSellerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSellerResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSellerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{8}
+	return file_seller_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *UpdateSellerResponse) GetSeller() *Seller {
@@ -493,7 +492,7 @@ type DeleteSellerRequest struct {
 
 func (x *DeleteSellerRequest) Reset() {
 	*x = DeleteSellerRequest{}
-	mi := &file_proto_seller_proto_msgTypes[9]
+	mi := &file_seller_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -505,7 +504,7 @@ func (x *DeleteSellerRequest) String() string {
 func (*DeleteSellerRequest) ProtoMessage() {}
 
 func (x *DeleteSellerRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[9]
+	mi := &file_seller_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -518,7 +517,7 @@ func (x *DeleteSellerRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSellerRequest.ProtoReflect.Descriptor instead.
 func (*DeleteSellerRequest) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{9}
+	return file_seller_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DeleteSellerRequest) GetId() string {
@@ -537,7 +536,7 @@ type DeleteSellerResponse struct {
 
 func (x *DeleteSellerResponse) Reset() {
 	*x = DeleteSellerResponse{}
-	mi := &file_proto_seller_proto_msgTypes[10]
+	mi := &file_seller_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -549,7 +548,7 @@ func (x *DeleteSellerResponse) String() string {
 func (*DeleteSellerResponse) ProtoMessage() {}
 
 func (x *DeleteSellerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_seller_proto_msgTypes[10]
+	mi := &file_seller_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -562,7 +561,7 @@ func (x *DeleteSellerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteSellerResponse.ProtoReflect.Descriptor instead.
 func (*DeleteSellerResponse) Descriptor() ([]byte, []int) {
-	return file_proto_seller_proto_rawDescGZIP(), []int{10}
+	return file_seller_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *DeleteSellerResponse) GetSuccess() bool {
@@ -572,11 +571,11 @@ func (x *DeleteSellerResponse) GetSuccess() bool {
 	return false
 }
 
-var File_proto_seller_proto protoreflect.FileDescriptor
+var File_seller_proto protoreflect.FileDescriptor
 
-const file_proto_seller_proto_rawDesc = "" +
+const file_seller_proto_rawDesc = "" +
 	"\n" +
-	"\x12proto/seller.proto\x12\x0emarketplace.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa2\x01\n" +
+	"\fseller.proto\x12\x0emarketplace.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa2\x01\n" +
 	"\x06Seller\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x129\n" +
@@ -614,22 +613,22 @@ const file_proto_seller_proto_rawDesc = "" +
 	"\tGetSeller\x12 .marketplace.v1.GetSellerRequest\x1a!.marketplace.v1.GetSellerResponse\x12V\n" +
 	"\vListSellers\x12\".marketplace.v1.ListSellersRequest\x1a#.marketplace.v1.ListSellersResponse\x12Y\n" +
 	"\fUpdateSeller\x12#.marketplace.v1.UpdateSellerRequest\x1a$.marketplace.v1.UpdateSellerResponse\x12Y\n" +
-	"\fDeleteSeller\x12#.marketplace.v1.DeleteSellerRequest\x1a$.marketplace.v1.DeleteSellerResponseB@Z>github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1;marketplacev1b\x06proto3"
+	"\fDeleteSeller\x12#.marketplace.v1.DeleteSellerRequest\x1a$.marketplace.v1.DeleteSellerResponseBMZKgithub.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1;marketplacev1b\x06proto3"
 
 var (
-	file_proto_seller_proto_rawDescOnce sync.Once
-	file_proto_seller_proto_rawDescData []byte
+	file_seller_proto_rawDescOnce sync.Once
+	file_seller_proto_rawDescData []byte
 )
 
-func file_proto_seller_proto_rawDescGZIP() []byte {
-	file_proto_seller_proto_rawDescOnce.Do(func() {
-		file_proto_seller_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_seller_proto_rawDesc), len(file_proto_seller_proto_rawDesc)))
+func file_seller_proto_rawDescGZIP() []byte {
+	file_seller_proto_rawDescOnce.Do(func() {
+		file_seller_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_seller_proto_rawDesc), len(file_seller_proto_rawDesc)))
 	})
-	return file_proto_seller_proto_rawDescData
+	return file_seller_proto_rawDescData
 }
 
-var file_proto_seller_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
-var file_proto_seller_proto_goTypes = []any{
+var file_seller_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_seller_proto_goTypes = []any{
 	(*Seller)(nil),                // 0: marketplace.v1.Seller
 	(*CreateSellerRequest)(nil),   // 1: marketplace.v1.CreateSellerRequest
 	(*CreateSellerResponse)(nil),  // 2: marketplace.v1.CreateSellerResponse
@@ -643,7 +642,7 @@ var file_proto_seller_proto_goTypes = []any{
 	(*DeleteSellerResponse)(nil),  // 10: marketplace.v1.DeleteSellerResponse
 	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
 }
-var file_proto_seller_proto_depIdxs = []int32{
+var file_seller_proto_depIdxs = []int32{
 	11, // 0: marketplace.v1.Seller.created_at:type_name -> google.protobuf.Timestamp
 	11, // 1: marketplace.v1.Seller.updated_at:type_name -> google.protobuf.Timestamp
 	0,  // 2: marketplace.v1.CreateSellerResponse.seller:type_name -> marketplace.v1.Seller
@@ -667,26 +666,26 @@ var file_proto_seller_proto_depIdxs = []int32{
 	0,  // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_proto_seller_proto_init() }
-func file_proto_seller_proto_init() {
-	if File_proto_seller_proto != nil {
+func init() { file_seller_proto_init() }
+func file_seller_proto_init() {
+	if File_seller_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_seller_proto_rawDesc), len(file_proto_seller_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_seller_proto_rawDesc), len(file_seller_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_proto_seller_proto_goTypes,
-		DependencyIndexes: file_proto_seller_proto_depIdxs,
-		MessageInfos:      file_proto_seller_proto_msgTypes,
+		GoTypes:           file_seller_proto_goTypes,
+		DependencyIndexes: file_seller_proto_depIdxs,
+		MessageInfos:      file_seller_proto_msgTypes,
 	}.Build()
-	File_proto_seller_proto = out.File
-	file_proto_seller_proto_goTypes = nil
-	file_proto_seller_proto_depIdxs = nil
+	File_seller_proto = out.File
+	file_seller_proto_goTypes = nil
+	file_seller_proto_depIdxs = nil
 }

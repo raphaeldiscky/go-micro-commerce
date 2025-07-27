@@ -11,7 +11,7 @@ import (
 
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
-	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto"
+	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1"
 )
 
 // ProductServiceServer implements the gRPC ProductService.
