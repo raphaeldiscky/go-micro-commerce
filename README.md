@@ -7,6 +7,10 @@
 - [Go-DDD: Domain Driven Design Template](#go-ddd-domain-driven-design-template)
   - [Table of Contents](#table-of-contents)
   - [Why Domain Driven Design?](#why-domain-driven-design)
+  - [🚀 Quick Start](#-quick-start)
+    - [Option 1: Microservices with Traefik API Gateway (Recommended)](#option-1-microservices-with-traefik-api-gateway-recommended)
+    - [Option 2: Microservices with Custom API Gateway](#option-2-microservices-with-custom-api-gateway)
+    - [Option 3: Monolithic Application (Legacy)](#option-3-monolithic-application-legacy)
   - [Architecture Overview](#architecture-overview)
   - [Project Structure](#project-structure)
   - [Layer Principles](#layer-principles)
@@ -17,6 +21,9 @@
   - [Best Practices](#best-practices)
     - [Repository Patterns](#repository-patterns)
     - [Data Management](#data-management)
+  - [Development](#development)
+    - [Mock Generation](#mock-generation)
+    - [Available Commands](#available-commands)
 
 ## Why Domain Driven Design?
 
@@ -33,6 +40,50 @@ DDD helps build maintainable enterprise software by connecting implementation to
 **Scalability**
 
 - Easier transition to microservices architecture
+
+## 🚀 Quick Start
+
+### Option 1: Microservices with Traefik API Gateway (Recommended)
+
+```bash
+# Start all services with Traefik
+./scripts/microservices-traefik.sh start
+
+# Check service status
+./scripts/microservices-traefik.sh status
+
+# Test the APIs
+./deployments/traefik/test-api.sh
+```
+
+**Access Points:**
+
+- **Traefik Dashboard:** http://localhost:8080
+- **Product API:** http://localhost/api/v1/products
+- **Seller API:** http://localhost/api/v1/sellers
+- **Prometheus:** http://localhost:9091
+- **Grafana:** http://localhost:3001 (admin/admin)
+- **Kafka UI:** http://localhost:8081
+
+### Option 2: Microservices with Custom API Gateway
+
+```bash
+# Start microservices
+./scripts/microservices.sh start
+
+# Check service health
+./scripts/microservices.sh health
+```
+
+### Option 3: Monolithic Application (Legacy)
+
+```bash
+# Start infrastructure
+docker-compose -f deployments/docker-compose/infra.yml up -d
+
+# Run the application
+make run
+```
 
 ## Architecture Overview
 

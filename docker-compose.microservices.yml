@@ -1,0 +1,156 @@
+version: "3.8"
+
+services:
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: deployments/docker/api-gateway.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PRODUCT_SERVICE_URL=http://product-service:8080
+      - SELLER_SERVICE_URL=http://seller-service:8081
+      - GATEWAY_PORT=8000
+    depends_on:
+      - product-service
+      - seller-service
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Product Service
+  product-service:
+    build:
+      context: ./services/product-service
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=product-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=marketplace_products
+      - DB_SSL_MODE=disable
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_TOPIC=product-events
+      - HTTP_PORT=8080
+    depends_on:
+      - product-db
+      - kafka
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Seller Service
+  seller-service:
+    build:
+      context: ./services/seller-service
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=seller-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=marketplace_sellers
+      - DB_SSL_MODE=disable
+      - KAFKA_BROKERS=kafka:9092
+      - KAFKA_TOPIC=seller-events
+      - HTTP_PORT=8081
+    depends_on:
+      - seller-db
+      - kafka
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Product Database
+  product-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=marketplace_products
+    ports:
+      - "5432:5432"
+    volumes:
+      - product_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Seller Database
+  seller-db:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=marketplace_sellers
+    ports:
+      - "5433:5432"
+    volumes:
+      - seller_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Zookeeper for Kafka
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Kafka Message Broker
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Redis (optional, for caching)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - microservices
+
+  # Kafka UI (optional, for monitoring)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    ports:
+      - "9090:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
+    restart: unless-stopped
+    networks:
+      - microservices
+
+volumes:
+  product_db_data:
+  seller_db_data:
+
+networks:
+  microservices:
+    driver: bridge

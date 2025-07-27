@@ -1,0 +1,92 @@
+http:
+  middlewares:
+    # CORS middleware
+    cors-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          - OPTIONS
+        accessControlAllowOriginList:
+          - "http://localhost:3000"
+          - "http://localhost:8080"
+          - "https://localhost:3000"
+        accessControlAllowHeaders:
+          - "Content-Type"
+          - "Authorization"
+          - "X-Requested-With"
+          - "Accept"
+          - "Origin"
+        accessControlExposeHeaders:
+          - "X-Total-Count"
+        accessControlAllowCredentials: true
+        accessControlMaxAge: 100
+        addVaryHeader: true
+
+    # Rate limiting middleware
+    rate-limit:
+      rateLimit:
+        average: 100
+        burst: 200
+        period: 1m
+
+    # Authentication middleware (for future use)
+    auth:
+      basicAuth:
+        users:
+          - "admin:$2y$10$..." # Generated with htpasswd
+
+    # Request/Response logging
+    access-log:
+      accessLog:
+        filePath: "/var/log/traefik/access.log"
+        format: json
+
+    # Circuit breaker
+    circuit-breaker:
+      circuitBreaker:
+        expression: "NetworkErrorRatio() > 0.3 || ResponseCodeRatio(500, 600, 0, 600) > 0.3"
+
+    # Retry middleware
+    retry:
+      retry:
+        attempts: 3
+
+    # Compression
+    compress:
+      compress: {}
+
+  # Global middleware chains
+  routers:
+    api:
+      rule: "Host(`api.localhost`)"
+      middlewares:
+        - cors-headers
+        - rate-limit
+        - compress
+        - retry
+        - circuit-breaker
+
+# TLS configuration
+tls:
+  options:
+    default:
+      sslProtocols:
+        - "TLSv1.2"
+        - "TLSv1.3"
+      cipherSuites:
+        - "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+        - "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305"
+        - "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+
+# Load balancing
+tcp:
+  services:
+    database-cluster:
+      loadBalancer:
+        servers:
+          - address: "product-db:5432"
+          - address: "seller-db:5432"

@@ -1,0 +1,82 @@
+# Traefik Static Configuration
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# API and Dashboard
+api:
+  dashboard: true
+  debug: true
+  insecure: true # Set to false in production with proper TLS
+
+# Metrics for Prometheus
+metrics:
+  prometheus:
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+
+# Access logs
+accessLog:
+  filePath: "/var/log/traefik/access.log"
+  format: json
+  fields:
+    headers:
+      defaultMode: keep
+
+# General logs
+log:
+  level: INFO
+  filePath: "/var/log/traefik/traefik.log"
+
+# Entry points
+entryPoints:
+  web:
+    address: ":80"
+    # Redirect HTTP to HTTPS
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        options: default
+
+  # gRPC entry point
+  grpc:
+    address: ":9090"
+
+  # Traefik dashboard
+  traefik:
+    address: ":8080"
+
+# Certificate resolvers for Let's Encrypt
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      tlsChallenge: {}
+      email: your-email@example.com
+      storage: /letsencrypt/acme.json
+      # Use staging server for testing
+      # caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+
+# Providers
+providers:
+  # Docker provider for service discovery
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: "go-ddd_traefik"
+
+  # File provider for dynamic configuration
+  file:
+    directory: /etc/traefik/config
+    watch: true
+# Pilot token (optional)
+# pilot:
+#   token: "your-pilot-token"
