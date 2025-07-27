@@ -10,9 +10,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/common"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/query"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/response"
-	"github.com/stretchr/testify/mock"
+	"github.com/raphaeldiscky/go-ddd-template/internal/mocks"
+	"go.uber.org/mock/gomock"
 
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
@@ -21,15 +23,18 @@ import (
 
 func TestCreateProduct(t *testing.T) {
 	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	e := echo.New()
-	mockService := new(MockProductService)
+	mockService := mocks.NewMockProductService(ctrl)
 	reqBody := map[string]interface{}{"Name": "TestProduct", "Price": 9.99, "SellerId": "123e4567-e89b-12d3-a456-426614174000"}
 	reqBodyBytes, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/products", bytes.NewReader(reqBodyBytes))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	ctrl := rest.NewProductController(e, mockService)
+	restCtrl := rest.NewProductController(e, mockService)
 
 	createProductCommandResult := &command.CreateProductCommandResult{
 		Result: &common.ProductResult{
@@ -38,10 +43,11 @@ func TestCreateProduct(t *testing.T) {
 			Price: 9.99,
 		},
 	}
-	mockService.On("CreateProduct", mock.Anything).Return(createProductCommandResult, nil)
+
+	mockService.EXPECT().CreateProduct(gomock.Any()).Return(createProductCommandResult, nil).Times(1)
 
 	// Execute
-	err := ctrl.CreateProductController(c)
+	err := restCtrl.CreateProductController(c)
 	assert.NoError(t, err)
 
 	// Deserialize the response body
@@ -62,13 +68,15 @@ func TestCreateProduct(t *testing.T) {
 	// Assertions
 	assert.Equal(t, http.StatusCreated, rec.Code)
 	assert.Equal(t, reqBody, responseBody)
-	mockService.AssertExpectations(t)
 }
 
 func TestGetAllProducts(t *testing.T) {
 	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
 	e := echo.New()
-	mockService := new(MockProductService) // Assuming you have a mock of ProductService
+	mockService := mocks.NewMockProductService(ctrl)
 
 	expectedProducts := []*entities.Product{
 		{
@@ -82,12 +90,27 @@ func TestGetAllProducts(t *testing.T) {
 		},
 	}
 
+	expectedResult := &query.ProductQueryListResult{
+		Result: []*common.ProductResult{
+			{
+				Id:    expectedProducts[0].Id,
+				Name:  expectedProducts[0].Name,
+				Price: expectedProducts[0].Price,
+			},
+			{
+				Id:    expectedProducts[1].Id,
+				Name:  expectedProducts[1].Name,
+				Price: expectedProducts[1].Price,
+			},
+		},
+	}
+
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/products", nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	ctrl := rest.NewProductController(e, mockService)
-	mockService.On("FindAllProducts").Return(expectedProducts, nil)
+	restCtrl := rest.NewProductController(e, mockService)
+	mockService.EXPECT().FindAllProducts().Return(expectedResult, nil).Times(1)
 
 	var expectedListResponse response.ListProductsResponse
 	for _, product := range expectedProducts {
@@ -100,7 +123,7 @@ func TestGetAllProducts(t *testing.T) {
 	}
 
 	// Assertions
-	if assert.NoError(t, ctrl.GetAllProductsController(c)) {
+	if assert.NoError(t, restCtrl.GetAllProductsController(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var receivedListResponse response.ListProductsResponse

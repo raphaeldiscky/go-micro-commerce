@@ -1,4 +1,4 @@
-package rest
+package rest_test
 
 import (
 	"bytes"
@@ -8,18 +8,26 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/common"
+	"github.com/raphaeldiscky/go-ddd-template/internal/application/query"
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/entities"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/request"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/response"
+	"github.com/raphaeldiscky/go-ddd-template/internal/mocks"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func TestCreateSeller(t *testing.T) {
-	// Arrange
-	mockService := NewMockSellerService()
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
 
 	// Create a seller for testing
@@ -27,6 +35,16 @@ func TestCreateSeller(t *testing.T) {
 		Name:  "TestSeller",
 		Email: "test@example.com",
 	}
+
+	expectedResult := &command.CreateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    uuid.New(),
+			Name:  "TestSeller",
+			Email: "test@example.com",
+		},
+	}
+
+	mockService.EXPECT().CreateSeller(gomock.Any()).Return(expectedResult, nil).Times(1)
 
 	sellerJSON, _ := json.Marshal(sellerRequest)
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/sellers", bytes.NewReader(sellerJSON))
@@ -51,9 +69,32 @@ func TestCreateSeller(t *testing.T) {
 }
 
 func TestPutSeller(t *testing.T) {
-	// Arrange
-	mockService := NewMockSellerService()
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
+
+	sellerId := uuid.New()
+	createResult := &command.CreateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    sellerId,
+			Name:  "TestSeller",
+			Email: "test@example.com",
+		},
+	}
+
+	updateResult := &command.UpdateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    sellerId,
+			Name:  "updatedName",
+			Email: "test@example.com",
+		},
+	}
+
+	// First expect the CreateSeller call
+	mockService.EXPECT().CreateSeller(gomock.Any()).Return(createResult, nil).Times(1)
 
 	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{
 		Name:  "TestSeller",
@@ -65,6 +106,9 @@ func TestPutSeller(t *testing.T) {
 		Id:   createdSeller.Result.Id,
 		Name: "updatedName",
 	}
+
+	// Expect the UpdateSeller call
+	mockService.EXPECT().UpdateSeller(gomock.Any()).Return(updateResult, nil).Times(1)
 
 	sellerJSON, _ := json.Marshal(updateRequest)
 	req := httptest.NewRequest(http.MethodPut, "/api/v1/sellers", bytes.NewReader(sellerJSON))
@@ -88,15 +132,33 @@ func TestPutSeller(t *testing.T) {
 }
 
 func TestDeleteSeller(t *testing.T) {
-	// Arrange
-	mockService := NewMockSellerService()
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
+
+	sellerId := uuid.New()
+	createResult := &command.CreateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    sellerId,
+			Name:  "TestSeller",
+			Email: "test@example.com",
+		},
+	}
+
+	// First expect the CreateSeller call
+	mockService.EXPECT().CreateSeller(gomock.Any()).Return(createResult, nil).Times(1)
 
 	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{
 		Name:  "TestSeller",
 		Email: "test@example.com",
 	})
 	assert.NoError(t, err)
+
+	// Expect the DeleteSeller call
+	mockService.EXPECT().DeleteSeller(createdSeller.Result.Id).Return(nil).Times(1)
 
 	req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.Id), nil)
 	rec := httptest.NewRecorder()
@@ -112,15 +174,41 @@ func TestDeleteSeller(t *testing.T) {
 }
 
 func TestGetSellerById(t *testing.T) {
-	// Arrange
-	mockService := NewMockSellerService()
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
+
+	sellerId := uuid.New()
+	createResult := &command.CreateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    sellerId,
+			Name:  "TestSeller",
+			Email: "test@example.com",
+		},
+	}
+
+	findResult := &query.SellerQueryResult{
+		Result: &common.SellerResult{
+			Id:    sellerId,
+			Name:  "TestSeller",
+			Email: "test@example.com",
+		},
+	}
+
+	// First expect the CreateSeller call
+	mockService.EXPECT().CreateSeller(gomock.Any()).Return(createResult, nil).Times(1)
 
 	createdSeller, err := mockService.CreateSeller(&command.CreateSellerCommand{
 		Name:  "TestSeller",
 		Email: "test@example.com",
 	})
 	assert.NoError(t, err)
+
+	// Expect the FindSellerById call
+	mockService.EXPECT().FindSellerById(createdSeller.Result.Id).Return(findResult, nil).Times(1)
 
 	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.Id), nil)
 	rec := httptest.NewRecorder()
@@ -143,9 +231,50 @@ func TestGetSellerById(t *testing.T) {
 }
 
 func TestGetAllSellers(t *testing.T) {
-	// Arrange
-	mockService := NewMockSellerService()
+	// Setup
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	mockService := mocks.NewMockSellerService(ctrl)
 	controller := rest.NewSellerController(echo.New(), mockService)
+
+	seller1Id := uuid.New()
+	seller2Id := uuid.New()
+
+	createResult1 := &command.CreateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    seller1Id,
+			Name:  "TestSeller1",
+			Email: "test1@example.com",
+		},
+	}
+
+	createResult2 := &command.CreateSellerCommandResult{
+		Result: &common.SellerResult{
+			Id:    seller2Id,
+			Name:  "TestSeller2",
+			Email: "test2@example.com",
+		},
+	}
+
+	findAllResult := &query.SellerQueryListResult{
+		Result: []*common.SellerResult{
+			{
+				Id:    seller1Id,
+				Name:  "TestSeller1",
+				Email: "test1@example.com",
+			},
+			{
+				Id:    seller2Id,
+				Name:  "TestSeller2",
+				Email: "test2@example.com",
+			},
+		},
+	}
+
+	// Expect the CreateSeller calls
+	mockService.EXPECT().CreateSeller(gomock.Any()).Return(createResult1, nil).Times(1)
+	mockService.EXPECT().CreateSeller(gomock.Any()).Return(createResult2, nil).Times(1)
 
 	_, err := mockService.CreateSeller(&command.CreateSellerCommand{
 		Name:  "TestSeller1",
@@ -158,6 +287,9 @@ func TestGetAllSellers(t *testing.T) {
 		Email: "test2@example.com",
 	})
 	assert.NoError(t, err)
+
+	// Expect the FindAllSellers call
+	mockService.EXPECT().FindAllSellers().Return(findAllResult, nil).Times(1)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/sellers", nil)
 	rec := httptest.NewRecorder()

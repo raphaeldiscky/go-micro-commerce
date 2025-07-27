@@ -28,6 +28,12 @@ proto: ## Generate protobuf files
 	@chmod +x generate_proto.sh
 	@./generate_proto.sh
 
+.PHONY: mocks
+mocks: ## Generate mocks using uber-go/mock
+	@echo "Generating mocks..."
+	go generate ./internal/application/interfaces/...
+	@echo "Mocks generated successfully!"
+
 .PHONY: build
 build: proto ## Build the application
 	@echo "Building $(APP_NAME)..."

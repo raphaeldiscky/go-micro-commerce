@@ -10,6 +10,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/redis/go-redis/v9 v9.11.0
 	github.com/stretchr/testify v1.10.0
+	go.uber.org/mock v0.5.2
 	google.golang.org/grpc v1.74.2
 	google.golang.org/protobuf v1.36.6
 )

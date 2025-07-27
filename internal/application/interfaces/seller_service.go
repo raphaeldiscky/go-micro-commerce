@@ -1,5 +1,7 @@
 package interfaces
 
+//go:generate mockgen -source=seller_service.go -destination=../../mocks/mock_seller_service.go -package=mocks
+
 import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"

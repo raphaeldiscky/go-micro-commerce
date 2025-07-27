@@ -154,3 +154,56 @@ Exposes application functionality to external consumers:
 - **Benefits**: Performance and backward compatibility
 
 > 💡 **Pro Tip**: Start by exploring the `domain/entities` to understand the business model, then follow the data flow through application services to infrastructure implementations.
+
+## Development
+
+### Mock Generation
+
+This project uses [Uber's mock](https://github.com/uber-go/mock) for generating type-safe mocks from interfaces:
+
+**Generate all mocks:**
+
+```bash
+make mocks
+```
+
+**Generate mocks manually:**
+
+```bash
+go generate ./internal/application/interfaces/...
+```
+
+**Adding mock generation to new interfaces:**
+
+Add the `//go:generate` directive to your interface file:
+
+```go
+package interfaces
+
+//go:generate mockgen -source=your_service.go -destination=../../mocks/mock_your_service.go -package=mocks
+
+type YourService interface {
+    DoSomething() error
+}
+```
+
+**Using generated mocks in tests:**
+
+```go
+func TestYourFunction(t *testing.T) {
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
+
+    mockService := mocks.NewMockYourService(ctrl)
+    mockService.EXPECT().DoSomething().Return(nil).Times(1)
+
+    // Your test logic here
+}
+```
+
+### Available Commands
+
+- `make mocks` - Generate all mocks
+- `make test` - Run all tests
+- `make build` - Build the application
+- `make proto` - Generate protobuf files
