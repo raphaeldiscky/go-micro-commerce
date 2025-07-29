@@ -10,7 +10,7 @@ import (
 
 // Seller represents a seller entity.
 type Seller struct {
-	Id        uuid.UUID
+	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
@@ -20,7 +20,7 @@ type Seller struct {
 // NewSeller creates a new Seller with the provided name and email.
 func NewSeller(name, email string) *Seller {
 	return &Seller{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Name:      name,

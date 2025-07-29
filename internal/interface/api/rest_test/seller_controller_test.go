@@ -39,7 +39,7 @@ func TestCreateSeller(t *testing.T) {
 
 	expectedResult := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    uuid.New(),
+			ID:    uuid.New(),
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -84,7 +84,7 @@ func TestPutSeller(t *testing.T) {
 	sellerID := uuid.New()
 	createResult := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    sellerID,
+			ID:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -92,7 +92,7 @@ func TestPutSeller(t *testing.T) {
 
 	updateResult := &command.UpdateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    sellerID,
+			ID:    sellerID,
 			Name:  "updatedName",
 			Email: "test@example.com",
 		},
@@ -108,7 +108,7 @@ func TestPutSeller(t *testing.T) {
 	assert.NoError(t, err)
 
 	updateRequest := request.UpdateSellerRequest{
-		Id:   createdSeller.Result.Id,
+		ID:   createdSeller.Result.ID,
 		Name: "updatedName",
 	}
 
@@ -152,7 +152,7 @@ func TestDeleteSeller(t *testing.T) {
 	sellerID := uuid.New()
 	createResult := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    sellerID,
+			ID:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -168,11 +168,11 @@ func TestDeleteSeller(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Expect the DeleteSeller call
-	mockService.EXPECT().DeleteSeller(createdSeller.Result.Id).Return(nil).Times(1)
+	mockService.EXPECT().DeleteSeller(createdSeller.Result.ID).Return(nil).Times(1)
 
 	req := httptest.NewRequest(
 		http.MethodDelete,
-		fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.Id),
+		fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.ID),
 		http.NoBody,
 	)
 	rec := httptest.NewRecorder()
@@ -198,7 +198,7 @@ func TestGetSellerById(t *testing.T) {
 	sellerID := uuid.New()
 	createResult := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    sellerID,
+			ID:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -206,7 +206,7 @@ func TestGetSellerById(t *testing.T) {
 
 	findResult := &query.SellerQueryResult{
 		Result: &common.SellerResult{
-			Id:    sellerID,
+			ID:    sellerID,
 			Name:  "TestSeller",
 			Email: "test@example.com",
 		},
@@ -222,11 +222,11 @@ func TestGetSellerById(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Expect the FindSellerByID call
-	mockService.EXPECT().FindSellerByID(createdSeller.Result.Id).Return(findResult, nil).Times(1)
+	mockService.EXPECT().FindSellerByID(createdSeller.Result.ID).Return(findResult, nil).Times(1)
 
 	req := httptest.NewRequest(
 		http.MethodGet,
-		fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.Id),
+		fmt.Sprintf("/api/v1/sellers/%s", createdSeller.Result.ID),
 		http.NoBody,
 	)
 	rec := httptest.NewRecorder()
@@ -244,7 +244,7 @@ func TestGetSellerById(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &fetchedSeller)
 	assert.NoError(t, err)
 
-	assert.Equal(t, createdSeller.Result.Id.String(), fetchedSeller.Id)
+	assert.Equal(t, createdSeller.Result.ID.String(), fetchedSeller.ID)
 	assert.Equal(t, createdSeller.Result.Name, fetchedSeller.Name)
 }
 
@@ -261,7 +261,7 @@ func TestGetAllSellers(t *testing.T) {
 
 	createResult1 := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    seller1Id,
+			ID:    seller1Id,
 			Name:  "TestSeller1",
 			Email: "test1@example.com",
 		},
@@ -269,7 +269,7 @@ func TestGetAllSellers(t *testing.T) {
 
 	createResult2 := &command.CreateSellerCommandResult{
 		Result: &common.SellerResult{
-			Id:    seller2Id,
+			ID:    seller2Id,
 			Name:  "TestSeller2",
 			Email: "test2@example.com",
 		},
@@ -278,12 +278,12 @@ func TestGetAllSellers(t *testing.T) {
 	findAllResult := &query.SellerQueryListResult{
 		Result: []*common.SellerResult{
 			{
-				Id:    seller1Id,
+				ID:    seller1Id,
 				Name:  "TestSeller1",
 				Email: "test1@example.com",
 			},
 			{
-				Id:    seller2Id,
+				ID:    seller2Id,
 				Name:  "TestSeller2",
 				Email: "test2@example.com",
 			},

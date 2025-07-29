@@ -22,7 +22,7 @@ type DomainEvent interface {
 type BaseDomainEvent struct {
 	ID                string      `json:"id"`
 	EventTypeName     string      `json:"type"`
-	AggregateId       string      `json:"aggregate_id"`
+	AggregateIDValue  string      `json:"aggregate_id"`
 	AggregateTypeName string      `json:"aggregate_type"`
 	Version           int         `json:"version"`
 	Timestamp         time.Time   `json:"timestamp"`
@@ -41,7 +41,7 @@ func (e *BaseDomainEvent) EventType() string {
 
 // AggregateID returns the ID of the aggregate that this event belongs to.
 func (e *BaseDomainEvent) AggregateID() string {
-	return e.AggregateId
+	return e.AggregateIDValue // Now references the renamed field
 }
 
 // AggregateType returns the type of the aggregate that this event belongs to.
@@ -73,7 +73,7 @@ func NewBaseDomainEvent(
 	return BaseDomainEvent{
 		ID:                uuid.New().String(),
 		EventTypeName:     eventType,
-		AggregateId:       aggregateID,
+		AggregateIDValue:  aggregateID,
 		AggregateTypeName: aggregateType,
 		Version:           version,
 		Timestamp:         time.Now().UTC(),

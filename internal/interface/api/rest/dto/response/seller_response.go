@@ -4,7 +4,7 @@ import "time"
 
 // SellerResponse represents the response structure for a seller.
 type SellerResponse struct {
-	Id        string
+	ID        string
 	Name      string
 	Email     string
 	CreatedAt time.Time

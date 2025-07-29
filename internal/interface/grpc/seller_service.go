@@ -46,7 +46,7 @@ func (s *SellerServiceServer) CreateSeller(
 	}
 
 	seller := &marketplacev1.Seller{
-		Id:        result.Result.Id.String(),
+		Id:        result.Result.ID.String(),
 		Name:      result.Result.Name,
 		CreatedAt: timestamppb.New(result.Result.CreatedAt),
 		UpdatedAt: timestamppb.New(result.Result.UpdatedAt),
@@ -81,7 +81,7 @@ func (s *SellerServiceServer) GetSeller(
 	}
 
 	seller := &marketplacev1.Seller{
-		Id:        result.Result.Id.String(),
+		Id:        result.Result.ID.String(),
 		Name:      result.Result.Name,
 		CreatedAt: timestamppb.New(result.Result.CreatedAt),
 		UpdatedAt: timestamppb.New(result.Result.UpdatedAt),
@@ -106,7 +106,7 @@ func (s *SellerServiceServer) ListSellers(
 
 	for _, sellerResult := range result.Result {
 		seller := &marketplacev1.Seller{
-			Id:        sellerResult.Id.String(),
+			Id:        sellerResult.ID.String(),
 			Name:      sellerResult.Name,
 			CreatedAt: timestamppb.New(sellerResult.CreatedAt),
 			UpdatedAt: timestamppb.New(sellerResult.UpdatedAt),

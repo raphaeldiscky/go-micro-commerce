@@ -9,7 +9,7 @@ import (
 
 // ProductResult represents the result of a product query.
 type ProductResult struct {
-	Id        uuid.UUID
+	ID        uuid.UUID
 	Name      string
 	Price     float64
 	Seller    *SellerResult

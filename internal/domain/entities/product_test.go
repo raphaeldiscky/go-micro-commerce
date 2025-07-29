@@ -24,7 +24,7 @@ func TestNewProduct(t *testing.T) {
 		t.Errorf("Expected product price to be 10.0, but got %f", product.Price)
 	}
 
-	if product.Id == (uuid.UUID{}) {
+	if product.ID == (uuid.UUID{}) {
 		t.Error("Expected product Id to be set, but got zero value")
 	}
 }

@@ -36,7 +36,7 @@ func (m *MockProductRepository) Update(
 	product *entities.ValidatedProduct,
 ) (*entities.Product, error) {
 	for index, p := range m.products {
-		if p.Id == product.Id {
+		if p.ID == product.ID {
 			m.products[index] = product
 
 			return &product.Product, nil
@@ -48,7 +48,7 @@ func (m *MockProductRepository) Update(
 
 func (m *MockProductRepository) Delete(id uuid.UUID) error {
 	for index, p := range m.products {
-		if p.Id == id {
+		if p.ID == id {
 			m.products = append(m.products[:index], m.products[index+1:]...)
 
 			return nil
@@ -60,7 +60,7 @@ func (m *MockProductRepository) Delete(id uuid.UUID) error {
 
 func (m *MockProductRepository) FindByID(id uuid.UUID) (*entities.Product, error) {
 	for _, p := range m.products {
-		if p.Id == id {
+		if p.ID == id {
 			return &p.Product, nil
 		}
 	}
@@ -138,7 +138,7 @@ func TestProductService_FindProductById(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	foundProduct, err := service.FindProductByID(result.Result.Id)
+	foundProduct, err := service.FindProductByID(result.Result.ID)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}
@@ -157,7 +157,7 @@ func getCreateProductCommand(product *entities.Product) *command.CreateProductCo
 	return &command.CreateProductCommand{
 		Name:     product.Name,
 		Price:    product.Price,
-		SellerId: product.Seller.Id,
+		SellerID: product.Seller.ID,
 	}
 }
 

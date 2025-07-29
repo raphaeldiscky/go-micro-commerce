@@ -8,14 +8,14 @@ import (
 
 // UpdateSellerRequest represents the request to update a seller.
 type UpdateSellerRequest struct {
-	Id   uuid.UUID `json:"Id"`
+	ID   uuid.UUID `json:"ID"`
 	Name string    `json:"Name"`
 }
 
 // ToUpdateSellerCommand converts the UpdateSellerRequest to an UpdateSellerCommand.
 func (req *UpdateSellerRequest) ToUpdateSellerCommand() (*command.UpdateSellerCommand, error) {
 	return &command.UpdateSellerCommand{
-		Id:   req.Id,
+		ID:   req.ID,
 		Name: req.Name,
 	}, nil
 }

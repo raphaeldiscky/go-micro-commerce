@@ -11,10 +11,10 @@ import (
 type CreateProductCommand struct {
 	// TODO: Implement idempotency key
 
-	Id       uuid.UUID
+	ID       uuid.UUID
 	Name     string
 	Price    float64
-	SellerId uuid.UUID
+	SellerID uuid.UUID
 }
 
 // CreateProductCommandResult represents the result of a CreateProduct command.

@@ -45,7 +45,7 @@ func (r *CachedSellerRepository) Create(
 
 	// Cache the created seller
 	ctx := context.Background()
-	cacheKey := r.buildSellerCacheKey(result.Id)
+	cacheKey := r.buildSellerCacheKey(result.ID)
 
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		// Log cache error but don't fail the operation
@@ -124,7 +124,7 @@ func (r *CachedSellerRepository) Update(
 	ctx := context.Background()
 
 	// Update cache with new data
-	cacheKey := r.buildSellerCacheKey(result.Id)
+	cacheKey := r.buildSellerCacheKey(result.ID)
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		log.Printf("Failed to update cached seller: %v", cacheErr)
 	}

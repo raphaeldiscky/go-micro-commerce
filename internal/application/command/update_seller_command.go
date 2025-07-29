@@ -11,7 +11,7 @@ import (
 type UpdateSellerCommand struct {
 	// TODO: Implement idempotency key
 
-	Id   uuid.UUID
+	ID   uuid.UUID
 	Name string
 }
 

@@ -53,7 +53,7 @@ func (s *SellerService) CreateSeller(
 	// Publish SellerCreated event
 	if s.eventPublisher != nil {
 		sellerCreatedEvent := events.NewSellerCreatedEvent(
-			validatedSeller.Id,
+			validatedSeller.ID,
 			validatedSeller.Name,
 		)
 
@@ -103,7 +103,7 @@ func (s *SellerService) FindSellerByID(id uuid.UUID) (*query.SellerQueryResult, 
 func (s *SellerService) UpdateSeller(
 	updateCommand *command.UpdateSellerCommand,
 ) (*command.UpdateSellerCommandResult, error) {
-	seller, err := s.repo.FindByID(updateCommand.Id)
+	seller, err := s.repo.FindByID(updateCommand.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -9,7 +9,7 @@ import (
 // ToSellerResponse converts a SellerResult to a SellerResponse.
 func ToSellerResponse(product *common.SellerResult) *response.SellerResponse {
 	return &response.SellerResponse{
-		Id:        product.Id.String(),
+		ID:        product.ID.String(),
 		Name:      product.Name,
 		Email:     product.Email,
 		CreatedAt: product.CreatedAt,

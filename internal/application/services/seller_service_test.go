@@ -35,7 +35,7 @@ func (m *MockSellerRepository) FindAll() ([]*entities.Seller, error) {
 // FindByID retrieves a seller by its ID.
 func (m *MockSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
 	for _, s := range m.sellers {
-		if s.Id == id {
+		if s.ID == id {
 			return &s.Seller, nil
 		}
 	}
@@ -46,7 +46,7 @@ func (m *MockSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) 
 // Delete removes a seller from the repository.
 func (m *MockSellerRepository) Delete(id uuid.UUID) error {
 	for index, s := range m.sellers {
-		if s.Id == id {
+		if s.ID == id {
 			m.sellers = append(m.sellers[:index], m.sellers[index+1:]...)
 
 			return nil
@@ -59,7 +59,7 @@ func (m *MockSellerRepository) Delete(id uuid.UUID) error {
 // Update modifies an existing seller in the repository.
 func (m *MockSellerRepository) Update(seller *entities.ValidatedSeller) (*entities.Seller, error) {
 	for index, s := range m.sellers {
-		if s.Id == seller.Id {
+		if s.ID == seller.ID {
 			m.sellers[index] = seller
 
 			return &seller.Seller, nil
@@ -118,7 +118,7 @@ func TestSellerService_GetSellerById(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	sellerID := createdSellerResult.Result.Id
+	sellerID := createdSellerResult.Result.ID
 
 	foundSeller, err := service.FindSellerByID(sellerID)
 	if err != nil {
@@ -145,15 +145,15 @@ func TestSellerService_UpdateSeller(t *testing.T) {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
-	sellerID := createdSellerResult.Result.Id
+	sellerID := createdSellerResult.Result.ID
 
 	updatableSeller := entities.Seller{
-		Id:   sellerID,
+		ID:   sellerID,
 		Name: "Doe Johnny",
 	}
 
 	_, err = service.UpdateSeller(&command.UpdateSellerCommand{
-		Id:   sellerID,
+		ID:   sellerID,
 		Name: updatableSeller.Name,
 	})
 	if err != nil {

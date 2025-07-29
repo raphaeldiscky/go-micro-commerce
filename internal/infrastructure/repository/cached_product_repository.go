@@ -44,7 +44,7 @@ func (r *CachedProductRepository) Create(
 
 	// Cache the created product
 	ctx := context.Background()
-	cacheKey := r.buildProductCacheKey(result.Id)
+	cacheKey := r.buildProductCacheKey(result.ID)
 
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		// Log cache error but don't fail the operation
@@ -123,7 +123,7 @@ func (r *CachedProductRepository) Update(
 	ctx := context.Background()
 
 	// Update cache with new data
-	cacheKey := r.buildProductCacheKey(result.Id)
+	cacheKey := r.buildProductCacheKey(result.ID)
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		log.Printf("Failed to update cached product: %v", cacheErr)
 	}

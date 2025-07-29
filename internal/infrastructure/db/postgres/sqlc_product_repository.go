@@ -45,7 +45,7 @@ func (repo *SqlcProductRepository) Create(
 	}
 
 	params := sqlc.CreateProductParams{
-		ID:          product.Id,
+		ID:          product.ID,
 		Name:        product.Name,
 		Description: pgtype.Text{String: "", Valid: false}, // Use empty description for now
 		Price:       priceNumeric,
@@ -113,7 +113,7 @@ func (repo *SqlcProductRepository) Update(
 	}
 
 	params := sqlc.UpdateProductParams{
-		ID:          product.Id,
+		ID:          product.ID,
 		Name:        product.Name,
 		Description: pgtype.Text{String: "", Valid: false},
 		Price:       priceNumeric,
@@ -154,7 +154,7 @@ func fromSqlcProduct(dbProduct *sqlc.Product) (*entities.Product, error) {
 	// For now, we'll create a simple seller struct - this needs to be handled properly
 	// by fetching the seller separately or using joins
 	seller := entities.Seller{
-		Id:        dbProduct.SellerID,
+		ID:        dbProduct.SellerID,
 		CreatedAt: time.Now(), // This should be fetched from the seller table
 		UpdatedAt: time.Now(), // This should be fetched from the seller table
 		Name:      "",         // This should be fetched from the seller table
@@ -162,7 +162,7 @@ func fromSqlcProduct(dbProduct *sqlc.Product) (*entities.Product, error) {
 	}
 
 	return &entities.Product{
-		Id:        dbProduct.ID,
+		ID:        dbProduct.ID,
 		CreatedAt: dbProduct.CreatedAt,
 		UpdatedAt: dbProduct.UpdatedAt,
 		Name:      dbProduct.Name,

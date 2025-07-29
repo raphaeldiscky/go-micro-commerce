@@ -11,12 +11,12 @@ import (
 type CreateProductRequest struct {
 	Name     string  `json:"Name"`
 	Price    float64 `json:"Price"`
-	SellerId string  `json:"SellerId"`
+	SellerID string  `json:"SellerId"`
 }
 
 // ToCreateProductCommand converts the CreateProductRequest to a CreateProductCommand.
 func (req *CreateProductRequest) ToCreateProductCommand() (*command.CreateProductCommand, error) {
-	sellerID, err := uuid.Parse(req.SellerId)
+	sellerID, err := uuid.Parse(req.SellerID)
 	if err != nil {
 		return nil, err
 	}
@@ -24,6 +24,6 @@ func (req *CreateProductRequest) ToCreateProductCommand() (*command.CreateProduc
 	return &command.CreateProductCommand{
 		Name:     req.Name,
 		Price:    req.Price,
-		SellerId: sellerID,
+		SellerID: sellerID,
 	}, nil
 }

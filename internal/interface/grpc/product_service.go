@@ -49,7 +49,7 @@ func (s *ProductServiceServer) CreateProduct(
 	createCmd := &command.CreateProductCommand{
 		Name:     req.Name,
 		Price:    req.Price,
-		SellerId: sellerID,
+		SellerID: sellerID,
 	}
 
 	result, err := s.productService.CreateProduct(createCmd)
@@ -58,10 +58,10 @@ func (s *ProductServiceServer) CreateProduct(
 	}
 
 	product := &marketplacev1.Product{
-		Id:         result.Result.Id.String(),
+		Id:         result.Result.ID.String(),
 		Name:       result.Result.Name,
 		Price:      result.Result.Price,
-		SellerId:   result.Result.Seller.Id.String(),
+		SellerId:   result.Result.Seller.ID.String(),
 		SellerName: result.Result.Seller.Name,
 		CreatedAt:  timestamppb.New(result.Result.CreatedAt),
 		UpdatedAt:  timestamppb.New(result.Result.UpdatedAt),
@@ -96,10 +96,10 @@ func (s *ProductServiceServer) GetProduct(
 	}
 
 	product := &marketplacev1.Product{
-		Id:         result.Result.Id.String(),
+		Id:         result.Result.ID.String(),
 		Name:       result.Result.Name,
 		Price:      result.Result.Price,
-		SellerId:   result.Result.Seller.Id.String(),
+		SellerId:   result.Result.Seller.ID.String(),
 		SellerName: result.Result.Seller.Name,
 		CreatedAt:  timestamppb.New(result.Result.CreatedAt),
 		UpdatedAt:  timestamppb.New(result.Result.UpdatedAt),
@@ -124,10 +124,10 @@ func (s *ProductServiceServer) ListProducts(
 
 	for _, productResult := range result.Result {
 		product := &marketplacev1.Product{
-			Id:         productResult.Id.String(),
+			Id:         productResult.ID.String(),
 			Name:       productResult.Name,
 			Price:      productResult.Price,
-			SellerId:   productResult.Seller.Id.String(),
+			SellerId:   productResult.Seller.ID.String(),
 			SellerName: productResult.Seller.Name,
 			CreatedAt:  timestamppb.New(productResult.CreatedAt),
 			UpdatedAt:  timestamppb.New(productResult.UpdatedAt),

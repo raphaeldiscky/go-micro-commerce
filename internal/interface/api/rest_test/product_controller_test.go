@@ -48,7 +48,7 @@ func TestCreateProduct(t *testing.T) {
 
 	createProductCommandResult := &command.CreateProductCommandResult{
 		Result: &common.ProductResult{
-			Id:    uuid.New(),
+			ID:    uuid.New(),
 			Name:  "TestProduct",
 			Price: 9.99,
 		},
@@ -72,8 +72,8 @@ func TestCreateProduct(t *testing.T) {
 	}
 
 	// Remove fields from responseBody that are not present in reqBody
-	// For example, remove Id and Seller fields
-	delete(responseBody, "Id")
+	// For example, remove ID and Seller fields
+	delete(responseBody, "ID")
 	delete(responseBody, "Seller")
 	delete(reqBody, "SellerId")
 	delete(responseBody, "CreatedAt")
@@ -94,11 +94,11 @@ func TestGetAllProducts(t *testing.T) {
 
 	expectedProducts := []*entities.Product{
 		{
-			Id:    uuid.New(),
+			ID:    uuid.New(),
 			Name:  "TestProduct1",
 			Price: 9.99,
 		}, {
-			Id:    uuid.New(),
+			ID:    uuid.New(),
 			Name:  "TestProduct2",
 			Price: 14.99,
 		},
@@ -107,12 +107,12 @@ func TestGetAllProducts(t *testing.T) {
 	expectedResult := &query.ProductQueryListResult{
 		Result: []*common.ProductResult{
 			{
-				Id:    expectedProducts[0].Id,
+				ID:    expectedProducts[0].ID,
 				Name:  expectedProducts[0].Name,
 				Price: expectedProducts[0].Price,
 			},
 			{
-				Id:    expectedProducts[1].Id,
+				ID:    expectedProducts[1].ID,
 				Name:  expectedProducts[1].Name,
 				Price: expectedProducts[1].Price,
 			},
@@ -130,7 +130,7 @@ func TestGetAllProducts(t *testing.T) {
 	for _, product := range expectedProducts {
 		expectedListResponse.Products = append(expectedListResponse.Products,
 			&response.ProductResponse{
-				Id:    product.Id.String(),
+				ID:    product.ID.String(),
 				Name:  product.Name,
 				Price: product.Price,
 			})

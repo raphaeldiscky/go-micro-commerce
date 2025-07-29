@@ -5,7 +5,7 @@ import "time"
 
 // ProductResponse represents the response structure for a product.
 type ProductResponse struct {
-	Id        string
+	ID        string
 	Name      string
 	Price     float64
 	CreatedAt time.Time

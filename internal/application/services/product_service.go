@@ -40,7 +40,7 @@ func NewProductService(
 func (s *ProductService) CreateProduct(
 	productCommand *command.CreateProductCommand,
 ) (*command.CreateProductCommandResult, error) {
-	storedSeller, err := s.sellerRepository.FindByID(productCommand.SellerId)
+	storedSeller, err := s.sellerRepository.FindByID(productCommand.SellerID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,10 +73,10 @@ func (s *ProductService) CreateProduct(
 	// Publish ProductCreated event
 	if s.eventPublisher != nil {
 		productCreatedEvent := events.NewProductCreatedEvent(
-			validatedProduct.Id,
+			validatedProduct.ID,
 			validatedProduct.Name,
 			validatedProduct.Price,
-			validatedProduct.Seller.Id,
+			validatedProduct.Seller.ID,
 			validatedProduct.Seller.Name,
 		)
 

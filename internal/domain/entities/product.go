@@ -10,7 +10,7 @@ import (
 
 // Product represents a product that has been validated.
 type Product struct {
-	Id        uuid.UUID
+	ID        uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
@@ -38,7 +38,7 @@ func (p *Product) validate() error {
 // NewProduct creates a new Product with the provided name, price, and seller.
 func NewProduct(name string, price float64, seller *ValidatedSeller) *Product {
 	return &Product{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Name:      name,

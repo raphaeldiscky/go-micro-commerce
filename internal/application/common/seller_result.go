@@ -9,7 +9,7 @@ import (
 
 // SellerResult represents the result of a seller query.
 type SellerResult struct {
-	Id        uuid.UUID
+	ID        uuid.UUID
 	Name      string
 	Email     string
 	CreatedAt time.Time

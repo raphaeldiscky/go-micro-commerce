@@ -32,7 +32,7 @@ func (repo *SellerRepository) Create(seller *entities.ValidatedSeller) (*entitie
 
 	now := time.Now()
 	params := sqlc.CreateSellerParams{
-		ID:        seller.Id,
+		ID:        seller.ID,
 		Name:      seller.Name,
 		Email:     seller.Email,
 		CreatedAt: now,
@@ -82,7 +82,7 @@ func (repo *SellerRepository) Update(seller *entities.ValidatedSeller) (*entitie
 	ctx := context.Background()
 
 	params := sqlc.UpdateSellerParams{
-		ID:        seller.Id,
+		ID:        seller.ID,
 		Name:      seller.Name,
 		Email:     seller.Email,
 		UpdatedAt: time.Now(),
@@ -106,7 +106,7 @@ func (repo *SellerRepository) Delete(id uuid.UUID) error {
 // Helper function to convert sqlc model to domain entity.
 func fromSqlcSeller(dbSeller *sqlc.Seller) *entities.Seller {
 	return &entities.Seller{
-		Id:        dbSeller.ID,
+		ID:        dbSeller.ID,
 		CreatedAt: dbSeller.CreatedAt,
 		UpdatedAt: dbSeller.UpdatedAt,
 		Name:      dbSeller.Name,

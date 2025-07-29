@@ -9,7 +9,7 @@ import (
 // ToProductResponse converts a ProductResult to a ProductResponse DTO.
 func ToProductResponse(product *common.ProductResult) *response.ProductResponse {
 	return &response.ProductResponse{
-		Id:        product.Id.String(),
+		ID:        product.ID.String(),
 		Name:      product.Name,
 		Price:     product.Price,
 		CreatedAt: product.CreatedAt,
