@@ -1,7 +1,9 @@
+// Package main implements the main entry point for the marketplace service.
 package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -20,9 +22,10 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/repository"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
 	grpcHandlers "github.com/raphaeldiscky/go-ddd-template/internal/interface/grpc"
-	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto"
+	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1"
 )
 
+// Config holds the application configuration.
 type Config struct {
 	Database DatabaseConfig
 	Redis    RedisConfig
@@ -30,10 +33,12 @@ type Config struct {
 	Server   ServerConfig
 }
 
+// DatabaseConfig holds the configuration for the database connection.
 type DatabaseConfig struct {
 	DSN string
 }
 
+// RedisConfig holds the configuration for Redis cache.
 type RedisConfig struct {
 	Host       string
 	Port       int
@@ -43,6 +48,7 @@ type RedisConfig struct {
 	DefaultTTL time.Duration
 }
 
+// KafkaConfig holds the configuration for Kafka messaging.
 type KafkaConfig struct {
 	Brokers       []string
 	TopicPrefix   string
@@ -50,6 +56,7 @@ type KafkaConfig struct {
 	RetryDelay    time.Duration
 }
 
+// ServerConfig holds the configuration for the HTTP and gRPC servers.
 type ServerConfig struct {
 	HTTPPort string
 	GRPCPort string
@@ -90,13 +97,15 @@ func main() {
 
 	// Run database migrations
 	log.Println("Running database migrations...")
+
 	migrationConfig := postgres2.MigrationConfig{
 		DatabaseURL:    config.Database.DSN,
 		MigrationsPath: "./migrations",
 	}
 	if err := postgres2.RunMigrations(dbPool, migrationConfig); err != nil {
-		log.Fatalf("Failed to run migrations: %v", err)
+		dbPool.Close()
 	}
+
 	log.Println("Database migrations completed successfully!")
 
 	// Initialize Redis cache
@@ -114,12 +123,14 @@ func main() {
 	if err := redisCache.Ping(ctx); err != nil {
 		log.Printf("Warning: Redis connection failed: %v", err)
 		log.Println("Continuing without cache...")
+
 		redisCache = nil
 	}
 
 	// Initialize Kafka event publisher
 	var kafkaPublisher events.EventPublisher
-	if kafkaEventPublisher, err := kafka.NewKafkaEventPublisher(kafka.KafkaConfig{
+
+	if kafkaEventPublisher, err := kafka.NewEventPublisher(kafka.Config{
 		Brokers:       config.Kafka.Brokers,
 		TopicPrefix:   config.Kafka.TopicPrefix,
 		RetryAttempts: config.Kafka.RetryAttempts,
@@ -136,12 +147,20 @@ func main() {
 	baseSellerRepo := postgres2.NewSqlcSellerRepository(dbPool)
 
 	// Decorate repositories with caching if Redis is available
-	var productRepo = baseProductRepo
-	var sellerRepo = baseSellerRepo
+	productRepo := baseProductRepo
+	sellerRepo := baseSellerRepo
 
 	if redisCache != nil {
-		productRepo = repository.NewCachedProductRepository(baseProductRepo, redisCache, config.Redis.DefaultTTL)
-		sellerRepo = repository.NewCachedSellerRepository(baseSellerRepo, redisCache, config.Redis.DefaultTTL)
+		productRepo = repository.NewCachedProductRepository(
+			baseProductRepo,
+			redisCache,
+			config.Redis.DefaultTTL,
+		)
+		sellerRepo = repository.NewCachedSellerRepository(
+			baseSellerRepo,
+			redisCache,
+			config.Redis.DefaultTTL,
+		)
 	}
 
 	// Initialize services
@@ -160,7 +179,11 @@ func main() {
 	startHTTPServer(config.Server.HTTPPort, productService, sellerService)
 }
 
-func startGRPCServer(port string, productService interfaces.ProductService, sellerService interfaces.SellerService) {
+func startGRPCServer(
+	port string,
+	productService interfaces.ProductService,
+	sellerService interfaces.SellerService,
+) {
 	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("Failed to listen on port %s: %v", port, err)
@@ -176,12 +199,17 @@ func startGRPCServer(port string, productService interfaces.ProductService, sell
 	marketplacev1.RegisterSellerServiceServer(s, sellerGRPCService)
 
 	log.Printf("gRPC server starting on port %s", port)
+
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve gRPC: %v", err)
 	}
 }
 
-func startHTTPServer(port string, productService interfaces.ProductService, sellerService interfaces.SellerService) {
+func startHTTPServer(
+	port string,
+	productService interfaces.ProductService,
+	sellerService interfaces.SellerService,
+) {
 	e := echo.New()
 
 	// Middleware
@@ -194,7 +222,8 @@ func startHTTPServer(port string, productService interfaces.ProductService, sell
 	rest.NewSellerController(e, sellerService)
 
 	log.Printf("HTTP server starting on port %s", port)
-	if err := e.Start(port); err != nil && err != http.ErrServerClosed {
+
+	if err := e.Start(port); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalf("Failed to start HTTP server: %v", err)
 	}
 }
@@ -206,26 +235,45 @@ func startKafkaConsumer(config KafkaConfig) {
 		config.TopicPrefix + ".SellerCreated",
 	}
 
-	consumer, err := kafka.NewKafkaEventSubscriber(config.Brokers, "marketplace-consumer-group", topics)
+	consumer, err := kafka.NewEventSubscriber(
+		config.Brokers,
+		"marketplace-consumer-group",
+		topics,
+	)
 	if err != nil {
 		log.Printf("Failed to create Kafka consumer: %v", err)
+
 		return
 	}
 
 	ctx := context.Background()
 
 	// Subscribe to events with example handlers
-	consumer.Subscribe(ctx, "ProductCreated", func(ctx context.Context, event events.DomainEvent) error {
-		log.Printf("Received ProductCreated event: %+v", event)
-		// Add your business logic here (e.g., update search index, send notifications, etc.)
-		return nil
-	})
+	err = consumer.Subscribe(
+		ctx,
+		"ProductCreated",
+		func(_ context.Context, event events.DomainEvent) error {
+			log.Printf("Received ProductCreated event: %+v", event)
+			// Add your business logic here (e.g., update search index, send notifications, etc.)
+			return nil
+		},
+	)
+	if err != nil {
+		log.Printf("Failed to subscribe to ProductCreated events: %v", err)
+	}
 
-	consumer.Subscribe(ctx, "SellerCreated", func(ctx context.Context, event events.DomainEvent) error {
-		log.Printf("Received SellerCreated event: %+v", event)
-		// Add your business logic here
-		return nil
-	})
+	err = consumer.Subscribe(
+		ctx,
+		"SellerCreated",
+		func(_ context.Context, event events.DomainEvent) error {
+			log.Printf("Received SellerCreated event: %+v", event)
+			// Add your business logic here
+			return nil
+		},
+	)
+	if err != nil {
+		log.Printf("Failed to subscribe to SellerCreated events: %v", err)
+	}
 
 	// Start consuming
 	if err := consumer.Start(ctx); err != nil {

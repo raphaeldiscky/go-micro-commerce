@@ -5,8 +5,9 @@ package middleware
 
 import (
 	"errors"
-	"github.com/labstack/echo/v4"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 // KeyAuthConfig defines the config for KeyAuth middleware.

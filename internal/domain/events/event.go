@@ -1,3 +1,4 @@
+// Package events defines the structure and behavior of domain events in the system.
 package events
 
 import (
@@ -6,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// DomainEvent represents a domain event in the system
+// DomainEvent represents a domain event in the system.
 type DomainEvent interface {
 	EventID() string
 	EventType() string
@@ -17,51 +18,62 @@ type DomainEvent interface {
 	EventData() interface{}
 }
 
-// BaseDomainEvent provides a base implementation for domain events
+// BaseDomainEvent provides a base implementation for domain events.
 type BaseDomainEvent struct {
 	ID                string      `json:"id"`
 	EventTypeName     string      `json:"type"`
-	AggregateId       string      `json:"aggregate_id"`
+	AggregateIDValue  string      `json:"aggregate_id"`
 	AggregateTypeName string      `json:"aggregate_type"`
 	Version           int         `json:"version"`
 	Timestamp         time.Time   `json:"timestamp"`
 	Data              interface{} `json:"data"`
 }
 
-func (e BaseDomainEvent) EventID() string {
+// EventID returns the unique identifier of the event.
+func (e *BaseDomainEvent) EventID() string {
 	return e.ID
 }
 
-func (e BaseDomainEvent) EventType() string {
+// EventType returns the type of the event.
+func (e *BaseDomainEvent) EventType() string {
 	return e.EventTypeName
 }
 
-func (e BaseDomainEvent) AggregateID() string {
-	return e.AggregateId
+// AggregateID returns the ID of the aggregate that this event belongs to.
+func (e *BaseDomainEvent) AggregateID() string {
+	return e.AggregateIDValue // Now references the renamed field
 }
 
-func (e BaseDomainEvent) AggregateType() string {
+// AggregateType returns the type of the aggregate that this event belongs to.
+func (e *BaseDomainEvent) AggregateType() string {
 	return e.AggregateTypeName
 }
 
-func (e BaseDomainEvent) EventVersion() int {
+// EventVersion returns the version of the event.
+func (e *BaseDomainEvent) EventVersion() int {
 	return e.Version
 }
 
-func (e BaseDomainEvent) OccurredAt() time.Time {
+// OccurredAt returns the time when the event occurred.
+func (e *BaseDomainEvent) OccurredAt() time.Time {
 	return e.Timestamp
 }
 
-func (e BaseDomainEvent) EventData() interface{} {
+// EventData returns the data associated with the event.
+func (e *BaseDomainEvent) EventData() interface{} {
 	return e.Data
 }
 
-// NewBaseDomainEvent creates a new base domain event
-func NewBaseDomainEvent(eventType, aggregateID, aggregateType string, version int, data interface{}) BaseDomainEvent {
+// NewBaseDomainEvent creates a new base domain event.
+func NewBaseDomainEvent(
+	eventType, aggregateID, aggregateType string,
+	version int,
+	data interface{},
+) BaseDomainEvent {
 	return BaseDomainEvent{
 		ID:                uuid.New().String(),
 		EventTypeName:     eventType,
-		AggregateId:       aggregateID,
+		AggregateIDValue:  aggregateID,
 		AggregateTypeName: aggregateType,
 		Version:           version,
 		Timestamp:         time.Now().UTC(),

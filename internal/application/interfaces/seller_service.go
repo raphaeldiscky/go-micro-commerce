@@ -4,14 +4,20 @@ package interfaces
 
 import (
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/query"
 )
 
+// SellerService defines the interface for seller-related operations.
 type SellerService interface {
-	CreateSeller(sellerCommand *command.CreateSellerCommand) (*command.CreateSellerCommandResult, error)
+	CreateSeller(
+		sellerCommand *command.CreateSellerCommand,
+	) (*command.CreateSellerCommandResult, error)
 	FindAllSellers() (*query.SellerQueryListResult, error)
-	FindSellerById(id uuid.UUID) (*query.SellerQueryResult, error)
-	UpdateSeller(updateCommand *command.UpdateSellerCommand) (*command.UpdateSellerCommandResult, error)
+	FindSellerByID(id uuid.UUID) (*query.SellerQueryResult, error)
+	UpdateSeller(
+		updateCommand *command.UpdateSellerCommand,
+	) (*command.UpdateSellerCommandResult, error)
 	DeleteSeller(id uuid.UUID) error
 }

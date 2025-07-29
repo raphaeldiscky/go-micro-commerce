@@ -1,3 +1,4 @@
+// Package services provides the implementation of seller-related business logic.
 package services
 
 import (
@@ -6,6 +7,7 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/mapper"
@@ -15,22 +17,28 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/repositories"
 )
 
+// SellerService is the service for managing sellers.
 type SellerService struct {
 	repo           repositories.SellerRepository
 	eventPublisher events.EventPublisher
 }
 
-// NewSellerService - Constructor for the service
-func NewSellerService(repo repositories.SellerRepository, eventPublisher events.EventPublisher) interfaces.SellerService {
+// NewSellerService - Constructor for the service.
+func NewSellerService(
+	repo repositories.SellerRepository,
+	eventPublisher events.EventPublisher,
+) interfaces.SellerService {
 	return &SellerService{
 		repo:           repo,
 		eventPublisher: eventPublisher,
 	}
 }
 
-// CreateSeller saves a new seller
-func (s *SellerService) CreateSeller(sellerCommand *command.CreateSellerCommand) (*command.CreateSellerCommandResult, error) {
-	var newSeller = entities.NewSeller(sellerCommand.Name, sellerCommand.Email)
+// CreateSeller saves a new seller.
+func (s *SellerService) CreateSeller(
+	sellerCommand *command.CreateSellerCommand,
+) (*command.CreateSellerCommandResult, error) {
+	newSeller := entities.NewSeller(sellerCommand.Name, sellerCommand.Email)
 
 	validatedSeller, err := entities.NewValidatedSeller(newSeller)
 	if err != nil {
@@ -45,7 +53,7 @@ func (s *SellerService) CreateSeller(sellerCommand *command.CreateSellerCommand)
 	// Publish SellerCreated event
 	if s.eventPublisher != nil {
 		sellerCreatedEvent := events.NewSellerCreatedEvent(
-			validatedSeller.Id,
+			validatedSeller.ID,
 			validatedSeller.Name,
 		)
 
@@ -63,7 +71,7 @@ func (s *SellerService) CreateSeller(sellerCommand *command.CreateSellerCommand)
 	return &result, nil
 }
 
-// FindAllSellers fetches all sellers
+// FindAllSellers fetches all sellers.
 func (s *SellerService) FindAllSellers() (*query.SellerQueryListResult, error) {
 	storedSellers, err := s.repo.FindAll()
 	if err != nil {
@@ -78,9 +86,9 @@ func (s *SellerService) FindAllSellers() (*query.SellerQueryListResult, error) {
 	return &queryResult, nil
 }
 
-// FindSellerById fetches a specific seller by Id
-func (s *SellerService) FindSellerById(id uuid.UUID) (*query.SellerQueryResult, error) {
-	storedSeller, err := s.repo.FindById(id)
+// FindSellerByID fetches a specific seller by ID.
+func (s *SellerService) FindSellerByID(id uuid.UUID) (*query.SellerQueryResult, error) {
+	storedSeller, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -91,9 +99,11 @@ func (s *SellerService) FindSellerById(id uuid.UUID) (*query.SellerQueryResult, 
 	return &queryResult, nil
 }
 
-// UpdateSeller updates a seller
-func (s *SellerService) UpdateSeller(updateCommand *command.UpdateSellerCommand) (*command.UpdateSellerCommandResult, error) {
-	seller, err := s.repo.FindById(updateCommand.Id)
+// UpdateSeller updates a seller.
+func (s *SellerService) UpdateSeller(
+	updateCommand *command.UpdateSellerCommand,
+) (*command.UpdateSellerCommandResult, error) {
+	seller, err := s.repo.FindByID(updateCommand.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +133,7 @@ func (s *SellerService) UpdateSeller(updateCommand *command.UpdateSellerCommand)
 	return &result, nil
 }
 
+// DeleteSeller removes a seller by ID.
 func (s *SellerService) DeleteSeller(id uuid.UUID) error {
 	return s.repo.Delete(id)
 }

@@ -1,3 +1,4 @@
+// Package entities defines the Seller entity.
 package entities
 
 import (
@@ -6,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// TestNewSeller tests the creation of a new Seller.
 func TestNewSeller(t *testing.T) {
 	seller := NewSeller("Example Seller", "seller@example.com")
 
@@ -17,7 +19,7 @@ func TestNewSeller(t *testing.T) {
 		t.Errorf("Expected seller email to be 'seller@example.com', but got %s", seller.Email)
 	}
 
-	if seller.Id == (uuid.UUID{}) {
+	if seller.ID == (uuid.UUID{}) {
 		t.Error("Expected seller Id to be set, but got zero value")
 	}
 }

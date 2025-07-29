@@ -8,11 +8,12 @@ import (
 	"sync"
 
 	"github.com/IBM/sarama"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
 )
 
-// KafkaEventSubscriber implements the EventSubscriber interface using Kafka
-type KafkaEventSubscriber struct {
+// EventSubscriber implements the EventSubscriber interface using Kafka.
+type EventSubscriber struct {
 	consumer      sarama.ConsumerGroup
 	handlers      map[string]events.EventHandler
 	handlersMutex sync.RWMutex
@@ -22,10 +23,14 @@ type KafkaEventSubscriber struct {
 	wg            sync.WaitGroup
 }
 
-// NewKafkaEventSubscriber creates a new Kafka event subscriber
-func NewKafkaEventSubscriber(brokers []string, groupID string, topics []string) (*KafkaEventSubscriber, error) {
+// NewEventSubscriber creates a new Kafka event subscriber.
+func NewEventSubscriber(
+	brokers []string,
+	groupID string,
+	topics []string,
+) (*EventSubscriber, error) {
 	config := sarama.NewConfig()
-	config.Consumer.Group.Rebalance.Strategy = sarama.BalanceStrategyRoundRobin
+	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategyRoundRobin()
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
 	config.Consumer.Group.Session.Timeout = sarama.NewConfig().Consumer.Group.Session.Timeout
 	config.Consumer.Group.Heartbeat.Interval = sarama.NewConfig().Consumer.Group.Heartbeat.Interval
@@ -35,7 +40,7 @@ func NewKafkaEventSubscriber(brokers []string, groupID string, topics []string) 
 		return nil, fmt.Errorf("failed to create Kafka consumer group: %w", err)
 	}
 
-	return &KafkaEventSubscriber{
+	return &EventSubscriber{
 		consumer: consumer,
 		handlers: make(map[string]events.EventHandler),
 		topics:   topics,
@@ -43,42 +48,52 @@ func NewKafkaEventSubscriber(brokers []string, groupID string, topics []string) 
 	}, nil
 }
 
-// Subscribe subscribes to an event type with a handler
-func (s *KafkaEventSubscriber) Subscribe(ctx context.Context, eventType string, handler events.EventHandler) error {
+// Subscribe subscribes to an event type with a handler.
+func (s *EventSubscriber) Subscribe(
+	_ context.Context,
+	eventType string,
+	handler events.EventHandler,
+) error {
 	s.handlersMutex.Lock()
 	s.handlers[eventType] = handler
 	s.handlersMutex.Unlock()
 
 	log.Printf("Subscribed to event type: %s", eventType)
+
 	return nil
 }
 
-// Unsubscribe removes the handler for an event type
-func (s *KafkaEventSubscriber) Unsubscribe(ctx context.Context, eventType string) error {
+// Unsubscribe removes the handler for an event type.
+func (s *EventSubscriber) Unsubscribe(_ context.Context, eventType string) error {
 	s.handlersMutex.Lock()
 	delete(s.handlers, eventType)
 	s.handlersMutex.Unlock()
 
 	log.Printf("Unsubscribed from event type: %s", eventType)
+
 	return nil
 }
 
-// Start starts consuming messages from Kafka
-func (s *KafkaEventSubscriber) Start(ctx context.Context) error {
+// Start starts consuming messages from Kafka.
+func (s *EventSubscriber) Start(ctx context.Context) error {
 	consumerCtx, cancel := context.WithCancel(ctx)
 	s.cancel = cancel
 
 	s.wg.Add(1)
+
 	go func() {
 		defer s.wg.Done()
+
 		for {
 			select {
 			case <-consumerCtx.Done():
-				log.Println("Kafka consumer context cancelled")
+				log.Println("Kafka consumer context canceled")
+
 				return
 			default:
 				if err := s.consumer.Consume(consumerCtx, s.topics, s); err != nil {
 					log.Printf("Error consuming from Kafka: %v", err)
+
 					return
 				}
 			}
@@ -86,32 +101,40 @@ func (s *KafkaEventSubscriber) Start(ctx context.Context) error {
 	}()
 
 	log.Printf("Started Kafka consumer for group: %s, topics: %v", s.groupID, s.topics)
+
 	return nil
 }
 
-// Stop stops the Kafka consumer
-func (s *KafkaEventSubscriber) Stop() error {
+// Stop stops the Kafka consumer.
+func (s *EventSubscriber) Stop() error {
 	if s.cancel != nil {
 		s.cancel()
 	}
+
 	s.wg.Wait()
+
 	return s.consumer.Close()
 }
 
-// Setup is run at the beginning of a new session, before ConsumeClaim
-func (s *KafkaEventSubscriber) Setup(sarama.ConsumerGroupSession) error {
+// Setup is run at the beginning of a new session, before ConsumeClaim.
+func (s *EventSubscriber) Setup(sarama.ConsumerGroupSession) error {
 	log.Println("Kafka consumer group session setup")
+
 	return nil
 }
 
-// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited
-func (s *KafkaEventSubscriber) Cleanup(sarama.ConsumerGroupSession) error {
+// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited.
+func (s *EventSubscriber) Cleanup(sarama.ConsumerGroupSession) error {
 	log.Println("Kafka consumer group session cleanup")
+
 	return nil
 }
 
-// ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages()
-func (s *KafkaEventSubscriber) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+// ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
+func (s *EventSubscriber) ConsumeClaim(
+	session sarama.ConsumerGroupSession,
+	claim sarama.ConsumerGroupClaim,
+) error {
 	for {
 		select {
 		case message := <-claim.Messages():
@@ -133,13 +156,18 @@ func (s *KafkaEventSubscriber) ConsumeClaim(session sarama.ConsumerGroupSession,
 	}
 }
 
-// handleMessage processes a Kafka message
-func (s *KafkaEventSubscriber) handleMessage(ctx context.Context, message *sarama.ConsumerMessage) error {
+// handleMessage processes a Kafka message.
+func (s *EventSubscriber) handleMessage(
+	ctx context.Context,
+	message *sarama.ConsumerMessage,
+) error {
 	// Extract event type from headers
 	var eventType string
+
 	for _, header := range message.Headers {
 		if string(header.Key) == "event_type" {
 			eventType = string(header.Value)
+
 			break
 		}
 	}
@@ -154,6 +182,7 @@ func (s *KafkaEventSubscriber) handleMessage(ctx context.Context, message *saram
 
 	if !exists {
 		log.Printf("No handler registered for event type: %s", eventType)
+
 		return nil
 	}
 
@@ -164,10 +193,11 @@ func (s *KafkaEventSubscriber) handleMessage(ctx context.Context, message *saram
 	}
 
 	// Call the handler
-	if err := handler(ctx, baseEvent); err != nil {
+	if err := handler(ctx, &baseEvent); err != nil {
 		return fmt.Errorf("handler failed for event %s: %w", baseEvent.EventID(), err)
 	}
 
 	log.Printf("Successfully processed event: %s (type: %s)", baseEvent.EventID(), eventType)
+
 	return nil
 }

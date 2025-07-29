@@ -2,7 +2,7 @@ package events
 
 import "github.com/google/uuid"
 
-// ProductCreated event is published when a new product is created
+// ProductCreated event is published when a new product is created.
 type ProductCreated struct {
 	BaseDomainEvent
 	ProductID   uuid.UUID `json:"product_id"`
@@ -12,8 +12,14 @@ type ProductCreated struct {
 	SellerName  string    `json:"seller_name"`
 }
 
-// NewProductCreatedEvent creates a new ProductCreated event
-func NewProductCreatedEvent(productID uuid.UUID, productName string, price float64, sellerID uuid.UUID, sellerName string) *ProductCreated {
+// NewProductCreatedEvent creates a new ProductCreated event.
+func NewProductCreatedEvent(
+	productID uuid.UUID,
+	productName string,
+	price float64,
+	sellerID uuid.UUID,
+	sellerName string,
+) *ProductCreated {
 	data := struct {
 		ProductID   uuid.UUID `json:"product_id"`
 		ProductName string    `json:"product_name"`
@@ -44,7 +50,7 @@ func NewProductCreatedEvent(productID uuid.UUID, productName string, price float
 	}
 }
 
-// ProductUpdated event is published when a product is updated
+// ProductUpdated event is published when a product is updated.
 type ProductUpdated struct {
 	BaseDomainEvent
 	ProductID   uuid.UUID `json:"product_id"`
@@ -53,8 +59,13 @@ type ProductUpdated struct {
 	SellerID    uuid.UUID `json:"seller_id"`
 }
 
-// NewProductUpdatedEvent creates a new ProductUpdated event
-func NewProductUpdatedEvent(productID uuid.UUID, productName string, price float64, sellerID uuid.UUID) *ProductUpdated {
+// NewProductUpdatedEvent creates a new ProductUpdated event.
+func NewProductUpdatedEvent(
+	productID uuid.UUID,
+	productName string,
+	price float64,
+	sellerID uuid.UUID,
+) *ProductUpdated {
 	data := struct {
 		ProductID   uuid.UUID `json:"product_id"`
 		ProductName string    `json:"product_name"`
@@ -82,13 +93,13 @@ func NewProductUpdatedEvent(productID uuid.UUID, productName string, price float
 	}
 }
 
-// ProductDeleted event is published when a product is deleted
+// ProductDeleted event is published when a product is deleted.
 type ProductDeleted struct {
 	BaseDomainEvent
 	ProductID uuid.UUID `json:"product_id"`
 }
 
-// NewProductDeletedEvent creates a new ProductDeleted event
+// NewProductDeletedEvent creates a new ProductDeleted event.
 func NewProductDeletedEvent(productID uuid.UUID) *ProductDeleted {
 	data := struct {
 		ProductID uuid.UUID `json:"product_id"`

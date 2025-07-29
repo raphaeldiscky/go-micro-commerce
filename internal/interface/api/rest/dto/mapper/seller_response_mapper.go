@@ -1,3 +1,4 @@
+// Package mapper provides functions to convert domain entities to API response DTOs.
 package mapper
 
 import (
@@ -5,9 +6,10 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/response"
 )
 
+// ToSellerResponse converts a SellerResult to a SellerResponse.
 func ToSellerResponse(product *common.SellerResult) *response.SellerResponse {
 	return &response.SellerResponse{
-		Id:        product.Id.String(),
+		ID:        product.ID.String(),
 		Name:      product.Name,
 		Email:     product.Email,
 		CreatedAt: product.CreatedAt,
@@ -15,6 +17,7 @@ func ToSellerResponse(product *common.SellerResult) *response.SellerResponse {
 	}
 }
 
+// ToSellerListResponse converts a list of SellerResult to a ListSellersResponse.
 func ToSellerListResponse(products []*common.SellerResult) *response.ListSellersResponse {
 	var responseList []*response.SellerResponse
 

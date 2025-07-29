@@ -11,24 +11,27 @@ import (
 
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
-	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto"
+	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1"
 )
 
-// SellerServiceServer implements the gRPC SellerService
+// SellerServiceServer implements the gRPC SellerService.
 type SellerServiceServer struct {
 	marketplacev1.UnimplementedSellerServiceServer
 	sellerService interfaces.SellerService
 }
 
-// NewSellerServiceServer creates a new SellerServiceServer
+// NewSellerServiceServer creates a new SellerServiceServer.
 func NewSellerServiceServer(sellerService interfaces.SellerService) *SellerServiceServer {
 	return &SellerServiceServer{
 		sellerService: sellerService,
 	}
 }
 
-// CreateSeller creates a new seller
-func (s *SellerServiceServer) CreateSeller(ctx context.Context, req *marketplacev1.CreateSellerRequest) (*marketplacev1.CreateSellerResponse, error) {
+// CreateSeller creates a new seller.
+func (s *SellerServiceServer) CreateSeller(
+	_ context.Context,
+	req *marketplacev1.CreateSellerRequest,
+) (*marketplacev1.CreateSellerResponse, error) {
 	if req.Name == "" {
 		return nil, status.Error(codes.InvalidArgument, "seller name is required")
 	}
@@ -43,7 +46,7 @@ func (s *SellerServiceServer) CreateSeller(ctx context.Context, req *marketplace
 	}
 
 	seller := &marketplacev1.Seller{
-		Id:        result.Result.Id.String(),
+		Id:        result.Result.ID.String(),
 		Name:      result.Result.Name,
 		CreatedAt: timestamppb.New(result.Result.CreatedAt),
 		UpdatedAt: timestamppb.New(result.Result.UpdatedAt),
@@ -54,8 +57,11 @@ func (s *SellerServiceServer) CreateSeller(ctx context.Context, req *marketplace
 	}, nil
 }
 
-// GetSeller retrieves a seller by ID
-func (s *SellerServiceServer) GetSeller(ctx context.Context, req *marketplacev1.GetSellerRequest) (*marketplacev1.GetSellerResponse, error) {
+// GetSeller retrieves a seller by ID.
+func (s *SellerServiceServer) GetSeller(
+	_ context.Context,
+	req *marketplacev1.GetSellerRequest,
+) (*marketplacev1.GetSellerResponse, error) {
 	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "seller ID is required")
 	}
@@ -65,7 +71,7 @@ func (s *SellerServiceServer) GetSeller(ctx context.Context, req *marketplacev1.
 		return nil, status.Error(codes.InvalidArgument, "invalid seller ID format")
 	}
 
-	result, err := s.sellerService.FindSellerById(sellerID)
+	result, err := s.sellerService.FindSellerByID(sellerID)
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to get seller: %v", err))
 	}
@@ -75,7 +81,7 @@ func (s *SellerServiceServer) GetSeller(ctx context.Context, req *marketplacev1.
 	}
 
 	seller := &marketplacev1.Seller{
-		Id:        result.Result.Id.String(),
+		Id:        result.Result.ID.String(),
 		Name:      result.Result.Name,
 		CreatedAt: timestamppb.New(result.Result.CreatedAt),
 		UpdatedAt: timestamppb.New(result.Result.UpdatedAt),
@@ -86,17 +92,21 @@ func (s *SellerServiceServer) GetSeller(ctx context.Context, req *marketplacev1.
 	}, nil
 }
 
-// ListSellers lists all sellers with pagination
-func (s *SellerServiceServer) ListSellers(ctx context.Context, req *marketplacev1.ListSellersRequest) (*marketplacev1.ListSellersResponse, error) {
+// ListSellers lists all sellers with pagination.
+func (s *SellerServiceServer) ListSellers(
+	_ context.Context,
+	req *marketplacev1.ListSellersRequest,
+) (*marketplacev1.ListSellersResponse, error) {
 	result, err := s.sellerService.FindAllSellers()
 	if err != nil {
 		return nil, status.Error(codes.Internal, fmt.Sprintf("failed to list sellers: %v", err))
 	}
 
 	var sellers []*marketplacev1.Seller
+
 	for _, sellerResult := range result.Result {
 		seller := &marketplacev1.Seller{
-			Id:        sellerResult.Id.String(),
+			Id:        sellerResult.ID.String(),
 			Name:      sellerResult.Name,
 			CreatedAt: timestamppb.New(sellerResult.CreatedAt),
 			UpdatedAt: timestamppb.New(sellerResult.UpdatedAt),
@@ -108,9 +118,11 @@ func (s *SellerServiceServer) ListSellers(ctx context.Context, req *marketplacev
 	total := int32(len(sellers))
 	page := req.Page
 	pageSize := req.PageSize
+
 	if page <= 0 {
 		page = 1
 	}
+
 	if pageSize <= 0 {
 		pageSize = 10
 	}
@@ -123,12 +135,18 @@ func (s *SellerServiceServer) ListSellers(ctx context.Context, req *marketplacev
 	}, nil
 }
 
-// UpdateSeller updates an existing seller
-func (s *SellerServiceServer) UpdateSeller(ctx context.Context, req *marketplacev1.UpdateSellerRequest) (*marketplacev1.UpdateSellerResponse, error) {
+// UpdateSeller updates an existing seller.
+func (s *SellerServiceServer) UpdateSeller(
+	_ context.Context,
+	_ *marketplacev1.UpdateSellerRequest,
+) (*marketplacev1.UpdateSellerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "update seller not implemented yet")
 }
 
-// DeleteSeller deletes a seller by ID
-func (s *SellerServiceServer) DeleteSeller(ctx context.Context, req *marketplacev1.DeleteSellerRequest) (*marketplacev1.DeleteSellerResponse, error) {
+// DeleteSeller deletes a seller by ID.
+func (s *SellerServiceServer) DeleteSeller(
+	_ context.Context,
+	_ *marketplacev1.DeleteSellerRequest,
+) (*marketplacev1.DeleteSellerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "delete seller not implemented yet")
 }

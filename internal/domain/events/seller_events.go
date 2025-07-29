@@ -2,14 +2,14 @@ package events
 
 import "github.com/google/uuid"
 
-// SellerCreated event is published when a new seller is created
+// SellerCreated event is published when a new seller is created.
 type SellerCreated struct {
 	BaseDomainEvent
 	SellerID   uuid.UUID `json:"seller_id"`
 	SellerName string    `json:"seller_name"`
 }
 
-// NewSellerCreatedEvent creates a new SellerCreated event
+// NewSellerCreatedEvent creates a new SellerCreated event.
 func NewSellerCreatedEvent(sellerID uuid.UUID, sellerName string) *SellerCreated {
 	data := struct {
 		SellerID   uuid.UUID `json:"seller_id"`
@@ -32,14 +32,14 @@ func NewSellerCreatedEvent(sellerID uuid.UUID, sellerName string) *SellerCreated
 	}
 }
 
-// SellerUpdated event is published when a seller is updated
+// SellerUpdated event is published when a seller is updated.
 type SellerUpdated struct {
 	BaseDomainEvent
 	SellerID   uuid.UUID `json:"seller_id"`
 	SellerName string    `json:"seller_name"`
 }
 
-// NewSellerUpdatedEvent creates a new SellerUpdated event
+// NewSellerUpdatedEvent creates a new SellerUpdated event.
 func NewSellerUpdatedEvent(sellerID uuid.UUID, sellerName string) *SellerUpdated {
 	data := struct {
 		SellerID   uuid.UUID `json:"seller_id"`
@@ -62,13 +62,13 @@ func NewSellerUpdatedEvent(sellerID uuid.UUID, sellerName string) *SellerUpdated
 	}
 }
 
-// SellerDeleted event is published when a seller is deleted
+// SellerDeleted event is published when a seller is deleted.
 type SellerDeleted struct {
 	BaseDomainEvent
 	SellerID uuid.UUID `json:"seller_id"`
 }
 
-// NewSellerDeletedEvent creates a new SellerDeleted event
+// NewSellerDeletedEvent creates a new SellerDeleted event.
 func NewSellerDeletedEvent(sellerID uuid.UUID) *SellerDeleted {
 	data := struct {
 		SellerID uuid.UUID `json:"seller_id"`

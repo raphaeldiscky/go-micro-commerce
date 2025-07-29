@@ -1,3 +1,4 @@
+// Package rest provides the REST API implementation for product management.
 package rest
 
 import (
@@ -6,15 +7,18 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
 	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/mapper"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest/dto/request"
 )
 
+// ProductController handles HTTP requests related to products.
 type ProductController struct {
 	service interfaces.ProductService
 }
 
+// NewProductController initializes a new ProductController.
 func NewProductController(e *echo.Echo, service interfaces.ProductService) *ProductController {
 	controller := &ProductController{
 		service: service,
@@ -22,12 +26,13 @@ func NewProductController(e *echo.Echo, service interfaces.ProductService) *Prod
 
 	e.POST("/api/v1/products", controller.CreateProductController)
 	e.GET("/api/v1/products", controller.GetAllProductsController)
-	e.GET("/api/v1/products/:id", controller.GetProductByIdController)
+	e.GET("/api/v1/products/:id", controller.GetProductByIDController)
 	e.Use(middleware.Recover())
 
 	return controller
 }
 
+// CreateProductController handles the creation of a new product.
 func (pc *ProductController) CreateProductController(c echo.Context) error {
 	var createProductRequest request.CreateProductRequest
 
@@ -56,6 +61,7 @@ func (pc *ProductController) CreateProductController(c echo.Context) error {
 	return c.JSON(http.StatusCreated, response)
 }
 
+// GetAllProductsController retrieves all products.
 func (pc *ProductController) GetAllProductsController(c echo.Context) error {
 	products, err := pc.service.FindAllProducts()
 	if err != nil {
@@ -69,7 +75,8 @@ func (pc *ProductController) GetAllProductsController(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
-func (pc *ProductController) GetProductByIdController(c echo.Context) error {
+// GetProductByIDController retrieves a product by ID.
+func (pc *ProductController) GetProductByIDController(c echo.Context) error {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{
@@ -77,7 +84,7 @@ func (pc *ProductController) GetProductByIdController(c echo.Context) error {
 		})
 	}
 
-	product, err := pc.service.FindProductById(id)
+	product, err := pc.service.FindProductByID(id)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{
 			"error": "Failed to fetch product",

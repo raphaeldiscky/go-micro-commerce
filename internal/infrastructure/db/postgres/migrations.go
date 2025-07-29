@@ -1,25 +1,31 @@
 package postgres
 
 import (
+	"errors"
 	"fmt"
+	"log"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 )
 
+// MigrationConfig holds the configuration for database migrations.
 type MigrationConfig struct {
 	DatabaseURL    string
 	MigrationsPath string
 }
 
-// RunMigrations executes database migrations
+// RunMigrations executes database migrations.
 func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	// Convert pgx pool to sql.DB for migrate
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("Error closing sqlDB: %v", err)
+		}
+	}()
 
 	// Create postgres driver instance
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
@@ -36,20 +42,29 @@ func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+
+	defer func() {
+		if err, errCheck := m.Close(); err != nil || errCheck != nil {
+			log.Printf("Error closing migrate instance: %v", err)
+		}
+	}()
 
 	// Run migrations
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("failed to run migrations: %w", err)
 	}
 
 	return nil
 }
 
-// RollbackMigrations rolls back database migrations by N steps
+// RollbackMigrations rolls back database migrations by N steps.
 func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("Error closing sqlDB: %v", err)
+		}
+	}()
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
@@ -64,7 +79,12 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+
+	defer func() {
+		if err, errCheck := m.Close(); err != nil || errCheck != nil {
+			log.Printf("Error closing migrate instance: %v", err)
+		}
+	}()
 
 	if err := m.Steps(-steps); err != nil {
 		return fmt.Errorf("failed to rollback migrations: %w", err)
@@ -73,10 +93,17 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 	return nil
 }
 
-// GetMigrationVersion returns the current migration version
-func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool, error) {
+// GetMigrationVersion returns the current migration version.
+func GetMigrationVersion(
+	pool *pgxpool.Pool,
+	config MigrationConfig,
+) (version uint, dirty bool, err error) {
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			log.Printf("Error closing sqlDB: %v", err)
+		}
+	}()
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
@@ -91,9 +118,14 @@ func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
 
-	version, dirty, err := m.Version()
+	defer func() {
+		if err, errCheck := m.Close(); err != nil || errCheck != nil {
+			log.Printf("Error closing migrate instance: %v", err)
+		}
+	}()
+
+	version, dirty, err = m.Version()
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to get migration version: %w", err)
 	}
