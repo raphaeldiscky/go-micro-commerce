@@ -13,15 +13,15 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"google.golang.org/grpc"
 
-	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
-	"github.com/raphaeldiscky/go-ddd-template/internal/application/services"
-	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
-	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/cache"
-	postgres2 "github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/postgres"
-	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/messaging/kafka"
-	"github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/repository"
-	"github.com/raphaeldiscky/go-ddd-template/internal/interface/api/rest"
-	grpcHandlers "github.com/raphaeldiscky/go-ddd-template/internal/interface/grpc"
+	"github.com/raphaeldiscky/go-ddd-template/internal/app/interfaces"
+	service "github.com/raphaeldiscky/go-ddd-template/internal/app/service"
+	event "github.com/raphaeldiscky/go-ddd-template/internal/domain/event"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infra/cache"
+	postgres2 "github.com/raphaeldiscky/go-ddd-template/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infra/kafka"
+	"github.com/raphaeldiscky/go-ddd-template/internal/infra/repository"
+	grpcHandler "github.com/raphaeldiscky/go-ddd-template/internal/interface/grpc"
+	rest "github.com/raphaeldiscky/go-ddd-template/internal/interface/http"
 	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1"
 )
 
@@ -128,7 +128,7 @@ func main() {
 	}
 
 	// Initialize Kafka event publisher
-	var kafkaPublisher events.EventPublisher
+	var kafkaPublisher event.EventPublisher
 
 	if kafkaEventPublisher, err := kafka.NewEventPublisher(kafka.Config{
 		Brokers:       config.Kafka.Brokers,
@@ -163,9 +163,9 @@ func main() {
 		)
 	}
 
-	// Initialize services
-	productService := services.NewProductService(productRepo, sellerRepo, kafkaPublisher)
-	sellerService := services.NewSellerService(sellerRepo, kafkaPublisher)
+	// Initialize service
+	productService := service.NewProductService(productRepo, sellerRepo, kafkaPublisher)
+	sellerService := service.NewSellerService(sellerRepo, kafkaPublisher)
 
 	// Start gRPC server
 	go startGRPCServer(config.Server.GRPCPort, productService, sellerService)
@@ -191,9 +191,9 @@ func startGRPCServer(
 
 	s := grpc.NewServer()
 
-	// Register gRPC services
-	productGRPCService := grpcHandlers.NewProductServiceServer(productService)
-	sellerGRPCService := grpcHandlers.NewSellerServiceServer(sellerService)
+	// Register gRPC service
+	productGRPCService := grpcHandler.NewProductServiceServer(productService)
+	sellerGRPCService := grpcHandler.NewSellerServiceServer(sellerService)
 
 	marketplacev1.RegisterProductServiceServer(s, productGRPCService)
 	marketplacev1.RegisterSellerServiceServer(s, sellerGRPCService)
@@ -248,31 +248,31 @@ func startKafkaConsumer(config KafkaConfig) {
 
 	ctx := context.Background()
 
-	// Subscribe to events with example handlers
+	// Subscribe to event with example handlers
 	err = consumer.Subscribe(
 		ctx,
 		"ProductCreated",
-		func(_ context.Context, event events.DomainEvent) error {
+		func(_ context.Context, event event.DomainEvent) error {
 			log.Printf("Received ProductCreated event: %+v", event)
 			// Add your business logic here (e.g., update search index, send notifications, etc.)
 			return nil
 		},
 	)
 	if err != nil {
-		log.Printf("Failed to subscribe to ProductCreated events: %v", err)
+		log.Printf("Failed to subscribe to ProductCreated event: %v", err)
 	}
 
 	err = consumer.Subscribe(
 		ctx,
 		"SellerCreated",
-		func(_ context.Context, event events.DomainEvent) error {
+		func(_ context.Context, event event.DomainEvent) error {
 			log.Printf("Received SellerCreated event: %+v", event)
 			// Add your business logic here
 			return nil
 		},
 	)
 	if err != nil {
-		log.Printf("Failed to subscribe to SellerCreated events: %v", err)
+		log.Printf("Failed to subscribe to SellerCreated event: %v", err)
 	}
 
 	// Start consuming

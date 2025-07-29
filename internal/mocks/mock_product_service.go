@@ -13,8 +13,8 @@ import (
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
-	command "github.com/raphaeldiscky/go-ddd-template/internal/application/command"
-	query "github.com/raphaeldiscky/go-ddd-template/internal/application/query"
+	command "github.com/raphaeldiscky/go-ddd-template/internal/app/command"
+	query "github.com/raphaeldiscky/go-ddd-template/internal/app/query"
 	gomock "go.uber.org/mock/gomock"
 )
 

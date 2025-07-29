@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/handlers"
+	handlers "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/handler"
 )
 
 // HTTPServer wraps the Echo server

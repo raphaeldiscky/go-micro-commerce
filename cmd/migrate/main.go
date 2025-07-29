@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	postgresInfra "github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/postgres"
+	postgresInfra "github.com/raphaeldiscky/go-ddd-template/internal/infra/db/postgres"
 )
 
 func main() {

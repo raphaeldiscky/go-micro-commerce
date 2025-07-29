@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "./internal/infrastructure/db/queries"
-    schema: "./migrations"
+    queries: "./internal/infra/db/query"
+    schema: "./internal/infra/db/migration"
     gen:
       go:
         package: "sqlc"
-        out: "./internal/infrastructure/db/sqlc"
+        out: "./internal/infra/db/sqlc"
         sql_package: "pgx/v5"
         emit_json_tags: true
         emit_prepared_queries: false
@@ -14,15 +14,9 @@ sql:
         emit_exact_table_names: false
         emit_empty_slices: true
         overrides:
-          - column: "*.id"
-            go_type: "github.com/google/uuid.UUID"
-          - column: "*.seller_id"
-            go_type: "github.com/google/uuid.UUID"
-          - column: "*.created_at"
+          - db_type: "timestamptz"
             go_type: "time.Time"
-          - column: "*.updated_at"
-            go_type: "time.Time"
-          - column: "*.deleted_at"
+          - db_type: "uuid"
             go_type:
-              type: "time.Time"
-              pointer: true
+              import: "github.com/google/uuid"
+              type: "UUID"

@@ -31,7 +31,7 @@ proto: ## Generate protobuf files
 .PHONY: mocks
 mocks: ## Generate mocks using uber-go/mock
 	@echo "Generating mocks..."
-	go generate ./internal/application/interfaces/...
+	go generate ./internal/app/interfaces/...
 	@echo "Mocks generated successfully!"
 
 .PHONY: build

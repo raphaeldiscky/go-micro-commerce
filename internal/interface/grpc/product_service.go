@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/raphaeldiscky/go-ddd-template/internal/application/command"
-	"github.com/raphaeldiscky/go-ddd-template/internal/application/interfaces"
+	"github.com/raphaeldiscky/go-ddd-template/internal/app/command"
+	"github.com/raphaeldiscky/go-ddd-template/internal/app/interfaces"
 	marketplacev1 "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1"
 )
 

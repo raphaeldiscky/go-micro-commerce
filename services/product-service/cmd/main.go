@@ -11,11 +11,11 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/application/services"
+	services "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/app/service"
 	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/config"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/infrastructure/messaging/kafka"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/infrastructure/persistence/postgres"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/handlers"
+	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/infra/kafka"
+	handlers "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/handler"
 	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/server"
 )
 
