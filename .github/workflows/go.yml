@@ -46,7 +46,7 @@ jobs:
       - name: Format
         run: task format
       - name: Lint
-        run: task lint_no_fix
+        run: task lint
 
       - name: Test
         run: task test
