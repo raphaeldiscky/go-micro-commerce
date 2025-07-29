@@ -32,6 +32,7 @@ func NewProductController(e *echo.Echo, service interfaces.ProductService) *Prod
 	return controller
 }
 
+// CreateProductController handles the creation of a new product.
 func (pc *ProductController) CreateProductController(c echo.Context) error {
 	var createProductRequest request.CreateProductRequest
 

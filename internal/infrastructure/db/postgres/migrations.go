@@ -3,6 +3,7 @@ package postgres
 import (
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -22,7 +23,7 @@ func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
-			fmt.Printf("Error closing sqlDB: %v\n", err)
+			log.Printf("Error closing sqlDB: %v", err)
 		}
 	}()
 
@@ -43,8 +44,8 @@ func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	}
 
 	defer func() {
-		if err, _ := m.Close(); err != nil {
-			fmt.Printf("Error closing migrate instance: %v\n", err)
+		if err, errCheck := m.Close(); err != nil || errCheck != nil {
+			log.Printf("Error closing migrate instance: %v", err)
 		}
 	}()
 
@@ -61,7 +62,7 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
-			fmt.Printf("Error closing sqlDB: %v\n", err)
+			log.Printf("Error closing sqlDB: %v", err)
 		}
 	}()
 
@@ -80,8 +81,8 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 	}
 
 	defer func() {
-		if err, _ := m.Close(); err != nil {
-			fmt.Printf("Error closing migrate instance: %v\n", err)
+		if err, errCheck := m.Close(); err != nil || errCheck != nil {
+			log.Printf("Error closing migrate instance: %v", err)
 		}
 	}()
 
@@ -93,11 +94,14 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 }
 
 // GetMigrationVersion returns the current migration version.
-func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool, error) {
+func GetMigrationVersion(
+	pool *pgxpool.Pool,
+	config MigrationConfig,
+) (version uint, dirty bool, err error) {
 	sqlDB := stdlib.OpenDBFromPool(pool)
 	defer func() {
 		if err := sqlDB.Close(); err != nil {
-			fmt.Printf("Error closing sqlDB: %v\n", err)
+			log.Printf("Error closing sqlDB: %v", err)
 		}
 	}()
 
@@ -116,12 +120,12 @@ func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool
 	}
 
 	defer func() {
-		if err, _ := m.Close(); err != nil {
-			fmt.Printf("Error closing migrate instance: %v\n", err)
+		if err, errCheck := m.Close(); err != nil || errCheck != nil {
+			log.Printf("Error closing migrate instance: %v", err)
 		}
 	}()
 
-	version, dirty, err := m.Version()
+	version, dirty, err = m.Version()
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to get migration version: %w", err)
 	}

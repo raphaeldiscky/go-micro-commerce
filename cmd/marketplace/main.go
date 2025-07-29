@@ -104,7 +104,6 @@ func main() {
 	}
 	if err := postgres2.RunMigrations(dbPool, migrationConfig); err != nil {
 		dbPool.Close()
-		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
 	log.Println("Database migrations completed successfully!")

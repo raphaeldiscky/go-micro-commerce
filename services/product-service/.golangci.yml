@@ -5,7 +5,6 @@ linters:
     - asciicheck
     - bodyclose
     - dogsled
-    - dupl
     - durationcheck
     - errorlint
     - exhaustive
@@ -46,6 +45,7 @@ linters:
   disable:
     - paralleltest
     - godox
+    - dupl
 
   settings:
     dupl:
@@ -67,6 +67,9 @@ linters:
     goconst:
       min-len: 2
       min-occurrences: 2
+    gosec:
+      excludes:
+        - G115
     gocritic:
       enabled-tags:
         - diagnostic

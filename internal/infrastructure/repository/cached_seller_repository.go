@@ -80,7 +80,7 @@ func (r *CachedSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error
 	if seller != nil {
 		// Cache the result
 		if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, seller, r.cacheTTL); cacheErr != nil {
-			fmt.Printf("Failed to cache seller: %v\n", cacheErr)
+			log.Printf("Failed to cache seller: %v", cacheErr)
 		}
 	}
 
@@ -106,7 +106,7 @@ func (r *CachedSellerRepository) FindAll() ([]*entities.Seller, error) {
 
 	// Cache the result
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, sellers, r.cacheTTL); cacheErr != nil {
-		fmt.Printf("Failed to cache sellers list: %v\n", cacheErr)
+		log.Printf("Failed to cache sellers list: %v", cacheErr)
 	}
 
 	return sellers, nil
@@ -126,12 +126,12 @@ func (r *CachedSellerRepository) Update(
 	// Update cache with new data
 	cacheKey := r.buildSellerCacheKey(result.Id)
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
-		fmt.Printf("Failed to update cached seller: %v\n", cacheErr)
+		log.Printf("Failed to update cached seller: %v", cacheErr)
 	}
 
 	// Invalidate sellers list cache
 	if invalidateErr := r.cache.Delete(ctx, "sellers:all"); invalidateErr != nil {
-		fmt.Printf("Failed to invalidate sellers list cache: %v\n", invalidateErr)
+		log.Printf("Failed to invalidate sellers list cache: %v", invalidateErr)
 	}
 
 	return result, nil
@@ -149,12 +149,12 @@ func (r *CachedSellerRepository) Delete(id uuid.UUID) error {
 	// Remove from cache
 	cacheKey := r.buildSellerCacheKey(id)
 	if cacheErr := r.cache.Delete(ctx, cacheKey); cacheErr != nil {
-		fmt.Printf("Failed to remove seller from cache: %v\n", cacheErr)
+		log.Printf("Failed to remove seller from cache: %v", cacheErr)
 	}
 
 	// Invalidate sellers list cache
 	if invalidateErr := r.cache.Delete(ctx, "sellers:all"); invalidateErr != nil {
-		fmt.Printf("Failed to invalidate sellers list cache: %v\n", invalidateErr)
+		log.Printf("Failed to invalidate sellers list cache: %v", invalidateErr)
 	}
 
 	return nil

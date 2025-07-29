@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"fmt"
 	"testing"
 
 	"github.com/google/uuid"
@@ -64,8 +63,6 @@ func (m *MockProductRepository) FindByID(id uuid.UUID) (*entities.Product, error
 		if p.Id == id {
 			return &p.Product, nil
 		}
-
-		fmt.Printf("Id: mem:%s - %s\n", p.Id, id)
 	}
 
 	return nil, errors.New("product not found")

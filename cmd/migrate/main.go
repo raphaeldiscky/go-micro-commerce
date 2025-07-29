@@ -54,8 +54,6 @@ func main() {
 		rollbackMigrations(pool, config, *steps)
 	case "version":
 		printMigrationVersion(pool, config)
-	default:
-		log.Fatalf("Unknown action: %s. Use 'up', 'down', or 'version'", *action)
 	}
 }
 

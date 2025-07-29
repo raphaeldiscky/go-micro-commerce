@@ -18,7 +18,7 @@ type Seller struct {
 }
 
 // NewSeller creates a new Seller with the provided name and email.
-func NewSeller(name string, email string) *Seller {
+func NewSeller(name, email string) *Seller {
 	return &Seller{
 		Id:        uuid.New(),
 		CreatedAt: time.Now(),
