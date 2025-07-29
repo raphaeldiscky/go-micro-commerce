@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -47,12 +48,12 @@ func (r *CachedProductRepository) Create(
 
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		// Log cache error but don't fail the operation
-		fmt.Printf("Failed to cache product: %v\n", cacheErr)
+		log.Printf("Failed to cache product: %v", cacheErr)
 	}
 
 	// Invalidate products list cache
 	if invalidateErr := r.cache.Delete(ctx, "products:all"); invalidateErr != nil {
-		fmt.Printf("Failed to invalidate products list cache: %v\n", invalidateErr)
+		log.Printf("Failed to invalidate products list cache: %v", invalidateErr)
 	}
 
 	return result, nil
@@ -78,7 +79,7 @@ func (r *CachedProductRepository) FindByID(id uuid.UUID) (*entities.Product, err
 	if product != nil {
 		// Cache the result
 		if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, product, r.cacheTTL); cacheErr != nil {
-			fmt.Printf("Failed to cache product: %v\n", cacheErr)
+			log.Printf("Failed to cache product: %v", cacheErr)
 		}
 	}
 
@@ -104,7 +105,7 @@ func (r *CachedProductRepository) FindAll() ([]*entities.Product, error) {
 
 	// Cache the result
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, products, r.cacheTTL); cacheErr != nil {
-		fmt.Printf("Failed to cache products list: %v\n", cacheErr)
+		log.Printf("Failed to cache products list: %v", cacheErr)
 	}
 
 	return products, nil
@@ -124,12 +125,12 @@ func (r *CachedProductRepository) Update(
 	// Update cache with new data
 	cacheKey := r.buildProductCacheKey(result.Id)
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
-		fmt.Printf("Failed to update cached product: %v\n", cacheErr)
+		log.Printf("Failed to update cached product: %v", cacheErr)
 	}
 
 	// Invalidate products list cache
 	if invalidateErr := r.cache.Delete(ctx, "products:all"); invalidateErr != nil {
-		fmt.Printf("Failed to invalidate products list cache: %v\n", invalidateErr)
+		log.Printf("Failed to invalidate products list cache: %v", invalidateErr)
 	}
 
 	return result, nil
@@ -147,12 +148,12 @@ func (r *CachedProductRepository) Delete(id uuid.UUID) error {
 	// Remove from cache
 	cacheKey := r.buildProductCacheKey(id)
 	if cacheErr := r.cache.Delete(ctx, cacheKey); cacheErr != nil {
-		fmt.Printf("Failed to remove product from cache: %v\n", cacheErr)
+		log.Printf("Failed to remove product from cache: %v", cacheErr)
 	}
 
 	// Invalidate products list cache
 	if invalidateErr := r.cache.Delete(ctx, "products:all"); invalidateErr != nil {
-		fmt.Printf("Failed to invalidate products list cache: %v\n", invalidateErr)
+		log.Printf("Failed to invalidate products list cache: %v", invalidateErr)
 	}
 
 	return nil

@@ -57,7 +57,7 @@ func (s *ProductService) CreateProduct(
 	newProduct := entities.NewProduct(
 		productCommand.Name,
 		productCommand.Price,
-		*validatedSeller,
+		validatedSeller,
 	)
 
 	validatedProduct, err := entities.NewValidatedProduct(newProduct)

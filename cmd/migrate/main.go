@@ -1,11 +1,13 @@
+// Package main implements the command-line tool for managing database migrations.
 package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	postgresInfra "github.com/raphaeldiscky/go-ddd-template/internal/infrastructure/db/postgres"
 )
@@ -21,7 +23,6 @@ func main() {
 	flag.Parse()
 
 	if *databaseURL == "" {
-		// Try to get from environment
 		*databaseURL = os.Getenv("DATABASE_URL")
 		if *databaseURL == "" {
 			log.Fatal(
@@ -30,13 +31,11 @@ func main() {
 		}
 	}
 
-	// Get absolute path for migrations
 	absPath, err := filepath.Abs(*migrationsPath)
 	if err != nil {
 		log.Fatalf("Failed to get absolute path for migrations: %v", err)
 	}
 
-	// Connect to database using pgx
 	pool, err := postgresInfra.NewConnection(*databaseURL)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
@@ -50,36 +49,45 @@ func main() {
 
 	switch *action {
 	case "up":
-		fmt.Println("Running migrations...")
-
-		if err := postgresInfra.RunMigrations(pool, config); err != nil {
-			log.Fatalf("Failed to run migrations: %v", err)
-		}
-
-		fmt.Println("Migrations completed successfully!")
-
+		runMigrations(pool, config)
 	case "down":
-		fmt.Printf("Rolling back %d migration(s)...\n", *steps)
-
-		if err := postgresInfra.RollbackMigrations(pool, config, *steps); err != nil {
-			log.Fatalf("Failed to rollback migrations: %v", err)
-		}
-
-		fmt.Println("Rollback completed successfully!")
-
+		rollbackMigrations(pool, config, *steps)
 	case "version":
-		version, dirty, err := postgresInfra.GetMigrationVersion(pool, config)
-		if err != nil {
-			log.Fatalf("Failed to get migration version: %v", err)
-		}
-
-		fmt.Printf("Current migration version: %d\n", version)
-
-		if dirty {
-			fmt.Println("Warning: Database is in dirty state")
-		}
-
+		printMigrationVersion(pool, config)
 	default:
 		log.Fatalf("Unknown action: %s. Use 'up', 'down', or 'version'", *action)
+	}
+}
+
+func runMigrations(pool *pgxpool.Pool, config postgresInfra.MigrationConfig) {
+	log.Println("Running migrations...")
+
+	if err := postgresInfra.RunMigrations(pool, config); err != nil {
+		log.Fatalf("Failed to run migrations: %v", err)
+	}
+
+	log.Println("Migrations completed successfully!")
+}
+
+func rollbackMigrations(pool *pgxpool.Pool, config postgresInfra.MigrationConfig, steps int) {
+	log.Printf("Rolling back %d migration(s)...", steps)
+
+	if err := postgresInfra.RollbackMigrations(pool, config, steps); err != nil {
+		log.Fatalf("Failed to rollback migrations: %v", err)
+	}
+
+	log.Println("Rollback completed successfully!")
+}
+
+func printMigrationVersion(pool *pgxpool.Pool, config postgresInfra.MigrationConfig) {
+	version, dirty, err := postgresInfra.GetMigrationVersion(pool, config)
+	if err != nil {
+		log.Fatalf("Failed to get migration version: %v", err)
+	}
+
+	log.Printf("Current migration version: %d", version)
+
+	if dirty {
+		log.Println("Warning: Database is in dirty state")
 	}
 }

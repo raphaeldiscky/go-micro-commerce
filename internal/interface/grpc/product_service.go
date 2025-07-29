@@ -1,3 +1,4 @@
+// Package grpc provides the gRPC implementation for the ProductService.
 package grpc
 
 import (

@@ -1,3 +1,4 @@
+// Package main implements the main entry point for the marketplace service.
 package main
 
 import (
@@ -102,6 +103,7 @@ func main() {
 		MigrationsPath: "./migrations",
 	}
 	if err := postgres2.RunMigrations(dbPool, migrationConfig); err != nil {
+		dbPool.Close()
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
@@ -129,7 +131,7 @@ func main() {
 	// Initialize Kafka event publisher
 	var kafkaPublisher events.EventPublisher
 
-	if kafkaEventPublisher, err := kafka.NewKafkaEventPublisher(kafka.KafkaConfig{
+	if kafkaEventPublisher, err := kafka.NewEventPublisher(kafka.Config{
 		Brokers:       config.Kafka.Brokers,
 		TopicPrefix:   config.Kafka.TopicPrefix,
 		RetryAttempts: config.Kafka.RetryAttempts,
@@ -234,7 +236,7 @@ func startKafkaConsumer(config KafkaConfig) {
 		config.TopicPrefix + ".SellerCreated",
 	}
 
-	consumer, err := kafka.NewKafkaEventSubscriber(
+	consumer, err := kafka.NewEventSubscriber(
 		config.Brokers,
 		"marketplace-consumer-group",
 		topics,

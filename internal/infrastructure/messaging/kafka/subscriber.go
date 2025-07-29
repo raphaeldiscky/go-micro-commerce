@@ -12,8 +12,8 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/domain/events"
 )
 
-// KafkaEventSubscriber implements the EventSubscriber interface using Kafka.
-type KafkaEventSubscriber struct {
+// EventSubscriber implements the EventSubscriber interface using Kafka.
+type EventSubscriber struct {
 	consumer      sarama.ConsumerGroup
 	handlers      map[string]events.EventHandler
 	handlersMutex sync.RWMutex
@@ -23,12 +23,12 @@ type KafkaEventSubscriber struct {
 	wg            sync.WaitGroup
 }
 
-// NewKafkaEventSubscriber creates a new Kafka event subscriber.
-func NewKafkaEventSubscriber(
+// NewEventSubscriber creates a new Kafka event subscriber.
+func NewEventSubscriber(
 	brokers []string,
 	groupID string,
 	topics []string,
-) (*KafkaEventSubscriber, error) {
+) (*EventSubscriber, error) {
 	config := sarama.NewConfig()
 	config.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategyRoundRobin()
 	config.Consumer.Offsets.Initial = sarama.OffsetNewest
@@ -40,7 +40,7 @@ func NewKafkaEventSubscriber(
 		return nil, fmt.Errorf("failed to create Kafka consumer group: %w", err)
 	}
 
-	return &KafkaEventSubscriber{
+	return &EventSubscriber{
 		consumer: consumer,
 		handlers: make(map[string]events.EventHandler),
 		topics:   topics,
@@ -49,7 +49,7 @@ func NewKafkaEventSubscriber(
 }
 
 // Subscribe subscribes to an event type with a handler.
-func (s *KafkaEventSubscriber) Subscribe(
+func (s *EventSubscriber) Subscribe(
 	_ context.Context,
 	eventType string,
 	handler events.EventHandler,
@@ -64,7 +64,7 @@ func (s *KafkaEventSubscriber) Subscribe(
 }
 
 // Unsubscribe removes the handler for an event type.
-func (s *KafkaEventSubscriber) Unsubscribe(_ context.Context, eventType string) error {
+func (s *EventSubscriber) Unsubscribe(_ context.Context, eventType string) error {
 	s.handlersMutex.Lock()
 	delete(s.handlers, eventType)
 	s.handlersMutex.Unlock()
@@ -75,7 +75,7 @@ func (s *KafkaEventSubscriber) Unsubscribe(_ context.Context, eventType string) 
 }
 
 // Start starts consuming messages from Kafka.
-func (s *KafkaEventSubscriber) Start(ctx context.Context) error {
+func (s *EventSubscriber) Start(ctx context.Context) error {
 	consumerCtx, cancel := context.WithCancel(ctx)
 	s.cancel = cancel
 
@@ -106,7 +106,7 @@ func (s *KafkaEventSubscriber) Start(ctx context.Context) error {
 }
 
 // Stop stops the Kafka consumer.
-func (s *KafkaEventSubscriber) Stop() error {
+func (s *EventSubscriber) Stop() error {
 	if s.cancel != nil {
 		s.cancel()
 	}
@@ -117,21 +117,21 @@ func (s *KafkaEventSubscriber) Stop() error {
 }
 
 // Setup is run at the beginning of a new session, before ConsumeClaim.
-func (s *KafkaEventSubscriber) Setup(sarama.ConsumerGroupSession) error {
+func (s *EventSubscriber) Setup(sarama.ConsumerGroupSession) error {
 	log.Println("Kafka consumer group session setup")
 
 	return nil
 }
 
 // Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited.
-func (s *KafkaEventSubscriber) Cleanup(sarama.ConsumerGroupSession) error {
+func (s *EventSubscriber) Cleanup(sarama.ConsumerGroupSession) error {
 	log.Println("Kafka consumer group session cleanup")
 
 	return nil
 }
 
 // ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
-func (s *KafkaEventSubscriber) ConsumeClaim(
+func (s *EventSubscriber) ConsumeClaim(
 	session sarama.ConsumerGroupSession,
 	claim sarama.ConsumerGroupClaim,
 ) error {
@@ -157,7 +157,7 @@ func (s *KafkaEventSubscriber) ConsumeClaim(
 }
 
 // handleMessage processes a Kafka message.
-func (s *KafkaEventSubscriber) handleMessage(
+func (s *EventSubscriber) handleMessage(
 	ctx context.Context,
 	message *sarama.ConsumerMessage,
 ) error {
@@ -193,7 +193,7 @@ func (s *KafkaEventSubscriber) handleMessage(
 	}
 
 	// Call the handler
-	if err := handler(ctx, baseEvent); err != nil {
+	if err := handler(ctx, &baseEvent); err != nil {
 		return fmt.Errorf("handler failed for event %s: %w", baseEvent.EventID(), err)
 	}
 

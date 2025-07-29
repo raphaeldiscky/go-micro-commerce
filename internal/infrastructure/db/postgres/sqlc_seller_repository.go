@@ -70,8 +70,8 @@ func (repo *SellerRepository) FindAll() ([]*entities.Seller, error) {
 	}
 
 	sellers := make([]*entities.Seller, len(dbSellers))
-	for i, dbSeller := range dbSellers {
-		sellers[i] = fromSqlcSeller(&dbSeller)
+	for i := range dbSellers {
+		sellers[i] = fromSqlcSeller(&dbSellers[i])
 	}
 
 	return sellers, nil

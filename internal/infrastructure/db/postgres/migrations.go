@@ -20,7 +20,11 @@ type MigrationConfig struct {
 func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	// Convert pgx pool to sql.DB for migrate
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			fmt.Printf("Error closing sqlDB: %v\n", err)
+		}
+	}()
 
 	// Create postgres driver instance
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
@@ -37,7 +41,12 @@ func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+
+	defer func() {
+		if err, _ := m.Close(); err != nil {
+			fmt.Printf("Error closing migrate instance: %v\n", err)
+		}
+	}()
 
 	// Run migrations
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
@@ -50,7 +59,11 @@ func RunMigrations(pool *pgxpool.Pool, config MigrationConfig) error {
 // RollbackMigrations rolls back database migrations by N steps.
 func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) error {
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			fmt.Printf("Error closing sqlDB: %v\n", err)
+		}
+	}()
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
@@ -65,7 +78,12 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 	if err != nil {
 		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+
+	defer func() {
+		if err, _ := m.Close(); err != nil {
+			fmt.Printf("Error closing migrate instance: %v\n", err)
+		}
+	}()
 
 	if err := m.Steps(-steps); err != nil {
 		return fmt.Errorf("failed to rollback migrations: %w", err)
@@ -77,7 +95,11 @@ func RollbackMigrations(pool *pgxpool.Pool, config MigrationConfig, steps int) e
 // GetMigrationVersion returns the current migration version.
 func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool, error) {
 	sqlDB := stdlib.OpenDBFromPool(pool)
-	defer sqlDB.Close()
+	defer func() {
+		if err := sqlDB.Close(); err != nil {
+			fmt.Printf("Error closing sqlDB: %v\n", err)
+		}
+	}()
 
 	driver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 	if err != nil {
@@ -92,7 +114,12 @@ func GetMigrationVersion(pool *pgxpool.Pool, config MigrationConfig) (uint, bool
 	if err != nil {
 		return 0, false, fmt.Errorf("failed to create migrate instance: %w", err)
 	}
-	defer m.Close()
+
+	defer func() {
+		if err, _ := m.Close(); err != nil {
+			fmt.Printf("Error closing migrate instance: %v\n", err)
+		}
+	}()
 
 	version, dirty, err := m.Version()
 	if err != nil {

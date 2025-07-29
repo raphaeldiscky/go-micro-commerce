@@ -14,7 +14,7 @@ func TestNewProduct(t *testing.T) {
 		t.Fatalf("Expected no error, but got %s", err.Error())
 	}
 
-	product := NewProduct("Example Product", 10.0, *validatedSeller)
+	product := NewProduct("Example Product", 10.0, validatedSeller)
 
 	if product.Name != "Example Product" {
 		t.Errorf("Expected product name to be 'Example Product', but got %s", product.Name)

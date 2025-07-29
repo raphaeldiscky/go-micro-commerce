@@ -4,6 +4,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,12 +49,12 @@ func (r *CachedSellerRepository) Create(
 
 	if cacheErr := r.cache.SetWithTTL(ctx, cacheKey, result, r.cacheTTL); cacheErr != nil {
 		// Log cache error but don't fail the operation
-		fmt.Printf("Failed to cache seller: %v\n", cacheErr)
+		log.Printf("Failed to cache seller: %v", cacheErr)
 	}
 
 	// Invalidate sellers list cache
 	if invalidateErr := r.cache.Delete(ctx, "sellers:all"); invalidateErr != nil {
-		fmt.Printf("Failed to invalidate sellers list cache: %v\n", invalidateErr)
+		log.Printf("Failed to invalidate sellers list cache: %v", invalidateErr)
 	}
 
 	return result, nil

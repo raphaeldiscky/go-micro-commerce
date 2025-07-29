@@ -36,7 +36,7 @@ func (p *Product) validate() error {
 }
 
 // NewProduct creates a new Product with the provided name, price, and seller.
-func NewProduct(name string, price float64, seller ValidatedSeller) *Product {
+func NewProduct(name string, price float64, seller *ValidatedSeller) *Product {
 	return &Product{
 		Id:        uuid.New(),
 		CreatedAt: time.Now(),

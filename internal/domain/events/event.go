@@ -30,37 +30,37 @@ type BaseDomainEvent struct {
 }
 
 // EventID returns the unique identifier of the event.
-func (e BaseDomainEvent) EventID() string {
+func (e *BaseDomainEvent) EventID() string {
 	return e.ID
 }
 
 // EventType returns the type of the event.
-func (e BaseDomainEvent) EventType() string {
+func (e *BaseDomainEvent) EventType() string {
 	return e.EventTypeName
 }
 
 // AggregateID returns the ID of the aggregate that this event belongs to.
-func (e BaseDomainEvent) AggregateID() string {
+func (e *BaseDomainEvent) AggregateID() string {
 	return e.AggregateId
 }
 
 // AggregateType returns the type of the aggregate that this event belongs to.
-func (e BaseDomainEvent) AggregateType() string {
+func (e *BaseDomainEvent) AggregateType() string {
 	return e.AggregateTypeName
 }
 
 // EventVersion returns the version of the event.
-func (e BaseDomainEvent) EventVersion() int {
+func (e *BaseDomainEvent) EventVersion() int {
 	return e.Version
 }
 
 // OccurredAt returns the time when the event occurred.
-func (e BaseDomainEvent) OccurredAt() time.Time {
+func (e *BaseDomainEvent) OccurredAt() time.Time {
 	return e.Timestamp
 }
 
 // EventData returns the data associated with the event.
-func (e BaseDomainEvent) EventData() interface{} {
+func (e *BaseDomainEvent) EventData() interface{} {
 	return e.Data
 }
 

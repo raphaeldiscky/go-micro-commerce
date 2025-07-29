@@ -86,8 +86,8 @@ func (repo *SqlcProductRepository) FindAll() ([]*entities.Product, error) {
 
 	products := make([]*entities.Product, len(dbProducts))
 
-	for i, dbProduct := range dbProducts {
-		product, err := fromSqlcProduct(&dbProduct)
+	for i := range dbProducts {
+		product, err := fromSqlcProduct(&dbProducts[i])
 		if err != nil {
 			return nil, err
 		}

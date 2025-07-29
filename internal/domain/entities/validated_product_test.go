@@ -33,7 +33,7 @@ func TestNewValidatedProduct(t *testing.T) {
 		t.Fatalf("Expected no error, but got %s", err.Error())
 	}
 
-	product := NewProduct("Example Product", 10.0, *validatedSeller)
+	product := NewProduct("Example Product", 10.0, validatedSeller)
 
 	validatedProduct, err := NewValidatedProduct(product)
 	if err != nil {
@@ -45,7 +45,7 @@ func TestNewValidatedProduct(t *testing.T) {
 	}
 
 	// Test invalid product
-	invalidProduct := NewProduct("", -10.0, *validatedSeller)
+	invalidProduct := NewProduct("", -10.0, validatedSeller)
 
 	validatedProduct, err = NewValidatedProduct(invalidProduct)
 	if err == nil {

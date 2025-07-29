@@ -80,7 +80,7 @@ func TestProductService_CreateProduct(t *testing.T) {
 	seller := createPersistedSeller(t, sellerRepo)
 
 	// Create product
-	product := entities.NewProduct("Example", 100.0, *seller)
+	product := entities.NewProduct("Example", 100.0, seller)
 	productCommand := getCreateProductCommand(product)
 
 	_, err := service.CreateProduct(productCommand)
@@ -103,14 +103,14 @@ func TestProductService_GetAllProducts(t *testing.T) {
 
 	// Add two products
 	_, err := service.CreateProduct(
-		getCreateProductCommand(entities.NewProduct("Example1", 100.0, *seller)),
+		getCreateProductCommand(entities.NewProduct("Example1", 100.0, seller)),
 	)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
 	_, err = service.CreateProduct(
-		getCreateProductCommand(entities.NewProduct("Example2", 200.0, *seller)),
+		getCreateProductCommand(entities.NewProduct("Example2", 200.0, seller)),
 	)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
@@ -134,7 +134,7 @@ func TestProductService_FindProductById(t *testing.T) {
 	// Create seller
 	seller := createPersistedSeller(t, sellerRepo)
 
-	product := entities.NewProduct("Example", 100.0, *seller)
+	product := entities.NewProduct("Example", 100.0, seller)
 
 	result, err := service.CreateProduct(getCreateProductCommand(product))
 	if err != nil {
@@ -169,6 +169,8 @@ func createPersistedSeller(
 	t *testing.T,
 	sellerRepo *MockSellerRepository,
 ) *entities.ValidatedSeller {
+	t.Helper()
+
 	seller := entities.NewSeller("John Doe", "john@example.com")
 
 	validatedSeller, err := entities.NewValidatedSeller(seller)

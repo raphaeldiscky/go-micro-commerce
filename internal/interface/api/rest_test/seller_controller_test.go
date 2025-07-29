@@ -63,8 +63,6 @@ func TestCreateSeller(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Printf("rec: %s\n", rec.Body.String())
-
 	// Assert
 	assert.Equal(t, http.StatusCreated, rec.Code)
 
