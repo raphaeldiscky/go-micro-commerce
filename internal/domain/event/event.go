@@ -1,5 +1,5 @@
-// Package events defines the structure and behavior of domain events in the system.
-package events
+// Package event defines the structure and behavior of domain event in the system.
+package event
 
 import (
 	"time"
@@ -18,7 +18,7 @@ type DomainEvent interface {
 	EventData() interface{}
 }
 
-// BaseDomainEvent provides a base implementation for domain events.
+// BaseDomainEvent provides a base implementation for domain event.
 type BaseDomainEvent struct {
 	ID                string      `json:"id"`
 	EventTypeName     string      `json:"type"`

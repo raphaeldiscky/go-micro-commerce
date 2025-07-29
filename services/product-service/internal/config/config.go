@@ -61,7 +61,7 @@ func LoadConfig() (*Config, error) {
 		},
 		Kafka: KafkaConfig{
 			Brokers: strings.Split(getEnv("KAFKA_BROKERS", "localhost:9092"), ","),
-			Topic:   getEnv("KAFKA_TOPIC", "product-events"),
+			Topic:   getEnv("KAFKA_TOPIC", "product-event"),
 		},
 		Redis: RedisConfig{
 			Addr:     getEnv("REDIS_ADDR", "localhost:6379"),

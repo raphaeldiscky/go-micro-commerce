@@ -1,4 +1,4 @@
-// Package mapper provides functions to convert domain entities to API response DTOs.
+// Package mapper provides functions to convert domain entity to API response DTOs.
 package mapper
 
 import (

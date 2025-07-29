@@ -128,7 +128,7 @@ func main() {
 	}
 
 	// Initialize Kafka event publisher
-	var kafkaPublisher event.EventPublisher
+	var kafkaPublisher event.Publisher
 
 	if kafkaEventPublisher, err := kafka.NewEventPublisher(kafka.Config{
 		Brokers:       config.Kafka.Brokers,
@@ -142,11 +142,11 @@ func main() {
 		kafkaPublisher = kafkaEventPublisher
 	}
 
-	// Initialize repositories
+	// Initialize repository
 	baseProductRepo := postgres2.NewSqlcProductRepository(dbPool)
 	baseSellerRepo := postgres2.NewSqlcSellerRepository(dbPool)
 
-	// Decorate repositories with caching if Redis is available
+	// Decorate repository with caching if Redis is available
 	productRepo := baseProductRepo
 	sellerRepo := baseSellerRepo
 

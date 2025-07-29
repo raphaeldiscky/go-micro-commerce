@@ -1,4 +1,4 @@
-package events
+package event
 
 import (
 	"time"
@@ -130,7 +130,7 @@ func (e ProductDeletedEvent) GetData() interface{} {
 	}
 }
 
-// EventPublisher defines the interface for publishing events
+// EventPublisher defines the interface for publishing event
 type EventPublisher interface {
 	Publish(event DomainEvent) error
 }

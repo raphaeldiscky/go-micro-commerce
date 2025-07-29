@@ -9,19 +9,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
-	repositories "github.com/raphaeldiscky/go-ddd-template/internal/domain/repository"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	repository "github.com/raphaeldiscky/go-ddd-template/internal/domain/repository"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infra/db/sqlc"
 )
 
-// SqlcProductRepository implements the repositories.ProductRepository interface using SQLC.
+// SqlcProductRepository implements the repository.ProductRepository interface using SQLC.
 type SqlcProductRepository struct {
 	pool    *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
 // NewSqlcProductRepository creates a new instance of SqlcProductRepository.
-func NewSqlcProductRepository(pool *pgxpool.Pool) repositories.ProductRepository {
+func NewSqlcProductRepository(pool *pgxpool.Pool) repository.ProductRepository {
 	return &SqlcProductRepository{
 		pool:    pool,
 		queries: sqlc.New(pool),
@@ -30,8 +30,8 @@ func NewSqlcProductRepository(pool *pgxpool.Pool) repositories.ProductRepository
 
 // Create adds a new product to the database.
 func (repo *SqlcProductRepository) Create(
-	product *entities.ValidatedProduct,
-) (*entities.Product, error) {
+	product *entity.ValidatedProduct,
+) (*entity.Product, error) {
 	ctx := context.Background()
 
 	now := time.Now()
@@ -64,7 +64,7 @@ func (repo *SqlcProductRepository) Create(
 }
 
 // FindByID retrieves a product by ID.
-func (repo *SqlcProductRepository) FindByID(id uuid.UUID) (*entities.Product, error) {
+func (repo *SqlcProductRepository) FindByID(id uuid.UUID) (*entity.Product, error) {
 	ctx := context.Background()
 
 	dbProduct, err := repo.queries.GetProductByID(ctx, id)
@@ -76,7 +76,7 @@ func (repo *SqlcProductRepository) FindByID(id uuid.UUID) (*entities.Product, er
 }
 
 // FindAll retrieves all products.
-func (repo *SqlcProductRepository) FindAll() ([]*entities.Product, error) {
+func (repo *SqlcProductRepository) FindAll() ([]*entity.Product, error) {
 	ctx := context.Background()
 
 	dbProducts, err := repo.queries.ListProducts(ctx)
@@ -84,7 +84,7 @@ func (repo *SqlcProductRepository) FindAll() ([]*entities.Product, error) {
 		return nil, err
 	}
 
-	products := make([]*entities.Product, len(dbProducts))
+	products := make([]*entity.Product, len(dbProducts))
 
 	for i := range dbProducts {
 		product, err := fromSqlcProduct(&dbProducts[i])
@@ -100,8 +100,8 @@ func (repo *SqlcProductRepository) FindAll() ([]*entities.Product, error) {
 
 // Update modifies an existing product.
 func (repo *SqlcProductRepository) Update(
-	product *entities.ValidatedProduct,
-) (*entities.Product, error) {
+	product *entity.ValidatedProduct,
+) (*entity.Product, error) {
 	ctx := context.Background()
 
 	// Convert price to pgtype.Numeric
@@ -136,8 +136,8 @@ func (repo *SqlcProductRepository) Delete(id uuid.UUID) error {
 	return repo.queries.DeleteProduct(ctx, id)
 }
 
-// fromSqlcProduct converts a sqlc.Product to an entities.Product.
-func fromSqlcProduct(dbProduct *sqlc.Product) (*entities.Product, error) {
+// fromSqlcProduct converts a sqlc.Product to an entity.Product.
+func fromSqlcProduct(dbProduct *sqlc.Product) (*entity.Product, error) {
 	// Convert pgtype.Numeric to float64
 	var price float64
 
@@ -153,7 +153,7 @@ func fromSqlcProduct(dbProduct *sqlc.Product) (*entities.Product, error) {
 
 	// For now, we'll create a simple seller struct - this needs to be handled properly
 	// by fetching the seller separately or using joins
-	seller := entities.Seller{
+	seller := entity.Seller{
 		ID:        dbProduct.SellerID,
 		CreatedAt: time.Now(), // This should be fetched from the seller table
 		UpdatedAt: time.Now(), // This should be fetched from the seller table
@@ -161,7 +161,7 @@ func fromSqlcProduct(dbProduct *sqlc.Product) (*entities.Product, error) {
 		Email:     "",         // This should be fetched from the seller table
 	}
 
-	return &entities.Product{
+	return &entity.Product{
 		ID:        dbProduct.ID,
 		CreatedAt: dbProduct.CreatedAt.Time,
 		UpdatedAt: dbProduct.UpdatedAt.Time,

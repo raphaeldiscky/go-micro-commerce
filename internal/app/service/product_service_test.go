@@ -7,24 +7,24 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/command"
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
 )
 
 // MockProductRepository is a mock implementation of the ProductRepository interface.
 type MockProductRepository struct {
-	products []*entities.ValidatedProduct
+	products []*entity.ValidatedProduct
 }
 
 func (m *MockProductRepository) Create(
-	product *entities.ValidatedProduct,
-) (*entities.Product, error) {
+	product *entity.ValidatedProduct,
+) (*entity.Product, error) {
 	m.products = append(m.products, product)
 
 	return &product.Product, nil
 }
 
-func (m *MockProductRepository) FindAll() ([]*entities.Product, error) {
-	var products []*entities.Product
+func (m *MockProductRepository) FindAll() ([]*entity.Product, error) {
+	var products []*entity.Product
 	for _, p := range m.products {
 		products = append(products, &p.Product)
 	}
@@ -33,8 +33,8 @@ func (m *MockProductRepository) FindAll() ([]*entities.Product, error) {
 }
 
 func (m *MockProductRepository) Update(
-	product *entities.ValidatedProduct,
-) (*entities.Product, error) {
+	product *entity.ValidatedProduct,
+) (*entity.Product, error) {
 	for index, p := range m.products {
 		if p.ID == product.ID {
 			m.products[index] = product
@@ -58,7 +58,7 @@ func (m *MockProductRepository) Delete(id uuid.UUID) error {
 	return errors.New("product not found for delete")
 }
 
-func (m *MockProductRepository) FindByID(id uuid.UUID) (*entities.Product, error) {
+func (m *MockProductRepository) FindByID(id uuid.UUID) (*entity.Product, error) {
 	for _, p := range m.products {
 		if p.ID == id {
 			return &p.Product, nil
@@ -77,7 +77,7 @@ func TestProductService_CreateProduct(t *testing.T) {
 	seller := createPersistedSeller(t, sellerRepo)
 
 	// Create product
-	product := entities.NewProduct("Example", 100.0, seller)
+	product := entity.NewProduct("Example", 100.0, seller)
 	productCommand := getCreateProductCommand(product)
 
 	_, err := service.CreateProduct(productCommand)
@@ -100,14 +100,14 @@ func TestProductService_GetAllProducts(t *testing.T) {
 
 	// Add two products
 	_, err := service.CreateProduct(
-		getCreateProductCommand(entities.NewProduct("Example1", 100.0, seller)),
+		getCreateProductCommand(entity.NewProduct("Example1", 100.0, seller)),
 	)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
 	}
 
 	_, err = service.CreateProduct(
-		getCreateProductCommand(entities.NewProduct("Example2", 200.0, seller)),
+		getCreateProductCommand(entity.NewProduct("Example2", 200.0, seller)),
 	)
 	if err != nil {
 		t.Errorf("Unexpected error: %s", err)
@@ -131,7 +131,7 @@ func TestProductService_FindProductById(t *testing.T) {
 	// Create seller
 	seller := createPersistedSeller(t, sellerRepo)
 
-	product := entities.NewProduct("Example", 100.0, seller)
+	product := entity.NewProduct("Example", 100.0, seller)
 
 	result, err := service.CreateProduct(getCreateProductCommand(product))
 	if err != nil {
@@ -153,7 +153,7 @@ func TestProductService_FindProductById(t *testing.T) {
 	}
 }
 
-func getCreateProductCommand(product *entities.Product) *command.CreateProductCommand {
+func getCreateProductCommand(product *entity.Product) *command.CreateProductCommand {
 	return &command.CreateProductCommand{
 		Name:     product.Name,
 		Price:    product.Price,
@@ -165,12 +165,12 @@ func getCreateProductCommand(product *entities.Product) *command.CreateProductCo
 func createPersistedSeller(
 	t *testing.T,
 	sellerRepo *MockSellerRepository,
-) *entities.ValidatedSeller {
+) *entity.ValidatedSeller {
 	t.Helper()
 
-	seller := entities.NewSeller("John Doe", "john@example.com")
+	seller := entity.NewSeller("John Doe", "john@example.com")
 
-	validatedSeller, err := entities.NewValidatedSeller(seller)
+	validatedSeller, err := entity.NewValidatedSeller(seller)
 	if err != nil {
 		t.Fatalf("Unexpected error: %s", err)
 	}

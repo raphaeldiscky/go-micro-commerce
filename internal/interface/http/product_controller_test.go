@@ -15,7 +15,7 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/common"
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/query"
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
 	rest "github.com/raphaeldiscky/go-ddd-template/internal/interface/http"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/http/dto/response"
 	"github.com/raphaeldiscky/go-ddd-template/internal/mocks"
@@ -92,7 +92,7 @@ func TestGetAllProducts(t *testing.T) {
 	e := echo.New()
 	mockService := mocks.NewMockProductService(ctrl)
 
-	expectedProducts := []*entities.Product{
+	expectedProducts := []*entity.Product{
 		{
 			ID:    uuid.New(),
 			Name:  "TestProduct1",

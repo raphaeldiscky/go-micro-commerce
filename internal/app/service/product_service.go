@@ -20,14 +20,14 @@ import (
 type ProductService struct {
 	productRepository repository.ProductRepository
 	sellerRepository  repository.SellerRepository
-	eventPublisher    event.EventPublisher
+	eventPublisher    event.Publisher
 }
 
 // NewProductService - Constructor for the service.
 func NewProductService(
 	productRepository repository.ProductRepository,
 	sellerRepository repository.SellerRepository,
-	eventPublisher event.EventPublisher,
+	eventPublisher event.Publisher,
 ) interfaces.ProductService {
 	return &ProductService{
 		productRepository: productRepository,

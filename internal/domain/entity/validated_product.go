@@ -1,5 +1,5 @@
-// Package entities defines the ValidatedProduct entity.
-package entities
+// Package entity defines the ValidatedProduct entity.
+package entity
 
 // ValidatedProduct represents a product that has been validated for business rules.
 type ValidatedProduct struct {

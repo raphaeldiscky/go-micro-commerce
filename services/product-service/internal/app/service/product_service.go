@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/app/dto"
-	entities "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/entity"
-	events "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/event"
-	repositories "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/repository"
+	entity "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/entity"
+	event "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/event"
+	repository "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/repository"
 )
 
 // ProductServiceInterface defines the interface for product business operations
@@ -22,12 +22,12 @@ type ProductServiceInterface interface {
 
 // ProductService implements the ProductServiceInterface
 type ProductService struct {
-	productRepo    repositories.ProductRepository
-	eventPublisher events.EventPublisher
+	productRepo    repository.ProductRepository
+	eventPublisher event.EventPublisher
 }
 
 // NewProductService creates a new instance of ProductService
-func NewProductService(productRepo repositories.ProductRepository, eventPublisher events.EventPublisher) ProductServiceInterface {
+func NewProductService(productRepo repository.ProductRepository, eventPublisher event.EventPublisher) ProductServiceInterface {
 	return &ProductService{
 		productRepo:    productRepo,
 		eventPublisher: eventPublisher,
@@ -37,7 +37,7 @@ func NewProductService(productRepo repositories.ProductRepository, eventPublishe
 // CreateProduct creates a new product
 func (s *ProductService) CreateProduct(ctx context.Context, req dto.CreateProductRequest) (*dto.ProductResponse, error) {
 	// Create domain entity
-	product, err := entities.NewProduct(req.Name, req.Price, req.SellerId)
+	product, err := entity.NewProduct(req.Name, req.Price, req.SellerId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create product entity: %w", err)
 	}
@@ -50,7 +50,7 @@ func (s *ProductService) CreateProduct(ctx context.Context, req dto.CreateProduc
 
 	// Publish domain event
 	if s.eventPublisher != nil {
-		event := events.NewProductCreatedEvent(savedProduct.Id, savedProduct.Name, savedProduct.Price, savedProduct.SellerId)
+		event := event.NewProductCreatedEvent(savedProduct.Id, savedProduct.Name, savedProduct.Price, savedProduct.SellerId)
 		if err := s.eventPublisher.Publish(event); err != nil {
 			// Log error but don't fail the operation
 			// In production, you might want to implement event outbox pattern
@@ -77,7 +77,7 @@ func (s *ProductService) GetProduct(ctx context.Context, id uuid.UUID) (*dto.Pro
 
 // GetProducts retrieves products with pagination and filtering
 func (s *ProductService) GetProducts(ctx context.Context, req dto.GetProductsRequest) (*dto.ProductListResponse, error) {
-	var products []*entities.Product
+	var products []*entity.Product
 	var total int64
 	var err error
 
@@ -147,7 +147,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, req dto.UpdateProduc
 
 	// Publish domain event
 	if s.eventPublisher != nil {
-		event := events.NewProductUpdatedEvent(updatedProduct.Id, updatedProduct.Name, updatedProduct.Price, updatedProduct.SellerId)
+		event := event.NewProductUpdatedEvent(updatedProduct.Id, updatedProduct.Name, updatedProduct.Price, updatedProduct.SellerId)
 		if err := s.eventPublisher.Publish(event); err != nil {
 			fmt.Printf("Failed to publish ProductUpdated event: %v\n", err)
 		}
@@ -175,7 +175,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 
 	// Publish domain event
 	if s.eventPublisher != nil {
-		event := events.NewProductDeletedEvent(id)
+		event := event.NewProductDeletedEvent(id)
 		if err := s.eventPublisher.Publish(event); err != nil {
 			fmt.Printf("Failed to publish ProductDeleted event: %v\n", err)
 		}
@@ -185,7 +185,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 }
 
 // mapToResponse converts domain entity to DTO response
-func (s *ProductService) mapToResponse(product *entities.Product) *dto.ProductResponse {
+func (s *ProductService) mapToResponse(product *entity.Product) *dto.ProductResponse {
 	return &dto.ProductResponse{
 		Id:        product.Id,
 		Name:      product.Name,

@@ -10,7 +10,7 @@ import (
 
 	"github.com/IBM/sarama"
 
-	events "github.com/raphaeldiscky/go-ddd-template/internal/domain/event"
+	event "github.com/raphaeldiscky/go-ddd-template/internal/domain/event"
 )
 
 // EventPublisher implements the EventPublisher interface using Kafka.
@@ -54,14 +54,14 @@ func NewEventPublisher(config Config) (*EventPublisher, error) {
 }
 
 // Publish publishes a single domain event to Kafka.
-func (p *EventPublisher) Publish(ctx context.Context, event events.DomainEvent) error {
-	return p.publishWithRetry(ctx, event)
+func (p *EventPublisher) Publish(ctx context.Context, e event.DomainEvent) error {
+	return p.publishWithRetry(ctx, e)
 }
 
-// PublishBatch publishes multiple domain events to Kafka.
+// PublishBatch publishes multiple domain event to Kafka.
 func (p *EventPublisher) PublishBatch(
 	ctx context.Context,
-	eventList []events.DomainEvent,
+	eventList []event.DomainEvent,
 ) error {
 	for _, event := range eventList {
 		if err := p.publishWithRetry(ctx, event); err != nil {
@@ -75,7 +75,7 @@ func (p *EventPublisher) PublishBatch(
 // publishWithRetry publishes an event with retry logic.
 func (p *EventPublisher) publishWithRetry(
 	ctx context.Context,
-	event events.DomainEvent,
+	e event.DomainEvent,
 ) error {
 	var lastErr error
 
@@ -88,7 +88,7 @@ func (p *EventPublisher) publishWithRetry(
 			}
 		}
 
-		if err := p.publishEvent(ctx, event); err != nil {
+		if err := p.publishEvent(ctx, e); err != nil {
 			lastErr = err
 			log.Printf(
 				"Failed to publish event (attempt %d/%d): %v",
@@ -107,34 +107,34 @@ func (p *EventPublisher) publishWithRetry(
 }
 
 // publishEvent publishes a single event to Kafka.
-func (p *EventPublisher) publishEvent(_ context.Context, event events.DomainEvent) error {
-	topic := p.getTopicName(event.EventType())
+func (p *EventPublisher) publishEvent(_ context.Context, e event.DomainEvent) error {
+	topic := p.getTopicName(e.EventType())
 
-	eventData, err := json.Marshal(event)
+	eventData, err := json.Marshal(e)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
 	message := &sarama.ProducerMessage{
 		Topic: topic,
-		Key:   sarama.StringEncoder(event.AggregateID()),
+		Key:   sarama.StringEncoder(e.AggregateID()),
 		Value: sarama.ByteEncoder(eventData),
 		Headers: []sarama.RecordHeader{
 			{
 				Key:   []byte("event_id"),
-				Value: []byte(event.EventID()),
+				Value: []byte(e.EventID()),
 			},
 			{
 				Key:   []byte("event_type"),
-				Value: []byte(event.EventType()),
+				Value: []byte(e.EventType()),
 			},
 			{
 				Key:   []byte("aggregate_type"),
-				Value: []byte(event.AggregateType()),
+				Value: []byte(e.AggregateType()),
 			},
 			{
 				Key:   []byte("occurred_at"),
-				Value: []byte(event.OccurredAt().Format(time.RFC3339)),
+				Value: []byte(e.OccurredAt().Format(time.RFC3339)),
 			},
 		},
 	}
@@ -145,7 +145,7 @@ func (p *EventPublisher) publishEvent(_ context.Context, event events.DomainEven
 	}
 
 	log.Printf("Event published to Kafka: topic=%s, partition=%d, offset=%d, event_id=%s",
-		topic, partition, offset, event.EventID())
+		topic, partition, offset, e.EventID())
 
 	return nil
 }

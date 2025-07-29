@@ -9,26 +9,26 @@ import (
 
 	"github.com/google/uuid"
 
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
-	repositories "github.com/raphaeldiscky/go-ddd-template/internal/domain/repository"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	repository "github.com/raphaeldiscky/go-ddd-template/internal/domain/repository"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infra/cache"
 )
 
 // CachedSellerRepository decorates a SellerRepository with caching capabilities.
 type CachedSellerRepository struct {
-	repository repositories.SellerRepository
+	repository repository.SellerRepository
 	cache      *cache.RedisCache
 	cacheTTL   time.Duration
 }
 
 // NewCachedSellerRepository creates a new cached seller repository.
 func NewCachedSellerRepository(
-	repository repositories.SellerRepository,
+	repo repository.SellerRepository,
 	cch *cache.RedisCache,
 	cacheTTL time.Duration,
-) repositories.SellerRepository {
+) repository.SellerRepository {
 	return &CachedSellerRepository{
-		repository: repository,
+		repository: repo,
 		cache:      cch,
 		cacheTTL:   cacheTTL,
 	}
@@ -36,8 +36,8 @@ func NewCachedSellerRepository(
 
 // Create creates a new seller and invalidates related cache entries.
 func (r *CachedSellerRepository) Create(
-	seller *entities.ValidatedSeller,
-) (*entities.Seller, error) {
+	seller *entity.ValidatedSeller,
+) (*entity.Seller, error) {
 	result, err := r.repository.Create(seller)
 	if err != nil {
 		return nil, err
@@ -61,12 +61,12 @@ func (r *CachedSellerRepository) Create(
 }
 
 // FindByID retrieves a seller by ID, using cache when available.
-func (r *CachedSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
+func (r *CachedSellerRepository) FindByID(id uuid.UUID) (*entity.Seller, error) {
 	ctx := context.Background()
 	cacheKey := r.buildSellerCacheKey(id)
 
 	// Try to get from cache first
-	var cachedSeller entities.Seller
+	var cachedSeller entity.Seller
 	if err := r.cache.Get(ctx, cacheKey, &cachedSeller); err == nil {
 		return &cachedSeller, nil
 	}
@@ -88,12 +88,12 @@ func (r *CachedSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error
 }
 
 // FindAll retrieves all sellers, using cache when available.
-func (r *CachedSellerRepository) FindAll() ([]*entities.Seller, error) {
+func (r *CachedSellerRepository) FindAll() ([]*entity.Seller, error) {
 	ctx := context.Background()
 	cacheKey := "sellers:all"
 
 	// Try to get from cache first
-	var cachedSellers []*entities.Seller
+	var cachedSellers []*entity.Seller
 	if err := r.cache.Get(ctx, cacheKey, &cachedSellers); err == nil {
 		return cachedSellers, nil
 	}
@@ -114,8 +114,8 @@ func (r *CachedSellerRepository) FindAll() ([]*entities.Seller, error) {
 
 // Update updates a seller and invalidates related cache entries.
 func (r *CachedSellerRepository) Update(
-	seller *entities.ValidatedSeller,
-) (*entities.Seller, error) {
+	seller *entity.ValidatedSeller,
+) (*entity.Seller, error) {
 	result, err := r.repository.Update(seller)
 	if err != nil {
 		return nil, err

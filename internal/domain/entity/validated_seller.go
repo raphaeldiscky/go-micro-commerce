@@ -1,4 +1,4 @@
-package entities
+package entity
 
 // ValidatedSeller represents a seller that has been validated.
 type ValidatedSeller struct {

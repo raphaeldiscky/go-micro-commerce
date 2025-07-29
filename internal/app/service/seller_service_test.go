@@ -7,24 +7,24 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/command"
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
 )
 
 // MockSellerRepository is a mock implementation of the SellerRepository interface.
 type MockSellerRepository struct {
-	sellers []*entities.ValidatedSeller
+	sellers []*entity.ValidatedSeller
 }
 
 // Create adds a new seller to the repository.
-func (m *MockSellerRepository) Create(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+func (m *MockSellerRepository) Create(seller *entity.ValidatedSeller) (*entity.Seller, error) {
 	m.sellers = append(m.sellers, seller)
 
 	return &seller.Seller, nil
 }
 
 // FindAll retrieves all sellers.
-func (m *MockSellerRepository) FindAll() ([]*entities.Seller, error) {
-	var sellers []*entities.Seller
+func (m *MockSellerRepository) FindAll() ([]*entity.Seller, error) {
+	var sellers []*entity.Seller
 	for _, s := range m.sellers {
 		sellers = append(sellers, &s.Seller)
 	}
@@ -33,7 +33,7 @@ func (m *MockSellerRepository) FindAll() ([]*entities.Seller, error) {
 }
 
 // FindByID retrieves a seller by its ID.
-func (m *MockSellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
+func (m *MockSellerRepository) FindByID(id uuid.UUID) (*entity.Seller, error) {
 	for _, s := range m.sellers {
 		if s.ID == id {
 			return &s.Seller, nil
@@ -57,7 +57,7 @@ func (m *MockSellerRepository) Delete(id uuid.UUID) error {
 }
 
 // Update modifies an existing seller in the repository.
-func (m *MockSellerRepository) Update(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+func (m *MockSellerRepository) Update(seller *entity.ValidatedSeller) (*entity.Seller, error) {
 	for index, s := range m.sellers {
 		if s.ID == seller.ID {
 			m.sellers[index] = seller
@@ -147,7 +147,7 @@ func TestSellerService_UpdateSeller(t *testing.T) {
 
 	sellerID := createdSellerResult.Result.ID
 
-	updatableSeller := entities.Seller{
+	updatableSeller := entity.Seller{
 		ID:   sellerID,
 		Name: "Doe Johnny",
 	}

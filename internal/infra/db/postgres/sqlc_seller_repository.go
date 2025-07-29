@@ -8,19 +8,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
-	repositories "github.com/raphaeldiscky/go-ddd-template/internal/domain/repository"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	repository "github.com/raphaeldiscky/go-ddd-template/internal/domain/repository"
 	"github.com/raphaeldiscky/go-ddd-template/internal/infra/db/sqlc"
 )
 
-// SellerRepository implements the repositories.SellerRepository interface using SQLC.
+// SellerRepository implements the repository.SellerRepository interface using SQLC.
 type SellerRepository struct {
 	pool    *pgxpool.Pool
 	queries *sqlc.Queries
 }
 
 // NewSqlcSellerRepository creates a new instance of SellerRepository.
-func NewSqlcSellerRepository(pool *pgxpool.Pool) repositories.SellerRepository {
+func NewSqlcSellerRepository(pool *pgxpool.Pool) repository.SellerRepository {
 	return &SellerRepository{
 		pool:    pool,
 		queries: sqlc.New(pool),
@@ -28,7 +28,7 @@ func NewSqlcSellerRepository(pool *pgxpool.Pool) repositories.SellerRepository {
 }
 
 // Create adds a new seller to the database.
-func (repo *SellerRepository) Create(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+func (repo *SellerRepository) Create(seller *entity.ValidatedSeller) (*entity.Seller, error) {
 	ctx := context.Background()
 
 	now := time.Now()
@@ -50,7 +50,7 @@ func (repo *SellerRepository) Create(seller *entities.ValidatedSeller) (*entitie
 }
 
 // FindByID retrieves a seller by its ID.
-func (repo *SellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
+func (repo *SellerRepository) FindByID(id uuid.UUID) (*entity.Seller, error) {
 	ctx := context.Background()
 
 	dbSeller, err := repo.queries.GetSellerByID(ctx, id)
@@ -62,7 +62,7 @@ func (repo *SellerRepository) FindByID(id uuid.UUID) (*entities.Seller, error) {
 }
 
 // FindAll retrieves all sellers.
-func (repo *SellerRepository) FindAll() ([]*entities.Seller, error) {
+func (repo *SellerRepository) FindAll() ([]*entity.Seller, error) {
 	ctx := context.Background()
 
 	dbSellers, err := repo.queries.ListSellers(ctx)
@@ -70,7 +70,7 @@ func (repo *SellerRepository) FindAll() ([]*entities.Seller, error) {
 		return nil, err
 	}
 
-	sellers := make([]*entities.Seller, len(dbSellers))
+	sellers := make([]*entity.Seller, len(dbSellers))
 	for i := range dbSellers {
 		sellers[i] = fromSqlcSeller(&dbSellers[i])
 	}
@@ -79,7 +79,7 @@ func (repo *SellerRepository) FindAll() ([]*entities.Seller, error) {
 }
 
 // Update updates an existing seller.
-func (repo *SellerRepository) Update(seller *entities.ValidatedSeller) (*entities.Seller, error) {
+func (repo *SellerRepository) Update(seller *entity.ValidatedSeller) (*entity.Seller, error) {
 	ctx := context.Background()
 
 	params := sqlc.UpdateSellerParams{
@@ -105,8 +105,8 @@ func (repo *SellerRepository) Delete(id uuid.UUID) error {
 }
 
 // Helper function to convert sqlc model to domain entity.
-func fromSqlcSeller(dbSeller *sqlc.Seller) *entities.Seller {
-	return &entities.Seller{
+func fromSqlcSeller(dbSeller *sqlc.Seller) *entity.Seller {
+	return &entity.Seller{
 		ID:        dbSeller.ID,
 		CreatedAt: dbSeller.CreatedAt.Time,
 		UpdatedAt: dbSeller.UpdatedAt.Time,

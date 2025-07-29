@@ -9,13 +9,13 @@ import (
 
 	"github.com/IBM/sarama"
 
-	events "github.com/raphaeldiscky/go-ddd-template/internal/domain/event"
+	event "github.com/raphaeldiscky/go-ddd-template/internal/domain/event"
 )
 
 // EventSubscriber implements the EventSubscriber interface using Kafka.
 type EventSubscriber struct {
 	consumer      sarama.ConsumerGroup
-	handlers      map[string]events.EventHandler
+	handlers      map[string]event.Handler
 	handlersMutex sync.RWMutex
 	topics        []string
 	groupID       string
@@ -42,7 +42,7 @@ func NewEventSubscriber(
 
 	return &EventSubscriber{
 		consumer: consumer,
-		handlers: make(map[string]events.EventHandler),
+		handlers: make(map[string]event.Handler),
 		topics:   topics,
 		groupID:  groupID,
 	}, nil
@@ -52,7 +52,7 @@ func NewEventSubscriber(
 func (s *EventSubscriber) Subscribe(
 	_ context.Context,
 	eventType string,
-	handler events.EventHandler,
+	handler event.Handler,
 ) error {
 	s.handlersMutex.Lock()
 	s.handlers[eventType] = handler
@@ -187,7 +187,7 @@ func (s *EventSubscriber) handleMessage(
 	}
 
 	// Unmarshal the event
-	var baseEvent events.BaseDomainEvent
+	var baseEvent event.BaseDomainEvent
 	if err := json.Unmarshal(message.Value, &baseEvent); err != nil {
 		return fmt.Errorf("failed to unmarshal event: %w", err)
 	}

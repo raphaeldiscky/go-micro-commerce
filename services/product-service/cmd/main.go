@@ -50,7 +50,7 @@ func main() {
 		log.Println("Kafka event publisher initialized")
 	}
 
-	// Setup repositories
+	// Setup repository
 	productRepo := postgres.NewProductRepositoryPostgres(dbPool)
 
 	// Setup services

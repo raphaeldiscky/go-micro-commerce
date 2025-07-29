@@ -16,7 +16,7 @@ import (
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/command"
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/common"
 	"github.com/raphaeldiscky/go-ddd-template/internal/app/query"
-	entities "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
+	entity "github.com/raphaeldiscky/go-ddd-template/internal/domain/entity"
 	rest "github.com/raphaeldiscky/go-ddd-template/internal/interface/http"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/http/dto/request"
 	"github.com/raphaeldiscky/go-ddd-template/internal/interface/http/dto/response"
@@ -66,7 +66,7 @@ func TestCreateSeller(t *testing.T) {
 	// Assert
 	assert.Equal(t, http.StatusCreated, rec.Code)
 
-	var createdSeller entities.Seller
+	var createdSeller entity.Seller
 	err = json.Unmarshal(rec.Body.Bytes(), &createdSeller)
 	assert.NoError(t, err)
 	assert.Equal(t, sellerRequest.Name, createdSeller.Name)

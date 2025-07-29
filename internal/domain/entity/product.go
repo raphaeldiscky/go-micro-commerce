@@ -1,5 +1,5 @@
-// Package entities defines the core domain entities and their behaviors.
-package entities
+// Package entity defines the core domain entity and their behaviors.
+package entity
 
 import (
 	"errors"

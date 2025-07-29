@@ -20,13 +20,13 @@ import (
 // SellerService is the service for managing sellers.
 type SellerService struct {
 	repo           repository.SellerRepository
-	eventPublisher event.EventPublisher
+	eventPublisher event.Publisher
 }
 
 // NewSellerService - Constructor for the service.
 func NewSellerService(
 	repo repository.SellerRepository,
-	eventPublisher event.EventPublisher,
+	eventPublisher event.Publisher,
 ) interfaces.SellerService {
 	return &SellerService{
 		repo:           repo,

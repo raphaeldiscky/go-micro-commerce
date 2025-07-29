@@ -1,5 +1,5 @@
-// Package entities defines the Seller entity.
-package entities
+// Package entity defines the Seller entity.
+package entity
 
 import (
 	"testing"
