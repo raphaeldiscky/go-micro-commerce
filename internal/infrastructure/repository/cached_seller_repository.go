@@ -1,3 +1,4 @@
+// Package repository provides a cached implementation of the SellerRepository.
 package repository
 
 import (

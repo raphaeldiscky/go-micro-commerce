@@ -1,3 +1,4 @@
+// Package rest provides the REST API implementation for product management.
 package rest
 
 import (
