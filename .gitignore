@@ -24,3 +24,4 @@ go.work
 
 .husky
 node_modules
+vendor

@@ -2,51 +2,54 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	entity "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/entity"
-	repository "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/repository"
+	entity "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/entity"
+	repository "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/repository"
 )
 
-// ProductRepositoryPostgres implements the ProductRepository interface using PostgreSQL
+// ProductRepositoryPostgres implements the ProductRepository interface using PostgreSQL.
 type ProductRepositoryPostgres struct {
 	db *pgxpool.Pool
 }
 
-// NewProductRepositoryPostgres creates a new instance of ProductRepositoryPostgres
+// NewProductRepositoryPostgres creates a new instance of ProductRepositoryPostgres.
 func NewProductRepositoryPostgres(db *pgxpool.Pool) repository.ProductRepository {
 	return &ProductRepositoryPostgres{
 		db: db,
 	}
 }
 
-// Create creates a new product in the database
-func (r *ProductRepositoryPostgres) Create(ctx context.Context, product *entity.Product) (*entity.Product, error) {
+// Create creates a new product in the database.
+func (r *ProductRepositoryPostgres) Create(
+	ctx context.Context,
+	product *entity.Product,
+) (*entity.Product, error) {
 	query := `
-		INSERT INTO products (id, name, price, seller_id, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, name, price, seller_id, created_at, updated_at
+		INSERT INTO products (id, name, price, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, name, price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
-		product.Id,
+		product.ID,
 		product.Name,
 		product.Price,
-		product.SellerId,
 		product.CreatedAt,
 		product.UpdatedAt,
 	)
 
 	var savedProduct entity.Product
+
 	err := row.Scan(
-		&savedProduct.Id,
+		&savedProduct.ID,
 		&savedProduct.Name,
 		&savedProduct.Price,
-		&savedProduct.SellerId,
 		&savedProduct.CreatedAt,
 		&savedProduct.UpdatedAt,
 	)
@@ -57,43 +60,46 @@ func (r *ProductRepositoryPostgres) Create(ctx context.Context, product *entity.
 	return &savedProduct, nil
 }
 
-// Update updates an existing product in the database
-func (r *ProductRepositoryPostgres) Update(ctx context.Context, product *entity.Product) (*entity.Product, error) {
+// Update updates an existing product in the database.
+func (r *ProductRepositoryPostgres) Update(
+	ctx context.Context,
+	product *entity.Product,
+) (*entity.Product, error) {
 	query := `
 		UPDATE products 
-		SET name = $2, price = $3, seller_id = $4, updated_at = $5
+		SET name = $2, price = $3, updated_at = $4
 		WHERE id = $1
-		RETURNING id, name, price, seller_id, created_at, updated_at
+		RETURNING id, name, price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
-		product.Id,
+		product.ID,
 		product.Name,
 		product.Price,
-		product.SellerId,
 		product.UpdatedAt,
 	)
 
 	var updatedProduct entity.Product
+
 	err := row.Scan(
-		&updatedProduct.Id,
+		&updatedProduct.ID,
 		&updatedProduct.Name,
 		&updatedProduct.Price,
-		&updatedProduct.SellerId,
 		&updatedProduct.CreatedAt,
 		&updatedProduct.UpdatedAt,
 	)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("product not found")
 		}
+
 		return nil, fmt.Errorf("failed to update product: %w", err)
 	}
 
 	return &updatedProduct, nil
 }
 
-// Delete deletes a product from the database
+// Delete deletes a product from the database.
 func (r *ProductRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM products WHERE id = $1`
 
@@ -109,10 +115,13 @@ func (r *ProductRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) er
 	return nil
 }
 
-// FindById finds a product by its ID
-func (r *ProductRepositoryPostgres) FindById(ctx context.Context, id uuid.UUID) (*entity.Product, error) {
+// FindByID finds a product by its ID.
+func (r *ProductRepositoryPostgres) FindByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*entity.Product, error) {
 	query := `
-		SELECT id, name, price, seller_id, created_at, updated_at
+		SELECT id, name, price, created_at, updated_at
 		FROM products
 		WHERE id = $1
 	`
@@ -120,28 +129,32 @@ func (r *ProductRepositoryPostgres) FindById(ctx context.Context, id uuid.UUID) 
 	row := r.db.QueryRow(ctx, query, id)
 
 	var product entity.Product
+
 	err := row.Scan(
-		&product.Id,
+		&product.ID,
 		&product.Name,
 		&product.Price,
-		&product.SellerId,
 		&product.CreatedAt,
 		&product.UpdatedAt,
 	)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
+
 		return nil, fmt.Errorf("failed to find product: %w", err)
 	}
 
 	return &product, nil
 }
 
-// FindAll finds all products with pagination
-func (r *ProductRepositoryPostgres) FindAll(ctx context.Context, limit, offset int) ([]*entity.Product, error) {
+// FindAll finds all products with pagination.
+func (r *ProductRepositoryPostgres) FindAll(
+	ctx context.Context,
+	limit, offset int,
+) ([]*entity.Product, error) {
 	query := `
-		SELECT id, name, price, seller_id, created_at, updated_at
+		SELECT id, name, price, created_at, updated_at
 		FROM products
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -154,19 +167,21 @@ func (r *ProductRepositoryPostgres) FindAll(ctx context.Context, limit, offset i
 	defer rows.Close()
 
 	var products []*entity.Product
+
 	for rows.Next() {
 		var product entity.Product
+
 		err := rows.Scan(
-			&product.Id,
+			&product.ID,
 			&product.Name,
 			&product.Price,
-			&product.SellerId,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan product: %w", err)
 		}
+
 		products = append(products, &product)
 	}
 
@@ -177,51 +192,12 @@ func (r *ProductRepositoryPostgres) FindAll(ctx context.Context, limit, offset i
 	return products, nil
 }
 
-// FindBySellerId finds products by seller ID with pagination
-func (r *ProductRepositoryPostgres) FindBySellerId(ctx context.Context, sellerId uuid.UUID, limit, offset int) ([]*entity.Product, error) {
-	query := `
-		SELECT id, name, price, seller_id, created_at, updated_at
-		FROM products
-		WHERE seller_id = $1
-		ORDER BY created_at DESC
-		LIMIT $2 OFFSET $3
-	`
-
-	rows, err := r.db.Query(ctx, query, sellerId, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find products by seller: %w", err)
-	}
-	defer rows.Close()
-
-	var products []*entity.Product
-	for rows.Next() {
-		var product entity.Product
-		err := rows.Scan(
-			&product.Id,
-			&product.Name,
-			&product.Price,
-			&product.SellerId,
-			&product.CreatedAt,
-			&product.UpdatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan product: %w", err)
-		}
-		products = append(products, &product)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error reading products: %w", err)
-	}
-
-	return products, nil
-}
-
-// Count returns the total number of products
+// Count returns the total number of products.
 func (r *ProductRepositoryPostgres) Count(ctx context.Context) (int64, error) {
 	query := `SELECT COUNT(*) FROM products`
 
 	var count int64
+
 	err := r.db.QueryRow(ctx, query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("failed to count products: %w", err)
@@ -230,24 +206,12 @@ func (r *ProductRepositoryPostgres) Count(ctx context.Context) (int64, error) {
 	return count, nil
 }
 
-// CountBySellerId returns the total number of products for a specific seller
-func (r *ProductRepositoryPostgres) CountBySellerId(ctx context.Context, sellerId uuid.UUID) (int64, error) {
-	query := `SELECT COUNT(*) FROM products WHERE seller_id = $1`
-
-	var count int64
-	err := r.db.QueryRow(ctx, query, sellerId).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("failed to count products by seller: %w", err)
-	}
-
-	return count, nil
-}
-
-// Exists checks if a product exists by ID
+// Exists checks if a product exists by ID.
 func (r *ProductRepositoryPostgres) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)`
 
 	var exists bool
+
 	err := r.db.QueryRow(ctx, query, id).Scan(&exists)
 	if err != nil {
 		return false, fmt.Errorf("failed to check product existence: %w", err)
