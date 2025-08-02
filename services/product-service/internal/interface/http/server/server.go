@@ -1,3 +1,4 @@
+// Package server provides the HTTP server for the product service.
 package server
 
 import (
@@ -8,16 +9,16 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	handlers "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/handler"
+	handlers "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/handler"
 )
 
-// HTTPServer wraps the Echo server
+// HTTPServer wraps the Echo server.
 type HTTPServer struct {
 	echo           *echo.Echo
 	productHandler *handlers.ProductHandler
 }
 
-// NewHTTPServer creates a new HTTP server
+// NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(productHandler *handlers.ProductHandler) *HTTPServer {
 	e := echo.New()
 
@@ -42,12 +43,12 @@ func NewHTTPServer(productHandler *handlers.ProductHandler) *HTTPServer {
 	}
 }
 
-// RegisterRoutes registers all HTTP routes
+// RegisterRoutes registers all HTTP routes.
 func (s *HTTPServer) RegisterRoutes() {
 	s.productHandler.RegisterRoutes(s.echo)
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server.
 func (s *HTTPServer) Start(port string) error {
 	s.RegisterRoutes()
 
@@ -60,10 +61,11 @@ func (s *HTTPServer) Start(port string) error {
 	}
 
 	s.echo.Logger.Infof("Starting HTTP server on port %s", port)
+
 	return s.echo.StartServer(server)
 }
 
-// Shutdown gracefully shuts down the HTTP server
+// Shutdown gracefully shuts down the HTTP server.
 func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	return s.echo.Shutdown(ctx)
 }

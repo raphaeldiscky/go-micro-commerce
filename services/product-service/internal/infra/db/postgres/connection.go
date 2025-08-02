@@ -1,3 +1,4 @@
+// Package postgres provides functions to create a PostgreSQL database connection and manage the products table.
 package postgres
 
 import (
@@ -7,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// NewConnection creates a new database connection pool
+// NewConnection creates a new database connection pool.
 func NewConnection(databaseURL string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
@@ -26,13 +27,14 @@ func NewConnection(databaseURL string) (*pgxpool.Pool, error) {
 	// Test connection
 	if err := pool.Ping(context.Background()); err != nil {
 		pool.Close()
+
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	return pool, nil
 }
 
-// CreateProductsTable creates the products table if it doesn't exist
+// CreateProductsTable creates the products table if it doesn't exist.
 func CreateProductsTable(pool *pgxpool.Pool) error {
 	query := `
 		CREATE TABLE IF NOT EXISTS products (

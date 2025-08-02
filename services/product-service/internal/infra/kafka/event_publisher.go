@@ -1,3 +1,4 @@
+// Package kafka provides an implementation of the EventPublisher interface using Kafka.
 package kafka
 
 import (
@@ -7,16 +8,17 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-	event "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/domain/event"
+
+	event "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/event"
 )
 
-// EventPublisherKafka implements the EventPublisher interface using Kafka
+// EventPublisherKafka implements the EventPublisher interface using Kafka.
 type EventPublisherKafka struct {
 	producer sarama.SyncProducer
 	topic    string
 }
 
-// NewEventPublisherKafka creates a new instance of EventPublisherKafka
+// NewEventPublisherKafka creates a new instance of EventPublisherKafka.
 func NewEventPublisherKafka(brokers []string, topic string) (*EventPublisherKafka, error) {
 	config := sarama.NewConfig()
 	config.Producer.Return.Successes = true
@@ -36,10 +38,10 @@ func NewEventPublisherKafka(brokers []string, topic string) (*EventPublisherKafk
 	}, nil
 }
 
-// Publish publishes an event to Kafka
-func (p *EventPublisherKafka) Publish(event event.DomainEvent) error {
+// Publish publishes an event to Kafka.
+func (p *EventPublisherKafka) Publish(evt event.DomainEvent) error {
 	// Marshal event to JSON
-	eventData, err := json.Marshal(event)
+	eventData, err := json.Marshal(evt)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
@@ -47,16 +49,16 @@ func (p *EventPublisherKafka) Publish(event event.DomainEvent) error {
 	// Create Kafka message
 	message := &sarama.ProducerMessage{
 		Topic: p.topic,
-		Key:   sarama.StringEncoder(event.GetAggregateId().String()),
+		Key:   sarama.StringEncoder(evt.GetAggregateID().String()),
 		Value: sarama.ByteEncoder(eventData),
 		Headers: []sarama.RecordHeader{
 			{
 				Key:   []byte("event-type"),
-				Value: []byte(event.GetEventType()),
+				Value: []byte(evt.GetEventType()),
 			},
 			{
 				Key:   []byte("timestamp"),
-				Value: []byte(event.GetOccurredAt().Format(time.RFC3339)),
+				Value: []byte(evt.GetOccurredAt().Format(time.RFC3339)),
 			},
 		},
 	}
@@ -68,15 +70,16 @@ func (p *EventPublisherKafka) Publish(event event.DomainEvent) error {
 	}
 
 	log.Printf("Event published to Kafka - Topic: %s, Partition: %d, Offset: %d, Type: %s",
-		p.topic, partition, offset, event.GetEventType())
+		p.topic, partition, offset, evt.GetEventType())
 
 	return nil
 }
 
-// Close closes the Kafka producer
+// Close closes the Kafka producer.
 func (p *EventPublisherKafka) Close() error {
 	if p.producer != nil {
 		return p.producer.Close()
 	}
+
 	return nil
 }

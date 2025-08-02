@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package marketplace.v1;
 
-option go_package = "github.com/raphaeldiscky/go-ddd-template/proto/marketplace/v1;marketplacev1";
+option go_package = "github.com/raphaeldiscky/go-micro-template/proto/marketplace/v1;marketplacev1";
 
 import "google/protobuf/timestamp.proto";
 
@@ -20,16 +20,15 @@ message Product {
   string id = 1;
   string name = 2;
   double price = 3;
-  string seller_id = 4;
-  string seller_name = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
+  int32 quantity = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
 }
 
 message CreateProductRequest {
   string name = 1;
   double price = 2;
-  string seller_id = 3;
+  int32 quantity = 3;
 }
 
 message CreateProductResponse {

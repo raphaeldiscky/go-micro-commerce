@@ -133,7 +133,7 @@ tasks:
       FILE: "{{.FILE}}"
       TEST_TYPE: '{{default "unit" .TEST_TYPE}}'
     cmds:
-      - sh ./scripts/test-file.sh {{.FILE}} {{.TEST_TYPE}}
+      - bash ./scripts/test_file.sh {{.FILE}} {{.TEST_TYPE}}
 
   test:
     desc: Run unit tests
@@ -143,10 +143,10 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Running unit tests for all services..."
-          sh ./scripts/test.sh $service unit
+          bash ./scripts/test.sh
         else
           echo "Running unit tests for {{.SERVICE}}..."
-          sh ./scripts/test.sh {{.SERVICE}} unit
+          bash ./scripts/test.sh {{.SERVICE}}
         fi
 
   format:
@@ -157,10 +157,10 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Running formatters for all services..."
-          sh ./scripts/format.sh
+          bash ./scripts/format.sh
         else
           echo "Formatting {{.SERVICE}}..."
-          sh ./scripts/format.sh {{.SERVICE}}
+          bash ./scripts/format.sh {{.SERVICE}}
         fi
 
   lint:
@@ -171,10 +171,10 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Running linters for all services..."
-          sh ./scripts/lint.sh
+          bash ./scripts/lint.sh
         else
           echo "Running linters for {{.SERVICE}}..."
-          sh ./scripts/lint.sh {{.SERVICE}}
+          bash ./scripts/lint.sh {{.SERVICE}}
         fi
     deps: ["format"]
 

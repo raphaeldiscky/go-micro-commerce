@@ -1,3 +1,4 @@
+// Package main initializes and runs the product service.
 package main
 
 import (
@@ -10,13 +11,14 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
-	services "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/app/service"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/config"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/infra/db/postgres"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/infra/kafka"
-	handlers "github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-ddd-template/services/product-service/internal/interface/http/server"
+	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/infra/kafka"
+	handlers "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/handler"
+	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/server"
+	services "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/service"
 )
 
 func main() {
@@ -27,26 +29,38 @@ func main() {
 	}
 
 	// Setup database connection
-	dbPool, err := pgxpool.New(context.Background(), cfg.GetDatabaseURL())
+	dbPool, err := pgxpool.New(context.Background(), cfg.GetPostgresURL())
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer dbPool.Close()
 
 	// Test database connection
 	if err := dbPool.Ping(context.Background()); err != nil {
+		dbPool.Close()
 		log.Fatalf("Failed to ping database: %v", err)
 	}
+
+	// Database is ready, set up defer for cleanup
+	defer dbPool.Close()
+
 	log.Println("Database connection established")
+
+	// Setup logger
+	appLogger := logger.NewZapLogger(0) // 0 = debug level
 
 	// Setup Kafka event publisher
 	eventPublisher, err := kafka.NewEventPublisherKafka(cfg.Kafka.Brokers, cfg.Kafka.Topic)
 	if err != nil {
 		log.Printf("Warning: Failed to setup Kafka event publisher: %v", err)
 		log.Println("Continuing without event publishing...")
+
 		eventPublisher = nil
 	} else {
-		defer eventPublisher.Close()
+		defer func() {
+			if err := eventPublisher.Close(); err != nil {
+				log.Printf("Error closing Kafka event publisher: %v", err)
+			}
+		}()
 		log.Println("Kafka event publisher initialized")
 	}
 
@@ -54,7 +68,7 @@ func main() {
 	productRepo := postgres.NewProductRepositoryPostgres(dbPool)
 
 	// Setup services
-	productService := services.NewProductService(productRepo, eventPublisher)
+	productService := services.NewProductService(productRepo, eventPublisher, appLogger)
 
 	// Setup HTTP handlers
 	productHandler := handlers.NewProductHandler(productService)
@@ -75,9 +89,11 @@ func main() {
 
 	// Start HTTP server
 	wg.Add(1)
+
 	go func() {
 		defer wg.Done()
 		log.Printf("Starting HTTP server on port %s", cfg.Server.HTTPPort)
+
 		if err := httpServer.Start(cfg.Server.HTTPPort); err != nil {
 			log.Printf("HTTP server error: %v", err)
 		}
