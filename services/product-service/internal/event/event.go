@@ -19,10 +19,47 @@ type DomainEvent interface {
 
 // BaseEvent provides common event properties.
 type BaseEvent struct {
-	EventID     uuid.UUID
-	EventType   string
-	AggregateID uuid.UUID
-	OccurredAt  time.Time
+	EventID     uuid.UUID `json:"event_id"`
+	EventType   string    `json:"event_type"`
+	AggregateID uuid.UUID `json:"aggregate_id"`
+	OccurredAt  time.Time `json:"occurred_at"`
+	Source      string    `json:"source,omitempty"` // Service that produced the event
+}
+
+// ProductCreatedData holds the data for the product created event.
+type ProductCreatedData struct {
+	ProductID uuid.UUID       `json:"product_id"`
+	Name      string          `json:"name"`
+	Price     decimal.Decimal `json:"price"`
+}
+
+// ProductUpdatedData holds the data for the product updated event.
+type ProductUpdatedData struct {
+	ProductID    uuid.UUID          `json:"product_id"`
+	Name         string             `json:"name"`
+	Price        decimal.Decimal    `json:"price"`
+	PreviousData ProductCreatedData `json:"previous_data,omitempty"` // Optional field for previous product data
+}
+
+// ProductDeletedData represents when a product is deleted.
+type ProductDeletedData struct {
+	ProductID uuid.UUID `json:"product_id"`
+}
+
+// ProductEvent is the envelope for all product events.
+type ProductCreatedEvent struct {
+	BaseEvent
+	Data ProductCreatedData
+}
+
+type ProductUpdatedEvent struct {
+	BaseEvent
+	Data ProductUpdatedData
+}
+
+type ProductDeletedEvent struct {
+	BaseEvent
+	Data ProductDeletedData
 }
 
 // GetEventID returns the unique identifier of the event.
@@ -36,114 +73,6 @@ func (e BaseEvent) GetAggregateID() uuid.UUID { return e.AggregateID }
 
 // GetOccurredAt returns the timestamp when the event occurred.
 func (e BaseEvent) GetOccurredAt() time.Time { return e.OccurredAt }
-
-// ProductCreatedEvent represents when a product is created.
-type ProductCreatedEvent struct {
-	BaseEvent
-	ProductID uuid.UUID
-	Name      string
-	Price     decimal.Decimal
-}
-
-// NewProductCreatedEvent creates a new ProductCreatedEvent.
-func NewProductCreatedEvent(
-	productID uuid.UUID,
-	name string,
-	price decimal.Decimal,
-) *ProductCreatedEvent {
-	return &ProductCreatedEvent{
-		BaseEvent: BaseEvent{
-			EventID:     uuid.New(),
-			EventType:   "ProductCreated",
-			AggregateID: productID,
-			OccurredAt:  time.Now(),
-		},
-		ProductID: productID,
-		Name:      name,
-		Price:     price,
-	}
-}
-
-// GetData returns the data associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetData() interface{} {
-	return struct {
-		ProductID uuid.UUID       `json:"product_id"`
-		Name      string          `json:"name"`
-		Price     decimal.Decimal `json:"price"`
-	}{
-		ProductID: e.ProductID,
-		Name:      e.Name,
-		Price:     e.Price,
-	}
-}
-
-// ProductUpdatedEvent represents when a product is updated.
-type ProductUpdatedEvent struct {
-	BaseEvent
-	ProductID uuid.UUID
-	Name      string
-	Price     decimal.Decimal
-}
-
-// NewProductUpdatedEvent creates a new ProductUpdatedEvent.
-func NewProductUpdatedEvent(
-	productID uuid.UUID,
-	name string,
-	price decimal.Decimal,
-) *ProductUpdatedEvent {
-	return &ProductUpdatedEvent{
-		BaseEvent: BaseEvent{
-			EventID:     uuid.New(),
-			EventType:   "ProductUpdated",
-			AggregateID: productID,
-			OccurredAt:  time.Now(),
-		},
-		ProductID: productID,
-		Name:      name,
-		Price:     price,
-	}
-}
-
-// GetData returns the data associated with the ProductUpdatedEvent.
-func (e *ProductUpdatedEvent) GetData() interface{} {
-	return struct {
-		ProductID uuid.UUID       `json:"product_id"`
-		Name      string          `json:"name"`
-		Price     decimal.Decimal `json:"price"`
-	}{
-		ProductID: e.ProductID,
-		Name:      e.Name,
-		Price:     e.Price,
-	}
-}
-
-// ProductDeletedEvent represents when a product is deleted.
-type ProductDeletedEvent struct {
-	BaseEvent
-	ProductID uuid.UUID
-}
-
-// NewProductDeletedEvent creates a new ProductDeletedEvent.
-func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
-	return &ProductDeletedEvent{
-		BaseEvent: BaseEvent{
-			EventID:     uuid.New(),
-			EventType:   "ProductDeleted",
-			AggregateID: productID,
-			OccurredAt:  time.Now(),
-		},
-		ProductID: productID,
-	}
-}
-
-// GetData returns the data associated with the ProductDeletedEvent.
-func (e *ProductDeletedEvent) GetData() interface{} {
-	return struct {
-		ProductID uuid.UUID `json:"product_id"`
-	}{
-		ProductID: e.ProductID,
-	}
-}
 
 // Publisher defines the interface for publishing event.
 type Publisher interface {
