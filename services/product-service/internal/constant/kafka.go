@@ -35,6 +35,13 @@ const (
 )
 
 const (
+	// OrderCreatedConsumerGroup is the consumer group for order created events.
+	OrderCreatedConsumerGroup = "order-created-consumer-group"
+	// OrderCancelledConsumerGroup is the consumer group for order canceled events.
+	OrderCancelledConsumerGroup = "order-canceled-consumer-group"
+)
+
+const (
 	// KafkaEventTypeProductCreated is the event type for product created events.
 	KafkaEventTypeProductCreated = "ProductCreated"
 	// KafkaEventTypeProductUpdated is the event type for product updated events.

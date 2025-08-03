@@ -26,3 +26,6 @@ go.work
 node_modules
 vendor
 main
+tmp
+
+.env

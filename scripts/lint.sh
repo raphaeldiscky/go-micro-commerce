@@ -7,6 +7,13 @@ if [ -d "./pkg" ] && [ -f "./pkg/go.mod" ]; then
     cd ..
 fi
 
+# Lint api gateway module
+echo "Linting api-gateway module..."
+if [ -d "./api-gateway" ] && [ -f "./api-gateway/go.mod" ]; then
+    cd ./api-gateway && golangci-lint run ./... --fix --timeout 5m --config ../.golangci.yml
+    cd ..
+fi
+
 echo "Linting services..."
 for service_dir in ./services/*/; do
     if [ -d "$service_dir" ] && [ -f "${service_dir}go.mod" ]; then

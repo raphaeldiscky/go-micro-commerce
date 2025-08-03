@@ -1,0 +1,10 @@
+name: go-micro-template
+
+include:
+  - pgpool.yaml
+  - kafka.yaml
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true

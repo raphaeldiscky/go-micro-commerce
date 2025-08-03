@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -29,7 +30,7 @@ func main() {
 	}
 
 	// Setup database connection
-	dbPool, err := pgxpool.New(context.Background(), cfg.GetPostgresURL())
+	dbPool, err := pgxpool.New(context.Background(), cfg.GetURL())
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -91,10 +92,10 @@ func main() {
 	wg.Add(1)
 
 	go func() {
-		defer wg.Done()
-		log.Printf("Starting HTTP server on port %s", cfg.Server.HTTPPort)
+		log.Printf("Starting HTTP server on port %d", cfg.HTTPServer.Port)
 
-		if err := httpServer.Start(cfg.Server.HTTPPort); err != nil {
+		portStr := fmt.Sprintf("%d", cfg.HTTPServer.Port)
+		if err := httpServer.Start(portStr); err != nil {
 			log.Printf("HTTP server error: %v", err)
 		}
 	}()
