@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/shopspring/decimal"
 
 	handlers "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/handler"
 )
@@ -21,6 +23,23 @@ type HTTPServer struct {
 // NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(productHandler *handlers.ProductHandler) *HTTPServer {
 	e := echo.New()
+
+	// Create validator instance
+	validate := validator.New()
+
+	// Register custom validator for decimal fields
+	if err := validate.RegisterValidation("decimal_gt", func(fl validator.FieldLevel) bool {
+		if dec, ok := fl.Field().Interface().(decimal.Decimal); ok {
+			return dec.GreaterThan(decimal.Zero)
+		}
+
+		return false
+	}); err != nil {
+		panic("failed to register decimal_gt validator: " + err.Error())
+	}
+
+	// Register validator
+	e.Validator = &CustomValidator{validator: validate}
 
 	// Middleware
 	e.Use(middleware.Logger())
@@ -68,4 +87,18 @@ func (s *HTTPServer) Start(port string) error {
 // Shutdown gracefully shuts down the HTTP server.
 func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	return s.echo.Shutdown(ctx)
+}
+
+// CustomValidator wraps the go-playground validator.
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+// Validate validates the struct using go-playground validator.
+func (cv *CustomValidator) Validate(i interface{}) error {
+	if err := cv.validator.Struct(i); err != nil {
+		return err
+	}
+
+	return nil
 }
