@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // DomainEvent represents a domain event interface.
@@ -41,11 +42,15 @@ type ProductCreatedEvent struct {
 	BaseEvent
 	ProductID uuid.UUID
 	Name      string
-	Price     float64
+	Price     decimal.Decimal
 }
 
 // NewProductCreatedEvent creates a new ProductCreatedEvent.
-func NewProductCreatedEvent(productID uuid.UUID, name string, price float64) *ProductCreatedEvent {
+func NewProductCreatedEvent(
+	productID uuid.UUID,
+	name string,
+	price decimal.Decimal,
+) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
 		BaseEvent: BaseEvent{
 			EventID:     uuid.New(),
@@ -62,9 +67,9 @@ func NewProductCreatedEvent(productID uuid.UUID, name string, price float64) *Pr
 // GetData returns the data associated with the ProductCreatedEvent.
 func (e *ProductCreatedEvent) GetData() interface{} {
 	return struct {
-		ProductID uuid.UUID `json:"product_id"`
-		Name      string    `json:"name"`
-		Price     float64   `json:"price"`
+		ProductID uuid.UUID       `json:"product_id"`
+		Name      string          `json:"name"`
+		Price     decimal.Decimal `json:"price"`
 	}{
 		ProductID: e.ProductID,
 		Name:      e.Name,
@@ -77,11 +82,15 @@ type ProductUpdatedEvent struct {
 	BaseEvent
 	ProductID uuid.UUID
 	Name      string
-	Price     float64
+	Price     decimal.Decimal
 }
 
 // NewProductUpdatedEvent creates a new ProductUpdatedEvent.
-func NewProductUpdatedEvent(productID uuid.UUID, name string, price float64) *ProductUpdatedEvent {
+func NewProductUpdatedEvent(
+	productID uuid.UUID,
+	name string,
+	price decimal.Decimal,
+) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
 		BaseEvent: BaseEvent{
 			EventID:     uuid.New(),
@@ -98,9 +107,9 @@ func NewProductUpdatedEvent(productID uuid.UUID, name string, price float64) *Pr
 // GetData returns the data associated with the ProductUpdatedEvent.
 func (e *ProductUpdatedEvent) GetData() interface{} {
 	return struct {
-		ProductID uuid.UUID `json:"product_id"`
-		Name      string    `json:"name"`
-		Price     float64   `json:"price"`
+		ProductID uuid.UUID       `json:"product_id"`
+		Name      string          `json:"name"`
+		Price     decimal.Decimal `json:"price"`
 	}{
 		ProductID: e.ProductID,
 		Name:      e.Name,

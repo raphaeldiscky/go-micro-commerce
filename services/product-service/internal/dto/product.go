@@ -5,31 +5,32 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // CreateProductRequest represents the request to create a new product.
 type CreateProductRequest struct {
-	Name     string  `json:"name"     validate:"required,min=1,max=255"`
-	Price    float64 `json:"price"    validate:"required,gt=0"`
-	Quantity int     `json:"quantity" validate:"required,min=0"`
+	Name     string          `json:"name"     validate:"required,min=1,max=255"`
+	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gt"`
+	Quantity int             `json:"quantity" validate:"required,min=0"`
 }
 
 // UpdateProductRequest represents the request to update a product.
 type UpdateProductRequest struct {
-	ID       uuid.UUID `json:"id"       validate:"required"`
-	Name     string    `json:"name"     validate:"required,min=1,max=255"`
-	Price    float64   `json:"price"    validate:"required,gt=0"`
-	Quantity int       `json:"quantity" validate:"required,min=0"`
+	ID       uuid.UUID       `json:"id"       validate:"required"`
+	Name     string          `json:"name"     validate:"required,min=1,max=255"`
+	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gt"`
+	Quantity int             `json:"quantity" validate:"required,min=0"`
 }
 
 // ProductResponse represents a product in API responses.
 type ProductResponse struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Price     float64   `json:"price"`
-	Quantity  int       `json:"quantity"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        uuid.UUID       `json:"id"`
+	Name      string          `json:"name"`
+	Price     decimal.Decimal `json:"price"`
+	Quantity  int             `json:"quantity"`
+	CreatedAt time.Time       `json:"created_at"`
+	UpdatedAt time.Time       `json:"updated_at"`
 }
 
 // ProductListResponse represents a list of products.

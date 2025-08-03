@@ -35,17 +35,9 @@ func (h *ProductHandler) CreateProduct(c echo.Context) error {
 		return c.JSON(httpErr.GetCode(), httpErr)
 	}
 
-	// Validate request
-	if req.Name == "" {
-		httpErr := httperror.NewNameRequiredError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
-	}
-
-	if req.Price <= 0 {
-		httpErr := httperror.NewPriceMustBeGreaterThanZeroError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+	// Validate request using go-playground validator
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
 	product, err := h.productService.CreateProduct(c.Request().Context(), req)
@@ -104,6 +96,11 @@ func (h *ProductHandler) GetProducts(c echo.Context) error {
 		}
 	}
 
+	// Validate query parameters using go-playground validator
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+	}
+
 	products, err := h.productService.GetProducts(c.Request().Context(), req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
@@ -123,10 +120,7 @@ func (h *ProductHandler) UpdateProduct(c echo.Context) error {
 		return c.JSON(httpErr.GetCode(), httpErr)
 	}
 
-	var reqBody struct {
-		Name  string  `json:"name"`
-		Price float64 `json:"price"`
-	}
+	var reqBody dto.UpdateProductRequest
 
 	if err := c.Bind(&reqBody); err != nil {
 		httpErr := httperror.NewInvalidRequestBodyError()
@@ -134,23 +128,16 @@ func (h *ProductHandler) UpdateProduct(c echo.Context) error {
 		return c.JSON(httpErr.GetCode(), httpErr)
 	}
 
-	// Validate request
-	if reqBody.Name == "" {
-		httpErr := httperror.NewNameRequiredError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
-	}
-
-	if reqBody.Price <= 0 {
-		httpErr := httperror.NewPriceMustBeGreaterThanZeroError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+	// Validate request using go-playground validator
+	if err := c.Validate(&reqBody); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
 	}
 
 	req := dto.UpdateProductRequest{
-		ID:    id,
-		Name:  reqBody.Name,
-		Price: reqBody.Price,
+		ID:       id,
+		Name:     reqBody.Name,
+		Price:    reqBody.Price,
+		Quantity: reqBody.Quantity,
 	}
 
 	product, err := h.productService.UpdateProduct(c.Request().Context(), req)

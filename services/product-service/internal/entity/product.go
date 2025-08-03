@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // Product represents a product in the marketplace.
@@ -14,7 +15,7 @@ type Product struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Name      string
-	Price     float64
+	Price     decimal.Decimal
 	Quantity  int
 }
 
@@ -24,7 +25,7 @@ func (p *Product) validate() error {
 		return errors.New("name must not be empty")
 	}
 
-	if p.Price <= 0 {
+	if p.Price.LessThanOrEqual(decimal.Zero) {
 		return errors.New("price must be greater than 0")
 	}
 
@@ -36,13 +37,13 @@ func (p *Product) validate() error {
 }
 
 // NewProduct creates a new product with validation.
-func NewProduct(name string, price float64) (*Product, error) {
+func NewProduct(name string, price decimal.Decimal) (*Product, error) {
 	product := &Product{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Name:      name,
-		Price:     price,
+		Price:     price.Round(2), // Ensure precision of 2 decimal places
 	}
 
 	if err := product.validate(); err != nil {
@@ -61,8 +62,8 @@ func (p *Product) UpdateName(name string) error {
 }
 
 // UpdatePrice updates the product price with validation.
-func (p *Product) UpdatePrice(price float64) error {
-	p.Price = price
+func (p *Product) UpdatePrice(price decimal.Decimal) error {
+	p.Price = price.Round(2) // Ensure precision of 2 decimal places
 	p.UpdatedAt = time.Now()
 
 	return p.validate()
