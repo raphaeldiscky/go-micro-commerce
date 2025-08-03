@@ -1,0 +1,11 @@
+name: go-micro-template
+
+services:
+  product-service:
+    build:
+      context: ../../services/product-service
+      dockerfile: Dockerfile
+    container_name: product-service
+    restart: always
+    networks:
+      - go-micro-template

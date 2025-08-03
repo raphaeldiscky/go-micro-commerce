@@ -42,29 +42,6 @@ services:
     networks:
       - microservices
 
-  # Seller Service
-  seller-service:
-    build:
-      context: ./services/seller-service
-    ports:
-      - "8081:8081"
-    environment:
-      - DB_HOST=seller-db
-      - DB_PORT=5432
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=marketplace_sellers
-      - DB_SSL_MODE=disable
-      - KAFKA_BROKERS=kafka:9092
-      - KAFKA_TOPIC=seller-events
-      - HTTP_PORT=8081
-    depends_on:
-      - seller-db
-      - kafka
-    restart: unless-stopped
-    networks:
-      - microservices
-
   # Product Database
   product-db:
     image: postgres:15-alpine
@@ -76,21 +53,6 @@ services:
       - "5432:5432"
     volumes:
       - product_db_data:/var/lib/postgresql/data
-    restart: unless-stopped
-    networks:
-      - microservices
-
-  # Seller Database
-  seller-db:
-    image: postgres:15-alpine
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=marketplace_sellers
-    ports:
-      - "5433:5432"
-    volumes:
-      - seller_db_data:/var/lib/postgresql/data
     restart: unless-stopped
     networks:
       - microservices
@@ -119,7 +81,7 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     restart: unless-stopped
     networks:
       - microservices
@@ -149,7 +111,6 @@ services:
 
 volumes:
   product_db_data:
-  seller_db_data:
 
 networks:
   microservices:

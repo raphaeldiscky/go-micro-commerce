@@ -65,10 +65,10 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Running all services with air..."
-          sh ./scripts/run.sh
+          bash ./scripts/run.sh
         else
           echo "Running {{.SERVICE}} with air..."
-          sh ./scripts/run.sh {{.SERVICE}}
+          bash ./scripts/run.sh {{.SERVICE}}
         fi
 
   sleep:

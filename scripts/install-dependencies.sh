@@ -23,6 +23,12 @@ get_search_dir() {
         echo "pkg"
         return
     fi
+
+    # If input is "api-gateway", use api-gateway directory
+    if [ "$input" = "api-gateway" ]; then
+        echo "api-gateway"
+        return
+    fi
     
     # If input is "services", use services directory
     if [ "$input" = "services" ]; then
