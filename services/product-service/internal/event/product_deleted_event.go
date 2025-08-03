@@ -23,8 +23,3 @@ func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 		},
 	}
 }
-
-// GetData returns the data associated with the ProductDeletedEvent.
-func (e *ProductDeletedEvent) GetData() interface{} {
-	return e.Data
-}

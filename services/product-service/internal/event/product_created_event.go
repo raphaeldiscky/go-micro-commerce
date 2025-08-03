@@ -30,8 +30,3 @@ func NewProductCreatedEvent(
 		},
 	}
 }
-
-// GetData returns the data associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetData() interface{} {
-	return e.Data
-}

@@ -46,33 +46,50 @@ type ProductDeletedData struct {
 	ProductID uuid.UUID `json:"product_id"`
 }
 
-// ProductEvent is the envelope for all product events.
+// ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
 	BaseEvent
 	Data ProductCreatedData
 }
 
+// GetData returns the data associated with the ProductCreatedEvent.
+func (e *ProductCreatedEvent) GetData() interface{} {
+	return e.Data
+}
+
+// ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
 	BaseEvent
 	Data ProductUpdatedData
 }
 
+// GetData returns the data associated with the ProductUpdatedEvent.
+func (e *ProductUpdatedEvent) GetData() interface{} {
+	return e.Data
+}
+
+// ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
 	BaseEvent
 	Data ProductDeletedData
 }
 
+// GetData returns the data associated with the ProductDeletedEvent.
+func (e *ProductDeletedEvent) GetData() interface{} {
+	return e.Data
+}
+
 // GetEventID returns the unique identifier of the event.
-func (e BaseEvent) GetEventID() uuid.UUID { return e.EventID }
+func (e *BaseEvent) GetEventID() uuid.UUID { return e.EventID }
 
 // GetEventType returns the type of the event.
-func (e BaseEvent) GetEventType() string { return e.EventType }
+func (e *BaseEvent) GetEventType() string { return e.EventType }
 
 // GetAggregateID returns the identifier of the aggregate that this event belongs to.
-func (e BaseEvent) GetAggregateID() uuid.UUID { return e.AggregateID }
+func (e *BaseEvent) GetAggregateID() uuid.UUID { return e.AggregateID }
 
 // GetOccurredAt returns the timestamp when the event occurred.
-func (e BaseEvent) GetOccurredAt() time.Time { return e.OccurredAt }
+func (e *BaseEvent) GetOccurredAt() time.Time { return e.OccurredAt }
 
 // Publisher defines the interface for publishing event.
 type Publisher interface {
