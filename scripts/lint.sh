@@ -6,6 +6,7 @@ SERVICES=(
   "auth-service"
   "notification-service"
   "order-service"
+  "product-service"
   "pkg"
   "api-gateway"
 )

@@ -2,7 +2,14 @@
 
 set -e
 
-SERVICES=("auth-service" "product-service" "order-service" "notification-service" "api-gateway")
+SERVICES=(
+  "auth-service"
+  "notification-service"
+  "order-service"
+  "product-service"
+  "pkg"
+  "api-gateway"
+)
 CURDIR=$(pwd)
 OUTPUT_DIR="$CURDIR/bin"
 
