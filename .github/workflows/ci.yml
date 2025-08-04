@@ -67,7 +67,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.22" # Using a recent Go version
+          go-version: "1.23" # Updated to match go.mod requirement
 
       - name: Cache Go modules
         uses: actions/cache@v4
