@@ -2,18 +2,17 @@
 # Use the official Golang image to build the application.
 FROM golang:1.23-alpine AS builder
 
-# Set the working directory inside the container
-WORKDIR /app
+# Set the working directory to match the repo structure
+WORKDIR /workspace
 
-# Copy go.mod and go.sum from the service directory
-COPY auth-service/go.mod auth-service/go.sum ./
-# Copy the pkg directory for local dependencies
+# Copy only the necessary files for this service
 COPY pkg/ ./pkg/
+COPY auth-service/ ./auth-service/
+
+# Change to the service directory for building
+WORKDIR /workspace/auth-service
 
 RUN go mod download
-
-# Copy the service source code
-COPY auth-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
@@ -30,7 +29,7 @@ WORKDIR /app
 
 # Copy ONLY the compiled binary from the 'builder' stage.
 # This is the key to a small final image.
-COPY --from=builder /app/main .
+COPY --from=builder /workspace/auth-service/main .
 
 # Switch to the non-root user
 USER appuser

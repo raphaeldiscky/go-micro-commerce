@@ -9,38 +9,85 @@ SERVICES=(
   "product-service"
   "api-gateway"
 )
+
+# Configuration
+REGISTRY="${REGISTRY:-localhost:5000}"
+TAG="${TAG:-latest}"
 CURDIR=$(pwd)
 
-build_service() {
+build_image() {
   local service=$1
-  local service_dir="$CURDIR/$service"
-  local main_file="$service_dir/cmd/main.go"
-  local service_bin_dir="$service_dir/bin"
-  local output_file="$service_bin_dir/main"
+  local dockerfile="$CURDIR/$service/Dockerfile"
+  local image_name="${REGISTRY}/${service}:${TAG}"
 
-  if [ ! -f "$main_file" ]; then
-    echo "Skipping $service: $main_file not found"
-    return
+  if [ ! -f "$dockerfile" ]; then
+    echo "Skipping $service: $dockerfile not found"
+    return 1
   fi
 
-  echo "Building $service..."
-  mkdir -p "$service_bin_dir"
-  cd "$service_dir"
-  CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags "-w -s" \
-    -tags "sonic avx" \
-    -v -o "$output_file" "./cmd/main.go"
-  cd "$CURDIR"
-  echo "Built $output_file"
+  if [ ! -f "$CURDIR/$service/cmd/main.go" ]; then
+    echo "Skipping $service: main.go not found in $CURDIR/$service/cmd/"
+    return 1
+  fi
+
+  echo "Building Docker image for $service..."
+  
+  # Build the Docker image using root context (like CI does)
+  # This matches the CI workflow: context: . and file: ./${{ matrix.service }}/Dockerfile
+  docker build \
+    --tag "$image_name" \
+    --file "$dockerfile" \
+    "$CURDIR"
+  
+  echo "Successfully built image: $image_name"
+  
+  # Optional: Push to registry (uncomment if needed)
+  # echo "Pushing $image_name to registry..."
+  # docker push "$image_name"
+  
+  return 0
 }
+
+# Check if Docker is running
+if ! docker info > /dev/null 2>&1; then
+  echo "Error: Docker is not running or not accessible"
+  exit 1
+fi
 
 # Single service build
 if [ -n "$1" ]; then
-  build_service "$1"
+  echo "Building image for service: $1"
+  if build_image "$1"; then
+    echo "Image build completed successfully for $1"
+  else
+    echo "Failed to build image for $1"
+    exit 1
+  fi
 else
-  echo "Building all services..."
+  echo "Building Docker images for all services..."
+  failed_services=()
+  
   for service in "${SERVICES[@]}"; do
-    build_service "$service"
+    if ! build_image "$service"; then
+      failed_services+=("$service")
+    fi
   done
-  echo "All builds complete."
+  
+  if [ ${#failed_services[@]} -eq 0 ]; then
+    echo "All Docker images built successfully!"
+    echo ""
+    echo "Built images:"
+    for service in "${SERVICES[@]}"; do
+      echo "  - ${REGISTRY}/${service}:${TAG}"
+    done
+  else
+    echo ""
+    echo "Failed to build images for: ${failed_services[*]}"
+    exit 1
+  fi
 fi
+
+# Show built images
+echo ""
+echo "Current images:"
+docker images | grep -E "(REPOSITORY|${REGISTRY})" || echo "No images found with registry ${REGISTRY}"
