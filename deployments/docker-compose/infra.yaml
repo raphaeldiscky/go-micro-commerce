@@ -9,7 +9,9 @@ services:
       - "8500:8500"
     environment:
       - CONSUL_BIND_INTERFACE=eth0
-    command: consul agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0
+    command: consul agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0 -data-dir=/consul/data
+    volumes:
+      - consul_data:/consul/data
     networks:
       - go-micro-template
     healthcheck:
@@ -22,8 +24,12 @@ include:
   - postgres.yaml
   - kafka.yaml
   - redis.yaml
+  - monitoring.yaml
 
 networks:
   go-micro-template:
     name: go-micro-template
     external: true
+
+volumes:
+  consul_data:
