@@ -2,7 +2,7 @@ name: "go-micro-template"
 
 services:
   api-gateway:
-    image: ghcr.io/raphaeldiscky/go-micro-template:api-gateway
+    image: ghcr.io/raphaeldiscky/go-micro-template/api-gateway
     container_name: api-gateway
     ports:
       - "8080:8080"
@@ -11,13 +11,13 @@ services:
       - CONSUL_ADDRESS=consul:8500
       - JWT_SECRET=your-256-bit-secret-key-here-change-in-production
       - REDIS_URL=redis://redis:6379
-      - TRACING_JAEGER_URL=http://jaeger:4318/v1/traces
+      - TRACING_URL=http://otel-collector:4318/v1/traces
     depends_on:
       consul:
         condition: service_healthy
       redis:
         condition: service_started
-      jaeger:
+      tempo:
         condition: service_started
     restart: unless-stopped
     deploy:
@@ -56,7 +56,7 @@ services:
           memory: 700m
 
   product-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template:product-service
+    image: ghcr.io/raphaeldiscky/go-micro-template/product-service
     container_name: product-service
     ports:
       - "8082:8082"
@@ -86,7 +86,7 @@ services:
           memory: 700m
 
   order-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template:order-service
+    image: ghcr.io/raphaeldiscky/go-micro-template/order-service
     container_name: order-service
     ports:
       - "8083:8083"
@@ -116,7 +116,7 @@ services:
           memory: 700m
 
   notification-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template:notification-service
+    image: ghcr.io/raphaeldiscky/go-micro-template/notification-service
     container_name: notification-service
     ports:
       - "8084:8084"

@@ -22,6 +22,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/ratelimit"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/monitoring"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/service"
 )
 
@@ -70,12 +71,11 @@ func main() {
 	e.Use(metricsInstance.Middleware())
 	e.Use(ratelimit.Middleware(*cfg.RateLimit))
 
-	// Health check endpoint
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{"status": "healthy"})
-	})
+	// Initialize monitoring handler
+	monitoringHandler := monitoring.NewHandler(logger, "1.0.0")
+	monitoringHandler.RegisterRoutes(e)
 
-	// Metrics endpoint
+	// Metrics endpoint (Prometheus format)
 	e.GET("/metrics", metrics.Handler())
 
 	// Initialize API Gateway

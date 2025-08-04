@@ -26,9 +26,9 @@ func InitTracing(cfg *config.TracingConfig) error {
 		return nil
 	}
 
-	// Create OTLP HTTP exporter for Jaeger
+	// Create OTLP HTTP exporter for Tempo
 	exporter, err := otlptracehttp.New(context.Background(),
-		otlptracehttp.WithEndpoint(cfg.JaegerURL),
+		otlptracehttp.WithEndpoint(cfg.URL),
 		otlptracehttp.WithInsecure(), // Use insecure for local development
 	)
 	if err != nil {

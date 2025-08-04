@@ -9,7 +9,7 @@ import (
 // TracingConfig holds tracing configuration.
 type TracingConfig struct {
 	Enabled       bool    `mapstructure:"TRACING_ENABLED"`
-	JaegerURL     string  `mapstructure:"TRACING_JAEGER_URL"`
+	URL           string  `mapstructure:"TRACING_URL"`
 	ServiceName   string  `mapstructure:"TRACING_SERVICE_NAME"`
 	SamplingRate  float64 `mapstructure:"TRACING_SAMPLING_RATE"`
 	Environment   string  `mapstructure:"TRACING_ENVIRONMENT"`
