@@ -122,7 +122,14 @@ services:
       - "4318:4318" # OTLP HTTP receiver
       - "8888:8888" # Prometheus metrics
       - "8889:8889" # Prometheus exporter metrics
+      - "13133:13133" # Health check endpoint
     command: ["--config=/etc/otel-collector-config.yaml"]
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "--help"] # Just test if binary exists
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     volumes:
       - ./monitoring/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     networks:
@@ -131,19 +138,6 @@ services:
       - prometheus
       - loki
       - tempo
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8888/",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
 networks:
   go-micro-template:

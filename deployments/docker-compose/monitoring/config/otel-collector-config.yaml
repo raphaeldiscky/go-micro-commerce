@@ -21,6 +21,7 @@ processors:
 
   memory_limiter:
     limit_mib: 512
+    check_interval: 1s
 
   resource:
     attributes:
@@ -38,10 +39,6 @@ exporters:
     const_labels:
       label1: value1
 
-  # Loki exporter for logs
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
-
   # Tempo exporter for traces
   otlp/tempo:
     endpoint: http://tempo:4317
@@ -49,30 +46,39 @@ exporters:
       insecure: true
 
   # Debug exporter
-  logging:
-    loglevel: debug
-
-service:
-  pipelines:
-    traces:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [otlp/tempo, logging]
-
-    metrics:
-      receivers: [otlp, prometheus]
-      processors: [memory_limiter, batch, resource]
-      exporters: [prometheus, logging]
-
-    logs:
-      receivers: [otlp]
-      processors: [memory_limiter, batch, resource]
-      exporters: [loki, logging]
-
-  extensions: [health_check, pprof]
+  debug:
+    verbosity: detailed
 
 extensions:
   health_check:
     endpoint: 0.0.0.0:13133
+    path: "/health"
   pprof:
     endpoint: 0.0.0.0:1777
+
+service:
+  # Enable extensions
+  extensions: [health_check, pprof]
+
+  # Configure collector's own telemetry
+  telemetry:
+    logs:
+      level: "info"
+    metrics:
+      level: detailed
+
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [otlp/tempo, debug]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, batch, resource]
+      exporters: [prometheus, debug]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, batch, resource]
+      exporters: [debug]

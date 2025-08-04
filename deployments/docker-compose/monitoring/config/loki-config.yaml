@@ -23,14 +23,20 @@ query_range:
         enabled: true
         max_size_mb: 100
 
+limits_config:
+  allow_structured_metadata: false
+  max_query_series: 100000
+  max_query_parallelism: 32
+  tsdb_max_query_parallelism: 512
+
 schema_config:
   configs:
-    - from: 2020-10-24
-      store: boltdb-shipper
+    - from: 2024-04-01
+      store: tsdb
       object_store: filesystem
-      schema: v11
+      schema: v13
       index:
-        prefix: index_
+        prefix: loki_index_
         period: 24h
 
 ruler:

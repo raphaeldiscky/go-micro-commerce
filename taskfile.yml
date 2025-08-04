@@ -153,6 +153,11 @@ tasks:
     cmds:
       - bash ./scripts/test_file.sh {{.FILE}} {{.TEST_TYPE}}
 
+  test_monitoring:
+    desc: Run monitoring tests
+    cmds:
+      - bash ./scripts/test-monitoring.sh
+
   test:
     desc: Run unit tests
     vars:
