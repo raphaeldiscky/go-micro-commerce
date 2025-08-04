@@ -118,11 +118,8 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
-          context: . # Use the root of the repository as the build context
-          file: ./Dockerfile # Point to the reusable Dockerfile
-          push: ${{ github.event_name != 'pull_request' }} # Only push on merges to main
+          context: ./${{ matrix.service }}
+          file: ./${{ matrix.service }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # This is the crucial part: pass the service name to the Dockerfile
-          build-args: |
-            SERVICE_NAME=${{ matrix.service }}

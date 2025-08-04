@@ -1,43 +1,36 @@
 # ---- Build Stage ----
 # Use the official Golang image to build the application.
-# The `AS builder` part names this stage.
 FROM golang:1.22-alpine AS builder
 
-# ARG declares a build-time variable. The CI will pass the service name here.
-ARG SERVICE_NAME
-
 # Set the working directory inside the container
-WORKDIR /app
+WORKDIR /app/api-gateway
 
-# Copy go.mod and go.sum first to leverage Docker's build cache.
-# This step is only re-run if these files change.
-COPY go.mod go.sum ./
+# Copy go.mod and go.sum from the root of the repository.
+# We copy them here so that we can leverage Docker's build cache.
+# This assumes the go.mod and go.sum are at the project root.
+COPY go.mod go.sum /app/
 RUN go mod download
 
 # Copy the rest of the source code into the container
-COPY . .
+COPY . /app
 
 # Build the Go application.
-# This is a static build, which is great for containers.
-# The command builds the specific service passed in via SERVICE_NAME.
-# Example: go build -o /app/main ./cmd/auth-service
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/main ./cmd/${SERVICE_NAME}
+# The command builds the specific service, which is now hardcoded.
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/api-gateway/main ./cmd/api-gateway
 
 # ---- Final Stage ----
 # Start from a minimal base image for the final container.
-# alpine is very small and secure.
 FROM alpine:latest
 
 # Create a non-root user and group for security.
-# Running containers as a non-root user is a critical security best practice.
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Set the working directory for the final image
-WORKDIR /app
+WORKDIR /app/api-gateway
 
 # Copy ONLY the compiled binary from the 'builder' stage.
-# This is the key to a small final image. No source code is included.
-COPY --from=builder /app/main .
+# This is the key to a small final image.
+COPY --from=builder /app/api-gateway/main .
 
 # Switch to the non-root user
 USER appuser
