@@ -3,20 +3,17 @@
 FROM golang:1.23-alpine AS builder
 
 # Set the working directory inside the container
-WORKDIR /app/order-service
+WORKDIR /app
 
-# Copy go.mod and go.sum from the root of the repository.
-# We copy them here so that we can leverage Docker's build cache.
-# This assumes the go.mod and go.sum are at the project root.
-COPY go.mod go.sum /app/
+# Copy go.mod and go.sum first to leverage Docker's build cache
+COPY go.mod go.sum ./
 RUN go mod download
 
 # Copy the rest of the source code into the container
-COPY . /app
+COPY . .
 
 # Build the Go application.
-# The command builds the specific service, which is now hardcoded.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/order-service/main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
 
 # ---- Final Stage ----
 # Start from a minimal base image for the final container.
@@ -26,11 +23,11 @@ FROM alpine:latest
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Set the working directory for the final image
-WORKDIR /app/order-service
+WORKDIR /app
 
 # Copy ONLY the compiled binary from the 'builder' stage.
 # This is the key to a small final image.
-COPY --from=builder /app/order-service/main .
+COPY --from=builder /app/main .
 
 # Switch to the non-root user
 USER appuser
