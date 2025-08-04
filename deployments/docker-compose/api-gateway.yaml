@@ -1,0 +1,46 @@
+# API Gateway services
+name: go-micro-template
+
+services:
+  # Traefik as API Gateway with Consul integration
+  traefik:
+    image: traefik:v3.5.0
+    container_name: traefik
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080" # Dashboard
+    command:
+      - --api.dashboard=true
+      - --api.insecure=true
+      - --providers.consul.endpoints=consul:8500
+      - --providers.consul.exposedByDefault=false
+      - --providers.consul.defaultRule=Host(`{{ .Name }}.localhost`)
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --metrics.prometheus=true
+      - --metrics.prometheus.addEntryPointsLabels=true
+      - --metrics.prometheus.addServicesLabels=true
+      - --accesslog=true
+      - --log.level=INFO
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/config:/etc/traefik/dynamic:ro
+    networks:
+      - go-micro-template
+    depends_on:
+      - consul
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true

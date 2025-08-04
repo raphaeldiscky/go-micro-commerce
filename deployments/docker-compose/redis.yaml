@@ -1,9 +1,55 @@
 name: go-micro-template
 
 services:
+  # Single Redis instance - good for most projects
   redis:
     image: redis:7.2-alpine
     container_name: redis
     ports:
       - "6379:6379"
-    command: redis-server --appendonly yes
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - go-micro-template
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 600m
+
+  # Redis Insight for development (optional but helpful)
+  redis-insight:
+    image: redislabs/redisinsight:2.70
+    container_name: redis-insight
+    ports:
+      - "8001:8001"
+    environment:
+      - RIPORT=8001
+    volumes:
+      - redis_insight_data:/db
+    networks:
+      - go-micro-template
+    depends_on:
+      - redis
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true
+
+volumes:
+  redis_data:
+  redis_insight_data:

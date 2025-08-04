@@ -1,0 +1,61 @@
+# Development and debugging tools
+name: go-micro-template
+
+services:
+  # MailHog for email testing
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: mailhog
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - go-micro-template
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8025/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Kafka UI for Kafka management
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
+    networks:
+      - go-micro-template
+    depends_on:
+      - kafka
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://localhost:8080/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Swagger UI for API documentation
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.10.5
+    container_name: swagger-ui
+    ports:
+      - "8082:8080"
+    environment:
+      - SWAGGER_JSON_URL=http://localhost:8080/swagger.json
+    networks:
+      - go-micro-template
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true

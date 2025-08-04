@@ -7,9 +7,11 @@ services:
     container_name: consul
     ports:
       - "8500:8500"
+      - "8501:8501" # HTTPS
+      - "8502:8502" # gRPC
     environment:
       - CONSUL_BIND_INTERFACE=eth0
-    command: consul agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0 -data-dir=/consul/data
+    command: consul agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0 -data-dir=/consul/data -enable-script-checks=true -grpc-port=8502
     volumes:
       - consul_data:/consul/data
     networks:
@@ -22,9 +24,11 @@ services:
 
 include:
   - postgres.yaml
-  - kafka.yaml
   - redis.yaml
+  - kafka.yaml
   - monitoring.yaml
+  - security.yaml
+  - dev-tools.yaml
 
 networks:
   go-micro-template:
