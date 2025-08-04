@@ -5,12 +5,15 @@ FROM golang:1.23-alpine AS builder
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy go.mod and go.sum first to leverage Docker's build cache
-COPY go.mod go.sum ./
+# Copy go.mod and go.sum from the service directory
+COPY order-service/go.mod order-service/go.sum ./
+# Copy the pkg directory for local dependencies
+COPY pkg/ ./pkg/
+
 RUN go mod download
 
-# Copy the rest of the source code into the container
-COPY . .
+# Copy the service source code
+COPY order-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
