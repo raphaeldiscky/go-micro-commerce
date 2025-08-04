@@ -46,7 +46,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Lint
+      - name: Run linter
         run: task lint SERVICE=notification-service
 
       - name: Run tests

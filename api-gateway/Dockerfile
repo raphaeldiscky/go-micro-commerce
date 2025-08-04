@@ -1,9 +1,12 @@
+# Copy pre-built artifacts
 FROM scratch AS build-stage
 
 WORKDIR /app
 
-COPY . .
+COPY bin/main bin/main
+COPY .env .env
 
+# Runtime stage
 FROM alpine:3.20 AS build-release-stage
 
 WORKDIR /
