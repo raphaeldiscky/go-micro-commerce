@@ -9,7 +9,7 @@ tasks:
   build:
     desc: Build the application binary
     cmds:
-      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -tags="sonic avx" -v -o {{.CURDIR}}/bin/main {{.CURDIR}}/cmd/api/main.go
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -tags="sonic avx" -v -o {{.CURDIR}}/bin/main {{.CURDIR}}/cmd/main.go
 
   test:
     desc: Run tests with verbose output and coverage
@@ -35,3 +35,8 @@ tasks:
       output: '{{.output | default "./mocks"}}'
     cmds:
       - mockery --all --case underscore --dir {{.input}} --output {{.output}}
+
+  migrateup:
+    desc: Run database migrations
+    cmds:
+      - migrate -path {{.CURDIR}}/internal/infra/db/migrations -database {{.DBURL}} up

@@ -66,3 +66,8 @@ volumes:
   pg-product-1_data:
   pg-product-2_data:
   pg-product-3_data:
+
+networks:
+  default:
+    name: go-micro-template
+    external: true

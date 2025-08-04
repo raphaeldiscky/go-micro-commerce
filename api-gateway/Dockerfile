@@ -14,6 +14,6 @@ USER executor
 COPY --from=build-stage /app/bin/main /main
 COPY --from=build-stage /app/.env /.env
 
-EXPOSE 8000
+EXPOSE 8080
 
-ENTRYPOINT [ "/main", "serve-all" ]
+ENTRYPOINT [ "/main" ]

@@ -1,0 +1,169 @@
+package service
+
+import (
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/hashicorp/consul/api"
+	"go.uber.org/zap"
+
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
+)
+
+// Discovery interface defines service discovery operations.
+type Discovery interface {
+	GetServiceEndpoint(serviceName string) (string, error)
+	RegisterService(serviceName, address string, port int) error
+	DeregisterService(serviceID string) error
+	HealthCheck(serviceName string) bool
+}
+
+// ConsulServiceDiscovery implements ServiceDiscovery using Consul.
+type ConsulServiceDiscovery struct {
+	client *api.Client
+	config config.ServiceDiscoveryConfig
+	cache  map[string][]string
+	mutex  sync.RWMutex
+	logger *zap.Logger
+}
+
+// NewConsulServiceDiscovery creates a new Consul service discovery client.
+func NewConsulServiceDiscovery(
+	cfg *config.ServiceDiscoveryConfig,
+) (*ConsulServiceDiscovery, error) {
+	consulConfig := api.DefaultConfig()
+	consulConfig.Address = cfg.Consul.Address
+	consulConfig.Datacenter = cfg.Consul.Datacenter
+	consulConfig.Token = cfg.Consul.Token
+
+	client, err := api.NewClient(consulConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create consul client: %w", err)
+	}
+
+	logger, err := zap.NewProduction()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create logger: %w", err)
+	}
+
+	sd := &ConsulServiceDiscovery{
+		client: client,
+		config: *cfg,
+		cache:  make(map[string][]string),
+		logger: logger,
+	}
+
+	// Start background cache refresh
+	go sd.refreshCache()
+
+	return sd, nil
+}
+
+// GetServiceEndpoint returns a healthy endpoint for the given service.
+func (sd *ConsulServiceDiscovery) GetServiceEndpoint(serviceName string) (string, error) {
+	sd.mutex.RLock()
+	endpoints, exists := sd.cache[serviceName]
+	sd.mutex.RUnlock()
+
+	if !exists || len(endpoints) == 0 {
+		return "", fmt.Errorf("no healthy endpoints found for service: %s", serviceName)
+	}
+
+	// Simple round-robin for now (could be enhanced with load balancing)
+	endpoint := endpoints[0]
+	sd.logger.Debug(
+		"Selected endpoint",
+		zap.String("service", serviceName),
+		zap.String("endpoint", endpoint),
+	)
+
+	return endpoint, nil
+}
+
+// RegisterService registers a service with Consul.
+func (sd *ConsulServiceDiscovery) RegisterService(serviceName, address string, port int) error {
+	registration := &api.AgentServiceRegistration{
+		ID:      fmt.Sprintf("%s-%s-%d", serviceName, address, port),
+		Name:    serviceName,
+		Address: address,
+		Port:    port,
+		Check: &api.AgentServiceCheck{
+			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
+			Interval:                       "10s",
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
+		},
+	}
+
+	return sd.client.Agent().ServiceRegister(registration)
+}
+
+// DeregisterService removes a service from Consul.
+func (sd *ConsulServiceDiscovery) DeregisterService(serviceID string) error {
+	return sd.client.Agent().ServiceDeregister(serviceID)
+}
+
+// HealthCheck checks if a service is healthy.
+func (sd *ConsulServiceDiscovery) HealthCheck(serviceName string) bool {
+	services, _, err := sd.client.Health().Service(serviceName, "", true, nil)
+	if err != nil {
+		sd.logger.Error("Health check failed", zap.String("service", serviceName), zap.Error(err))
+
+		return false
+	}
+
+	return len(services) > 0
+}
+
+// refreshCache periodically refreshes the service cache.
+func (sd *ConsulServiceDiscovery) refreshCache() {
+	ticker := time.NewTicker(30 * time.Second)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		sd.updateCache()
+	}
+}
+
+// updateCache updates the service endpoints cache.
+func (sd *ConsulServiceDiscovery) updateCache() {
+	services, _, err := sd.client.Catalog().Services(nil)
+	if err != nil {
+		sd.logger.Error("Failed to fetch services", zap.Error(err))
+
+		return
+	}
+
+	newCache := make(map[string][]string)
+
+	for serviceName := range services {
+		healthyServices, _, err := sd.client.Health().Service(serviceName, "", true, nil)
+		if err != nil {
+			sd.logger.Error(
+				"Failed to fetch healthy services",
+				zap.String("service", serviceName),
+				zap.Error(err),
+			)
+
+			continue
+		}
+
+		var endpoints []string
+
+		for _, service := range healthyServices {
+			endpoint := fmt.Sprintf("http://%s:%d", service.Service.Address, service.Service.Port)
+			endpoints = append(endpoints, endpoint)
+		}
+
+		if len(endpoints) > 0 {
+			newCache[serviceName] = endpoints
+		}
+	}
+
+	sd.mutex.Lock()
+	sd.cache = newCache
+	sd.mutex.Unlock()
+
+	sd.logger.Debug("Service cache updated", zap.Int("services", len(newCache)))
+}

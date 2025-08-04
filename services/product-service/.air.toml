@@ -3,7 +3,6 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
-args_bin = ["serve-all"]
 bin = "./tmp/main"
 cmd = "go build -tags=\"sonic avx\" -v -o ./tmp/main ./cmd/main.go"
 delay = 1000
