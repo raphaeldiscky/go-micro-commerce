@@ -23,10 +23,10 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Installing dependencies for all services..."
-          sh ./scripts/install-dependencies.sh
+          bash ./scripts/install-dependencies.sh
         else
           echo "Installing dependencies for {{.SERVICE}}..."
-          sh ./scripts/install-dependencies.sh {{.SERVICE}}
+          bash ./scripts/install-dependencies.sh {{.SERVICE}}
         fi
 
   build:

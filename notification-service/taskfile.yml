@@ -35,8 +35,3 @@ tasks:
       output: '{{.output | default "./mocks"}}'
     cmds:
       - mockery --all --case underscore --dir {{.input}} --output {{.output}}
-
-  migrateup:
-    desc: Run database migrations
-    cmds:
-      - migrate -path {{.CURDIR}}/internal/infra/db/migrations -database {{.DBURL}} up

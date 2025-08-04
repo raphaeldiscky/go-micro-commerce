@@ -12,44 +12,16 @@ services:
     command: consul agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0
     networks:
       - go-micro-template
-    volumes:
-      - consul_data:/consul/data
     healthcheck:
       test: ["CMD", "consul", "members"]
       interval: 30s
       timeout: 10s
       retries: 3
 
-  product-service:
-    build:
-      context: ../../services/product-service
-      dockerfile: Dockerfile
-    container_name: product-service
-    restart: always
-    networks:
-      - go-micro-template
-
-  api-gateway:
-    build:
-      context: ../../api-gateway
-      dockerfile: Dockerfile
-    container_name: api-gateway
-    restart: always
-    ports:
-      - "8080:8080"
-    depends_on:
-      - consul
-      - product-service
-    networks:
-      - go-micro-template
-
 include:
-  - pgpool.yaml
+  - postgres.yaml
   - kafka.yaml
   - redis.yaml
-
-volumes:
-  consul_data:
 
 networks:
   go-micro-template:

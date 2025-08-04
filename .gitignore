@@ -27,6 +27,7 @@ node_modules
 vendor
 main
 tmp
+BIN
 
 .env
 .env.local
