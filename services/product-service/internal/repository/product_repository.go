@@ -13,6 +13,7 @@ import (
 	entity "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/entity"
 )
 
+// ProductRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
 type ProductRepositoryPostgres struct {
 	db *pgxpool.Pool
 }

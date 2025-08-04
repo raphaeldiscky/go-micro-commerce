@@ -22,9 +22,8 @@ type CircuitBreakerService struct {
 func NewCircuitBreaker() *CircuitBreakerService {
 	logger, err := zap.NewProduction()
 	if err != nil {
-		fmt.Printf("Failed to initialize logger: %v\n", err)
-
-		return nil
+		// Logger initialization failed, use a no-op logger to avoid fmt.Printf
+		logger = zap.NewNop()
 	}
 
 	return &CircuitBreakerService{
