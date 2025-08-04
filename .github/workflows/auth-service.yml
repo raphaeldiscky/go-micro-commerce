@@ -1,4 +1,4 @@
-name: Auth Service CI
+name: Auth Service
 
 on:
   push:
@@ -39,10 +39,10 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Lint
-        run: bash scripts/lint.sh SERVICE=auth-service
+        run: bash scripts/lint.sh auth-service
 
       - name: Run tests
-        run: bash scripts/test.sh SERVICE=auth-service
+        run: bash scripts/test.sh auth-service
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

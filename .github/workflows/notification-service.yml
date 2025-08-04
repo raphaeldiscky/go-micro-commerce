@@ -1,4 +1,4 @@
-name: Notification Service CI
+name: Notification Service
 
 on:
   push:
@@ -39,10 +39,10 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Lint
-        run: bash scripts/lint.sh SERVICE=notification-service
+        run: bash scripts/lint.sh notification-service
 
       - name: Run tests
-        run: bash scripts/test.sh SERVICE=notification-service
+        run: bash scripts/test.sh notification-service
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
