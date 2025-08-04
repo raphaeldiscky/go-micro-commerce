@@ -6,6 +6,7 @@ vars:
   GOOS: "{{default OS .GOOS}}"
   DC_DIR: "deployments/docker-compose"
   INFRA_DC_FILE: "{{.DC_DIR}}/infra.yaml"
+  APPS_DC_FILE: "{{.DC_DIR}}/apps.yaml"
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
 
@@ -102,6 +103,11 @@ tasks:
     cmds:
       - docker compose -f {{.MONITORING_DC_FILE}} up -d
 
+  start_apps:
+    desc: Start all applications using docker-compose
+    cmds:
+      - docker compose -f {{.APPS_DC_FILE}} up -d
+
   stop_infra:
     desc: Stop local infrastructure using docker-compose
     cmds:
@@ -113,10 +119,10 @@ tasks:
     cmds:
       - docker compose -f {{.MONITORING_DC_FILE}} down
 
-  stop_all:
-    desc: Stop all services using docker-compose
+  stop_apps:
+    desc: Stop all applications using docker-compose
     cmds:
-      - docker compose -f {{.MAIN_DC_FILE}} down
+      - docker compose -f {{.APPS_DC_FILE}} down
 
   restart_infra:
     desc: Restart infrastructure using docker-compose
@@ -131,6 +137,13 @@ tasks:
       - task: stop_monitoring
       - task: sleep
       - task: start_monitoring
+
+  restart_apps:
+    desc: Restart applications using docker-compose
+    cmds:
+      - task: stop_apps
+      - task: sleep
+      - task: start_apps
 
   test_file:
     desc: Run individual test file

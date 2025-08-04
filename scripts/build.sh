@@ -7,18 +7,16 @@ SERVICES=(
   "notification-service"
   "order-service"
   "product-service"
-  "pkg"
   "api-gateway"
 )
 CURDIR=$(pwd)
-OUTPUT_DIR="$CURDIR/bin"
-
-mkdir -p "$OUTPUT_DIR"
 
 build_service() {
   local service=$1
-  local main_file="$CURDIR/$service/cmd/main.go"
-  local output_file="$OUTPUT_DIR/$service"
+  local service_dir="$CURDIR/$service"
+  local main_file="$service_dir/cmd/main.go"
+  local service_bin_dir="$service_dir/bin"
+  local output_file="$service_bin_dir/main"
 
   if [ ! -f "$main_file" ]; then
     echo "Skipping $service: $main_file not found"
@@ -26,10 +24,13 @@ build_service() {
   fi
 
   echo "Building $service..."
+  mkdir -p "$service_bin_dir"
+  cd "$service_dir"
   CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags "-w -s" \
     -tags "sonic avx" \
-    -v -o "$output_file" "$main_file"
+    -v -o "$output_file" "./cmd/main.go"
+  cd "$CURDIR"
   echo "Built $output_file"
 }
 
