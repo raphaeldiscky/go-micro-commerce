@@ -16,7 +16,7 @@ COPY . /app
 
 # Build the Go application.
 # The command builds the specific service, which is now hardcoded.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/order-service/main ./cmd/order-service
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /app/order-service/main ./cmd/main.go
 
 # ---- Final Stage ----
 # Start from a minimal base image for the final container.
