@@ -1,63 +1,26 @@
 name: go-micro-template
 
 services:
-  kafka-1: &kafka-common
-    image: "bitnami/kafka:latest"
-    restart: always
-    container_name: kafka-1
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on:
+      - zookeeper
     ports:
-      - "9094:9092"
-    environment: &kafka-env
-      KAFKA_CFG_NODE_ID: 1
-      KAFKA_KRAFT_CLUSTER_ID: oxKVE1dstwq18M5FitTbQ
-      KAFKA_CFG_PROCESS_ROLES: controller,broker
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://:9092
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
-      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
-      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
-      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
-    volumes:
-      - kafka-1_data:/bitnami/kafka
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "kafka-cluster.sh",
-          "cluster-id",
-          "--bootstrap-server localhost:9092 || exit 1",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - go-micro-template
-
-  kafka-2:
-    <<: *kafka-common
-    container_name: kafka-2
-    ports:
-      - "9095:9092"
+      - "9092:9092"
     environment:
-      <<: *kafka-env
-      KAFKA_CFG_NODE_ID: 2
-    volumes:
-      - kafka-2_data:/bitnami/kafka
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092,PLAINTEXT_INTERNAL://kafka:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_INTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
-  kafka-3:
-    <<: *kafka-common
-    container_name: kafka-3
-    ports:
-      - "9096:9092"
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
     environment:
-      <<: *kafka-env
-      KAFKA_CFG_NODE_ID: 3
-    volumes:
-      - kafka-3_data:/bitnami/kafka
-
-volumes:
-  kafka-1_data:
-  kafka-2_data:
-  kafka-3_data:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"

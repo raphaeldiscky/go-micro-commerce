@@ -6,6 +6,7 @@ vars:
   GOOS: "{{default OS .GOOS}}"
   DC_DIR: "deployments/docker-compose"
   INFRA_DC_FILE: "{{.DC_DIR}}/infra.yaml"
+  APPS_DC_FILE: "{{.DC_DIR}}/apps.yaml"
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
 
@@ -23,10 +24,24 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Installing dependencies for all services..."
-          sh ./scripts/install-dependencies.sh
+          bash ./scripts/install-dependencies.sh
         else
           echo "Installing dependencies for {{.SERVICE}}..."
-          sh ./scripts/install-dependencies.sh {{.SERVICE}}
+          bash ./scripts/install-dependencies.sh {{.SERVICE}}
+        fi
+
+  build:
+    desc: Build all services
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Building all services..."
+          bash ./scripts/build.sh
+        else
+          echo "Building {{.SERVICE}}..."
+          bash ./scripts/build.sh {{.SERVICE}}
         fi
 
   migrateup:
@@ -37,10 +52,10 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Running migrations for all services..."
-          sh ./scripts/migrate.sh up
+          bash ./scripts/migrate.sh up
         else
           echo "Running migrations for {{.SERVICE}}..."
-          sh ./scripts/migrate.sh up {{.SERVICE}}
+          bash ./scripts/migrate.sh up {{.SERVICE}}
         fi
 
   migratedown:
@@ -77,41 +92,37 @@ tasks:
     cmds:
       - "{{.SLEEP_CMD}} {{.DURATION}}"
 
-  build:
-    desc: Build project components
-    vars:
-      SERVICE: '{{.SERVICE | default ""}}'
-    cmds:
-      - |
-        if [ -z "{{.SERVICE}}" ]; then
-          echo "Building all services..."
-          sh ./scripts/build.sh
-        else
-          echo "Building {{.SERVICE}}..."
-          sh ./scripts/build.sh {{.SERVICE}}
-        fi
-
   start_infra:
-    desc: Start infrastructure using docker-compose
+    desc: Start local infrastructure using docker-compose
     cmds:
+      - docker network create --driver bridge go-micro-template
       - docker compose -f {{.INFRA_DC_FILE}} up -d
 
   start_monitoring:
-    desc: Start monitoring using docker-compose
+    desc: Start local monitoring using docker-compose
     cmds:
       - docker compose -f {{.MONITORING_DC_FILE}} up -d
 
-  stop_infra:
-    desc: Stop infrastructure using docker-compose
+  start_apps:
+    desc: Start all applications using docker-compose
     cmds:
-      - docker compose -f {{.INFRA_DC_FILE}} stop
-      - docker compose -f {{.INFRA_DC_FILE}} rm -f
+      - docker compose -f {{.APPS_DC_FILE}} up -d
+
+  stop_infra:
+    desc: Stop local infrastructure using docker-compose
+    cmds:
+      - docker compose -f {{.INFRA_DC_FILE}} down
+      - docker network rm go-micro-template
 
   stop_monitoring:
-    desc: Stop monitoring using docker-compose
+    desc: Stop local monitoring using docker-compose
     cmds:
-      - docker compose -f {{.MONITORING_DC_FILE}} stop
-      - docker compose -f {{.MONITORING_DC_FILE}} rm -f
+      - docker compose -f {{.MONITORING_DC_FILE}} down
+
+  stop_apps:
+    desc: Stop all applications using docker-compose
+    cmds:
+      - docker compose -f {{.APPS_DC_FILE}} down
 
   restart_infra:
     desc: Restart infrastructure using docker-compose
@@ -126,6 +137,13 @@ tasks:
       - task: stop_monitoring
       - task: sleep
       - task: start_monitoring
+
+  restart_apps:
+    desc: Restart applications using docker-compose
+    cmds:
+      - task: stop_apps
+      - task: sleep
+      - task: start_apps
 
   test_file:
     desc: Run individual test file

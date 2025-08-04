@@ -1,19 +1,38 @@
-FROM scratch AS build-stage
+# ---- Build Stage ----
+# Use the official Golang image to build the application.
+FROM golang:1.23-alpine AS builder
 
+# Set the working directory to match the repo structure
+WORKDIR /workspace
+
+# Copy only the necessary files for this service
+COPY pkg/ ./pkg/
+COPY api-gateway/ ./api-gateway/
+
+# Change to the service directory for building
+WORKDIR /workspace/api-gateway
+
+RUN go mod download
+
+# Build the Go application.
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
+
+# ---- Final Stage ----
+# Start from a minimal base image for the final container.
+FROM alpine:latest
+
+# Create a non-root user and group for security.
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
+# Set the working directory for the final image
 WORKDIR /app
 
-COPY . .
+# Copy ONLY the compiled binary from the 'builder' stage.
+# This is the key to a small final image.
+COPY --from=builder /workspace/api-gateway/main .
 
-FROM alpine:3.20 AS build-release-stage
+# Switch to the non-root user
+USER appuser
 
-WORKDIR /
-
-RUN addgroup -S executorgroup && adduser -S executor -G executorgroup
-USER executor
-
-COPY --from=build-stage /app/bin/main /main
-COPY --from=build-stage /app/.env /.env
-
-EXPOSE 8000
-
-ENTRYPOINT [ "/main", "serve-all" ]
+# The ENTRYPOINT is the command that will be run when the container starts.
+ENTRYPOINT ["./main"]
