@@ -19,9 +19,10 @@ SSL_MODE="${SSL_MODE:-disable}"
 
 # Map services to host ports (from Docker Compose)
 declare -A SERVICE_PORTS
-SERVICE_PORTS[product-service]=15432
-SERVICE_PORTS[order-service]=25433
-# Add more services if needed
+SERVICE_PORTS[auth-service]=15432
+SERVICE_PORTS[product-service]=25432
+SERVICE_PORTS[order-service]=35432
+
 
 # If SERVICE == "all", loop through all
 if [ "$SERVICE" == "all" ]; then

@@ -14,6 +14,7 @@ USER executor
 COPY --from=build-stage /app/bin/main /main
 COPY --from=build-stage /app/.env /.env
 
-EXPOSE 8080
+# API Gateway listens on port 8080
+EXPOSE 8080 
 
 ENTRYPOINT [ "/main" ]
