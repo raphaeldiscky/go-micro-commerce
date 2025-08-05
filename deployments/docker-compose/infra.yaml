@@ -1,27 +1,4 @@
 # Local infrastructure services
-name: go-micro-template
-
-services:
-  consul:
-    image: consul:1.15
-    container_name: consul
-    ports:
-      - "8500:8500"
-      - "8501:8501" # HTTPS
-      - "8502:8502" # gRPC
-    environment:
-      - CONSUL_BIND_INTERFACE=eth0
-    command: consul agent -server -bootstrap -ui -client=0.0.0.0 -bind=0.0.0.0 -data-dir=/consul/data -enable-script-checks=true -grpc-port=8502
-    volumes:
-      - consul_data:/consul/data
-    networks:
-      - go-micro-template
-    healthcheck:
-      test: ["CMD", "consul", "members"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
 include:
   - postgres.yaml
   - redis.yaml
@@ -29,11 +6,10 @@ include:
   - monitoring.yaml
   - security.yaml
   - dev-tools.yaml
+  - api-gateway.yaml
+  - apps.yaml
 
 networks:
   go-micro-template:
     name: go-micro-template
     external: true
-
-volumes:
-  consul_data:

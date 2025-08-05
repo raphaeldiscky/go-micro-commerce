@@ -1,6 +1,4 @@
 # Security services
-name: go-micro-template
-
 services:
   # Vault for secrets management
   vault:

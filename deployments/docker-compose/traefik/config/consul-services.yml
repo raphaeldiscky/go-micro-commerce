@@ -1,0 +1,20 @@
+# Consul Services Configuration
+# This file will be populated automatically by Consul Catalog provider
+# Services registered in Consul will appear here automatically with their labels/tags
+
+http:
+  # Services discovered from Consul will be dynamically configured here
+  # Example of what Traefik will create automatically:
+  #
+  # routers:
+  #   consul-product-service:
+  #     rule: "Host(`products.localhost`)"
+  #     service: consul-product-service
+  #     entryPoints:
+  #       - web
+  #
+  # services:
+  #   consul-product-service:
+  #     loadBalancer:
+  #       servers:
+  #         - url: "http://product-service:8082"

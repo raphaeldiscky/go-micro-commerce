@@ -1,24 +1,74 @@
-name: "go-micro-template"
-
 services:
+  # API Gateway Service (now works alongside Traefik)
+  # Your other services like auth-service and product-service should not have these Traefik labels.
+  # Traefik is an API Gateway for external traffic, and those services are internal.
+  # The api-gateway is responsible for routing to them internally.
   api-gateway:
-    image: ghcr.io/raphaeldiscky/go-micro-template/api-gateway
+    image: ghcr.io/raphaeldiscky/go-micro-template/api-gateway:latest
+    build:
+      context: ../..
+      dockerfile: api-gateway/Dockerfile
+    volumes:
+      - ../../api-gateway/.env:/app/.env
     container_name: api-gateway
     ports:
       - "8080:8080"
+    networks:
+      - go-micro-template
     environment:
-      - SERVER_PORT=8080
-      - CONSUL_ADDRESS=consul:8500
+      - APP_ENVIRONMENT="development"
+      - SERVICE_NAME="api-gateway"
+      - HTTP_SERVER_PORT=8080
+      - SERVER_READ_TIMEOUT=15s
+      - SERVER_WRITE_TIMEOUT=15s
       - JWT_SECRET=your-256-bit-secret-key-here-change-in-production
-      - REDIS_URL=redis://redis:6379
-      - TRACING_URL=http://otel-collector:4318/v1/traces
+      - JWT_EXPIRATION_TIME=24h
+      - JWT_REFRESH_TIME=72h
+      - JWT_ISSUER=api-gateway
+      - JWT_TOKEN_LOOKUP=header:Authorization
+      - JWT_AUTH_SCHEME=Bearer
+      - JWT_SIGNING_METHOD=HS256
+      - JWT_CONTEXT_KEY=user
+      - SERVICE_DISCOVERY_TYPE=consul
+      - SERVICE_DISCOVERY_ADDRESS=consul:8500
+      - SERVICE_DISCOVERY_TIMEOUT=5s
+      - SERVICE_DISCOVERY_CONSUL_ADDRESS=consul:8500
+      - SERVICE_DISCOVERY_CONSUL_DATACENTER=dc1
+      - SERVICE_DISCOVERY_CONSUL_TOKEN=your-consul-token-here
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_REQUESTS=100
+      - RATE_LIMIT_WINDOW=1m
+      - RATE_LIMIT_BURST_LIMIT=10
+      - TRACING_ENABLED=true
+      - TRACING_URL=http://localhost:4318/v1/traces
+      - TRACING_SERVICE_NAME=api-gateway
+      - TRACING_SAMPLING_RATE=0.1
+      - TRACING_ENVIRONMENT=development
+      - TRACING_BATCH_TIMEOUT=5
+      - TRACING_EXPORT_TIMEOUT=30
+      - TRACING_METADATA=api-gateway
+      - METRICS_ENABLED=true
+      - METRICS_PATH=/metrics
+      - METRICS_PORT=9090
     depends_on:
       consul:
         condition: service_healthy
-      redis:
-        condition: service_started
-      tempo:
-        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      # Traefik labels for service discovery
+      - "traefik.enable=true"
+      - "traefik.http.routers.api-gateway.rule=Host(`api.localhost`)"
+      - "traefik.http.routers.api-gateway.entrypoints=web"
+      - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
+      - "traefik.http.services.api-gateway.loadbalancer.healthcheck.path=/health"
+      - "traefik.http.services.api-gateway.loadbalancer.healthcheck.interval=30s"
+      - "traefik.http.middlewares.api-gateway-ratelimit.ratelimit.burst=100"
+      - "traefik.http.middlewares.api-gateway-ratelimit.ratelimit.average=10"
+      - "traefik.http.routers.api-gateway.middlewares=api-gateway-ratelimit"
     restart: unless-stopped
     deploy:
       resources:
@@ -26,15 +76,22 @@ services:
           memory: 700m
 
   auth-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template:auth-service
+    image: ghcr.io/raphaeldiscky/go-micro-template/auth-service:latest
     container_name: auth-service
+    build:
+      context: ../..
+      dockerfile: auth-service/Dockerfile
+    volumes:
+      - ../../auth-service/.env:/app/.env
+    restart: unless-stopped
     ports:
       - "8081:8081"
-    restart: unless-stopped
+    networks:
+      - go-micro-template
     environment:
       - HTTP_SERVER_PORT=8081
       - DB_HOST=postgres-auth
-      - DB_PORT=15431
+      - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=password
       - DB_NAME=auth_service
@@ -56,14 +113,21 @@ services:
           memory: 700m
 
   product-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/product-service
+    image: ghcr.io/raphaeldiscky/go-micro-template/product-service:latest
     container_name: product-service
+    build:
+      context: ../..
+      dockerfile: product-service/Dockerfile
+    volumes:
+      - ../../product-service/.env:/app/.env
     ports:
       - "8082:8082"
+    networks:
+      - go-micro-template
     environment:
       - HTTP_SERVER_PORT=8082
       - DB_HOST=postgres-product
-      - DB_PORT=25432
+      - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=postgres
@@ -79,6 +143,21 @@ services:
         condition: service_started
       consul:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    labels:
+      # Traefik labels for direct access (optional, for testing)
+      # TODO: Remove in production
+      - "traefik.enable=true"
+      - "traefik.http.routers.product-service.rule=Host(`products.localhost`)"
+      - "traefik.http.routers.product-service.entrypoints=web"
+      - "traefik.http.services.product-service.loadbalancer.server.port=8082"
+      - "traefik.http.services.product-service.loadbalancer.healthcheck.path=/health"
+      - "traefik.http.services.product-service.loadbalancer.healthcheck.interval=30s"
     restart: unless-stopped
     deploy:
       resources:
@@ -86,14 +165,21 @@ services:
           memory: 700m
 
   order-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/order-service
+    image: ghcr.io/raphaeldiscky/go-micro-template/order-service:latest
     container_name: order-service
+    build:
+      context: ../..
+      dockerfile: order-service/Dockerfile
+    volumes:
+      - ../../order-service/.env:/app/.env
     ports:
       - "8083:8083"
+    networks:
+      - go-micro-template
     environment:
       - HTTP_SERVER_PORT=8083
       - DB_HOST=postgres-order
-      - DB_PORT=35432
+      - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
       - DB_NAME=postgres
@@ -118,8 +204,15 @@ services:
   notification-service:
     image: ghcr.io/raphaeldiscky/go-micro-template/notification-service
     container_name: notification-service
+    build:
+      context: ../..
+      dockerfile: notification-service/Dockerfile
+    volumes:
+      - ../../notification-service/.env:/app/.env
     ports:
       - "8084:8084"
+    networks:
+      - go-micro-template
     environment:
       - HTTP_SERVER_PORT=8084
       - SMTP_HOST=smtp.gmail.com
@@ -134,3 +227,8 @@ services:
       resources:
         limits:
           memory: 700m
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true

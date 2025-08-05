@@ -1,35 +1,86 @@
-# API Gateway services
-name: go-micro-template
-
+# Enhanced API Gateway with Consul and Traefik
 services:
-  # Traefik as API Gateway with Consul integration
+  consul:
+    image: consul:1.15
+    container_name: consul
+    ports:
+      - "8500:8500" # HTTP API
+      - "8501:8501" # HTTPS API
+      - "8502:8502" # gRPC API
+      - "8600:8600/udp" # DNS
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+      - CONSUL_CLIENT_INTERFACE=eth0
+    command: >
+      consul agent
+      -server
+      -bootstrap-expect=1
+      -ui
+      -client=0.0.0.0
+      -bind=0.0.0.0
+      -data-dir=/consul/data
+      -enable-script-checks=true
+      -grpc-port=8502
+      -log-level=INFO
+      -enable-local-script-checks=true
+    volumes:
+      - consul_data:/consul/data
+    networks:
+      - go-micro-template
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Enhanced Traefik as API Gateway with Consul integration
   traefik:
     image: traefik:v3.5.0
     container_name: traefik
     ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080" # Dashboard
+      - "80:80" # HTTP
+      - "443:443" # HTTPS (for production)
+      - "9000:8080" # Dashboard
     command:
+      # API Configuration
       - --api.dashboard=true
       - --api.insecure=true
-      - --providers.consul.endpoints=consul:8500
-      - --providers.consul.exposedByDefault=false
-      - --providers.consul.defaultRule=Host(`{{ .Name }}.localhost`)
+
+      # Ping endpoint for health checks
+      - --ping=true
+      - --ping.entryPoint=traefik
+
+      # Entry Points
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
+      - --entrypoints.traefik.address=:8080
+
+      # Consul Catalog Provider
+      - --providers.consulCatalog.endpoint.address=consul:8500
+      - --providers.consulCatalog.exposedByDefault=false
+      - --providers.consulCatalog.defaultRule=Host(`{{ .Name }}.localhost`)
+
+      # File Provider for Static Configuration
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+
+      # Metrics
       - --metrics.prometheus=true
       - --metrics.prometheus.addEntryPointsLabels=true
       - --metrics.prometheus.addServicesLabels=true
-      - --accesslog=true
+
+      # Logs
       - --log.level=INFO
+      - --accesslog=true
+
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik/config:/etc/traefik/dynamic:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro # For Docker provider (optional)
     networks:
       - go-micro-template
     depends_on:
-      - consul
+      consul:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 30s
@@ -39,6 +90,9 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
       - "traefik.http.routers.traefik.service=api@internal"
+
+volumes:
+  consul_data:
 
 networks:
   go-micro-template:

@@ -1,5 +1,3 @@
-name: go-micro-template
-
 services:
   # Zookeeper - required for Kafka coordination
   zookeeper:

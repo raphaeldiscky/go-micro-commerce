@@ -1,5 +1,3 @@
-name: go-micro-template
-
 services:
   # Single Redis instance - good for most projects
   redis:

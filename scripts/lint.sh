@@ -11,12 +11,21 @@ SERVICES=(
   "api-gateway"
 )
 
+lint_pkg() {
+  echo "Linting shared package (pkg)..."
+  (cd "pkg" && golangci-lint run ./... --fix --timeout 5m --config ../.golangci.yml)
+  echo "Lint completed for pkg"
+}
+
+
 lint_service() {
   local dir="$1"
   echo "Linting $dir..."
   (cd "$dir" && golangci-lint run ./... --fix --timeout 5m --config ../.golangci.yml)
   echo "Lint completed for $dir"
 }
+
+lint_pkg
 
 if [ -n "$1" ]; then
   if [[ " ${SERVICES[*]} " =~ " $1 " ]]; then

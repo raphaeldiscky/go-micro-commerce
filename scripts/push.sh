@@ -11,7 +11,7 @@ SERVICES=(
 )
 
 # Configuration
-REGISTRY="${REGISTRY:-localhost:5000}"
+REGISTRY="${REGISTRY:-ghcr.io/raphaeldiscky/go-micro-template}"
 TAG="${TAG:-latest}"
 CURDIR=$(pwd)
 
@@ -24,22 +24,22 @@ NC='\033[0m' # No Color
 
 # Function to print colored output
 print_status() {
-    echo -e "${BLUE} $1${NC}"
+    echo -e "${BLUE}$1${NC}"
 }
 
 print_success() {
-    echo -e "${GREEN} $1${NC}"
+    echo -e "${GREEN}$1${NC}"
 }
 
 print_warning() {
-    echo -e "${YELLOW}  $1${NC}"
+    echo -e "${YELLOW}$1${NC}"
 }
 
 print_error() {
-    echo -e "${RED} $1${NC}"
+    echo -e "${RED}$1${NC}"
 }
 
-build_image() {
+build_and_push_image() {
   local service=$1
   local dockerfile="$CURDIR/$service/Dockerfile"
   local image_name="${REGISTRY}/${service}:${TAG}"
@@ -56,8 +56,7 @@ build_image() {
 
   print_status "Building Docker image for $service..."
   
-  # Build the Docker image using root context (like CI does)
-  # This matches the CI workflow: context: . and file: ./${{ matrix.service }}/Dockerfile
+  # Build the Docker image using root context
   if docker build \
     --tag "$image_name" \
     --file "$dockerfile" \
@@ -68,16 +67,50 @@ build_image() {
     return 1
   fi
   
+  # Push to registry
+  print_status "Pushing $image_name to registry..."
+  if docker push "$image_name"; then
+    print_success "Successfully pushed image: $image_name"
+  else
+    print_error "Failed to push image for $service"
+    return 1
+  fi
+  
   return 0
+}
+
+check_docker_login() {
+  print_status "Checking Docker registry authentication..."
+  
+  # Check if we can access the registry
+  if [[ "$REGISTRY" == ghcr.io* ]]; then
+    # For GitHub Container Registry
+    if ! docker info | grep -q "Username"; then
+      print_warning "Not logged into Docker registry"
+      print_status "To login to GitHub Container Registry, run:"
+      echo "  export CR_PAT=YOUR_GITHUB_TOKEN"
+      echo "  echo \$CR_PAT | docker login ghcr.io -u USERNAME --password-stdin"
+      echo ""
+      read -p "Continue anyway? (y/N): " -n 1 -r
+      echo
+      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 1
+      fi
+    else
+      print_success "Docker registry authentication verified"
+    fi
+  else
+    print_status "Using custom registry: $REGISTRY"
+  fi
 }
 
 show_usage() {
   echo "Usage: $0 [OPTIONS] [SERVICE]"
   echo ""
-  echo "Build Docker images for microservices (local development)"
+  echo "Build and push Docker images for microservices"
   echo ""
   echo "OPTIONS:"
-  echo "  -r, --registry REGISTRY   Docker registry (default: localhost:5000)"
+  echo "  -r, --registry REGISTRY   Docker registry (default: ghcr.io/raphaeldiscky/go-micro-template)"
   echo "  -t, --tag TAG            Image tag (default: latest)"
   echo "  -h, --help               Show this help message"
   echo ""
@@ -87,11 +120,10 @@ show_usage() {
   done
   echo ""
   echo "EXAMPLES:"
-  echo "  $0                       # Build all services"
-  echo "  $0 api-gateway          # Build only api-gateway"
-  echo "  $0 -t dev               # Build all with tag dev"
-  echo ""
-  echo "NOTE: This script only builds images locally. Use push.sh to build and push to registry."
+  echo "  $0                       # Build and push all services"
+  echo "  $0 api-gateway          # Build and push only api-gateway"
+  echo "  $0 -t v1.0.0            # Build and push all with tag v1.0.0"
+  echo "  $0 -r my-registry.com   # Use custom registry"
 }
 
 # Parse command line arguments
@@ -128,30 +160,33 @@ if ! docker info > /dev/null 2>&1; then
   exit 1
 fi
 
+# Check Docker registry authentication
+check_docker_login
+
 print_status "Using registry: $REGISTRY"
 print_status "Using tag: $TAG"
 echo ""
 
-# Single service build
+# Single service build and push
 if [ -n "$SERVICE_NAME" ]; then
-  print_status "Building image for service: $SERVICE_NAME"
-  if build_image "$SERVICE_NAME"; then
-    print_success "Image build completed successfully for $SERVICE_NAME"
+  print_status "Building and pushing image for service: $SERVICE_NAME"
+  if build_and_push_image "$SERVICE_NAME"; then
+    print_success "Build and push completed successfully for $SERVICE_NAME"
     echo ""
-    print_status "Image available locally: ${REGISTRY}/${SERVICE_NAME}:${TAG}"
+    print_status "Image available at: ${REGISTRY}/${SERVICE_NAME}:${TAG}"
   else
-    print_error "Failed to build image for $SERVICE_NAME"
+    print_error "Failed to build and push image for $SERVICE_NAME"
     exit 1
   fi
 else
-  print_status "Building Docker images for all services..."
+  print_status "Building and pushing Docker images for all services..."
   failed_services=()
   successful_services=()
   
   for service in "${SERVICES[@]}"; do
     echo ""
     print_status "Processing service: $service"
-    if build_image "$service"; then
+    if build_and_push_image "$service"; then
       successful_services+=("$service")
     else
       failed_services+=("$service")
@@ -162,7 +197,7 @@ else
   echo "==================== SUMMARY ===================="
   
   if [ ${#successful_services[@]} -gt 0 ]; then
-    print_success "Successfully built ${#successful_services[@]} service(s):"
+    print_success "Successfully built and pushed ${#successful_services[@]} service(s):"
     for service in "${successful_services[@]}"; do
       echo " ${REGISTRY}/${service}:${TAG}"
     done
@@ -170,18 +205,22 @@ else
   
   if [ ${#failed_services[@]} -gt 0 ]; then
     echo ""
-    print_error "Failed to build ${#failed_services[@]} service(s):"
+    print_error "Failed to build and push ${#failed_services[@]} service(s):"
     for service in "${failed_services[@]}"; do
       echo " $service"
     done
     exit 1
   else
     echo ""
-    print_success "All Docker images built successfully!"
+    print_success "All Docker images built and pushed successfully!"
   fi
 fi
 
-# Show built images
 echo ""
-print_status "Current images:"
-docker images | grep -E "(REPOSITORY|${REGISTRY})" || echo "No images found with registry ${REGISTRY}"
+print_status "Deployment commands:"
+echo "  docker pull ${REGISTRY}/api-gateway:${TAG}"
+echo "  docker pull ${REGISTRY}/auth-service:${TAG}"
+echo "  # ... etc"
+echo ""
+print_status "To update your docker-compose.yml files, change the image references to:"
+echo "  image: ${REGISTRY}/SERVICE_NAME:${TAG}"
