@@ -1,0 +1,56 @@
+# API Routes Configuration
+http:
+  routers:
+    # Main API Gateway - handles all external traffic
+    api-gateway:
+      rule: "Host(`api.localhost`)"
+      service: api-gateway-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+        - auth-headers
+
+    # Direct access to Product Service (for testing/admin)
+    product-service:
+      rule: "Host(`products.localhost`)"
+      service: product-service-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
+  services:
+    api-gateway-service:
+      loadBalancer:
+        servers:
+          - url: "http://api-gateway:8080"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: api-gateway
+
+    product-service-service:
+      loadBalancer:
+        servers:
+          - url: "http://product-service:8082"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: product-service
+
+  middlewares:
+    rate-limit:
+      rateLimit:
+        burst: 100
+        average: 10
+
+    auth-headers:
+      headers:
+        customRequestHeaders:
+          X-Forwarded-Proto: http
+          X-Forwarded-Host: api.localhost

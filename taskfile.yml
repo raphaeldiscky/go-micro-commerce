@@ -9,6 +9,8 @@ vars:
   APPS_DC_FILE: "{{.DC_DIR}}/apps.yaml"
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
+  COMPOSE_FILES:
+    sh: echo "-f deployments/docker-compose/"{postgres,redis,kafka,monitoring,security,dev-tools,api-gateway,apps}".yaml" | tr ' ' '\n' | paste -sd ' ' -
 
 tasks:
   install_tools:
@@ -38,10 +40,28 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Building all services..."
+          bash ./scripts/lint.sh
           bash ./scripts/build.sh
         else
           echo "Building {{.SERVICE}}..."
+          bash ./scripts/lint.sh {{.SERVICE}}
           bash ./scripts/build.sh {{.SERVICE}}
+        fi
+
+  push:
+    desc: Push all services to the container registry
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Pushing all services..."
+          bash ./scripts/lint.sh
+          bash ./scripts/push.sh
+        else
+          echo "Pushing {{.SERVICE}}..."
+          bash ./scripts/lint.sh {{.SERVICE}}
+          bash ./scripts/push.sh {{.SERVICE}}
         fi
 
   migrateup:
@@ -111,7 +131,13 @@ tasks:
   stop_infra:
     desc: Stop local infrastructure using docker-compose
     cmds:
-      - docker compose -f {{.INFRA_DC_FILE}} down
+      - docker compose {{.COMPOSE_FILES}} down
+      - |
+        CONTAINERS=$(docker ps --filter network=go-micro-template -q)
+        if [ -n "$CONTAINERS" ]; then
+          echo "Stopping leftover containers attached to go-micro-template network..."
+          docker rm -f $CONTAINERS
+        fi
       - docker network rm go-micro-template
 
   stop_monitoring:

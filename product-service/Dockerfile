@@ -31,6 +31,8 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/product-service/main .
 
+EXPOSE 8082
+
 # Switch to the non-root user
 USER appuser
 

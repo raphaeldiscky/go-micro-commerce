@@ -1,6 +1,4 @@
 # Local monitoring services
-name: go-micro-template
-
 services:
   # Prometheus for metrics collection
   prometheus:
@@ -91,11 +89,12 @@ services:
   tempo:
     image: grafana/tempo:2.8.1
     container_name: tempo
+    user: "10001:10001" # Run as non-root user
     ports:
       - "3200:3200" # tempo
     command: ["-config.file=/etc/tempo.yaml"]
     volumes:
-      - tempo_data:/tmp/tempo
+      - tempo_data:/var/tempo
       - ./monitoring/config/tempo-config.yaml:/etc/tempo.yaml:ro
     networks:
       - go-micro-template

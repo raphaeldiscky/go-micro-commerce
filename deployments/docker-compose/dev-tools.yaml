@@ -1,6 +1,4 @@
 # Development and debugging tools
-name: go-micro-template
-
 services:
   # MailHog for email testing
   mailhog:
@@ -49,9 +47,9 @@ services:
     image: swaggerapi/swagger-ui:v5.10.5
     container_name: swagger-ui
     ports:
-      - "8082:8080"
+      - "8091:8080"
     environment:
-      - SWAGGER_JSON_URL=http://localhost:8080/swagger.json
+      - SWAGGER_JSON_URL=http://localhost:8081/swagger.json
     networks:
       - go-micro-template
 

@@ -1,5 +1,3 @@
-name: go-micro-template
-
 services:
   postgres-auth:
     image: postgres:16-alpine
@@ -11,6 +9,8 @@ services:
       - POSTGRES_HOST=localhost
     ports:
       - "15432:5432"
+    networks:
+      - go-micro-template
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -31,6 +31,8 @@ services:
       - POSTGRES_HOST=localhost
     ports:
       - "25432:5432"
+    networks:
+      - go-micro-template
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -51,6 +53,8 @@ services:
       - POSTGRES_HOST=localhost
     ports:
       - "35432:5432"
+    networks:
+      - go-micro-template
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -60,3 +64,8 @@ services:
       resources:
         limits:
           memory: 500m
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true

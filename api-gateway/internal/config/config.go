@@ -21,9 +21,10 @@ type Config struct {
 
 // LoadConfig loads configuration from environment variables and config files.
 func LoadConfig() (*Config, error) {
+	viper.AutomaticEnv()
+
 	configPath := parseConfigPath()
-	viper.AddConfigPath(configPath)
-	viper.SetConfigName(".env")
+	viper.SetConfigFile(configPath + "/.env")
 	viper.SetConfigType("env")
 
 	if err := viper.ReadInConfig(); err != nil {
