@@ -29,6 +29,10 @@ func (p *Product) validate() error {
 		return errors.New("price must be greater than 0")
 	}
 
+	if p.Quantity < 0 {
+		return errors.New("quantity must be greater than or equal to 0")
+	}
+
 	if p.CreatedAt.After(p.UpdatedAt) {
 		return errors.New("created_at must be before updated_at")
 	}
@@ -37,13 +41,14 @@ func (p *Product) validate() error {
 }
 
 // NewProduct creates a new product with validation.
-func NewProduct(name string, price decimal.Decimal) (*Product, error) {
+func NewProduct(name string, price decimal.Decimal, quantity int) (*Product, error) {
 	product := &Product{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Name:      name,
 		Price:     price.Round(2), // Ensure precision of 2 decimal places
+		Quantity:  quantity,
 	}
 
 	if err := product.validate(); err != nil {
@@ -64,6 +69,14 @@ func (p *Product) UpdateName(name string) error {
 // UpdatePrice updates the product price with validation.
 func (p *Product) UpdatePrice(price decimal.Decimal) error {
 	p.Price = price.Round(2) // Ensure precision of 2 decimal places
+	p.UpdatedAt = time.Now()
+
+	return p.validate()
+}
+
+// UpdateQuantity updates the product quantity with validation.
+func (p *Product) UpdateQuantity(quantity int) error {
+	p.Quantity = quantity
 	p.UpdatedAt = time.Now()
 
 	return p.validate()

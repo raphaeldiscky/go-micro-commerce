@@ -14,12 +14,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/infra/kafka"
-	handlers "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/server"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/repository"
-	services "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/kafka"
+	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/server"
+	services "github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 func main() {
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	// Setup repository
-	productRepo := repository.NewProductRepository(dbPool)
+	productRepo := postgres.NewProductRepositoryPostgres(dbPool)
 
 	// Setup services
 	productService := services.NewProductService(productRepo, eventPublisher, appLogger)

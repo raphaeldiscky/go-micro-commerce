@@ -11,7 +11,7 @@ import (
 // CreateProductRequest represents the request to create a new product.
 type CreateProductRequest struct {
 	Name     string          `json:"name"     validate:"required,min=1,max=255"`
-	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gt"`
+	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gte"`
 	Quantity int             `json:"quantity" validate:"required,min=0"`
 }
 
@@ -19,7 +19,7 @@ type CreateProductRequest struct {
 type UpdateProductRequest struct {
 	ID       uuid.UUID       `json:"id"       validate:"required"`
 	Name     string          `json:"name"     validate:"required,min=1,max=255"`
-	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gt"`
+	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gte"`
 	Quantity int             `json:"quantity" validate:"required,min=0"`
 }
 

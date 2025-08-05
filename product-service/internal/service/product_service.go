@@ -7,11 +7,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/dto"
-	entity "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/entity"
-	event "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/event"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/log"
-	repository "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
+	entity "github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
+	event "github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/log"
+	repository "github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 )
 
 // ProductServiceInterface defines the interface for product business operations.
@@ -49,7 +49,7 @@ func (s *ProductService) CreateProduct(
 	req dto.CreateProductRequest,
 ) (*dto.ProductResponse, error) {
 	// Create domain entity
-	product, err := entity.NewProduct(req.Name, req.Price)
+	product, err := entity.NewProduct(req.Name, req.Price, req.Quantity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create product entity: %w", err)
 	}
@@ -152,6 +152,10 @@ func (s *ProductService) UpdateProduct(
 		return nil, fmt.Errorf("failed to update product price: %w", err)
 	}
 
+	if err := existingProduct.UpdateQuantity(req.Quantity); err != nil {
+		return nil, fmt.Errorf("failed to update product quantity: %w", err)
+	}
+
 	// Save updated product
 	updatedProduct, err := s.productRepo.Update(ctx, existingProduct)
 	if err != nil {
@@ -164,6 +168,7 @@ func (s *ProductService) UpdateProduct(
 			updatedProduct.ID,
 			updatedProduct.Name,
 			updatedProduct.Price,
+			updatedProduct.Quantity,
 		)
 		if err := s.eventPublisher.Publish(evt); err != nil {
 			s.logger.Errorf("Failed to publish ProductUpdated event: %v", err)
@@ -207,6 +212,7 @@ func (s *ProductService) mapToResponse(product *entity.Product) *dto.ProductResp
 		ID:        product.ID,
 		Name:      product.Name,
 		Price:     product.Price,
+		Quantity:  product.Quantity,
 		CreatedAt: product.CreatedAt,
 		UpdatedAt: product.UpdatedAt,
 	}
