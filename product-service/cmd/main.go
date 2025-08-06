@@ -74,8 +74,12 @@ func main() {
 	// Setup HTTP handlers
 	productHandler := handlers.NewProductHandler(productService)
 
-	// Setup HTTP server
+	// Initialize HTTP server
 	httpServer := server.NewHTTPServer(productHandler)
+
+	// Register with Consul if enabled and setup cleanup
+	consulCleanup := setupConsulRegistration(cfg)
+	defer consulCleanup()
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())

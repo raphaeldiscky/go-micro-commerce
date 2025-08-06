@@ -30,27 +30,29 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
 	require.NoError(s.T(), err)
 
-	if cerr := resp.Body.Close(); cerr != nil {
-		require.NoError(s.T(), cerr)
-	}
-
 	var createdProduct dto.ProductResponse
 	err = s.parseResponse(resp, &createdProduct)
 	require.NoError(s.T(), err)
 
-	// Test getting the product
-	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", createdProduct.ID), nil)
-	require.NoError(s.T(), err)
-
+	// Close response body after parsing
 	if cerr := resp.Body.Close(); cerr != nil {
 		require.NoError(s.T(), cerr)
 	}
+
+	// Test getting the product
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", createdProduct.ID), nil)
+	require.NoError(s.T(), err)
 
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var product dto.ProductResponse
 	err = s.parseResponse(resp, &product)
 	require.NoError(s.T(), err)
+
+	// Close response body after parsing
+	if cerr := resp.Body.Close(); cerr != nil {
+		require.NoError(s.T(), cerr)
+	}
 
 	assert.Equal(s.T(), createdProduct.ID, product.ID)
 	assert.Equal(s.T(), "Test Product", product.Name)
@@ -64,22 +66,22 @@ func (s *ProductGetTestSuite) TestGetProductNotFound() {
 	resp, err := s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", nonExistentID), nil)
 	require.NoError(s.T(), err)
 
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
+
 	if cerr := resp.Body.Close(); cerr != nil {
 		require.NoError(s.T(), cerr)
 	}
-
-	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 }
 
 func (s *ProductGetTestSuite) TestGetProductInvalidID() {
 	resp, err := s.makeRequest("GET", "/api/v1/products/invalid-uuid", nil)
 	require.NoError(s.T(), err)
 
+	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
+
 	if cerr := resp.Body.Close(); cerr != nil {
 		require.NoError(s.T(), cerr)
 	}
-
-	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 }
 
 // TestProductGetSuite runs the product retrieval test suite.

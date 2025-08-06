@@ -268,3 +268,8 @@ tasks:
           echo "Generating SQLC files for {{.SERVICE}}..."
           sh ./scripts/sqlc.sh {{.SERVICE}}
         fi
+
+  jwt:
+    desc: Generate JWT keys
+    cmds:
+      - node ./scripts/generate-jwt.js

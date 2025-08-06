@@ -15,6 +15,7 @@ type Config struct {
 	Kafka      *KafkaConfig
 	Logger     *LoggerConfig
 	Redis      *RedisConfig
+	Consul     *ConsulConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -36,6 +37,7 @@ func LoadConfig() (*Config, error) {
 		Kafka:      initKafkaConfig(),
 		Logger:     initLoggerConfig(),
 		Redis:      initRedisConfig(),
+		Consul:     initConsulConfig(),
 	}
 
 	return cfg, nil
