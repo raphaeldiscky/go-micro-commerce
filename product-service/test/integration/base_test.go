@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"testing"
@@ -51,8 +52,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	productHandler := handlers.NewProductHandler(s.productService)
 	s.httpServer = server.NewHTTPServer(productHandler)
 
-	// Use a different port for integration tests to avoid conflicts
-	testPort := "10081"
+	// Use a unique port for each test suite to avoid conflicts
+	// Generate a port number based on current time to make it unique
+	basePort := 10080 + (int(time.Now().UnixNano()/1000000) % 1000)
+	testPort := fmt.Sprintf("%d", basePort)
 
 	// Start HTTP server in goroutine
 	go func() {
@@ -64,7 +67,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}()
 
 	// Wait for server to start
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 
 	s.baseURL = "http://localhost:" + testPort
 

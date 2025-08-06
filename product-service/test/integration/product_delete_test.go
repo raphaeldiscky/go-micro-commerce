@@ -70,7 +70,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProductNotFound() {
 	resp, err := s.makeRequest("DELETE", fmt.Sprintf("/api/v1/products/%s", nonExistentID), nil)
 	require.NoError(s.T(), err)
 
-	assert.Equal(s.T(), http.StatusInternalServerError, resp.StatusCode)
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode) // 404
 
 	if cerr := resp.Body.Close(); cerr != nil {
 		require.NoError(s.T(), cerr)

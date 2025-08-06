@@ -12,7 +12,7 @@ tasks:
       - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -tags="sonic avx" -v -o {{.CURDIR}}/bin/main {{.CURDIR}}/cmd/main.go
 
   test:
-    desc: Run tests with verbose output and coverage
+    desc: Run tests with verbose output and coverage (sequential)
     cmds:
       - go test -v -cover {{.CURDIR}}/...
 
