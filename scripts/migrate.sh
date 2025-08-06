@@ -24,11 +24,16 @@ SERVICE_PORTS[product-service]=25432
 SERVICE_PORTS[order-service]=35432
 
 
+# Postgres path
+POSTGRES_MIGRATION_PATH="internal/infra/db/migrations"
+
+
 # If SERVICE == "all", loop through all
 if [ "$SERVICE" == "all" ]; then
   echo "📦 Running '$COMMAND' migrations for all services..."
   for svc in "${!SERVICE_PORTS[@]}"; do
-    MIGRATIONS_DIR="${svc}/db/migrations"
+    MIGRATIONS_DIR="${svc}/${POSTGRES_MIGRATION_PATH}"
+    echo "Checking migrations for $svc at $MIGRATIONS_DIR"
     if [ ! -d "$MIGRATIONS_DIR" ]; then
       echo "Skipping $svc — no migrations found at $MIGRATIONS_DIR"
       continue
@@ -41,13 +46,14 @@ fi
 PORT=${SERVICE_PORTS[$SERVICE]}
 
 if [ -z "$PORT" ]; then
-  echo "❌ Unknown service: '$SERVICE'"
+  echo "Unknown service: '$SERVICE'"
   echo "Available services: ${!SERVICE_PORTS[@]}"
   exit 1
 fi
 
-MIGRATIONS_DIR="${SERVICE}/db/migrations"
+MIGRATIONS_DIR="${SERVICE}/${POSTGRES_MIGRATION_PATH}"
 if [ ! -d "$MIGRATIONS_DIR" ]; then
+  echo "Migrations directory '$MIGRATIONS_DIR' does not exist for service '$SERVICE'."
   echo " No migration directory found for $SERVICE — skipping"
   exit 0
 fi

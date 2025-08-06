@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 )
 
 // NewProductCreatedEvent creates a new ProductCreatedEvent.

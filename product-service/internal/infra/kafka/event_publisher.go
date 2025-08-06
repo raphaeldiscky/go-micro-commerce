@@ -9,7 +9,7 @@ import (
 
 	"github.com/IBM/sarama"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
 )
 
 // EventPublisherKafka implements the EventPublisher interface using Kafka.

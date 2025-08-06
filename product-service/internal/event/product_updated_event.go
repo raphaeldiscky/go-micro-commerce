@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 )
 
 // NewProductUpdatedEvent creates a new ProductUpdatedEvent.
@@ -14,6 +14,7 @@ func NewProductUpdatedEvent(
 	productID uuid.UUID,
 	name string,
 	price decimal.Decimal,
+	quantity int,
 ) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
 		BaseEvent: BaseEvent{
@@ -27,6 +28,7 @@ func NewProductUpdatedEvent(
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
+			Quantity:  quantity,
 		},
 	}
 }

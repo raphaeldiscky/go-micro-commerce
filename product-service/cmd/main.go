@@ -14,12 +14,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/infra/kafka"
-	handlers "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/server"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/repository"
-	services "github.com/raphaeldiscky/go-micro-template/services/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/consul"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/kafka"
+	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/server"
+	services "github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 func main() {
@@ -66,7 +67,7 @@ func main() {
 	}
 
 	// Setup repository
-	productRepo := repository.NewProductRepository(dbPool)
+	productRepo := postgres.NewProductRepositoryPostgres(dbPool)
 
 	// Setup services
 	productService := services.NewProductService(productRepo, eventPublisher, appLogger)
@@ -74,8 +75,12 @@ func main() {
 	// Setup HTTP handlers
 	productHandler := handlers.NewProductHandler(productService)
 
-	// Setup HTTP server
+	// Initialize HTTP server
 	httpServer := server.NewHTTPServer(productHandler)
+
+	// Register with Consul if enabled and setup cleanup
+	consulCleanup := setupConsulRegistration(cfg)
+	defer consulCleanup()
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -125,4 +130,38 @@ func main() {
 	// Wait for all goroutines to finish
 	wg.Wait()
 	log.Println("Product service shut down complete")
+}
+
+// setupConsulRegistration handles Consul service registration and returns a cleanup function.
+func setupConsulRegistration(cfg *config.Config) func() {
+	if !cfg.Consul.Enabled {
+		log.Println("Consul service discovery is disabled")
+
+		return func() {}
+	}
+
+	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address)
+	if err != nil {
+		log.Printf("Failed to create Consul client: %v", err)
+
+		return func() {}
+	}
+
+	if err := consulClient.Register(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+		log.Printf("Failed to register with Consul: %v", err)
+
+		return func() {}
+	}
+
+	log.Printf("Service registered with Consul: %s at %s:%d",
+		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
+
+	// Return cleanup function
+	return func() {
+		if err := consulClient.Deregister(); err != nil {
+			log.Printf("Failed to deregister from Consul: %v", err)
+		} else {
+			log.Println("Service deregistered from Consul")
+		}
+	}
 }

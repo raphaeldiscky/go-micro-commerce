@@ -31,6 +31,7 @@ type ProductCreatedData struct {
 	ProductID uuid.UUID       `json:"product_id"`
 	Name      string          `json:"name"`
 	Price     decimal.Decimal `json:"price"`
+	Quantity  int             `json:"quantity"`
 }
 
 // ProductUpdatedData holds the data for the product updated event.
@@ -38,6 +39,7 @@ type ProductUpdatedData struct {
 	ProductID    uuid.UUID          `json:"product_id"`
 	Name         string             `json:"name"`
 	Price        decimal.Decimal    `json:"price"`
+	Quantity     int                `json:"quantity"`
 	PreviousData ProductCreatedData `json:"previous_data,omitempty"` // Optional field for previous product data
 }
 

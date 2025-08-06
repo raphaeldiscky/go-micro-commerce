@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/interface/http/httperror"
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/httperror"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 // ProductHandler handles HTTP requests for product operations.

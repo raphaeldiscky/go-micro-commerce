@@ -7,7 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 )
 
 // NewProductNotFoundError creates a new product not found error.

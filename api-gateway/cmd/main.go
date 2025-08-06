@@ -120,6 +120,16 @@ func main() {
 }
 
 func setupRoutes(e *echo.Echo, gw *gateway.Gateway, cfg *config.Config) {
+	// Health endpoints for services (no auth required)
+	healthGroup := e.Group("/services")
+	healthGroup.GET("/product-service/health", gw.ProxyToService("product-service", "/health"))
+	healthGroup.GET("/auth-service/health", gw.ProxyToService("auth-service", "/health"))
+	healthGroup.GET("/order-service/health", gw.ProxyToService("order-service", "/health"))
+	healthGroup.GET(
+		"/notification-service/health",
+		gw.ProxyToService("notification-service", "/health"),
+	)
+
 	// API version 1
 	v1 := e.Group("/api/v1")
 

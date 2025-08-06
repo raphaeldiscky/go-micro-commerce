@@ -7,7 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
 
-	"github.com/raphaeldiscky/go-micro-template/services/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 )
 
 // NewInvalidRequestBodyError creates a new invalid request body error.

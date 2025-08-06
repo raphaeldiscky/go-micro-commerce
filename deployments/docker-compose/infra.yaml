@@ -7,7 +7,7 @@ include:
   - security.yaml
   - dev-tools.yaml
   - api-gateway.yaml
-  - apps.yaml
+  # - apps.yaml
 
 networks:
   go-micro-template:
