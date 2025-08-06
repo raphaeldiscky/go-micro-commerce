@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// Setup database connection
-	dbPool, err := pgxpool.New(context.Background(), cfg.GetURL())
+	dbPool, err := pgxpool.New(context.Background(), cfg.Postgres.GetConnectionString())
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

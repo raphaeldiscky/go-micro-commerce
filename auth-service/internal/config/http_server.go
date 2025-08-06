@@ -21,6 +21,7 @@ func initHTTPServerConfig() *HTTPServerConfig {
 	viper.SetDefault("HTTP_SERVER_PORT", 8081)
 	viper.SetDefault("HTTP_SERVER_GRACE_PERIOD", 10)
 	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", 30)
+
 	httpServerConfig := &HTTPServerConfig{}
 
 	if err := viper.Unmarshal(&httpServerConfig); err != nil {

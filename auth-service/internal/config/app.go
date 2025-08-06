@@ -1,4 +1,3 @@
-// Package config provides configuration management for the application.
 package config
 
 import (
@@ -7,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// AppConfig holds the application configuration.
+// AppConfig holds application configuration.
 type AppConfig struct {
 	Name        string `mapstructure:"APP_NAME"`
 	Environment string `mapstructure:"APP_ENVIRONMENT"`
@@ -18,7 +17,7 @@ type AppConfig struct {
 // initAppConfig initializes the application configuration from environment variables.
 func initAppConfig() *AppConfig {
 	// Set defaults
-	viper.SetDefault("APP_NAME", "product-service")
+	viper.SetDefault("APP_NAME", "auth-service")
 	viper.SetDefault("APP_ENVIRONMENT", "development")
 	viper.SetDefault("APP_VERSION", "1.0.0")
 	viper.SetDefault("LOG_LEVEL", "info")

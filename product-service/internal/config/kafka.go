@@ -17,6 +17,13 @@ type KafkaConfig struct {
 
 // initKafkaConfig initializes the Kafka configuration from environment variables.
 func initKafkaConfig() *KafkaConfig {
+	// Set defaults
+	viper.SetDefault("KAFKA_BROKERS", []string{"localhost:9092"})
+	viper.SetDefault("KAFKA_TOPIC", "product-events")
+	viper.SetDefault("KAFKA_RETRY_MAX", 3)
+	viper.SetDefault("KAFKA_FLUSH_FREQUENCY", 1000)
+	viper.SetDefault("KAFKA_RETURN_SUCCESS", true)
+
 	kafkaConfig := &KafkaConfig{}
 
 	if err := viper.Unmarshal(&kafkaConfig); err != nil {

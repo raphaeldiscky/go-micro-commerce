@@ -16,28 +16,16 @@ type ConsulConfig struct {
 
 // initConsulConfig initializes the Consul configuration from environment variables.
 func initConsulConfig() *ConsulConfig {
+	// Set defaults
+	viper.SetDefault("CONSUL_ADDRESS", "localhost:8500")
+	viper.SetDefault("SERVICE_NAME", "product-service")
+	viper.SetDefault("SERVICE_HOST", "192.168.0.107")
+	viper.SetDefault("CONSUL_ENABLED", true)
+
 	consulConfig := &ConsulConfig{}
 
 	if err := viper.Unmarshal(&consulConfig); err != nil {
 		log.Fatalf("error mapping consul config: %v", err)
-	}
-
-	// Set defaults
-	if consulConfig.Address == "" {
-		consulConfig.Address = "localhost:8500"
-	}
-
-	if consulConfig.ServiceName == "" {
-		consulConfig.ServiceName = "product-service"
-	}
-
-	if consulConfig.ServiceHost == "" {
-		consulConfig.ServiceHost = "192.168.0.107" // Default host IP for Docker
-	}
-
-	// Enable by default if address is provided
-	if !consulConfig.Enabled && consulConfig.Address != "" {
-		consulConfig.Enabled = true
 	}
 
 	return consulConfig
