@@ -6,10 +6,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net"
 	"net/http"
 	"os"
-	"strconv"
 	"testing"
 	"time"
 
@@ -54,7 +52,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.httpServer = server.NewHTTPServer(productHandler)
 
 	// Use a different port for integration tests to avoid conflicts
-	testPort := s.findAvailablePort()
+	testPort := "10081"
 
 	// Start HTTP server in goroutine
 	go func() {
@@ -167,22 +165,4 @@ func TestMain(m *testing.M) {
 
 	// Exit with the same code as the test run
 	os.Exit(code)
-}
-
-// findAvailablePort finds an available port for testing.
-func (s *IntegrationTestSuite) findAvailablePort() string {
-	// Try ports starting from 8090 to avoid conflicts with main services
-	for port := 8090; port <= 8099; port++ {
-		listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
-		if err == nil {
-			if err := listener.Close(); err != nil {
-				s.T().Errorf("failed to close listener: %v", err)
-			}
-
-			return strconv.Itoa(port)
-		}
-	}
-
-	// Fallback to a default port if no available port found
-	return "8095"
 }
