@@ -6,8 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -51,9 +53,12 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	productHandler := handlers.NewProductHandler(s.productService)
 	s.httpServer = server.NewHTTPServer(productHandler)
 
+	// Use a different port for integration tests to avoid conflicts
+	testPort := s.findAvailablePort()
+
 	// Start HTTP server in goroutine
 	go func() {
-		if err := s.httpServer.Start("8082"); err != nil {
+		if err := s.httpServer.Start(testPort); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				s.T().Errorf("HTTP server error: %v", err)
 			}
@@ -61,9 +66,9 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	}()
 
 	// Wait for server to start
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(200 * time.Millisecond)
 
-	s.baseURL = "http://localhost:8082"
+	s.baseURL = "http://localhost:" + testPort
 
 	// Verify server is running
 	resp, err := http.NewRequestWithContext(s.ctx, http.MethodGet, s.baseURL+"/health", http.NoBody)
@@ -162,4 +167,22 @@ func TestMain(m *testing.M) {
 
 	// Exit with the same code as the test run
 	os.Exit(code)
+}
+
+// findAvailablePort finds an available port for testing.
+func (s *IntegrationTestSuite) findAvailablePort() string {
+	// Try ports starting from 8090 to avoid conflicts with main services
+	for port := 8090; port <= 8099; port++ {
+		listener, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+		if err == nil {
+			if err := listener.Close(); err != nil {
+				s.T().Errorf("failed to close listener: %v", err)
+			}
+
+			return strconv.Itoa(port)
+		}
+	}
+
+	// Fallback to a default port if no available port found
+	return "8095"
 }
