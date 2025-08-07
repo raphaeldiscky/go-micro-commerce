@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
@@ -28,28 +29,34 @@ func NewHTTPServer(
 	authHandler *handler.AuthHandler,
 	cfg *config.Config,
 	lgr logger.Logger,
-) (*HTTPServer, error) {
+) *HTTPServer {
 	e := echo.New()
 
 	// Set custom validator
 	e.Validator = validation.NewValidator()
+
+	// Middleware
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
+	e.Use(middleware.RequestID())
 
 	return &HTTPServer{
 		echo:        e,
 		config:      cfg,
 		logger:      lgr,
 		authHandler: authHandler,
-	}, nil
+	}
 }
 
-// RegisterAuthRoutes registers the authentication routes.
-func (s *HTTPServer) RegisterAuthRoutes() {
+// RegisterRoutes registers the authentication routes.
+func (s *HTTPServer) RegisterRoutes() {
 	routes.SetupAuthRoutes(s.echo, s.authHandler)
 }
 
 // Start starts the HTTP server.
 func (s *HTTPServer) Start(port string) error {
-	s.RegisterAuthRoutes()
+	s.RegisterRoutes()
 
 	server := &http.Server{
 		Addr:         ":" + port,

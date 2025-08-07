@@ -73,6 +73,7 @@ func (s *ProductService) CreateProduct(
 			savedProduct.Quantity,
 		)
 		topic := s.topics.ProductLifecycle
+
 		if err := s.producer.Produce(topic, evt); err != nil {
 			// Log error but don't fail the operation
 			// In production, you might want to implement event outbox pattern
@@ -177,6 +178,7 @@ func (s *ProductService) UpdateProduct(
 			updatedProduct.Quantity,
 		)
 		topic := s.topics.ProductLifecycle
+
 		if err := s.producer.Produce(topic, evt); err != nil {
 			s.logger.Errorf("Failed to produce ProductUpdated event: %v", err)
 		}
@@ -206,6 +208,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 	if s.producer != nil {
 		evt := event.NewProductDeletedEvent(id)
 		topic := s.topics.ProductLifecycle
+
 		if err := s.producer.Produce(topic, evt); err != nil {
 			s.logger.Errorf("Failed to produce ProductDeleted event: %v", err)
 		}

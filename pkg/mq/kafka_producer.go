@@ -1,4 +1,4 @@
-package client
+package mq
 
 import (
 	"encoding/json"
@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
-
 	"github.com/google/uuid"
 )
 
+// KafkaProducerConfig holds the configuration for the Kafka producer.
 type KafkaProducerConfig struct {
 	Brokers        []string
 	ReturnSuccess  bool
@@ -22,6 +22,12 @@ type KafkaProducerConfig struct {
 // ProducerKafka implements the EventProducer interface using Kafka.
 type ProducerKafka struct {
 	producer sarama.SyncProducer
+}
+
+// BaseEvent represents a base event interface.
+type BaseEvent interface {
+	GetMetadata() KafkaMetadata
+	GetPayload() interface{}
 }
 
 // KafkaMetadata provides common event properties.
@@ -52,8 +58,8 @@ func NewProducerKafka(cfg *KafkaProducerConfig) (*ProducerKafka, error) {
 	}, nil
 }
 
-// Publish publishes an event to Kafka.
-func (p *ProducerKafka) Publish(topic string, evt BaseEvent) error {
+// Produce an event to Kafka.
+func (p *ProducerKafka) Produce(topic string, evt BaseEvent) error {
 	// Marshal event to JSON
 	eventData, err := json.Marshal(evt)
 	if err != nil {

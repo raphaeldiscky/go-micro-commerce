@@ -1,4 +1,5 @@
-package event
+// Package mq provides a Kafka consumer implementation for consuming messages from Kafka topics.
+package mq
 
 import (
 	"context"
@@ -7,8 +8,18 @@ import (
 	"log"
 
 	"github.com/IBM/sarama"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 )
+
+// KafkaConsumerConfig holds the configuration for the Kafka consumer.
+type KafkaConsumerConfig struct {
+	Brokers        []string
+	GroupID        string
+	Topics         []string
+	ReturnSuccess  bool
+	ReturnErrors   bool
+	RetryMax       int
+	FlushFrequency int // in milliseconds
+}
 
 // ConsumerHandler defines the handler function for consuming messages.
 type ConsumerHandler func(message *BaseEvent) error
@@ -21,7 +32,11 @@ type ConsumerKafka struct {
 }
 
 // NewConsumerKafka creates a new Kafka consumer group.
-func NewConsumerKafka(ctx context.Context, cfg *config.KafkaConfig, groupID, topic string, handler ConsumerHandler) (*ConsumerKafka, error) {
+func NewConsumerKafka(
+	cfg *KafkaConsumerConfig,
+	groupID, topic string,
+	handler ConsumerHandler,
+) (*ConsumerKafka, error) {
 	saramaCfg := sarama.NewConfig()
 	saramaCfg.Version = sarama.V2_6_0_0
 	saramaCfg.Consumer.Offsets.Initial = sarama.OffsetNewest
@@ -44,6 +59,7 @@ func (c *ConsumerKafka) Start(ctx context.Context) error {
 	for {
 		if err := c.consumerGroup.Consume(ctx, []string{c.topic}, c); err != nil {
 			log.Printf("Error consuming from topic %s: %v", c.topic, err)
+
 			continue
 		}
 
@@ -59,6 +75,7 @@ func (c *ConsumerKafka) Close() error {
 	if c.consumerGroup != nil {
 		return c.consumerGroup.Close()
 	}
+
 	return nil
 }
 
@@ -69,16 +86,21 @@ func (c *ConsumerKafka) Setup(sarama.ConsumerGroupSession) error { return nil }
 func (c *ConsumerKafka) Cleanup(sarama.ConsumerGroupSession) error { return nil }
 
 // ConsumeClaim processes messages from the claim.
-func (c *ConsumerKafka) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+func (c *ConsumerKafka) ConsumeClaim(
+	session sarama.ConsumerGroupSession,
+	claim sarama.ConsumerGroupClaim,
+) error {
 	for msg := range claim.Messages() {
 		var evt BaseEvent
 		if err := json.Unmarshal(msg.Value, &evt); err != nil {
 			log.Printf("Failed to unmarshal message: %v", err)
+
 			continue
 		}
 
 		if err := c.handler(&evt); err != nil {
 			log.Printf("Handler error: %v", err)
+
 			continue
 		}
 

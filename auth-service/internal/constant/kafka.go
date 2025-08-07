@@ -1,3 +1,4 @@
+// Package constant defines constants used in the auth service.
 package constant
 
 // Auth Service Source.

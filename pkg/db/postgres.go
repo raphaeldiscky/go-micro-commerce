@@ -1,4 +1,5 @@
-package client
+// Package db provides a PostgreSQL connection pool implementation.
+package db
 
 import (
 	"context"
@@ -8,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// PostgresConfig holds the configuration for the PostgreSQL connection.
 type PostgresConfig struct {
 	Host            string
 	Name            string

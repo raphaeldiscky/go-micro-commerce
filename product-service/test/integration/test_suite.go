@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/suite"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
-	postgresrepo "github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
-	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/server"
-	services "github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 // TestSuite holds all integration tests.
@@ -27,7 +27,7 @@ type TestSuite struct {
 	tcSetup        *TestContainersSetup
 	httpServer     *server.HTTPServer
 	baseURL        string
-	productService services.ProductServiceInterface
+	productService service.ProductServiceInterface
 	ctx            context.Context
 }
 
@@ -44,15 +44,15 @@ func (s *TestSuite) SetupSuite() {
 	appLogger := logger.NewLogrusLogger(4) // Debug level
 
 	// Setup repository and service
-	productRepo := postgresrepo.NewProductRepositoryPostgres(s.tcSetup.DbPool)
+	productRepo := postgres.NewProductRepositoryPostgres(s.tcSetup.DbPool)
 
 	// Setup event publisher (optional, can be nil for tests)
 	topics := constant.NewProductTopics()
-	s.productService = services.NewProductService(productRepo, nil, topics, appLogger)
+	s.productService = service.NewProductService(productRepo, nil, topics, appLogger)
 
 	// Setup HTTP handlers and server
-	productHandler := handlers.NewProductHandler(s.productService)
-	s.httpServer = server.NewHTTPServer(productHandler)
+	productHandler := handler.NewProductHandler(s.productService)
+	s.httpServer = server.NewHTTPServer(productHandler, nil, appLogger)
 
 	// Use a unique port for each test suite to avoid conflicts
 	// Generate a port number based on current time to make it unique

@@ -4,7 +4,6 @@ package main
 import (
 	"context"
 	"fmt"
-
 	"log"
 	"os"
 	"os/signal"
@@ -12,16 +11,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/client"
+	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/consul"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
-	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/server"
-	services "github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 func main() {
@@ -31,25 +31,27 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	db, err := client.NewPostgresConnection(&client.PostgresConfig{
-		Host:     cfg.Postgres.Host,
-		Port:     cfg.Postgres.Port,
-		User:     cfg.Postgres.User,
-		Password: cfg.Postgres.Password,
-		Name:     cfg.Postgres.Name,
-		SSLMode:  cfg.Postgres.SSLMode,
+	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
+		Host:            cfg.Postgres.Host,
+		Port:            cfg.Postgres.Port,
+		User:            cfg.Postgres.User,
+		Password:        cfg.Postgres.Password,
+		Name:            cfg.Postgres.Name,
+		SSLMode:         cfg.Postgres.SSLMode,
+		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
+		MaxOpenConns:    cfg.Postgres.MaxOpenConns,
+		MaxConnLifetime: cfg.Postgres.MaxConnLifetime,
 	})
-
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer pgPool.Close()
 
 	// Setup logger
 	appLogger := logger.NewZapLogger(0) // 0 = debug level
 
 	// Setup Kafka event publisher
-	producer, err := client.NewProducerKafka(&client.KafkaProducerConfig{
+	producer, err := mq.NewProducerKafka(&mq.KafkaProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,
@@ -71,17 +73,17 @@ func main() {
 	}
 
 	// Setup repository
-	productRepo := postgres.NewProductRepositoryPostgres(db)
+	productRepo := postgres.NewProductRepositoryPostgres(pgPool)
 
 	// Setup services
 	topics := constant.NewProductTopics()
-	productService := services.NewProductService(productRepo, producer, topics, appLogger)
+	productService := service.NewProductService(productRepo, producer, topics, appLogger)
 
 	// Setup HTTP handlers
-	productHandler := handlers.NewProductHandler(productService)
+	productHandler := handler.NewProductHandler(productService)
 
 	// Initialize HTTP server
-	httpServer := server.NewHTTPServer(productHandler)
+	httpServer := server.NewHTTPServer(productHandler, cfg.HTTPServer, appLogger)
 
 	// Register with Consul if enabled and setup cleanup
 	consulCleanup := setupConsulRegistration(cfg)

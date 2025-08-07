@@ -2,26 +2,17 @@
 package event
 
 import (
-	"time"
-
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/shopspring/decimal"
 )
 
-// BaseEvent represents a base event interface.
-type BaseEvent interface {
-	GetMetadata() KafkaMetadata
-	GetPayload() interface{}
-}
-
-// KafkaMetadata provides common event properties.
-type KafkaMetadata struct {
-	EventID     uuid.UUID `json:"event_id"`
-	EventType   string    `json:"event_type"`
-	AggregateID uuid.UUID `json:"aggregate_id"`
-	OccurredAt  time.Time `json:"occurred_at"`
-	Source      string    `json:"source,omitempty"` // Service that produced the event
-}
+type (
+	// BaseEvent defines the interface for all events in the product service.
+	BaseEvent = mq.BaseEvent
+	// KafkaMetadata provides common event properties.
+	KafkaMetadata = mq.KafkaMetadata
+)
 
 // ProductCreatedPayload holds the data for the product created event.
 type ProductCreatedPayload struct {

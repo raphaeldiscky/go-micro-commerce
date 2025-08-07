@@ -59,11 +59,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService, appLogger)
 
 	// Initialize HTTP server
-	httpServer, err := server.NewHTTPServer(authHandler, cfg, appLogger)
-
-	if err != nil {
-		log.Fatalf("Failed to create HTTP server: %v", err)
-	}
+	httpServer := server.NewHTTPServer(authHandler, cfg, appLogger)
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())

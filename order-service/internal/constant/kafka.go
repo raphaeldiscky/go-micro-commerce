@@ -1,12 +1,12 @@
 // Package constant defines constants used in the order service for Kafka topics and event types.
 package constant
 
-// Order Service Source
+// Order Service Source.
 const (
 	KafkaSourceOrderService = "order-service"
 )
 
-// Order Service Event Types
+// Order Service Event Types.
 const (
 	// KafkaEventTypeOrderCreated is the event type for order creation events.
 	KafkaEventTypeOrderCreated = "OrderCreated"
@@ -33,7 +33,7 @@ const (
 	// KafkaEventTypeInventoryUpdated is the event type for inventory update events.
 )
 
-// Topics that Auth Service produces to
+// Topics that Auth Service produces to.
 const (
 	// TopicOrderLifecycle is the topic for order lifecycle events.
 	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
@@ -43,7 +43,7 @@ const (
 	TopicOrderInventory = "order.inventory" // InventoryReserved, InventoryReleased, InventoryUpdated
 )
 
-// Consumer groups for Order Service (consuming from other services)
+// Consumer groups for Order Service (consuming from other services).
 const (
 	// ConsumerGroupOrderAuthEvents is the consumer group for auth service events.
 	ConsumerGroupOrderUserEvents = "order-service.user-events" // For user lifecycle

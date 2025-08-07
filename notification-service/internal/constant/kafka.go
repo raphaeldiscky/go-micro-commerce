@@ -1,12 +1,12 @@
 // Package constant defines constants used in the order service for Kafka topics and event types.
 package constant
 
-// Notification Service Source
+// Notification Service Source.
 const (
 	KafkaSourceNotificationService = "notification-service"
 )
 
-// Notification Service Event Types
+// Notification Service Event Types.
 const (
 	// KafkaEventTypeEmailSent is the event type for email sent events.
 	KafkaEventTypeEmailSent = "EmailSent"
@@ -14,7 +14,7 @@ const (
 	KafkaEventTypeEmailFailed = "EmailFailed"
 )
 
-// Topics that Notification Service produces to
+// Topics that Notification Service produces to.
 const (
 	// TopicEmail is the topic for email events.
 	TopicEmail = "email"
@@ -24,7 +24,7 @@ const (
 	TopicPushNotification = "push" // Push notifications
 )
 
-// Consumer groups for Notification Service (consuming from other services)
+// Consumer groups for Notification Service (consuming from other services).
 const (
 	// ConsumerGroupNotificationUserEvents is the consumer group for user events.
 	ConsumerGroupNotificationUserEvents = "notification-service.user-events" // For user lifecycle

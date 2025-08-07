@@ -98,10 +98,10 @@ type PublisherInterface interface {
 }
 
 // NewBaseEvent creates a new base event.
-func NewBaseEvent(Type string, userID uuid.UUID) BaseEvent {
+func NewBaseEvent(eventType string, userID uuid.UUID) BaseEvent {
 	return BaseEvent{
 		EventID:   uuid.New(),
-		EventType: Type,
+		EventType: eventType,
 		Timestamp: time.Now(),
 		UserID:    userID,
 	}
