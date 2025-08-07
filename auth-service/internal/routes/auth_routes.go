@@ -1,3 +1,4 @@
+// Package routes provides the HTTP routes for the authentication service.
 package routes
 
 import (
@@ -24,6 +25,11 @@ func SetupAuthRoutes(e *echo.Echo, authHandler *handler.AuthHandler) {
 
 	// Session management
 	auth.POST("/logout", authHandler.Logout)
+
+	// User routes (protected)
+	users := v1.Group("/users")
+	users.GET("/:id", authHandler.GetProfile)
+	users.PUT("/:id", authHandler.UpdateProfile)
 
 	// Add CORS middleware for all routes
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{

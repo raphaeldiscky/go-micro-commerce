@@ -15,7 +15,7 @@ package integration
 
 // // ProductWorkflowTestSuite holds the test suite.
 // type ProductWorkflowTestSuite struct {
-// 	IntegrationTestSuite
+// 	TestSuite
 // }
 
 // func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {

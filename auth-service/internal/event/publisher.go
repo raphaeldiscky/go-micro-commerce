@@ -14,9 +14,9 @@ type SimplePublisher struct {
 }
 
 // NewSimplePublisher creates a new simple event publisher.
-func NewSimplePublisher(config *config.EventPublisherConfig) PublisherInterface {
+func NewSimplePublisher(cfg *config.EventPublisherConfig) PublisherInterface {
 	return &SimplePublisher{
-		config: config,
+		config: cfg,
 	}
 }
 

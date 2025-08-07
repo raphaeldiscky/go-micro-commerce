@@ -1,4 +1,4 @@
-package postgres
+package client
 
 import (
 	"context"
@@ -6,13 +6,23 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 )
 
-// NewConnection creates a new PostgreSQL connection pool.
-func NewConnection(cfg *config.PostgresConfig) (*pgxpool.Pool, error) {
-	dsn := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s?sslmode=%s",
+type PostgresConfig struct {
+	Host            string
+	Name            string
+	User            string
+	Password        string
+	SSLMode         string
+	Port            int
+	MaxIdleConns    int
+	MaxOpenConns    int
+	MaxConnLifetime int
+}
+
+// NewPostgresConnection creates a new PostgreSQL connection pool.
+func NewPostgresConnection(cfg *PostgresConfig) (*pgxpool.Pool, error) {
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode)
 
 	poolConfig, err := pgxpool.ParseConfig(dsn)

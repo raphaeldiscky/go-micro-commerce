@@ -7,30 +7,19 @@ import (
 	"github.com/google/uuid"
 )
 
-// EventType represents the type of event.
-type EventType string
-
-const (
-	// UserRegistered event type.
-	UserRegistered EventType = "user.registered"
-	// EmailVerificationRequested event type.
-	EmailVerificationRequested EventType = "user.email_verification_requested"
-	// EmailVerified event type.
-	EmailVerified EventType = "user.email_verified"
-	// PasswordResetRequested event type.
-	PasswordResetRequested EventType = "user.password_reset_requested"
-	// PasswordChanged event type.
-	PasswordChanged EventType = "user.password_changed"
-	// UserLoggedIn event type.
-	UserLoggedIn EventType = "user.logged_in"
-	// UserLoggedOut event type.
-	UserLoggedOut EventType = "user.logged_out"
-)
+// DomainEvent represents a domain event interface.
+type DomainEvent interface {
+	GetEventID() uuid.UUID
+	GetEventType() string
+	GetAggregateID() uuid.UUID
+	GetOccurredAt() time.Time
+	GetData() interface{}
+}
 
 // BaseEvent represents a base event structure.
 type BaseEvent struct {
-	ID        uuid.UUID `json:"id"`
-	Type      EventType `json:"type"`
+	EventID   uuid.UUID `json:"event_id"`
+	EventType string    `json:"type"`
 	Timestamp time.Time `json:"timestamp"`
 	UserID    uuid.UUID `json:"user_id"`
 }
@@ -109,10 +98,10 @@ type PublisherInterface interface {
 }
 
 // NewBaseEvent creates a new base event.
-func NewBaseEvent(eventType EventType, userID uuid.UUID) BaseEvent {
+func NewBaseEvent(Type string, userID uuid.UUID) BaseEvent {
 	return BaseEvent{
-		ID:        uuid.New(),
-		Type:      eventType,
+		EventID:   uuid.New(),
+		EventType: Type,
 		Timestamp: time.Now(),
 		UserID:    userID,
 	}

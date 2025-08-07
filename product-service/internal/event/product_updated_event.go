@@ -17,14 +17,14 @@ func NewProductUpdatedEvent(
 	quantity int,
 ) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
-		BaseEvent: BaseEvent{
+		Metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductUpdated,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		Data: ProductUpdatedData{
+		Payload: ProductUpdatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,

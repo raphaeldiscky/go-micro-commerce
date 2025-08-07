@@ -8,22 +8,21 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"testing"
 	"time"
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	postgresrepo "github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
 	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/server"
 	services "github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
-// IntegrationTestSuite holds all integration tests.
-type IntegrationTestSuite struct {
+// TestSuite holds all integration tests.
+type TestSuite struct {
 	suite.Suite
 	tcSetup        *TestContainersSetup
 	httpServer     *server.HTTPServer
@@ -33,7 +32,7 @@ type IntegrationTestSuite struct {
 }
 
 // SetupSuite runs once before all tests.
-func (s *IntegrationTestSuite) SetupSuite() {
+func (s *TestSuite) SetupSuite() {
 	s.ctx = context.Background()
 
 	// Setup testcontainers
@@ -46,7 +45,10 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	// Setup repository and service
 	productRepo := postgresrepo.NewProductRepositoryPostgres(s.tcSetup.DbPool)
-	s.productService = services.NewProductService(productRepo, nil, appLogger)
+
+	// Setup event publisher (optional, can be nil for tests)
+	topics := constant.NewProductTopics()
+	s.productService = services.NewProductService(productRepo, nil, topics, appLogger)
 
 	// Setup HTTP handlers and server
 	productHandler := handlers.NewProductHandler(s.productService)
@@ -86,7 +88,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 }
 
 // TearDownSuite runs once after all tests.
-func (s *IntegrationTestSuite) TearDownSuite() {
+func (s *TestSuite) TearDownSuite() {
 	if s.httpServer != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
@@ -103,15 +105,16 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 }
 
 // SetupTest runs before each test.
-func (s *IntegrationTestSuite) SetupTest() {
+func (s *TestSuite) SetupTest() {
 	// Clean up products table before each test
 	err := s.tcSetup.CleanupData()
 	require.NoError(s.T(), err)
 }
 
 // Helper methods for making HTTP requests.
-func (s *IntegrationTestSuite) makeRequest(
-	method, endpoint string,
+func (s *TestSuite) makeRequest(
+	method string,
+	endpoint string,
 	body interface{},
 ) (*http.Response, error) {
 	var reqBody []byte
@@ -142,7 +145,7 @@ func (s *IntegrationTestSuite) makeRequest(
 	return client.Do(req)
 }
 
-func (s *IntegrationTestSuite) parseResponse(resp *http.Response, target interface{}) error {
+func (s *TestSuite) parseResponse(resp *http.Response, target interface{}) error {
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			s.T().Errorf("failed to close response body: %v", err)
@@ -150,22 +153,4 @@ func (s *IntegrationTestSuite) parseResponse(resp *http.Response, target interfa
 	}()
 
 	return json.NewDecoder(resp.Body).Decode(target)
-}
-
-// TestMain sets up test environment.
-func TestMain(m *testing.M) {
-	// Set test environment variables
-	if err := os.Setenv("APP_ENV", "test"); err != nil {
-		panic("failed to set APP_ENV: " + err.Error())
-	}
-
-	if err := os.Setenv("LOG_LEVEL", "error"); err != nil {
-		panic("failed to set LOG_LEVEL: " + err.Error())
-	}
-
-	// Run tests
-	code := m.Run()
-
-	// Exit with the same code as the test run
-	os.Exit(code)
 }

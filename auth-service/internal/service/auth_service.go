@@ -15,6 +15,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
@@ -63,14 +64,14 @@ func NewAuthService(
 	sessionRepo repository.SessionRepositoryInterface,
 	jwtConfig *config.JWTConfig,
 	eventPublisher event.PublisherInterface,
-	logger logger.Logger,
+	lgr logger.Logger,
 ) AuthServiceInterface {
 	return &AuthService{
 		userRepo:       userRepo,
 		sessionRepo:    sessionRepo,
 		jwtConfig:      jwtConfig,
 		eventPublisher: eventPublisher,
-		logger:         logger,
+		logger:         lgr,
 	}
 }
 
@@ -180,7 +181,7 @@ func (s *AuthService) Register(
 
 	emailEvent := &event.EmailVerificationRequestedEvent{
 		BaseEvent: event.BaseEvent{
-			Type:      event.EmailVerificationRequested,
+			EventType: constant.KafkaEventTypeEmailVerificationRequested,
 			UserID:    user.ID,
 			Timestamp: time.Now(),
 		},

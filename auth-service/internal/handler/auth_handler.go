@@ -1,8 +1,10 @@
+// Package handler provides HTTP handlers for the auth service.
 package handler
 
 import (
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
@@ -17,10 +19,10 @@ type AuthHandler struct {
 }
 
 // NewAuthHandler creates a new auth handler.
-func NewAuthHandler(authService service.AuthServiceInterface, logger logger.Logger) *AuthHandler {
+func NewAuthHandler(authService service.AuthServiceInterface, lgr logger.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
-		logger:      logger,
+		logger:      lgr,
 	}
 }
 
@@ -134,6 +136,79 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 	return c.JSON(http.StatusOK, dto.SuccessResponse{
 		Message: "Successfully logged out",
 	})
+}
+
+// GetProfile retrieves the user's profile.
+func (h *AuthHandler) GetProfile(c echo.Context) error {
+	userIDStr, ok := c.Get("userID").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Code:    http.StatusUnauthorized,
+			Message: "User ID not found in context",
+		})
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid user ID format",
+		})
+	}
+
+	profile, err := h.authService.GetProfile(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, profile)
+}
+
+// UpdateProfile updates the user's profile.
+func (h *AuthHandler) UpdateProfile(c echo.Context) error {
+	userIDStr, ok := c.Get("userID").(string)
+	if !ok {
+		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
+			Code:    http.StatusUnauthorized,
+			Message: "User ID not found in context",
+		})
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid user ID format",
+		})
+	}
+
+	var req dto.UpdateProfileRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid request format",
+		})
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
+
+	profile, err := h.authService.UpdateProfile(c.Request().Context(), userID, &req)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, profile)
 }
 
 // Health handles health check.

@@ -16,7 +16,7 @@ import (
 
 // ProductGetTestSuite holds product retrieval tests.
 type ProductGetTestSuite struct {
-	IntegrationTestSuite
+	TestSuite
 }
 
 func (s *ProductGetTestSuite) TestGetProduct() {
@@ -28,11 +28,11 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 	}
 
 	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	var createdProduct dto.ProductResponse
 	err = s.parseResponse(resp, &createdProduct)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// Close response body after parsing
 	if cerr := resp.Body.Close(); cerr != nil {
@@ -41,13 +41,13 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 
 	// Test getting the product
 	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", createdProduct.ID), nil)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var product dto.ProductResponse
 	err = s.parseResponse(resp, &product)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	// Close response body after parsing
 	if cerr := resp.Body.Close(); cerr != nil {
@@ -64,7 +64,7 @@ func (s *ProductGetTestSuite) TestGetProductNotFound() {
 	nonExistentID := uuid.New()
 
 	resp, err := s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", nonExistentID), nil)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 
@@ -75,7 +75,7 @@ func (s *ProductGetTestSuite) TestGetProductNotFound() {
 
 func (s *ProductGetTestSuite) TestGetProductInvalidID() {
 	resp, err := s.makeRequest("GET", "/api/v1/products/invalid-uuid", nil)
-	require.NoError(s.T(), err)
+	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 

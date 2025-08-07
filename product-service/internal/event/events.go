@@ -8,17 +8,14 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// DomainEvent represents a domain event interface.
-type DomainEvent interface {
-	GetEventID() uuid.UUID
-	GetEventType() string
-	GetAggregateID() uuid.UUID
-	GetOccurredAt() time.Time
-	GetData() interface{}
+// BaseEvent represents a base event interface.
+type BaseEvent interface {
+	GetMetadata() KafkaMetadata
+	GetPayload() interface{}
 }
 
-// BaseEvent provides common event properties.
-type BaseEvent struct {
+// KafkaMetadata provides common event properties.
+type KafkaMetadata struct {
 	EventID     uuid.UUID `json:"event_id"`
 	EventType   string    `json:"event_type"`
 	AggregateID uuid.UUID `json:"aggregate_id"`
@@ -26,74 +23,77 @@ type BaseEvent struct {
 	Source      string    `json:"source,omitempty"` // Service that produced the event
 }
 
-// ProductCreatedData holds the data for the product created event.
-type ProductCreatedData struct {
+// ProductCreatedPayload holds the data for the product created event.
+type ProductCreatedPayload struct {
 	ProductID uuid.UUID       `json:"product_id"`
 	Name      string          `json:"name"`
 	Price     decimal.Decimal `json:"price"`
 	Quantity  int             `json:"quantity"`
 }
 
-// ProductUpdatedData holds the data for the product updated event.
-type ProductUpdatedData struct {
-	ProductID    uuid.UUID          `json:"product_id"`
-	Name         string             `json:"name"`
-	Price        decimal.Decimal    `json:"price"`
-	Quantity     int                `json:"quantity"`
-	PreviousData ProductCreatedData `json:"previous_data,omitempty"` // Optional field for previous product data
+// ProductUpdatedPayload holds the data for the product updated event.
+type ProductUpdatedPayload struct {
+	ProductID    uuid.UUID             `json:"product_id"`
+	Name         string                `json:"name"`
+	Price        decimal.Decimal       `json:"price"`
+	Quantity     int                   `json:"quantity"`
+	PreviousData ProductCreatedPayload `json:"previous_data,omitempty"` // Optional field for previous product data
 }
 
-// ProductDeletedData represents when a product is deleted.
-type ProductDeletedData struct {
+// ProductDeletedPayload represents when a product is deleted.
+type ProductDeletedPayload struct {
 	ProductID uuid.UUID `json:"product_id"`
 }
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	BaseEvent
-	Data ProductCreatedData
+	Metadata KafkaMetadata
+	Payload  ProductCreatedPayload
 }
 
-// GetData returns the data associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetData() interface{} {
-	return e.Data
+// GetPayload returns the data associated with the ProductCreatedEvent.
+func (e *ProductCreatedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the ProductCreatedEvent.
+func (e *ProductCreatedEvent) GetMetadata() KafkaMetadata {
+	return e.Metadata
 }
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	BaseEvent
-	Data ProductUpdatedData
+	Metadata KafkaMetadata
+	Payload  ProductUpdatedPayload
 }
 
-// GetData returns the data associated with the ProductUpdatedEvent.
-func (e *ProductUpdatedEvent) GetData() interface{} {
-	return e.Data
+// GetPayload returns the data associated with the ProductUpdatedEvent.
+func (e *ProductUpdatedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the ProductUpdatedEvent.
+func (e *ProductUpdatedEvent) GetMetadata() KafkaMetadata {
+	return e.Metadata
 }
 
 // ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
-	BaseEvent
-	Data ProductDeletedData
+	Metadata KafkaMetadata
+	Payload  ProductDeletedPayload
 }
 
-// GetData returns the data associated with the ProductDeletedEvent.
-func (e *ProductDeletedEvent) GetData() interface{} {
-	return e.Data
+// GetPayload returns the data associated with the ProductDeletedEvent.
+func (e *ProductDeletedEvent) GetPayload() interface{} {
+	return e.Payload
 }
 
-// GetEventID returns the unique identifier of the event.
-func (e *BaseEvent) GetEventID() uuid.UUID { return e.EventID }
+// GetMetadata returns the metadata associated with the ProductDeletedEvent.
+func (e *ProductDeletedEvent) GetMetadata() KafkaMetadata {
+	return e.Metadata
+}
 
-// GetEventType returns the type of the event.
-func (e *BaseEvent) GetEventType() string { return e.EventType }
-
-// GetAggregateID returns the identifier of the aggregate that this event belongs to.
-func (e *BaseEvent) GetAggregateID() uuid.UUID { return e.AggregateID }
-
-// GetOccurredAt returns the timestamp when the event occurred.
-func (e *BaseEvent) GetOccurredAt() time.Time { return e.OccurredAt }
-
-// Publisher defines the interface for publishing event.
-type Publisher interface {
-	Publish(event DomainEvent) error
+// Producer defines the interface for producing events.
+type Producer interface {
+	Produce(topic string, event BaseEvent) error
 }
