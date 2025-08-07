@@ -10,7 +10,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/httperror"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
@@ -24,6 +24,14 @@ func NewProductHandler(productService service.ProductServiceInterface) *ProductH
 	return &ProductHandler{
 		productService: productService,
 	}
+}
+
+// Health handles health check.
+func (h *ProductHandler) Health(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "healthy",
+		"service": "product-service",
+	})
 }
 
 // CreateProduct handles POST /products.
@@ -177,15 +185,4 @@ func (h *ProductHandler) DeleteProduct(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
-}
-
-// RegisterRoutes registers all product routes.
-func (h *ProductHandler) RegisterRoutes(e *echo.Echo) {
-	productGroup := e.Group("/api/v1/products")
-
-	productGroup.POST("", h.CreateProduct)
-	productGroup.GET("", h.GetProducts)
-	productGroup.GET("/:id", h.GetProduct)
-	productGroup.PUT("/:id", h.UpdateProduct)
-	productGroup.DELETE("/:id", h.DeleteProduct)
 }

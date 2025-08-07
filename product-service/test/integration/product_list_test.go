@@ -15,7 +15,7 @@ package integration
 
 // // ProductListTestSuite holds product listing tests.
 // type ProductListTestSuite struct {
-// 	IntegrationTestSuite
+// 	TestSuite
 // }
 
 // func (s *ProductListTestSuite) TestGetProducts() {
@@ -28,7 +28,7 @@ package integration
 
 // 	for _, product := range products {
 // 		resp, err := s.makeRequest("POST", "/api/v1/products", product)
-// 		require.NoError(s.T(), err)
+// 			s.NoError(err)
 
 // 		// Close response body immediately since we don't need to parse it
 // 		if cerr := resp.Body.Close(); cerr != nil {
@@ -38,13 +38,13 @@ package integration
 
 // 	// Test getting all products with default pagination
 // 	resp, err := s.makeRequest("GET", "/api/v1/products", nil)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 // 	var productList dto.ProductListResponse
 // 	err = s.parseResponse(resp, &productList)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	// Close response body after parsing
 // 	if cerr := resp.Body.Close(); cerr != nil {
@@ -66,7 +66,7 @@ package integration
 // 			Quantity: i * 5,
 // 		}
 // 		resp, err := s.makeRequest("POST", "/api/v1/products", product)
-// 		require.NoError(s.T(), err)
+// 			s.NoError(err)
 
 // 		// Close response body immediately since we don't need to parse it
 // 		if cerr := resp.Body.Close(); cerr != nil {
@@ -76,13 +76,13 @@ package integration
 
 // 	// Test pagination
 // 	resp, err := s.makeRequest("GET", "/api/v1/products?limit=2&offset=1", nil)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 // 	var productList dto.ProductListResponse
 // 	err = s.parseResponse(resp, &productList)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	// Close response body after parsing
 // 	if cerr := resp.Body.Close(); cerr != nil {

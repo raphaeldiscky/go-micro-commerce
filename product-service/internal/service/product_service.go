@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
 	entity "github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
 	event "github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
@@ -25,21 +26,24 @@ type ProductServiceInterface interface {
 
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
-	productRepo    repository.ProductRepository
-	eventPublisher event.Publisher
-	logger         log.LoggerInterface
+	productRepo repository.ProductRepository
+	producer    event.Producer
+	topics      constant.ProductTopics
+	logger      log.LoggerInterface
 }
 
 // NewProductService creates a new instance of ProductService.
 func NewProductService(
 	productRepo repository.ProductRepository,
-	eventPublisher event.Publisher,
+	producer event.Producer,
+	topics constant.ProductTopics,
 	logger log.LoggerInterface,
 ) ProductServiceInterface {
 	return &ProductService{
-		productRepo:    productRepo,
-		eventPublisher: eventPublisher,
-		logger:         logger,
+		productRepo: productRepo,
+		producer:    producer,
+		topics:      topics,
+		logger:      logger,
 	}
 }
 
@@ -60,17 +64,20 @@ func (s *ProductService) CreateProduct(
 		return nil, fmt.Errorf("failed to save product: %w", err)
 	}
 
-	// Publish domain event
-	if s.eventPublisher != nil {
+	// Produce domain event
+	if s.producer != nil {
 		evt := event.NewProductCreatedEvent(
 			savedProduct.ID,
 			savedProduct.Name,
 			savedProduct.Price,
+			savedProduct.Quantity,
 		)
-		if err := s.eventPublisher.Publish(evt); err != nil {
+		topic := s.topics.ProductLifecycle
+
+		if err := s.producer.Produce(topic, evt); err != nil {
 			// Log error but don't fail the operation
 			// In production, you might want to implement event outbox pattern
-			s.logger.Errorf("Failed to publish ProductCreated event: %v", err)
+			s.logger.Errorf("Failed to produce ProductCreated event: %v", err)
 		}
 	}
 
@@ -162,16 +169,18 @@ func (s *ProductService) UpdateProduct(
 		return nil, fmt.Errorf("failed to update product: %w", err)
 	}
 
-	// Publish domain event
-	if s.eventPublisher != nil {
+	// Produce domain event
+	if s.producer != nil {
 		evt := event.NewProductUpdatedEvent(
 			updatedProduct.ID,
 			updatedProduct.Name,
 			updatedProduct.Price,
 			updatedProduct.Quantity,
 		)
-		if err := s.eventPublisher.Publish(evt); err != nil {
-			s.logger.Errorf("Failed to publish ProductUpdated event: %v", err)
+		topic := s.topics.ProductLifecycle
+
+		if err := s.producer.Produce(topic, evt); err != nil {
+			s.logger.Errorf("Failed to produce ProductUpdated event: %v", err)
 		}
 	}
 
@@ -195,11 +204,13 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 		return fmt.Errorf("failed to delete product: %w", err)
 	}
 
-	// Publish domain event
-	if s.eventPublisher != nil {
+	// Produce domain event
+	if s.producer != nil {
 		evt := event.NewProductDeletedEvent(id)
-		if err := s.eventPublisher.Publish(evt); err != nil {
-			s.logger.Errorf("Failed to publish ProductDeleted event: %v", err)
+		topic := s.topics.ProductLifecycle
+
+		if err := s.producer.Produce(topic, evt); err != nil {
+			s.logger.Errorf("Failed to produce ProductDeleted event: %v", err)
 		}
 	}
 

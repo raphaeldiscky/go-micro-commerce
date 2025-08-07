@@ -13,7 +13,6 @@ type Config struct {
 	HTTPServer *HTTPServerConfig
 	Postgres   *PostgresConfig
 	Kafka      *KafkaConfig
-	Logger     *LoggerConfig
 	Redis      *RedisConfig
 	Consul     *ConsulConfig
 }
@@ -35,7 +34,6 @@ func LoadConfig() (*Config, error) {
 		HTTPServer: initHTTPServerConfig(),
 		Postgres:   initPostgresConfig(),
 		Kafka:      initKafkaConfig(),
-		Logger:     initLoggerConfig(),
 		Redis:      initRedisConfig(),
 		Consul:     initConsulConfig(),
 	}

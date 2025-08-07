@@ -8,19 +8,28 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
-	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/validation"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/validation"
 )
 
 // HTTPServer wraps the Echo server.
 type HTTPServer struct {
 	echo           *echo.Echo
+	config         *config.HTTPServerConfig
 	productHandler *handlers.ProductHandler
+	logger         logger.Logger
 }
 
 // NewHTTPServer creates a new HTTP server.
-func NewHTTPServer(productHandler *handlers.ProductHandler) *HTTPServer {
+func NewHTTPServer(
+	productHandler *handlers.ProductHandler,
+	cfg *config.HTTPServerConfig,
+	lgr logger.Logger,
+) *HTTPServer {
 	e := echo.New()
 
 	// Register validator
@@ -32,24 +41,17 @@ func NewHTTPServer(productHandler *handlers.ProductHandler) *HTTPServer {
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestID())
 
-	// Health check endpoint
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{
-			"status":    "healthy",
-			"service":   "product-service",
-			"timestamp": time.Now().Format(time.RFC3339),
-		})
-	})
-
 	return &HTTPServer{
 		echo:           e,
 		productHandler: productHandler,
+		config:         cfg,
+		logger:         lgr,
 	}
 }
 
 // RegisterRoutes registers all HTTP routes.
 func (s *HTTPServer) RegisterRoutes() {
-	s.productHandler.RegisterRoutes(s.echo)
+	routes.SetupProductRoutes(s.echo, s.productHandler)
 }
 
 // Start starts the HTTP server.

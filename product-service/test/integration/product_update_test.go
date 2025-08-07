@@ -16,7 +16,7 @@ package integration
 
 // // ProductUpdateTestSuite holds product update tests.
 // type ProductUpdateTestSuite struct {
-// 	IntegrationTestSuite
+// 	TestSuite
 // }
 
 // func (s *ProductUpdateTestSuite) TestUpdateProduct() {
@@ -28,11 +28,11 @@ package integration
 // 	}
 
 // 	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	var createdProduct dto.ProductResponse
 // 	err = s.parseResponse(resp, &createdProduct)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	// Close response body after parsing
 // 	if cerr := resp.Body.Close(); cerr != nil {
@@ -52,13 +52,13 @@ package integration
 // 		fmt.Sprintf("/api/v1/products/%s", createdProduct.ID),
 // 		updateReq,
 // 	)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 // 	var updatedProduct dto.ProductResponse
 // 	err = s.parseResponse(resp, &updatedProduct)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	// Close response body after parsing
 // 	if cerr := resp.Body.Close(); cerr != nil {
@@ -86,7 +86,7 @@ package integration
 // 		fmt.Sprintf("/api/v1/products/%s", nonExistentID),
 // 		updateReq,
 // 	)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 
@@ -104,11 +104,11 @@ package integration
 // 	}
 
 // 	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	var createdProduct dto.ProductResponse
 // 	err = s.parseResponse(resp, &createdProduct)
-// 	require.NoError(s.T(), err)
+// 		s.NoError(err)
 
 // 	// Close response body after parsing
 // 	if cerr := resp.Body.Close(); cerr != nil {

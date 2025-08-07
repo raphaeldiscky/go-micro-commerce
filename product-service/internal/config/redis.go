@@ -15,6 +15,11 @@ type RedisConfig struct {
 
 // initRedisConfig initializes the Redis configuration from environment variables.
 func initRedisConfig() *RedisConfig {
+	// Set defaults
+	viper.SetDefault("REDIS_ADDR", "localhost:6379")
+	viper.SetDefault("REDIS_PASSWORD", "")
+	viper.SetDefault("REDIS_DB", 0)
+
 	redisConfig := &RedisConfig{}
 
 	if err := viper.Unmarshal(&redisConfig); err != nil {

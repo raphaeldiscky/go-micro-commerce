@@ -149,8 +149,8 @@ func setupRoutes(e *echo.Echo, gw *gateway.Gateway, cfg *config.Config) {
 
 	// User routes
 	userGroup := protected.Group("/users")
-	userGroup.GET("/profile", gw.ProxyToService("auth-service", "/api/v1/users/profile"))
-	userGroup.PUT("/profile", gw.ProxyToService("auth-service", "/api/v1/users/profile"))
+	userGroup.GET("/:id", gw.ProxyToService("auth-service", "/api/v1/users/:id"))
+	userGroup.PUT("/:id", gw.ProxyToService("auth-service", "/api/v1/users/:id"))
 
 	// Product routes
 	productGroup := protected.Group("/products")
@@ -160,12 +160,12 @@ func setupRoutes(e *echo.Echo, gw *gateway.Gateway, cfg *config.Config) {
 	productGroup.PUT("/:id", gw.ProxyToService("product-service", "/api/v1/products/:id"))
 	productGroup.DELETE("/:id", gw.ProxyToService("product-service", "/api/v1/products/:id"))
 
-	// Seller routes
-	sellerGroup := protected.Group("/sellers")
-	sellerGroup.GET("", gw.ProxyToService("product-service", "/api/v1/sellers"))
-	sellerGroup.GET("/:id", gw.ProxyToService("product-service", "/api/v1/sellers/:id"))
-	sellerGroup.POST("", gw.ProxyToService("product-service", "/api/v1/sellers"))
-	sellerGroup.PUT("/:id", gw.ProxyToService("product-service", "/api/v1/sellers/:id"))
+	// Order routes
+	orderGroup := protected.Group("/orders")
+	orderGroup.GET("", gw.ProxyToService("order-service", "/api/v1/orders"))
+	orderGroup.GET("/:id", gw.ProxyToService("order-service", "/api/v1/orders/:id"))
+	orderGroup.POST("", gw.ProxyToService("order-service", "/api/v1/orders"))
+	orderGroup.PUT("/:id", gw.ProxyToService("order-service", "/api/v1/orders/:id"))
 
 	// Notification routes (admin only)
 	notificationGroup := protected.Group("/notifications")

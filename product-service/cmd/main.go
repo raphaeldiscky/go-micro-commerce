@@ -11,16 +11,17 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/consul"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/kafka"
-	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/interface/http/server"
-	services "github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 func main() {
@@ -30,53 +31,59 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// Setup database connection
-	dbPool, err := pgxpool.New(context.Background(), cfg.GetURL())
+	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
+		Host:            cfg.Postgres.Host,
+		Port:            cfg.Postgres.Port,
+		User:            cfg.Postgres.User,
+		Password:        cfg.Postgres.Password,
+		Name:            cfg.Postgres.Name,
+		SSLMode:         cfg.Postgres.SSLMode,
+		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
+		MaxOpenConns:    cfg.Postgres.MaxOpenConns,
+		MaxConnLifetime: cfg.Postgres.MaxConnLifetime,
+	})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-
-	// Test database connection
-	if err := dbPool.Ping(context.Background()); err != nil {
-		dbPool.Close()
-		log.Fatalf("Failed to ping database: %v", err)
-	}
-
-	// Database is ready, set up defer for cleanup
-	defer dbPool.Close()
-
-	log.Println("Database connection established")
+	defer pgPool.Close()
 
 	// Setup logger
 	appLogger := logger.NewZapLogger(0) // 0 = debug level
 
 	// Setup Kafka event publisher
-	eventPublisher, err := kafka.NewEventPublisherKafka(cfg.Kafka.Brokers, cfg.Kafka.Topic)
+	producer, err := mq.NewProducerKafka(&mq.KafkaProducerConfig{
+		Brokers:        cfg.Kafka.Brokers,
+		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
+		RetryMax:       cfg.Kafka.RetryMax,
+		FlushFrequency: cfg.Kafka.FlushFrequency,
+	})
 	if err != nil {
 		log.Printf("Warning: Failed to setup Kafka event publisher: %v", err)
 		log.Println("Continuing without event publishing...")
 
-		eventPublisher = nil
+		producer = nil
 	} else {
 		defer func() {
-			if err := eventPublisher.Close(); err != nil {
-				log.Printf("Error closing Kafka event publisher: %v", err)
+			if err := producer.Close(); err != nil {
+				log.Printf("Error closing Kafka event producer: %v", err)
 			}
 		}()
 		log.Println("Kafka event publisher initialized")
 	}
 
 	// Setup repository
-	productRepo := postgres.NewProductRepositoryPostgres(dbPool)
+	productRepo := postgres.NewProductRepositoryPostgres(pgPool)
 
 	// Setup services
-	productService := services.NewProductService(productRepo, eventPublisher, appLogger)
+	topics := constant.NewProductTopics()
+	productService := service.NewProductService(productRepo, producer, topics, appLogger)
 
 	// Setup HTTP handlers
-	productHandler := handlers.NewProductHandler(productService)
+	productHandler := handler.NewProductHandler(productService)
 
 	// Initialize HTTP server
-	httpServer := server.NewHTTPServer(productHandler)
+	httpServer := server.NewHTTPServer(productHandler, cfg.HTTPServer, appLogger)
 
 	// Register with Consul if enabled and setup cleanup
 	consulCleanup := setupConsulRegistration(cfg)

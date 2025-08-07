@@ -11,14 +11,14 @@ import (
 // NewProductDeletedEvent creates a new ProductDeletedEvent.
 func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 	return &ProductDeletedEvent{
-		BaseEvent: BaseEvent{
+		Metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductDeleted,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		Data: ProductDeletedData{
+		Payload: ProductDeletedPayload{
 			ProductID: productID,
 		},
 	}
