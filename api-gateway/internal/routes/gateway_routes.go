@@ -24,11 +24,10 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway) {
 	// Debug endpoint to check service discovery
 	e.GET("/debug/services", gw.DebugServices())
 
-	v1 := e.Group("/api/v1")
 	// Auth service
-	v1.Any("/auth/*", gw.ProxyToService("auth-service", ""))
-	v1.Any("/products/*", gw.ProxyToService("product-service", ""))
-	v1.Any("/users/*", gw.ProxyToService("auth-service", ""))
-	v1.Any("/orders/*", gw.ProxyToService("order-service", ""))
-	v1.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
+	e.Any("/auth/*", gw.ProxyToService("auth-service", ""))
+	e.Any("/products/*", gw.ProxyToService("product-service", ""))
+	e.Any("/users/*", gw.ProxyToService("auth-service", ""))
+	e.Any("/orders/*", gw.ProxyToService("order-service", ""))
+	e.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
 }
