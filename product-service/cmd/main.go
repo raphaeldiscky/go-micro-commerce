@@ -11,13 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/raphaeldiscky/go-micro-template/pkg/consul"
 	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/consul"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"

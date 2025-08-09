@@ -1,4 +1,4 @@
-// Package consul provides service registration with Consul for the product service.
+// Package consul provides service registration with Consul for the services.
 package consul
 
 import (

@@ -9,8 +9,8 @@ import (
 
 // Config holds all configuration for the application.
 type Config struct {
-	// Paseto holds the PASETO token configuration.
-	Paseto *PasetoConfig
+	// JWT holds the JWT token configuration.
+	JWT *JWTConfig
 	// SMTP holds the SMTP server configuration.
 	SMTP *SMTPConfig
 }
@@ -28,13 +28,13 @@ func NewConfig() (*Config, error) {
 	}
 
 	return &Config{
-		Paseto: initPasetoConfig(),
-		SMTP:   initSMTPConfig(),
+		JWT:  initJWTConfig(),
+		SMTP: initSMTPConfig(),
 	}, nil
 }
 
 // InitConfig initializes the configuration by loading environment variables
-// and setting up PASETO and SMTP configurations.
+// and setting up JWT and SMTP configurations.
 // Deprecated: Use NewConfig instead for better error handling.
 func InitConfig() (*Config, error) {
 	return NewConfig()

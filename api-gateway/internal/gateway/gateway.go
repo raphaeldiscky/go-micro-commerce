@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"go.uber.org/zap"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
@@ -21,7 +22,7 @@ import (
 
 // Gateway represents the API Gateway.
 type Gateway struct {
-	logger           *zap.Logger
+	logger           logger.Logger
 	serviceDiscovery service.Discovery
 	circuitBreaker   *service.CircuitBreakerService
 	loadBalancer     service.LoadBalancer
@@ -31,7 +32,7 @@ type Gateway struct {
 
 // Config holds gateway configuration.
 type Config struct {
-	Logger           *zap.Logger
+	Logger           logger.Logger
 	ServiceDiscovery service.Discovery
 	CircuitBreaker   *service.CircuitBreakerService
 	LoadBalancer     service.LoadBalancer
@@ -267,5 +268,38 @@ func (gw *Gateway) CreateReverseProxy(serviceName string) echo.HandlerFunc {
 		proxy.ServeHTTP(c.Response(), c.Request())
 
 		return nil
+	}
+}
+
+// DebugServices returns information about discovered services.
+func (gw *Gateway) DebugServices() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		services := []string{
+			"product-service",
+			"auth-service",
+			"order-service",
+			"notification-service",
+		}
+		result := make(map[string]interface{})
+
+		for _, serviceName := range services {
+			endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
+			if err != nil {
+				result[serviceName] = map[string]string{
+					"status": "unavailable",
+					"error":  err.Error(),
+				}
+			} else {
+				result[serviceName] = map[string]string{
+					"status":   "available",
+					"endpoint": endpoint,
+				}
+			}
+		}
+
+		return c.JSON(http.StatusOK, map[string]interface{}{
+			"services":  result,
+			"timestamp": time.Now().Unix(),
+		})
 	}
 }

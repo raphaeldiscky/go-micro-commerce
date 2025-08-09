@@ -12,7 +12,6 @@ import (
 type Config struct {
 	App              *AppConfig
 	HTTPServer       *HTTPServerConfig
-	JWT              *JWTConfig
 	ServiceDiscovery *ServiceDiscoveryConfig
 	RateLimit        *RateLimitConfig
 	Tracing          *TracingConfig
@@ -34,7 +33,6 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		App:              initAppConfig(),
 		HTTPServer:       initHTTPServerConfig(),
-		JWT:              initJWTConfig(),
 		ServiceDiscovery: initServiceDiscoveryConfig(),
 		RateLimit:        initRateLimitConfig(),
 		Tracing:          initTracingConfig(),

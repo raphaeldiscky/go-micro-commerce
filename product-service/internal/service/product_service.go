@@ -3,16 +3,16 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
-	entity "github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
-	event "github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/log"
-	repository "github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 )
 
 // ProductServiceInterface defines the interface for product business operations.
@@ -53,17 +53,18 @@ func (s *ProductService) CreateProduct(
 	req dto.CreateProductRequest,
 ) (*dto.ProductResponse, error) {
 	res := new(dto.ProductResponse)
-	err := s.dataStore.WithTransaction(ctx, func(tx repository.DataStore) error {
+
+	err := s.dataStore.Atomic(ctx, func(tx repository.DataStore) error {
 		productRepo := tx.ProductRepository()
 		// Create domain entity
 		product, err := entity.NewProduct(req.Name, req.Price, req.Quantity)
 		if err != nil {
-			return fmt.Errorf("failed to create product entity: %w", err)
+			return httperror.NewInvalidRequestBodyError()
 		}
 		// Save to repository
 		savedProduct, err := productRepo.Create(ctx, product)
 		if err != nil {
-			return fmt.Errorf("failed to save product: %w", err)
+			return err
 		}
 		// Produce domain event
 		if s.producer != nil {
@@ -83,11 +84,11 @@ func (s *ProductService) CreateProduct(
 		}
 
 		res = s.mapToResponse(savedProduct)
+
 		return nil
 	})
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to create product: %w", err)
+		return nil, err
 	}
 
 	return res, nil
@@ -99,13 +100,14 @@ func (s *ProductService) GetProduct(
 	id uuid.UUID,
 ) (*dto.ProductResponse, error) {
 	productRepo := s.dataStore.ProductRepository()
+
 	product, err := productRepo.FindByID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get product: %w", err)
+		return nil, err
 	}
 
 	if product == nil {
-		return nil, fmt.Errorf("product not found")
+		return nil, httperror.NewProductNotFoundError()
 	}
 
 	return s.mapToResponse(product), nil
@@ -121,15 +123,17 @@ func (s *ProductService) GetProducts(
 	var total int64
 
 	var err error
+
 	productRepo := s.dataStore.ProductRepository()
+
 	products, err = productRepo.FindAll(ctx, req.Limit, req.Offset)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get products: %w", err)
+		return nil, err
 	}
 
 	total, err = productRepo.Count(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to count products: %w", err)
+		return nil, err
 	}
 
 	productResponses := make([]dto.ProductResponse, len(products))
@@ -151,35 +155,37 @@ func (s *ProductService) UpdateProduct(
 	req dto.UpdateProductRequest,
 ) (*dto.ProductResponse, error) {
 	res := new(dto.ProductResponse)
-	err := s.dataStore.WithTransaction(ctx, func(tx repository.DataStore) error {
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		// Check if product exists
-		productRepo := s.dataStore.ProductRepository()
+		productRepo := ds.ProductRepository()
+
 		existingProduct, err := productRepo.FindByID(ctx, req.ID)
 		if err != nil {
-			return fmt.Errorf("failed to find product: %w", err)
+			return err
 		}
 
 		if existingProduct == nil {
-			return fmt.Errorf("product not found")
+			return httperror.NewProductNotFoundError()
 		}
 
 		// Update fields
 		if err := existingProduct.UpdateName(req.Name); err != nil {
-			return fmt.Errorf("failed to update product name: %w", err)
+			return err
 		}
 
 		if err := existingProduct.UpdatePrice(req.Price); err != nil {
-			return fmt.Errorf("failed to update product price: %w", err)
+			return err
 		}
 
 		if err := existingProduct.UpdateQuantity(req.Quantity); err != nil {
-			return fmt.Errorf("failed to update product quantity: %w", err)
+			return err
 		}
 
 		// Save updated product
 		updatedProduct, err := productRepo.Update(ctx, existingProduct)
 		if err != nil {
-			return fmt.Errorf("failed to update product: %w", err)
+			return err
 		}
 
 		// Produce domain event
@@ -196,12 +202,13 @@ func (s *ProductService) UpdateProduct(
 				s.logger.Errorf("failed to produce ProductUpdated event: %v", err)
 			}
 		}
+
 		res = s.mapToResponse(updatedProduct)
+
 		return nil
 	})
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to update product: %w", err)
+		return nil, err
 	}
 
 	return res, nil
@@ -209,20 +216,21 @@ func (s *ProductService) UpdateProduct(
 
 // DeleteProduct deletes a product by ID.
 func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
-	err := s.dataStore.WithTransaction(ctx, func(tx repository.DataStore) error {
-		productRepo := tx.ProductRepository()
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		productRepo := ds.ProductRepository()
+
 		exists, err := productRepo.Exists(ctx, id)
 		if err != nil {
-			return fmt.Errorf("failed to check product existence: %w", err)
+			return err
 		}
 
 		if !exists {
-			return fmt.Errorf("product not found")
+			return httperror.NewProductNotFoundError()
 		}
 
 		// Delete product
 		if err := productRepo.Delete(ctx, id); err != nil {
-			return fmt.Errorf("failed to delete product: %w", err)
+			return err
 		}
 
 		// Produce domain event
@@ -234,11 +242,11 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 				s.logger.Errorf("failed to produce ProductDeleted event: %v", err)
 			}
 		}
+
 		return nil
 	})
-
 	if err != nil {
-		return fmt.Errorf("failed to delete product: %w", err)
+		return err
 	}
 
 	return nil

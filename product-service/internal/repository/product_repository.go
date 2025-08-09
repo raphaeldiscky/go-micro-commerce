@@ -8,11 +8,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	entity "github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
 )
 
-// ProductRepository defines the interface for product data operations.
-type ProductRepository interface {
+// ProductRepositoryInterface defines the interface for product data operations.
+type ProductRepositoryInterface interface {
 	// Create saves a new product
 	Create(ctx context.Context, product *entity.Product) (*entity.Product, error)
 
@@ -41,7 +41,7 @@ type ProductRepositoryPostgres struct {
 }
 
 // NewProductRepositoryPostgres creates a new instance of ProductRepositoryPostgres.
-func NewProductRepositoryPostgres(db DBTX) ProductRepository {
+func NewProductRepositoryPostgres(db DBTX) ProductRepositoryInterface {
 	return &ProductRepositoryPostgres{
 		db: db,
 	}

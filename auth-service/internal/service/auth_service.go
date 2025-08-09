@@ -19,6 +19,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/repository"
 )
 
@@ -51,27 +52,27 @@ type AuthServiceInterface interface {
 
 // AuthService implements AuthServiceInterface.
 type AuthService struct {
-	userRepo       repository.UserRepositoryInterface
-	sessionRepo    repository.SessionRepositoryInterface
-	jwtConfig      *config.JWTConfig
-	eventPublisher event.PublisherInterface
-	logger         logger.Logger
+	dataStore repository.DataStore
+	jwtConfig *config.JWTConfig
+	topics    constant.AuthTopics
+	producer  event.Producer
+	logger    logger.Logger
 }
 
 // NewAuthService creates a new AuthService.
 func NewAuthService(
-	userRepo repository.UserRepositoryInterface,
-	sessionRepo repository.SessionRepositoryInterface,
+	dataStore repository.DataStore,
 	jwtConfig *config.JWTConfig,
-	eventPublisher event.PublisherInterface,
+	topics constant.AuthTopics,
+	producer event.Producer,
 	lgr logger.Logger,
 ) AuthServiceInterface {
 	return &AuthService{
-		userRepo:       userRepo,
-		sessionRepo:    sessionRepo,
-		jwtConfig:      jwtConfig,
-		eventPublisher: eventPublisher,
-		logger:         lgr,
+		dataStore: dataStore,
+		jwtConfig: jwtConfig,
+		topics:    topics,
+		producer:  producer,
+		logger:    lgr,
 	}
 }
 
@@ -81,124 +82,133 @@ func (s *AuthService) Register(
 	req *dto.RegisterRequest,
 	clientIP, userAgent string,
 ) (*dto.AuthResponse, error) {
-	// Check if email already exists
-	emailExists, err := s.userRepo.EmailExists(ctx, req.Email)
+	res := new(dto.AuthResponse)
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		userRepo := ds.UserRepository()
+		sessionRepo := ds.SessionRepository()
+		// Check if email already exists
+		emailExists, err := userRepo.EmailExists(ctx, req.Email)
+		if err != nil {
+			s.logger.Error("Failed to check email existence", "error", err)
+
+			return err
+		}
+
+		if emailExists {
+			return httperror.NewUserAlreadyExistError()
+		}
+
+		// Check if username already exists
+		usernameExists, err := userRepo.UsernameExists(ctx, req.Username)
+		if err != nil {
+			s.logger.Error("Failed to check username existence", "error", err)
+
+			return err
+		}
+
+		if usernameExists {
+			return httperror.NewUserAlreadyExistError()
+		}
+
+		// Hash password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		if err != nil {
+			s.logger.Error("Failed to hash password", "error", err)
+
+			return err
+		}
+
+		// Generate email verification token
+		verificationToken, err := s.generateVerificationToken()
+		if err != nil {
+			s.logger.Error("Failed to generate verification token", "error", err)
+
+			return err
+		}
+
+		// Create user
+		user := &entity.User{
+			Email:                   req.Email,
+			Username:                req.Username,
+			PasswordHash:            string(hashedPassword),
+			FirstName:               req.FirstName,
+			LastName:                req.LastName,
+			Roles:                   []string{"user"},
+			IsActive:                true,
+			IsEmailVerified:         false,
+			EmailVerificationToken:  &verificationToken,
+			EmailVerificationSentAt: &time.Time{},
+		}
+		*user.EmailVerificationSentAt = time.Now()
+
+		if err := userRepo.Create(ctx, user); err != nil {
+			s.logger.Error("Failed to create user", "error", err)
+
+			return err
+		}
+
+		// Generate tokens
+		accessToken, err := s.generateAccessToken(user)
+		if err != nil {
+			s.logger.Error("Failed to generate access token", "error", err)
+
+			return err
+		}
+
+		refreshToken, err := s.generateRefreshToken(user)
+		if err != nil {
+			s.logger.Error("Failed to generate refresh token", "error", err)
+
+			return err
+		}
+
+		// Create session
+		session := &entity.Session{
+			UserID:       user.ID,
+			RefreshToken: refreshToken,
+			IPAddress:    clientIP,
+			UserAgent:    userAgent,
+			IsActive:     true,
+			ExpiresAt:    time.Now().Add(7 * 24 * time.Hour), // 7 days
+		}
+
+		if err := sessionRepo.Create(ctx, session); err != nil {
+			s.logger.Error("Failed to create session", "error", err)
+
+			return err
+		}
+
+		// Publish email verification event
+		s.logger.Info("sending email verification event")
+
+		if s.producer != nil {
+			evt := event.NewEmailVerificationRequestedEvent(
+				user.ID,
+				user.Email,
+			)
+			topic := s.topics.UserVerification
+
+			if err = s.producer.Produce(topic, evt); err != nil {
+				s.logger.Error("failed to publish email verification event", "error", err)
+			}
+		}
+
+		res = &dto.AuthResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+			TokenType:    "Bearer",
+			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+			User:         s.userToUserResponse(user),
+		}
+
+		return nil
+	})
 	if err != nil {
-		s.logger.Error("Failed to check email existence", "error", err)
-
-		return nil, errors.New("failed to check email existence")
+		return nil, err
 	}
 
-	if emailExists {
-		return nil, errors.New("email already registered")
-	}
-
-	// Check if username already exists
-	usernameExists, err := s.userRepo.UsernameExists(ctx, req.Username)
-	if err != nil {
-		s.logger.Error("Failed to check username existence", "error", err)
-
-		return nil, errors.New("failed to check username existence")
-	}
-
-	if usernameExists {
-		return nil, errors.New("username already taken")
-	}
-
-	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-	if err != nil {
-		s.logger.Error("Failed to hash password", "error", err)
-
-		return nil, errors.New("failed to hash password")
-	}
-
-	// Generate email verification token
-	verificationToken, err := s.generateVerificationToken()
-	if err != nil {
-		s.logger.Error("Failed to generate verification token", "error", err)
-
-		return nil, errors.New("failed to generate verification token")
-	}
-
-	// Create user
-	user := &entity.User{
-		Email:                   req.Email,
-		Username:                req.Username,
-		PasswordHash:            string(hashedPassword),
-		FirstName:               req.FirstName,
-		LastName:                req.LastName,
-		Roles:                   []string{"user"},
-		IsActive:                true,
-		IsEmailVerified:         false,
-		EmailVerificationToken:  &verificationToken,
-		EmailVerificationSentAt: &time.Time{},
-	}
-	*user.EmailVerificationSentAt = time.Now()
-
-	if err := s.userRepo.Create(ctx, user); err != nil {
-		s.logger.Error("Failed to create user", "error", err)
-
-		return nil, errors.New("failed to create user")
-	}
-
-	// TODO: Send verification email
-	s.logger.Info("User registered", "user_id", user.ID, "email", user.Email)
-
-	// Generate tokens
-	accessToken, err := s.generateAccessToken(user)
-	if err != nil {
-		s.logger.Error("Failed to generate access token", "error", err)
-
-		return nil, errors.New("failed to generate access token")
-	}
-
-	refreshToken, err := s.generateRefreshToken(user)
-	if err != nil {
-		s.logger.Error("Failed to generate refresh token", "error", err)
-
-		return nil, errors.New("failed to generate refresh token")
-	}
-
-	// Create session
-	session := &entity.Session{
-		UserID:       user.ID,
-		RefreshToken: refreshToken,
-		IPAddress:    clientIP,
-		UserAgent:    userAgent,
-		IsActive:     true,
-		ExpiresAt:    time.Now().Add(7 * 24 * time.Hour), // 7 days
-	}
-
-	if err := s.sessionRepo.Create(ctx, session); err != nil {
-		s.logger.Error("Failed to create session", "error", err)
-
-		return nil, errors.New("failed to create session")
-	}
-
-	// Publish email verification event
-	s.logger.Info("sending email verification event")
-
-	emailEvent := &event.EmailVerificationRequestedEvent{
-		BaseEvent: event.BaseEvent{
-			EventType: constant.KafkaEventTypeEmailVerificationRequested,
-			UserID:    user.ID,
-			Timestamp: time.Now(),
-		},
-		Email:             user.Email,
-		VerificationToken: verificationToken,
-	}
-	if err = s.eventPublisher.PublishEmailVerificationRequested(emailEvent); err != nil {
-		s.logger.Error("failed to publish email verification event", "error", err)
-	}
-
-	return &dto.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
-		User:         s.userToUserResponse(user),
-	}, nil
+	return res, nil
 }
 
 // Login authenticates a user and returns tokens.
@@ -207,74 +217,89 @@ func (s *AuthService) Login(
 	req *dto.LoginRequest,
 	clientIP, userAgent string,
 ) (*dto.AuthResponse, error) {
-	// Get user by email
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("invalid credentials")
+	res := new(dto.AuthResponse)
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		userRepo := ds.UserRepository()
+		sessionRepo := ds.SessionRepository()
+		// Get user by email
+		user, err := userRepo.GetByEmail(ctx, req.Email)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return httperror.NewInvalidCredentialError()
+			}
+
+			s.logger.Error("Failed to get user by email", "error", err)
+
+			return err
 		}
 
-		s.logger.Error("Failed to get user by email", "error", err)
+		// Check if user is active
+		if !user.IsActive {
+			s.logger.Error("User account is inactive", "user_id", user.ID, "email", user.Email)
 
-		return nil, errors.New("authentication failed")
-	}
+			return httperror.NewInvalidCredentialError()
+		}
 
-	// Check if user is active
-	if !user.IsActive {
-		return nil, errors.New("user account is inactive")
-	}
+		// Verify password
+		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+			return httperror.NewInvalidCredentialError()
+		}
 
-	// Verify password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, errors.New("invalid credentials")
-	}
+		// Update last login
+		if err := userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+			s.logger.Error("Failed to update last login", "error", err)
+			// Don't fail the login for this
+		}
 
-	// Update last login
-	if err := s.userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
-		s.logger.Error("Failed to update last login", "error", err)
-		// Don't fail the login for this
-	}
+		// Generate tokens
+		accessToken, err := s.generateAccessToken(user)
+		if err != nil {
+			s.logger.Error("Failed to generate access token", "error", err)
 
-	// Generate tokens
-	accessToken, err := s.generateAccessToken(user)
+			return err
+		}
+
+		refreshToken, err := s.generateRefreshToken(user)
+		if err != nil {
+			s.logger.Error("Failed to generate refresh token", "error", err)
+
+			return err
+		}
+
+		// Create session
+		session := &entity.Session{
+			UserID:       user.ID,
+			RefreshToken: refreshToken,
+			IPAddress:    clientIP,
+			UserAgent:    userAgent,
+			IsActive:     true,
+			ExpiresAt:    time.Now().Add(7 * 24 * time.Hour), // 7 days
+		}
+
+		if err := sessionRepo.Create(ctx, session); err != nil {
+			s.logger.Error("Failed to create session", "error", err)
+
+			return err
+		}
+
+		s.logger.Info("User logged in", "user_id", user.ID, "email", user.Email)
+
+		res = &dto.AuthResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+			TokenType:    "Bearer",
+			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+			User:         s.userToUserResponse(user),
+		}
+
+		return nil
+	})
 	if err != nil {
-		s.logger.Error("Failed to generate access token", "error", err)
-
-		return nil, errors.New("failed to generate access token")
+		return nil, err
 	}
 
-	refreshToken, err := s.generateRefreshToken(user)
-	if err != nil {
-		s.logger.Error("Failed to generate refresh token", "error", err)
-
-		return nil, errors.New("failed to generate refresh token")
-	}
-
-	// Create session
-	session := &entity.Session{
-		UserID:       user.ID,
-		RefreshToken: refreshToken,
-		IPAddress:    clientIP,
-		UserAgent:    userAgent,
-		IsActive:     true,
-		ExpiresAt:    time.Now().Add(7 * 24 * time.Hour), // 7 days
-	}
-
-	if err := s.sessionRepo.Create(ctx, session); err != nil {
-		s.logger.Error("Failed to create session", "error", err)
-
-		return nil, errors.New("failed to create session")
-	}
-
-	s.logger.Info("User logged in", "user_id", user.ID, "email", user.Email)
-
-	return &dto.AuthResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
-		User:         s.userToUserResponse(user),
-	}, nil
+	return res, nil
 }
 
 // RefreshToken refreshes an access token.
@@ -282,6 +307,7 @@ func (s *AuthService) RefreshToken(
 	ctx context.Context,
 	req *dto.RefreshTokenRequest,
 ) (*dto.AuthResponse, error) {
+	userRepo := s.dataStore.UserRepository()
 	// Parse and validate refresh token
 	token, err := jwt.Parse(req.RefreshToken, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -291,12 +317,12 @@ func (s *AuthService) RefreshToken(
 		return []byte(s.jwtConfig.Secret), nil
 	})
 	if err != nil {
-		return nil, errors.New("invalid refresh token")
+		return nil, httperror.NewInvalidRefreshTokenError()
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return nil, errors.New("invalid refresh token")
+		return nil, httperror.NewInvalidRefreshTokenError()
 	}
 
 	// Extract user ID from claims
@@ -311,7 +337,7 @@ func (s *AuthService) RefreshToken(
 	}
 
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -353,7 +379,9 @@ func (s *AuthService) RefreshToken(
 
 // GetProfile gets user profile.
 func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
-	user, err := s.userRepo.GetByID(ctx, userID)
+	userRepo := s.dataStore.UserRepository()
+
+	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
@@ -366,7 +394,7 @@ func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*dto.Us
 
 	userResponse := s.userToUserResponse(user)
 
-	return &userResponse, nil
+	return userResponse, nil
 }
 
 // UpdateProfile updates user profile.
@@ -375,55 +403,65 @@ func (s *AuthService) UpdateProfile(
 	userID uuid.UUID,
 	req *dto.UpdateProfileRequest,
 ) (*dto.UserResponse, error) {
-	// Get existing user
-	user, err := s.userRepo.GetByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
-		}
+	res := new(dto.UserResponse)
 
-		s.logger.Error("Failed to get user by ID", "error", err)
-
-		return nil, errors.New("failed to get user")
-	}
-
-	// Update fields if provided
-	if req.FirstName != "" {
-		user.FirstName = req.FirstName
-	}
-
-	if req.LastName != "" {
-		user.LastName = req.LastName
-	}
-
-	if req.Username != "" && req.Username != user.Username {
-		// Check if new username is available
-		usernameExists, err := s.userRepo.UsernameExists(ctx, req.Username)
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		userRepo := ds.UserRepository()
+		// Get existing user
+		user, err := userRepo.GetByID(ctx, userID)
 		if err != nil {
-			s.logger.Error("Failed to check username existence", "error", err)
+			if errors.Is(err, sql.ErrNoRows) {
+				return errors.New("user not found")
+			}
 
-			return nil, errors.New("failed to check username existence")
+			s.logger.Error("Failed to get user by ID", "error", err)
+
+			return errors.New("failed to get user")
 		}
 
-		if usernameExists {
-			return nil, errors.New("username already taken")
+		// Update fields if provided
+		if req.FirstName != "" {
+			user.FirstName = req.FirstName
 		}
 
-		user.Username = req.Username
+		if req.LastName != "" {
+			user.LastName = req.LastName
+		}
+
+		if req.Username != "" && req.Username != user.Username {
+			// Check if new username is available
+			usernameExists, err := userRepo.UsernameExists(ctx, req.Username)
+			if err != nil {
+				s.logger.Error("Failed to check username existence", "error", err)
+
+				return errors.New("failed to check username existence")
+			}
+
+			if usernameExists {
+				return errors.New("username already taken")
+			}
+
+			user.Username = req.Username
+		}
+
+		// Update user
+		updatedUser, err := userRepo.Update(ctx, user)
+		if err != nil {
+			s.logger.Error("Failed to update user", "error", err)
+
+			return errors.New("failed to update user")
+		}
+
+		s.logger.Info("User profile updated", "user_id", userID)
+		res = s.userToUserResponse(updatedUser)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	// Update user
-	if err := s.userRepo.Update(ctx, user); err != nil {
-		s.logger.Error("Failed to update user", "error", err)
-
-		return nil, errors.New("failed to update user")
-	}
-
-	s.logger.Info("User profile updated", "user_id", userID)
-
-	userResponse := s.userToUserResponse(user)
-
-	return &userResponse, nil
+	return res, nil
 }
 
 // ChangePassword changes user password.
@@ -432,8 +470,9 @@ func (s *AuthService) ChangePassword(
 	userID uuid.UUID,
 	req *dto.ChangePasswordRequest,
 ) error {
+	userRepo := s.dataStore.UserRepository()
 	// Get user
-	user, err := s.userRepo.GetByID(ctx, userID)
+	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errors.New("user not found")
@@ -459,7 +498,9 @@ func (s *AuthService) ChangePassword(
 
 	// Update password
 	user.PasswordHash = string(hashedPassword)
-	if err := s.userRepo.Update(ctx, user); err != nil {
+
+	_, err = userRepo.Update(ctx, user)
+	if err != nil {
 		s.logger.Error("Failed to update user password", "error", err)
 
 		return errors.New("failed to update password")
@@ -472,8 +513,9 @@ func (s *AuthService) ChangePassword(
 
 // VerifyEmail verifies user email.
 func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailRequest) error {
+	userRepo := s.dataStore.UserRepository()
 	// Get user by verification token
-	user, err := s.userRepo.GetByEmailVerificationToken(ctx, req.Token)
+	user, err := userRepo.GetByEmailVerificationToken(ctx, req.Token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errors.New("invalid verification token")
@@ -490,7 +532,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 	}
 
 	// Verify email
-	if err := s.userRepo.VerifyEmail(ctx, user.ID); err != nil {
+	if err := userRepo.VerifyEmail(ctx, user.ID); err != nil {
 		s.logger.Error("Failed to verify email", "error", err)
 
 		return errors.New("failed to verify email")
@@ -506,8 +548,9 @@ func (s *AuthService) ResendVerification(
 	ctx context.Context,
 	req *dto.ResendVerificationRequest,
 ) error {
+	userRepo := s.dataStore.UserRepository()
 	// Get user by email
-	user, err := s.userRepo.GetByEmail(ctx, req.Email)
+	user, err := userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return errors.New("user not found")
@@ -532,7 +575,7 @@ func (s *AuthService) ResendVerification(
 	}
 
 	// Set new verification token
-	if err := s.userRepo.SetEmailVerificationToken(ctx, user.ID, verificationToken); err != nil {
+	if err := userRepo.SetEmailVerificationToken(ctx, user.ID, verificationToken); err != nil {
 		s.logger.Error("Failed to set verification token", "error", err)
 
 		return errors.New("failed to set verification token")
@@ -587,8 +630,8 @@ func (s *AuthService) generateVerificationToken() (string, error) {
 }
 
 // userToUserResponse converts entity.User to dto.UserResponse.
-func (s *AuthService) userToUserResponse(user *entity.User) dto.UserResponse {
-	return dto.UserResponse{
+func (s *AuthService) userToUserResponse(user *entity.User) *dto.UserResponse {
+	return &dto.UserResponse{
 		ID:              user.ID,
 		Email:           user.Email,
 		Username:        user.Username,
@@ -609,7 +652,9 @@ func (s *AuthService) GetActiveSessions(
 	ctx context.Context,
 	userID uuid.UUID,
 ) ([]*dto.SessionResponse, error) {
-	sessions, err := s.sessionRepo.GetActiveSessionsByUserID(ctx, userID)
+	sessionRepo := s.dataStore.SessionRepository()
+
+	sessions, err := sessionRepo.GetActiveSessionsByUserID(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to get active sessions", "userID", userID, "error", err)
 
@@ -634,11 +679,13 @@ func (s *AuthService) GetActiveSessions(
 
 // Logout deactivates a specific session.
 func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error {
+	sessionRepo := s.dataStore.SessionRepository()
+
 	if req.RefreshToken == "" {
 		return errors.New("refresh token is required")
 	}
 
-	session, err := s.sessionRepo.GetByRefreshToken(ctx, req.RefreshToken)
+	session, err := sessionRepo.GetByRefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		s.logger.Error("failed to find session by refresh token", "error", err)
 
@@ -649,7 +696,7 @@ func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error 
 		return errors.New("session not found")
 	}
 
-	err = s.sessionRepo.DeactivateSession(ctx, session.ID)
+	err = sessionRepo.DeactivateSession(ctx, session.ID)
 	if err != nil {
 		s.logger.Error("failed to deactivate session", "sessionID", session.ID, "error", err)
 
@@ -663,7 +710,9 @@ func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error 
 
 // LogoutAllSessions deactivates all sessions for a user.
 func (s *AuthService) LogoutAllSessions(ctx context.Context, userID uuid.UUID) error {
-	err := s.sessionRepo.DeactivateAllUserSessions(ctx, userID)
+	sessionRepo := s.dataStore.SessionRepository()
+
+	err := sessionRepo.DeactivateAllUserSessions(ctx, userID)
 	if err != nil {
 		s.logger.Error("failed to logout all sessions", "userID", userID, "error", err)
 
