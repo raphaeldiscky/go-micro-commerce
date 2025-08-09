@@ -9,12 +9,13 @@ import (
 
 // Config represents the application configuration.
 type Config struct {
-	App        *AppConfig        `mapstructure:"app"`
-	HTTPServer *HTTPServerConfig `mapstructure:"http_server"`
-	JWT        *JWTConfig        `mapstructure:"jwt"`
-	Postgres   *PostgresConfig   `mapstructure:"postgres"`
-	Kafka      *KafkaConfig      `mapstructure:"kafka"`
-	Consul     *ConsulConfig     `mapstructure:"consul"`
+	App        *AppConfig
+	Logger     *LoggerConfig
+	HTTPServer *HTTPServerConfig
+	JWT        *JWTConfig
+	Postgres   *PostgresConfig
+	Kafka      *KafkaConfig
+	Consul     *ConsulConfig
 }
 
 // LoadConfig loads configuration from environment variables.
@@ -24,6 +25,7 @@ func LoadConfig() (*Config, error) {
 
 	config := &Config{
 		App:        initAppConfig(),
+		Logger:     initLoggerConfig(),
 		HTTPServer: initHTTPServerConfig(),
 		Postgres:   initPostgresConfig(),
 		Kafka:      initKafkaConfig(),
