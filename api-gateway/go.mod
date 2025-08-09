@@ -1,9 +1,11 @@
 module github.com/raphaeldiscky/go-micro-template/api-gateway
 
-go 1.23.0
+go 1.23.8
+
+toolchain go1.23.12
 
 require (
-	github.com/hashicorp/consul/api v1.29.4
+	github.com/hashicorp/consul/api v1.32.1
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/prometheus/client_golang v1.20.4
 	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-20250807134202-b01862310e8d
@@ -65,7 +67,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.7.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/crypto v0.39.0 // indirect
-	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
+	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
@@ -75,3 +77,5 @@ require (
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/raphaeldiscky/go-micro-template/pkg => ../pkg
