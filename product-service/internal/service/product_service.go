@@ -26,24 +26,24 @@ type ProductServiceInterface interface {
 
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
-	productRepo repository.ProductRepository
-	producer    event.Producer
-	topics      constant.ProductTopics
-	logger      log.LoggerInterface
+	dataStore repository.DataStore
+	producer  event.Producer
+	topics    constant.ProductTopics
+	logger    log.LoggerInterface
 }
 
 // NewProductService creates a new instance of ProductService.
 func NewProductService(
-	productRepo repository.ProductRepository,
+	dataStore repository.DataStore,
 	producer event.Producer,
 	topics constant.ProductTopics,
 	logger log.LoggerInterface,
 ) ProductServiceInterface {
 	return &ProductService{
-		productRepo: productRepo,
-		producer:    producer,
-		topics:      topics,
-		logger:      logger,
+		dataStore: dataStore,
+		producer:  producer,
+		topics:    topics,
+		logger:    logger,
 	}
 }
 
@@ -52,36 +52,45 @@ func (s *ProductService) CreateProduct(
 	ctx context.Context,
 	req dto.CreateProductRequest,
 ) (*dto.ProductResponse, error) {
-	// Create domain entity
-	product, err := entity.NewProduct(req.Name, req.Price, req.Quantity)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create product entity: %w", err)
-	}
-
-	// Save to repository
-	savedProduct, err := s.productRepo.Create(ctx, product)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save product: %w", err)
-	}
-
-	// Produce domain event
-	if s.producer != nil {
-		evt := event.NewProductCreatedEvent(
-			savedProduct.ID,
-			savedProduct.Name,
-			savedProduct.Price,
-			savedProduct.Quantity,
-		)
-		topic := s.topics.ProductLifecycle
-
-		if err := s.producer.Produce(topic, evt); err != nil {
-			// Log error but don't fail the operation
-			// In production, you might want to implement event outbox pattern
-			s.logger.Errorf("Failed to produce ProductCreated event: %v", err)
+	res := new(dto.ProductResponse)
+	err := s.dataStore.WithTransaction(ctx, func(tx repository.DataStore) error {
+		productRepo := tx.ProductRepository()
+		// Create domain entity
+		product, err := entity.NewProduct(req.Name, req.Price, req.Quantity)
+		if err != nil {
+			return fmt.Errorf("failed to create product entity: %w", err)
 		}
+		// Save to repository
+		savedProduct, err := productRepo.Create(ctx, product)
+		if err != nil {
+			return fmt.Errorf("failed to save product: %w", err)
+		}
+		// Produce domain event
+		if s.producer != nil {
+			evt := event.NewProductCreatedEvent(
+				savedProduct.ID,
+				savedProduct.Name,
+				savedProduct.Price,
+				savedProduct.Quantity,
+			)
+			topic := s.topics.ProductLifecycle
+
+			if err := s.producer.Produce(topic, evt); err != nil {
+				// Log error but don't fail the operation
+				// In production, you might want to implement event outbox pattern
+				s.logger.Errorf("failed to produce ProductCreated event: %v", err)
+			}
+		}
+
+		res = s.mapToResponse(savedProduct)
+		return nil
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create product: %w", err)
 	}
 
-	return s.mapToResponse(savedProduct), nil
+	return res, nil
 }
 
 // GetProduct retrieves a product by ID.
@@ -89,7 +98,8 @@ func (s *ProductService) GetProduct(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ProductResponse, error) {
-	product, err := s.productRepo.FindByID(ctx, id)
+	productRepo := s.dataStore.ProductRepository()
+	product, err := productRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get product: %w", err)
 	}
@@ -111,13 +121,13 @@ func (s *ProductService) GetProducts(
 	var total int64
 
 	var err error
-
-	products, err = s.productRepo.FindAll(ctx, req.Limit, req.Offset)
+	productRepo := s.dataStore.ProductRepository()
+	products, err = productRepo.FindAll(ctx, req.Limit, req.Offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get products: %w", err)
 	}
 
-	total, err = s.productRepo.Count(ctx)
+	total, err = productRepo.Count(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count products: %w", err)
 	}
@@ -140,78 +150,95 @@ func (s *ProductService) UpdateProduct(
 	ctx context.Context,
 	req dto.UpdateProductRequest,
 ) (*dto.ProductResponse, error) {
-	// Check if product exists
-	existingProduct, err := s.productRepo.FindByID(ctx, req.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find product: %w", err)
-	}
+	res := new(dto.ProductResponse)
+	err := s.dataStore.WithTransaction(ctx, func(tx repository.DataStore) error {
+		// Check if product exists
+		productRepo := s.dataStore.ProductRepository()
+		existingProduct, err := productRepo.FindByID(ctx, req.ID)
+		if err != nil {
+			return fmt.Errorf("failed to find product: %w", err)
+		}
 
-	if existingProduct == nil {
-		return nil, fmt.Errorf("product not found")
-	}
+		if existingProduct == nil {
+			return fmt.Errorf("product not found")
+		}
 
-	// Update fields
-	if err := existingProduct.UpdateName(req.Name); err != nil {
-		return nil, fmt.Errorf("failed to update product name: %w", err)
-	}
+		// Update fields
+		if err := existingProduct.UpdateName(req.Name); err != nil {
+			return fmt.Errorf("failed to update product name: %w", err)
+		}
 
-	if err := existingProduct.UpdatePrice(req.Price); err != nil {
-		return nil, fmt.Errorf("failed to update product price: %w", err)
-	}
+		if err := existingProduct.UpdatePrice(req.Price); err != nil {
+			return fmt.Errorf("failed to update product price: %w", err)
+		}
 
-	if err := existingProduct.UpdateQuantity(req.Quantity); err != nil {
-		return nil, fmt.Errorf("failed to update product quantity: %w", err)
-	}
+		if err := existingProduct.UpdateQuantity(req.Quantity); err != nil {
+			return fmt.Errorf("failed to update product quantity: %w", err)
+		}
 
-	// Save updated product
-	updatedProduct, err := s.productRepo.Update(ctx, existingProduct)
+		// Save updated product
+		updatedProduct, err := productRepo.Update(ctx, existingProduct)
+		if err != nil {
+			return fmt.Errorf("failed to update product: %w", err)
+		}
+
+		// Produce domain event
+		if s.producer != nil {
+			evt := event.NewProductUpdatedEvent(
+				updatedProduct.ID,
+				updatedProduct.Name,
+				updatedProduct.Price,
+				updatedProduct.Quantity,
+			)
+			topic := s.topics.ProductLifecycle
+
+			if err := s.producer.Produce(topic, evt); err != nil {
+				s.logger.Errorf("failed to produce ProductUpdated event: %v", err)
+			}
+		}
+		res = s.mapToResponse(updatedProduct)
+		return nil
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to update product: %w", err)
 	}
 
-	// Produce domain event
-	if s.producer != nil {
-		evt := event.NewProductUpdatedEvent(
-			updatedProduct.ID,
-			updatedProduct.Name,
-			updatedProduct.Price,
-			updatedProduct.Quantity,
-		)
-		topic := s.topics.ProductLifecycle
-
-		if err := s.producer.Produce(topic, evt); err != nil {
-			s.logger.Errorf("Failed to produce ProductUpdated event: %v", err)
-		}
-	}
-
-	return s.mapToResponse(updatedProduct), nil
+	return res, nil
 }
 
 // DeleteProduct deletes a product by ID.
 func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
-	// Check if product exists
-	exists, err := s.productRepo.Exists(ctx, id)
-	if err != nil {
-		return fmt.Errorf("failed to check product existence: %w", err)
-	}
-
-	if !exists {
-		return fmt.Errorf("product not found")
-	}
-
-	// Delete product
-	if err := s.productRepo.Delete(ctx, id); err != nil {
-		return fmt.Errorf("failed to delete product: %w", err)
-	}
-
-	// Produce domain event
-	if s.producer != nil {
-		evt := event.NewProductDeletedEvent(id)
-		topic := s.topics.ProductLifecycle
-
-		if err := s.producer.Produce(topic, evt); err != nil {
-			s.logger.Errorf("Failed to produce ProductDeleted event: %v", err)
+	err := s.dataStore.WithTransaction(ctx, func(tx repository.DataStore) error {
+		productRepo := tx.ProductRepository()
+		exists, err := productRepo.Exists(ctx, id)
+		if err != nil {
+			return fmt.Errorf("failed to check product existence: %w", err)
 		}
+
+		if !exists {
+			return fmt.Errorf("product not found")
+		}
+
+		// Delete product
+		if err := productRepo.Delete(ctx, id); err != nil {
+			return fmt.Errorf("failed to delete product: %w", err)
+		}
+
+		// Produce domain event
+		if s.producer != nil {
+			evt := event.NewProductDeletedEvent(id)
+			topic := s.topics.ProductLifecycle
+
+			if err := s.producer.Produce(topic, evt); err != nil {
+				s.logger.Errorf("failed to produce ProductDeleted event: %v", err)
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to delete product: %w", err)
 	}
 
 	return nil

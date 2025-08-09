@@ -16,7 +16,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
@@ -43,12 +43,12 @@ func (s *TestSuite) SetupSuite() {
 	// Setup logger
 	appLogger := logger.NewLogrusLogger(4) // Debug level
 
-	// Setup repository and service
-	productRepo := postgres.NewProductRepositoryPostgres(s.tcSetup.DbPool)
+	// Setup dataStore
+	dataStore := repository.NewDataStore(s.tcSetup.DbPool)
 
 	// Setup event publisher (optional, can be nil for tests)
 	topics := constant.NewProductTopics()
-	s.productService = service.NewProductService(productRepo, nil, topics, appLogger)
+	s.productService = service.NewProductService(dataStore, nil, topics, appLogger)
 
 	// Setup HTTP handlers and server
 	productHandler := handler.NewProductHandler(s.productService)
