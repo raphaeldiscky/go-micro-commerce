@@ -7,10 +7,11 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
 )
 
-// SetupAPIGatewayRoutes sets up the API gateway routes.
-func SetupAPIGatewayRoutes(e *echo.Echo, gw *gateway.Gateway) {
+// SetupGatewayRoutes sets up the API gateway routes.
+func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway) {
 	// Gateway health endpoint
 	e.GET("/health", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, map[string]string{
@@ -18,7 +19,8 @@ func SetupAPIGatewayRoutes(e *echo.Echo, gw *gateway.Gateway) {
 			"service": "api-gateway",
 		})
 	})
-
+	// Metrics endpoint (Prometheus format)
+	e.GET("/metrics", metrics.Handler())
 	// Debug endpoint to check service discovery
 	e.GET("/debug/services", gw.DebugServices())
 

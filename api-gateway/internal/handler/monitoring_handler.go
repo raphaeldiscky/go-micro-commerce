@@ -1,5 +1,5 @@
-// Package monitoring provides health check and monitoring endpoints for the API gateway.
-package monitoring
+// Package handler for monitoring and gateways
+package handler
 
 import (
 	"fmt"
@@ -15,16 +15,16 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
 )
 
-// Handler handles monitoring and health check endpoints.
-type Handler struct {
+// MonitoringHandler handles monitoring and health check endpoints.
+type MonitoringHandler struct {
 	logger    logger.Logger
 	startTime time.Time
 	version   string
 }
 
-// NewHandler creates a new monitoring handler.
-func NewHandler(lgr logger.Logger, version string) *Handler {
-	return &Handler{
+// NewMonitoringHandler creates a new monitoring handler.
+func NewMonitoringHandler(lgr logger.Logger, version string) *MonitoringHandler {
+	return &MonitoringHandler{
 		logger:    lgr,
 		startTime: time.Now(),
 		version:   version,
@@ -51,7 +51,7 @@ type MetricsResponse struct {
 }
 
 // Health returns the health status of the API gateway.
-func (h *Handler) Health(c echo.Context) error {
+func (h *MonitoringHandler) Health(c echo.Context) error {
 	uptime := time.Since(h.startTime)
 
 	// Perform basic health checks
@@ -89,7 +89,7 @@ func (h *Handler) Health(c echo.Context) error {
 }
 
 // Ready returns the readiness status of the API gateway.
-func (h *Handler) Ready(c echo.Context) error {
+func (h *MonitoringHandler) Ready(c echo.Context) error {
 	// Check if the service is ready to accept requests
 	// Add any specific readiness checks here
 	response := map[string]interface{}{
@@ -101,7 +101,7 @@ func (h *Handler) Ready(c echo.Context) error {
 }
 
 // Metrics returns basic application metrics.
-func (h *Handler) Metrics(c echo.Context) error {
+func (h *MonitoringHandler) Metrics(c echo.Context) error {
 	var m runtime.MemStats
 
 	runtime.ReadMemStats(&m)
@@ -119,7 +119,7 @@ func (h *Handler) Metrics(c echo.Context) error {
 }
 
 // Info returns general information about the API gateway.
-func (h *Handler) Info(c echo.Context) error {
+func (h *MonitoringHandler) Info(c echo.Context) error {
 	response := map[string]interface{}{
 		"service":    "api-gateway",
 		"version":    h.version,
@@ -139,7 +139,7 @@ func (h *Handler) Info(c echo.Context) error {
 }
 
 // TestTrace creates a test trace for monitoring validation.
-func (h *Handler) TestTrace(c echo.Context) error {
+func (h *MonitoringHandler) TestTrace(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// Create a test span
@@ -177,7 +177,7 @@ func (h *Handler) TestTrace(c echo.Context) error {
 }
 
 // TestError creates a test error for monitoring validation.
-func (h *Handler) TestError(c echo.Context) error {
+func (h *MonitoringHandler) TestError(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	// Create a span for error testing
@@ -207,7 +207,7 @@ func (h *Handler) TestError(c echo.Context) error {
 }
 
 // checkMemory performs a basic memory usage check.
-func (h *Handler) checkMemory() string {
+func (h *MonitoringHandler) checkMemory() string {
 	var m runtime.MemStats
 
 	runtime.ReadMemStats(&m)
@@ -221,7 +221,7 @@ func (h *Handler) checkMemory() string {
 }
 
 // checkGoroutines performs a basic goroutine count check.
-func (h *Handler) checkGoroutines() string {
+func (h *MonitoringHandler) checkGoroutines() string {
 	count := runtime.NumGoroutine()
 
 	// Consider > 1000 goroutines as warning
@@ -230,18 +230,4 @@ func (h *Handler) checkGoroutines() string {
 	}
 
 	return constant.HealthyStatus
-}
-
-// RegisterRoutes registers all monitoring routes.
-func (h *Handler) RegisterRoutes(e *echo.Echo) {
-	// Health and readiness endpoints
-	e.GET("/health", h.Health)
-	e.GET("/ready", h.Ready)
-	e.GET("/app-metrics", h.Metrics) // Changed from /metrics to /app-metrics
-	e.GET("/info", h.Info)
-
-	// Test endpoints for monitoring validation
-	monitoring := e.Group("/test")
-	monitoring.GET("/trace", h.TestTrace)
-	monitoring.GET("/error", h.TestError)
 }

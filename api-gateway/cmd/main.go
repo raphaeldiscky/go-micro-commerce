@@ -3,27 +3,21 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/handler"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/ratelimit"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/monitoring"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/routes"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/server"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/service"
 )
 
@@ -37,9 +31,6 @@ func main() {
 	// Initialize logger
 	appLogger := logger.NewZapLogger(0)
 
-	// Initialize metrics
-	metricsInstance := metrics.NewMetrics()
-
 	// Initialize services
 	discoveryService, err := service.NewConsulServiceDiscovery(cfg.ServiceDiscovery)
 	if err != nil {
@@ -52,23 +43,8 @@ func main() {
 	// Initialize load balancer
 	loadBalancer := service.NewLoadBalancer()
 
-	// Create Echo instance
-	e := echo.New()
-
-	// Add middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
-	e.Use(tracing.Middleware())
-	e.Use(metricsInstance.Middleware())
-	e.Use(ratelimit.Middleware(*cfg.RateLimit))
-
-	// Initialize monitoring handler
-	monitoringHandler := monitoring.NewHandler(appLogger, "1.0.0")
-	monitoringHandler.RegisterRoutes(e)
-
-	// Metrics endpoint (Prometheus format)
-	e.GET("/metrics", metrics.Handler())
+	// Initialize metrics
+	metricsInstance := metrics.NewMetrics()
 
 	// Initialize API Gateway
 	gw := gateway.New(gateway.Config{
@@ -80,8 +56,11 @@ func main() {
 		Config:           cfg,
 	})
 
-	// Setup routes
-	routes.SetupAPIGatewayRoutes(e, gw)
+	// Initialize monitoring handler
+	monitoringHandler := handler.NewMonitoringHandler(appLogger, "1.0.0")
+
+	// Initialize HTTP server
+	httpServer := server.NewHTTPServer(gw, metricsInstance, cfg, appLogger, monitoringHandler)
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -96,11 +75,12 @@ func main() {
 	// Start HTTP server
 	wg.Add(1)
 
-	// Start server
 	go func() {
-		if err := e.Start(fmt.Sprintf(":%d", cfg.HTTPServer.Port)); err != nil &&
-			!errors.Is(err, http.ErrServerClosed) {
-			appLogger.Fatal("Failed to start server", err)
+		log.Printf("Starting HTTP server on port %d", cfg.HTTPServer.Port)
+
+		portStr := fmt.Sprintf("%d", cfg.HTTPServer.Port)
+		if err := httpServer.Start(portStr); err != nil {
+			log.Printf("HTTP server error: %v", err)
 		}
 	}()
 
@@ -120,7 +100,7 @@ func main() {
 	defer shutdownCancel()
 
 	// Shutdown HTTP server
-	if err := e.Shutdown(shutdownCtx); err != nil {
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
 		log.Printf("Error shutting down HTTP server: %v", err)
 	} else {
 		log.Println("HTTP server shut down gracefully")
