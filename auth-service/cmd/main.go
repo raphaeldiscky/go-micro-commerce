@@ -11,12 +11,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/raphaeldiscky/go-micro-template/pkg/consul"
+	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/server"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/service"
 )
@@ -29,29 +32,57 @@ func main() {
 	}
 
 	// Initialize database connection
-	db, err := postgres.NewConnection(cfg.Postgres)
+	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
+		Host:            cfg.Postgres.Host,
+		Port:            cfg.Postgres.Port,
+		User:            cfg.Postgres.User,
+		Password:        cfg.Postgres.Password,
+		Name:            cfg.Postgres.Name,
+		SSLMode:         cfg.Postgres.SSLMode,
+		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
+		MaxOpenConns:    cfg.Postgres.MaxOpenConns,
+		MaxConnLifetime: cfg.Postgres.MaxConnLifetime,
+	})
 	if err != nil {
-		db.Close()
-		log.Fatalf("Failed to ping database: %v", err)
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer pgPool.Close()
 
 	// Initialize logger (0 = Info level)
 	appLogger := logger.NewZapLogger(0)
 
-	// Initialize repositories
-	userRepo := postgres.NewUserRepositoryPostgres(db)
-	sessionRepo := postgres.NewSessionRepository(db)
+	// Setup Kafka event publisher
+	producer, err := mq.NewProducerKafka(&mq.KafkaProducerConfig{
+		Brokers:        cfg.Kafka.Brokers,
+		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
+		RetryMax:       cfg.Kafka.RetryMax,
+		FlushFrequency: cfg.Kafka.FlushFrequency,
+	})
+	if err != nil {
+		log.Printf("Warning: Failed to setup Kafka event publisher: %v", err)
+		log.Println("Continuing without event publishing...")
 
-	// Initialize event publisher
-	eventPublisher := event.NewSimplePublisher(cfg.EventPublisher)
+		producer = nil
+	} else {
+		defer func() {
+			if err := producer.Close(); err != nil {
+				log.Printf("Error closing Kafka event producer: %v", err)
+			}
+		}()
+		log.Println("Kafka event publisher initialized")
+	}
+
+	// Setup datastore
+	dataStore := repository.NewDataStore(pgPool)
 
 	// Initialize service
+	topics := constant.NewAuthTopics()
 	authService := service.NewAuthService(
-		userRepo,
-		sessionRepo,
+		dataStore,
 		cfg.JWT,
-		eventPublisher,
+		topics,
+		producer,
 		appLogger,
 	)
 
@@ -60,6 +91,10 @@ func main() {
 
 	// Initialize HTTP server
 	httpServer := server.NewHTTPServer(authHandler, cfg, appLogger)
+
+	// Register with Consul if enabled and setup cleanup
+	consulCleanup := setupConsulRegistration(cfg)
+	defer consulCleanup()
 
 	// Create context for graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
@@ -108,4 +143,38 @@ func main() {
 	// Wait for all goroutines to finish
 	wg.Wait()
 	log.Println("Product service shut down complete")
+}
+
+// setupConsulRegistration handles Consul service registration and returns a cleanup function.
+func setupConsulRegistration(cfg *config.Config) func() {
+	if !cfg.Consul.Enabled {
+		log.Println("Consul service discovery is disabled")
+
+		return func() {}
+	}
+
+	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address)
+	if err != nil {
+		log.Printf("Failed to create Consul client: %v", err)
+
+		return func() {}
+	}
+
+	if err := consulClient.Register(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+		log.Printf("Failed to register with Consul: %v", err)
+
+		return func() {}
+	}
+
+	log.Printf("Service registered with Consul: %s at %s:%d",
+		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
+
+	// Return cleanup function
+	return func() {
+		if err := consulClient.Deregister(); err != nil {
+			log.Printf("Failed to deregister from Consul: %v", err)
+		} else {
+			log.Println("Service deregistered from Consul")
+		}
+	}
 }

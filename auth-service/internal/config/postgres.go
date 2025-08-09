@@ -23,14 +23,14 @@ type PostgresConfig struct {
 func initPostgresConfig() *PostgresConfig {
 	// Set defaults
 	viper.SetDefault("DB_HOST", "localhost")
-	viper.SetDefault("DB_PORT", 5432)
-	viper.SetDefault("DB_NAME", "authdb")
+	viper.SetDefault("DB_PORT", 15432)
+	viper.SetDefault("DB_NAME", "postgres")
 	viper.SetDefault("DB_USER", "postgres")
 	viper.SetDefault("DB_PASSWORD", "postgres")
 	viper.SetDefault("DB_SSL_MODE", "disable")
 	viper.SetDefault("DB_MAX_IDLE_CONNS", 10)
-	viper.SetDefault("DB_MAX_OPEN_CONNS", 100)
-	viper.SetDefault("DB_MAX_CONN_LIFETIME", 300)
+	viper.SetDefault("DB_MAX_OPEN_CONNS", 32)
+	viper.SetDefault("DB_CONN_MAX_LIFETIME", 60)
 
 	PostgresConfig := &PostgresConfig{}
 

@@ -24,11 +24,11 @@ type LoginRequest struct {
 
 // AuthResponse represents the response after successful authentication.
 type AuthResponse struct {
-	AccessToken  string       `json:"access_token"`
-	RefreshToken string       `json:"refresh_token"`
-	TokenType    string       `json:"token_type"`
-	ExpiresIn    int64        `json:"expires_in"`
-	User         UserResponse `json:"user"`
+	AccessToken  string        `json:"access_token"`
+	RefreshToken string        `json:"refresh_token"`
+	TokenType    string        `json:"token_type"`
+	ExpiresIn    int64         `json:"expires_in"`
+	User         *UserResponse `json:"user"`
 }
 
 // UserResponse represents a user in API responses.

@@ -11,6 +11,15 @@ http:
         - rate-limit
         - auth-headers
 
+      # Direct access to Auth Service (for testing/admin)
+    auth-service:
+      rule: "Host(`auth.localhost`)"
+      service: auth-service-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
     # Direct access to Product Service (for testing/admin)
     product-service:
       rule: "Host(`products.localhost`)"
@@ -32,16 +41,27 @@ http:
           headers:
             Host: api-gateway
 
-    product-service-service:
-      loadBalancer:
-        servers:
-          - url: "http://product-service:8082"
-        healthCheck:
-          path: /health
-          interval: 30s
-          timeout: 10s
-          headers:
-            Host: product-service
+      auth-service-service:
+        loadBalancer:
+          servers:
+            - url: "http://auth-service:8081"
+          healthCheck:
+            path: /health
+            interval: 30s
+            timeout: 10s
+            headers:
+              Host: auth-service
+
+      product-service-service:
+        loadBalancer:
+          servers:
+            - url: "http://product-service:8082"
+          healthCheck:
+            path: /health
+            interval: 30s
+            timeout: 10s
+            headers:
+              Host: product-service
 
   middlewares:
     rate-limit:

@@ -11,15 +11,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/raphaeldiscky/go-micro-template/pkg/consul"
 	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/consul"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/infra/db/postgres"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
@@ -72,12 +72,12 @@ func main() {
 		log.Println("Kafka event publisher initialized")
 	}
 
-	// Setup repository
-	productRepo := postgres.NewProductRepositoryPostgres(pgPool)
+	// Setup datastore
+	dataStore := repository.NewDataStore(pgPool)
 
 	// Setup services
 	topics := constant.NewProductTopics()
-	productService := service.NewProductService(productRepo, producer, topics, appLogger)
+	productService := service.NewProductService(dataStore, producer, topics, appLogger)
 
 	// Setup HTTP handlers
 	productHandler := handler.NewProductHandler(productService)

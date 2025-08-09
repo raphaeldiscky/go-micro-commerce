@@ -10,7 +10,7 @@ vars:
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
   COMPOSE_FILES:
-    sh: echo "-f deployments/docker-compose/"{postgres,redis,kafka,monitoring,security,dev-tools,api-gateway,apps}".yaml" | tr ' ' '\n' | paste -sd ' ' -
+    sh: echo "-f deployments/docker-compose/postgres.yaml -f deployments/docker-compose/redis.yaml -f deployments/docker-compose/kafka.yaml -f deployments/docker-compose/monitoring.yaml -f deployments/docker-compose/security.yaml -f deployments/docker-compose/dev-tools.yaml -f deployments/docker-compose/api-gateway.yaml -f deployments/docker-compose/apps.yaml"
 
 tasks:
   install_tools:
@@ -115,6 +115,7 @@ tasks:
   start_infra:
     desc: Start local infrastructure using docker-compose
     cmds:
+      - docker network rm go-micro-template
       - docker network create --driver bridge go-micro-template
       - docker compose -f {{.INFRA_DC_FILE}} up -d
 
@@ -138,7 +139,6 @@ tasks:
           echo "Stopping leftover containers attached to go-micro-template network..."
           docker rm -f $CONTAINERS
         fi
-      - docker network rm go-micro-template
 
   stop_monitoring:
     desc: Stop local monitoring using docker-compose

@@ -214,3 +214,22 @@ open http://localhost:3000
 2. **No traces appearing**: Verify OTLP collector is receiving data at <http://localhost:8888>
 3. **Grafana data source issues**: Check provisioning logs in Grafana container
 4. **Performance issues**: Adjust sampling rates in service configurations
+
+## Register services manually
+
+```
+curl -X PUT http://localhost:8500/v1/agent/service/register \
+-H "Content-Type: application/json" \
+-d '{
+  "ID": "auth-service-manual",
+  "Name": "auth-service",
+  "Tags": ["http", "api", "microservice"],
+  "Address": "192.168.0.107",
+  "Port": 8081,
+  "Check": {
+    "HTTP": "http://192.168.0.107:8081/health",
+    "Interval": "30s",
+    "Timeout": "10s"
+  }
+}'
+```

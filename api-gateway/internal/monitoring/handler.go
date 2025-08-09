@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"go.uber.org/zap"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/constant"
@@ -16,15 +17,15 @@ import (
 
 // Handler handles monitoring and health check endpoints.
 type Handler struct {
-	logger    *zap.Logger
+	logger    logger.Logger
 	startTime time.Time
 	version   string
 }
 
 // NewHandler creates a new monitoring handler.
-func NewHandler(logger *zap.Logger, version string) *Handler {
+func NewHandler(lgr logger.Logger, version string) *Handler {
 	return &Handler{
-		logger:    logger,
+		logger:    lgr,
 		startTime: time.Now(),
 		version:   version,
 	}

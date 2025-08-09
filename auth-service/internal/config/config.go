@@ -9,12 +9,12 @@ import (
 
 // Config represents the application configuration.
 type Config struct {
-	App              *AppConfig              `mapstructure:"app"`
-	HTTPServer       *HTTPServerConfig       `mapstructure:"http_server"`
-	Postgres         *PostgresConfig         `mapstructure:"postgres"`
-	JWT              *JWTConfig              `mapstructure:"jwt"`
-	ServiceDiscovery *ServiceDiscoveryConfig `mapstructure:"service_discovery"`
-	EventPublisher   *EventPublisherConfig   `mapstructure:"event_publisher"`
+	App        *AppConfig        `mapstructure:"app"`
+	HTTPServer *HTTPServerConfig `mapstructure:"http_server"`
+	JWT        *JWTConfig        `mapstructure:"jwt"`
+	Postgres   *PostgresConfig   `mapstructure:"postgres"`
+	Kafka      *KafkaConfig      `mapstructure:"kafka"`
+	Consul     *ConsulConfig     `mapstructure:"consul"`
 }
 
 // LoadConfig loads configuration from environment variables.
@@ -23,12 +23,12 @@ func LoadConfig() (*Config, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
 	config := &Config{
-		App:              initAppConfig(),
-		HTTPServer:       initHTTPServerConfig(),
-		Postgres:         initPostgresConfig(),
-		JWT:              initJWTConfig(),
-		ServiceDiscovery: initServiceDiscoveryConfig(),
-		EventPublisher:   initEventPublisherConfig(),
+		App:        initAppConfig(),
+		HTTPServer: initHTTPServerConfig(),
+		Postgres:   initPostgresConfig(),
+		Kafka:      initKafkaConfig(),
+		JWT:        initJWTConfig(),
+		Consul:     initConsulConfig(),
 	}
 
 	return config, nil

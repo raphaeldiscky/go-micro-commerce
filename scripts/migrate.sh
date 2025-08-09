@@ -25,7 +25,7 @@ SERVICE_PORTS[order-service]=35432
 
 
 # Postgres path
-POSTGRES_MIGRATION_PATH="internal/infra/db/migrations"
+POSTGRES_MIGRATION_PATH="/db/migrations"
 
 
 # If SERVICE == "all", loop through all
