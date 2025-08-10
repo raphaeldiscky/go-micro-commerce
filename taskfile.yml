@@ -10,7 +10,17 @@ vars:
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
   COMPOSE_FILES:
-    sh: echo "-f deployments/docker-compose/postgres.yaml -f deployments/docker-compose/redis.yaml -f deployments/docker-compose/kafka.yaml -f deployments/docker-compose/monitoring.yaml -f deployments/docker-compose/security.yaml -f deployments/docker-compose/dev-tools.yaml -f deployments/docker-compose/api-gateway.yaml -f deployments/docker-compose/apps.yaml"
+    sh: |
+      echo "\
+        -f {{.DC_DIR}}/postgres.yaml \
+        -f {{.DC_DIR}}/redis.yaml \
+        -f {{.DC_DIR}}/kafka.yaml \
+        -f {{.DC_DIR}}/monitoring.yaml \
+        -f {{.DC_DIR}}/security.yaml \
+        -f {{.DC_DIR}}/dev-tools.yaml \
+        -f {{.DC_DIR}}/api-gateway.yaml \
+        -f {{.DC_DIR}}/apps.yaml \
+        -f {{.DC_DIR}}/dev.yaml"
 
 tasks:
   install_tools:

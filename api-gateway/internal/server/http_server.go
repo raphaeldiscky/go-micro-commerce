@@ -31,13 +31,8 @@ func NewHTTPServer(
 ) *HTTPServer {
 	e := echo.New()
 
-	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
-	e.Use(middleware.RequestID())
-
-	provider.SetupHTTP(cfg, e, lgr, gw)
+	RegisterMiddlewares(e, lgr)
+	provider.SetupHTTP(e, cfg, lgr, gw)
 
 	return &HTTPServer{
 		echo:   e,
@@ -77,4 +72,12 @@ func (s *HTTPServer) Shutdown() {
 	}
 
 	s.logger.Info("HTTP server shut down gracefully")
+}
+
+// RegisterMiddlewares registers custom middleware for the HTTP server.
+func RegisterMiddlewares(e *echo.Echo, lgr logger.Logger) {
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
+	e.Use(middleware.RequestID())
 }

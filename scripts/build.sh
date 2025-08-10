@@ -49,8 +49,8 @@ build_image() {
     return 1
   fi
 
-  if [ ! -f "$CURDIR/$service/cmd/main.go" ]; then
-    print_warning "Skipping $service: main.go not found in $CURDIR/$service/cmd/"
+  if [ ! -f "$CURDIR/$service/cmd/api/main.go" ]; then
+    print_warning "Skipping $service: main.go not found in $CURDIR/$service/cmd/api/"
     return 1
   fi
 
