@@ -11,6 +11,7 @@ import (
 // Config holds the application configuration.
 type Config struct {
 	App              *AppConfig
+	JWT              *JWTConfig
 	Logger           *LoggerConfig
 	HTTPServer       *HTTPServerConfig
 	ServiceDiscovery *ServiceDiscoveryConfig
@@ -33,6 +34,7 @@ func LoadConfig() (*Config, error) {
 
 	cfg := &Config{
 		App:              initAppConfig(),
+		JWT:              initJWTConfig(),
 		Logger:           initLoggerConfig(),
 		HTTPServer:       initHTTPServerConfig(),
 		ServiceDiscovery: initServiceDiscoveryConfig(),

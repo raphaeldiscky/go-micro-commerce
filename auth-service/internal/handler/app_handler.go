@@ -16,11 +16,6 @@ func NewAppHandler() *AppHandler {
 	return &AppHandler{}
 }
 
-// Route sets up the HTTP routes for the application.
-func (c *AppHandler) Route(e *echo.Echo) {
-	e.HTTPErrorHandler = c.CustomHTTPErrorHandler
-}
-
 // Health handles health check.
 func (c *AppHandler) Health(e echo.Context) error {
 	return e.JSON(http.StatusOK, map[string]interface{}{

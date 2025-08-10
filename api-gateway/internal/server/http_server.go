@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -12,29 +13,21 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/ratelimit"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/routes"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/provider"
 )
 
 // HTTPServer represents the HTTP server.
 type HTTPServer struct {
-	echo              *echo.Echo
-	config            *config.Config
-	logger            logger.Logger
-	gateway           *gateway.Gateway
-	monitoringHandler *handler.MonitoringHandler
+	echo   *echo.Echo
+	config *config.Config
+	logger logger.Logger
 }
 
 // NewHTTPServer creates a new HTTP server instance.
 func NewHTTPServer(
 	gw *gateway.Gateway,
-	metricsInstance *metrics.Metrics,
 	cfg *config.Config,
 	lgr logger.Logger,
-	monitoringHandler *handler.MonitoringHandler,
 ) *HTTPServer {
 	e := echo.New()
 
@@ -44,30 +37,18 @@ func NewHTTPServer(
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestID())
 
-	// Custom Middleware
-	e.Use(tracing.Middleware())
-	e.Use(metricsInstance.Middleware())
-	e.Use(ratelimit.Middleware(*cfg.RateLimit))
+	provider.SetupHTTP(cfg, e, lgr, gw)
 
 	return &HTTPServer{
-		echo:              e,
-		config:            cfg,
-		logger:            lgr,
-		gateway:           gw,
-		monitoringHandler: monitoringHandler,
+		echo:   e,
+		config: cfg,
+		logger: lgr,
 	}
 }
 
-// RegisterRoutes registers the authentication routes.
-func (s *HTTPServer) RegisterRoutes() {
-	routes.SetupMonitoringRoutes(s.echo, s.monitoringHandler)
-	routes.SetupGatewayRoutes(s.echo, s.gateway)
-}
-
 // Start starts the HTTP server.
-func (s *HTTPServer) Start(port string) error {
-	s.RegisterRoutes()
-
+func (s *HTTPServer) Start() error {
+	port := strconv.Itoa(s.config.HTTPServer.Port)
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      s.echo,
@@ -82,6 +63,18 @@ func (s *HTTPServer) Start(port string) error {
 }
 
 // Shutdown gracefully shuts down the HTTP server.
-func (s *HTTPServer) Shutdown(ctx context.Context) error {
-	return s.echo.Shutdown(ctx)
+func (s *HTTPServer) Shutdown() {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Duration(s.config.HTTPServer.GracePeriod)*time.Second,
+	)
+	defer cancel()
+
+	s.logger.Info("Attempting to shut down the HTTP server...")
+
+	if err := s.echo.Shutdown(ctx); err != nil {
+		s.logger.Fatal("Error shutting down HTTP server:", err)
+	}
+
+	s.logger.Info("HTTP server shut down gracefully")
 }

@@ -11,23 +11,24 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"go.uber.org/zap"
 
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
 )
 
 // MonitoringHandler handles monitoring and health check endpoints.
 type MonitoringHandler struct {
+	config    *config.Config
 	logger    logger.Logger
 	startTime time.Time
-	version   string
 }
 
 // NewMonitoringHandler creates a new monitoring handler.
-func NewMonitoringHandler(lgr logger.Logger, version string) *MonitoringHandler {
+func NewMonitoringHandler(cfg *config.Config, lgr logger.Logger) *MonitoringHandler {
 	return &MonitoringHandler{
+		config:    cfg,
 		logger:    lgr,
 		startTime: time.Now(),
-		version:   version,
 	}
 }
 
@@ -76,7 +77,6 @@ func (h *MonitoringHandler) Health(c echo.Context) error {
 		Status:    status,
 		Timestamp: time.Now(),
 		Uptime:    uptime.String(),
-		Version:   h.version,
 		Checks:    checks,
 	}
 
@@ -122,7 +122,6 @@ func (h *MonitoringHandler) Metrics(c echo.Context) error {
 func (h *MonitoringHandler) Info(c echo.Context) error {
 	response := map[string]interface{}{
 		"service":    "api-gateway",
-		"version":    h.version,
 		"timestamp":  time.Now(),
 		"uptime":     time.Since(h.startTime).String(),
 		"go_version": runtime.Version(),

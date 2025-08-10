@@ -16,14 +16,6 @@ func NewAppHandler() *AppHandler {
 	return &AppHandler{}
 }
 
-// Health handles health check.
-func (c *AppHandler) Health(e echo.Context) error {
-	return e.JSON(http.StatusOK, map[string]interface{}{
-		"status":  "healthy",
-		"service": "product-service",
-	})
-}
-
 // CustomHTTPErrorHandler handles all HTTP errors including 404 and 405.
 func (c *AppHandler) CustomHTTPErrorHandler(err error, ctx echo.Context) {
 	code := http.StatusInternalServerError
@@ -54,4 +46,12 @@ func (c *AppHandler) CustomHTTPErrorHandler(err error, ctx echo.Context) {
 			ctx.Logger().Error(err)
 		}
 	}
+}
+
+// Health handles health check.
+func (c *AppHandler) Health(e echo.Context) error {
+	return e.JSON(http.StatusOK, map[string]interface{}{
+		"status":  "healthy",
+		"service": "auth-service",
+	})
 }

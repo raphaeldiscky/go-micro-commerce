@@ -23,7 +23,7 @@ require (
 )
 
 require (
-	github.com/IBM/sarama v1.45.2 // indirect
+	github.com/IBM/sarama v1.45.2
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect

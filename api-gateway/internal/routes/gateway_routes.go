@@ -2,8 +2,6 @@
 package routes
 
 import (
-	"net/http"
-
 	"github.com/labstack/echo/v4"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
@@ -12,13 +10,6 @@ import (
 
 // SetupGatewayRoutes sets up the API gateway routes.
 func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway) {
-	// Gateway health endpoint
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{
-			"status":  "healthy",
-			"service": "api-gateway",
-		})
-	})
 	// Metrics endpoint (Prometheus format)
 	e.GET("/metrics", metrics.Handler())
 	// Debug endpoint to check service discovery
