@@ -1,9 +1,12 @@
 package event
 
 import (
+	"context"
 	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
@@ -19,7 +22,7 @@ type ProductCreatedPayload struct {
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata KafkaMetadata
+	Metadata mq.KafkaMetadata // Use the correct type from mq package
 	Payload  ProductCreatedPayload
 }
 
@@ -29,7 +32,7 @@ func (e *ProductCreatedEvent) GetPayload() interface{} {
 }
 
 // GetMetadata returns the metadata associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetMetadata() KafkaMetadata {
+func (e *ProductCreatedEvent) GetMetadata() mq.KafkaMetadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
@@ -41,7 +44,7 @@ func NewProductCreatedEvent(
 	quantity int,
 ) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
-		Metadata: KafkaMetadata{
+		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductCreated,
 			AggregateID: productID,
@@ -55,4 +58,32 @@ func NewProductCreatedEvent(
 			Quantity:  quantity,
 		},
 	}
+}
+
+// ProductCreatedProducer is responsible for producing product created events.
+type ProductCreatedProducer struct {
+	Producer  *mq.KafkaAsyncProducer
+	RetryChan chan *sarama.ProducerMessage
+	topic     string
+}
+
+// NewProductCreatedProducer creates a new instance of ProductCreatedProducer.
+func NewProductCreatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
+	pr := &ProductCreatedProducer{
+		Producer:  producer,
+		topic:     constant.ProductLifecycleTopic,
+		RetryChan: make(chan *sarama.ProducerMessage, 100),
+	}
+
+	return pr
+}
+
+// Send implements the KafkaProducer interface.
+func (p *ProductCreatedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+	return p.Producer.ProduceAsync(ctx, p.topic, event)
+}
+
+// Topic returns the topic name.
+func (p *ProductCreatedProducer) Topic() string {
+	return p.topic
 }

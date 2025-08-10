@@ -1,6 +1,19 @@
--- Create users table
+-- Migration: 001_create_users_and_sessions
+-- Up Migration - Creates users and sessions tables with all related objects
+
+-- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column() 
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE 'plpgsql';
+
+-- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -33,16 +46,16 @@ CREATE TABLE IF NOT EXISTS sessions (
     last_used_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better performance
--- Users indexes
+-- Create indexes for users table
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
-CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON users(email_verification_token) WHERE email_verification_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON users(email_verification_token) 
+    WHERE email_verification_token IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_is_email_verified ON users(is_email_verified);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
--- Sessions indexes
+-- Create indexes for sessions table
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_refresh_token ON sessions(refresh_token);
 CREATE INDEX IF NOT EXISTS idx_sessions_is_active ON sessions(is_active);
@@ -50,18 +63,13 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expires_at ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions(created_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_last_used_at ON sessions(last_used_at);
 
--- Create updated_at trigger function
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
+-- Create triggers for automatic updated_at timestamp updates
+CREATE TRIGGER update_users_updated_at 
+    BEFORE UPDATE ON users
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
 
--- Create triggers for updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
-CREATE TRIGGER update_sessions_updated_at BEFORE UPDATE ON sessions
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_sessions_updated_at 
+    BEFORE UPDATE ON sessions
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();

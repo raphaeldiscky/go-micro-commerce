@@ -25,12 +25,12 @@ SERVICE_PORTS[order-service]=35432
 
 
 # Postgres path
-POSTGRES_MIGRATION_PATH="/db/migrations"
+POSTGRES_MIGRATION_PATH="db/migrations"
 
 
 # If SERVICE == "all", loop through all
 if [ "$SERVICE" == "all" ]; then
-  echo "📦 Running '$COMMAND' migrations for all services..."
+  echo "Running '$COMMAND' migrations for all services..."
   for svc in "${!SERVICE_PORTS[@]}"; do
     MIGRATIONS_DIR="${svc}/${POSTGRES_MIGRATION_PATH}"
     echo "Checking migrations for $svc at $MIGRATIONS_DIR"

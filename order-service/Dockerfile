@@ -15,7 +15,7 @@ WORKDIR /workspace/order-service
 RUN go mod download
 
 # Build the Go application.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go
 
 # ---- Final Stage ----
 # Start from a minimal base image for the final container.

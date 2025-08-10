@@ -133,8 +133,31 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	// Replace path parameters
-	finalPath := gw.replacePath(path, c)
+	// Determine final path to forward
+	// If a path template is provided, replace parameters.
+	// Otherwise, derive from the incoming request by removing the route prefix.
+	finalPath := path
+	if finalPath == "" {
+		incomingPath := c.Request().URL.Path // e.g., /products/health
+		routePattern := c.Path()             // e.g., /products/*
+		basePrefix := strings.TrimSuffix(routePattern, "*")
+		trimmedPrefix := strings.TrimRight(basePrefix, "/")
+		suffix := strings.TrimPrefix(incomingPath, trimmedPrefix)
+
+		switch suffix {
+		case "", "/":
+			finalPath = "/"
+		default:
+			if !strings.HasPrefix(suffix, "/") {
+				finalPath = "/" + suffix
+			} else {
+				finalPath = suffix
+			}
+		}
+	} else {
+		finalPath = gw.replacePath(path, c)
+	}
+
 	targetURL.Path = finalPath
 	targetURL.RawQuery = c.Request().URL.RawQuery
 

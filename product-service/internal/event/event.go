@@ -12,7 +12,7 @@ type (
 	KafkaMetadata = mq.KafkaMetadata
 )
 
-// Producer defines the interface for producing events.
-type Producer interface {
-	Produce(topic string, event BaseEvent) error
+// AsyncProducer defines the interface for producing events.
+type AsyncProducer interface {
+	ProduceAsync(topic string, event BaseEvent) error
 }

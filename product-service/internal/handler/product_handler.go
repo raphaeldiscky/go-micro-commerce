@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
@@ -17,21 +18,18 @@ import (
 // ProductHandler handles HTTP requests for product operations.
 type ProductHandler struct {
 	productService service.ProductServiceInterface
+	logger         logger.Logger
 }
 
 // NewProductHandler creates a new instance of ProductHandler.
-func NewProductHandler(productService service.ProductServiceInterface) *ProductHandler {
+func NewProductHandler(
+	productService service.ProductServiceInterface,
+	appLogger logger.Logger,
+) *ProductHandler {
 	return &ProductHandler{
 		productService: productService,
+		logger:         appLogger,
 	}
-}
-
-// Health handles health check.
-func (h *ProductHandler) Health(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":  "healthy",
-		"service": "product-service",
-	})
 }
 
 // CreateProduct handles POST /products.

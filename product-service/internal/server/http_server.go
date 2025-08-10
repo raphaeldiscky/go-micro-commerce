@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -11,24 +12,22 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	handlers "github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/validation"
 )
 
 // HTTPServer wraps the Echo server.
 type HTTPServer struct {
-	echo           *echo.Echo
-	config         *config.HTTPServerConfig
-	productHandler *handlers.ProductHandler
-	logger         logger.Logger
+	echo   *echo.Echo
+	config *config.Config
+	logger logger.Logger
 }
 
 // NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(
-	productHandler *handlers.ProductHandler,
-	cfg *config.HTTPServerConfig,
+	cfg *config.Config,
 	lgr logger.Logger,
+	providers *provider.Providers,
 ) *HTTPServer {
 	e := echo.New()
 
@@ -41,23 +40,19 @@ func NewHTTPServer(
 	e.Use(middleware.CORS())
 	e.Use(middleware.RequestID())
 
+	// Setup HTTP
+	provider.SetupHTTP(cfg, e, lgr, providers)
+
 	return &HTTPServer{
-		echo:           e,
-		productHandler: productHandler,
-		config:         cfg,
-		logger:         lgr,
+		echo:   e,
+		config: cfg,
+		logger: lgr,
 	}
 }
 
-// RegisterRoutes registers all HTTP routes.
-func (s *HTTPServer) RegisterRoutes() {
-	routes.SetupProductRoutes(s.echo, s.productHandler)
-}
-
 // Start starts the HTTP server.
-func (s *HTTPServer) Start(port string) error {
-	s.RegisterRoutes()
-
+func (s *HTTPServer) Start() error {
+	port := strconv.Itoa(s.config.HTTPServer.Port)
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      s.echo,
@@ -72,6 +67,18 @@ func (s *HTTPServer) Start(port string) error {
 }
 
 // Shutdown gracefully shuts down the HTTP server.
-func (s *HTTPServer) Shutdown(ctx context.Context) error {
-	return s.echo.Shutdown(ctx)
+func (s *HTTPServer) Shutdown() {
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Duration(s.config.HTTPServer.GracePeriod)*time.Second,
+	)
+	defer cancel()
+
+	s.logger.Info("Attempting to shut down the HTTP server...")
+
+	if err := s.echo.Shutdown(ctx); err != nil {
+		s.logger.Fatal("Error shutting down HTTP server:", err)
+	}
+
+	s.logger.Info("HTTP server shut down gracefully")
 }
