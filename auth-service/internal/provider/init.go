@@ -4,8 +4,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/repository"
 )
 
 // Providers holds all initialized providers.
@@ -14,7 +14,7 @@ type Providers struct {
 	KafkaAdmin *mq.KafkaAdmin
 }
 
-// SetupGlobal initializes all providers.
+// SetupGlobal initializes and returns the providers.
 func SetupGlobal(cfg *config.Config) (*Providers, error) {
 	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
 		Host:            cfg.Postgres.Host,
@@ -30,9 +30,10 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer pgPool.Close()
+
 	// Setup datastore
 	dataStore := repository.NewDataStore(pgPool)
+
 	// Setup kafka admin
 	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{
 		Brokers: cfg.Kafka.Brokers,

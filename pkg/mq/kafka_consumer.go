@@ -10,8 +10,10 @@ import (
 	"github.com/IBM/sarama"
 )
 
+// KafkaHandler is a function type for handling Kafka messages.
 type KafkaHandler func(ctx context.Context, body []byte) error
 
+// KafkaConsumer is an interface for consuming messages from Kafka topics.
 type KafkaConsumer interface {
 	Consume(ctx context.Context) error
 	Handler() KafkaHandler

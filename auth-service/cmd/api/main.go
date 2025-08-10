@@ -7,8 +7,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/consul"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/cmd/worker"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/cmd/worker"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
 )
 
 func main() {

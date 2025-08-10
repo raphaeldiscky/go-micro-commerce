@@ -10,11 +10,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/spf13/cobra"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/provider"
 )
 
-// Start initializes and starts the worker services.
+// Start initializes the application workers.
 func Start(cfg *config.Config, appLogger logger.Logger) {
 	providers, err := provider.SetupGlobal(cfg)
 	if err != nil {

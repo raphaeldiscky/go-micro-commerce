@@ -1,9 +1,12 @@
 package event
 
 import (
+	"context"
 	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
 )
@@ -48,4 +51,32 @@ func NewEmailVerificationRequestedEvent(
 			Email:  email,
 		},
 	}
+}
+
+// EmailVerificationRequestedProducer is responsible for producing product created events.
+type EmailVerificationRequestedProducer struct {
+	Producer  *mq.KafkaAsyncProducer
+	RetryChan chan *sarama.ProducerMessage
+	topic     string
+}
+
+// NewEmailVerificationRequestedProducer creates a new instance of EmailVerificationRequestedProducer.
+func NewEmailVerificationRequestedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
+	pr := &EmailVerificationRequestedProducer{
+		Producer:  producer,
+		topic:     constant.UserVerificationTopic,
+		RetryChan: make(chan *sarama.ProducerMessage, 100),
+	}
+
+	return pr
+}
+
+// Send implements the KafkaProducer interface.
+func (p *EmailVerificationRequestedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+	return p.Producer.ProduceAsync(ctx, p.topic, event)
+}
+
+// Topic returns the topic name.
+func (p *EmailVerificationRequestedProducer) Topic() string {
+	return p.topic
 }

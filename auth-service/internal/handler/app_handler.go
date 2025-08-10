@@ -25,7 +25,7 @@ func (c *AppHandler) Route(e *echo.Echo) {
 func (c *AppHandler) Health(e echo.Context) error {
 	return e.JSON(http.StatusOK, map[string]interface{}{
 		"status":  "healthy",
-		"service": "product-service",
+		"service": "auth-service",
 	})
 }
 

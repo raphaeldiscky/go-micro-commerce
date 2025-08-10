@@ -27,6 +27,7 @@ type HTTPServer struct {
 func NewHTTPServer(
 	cfg *config.Config,
 	lgr logger.Logger,
+	providers *provider.Providers,
 ) *HTTPServer {
 	e := echo.New()
 
@@ -40,7 +41,7 @@ func NewHTTPServer(
 	e.Use(middleware.RequestID())
 
 	// Setup HTTP
-	provider.SetupHTTP(cfg, e)
+	provider.SetupHTTP(cfg, e, lgr, providers)
 
 	return &HTTPServer{
 		echo:   e,
@@ -67,12 +68,17 @@ func (s *HTTPServer) Start() error {
 
 // Shutdown gracefully shuts down the HTTP server.
 func (s *HTTPServer) Shutdown() {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.config.HTTPServer.GracePeriod)*time.Second)
+	ctx, cancel := context.WithTimeout(
+		context.Background(),
+		time.Duration(s.config.HTTPServer.GracePeriod)*time.Second,
+	)
 	defer cancel()
 
 	s.logger.Info("Attempting to shut down the HTTP server...")
+
 	if err := s.echo.Shutdown(ctx); err != nil {
 		s.logger.Fatal("Error shutting down HTTP server:", err)
 	}
+
 	s.logger.Info("HTTP server shut down gracefully")
 }

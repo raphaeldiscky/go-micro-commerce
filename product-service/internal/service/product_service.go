@@ -5,8 +5,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"

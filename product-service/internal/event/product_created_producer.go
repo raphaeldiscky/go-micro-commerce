@@ -6,9 +6,9 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 )
 
@@ -78,12 +78,12 @@ func NewProductCreatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer
 	return pr
 }
 
-// Send implements the KafkaProducer interface
+// Send implements the KafkaProducer interface.
 func (p *ProductCreatedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
-	return p.Producer.ProduceAsync(p.topic, event)
+	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 
-// Topic returns the topic name
+// Topic returns the topic name.
 func (p *ProductCreatedProducer) Topic() string {
 	return p.topic
 }

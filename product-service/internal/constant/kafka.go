@@ -1,18 +1,6 @@
 // Package constant defines constants used throughout the product service.
 package constant
 
-// ProductTopics defines the topics used by the product service for event publishing.
-type ProductTopics struct {
-	ProductLifecycle string
-}
-
-// NewProductTopics initializes and returns a ProductTopics instance with predefined topics.
-func NewProductTopics() ProductTopics {
-	return ProductTopics{
-		ProductLifecycle: ProductLifecycleTopic,
-	}
-}
-
 // Product Service Source.
 const (
 	// KafkaSourceProductService is the source identifier for events produced by the product service.

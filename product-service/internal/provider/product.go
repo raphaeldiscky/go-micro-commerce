@@ -5,7 +5,9 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
@@ -14,8 +16,13 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
-func SetupProduct(cfg *config.Config, e *echo.Echo) {
-	kafkaAdmin.CreateTopic(constant.ProductLifecycleTopic, constant.ProductLifecycleTopicNumPartitions, constant.ProductLifecycleTopicReplicationFactor)
+// SetupProduct initializes the product-related routes and services.
+func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
+	providers.KafkaAdmin.CreateTopic(
+		constant.ProductLifecycleTopic,
+		constant.ProductLifecycleTopicNumPartitions,
+		constant.ProductLifecycleTopicReplicationFactor,
+	)
 
 	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
@@ -28,12 +35,18 @@ func SetupProduct(cfg *config.Config, e *echo.Echo) {
 	if err != nil {
 		log.Fatalf("failed to create Kafka async producer: %v", err)
 	}
+
 	productCreatedProducer := event.NewProductCreatedProducer(asyncProducer)
 	productUpdatedProducer := event.NewProductUpdatedProducer(asyncProducer)
 	productDeletedProducer := event.NewProductDeletedProducer(asyncProducer)
 
-	productService := service.NewProductService(dataStore, productCreatedProducer, productUpdatedProducer, productDeletedProducer)
-	productHandler := handler.NewProductHandler(productService)
+	productService := service.NewProductService(
+		providers.DataStore,
+		productCreatedProducer,
+		productUpdatedProducer,
+		productDeletedProducer,
+	)
+	productHandler := handler.NewProductHandler(productService, appLogger)
 
 	routes.SetupProductRoutes(e, productHandler)
 }

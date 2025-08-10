@@ -1,5 +1,6 @@
 package dto
 
+// PageMetaData represents metadata about the current page of results.
 type PageMetaData struct {
 	Page      int64  `json:"page"`
 	Size      int64  `json:"size"`
@@ -8,6 +9,7 @@ type PageMetaData struct {
 	Links     *Links `json:"links"`
 }
 
+// Links represents pagination links.
 type Links struct {
 	Self  string `json:"self"`
 	First string `json:"first"`

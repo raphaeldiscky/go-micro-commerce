@@ -141,19 +141,23 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 		incomingPath := c.Request().URL.Path // e.g., /products/health
 		routePattern := c.Path()             // e.g., /products/*
 		basePrefix := strings.TrimSuffix(routePattern, "*")
-		// Remove the prefix from the incoming path
-		suffix := strings.TrimPrefix(incomingPath, strings.TrimRight(basePrefix, "/"))
-		if suffix == "" || suffix == "/" {
+		trimmedPrefix := strings.TrimRight(basePrefix, "/")
+		suffix := strings.TrimPrefix(incomingPath, trimmedPrefix)
+
+		switch suffix {
+		case "", "/":
 			finalPath = "/"
-		} else {
+		default:
 			if !strings.HasPrefix(suffix, "/") {
-				suffix = "/" + suffix
+				finalPath = "/" + suffix
+			} else {
+				finalPath = suffix
 			}
-			finalPath = suffix
 		}
 	} else {
 		finalPath = gw.replacePath(path, c)
 	}
+
 	targetURL.Path = finalPath
 	targetURL.RawQuery = c.Request().URL.RawQuery
 

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// KafkaProducer is an interface for sending events to Kafka.
 type KafkaProducer interface {
 	Send(ctx context.Context, event BaseEvent) error
 	Topic() string
@@ -74,7 +75,7 @@ func NewKafkaAdmin(opt *KafkaAdminConfig) *KafkaAdmin {
 }
 
 // CreateTopic creates a new Kafka topic.
-func (admin *KafkaAdmin) CreateTopic(topic string, numPartitions int, replicationFactor int) {
+func (admin *KafkaAdmin) CreateTopic(topic string, numPartitions, replicationFactor int) {
 	adminClient, err := sarama.NewClusterAdminFromClient(admin.Client)
 	if err != nil {
 		log.Fatalf("failed to create kafka admin: %v", err)
@@ -179,14 +180,15 @@ func (p *KafkaSyncProducer) ProduceSync(topic string, evt BaseEvent) error {
 func (p *KafkaSyncProducer) CloseSync() error {
 	if p.syncProducer != nil {
 		log.Println("Closing Kafka sync producer")
+
 		return p.syncProducer.Close()
 	}
 
 	return nil
 }
 
-// ProduceAsync an event to Kafka (FIXED: now uses correct receiver).
-func (p *KafkaAsyncProducer) ProduceAsync(topic string, evt BaseEvent) error {
+// ProduceAsync an event to Kafka.
+func (p *KafkaAsyncProducer) ProduceAsync(ctx context.Context, topic string, evt BaseEvent) error {
 	// Marshal event to JSON
 	eventData, err := json.Marshal(evt)
 	if err != nil {
@@ -217,9 +219,10 @@ func (p *KafkaAsyncProducer) ProduceAsync(topic string, evt BaseEvent) error {
 	case p.asyncProducer.Input() <- message:
 		log.Printf("Event sent to async producer - Topic: %s, Type: %s",
 			topic, metadata.EventType)
+
 		return nil
-	case err := <-p.asyncProducer.Errors():
-		return fmt.Errorf("failed to send async message to Kafka: %w", err.Err)
+	case <-ctx.Done():
+		return ctx.Err()
 	}
 }
 
@@ -227,6 +230,7 @@ func (p *KafkaAsyncProducer) ProduceAsync(topic string, evt BaseEvent) error {
 func (p *KafkaAsyncProducer) CloseAsync() error {
 	if p.asyncProducer != nil {
 		log.Println("Closing Kafka async producer")
+
 		return p.asyncProducer.Close()
 	}
 

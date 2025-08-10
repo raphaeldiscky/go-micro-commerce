@@ -210,11 +210,3 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, profile)
 }
-
-// Health handles health check.
-func (h *AuthHandler) Health(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":  "healthy",
-		"service": "auth-service",
-	})
-}

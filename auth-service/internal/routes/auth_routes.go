@@ -9,9 +9,6 @@ import (
 
 // SetupAuthRoutes sets up all authentication routes.
 func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
-	// Health and readiness checks
-	e.GET("/health", h.Health)
-
 	// API versioning
 	v1 := e.Group("/v1")
 

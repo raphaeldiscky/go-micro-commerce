@@ -12,10 +12,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
@@ -52,27 +52,27 @@ type AuthServiceInterface interface {
 
 // AuthService implements AuthServiceInterface.
 type AuthService struct {
-	dataStore repository.DataStore
-	jwtConfig *config.JWTConfig
-	topics    constant.AuthTopics
-	producer  event.Producer
-	logger    logger.Logger
+	dataStore                          repository.DataStore
+	jwtConfig                          *config.JWTConfig
+	logger                             logger.Logger
+	emailVerificationRequestedProducer mq.KafkaProducer
+	userVerifiedProducer               mq.KafkaProducer
 }
 
 // NewAuthService creates a new AuthService.
 func NewAuthService(
 	dataStore repository.DataStore,
 	jwtConfig *config.JWTConfig,
-	topics constant.AuthTopics,
-	producer event.Producer,
-	lgr logger.Logger,
+	appLogger logger.Logger,
+	emailVerificationRequestedProducer mq.KafkaProducer,
+	userVerifiedProducer mq.KafkaProducer,
 ) AuthServiceInterface {
 	return &AuthService{
-		dataStore: dataStore,
-		jwtConfig: jwtConfig,
-		topics:    topics,
-		producer:  producer,
-		logger:    lgr,
+		dataStore:                          dataStore,
+		jwtConfig:                          jwtConfig,
+		logger:                             appLogger,
+		emailVerificationRequestedProducer: emailVerificationRequestedProducer,
+		userVerifiedProducer:               userVerifiedProducer,
 	}
 }
 
@@ -182,16 +182,13 @@ func (s *AuthService) Register(
 		// Publish email verification event
 		s.logger.Info("sending email verification event")
 
-		if s.producer != nil {
-			evt := event.NewEmailVerificationRequestedEvent(
-				user.ID,
-				user.Email,
-			)
-			topic := s.topics.UserVerification
+		evt := event.NewEmailVerificationRequestedEvent(
+			user.ID,
+			user.Email,
+		)
 
-			if err = s.producer.Produce(topic, evt); err != nil {
-				s.logger.Error("failed to publish email verification event", "error", err)
-			}
+		if err = s.emailVerificationRequestedProducer.Send(ctx, evt); err != nil {
+			s.logger.Error("failed to publish email verification event", "error", err)
 		}
 
 		res = &dto.AuthResponse{

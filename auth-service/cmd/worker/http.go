@@ -5,11 +5,12 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/server"
 )
 
+// runHTTPWorker starts the HTTP server and waits for the context to be done.
 func runHTTPWorker(
 	ctx context.Context,
 	cfg *config.Config,
