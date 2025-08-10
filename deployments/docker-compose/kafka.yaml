@@ -1,103 +1,173 @@
 services:
-  kafka-1: &kafka-common
+  kafka-1:
     image: bitnami/kafka:4.0.0
+    hostname: kafka-1
     container_name: kafka-1
-    restart: unless-stopped
     ports:
-      - "9092:9092"
-    environment: &kafka-env # KRaft mode configuration
+      - "9092:9094"
+    environment:
+      # KRaft settings
       KAFKA_CFG_NODE_ID: 1
-      KAFKA_KRAFT_CLUSTER_ID: comY5kPPRmOAB0eWuZq5cg
       KAFKA_CFG_PROCESS_ROLES: controller,broker
-      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:19093,2@kafka-2:19093,3@kafka-3:19093
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:19093
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+
+      # Listeners
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,EXTERNAL://localhost:9092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
 
-      # Multi-node settings
+      # Replication settings
       KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
-      KAFKA_CFG_MIN_INSYNC_REPLICAS: 2
+      KAFKA_CFG_MIN_IN_SYNC_REPLICAS: 2
 
-      # Additional settings
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # Other settings
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_CFG_LOG_RETENTION_HOURS: 168
-
-      # Bitnami specific settings
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_ENABLE_KRAFT: "yes"
-
+      KAFKA_CFG_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
     volumes:
-      - kafka-1_data:/bitnami/kafka
+      - kafka_1_data:/bitnami/kafka
+    networks:
+      - go-micro-template
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "/opt/bitnami/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 || exit 1",
+          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
         ]
-      interval: 10s
-      timeout: 5s
+      interval: 30s
+      timeout: 10s
       retries: 5
-      start_period: 30s
-    networks:
-      - go-micro-template
 
   kafka-2:
-    <<: *kafka-common
+    image: bitnami/kafka:4.0.0
+    hostname: kafka-2
     container_name: kafka-2
     ports:
-      - "9093:9092"
+      - "9093:9094"
     environment:
-      <<: *kafka-env
+      # KRaft settings
       KAFKA_CFG_NODE_ID: 2
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
-    volumes:
-      - kafka-2_data:/bitnami/kafka
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
 
-  kafka-3:
-    <<: *kafka-common
-    container_name: kafka-3
-    ports:
-      - "9094:9092"
-    environment:
-      <<: *kafka-env
-      KAFKA_CFG_NODE_ID: 3
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
-    volumes:
-      - kafka-3_data:/bitnami/kafka
+      # Listeners
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:9093
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
 
-  # Kafka UI
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: kafka-ui
-    ports:
-      - "8090:8080"
-    environment:
-      - KAFKA_CLUSTERS_0_NAME=local
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
+      # Replication settings
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_IN_SYNC_REPLICAS: 2
+
+      # Other settings
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CFG_LOG_RETENTION_HOURS: 168
+      KAFKA_CFG_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+
+    volumes:
+      - kafka_2_data:/bitnami/kafka
     networks:
       - go-micro-template
     healthcheck:
       test:
         [
-          "CMD",
-          "wget",
-          "--spider",
-          "-q",
-          "http://localhost:8080/actuator/health",
+          "CMD-SHELL",
+          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
         ]
       interval: 30s
       timeout: 10s
-      retries: 3
+      retries: 5
+
+  kafka-3:
+    image: bitnami/kafka:4.0.0
+    hostname: kafka-3
+    container_name: kafka-3
+    ports:
+      - "9094:9094"
+    environment:
+      # KRaft settings
+      KAFKA_CFG_NODE_ID: 3
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
+      KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
+
+      # Listeners
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+
+      # Replication settings
+      KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
+      KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_CFG_MIN_IN_SYNC_REPLICAS: 2
+
+      # Other settings
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CFG_LOG_RETENTION_HOURS: 168
+      KAFKA_CFG_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_CFG_LOG_RETENTION_CHECK_INTERVAL_MS: 300000
+
+    volumes:
+      - kafka_3_data:/bitnami/kafka
+    networks:
+      - go-micro-template
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      kafka-1:
+        condition: service_healthy
+      kafka-2:
+        condition: service_healthy
+      kafka-3:
+        condition: service_healthy
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: kafka-kraft-cluster
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    networks:
+      - go-micro-template
+    restart: unless-stopped
 
 volumes:
-  kafka-1_data:
-  kafka-2_data:
-  kafka-3_data:
+  kafka_1_data:
+    driver: local
+  kafka_2_data:
+    driver: local
+  kafka_3_data:
+    driver: local
 
 networks:
   go-micro-template:

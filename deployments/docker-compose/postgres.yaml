@@ -1,6 +1,6 @@
 services:
   postgres-auth:
-    image: postgres:16-alpine
+    image: postgres:17.5-alpine
     container_name: postgres-auth
     environment:
       - POSTGRES_USER=postgres
@@ -16,13 +16,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - postgres-auth_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
           memory: 500m
 
   postgres-product:
-    image: postgres:16-alpine
+    image: postgres:17.5-alpine
     container_name: postgres-product
     environment:
       - POSTGRES_USER=postgres
@@ -38,13 +40,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - postgres-product_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
           memory: 500m
 
   postgres-order:
-    image: postgres:16-alpine
+    image: postgres:17.5-alpine
     container_name: postgres-order
     environment:
       - POSTGRES_USER=postgres
@@ -60,10 +64,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    volumes:
+      - postgres-order_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
           memory: 500m
+
+volumes:
+  postgres-auth_data:
+  postgres-product_data:
+  postgres-order_data:
 
 networks:
   go-micro-template:

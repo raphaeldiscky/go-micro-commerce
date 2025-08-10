@@ -93,8 +93,8 @@ services:
       - DB_HOST=postgres-auth
       - DB_PORT=5432
       - DB_USER=postgres
-      - DB_PASSWORD=password
-      - DB_NAME=auth_service
+      - DB_PASSWORD=postgres
+      - DB_NAME=postgres
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - CONSUL_ADDRESS=consul:8500
