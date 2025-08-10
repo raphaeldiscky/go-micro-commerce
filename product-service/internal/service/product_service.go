@@ -6,12 +6,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/httperror"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/log"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 )
 
@@ -26,24 +25,24 @@ type ProductServiceInterface interface {
 
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
-	dataStore repository.DataStore
-	producer  event.Producer
-	topics    constant.ProductTopics
-	logger    log.LoggerInterface
+	dataStore              repository.DataStore
+	productCreatedProducer mq.KafkaProducer
+	productUpdatedProducer mq.KafkaProducer
+	productDeletedProducer mq.KafkaProducer
 }
 
 // NewProductService creates a new instance of ProductService.
 func NewProductService(
 	dataStore repository.DataStore,
-	producer event.Producer,
-	topics constant.ProductTopics,
-	logger log.LoggerInterface,
+	productCreatedProducer mq.KafkaProducer,
+	productUpdatedProducer mq.KafkaProducer,
+	productDeletedProducer mq.KafkaProducer,
 ) ProductServiceInterface {
 	return &ProductService{
-		dataStore: dataStore,
-		producer:  producer,
-		topics:    topics,
-		logger:    logger,
+		dataStore:              dataStore,
+		productCreatedProducer: productCreatedProducer,
+		productUpdatedProducer: productUpdatedProducer,
+		productDeletedProducer: productDeletedProducer,
 	}
 }
 
@@ -66,21 +65,16 @@ func (s *ProductService) CreateProduct(
 		if err != nil {
 			return err
 		}
-		// Produce domain event
-		if s.producer != nil {
-			evt := event.NewProductCreatedEvent(
-				savedProduct.ID,
-				savedProduct.Name,
-				savedProduct.Price,
-				savedProduct.Quantity,
-			)
-			topic := s.topics.ProductLifecycle
 
-			if err := s.producer.Produce(topic, evt); err != nil {
-				// Log error but don't fail the operation
-				// In production, you might want to implement event outbox pattern
-				s.logger.Errorf("failed to produce ProductCreated event: %v", err)
-			}
+		evt := event.NewProductCreatedEvent(
+			savedProduct.ID,
+			savedProduct.Name,
+			savedProduct.Price,
+			savedProduct.Quantity,
+		)
+
+		if err := s.productCreatedProducer.Send(ctx, evt); err != nil {
+			return err
 		}
 
 		res = s.mapToResponse(savedProduct)
@@ -189,18 +183,14 @@ func (s *ProductService) UpdateProduct(
 		}
 
 		// Produce domain event
-		if s.producer != nil {
-			evt := event.NewProductUpdatedEvent(
-				updatedProduct.ID,
-				updatedProduct.Name,
-				updatedProduct.Price,
-				updatedProduct.Quantity,
-			)
-			topic := s.topics.ProductLifecycle
-
-			if err := s.producer.Produce(topic, evt); err != nil {
-				s.logger.Errorf("failed to produce ProductUpdated event: %v", err)
-			}
+		evt := event.NewProductUpdatedEvent(
+			updatedProduct.ID,
+			updatedProduct.Name,
+			updatedProduct.Price,
+			updatedProduct.Quantity,
+		)
+		if err := s.productUpdatedProducer.Send(ctx, evt); err != nil {
+			return err
 		}
 
 		res = s.mapToResponse(updatedProduct)
@@ -234,13 +224,9 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 		}
 
 		// Produce domain event
-		if s.producer != nil {
-			evt := event.NewProductDeletedEvent(id)
-			topic := s.topics.ProductLifecycle
-
-			if err := s.producer.Produce(topic, evt); err != nil {
-				s.logger.Errorf("failed to produce ProductDeleted event: %v", err)
-			}
+		evt := event.NewProductDeletedEvent(id)
+		if err := s.productDeletedProducer.Send(ctx, evt); err != nil {
+			return err
 		}
 
 		return nil

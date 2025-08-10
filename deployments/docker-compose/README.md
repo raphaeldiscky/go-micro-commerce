@@ -233,3 +233,11 @@ curl -X PUT http://localhost:8500/v1/agent/service/register \
   }
 }'
 ```
+
+## Deregister
+
+```
+curl http://localhost:8500/v1/catalog/services
+curl http://localhost:8500/v1/health/service/product-service
+curl -X PUT http://localhost:8500/v1/agent/service/deregister/product-service-Raphael-8081
+```

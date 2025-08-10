@@ -27,7 +27,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProduct() {
 		Quantity: 10,
 	}
 
-	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
+	resp, err := s.makeRequest("POST", "/v1", createReq)
 	s.NoError(err)
 
 	var createdProduct dto.ProductResponse
@@ -42,7 +42,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProduct() {
 	// Delete the product
 	resp, err = s.makeRequest(
 		"DELETE",
-		fmt.Sprintf("/api/v1/products/%s", createdProduct.ID),
+		fmt.Sprintf("/v1/%s", createdProduct.ID),
 		nil,
 	)
 	s.NoError(err)
@@ -54,7 +54,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProduct() {
 	}
 
 	// Verify product is deleted
-	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", createdProduct.ID), nil)
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", createdProduct.ID), nil)
 	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
@@ -67,7 +67,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProduct() {
 func (s *ProductDeleteTestSuite) TestDeleteProductNotFound() {
 	nonExistentID := uuid.New()
 
-	resp, err := s.makeRequest("DELETE", fmt.Sprintf("/api/v1/products/%s", nonExistentID), nil)
+	resp, err := s.makeRequest("DELETE", fmt.Sprintf("/v1/%s", nonExistentID), nil)
 	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode) // 404
@@ -78,7 +78,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProductNotFound() {
 }
 
 func (s *ProductDeleteTestSuite) TestDeleteProductInvalidID() {
-	resp, err := s.makeRequest("DELETE", "/api/v1/products/invalid-uuid", nil)
+	resp, err := s.makeRequest("DELETE", "/v1/invalid-uuid", nil)
 	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)

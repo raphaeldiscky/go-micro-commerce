@@ -26,14 +26,6 @@ func NewProductHandler(productService service.ProductServiceInterface) *ProductH
 	}
 }
 
-// Health handles health check.
-func (h *ProductHandler) Health(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]interface{}{
-		"status":  "healthy",
-		"service": "product-service",
-	})
-}
-
 // CreateProduct handles POST /products.
 func (h *ProductHandler) CreateProduct(c echo.Context) error {
 	var req dto.CreateProductRequest

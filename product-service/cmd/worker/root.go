@@ -1,0 +1,38 @@
+// Package worker provides the entry point for starting the worker services.
+package worker
+
+import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
+	"github.com/spf13/cobra"
+)
+
+func Start(cfg *config.Config, lgr logger.Logger) {
+	provider.SetupGlobal(cfg)
+
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	rootCmd := &cobra.Command{}
+	cmd := []*cobra.Command{
+		{
+			Use:   "serve-all",
+			Short: "Run all",
+			Run: func(cmd *cobra.Command, _ []string) {
+				runHTTPWorker(cfg, lgr, ctx)
+
+			},
+		},
+	}
+
+	rootCmd.AddCommand(cmd...)
+	if err := rootCmd.Execute(); err != nil {
+		lgr.Fatal(err)
+	}
+}

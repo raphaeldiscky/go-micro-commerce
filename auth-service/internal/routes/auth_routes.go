@@ -13,15 +13,13 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	e.GET("/health", h.Health)
 
 	// API versioning
-	v1 := e.Group("/api/v1")
+	v1 := e.Group("/v1")
 
 	// Public routes (no authentication required)
-	auth := v1.Group("/auth")
+	auth := v1.Group("")
 	auth.POST("/register", h.Register)
 	auth.POST("/login", h.Login)
 	auth.POST("/refresh", h.RefreshToken)
-
-	// Session management
 	auth.POST("/logout", h.Logout)
 
 	// User routes (protected)

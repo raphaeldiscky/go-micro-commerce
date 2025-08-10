@@ -3,8 +3,9 @@ testdata_dir = "testdata"
 tmp_dir = "tmp"
 
 [build]
+args_bin = ["serve-all"]
 bin = "./tmp/main"
-cmd = "go build -tags=\"sonic avx\" -v -o ./tmp/main ./cmd/main.go"
+cmd = "go build -tags=\"sonic avx\" -v -o ./tmp/main ./cmd/api/main.go"
 delay = 1000
 exclude_dir = ["tmp", "assets", "vendor", "bin", "build", "deploy"]
 exclude_file = []

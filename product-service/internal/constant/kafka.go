@@ -34,4 +34,8 @@ const (
 const (
 	// ProductLifecycleTopic is the topic for product lifecycle events.
 	ProductLifecycleTopic = "product.lifecycle" // ProductCreated, ProductUpdated, ProductDeleted
+	// ProductLifecycleTopicNumPartitions is the number of partitions for the product lifecycle topic.
+	ProductLifecycleTopicNumPartitions = 3
+	// ProductLifecycleTopicReplicationFactor is the replication factor for the product lifecycle topic.
+	ProductLifecycleTopicReplicationFactor = 1
 )

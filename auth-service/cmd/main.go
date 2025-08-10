@@ -50,9 +50,9 @@ func main() {
 
 	// Initialize logger (0 = Info level)
 	appLogger := logger.NewZapLogger(0)
-
+	log.Println(cfg.Kafka)
 	// Setup Kafka event publisher
-	producer, err := mq.NewProducerKafka(&mq.KafkaProducerConfig{
+	producer, err := mq.NewKafkaSyncProducer(&mq.KafkaProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,

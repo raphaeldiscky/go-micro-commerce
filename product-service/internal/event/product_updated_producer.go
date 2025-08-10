@@ -1,11 +1,14 @@
 package event
 
 import (
+	"context"
 	"time"
 
+	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
 )
 
@@ -56,4 +59,32 @@ func NewProductUpdatedEvent(
 			Quantity:  quantity,
 		},
 	}
+}
+
+// ProductUpdatedProducer is responsible for producing product Updated events.
+type ProductUpdatedProducer struct {
+	Producer  *mq.KafkaAsyncProducer
+	RetryChan chan *sarama.ProducerMessage
+	topic     string
+}
+
+// NewProductUpdatedProducer creates a new instance of ProductUpdatedProducer.
+func NewProductUpdatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
+	pr := &ProductUpdatedProducer{
+		Producer:  producer,
+		topic:     constant.ProductLifecycleTopic,
+		RetryChan: make(chan *sarama.ProducerMessage, 100),
+	}
+
+	return pr
+}
+
+// Send implements the KafkaProducer interface
+func (p *ProductUpdatedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+	return p.Producer.ProduceAsync(p.topic, event)
+}
+
+// Topic returns the topic name
+func (p *ProductUpdatedProducer) Topic() string {
+	return p.topic
 }

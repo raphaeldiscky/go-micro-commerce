@@ -15,7 +15,7 @@ SERVICES=(
 install_deps() {
   local dir="$1"
   echo "Installing dependencies in $dir..."
-  (cd "$dir" && go mod tidy && go mod vendor)
+  (cd "$dir" && go mod tidy)
   echo "Done for $dir"
 }
 

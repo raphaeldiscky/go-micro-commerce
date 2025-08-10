@@ -14,8 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
@@ -46,22 +45,22 @@ func (s *TestSuite) SetupSuite() {
 	// Setup dataStore
 	dataStore := repository.NewDataStore(s.tcSetup.DbPool)
 
-	// Setup event publisher (optional, can be nil for tests)
-	topics := constant.NewProductTopics()
-	s.productService = service.NewProductService(dataStore, nil, topics, appLogger)
+	// Setup product service with nil Kafka producers for testing
+	s.productService = service.NewProductService(dataStore, nil, nil, nil)
 
-	// Setup HTTP handlers and server
-	productHandler := handler.NewProductHandler(s.productService)
-	s.httpServer = server.NewHTTPServer(productHandler, nil, appLogger)
+	// Create a test config
+	testConfig := &config.Config{
+		HTTPServer: &config.HTTPServerConfig{
+			Port: 10080 + (int(time.Now().UnixNano()/1000000) % 1000),
+		},
+	}
 
-	// Use a unique port for each test suite to avoid conflicts
-	// Generate a port number based on current time to make it unique
-	basePort := 10080 + (int(time.Now().UnixNano()/1000000) % 1000)
-	testPort := fmt.Sprintf("%d", basePort)
+	// Setup HTTP server
+	s.httpServer = server.NewHTTPServer(testConfig, appLogger)
 
 	// Start HTTP server in goroutine
 	go func() {
-		if err := s.httpServer.Start(testPort); err != nil {
+		if err := s.httpServer.Start(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				s.T().Errorf("HTTP server error: %v", err)
 			}
@@ -71,7 +70,7 @@ func (s *TestSuite) SetupSuite() {
 	// Wait for server to start
 	time.Sleep(300 * time.Millisecond)
 
-	s.baseURL = "http://localhost:" + testPort
+	s.baseURL = fmt.Sprintf("http://localhost:%d", testConfig.HTTPServer.Port)
 
 	// Verify server is running
 	resp, err := http.NewRequestWithContext(s.ctx, http.MethodGet, s.baseURL+"/health", http.NoBody)
@@ -90,13 +89,7 @@ func (s *TestSuite) SetupSuite() {
 // TearDownSuite runs once after all tests.
 func (s *TestSuite) TearDownSuite() {
 	if s.httpServer != nil {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		err := s.httpServer.Shutdown(ctx)
-		if err != nil {
-			s.T().Errorf("failed to shutdown HTTP server: %v", err)
-		}
+		s.httpServer.Shutdown()
 	}
 
 	if s.tcSetup != nil {

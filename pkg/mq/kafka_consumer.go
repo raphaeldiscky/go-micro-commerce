@@ -10,6 +10,15 @@ import (
 	"github.com/IBM/sarama"
 )
 
+type KafkaHandler func(ctx context.Context, body []byte) error
+
+type KafkaConsumer interface {
+	Consume(ctx context.Context) error
+	Handler() KafkaHandler
+	Topic() string
+	Close() error
+}
+
 // KafkaConsumerConfig holds the configuration for the Kafka consumer.
 type KafkaConsumerConfig struct {
 	Brokers        []string
@@ -31,8 +40,8 @@ type ConsumerKafka struct {
 	handler       ConsumerHandler
 }
 
-// NewConsumerKafka creates a new Kafka consumer group.
-func NewConsumerKafka(
+// NewKafkaConsumerGroup creates a new Kafka consumer group.
+func NewKafkaConsumerGroup(
 	cfg *KafkaConsumerConfig,
 	groupID, topic string,
 	handler ConsumerHandler,

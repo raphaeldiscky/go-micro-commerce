@@ -27,7 +27,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 		Quantity: 50,
 	}
 
-	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
+	resp, err := s.makeRequest("POST", "/v1", createReq)
 	s.NoError(err)
 
 	var createdProduct dto.ProductResponse
@@ -40,7 +40,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 	}
 
 	// Test getting the product
-	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", createdProduct.ID), nil)
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", createdProduct.ID), nil)
 	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
@@ -63,7 +63,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 func (s *ProductGetTestSuite) TestGetProductNotFound() {
 	nonExistentID := uuid.New()
 
-	resp, err := s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", nonExistentID), nil)
+	resp, err := s.makeRequest("GET", fmt.Sprintf("/v1/%s", nonExistentID), nil)
 	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
@@ -74,7 +74,7 @@ func (s *ProductGetTestSuite) TestGetProductNotFound() {
 }
 
 func (s *ProductGetTestSuite) TestGetProductInvalidID() {
-	resp, err := s.makeRequest("GET", "/api/v1/products/invalid-uuid", nil)
+	resp, err := s.makeRequest("GET", "/v1/invalid-uuid", nil)
 	s.NoError(err)
 
 	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
