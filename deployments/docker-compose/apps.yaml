@@ -103,7 +103,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      kafka:
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      kafka-3:
         condition: service_started
       consul:
         condition: service_healthy
@@ -139,7 +143,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      kafka:
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      kafka-3:
         condition: service_started
       consul:
         condition: service_healthy
@@ -191,7 +199,11 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      kafka:
+      kafka-1:
+        condition: service_started
+      kafka-2:
+        condition: service_started
+      kafka-3:
         condition: service_started
       consul:
         condition: service_healthy
