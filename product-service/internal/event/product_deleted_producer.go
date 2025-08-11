@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
@@ -18,31 +17,31 @@ type ProductDeletedPayload struct {
 
 // ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
-	metadata KafkaMetadata
-	payload  ProductDeletedPayload
+	Metadata KafkaMetadata
+	Payload  ProductDeletedPayload
 }
 
 // GetPayload returns the data associated with the ProductDeletedEvent.
 func (e *ProductDeletedEvent) GetPayload() interface{} {
-	return e.payload
+	return e.Payload
 }
 
 // GetMetadata returns the metadata associated with the ProductDeletedEvent.
 func (e *ProductDeletedEvent) GetMetadata() KafkaMetadata {
-	return e.metadata
+	return e.Metadata
 }
 
 // NewProductDeletedEvent creates a new ProductDeletedEvent.
 func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 	return &ProductDeletedEvent{
-		metadata: KafkaMetadata{
+		Metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductDeleted,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		payload: ProductDeletedPayload{
+		Payload: ProductDeletedPayload{
 			ProductID: productID,
 		},
 	}
@@ -50,20 +49,16 @@ func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 
 // ProductDeletedProducer is responsible for producing product deleted events.
 type ProductDeletedProducer struct {
-	Producer  *mq.KafkaAsyncProducer
-	RetryChan chan *sarama.ProducerMessage
-	topic     string
+	Producer *mq.KafkaAsyncProducer
+	topic    string
 }
 
 // NewProductDeletedProducer creates a new instance of ProductDeletedProducer.
-func NewProductDeletedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
-	pr := &ProductDeletedProducer{
-		Producer:  producer,
-		topic:     constant.ProductLifecycleTopic,
-		RetryChan: make(chan *sarama.ProducerMessage, 100),
+func NewProductDeletedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+	return &ProductDeletedProducer{
+		Producer: producer,
+		topic:    constant.ProductLifecycleTopic,
 	}
-
-	return pr
 }
 
 // Send implements the KafkaProducer interface.

@@ -9,10 +9,11 @@ import (
 
 // Config holds the application configuration.
 type Config struct {
-	App    *AppConfig
-	Logger *LoggerConfig
-	Kafka  *KafkaConfig
-	Consul *ConsulConfig
+	App        *AppConfig
+	Logger     *LoggerConfig
+	HTTPServer *HTTPServerConfig
+	Kafka      *KafkaConfig
+	Consul     *ConsulConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -28,10 +29,11 @@ func LoadConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		App:    initAppConfig(),
-		Logger: initLoggerConfig(),
-		Kafka:  initKafkaConfig(),
-		Consul: initConsulConfig(),
+		App:        initAppConfig(),
+		Logger:     initLoggerConfig(),
+		HTTPServer: initHTTPServerConfig(),
+		Kafka:      initKafkaConfig(),
+		Consul:     initConsulConfig(),
 	}
 
 	return cfg, nil

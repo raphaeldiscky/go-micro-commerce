@@ -10,7 +10,6 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/lib/pq v1.10.9
 	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-00010101000000-000000000000
 	github.com/spf13/viper v1.20.1
 	golang.org/x/crypto v0.38.0

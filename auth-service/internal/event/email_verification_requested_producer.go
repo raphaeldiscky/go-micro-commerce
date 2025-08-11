@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
@@ -19,18 +18,18 @@ type EmailVerificationRequestedPayload struct {
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	metadata KafkaMetadata
-	payload  EmailVerificationRequestedPayload
+	Metadata KafkaMetadata
+	Payload  EmailVerificationRequestedPayload
 }
 
 // GetPayload returns the data associated with the EmailVerificationRequestedEvent.
 func (e *EmailVerificationRequestedEvent) GetPayload() interface{} {
-	return e.payload
+	return e.Payload
 }
 
 // GetMetadata returns the metadata associated with the EmailVerificationRequestedEvent.
 func (e *EmailVerificationRequestedEvent) GetMetadata() KafkaMetadata {
-	return e.metadata
+	return e.Metadata
 }
 
 // NewEmailVerificationRequestedEvent creates a new EmailVerificationRequestedEvent.
@@ -39,14 +38,14 @@ func NewEmailVerificationRequestedEvent(
 	email string,
 ) *EmailVerificationRequestedEvent {
 	return &EmailVerificationRequestedEvent{
-		metadata: KafkaMetadata{
+		Metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeEmailVerificationRequested,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceAuthService,
 		},
-		payload: EmailVerificationRequestedPayload{
+		Payload: EmailVerificationRequestedPayload{
 			UserID: userID,
 			Email:  email,
 		},
@@ -55,20 +54,16 @@ func NewEmailVerificationRequestedEvent(
 
 // EmailVerificationRequestedProducer is responsible for producing product created events.
 type EmailVerificationRequestedProducer struct {
-	Producer  *mq.KafkaAsyncProducer
-	RetryChan chan *sarama.ProducerMessage
-	topic     string
+	Producer *mq.KafkaAsyncProducer
+	topic    string
 }
 
 // NewEmailVerificationRequestedProducer creates a new instance of EmailVerificationRequestedProducer.
-func NewEmailVerificationRequestedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
-	pr := &EmailVerificationRequestedProducer{
-		Producer:  producer,
-		topic:     constant.UserVerificationTopic,
-		RetryChan: make(chan *sarama.ProducerMessage, 100),
+func NewEmailVerificationRequestedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+	return &EmailVerificationRequestedProducer{
+		Producer: producer,
+		topic:    constant.UserVerificationTopic,
 	}
-
-	return pr
 }
 
 // Send implements the KafkaProducer interface.

@@ -55,8 +55,8 @@ type AuthService struct {
 	dataStore                          repository.DataStore
 	jwtConfig                          *config.JWTConfig
 	logger                             logger.Logger
-	emailVerificationRequestedProducer mq.KafkaProducer
-	userVerifiedProducer               mq.KafkaProducer
+	emailVerificationRequestedProducer mq.KafkaProducerInterface
+	userVerifiedProducer               mq.KafkaProducerInterface
 }
 
 // NewAuthService creates a new AuthService.
@@ -64,8 +64,8 @@ func NewAuthService(
 	dataStore repository.DataStore,
 	jwtConfig *config.JWTConfig,
 	appLogger logger.Logger,
-	emailVerificationRequestedProducer mq.KafkaProducer,
-	userVerifiedProducer mq.KafkaProducer,
+	emailVerificationRequestedProducer mq.KafkaProducerInterface,
+	userVerifiedProducer mq.KafkaProducerInterface,
 ) AuthServiceInterface {
 	return &AuthService{
 		dataStore:                          dataStore,
