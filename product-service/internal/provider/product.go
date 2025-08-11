@@ -1,8 +1,6 @@
 package provider
 
 import (
-	"log"
-
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
@@ -33,7 +31,7 @@ func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 		Acks:           sarama.WaitForLocal,
 	})
 	if err != nil {
-		log.Fatalf("failed to create Kafka async producer: %v", err)
+		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
 	productCreatedProducer := event.NewProductCreatedProducer(asyncProducer)

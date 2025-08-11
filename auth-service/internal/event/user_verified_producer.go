@@ -19,18 +19,18 @@ type UserVerifiedPayload struct {
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata KafkaMetadata
-	Payload  UserVerifiedPayload
+	metadata KafkaMetadata
+	payload  UserVerifiedPayload
 }
 
 // GetPayload returns the data associated with the UserVerifiedEvent.
 func (e *UserVerifiedEvent) GetPayload() interface{} {
-	return e.Payload
+	return e.payload
 }
 
 // GetMetadata returns the metadata associated with the UserVerifiedEvent.
 func (e *UserVerifiedEvent) GetMetadata() KafkaMetadata {
-	return e.Metadata
+	return e.metadata
 }
 
 // NewUserVerifiedEvent creates a new UserVerifiedEvent.
@@ -39,14 +39,14 @@ func NewUserVerifiedEvent(
 	email string,
 ) *UserVerifiedEvent {
 	return &UserVerifiedEvent{
-		Metadata: KafkaMetadata{
+		metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeUserVerified,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceAuthService,
 		},
-		Payload: UserVerifiedPayload{
+		payload: UserVerifiedPayload{
 			UserID: userID,
 			Email:  email,
 		},

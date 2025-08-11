@@ -1,0 +1,73 @@
+services:
+  auth-service:
+    build:
+      context: ../..
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    volumes:
+      - ../../auth-service/.env:/app/.env
+    restart: always
+    ports:
+      - "8081:8081"
+    networks:
+      - go-micro-template
+
+  product-service:
+    build:
+      context: ../..
+      dockerfile: product-service/Dockerfile
+    container_name: product-service
+    volumes:
+      - ../../product-service/.env:/app/.env
+    restart: always
+    ports:
+      - "8082:8082"
+    networks:
+      - go-micro-template
+
+  order-service:
+    build:
+      context: ../..
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    restart: always
+    ports:
+      - "8083:8083"
+    networks:
+      - go-micro-template
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: notification-service/Dockerfile
+    container_name: notification-service
+    volumes:
+      - ../../notification-service/.env:/app/.env
+    restart: always
+    ports:
+      - "8084:8084"
+    networks:
+      - go-micro-template
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    volumes:
+      - ../../api-gateway/.env:/app/.env
+    restart: always
+    ports:
+      - "8080:8080"
+    depends_on:
+      - auth-service
+      - product-service
+      - order-service
+      - notification-service
+    networks:
+      - go-micro-template
+
+networks:
+  go-micro-template:
+    name: go-micro-template
+    external: true

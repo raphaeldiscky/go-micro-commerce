@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/lib/pq"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
 )
@@ -72,7 +71,7 @@ func (r *UserRepositoryPostgres) Create(ctx context.Context, user *entity.User) 
 
 	_, err := r.db.Exec(ctx, query,
 		user.ID, user.Email, user.Username, user.PasswordHash,
-		user.FirstName, user.LastName, pq.Array(user.Roles), user.IsActive,
+		user.FirstName, user.LastName, user.Roles, user.IsActive,
 		user.IsEmailVerified, user.EmailVerificationToken,
 		user.EmailVerificationSentAt, user.CreatedAt, user.UpdatedAt,
 	)
@@ -90,11 +89,9 @@ func (r *UserRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*en
 		       created_at, updated_at
 		FROM users WHERE id = $1`
 
-	var roles pq.StringArray
-
 	err := r.db.QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-		&user.FirstName, &user.LastName, &roles, &user.IsActive,
+		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 		&user.IsEmailVerified, &user.EmailVerificationToken,
 		&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
@@ -106,8 +103,6 @@ func (r *UserRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*en
 
 		return nil, err
 	}
-
-	user.Roles = []string(roles)
 
 	return user, nil
 }
@@ -125,11 +120,9 @@ func (r *UserRepositoryPostgres) GetByEmail(
 		       created_at, updated_at
 		FROM users WHERE email = $1`
 
-	var roles pq.StringArray
-
 	err := r.db.QueryRow(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-		&user.FirstName, &user.LastName, &roles, &user.IsActive,
+		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 		&user.IsEmailVerified, &user.EmailVerificationToken,
 		&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
@@ -141,8 +134,6 @@ func (r *UserRepositoryPostgres) GetByEmail(
 
 		return nil, err
 	}
-
-	user.Roles = []string(roles)
 
 	return user, nil
 }
@@ -160,11 +151,9 @@ func (r *UserRepositoryPostgres) GetByUsername(
 		       created_at, updated_at
 		FROM users WHERE username = $1`
 
-	var roles pq.StringArray
-
 	err := r.db.QueryRow(ctx, query, username).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-		&user.FirstName, &user.LastName, &roles, &user.IsActive,
+		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 		&user.IsEmailVerified, &user.EmailVerificationToken,
 		&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
@@ -176,8 +165,6 @@ func (r *UserRepositoryPostgres) GetByUsername(
 
 		return nil, err
 	}
-
-	user.Roles = []string(roles)
 
 	return user, nil
 }
@@ -195,11 +182,9 @@ func (r *UserRepositoryPostgres) GetByEmailVerificationToken(
 		       created_at, updated_at
 		FROM users WHERE email_verification_token = $1`
 
-	var roles pq.StringArray
-
 	err := r.db.QueryRow(ctx, query, token).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-		&user.FirstName, &user.LastName, &roles, &user.IsActive,
+		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 		&user.IsEmailVerified, &user.EmailVerificationToken,
 		&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
 		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
@@ -211,8 +196,6 @@ func (r *UserRepositoryPostgres) GetByEmailVerificationToken(
 
 		return nil, err
 	}
-
-	user.Roles = []string(roles)
 
 	return user, nil
 }
@@ -238,19 +221,17 @@ func (r *UserRepositoryPostgres) Update(
 				  created_at, updated_at
 	`
 
-	var roles pq.StringArray
-
 	updatedUser := &entity.User{}
 
 	err := r.db.QueryRow(ctx, query,
 		user.ID, user.Email, user.Username, user.PasswordHash,
-		user.FirstName, user.LastName, pq.Array(user.Roles),
+		user.FirstName, user.LastName, user.Roles,
 		user.IsActive, user.IsEmailVerified, user.EmailVerificationToken,
 		user.EmailVerificationSentAt, user.EmailVerifiedAt,
 		user.LastLoginAt, user.UpdatedAt,
 	).Scan(
 		&updatedUser.ID, &updatedUser.Email, &updatedUser.Username, &updatedUser.PasswordHash,
-		&updatedUser.FirstName, &updatedUser.LastName, &roles, &updatedUser.IsActive,
+		&updatedUser.FirstName, &updatedUser.LastName, &updatedUser.Roles, &updatedUser.IsActive,
 		&updatedUser.IsEmailVerified, &updatedUser.EmailVerificationToken,
 		&updatedUser.EmailVerificationSentAt, &updatedUser.EmailVerifiedAt,
 		&updatedUser.LastLoginAt, &updatedUser.CreatedAt, &updatedUser.UpdatedAt,
@@ -258,8 +239,6 @@ func (r *UserRepositoryPostgres) Update(
 	if err != nil {
 		return nil, err
 	}
-
-	updatedUser.Roles = []string(roles)
 
 	return updatedUser, nil
 }
@@ -297,11 +276,9 @@ func (r *UserRepositoryPostgres) List(
 	for rows.Next() {
 		user := &entity.User{}
 
-		var roles pq.StringArray
-
 		err := rows.Scan(
 			&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-			&user.FirstName, &user.LastName, &roles, &user.IsActive,
+			&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 			&user.IsEmailVerified, &user.EmailVerificationToken,
 			&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
 			&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
@@ -310,7 +287,6 @@ func (r *UserRepositoryPostgres) List(
 			return nil, err
 		}
 
-		user.Roles = []string(roles)
 		users = append(users, user)
 	}
 
@@ -372,7 +348,7 @@ func (r *UserRepositoryPostgres) UpdateRoles(
 	roles []string,
 ) error {
 	query := `UPDATE users SET roles = $2, updated_at = $3 WHERE id = $1`
-	_, err := r.db.Exec(ctx, query, id, pq.Array(roles), time.Now())
+	_, err := r.db.Exec(ctx, query, id, roles, time.Now())
 
 	return err
 }

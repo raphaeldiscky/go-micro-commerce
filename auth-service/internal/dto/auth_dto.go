@@ -47,8 +47,8 @@ type UserResponse struct {
 	UpdatedAt       time.Time  `json:"updated_at"`
 }
 
-// UpdateProfileRequest represents a profile update request.
-type UpdateProfileRequest struct {
+// UpdateUserRequest represents a user update request.
+type UpdateUserRequest struct {
 	FirstName string `json:"first_name" validate:"omitempty,min=1,max=50"`
 	LastName  string `json:"last_name"  validate:"omitempty,min=1,max=50"`
 	Username  string `json:"username"   validate:"omitempty,min=3,max=50"`

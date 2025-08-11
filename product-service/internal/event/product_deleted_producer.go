@@ -18,31 +18,31 @@ type ProductDeletedPayload struct {
 
 // ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
-	Metadata KafkaMetadata
-	Payload  ProductDeletedPayload
+	metadata KafkaMetadata
+	payload  ProductDeletedPayload
 }
 
 // GetPayload returns the data associated with the ProductDeletedEvent.
 func (e *ProductDeletedEvent) GetPayload() interface{} {
-	return e.Payload
+	return e.payload
 }
 
 // GetMetadata returns the metadata associated with the ProductDeletedEvent.
 func (e *ProductDeletedEvent) GetMetadata() KafkaMetadata {
-	return e.Metadata
+	return e.metadata
 }
 
 // NewProductDeletedEvent creates a new ProductDeletedEvent.
 func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 	return &ProductDeletedEvent{
-		Metadata: KafkaMetadata{
+		metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductDeleted,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		Payload: ProductDeletedPayload{
+		payload: ProductDeletedPayload{
 			ProductID: productID,
 		},
 	}

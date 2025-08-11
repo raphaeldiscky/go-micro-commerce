@@ -26,7 +26,7 @@ type HTTPServer struct {
 // NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(
 	cfg *config.Config,
-	lgr logger.Logger,
+	appLogger logger.Logger,
 	providers *provider.Providers,
 ) *HTTPServer {
 	e := echo.New()
@@ -35,18 +35,15 @@ func NewHTTPServer(
 	e.Validator = validation.NewValidator()
 
 	// Middleware
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
-	e.Use(middleware.RequestID())
+	RegisterMiddlewares(e)
 
 	// Setup HTTP
-	provider.SetupHTTP(cfg, e, lgr, providers)
+	provider.SetupHTTP(cfg, e, appLogger, providers)
 
 	return &HTTPServer{
 		echo:   e,
 		config: cfg,
-		logger: lgr,
+		logger: appLogger,
 	}
 }
 
@@ -81,4 +78,12 @@ func (s *HTTPServer) Shutdown() {
 	}
 
 	s.logger.Info("HTTP server shut down gracefully")
+}
+
+// RegisterMiddlewares registers custom middleware for the HTTP server.
+func RegisterMiddlewares(e *echo.Echo) {
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
+	e.Use(middleware.RequestID())
 }
