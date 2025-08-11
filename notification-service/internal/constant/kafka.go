@@ -16,12 +16,8 @@ const (
 
 // Topics that Notification Service produces to.
 const (
-	// TopicEmail is the topic for email events.
-	TopicEmail = "email"
-	// TopicSMS is the topic for SMS events.
-	TopicSMS = "sms"
-	// TopicPushNotification is the topic for push notification events.
-	TopicPushNotification = "push" // Push notifications
+	// UserVerificationTopic is the topic for user verification events.
+	UserVerificationTopic = "user.verification"
 )
 
 // Consumer groups for Notification Service (consuming from other services).

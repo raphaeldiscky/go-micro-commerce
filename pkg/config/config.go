@@ -9,9 +9,7 @@ import (
 
 // Config holds all configuration for the application.
 type Config struct {
-	// JWT holds the JWT token configuration.
-	JWT *JWTConfig
-	// SMTP holds the SMTP server configuration.
+	JWT  *JWTConfig
 	SMTP *SMTPConfig
 }
 

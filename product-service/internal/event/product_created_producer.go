@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/shopspring/decimal"
@@ -22,18 +21,18 @@ type ProductCreatedPayload struct {
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	metadata mq.KafkaMetadata // Use the correct type from mq package
-	payload  ProductCreatedPayload
+	Metadata mq.KafkaMetadata // Use the correct type from mq package
+	Payload  ProductCreatedPayload
 }
 
 // GetPayload returns the data associated with the ProductCreatedEvent.
 func (e *ProductCreatedEvent) GetPayload() interface{} {
-	return e.payload
+	return e.Payload
 }
 
 // GetMetadata returns the metadata associated with the ProductCreatedEvent.
 func (e *ProductCreatedEvent) GetMetadata() mq.KafkaMetadata { // Use the correct type from mq package
-	return e.metadata
+	return e.Metadata
 }
 
 // NewProductCreatedEvent creates a new ProductCreatedEvent.
@@ -44,14 +43,14 @@ func NewProductCreatedEvent(
 	quantity int,
 ) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
-		metadata: mq.KafkaMetadata{ // Use the correct type from mq package
+		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductCreated,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		payload: ProductCreatedPayload{
+		Payload: ProductCreatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
@@ -62,20 +61,16 @@ func NewProductCreatedEvent(
 
 // ProductCreatedProducer is responsible for producing product created events.
 type ProductCreatedProducer struct {
-	Producer  *mq.KafkaAsyncProducer
-	RetryChan chan *sarama.ProducerMessage
-	topic     string
+	Producer *mq.KafkaAsyncProducer
+	topic    string
 }
 
 // NewProductCreatedProducer creates a new instance of ProductCreatedProducer.
-func NewProductCreatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
-	pr := &ProductCreatedProducer{
-		Producer:  producer,
-		topic:     constant.ProductLifecycleTopic,
-		RetryChan: make(chan *sarama.ProducerMessage, 100),
+func NewProductCreatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+	return &ProductCreatedProducer{
+		Producer: producer,
+		topic:    constant.ProductLifecycleTopic,
 	}
-
-	return pr
 }
 
 // Send implements the KafkaProducer interface.

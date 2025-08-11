@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/shopspring/decimal"
@@ -23,18 +22,18 @@ type ProductUpdatedPayload struct {
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	metadata KafkaMetadata
-	payload  ProductUpdatedPayload
+	Metadata KafkaMetadata
+	Payload  ProductUpdatedPayload
 }
 
 // GetPayload returns the data associated with the ProductUpdatedEvent.
 func (e *ProductUpdatedEvent) GetPayload() interface{} {
-	return e.payload
+	return e.Payload
 }
 
 // GetMetadata returns the metadata associated with the ProductUpdatedEvent.
 func (e *ProductUpdatedEvent) GetMetadata() KafkaMetadata {
-	return e.metadata
+	return e.Metadata
 }
 
 // NewProductUpdatedEvent creates a new ProductUpdatedEvent.
@@ -45,14 +44,14 @@ func NewProductUpdatedEvent(
 	quantity int,
 ) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
-		metadata: KafkaMetadata{
+		Metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductUpdated,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		payload: ProductUpdatedPayload{
+		Payload: ProductUpdatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
@@ -63,20 +62,16 @@ func NewProductUpdatedEvent(
 
 // ProductUpdatedProducer is responsible for producing product Updated events.
 type ProductUpdatedProducer struct {
-	Producer  *mq.KafkaAsyncProducer
-	RetryChan chan *sarama.ProducerMessage
-	topic     string
+	Producer *mq.KafkaAsyncProducer
+	topic    string
 }
 
 // NewProductUpdatedProducer creates a new instance of ProductUpdatedProducer.
-func NewProductUpdatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
-	pr := &ProductUpdatedProducer{
-		Producer:  producer,
-		topic:     constant.ProductLifecycleTopic,
-		RetryChan: make(chan *sarama.ProducerMessage, 100),
+func NewProductUpdatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+	return &ProductUpdatedProducer{
+		Producer: producer,
+		topic:    constant.ProductLifecycleTopic,
 	}
-
-	return pr
 }
 
 // Send implements the KafkaProducer interface.

@@ -26,17 +26,17 @@ type ProductServiceInterface interface {
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
 	dataStore              repository.DataStore
-	productCreatedProducer mq.KafkaProducer
-	productUpdatedProducer mq.KafkaProducer
-	productDeletedProducer mq.KafkaProducer
+	productCreatedProducer mq.KafkaProducerInterface
+	productUpdatedProducer mq.KafkaProducerInterface
+	productDeletedProducer mq.KafkaProducerInterface
 }
 
 // NewProductService creates a new instance of ProductService.
 func NewProductService(
 	dataStore repository.DataStore,
-	productCreatedProducer mq.KafkaProducer,
-	productUpdatedProducer mq.KafkaProducer,
-	productDeletedProducer mq.KafkaProducer,
+	productCreatedProducer mq.KafkaProducerInterface,
+	productUpdatedProducer mq.KafkaProducerInterface,
+	productDeletedProducer mq.KafkaProducerInterface,
 ) ProductServiceInterface {
 	return &ProductService{
 		dataStore:              dataStore,

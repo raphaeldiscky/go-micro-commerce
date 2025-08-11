@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/IBM/sarama"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
@@ -19,18 +18,18 @@ type UserVerifiedPayload struct {
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	metadata KafkaMetadata
-	payload  UserVerifiedPayload
+	Metadata KafkaMetadata
+	Payload  UserVerifiedPayload
 }
 
 // GetPayload returns the data associated with the UserVerifiedEvent.
 func (e *UserVerifiedEvent) GetPayload() interface{} {
-	return e.payload
+	return e.Payload
 }
 
 // GetMetadata returns the metadata associated with the UserVerifiedEvent.
 func (e *UserVerifiedEvent) GetMetadata() KafkaMetadata {
-	return e.metadata
+	return e.Metadata
 }
 
 // NewUserVerifiedEvent creates a new UserVerifiedEvent.
@@ -39,14 +38,14 @@ func NewUserVerifiedEvent(
 	email string,
 ) *UserVerifiedEvent {
 	return &UserVerifiedEvent{
-		metadata: KafkaMetadata{
+		Metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeUserVerified,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceAuthService,
 		},
-		payload: UserVerifiedPayload{
+		Payload: UserVerifiedPayload{
 			UserID: userID,
 			Email:  email,
 		},
@@ -55,20 +54,16 @@ func NewUserVerifiedEvent(
 
 // UserVerifiedProducer is responsible for producing product created events.
 type UserVerifiedProducer struct {
-	Producer  *mq.KafkaAsyncProducer
-	RetryChan chan *sarama.ProducerMessage
-	topic     string
+	Producer *mq.KafkaAsyncProducer
+	topic    string
 }
 
 // NewUserVerifiedProducer creates a new instance of UserVerifiedProducer.
-func NewUserVerifiedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer {
-	pr := &UserVerifiedProducer{
-		Producer:  producer,
-		topic:     constant.UserVerificationTopic,
-		RetryChan: make(chan *sarama.ProducerMessage, 100),
+func NewUserVerifiedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+	return &UserVerifiedProducer{
+		Producer: producer,
+		topic:    constant.UserVerificationTopic,
 	}
-
-	return pr
 }
 
 // Send implements the KafkaProducer interface.
