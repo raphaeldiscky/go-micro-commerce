@@ -12,6 +12,7 @@ type Config struct {
 	App        *AppConfig
 	Logger     *LoggerConfig
 	HTTPServer *HTTPServerConfig
+	SMTP       *SMTPConfig
 	Kafka      *KafkaConfig
 	Consul     *ConsulConfig
 }
@@ -31,6 +32,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		App:        initAppConfig(),
 		Logger:     initLoggerConfig(),
+		SMTP:       initSMTPConfig(),
 		HTTPServer: initHTTPServerConfig(),
 		Kafka:      initKafkaConfig(),
 		Consul:     initConsulConfig(),

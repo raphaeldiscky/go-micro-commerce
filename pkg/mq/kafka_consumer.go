@@ -3,86 +3,87 @@ package mq
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/IBM/sarama"
 )
 
 // KafkaHandler is a function type for handling Kafka messages.
+// It receives the context and the message body as bytes.
 type KafkaHandler func(ctx context.Context, body []byte) error
 
-// KafkaConsumer is an interface for consuming messages from Kafka topics.
+// KafkaConsumer is the interface that all consumers must implement.
 type KafkaConsumer interface {
 	Consume(ctx context.Context) error
-	Handler() KafkaHandler
-	Topic() string
 	Close() error
+	Topic() string
 }
 
-// KafkaConsumerConfig holds the configuration for the Kafka consumer.
-type KafkaConsumerConfig struct {
-	Brokers        []string
-	GroupID        string
-	Topics         []string
-	ReturnSuccess  bool
-	ReturnErrors   bool
-	RetryMax       int
-	FlushFrequency int // in milliseconds
-}
-
-// ConsumerHandler defines the handler function for consuming messages.
-type ConsumerHandler func(message *BaseEvent) error
-
-// ConsumerKafka handles consuming events from Kafka.
-type ConsumerKafka struct {
+// consumerKafka handles consuming events from Kafka. It implements the sarama.ConsumerGroupHandler.
+type consumerKafka struct {
 	consumerGroup sarama.ConsumerGroup
 	topic         string
-	handler       ConsumerHandler
+	handler       KafkaHandler // The business logic handler for a message.
 }
 
-// NewKafkaConsumerGroup creates a new Kafka consumer group.
-func NewKafkaConsumerGroup(
-	cfg *KafkaConsumerConfig,
-	groupID, topic string,
-	handler ConsumerHandler,
-) (*ConsumerKafka, error) {
-	saramaCfg := sarama.NewConfig()
-	saramaCfg.Version = sarama.V2_6_0_0
-	saramaCfg.Consumer.Offsets.Initial = sarama.OffsetNewest
-	saramaCfg.Consumer.Group.Rebalance.Strategy = sarama.NewBalanceStrategyRoundRobin()
+// NewConsumerKafka creates and configures a new Kafka consumer.
+func NewConsumerKafka(
+	brokers []string,
+	topic, groupID string,
+	handler KafkaHandler,
+) (KafkaConsumer, error) {
+	config := sarama.NewConfig()
+	config.Version = sarama.V2_8_0_0 // Or your desired Kafka version
+	config.Consumer.Offsets.Initial = sarama.OffsetOldest
+	config.Consumer.Return.Errors = true
 
-	consumerGroup, err := sarama.NewConsumerGroup(cfg.Brokers, groupID, saramaCfg)
+	// Create a consumer group
+	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupID, config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Kafka consumer group: %w", err)
+		return nil, err
 	}
 
-	return &ConsumerKafka{
+	return &consumerKafka{
 		consumerGroup: consumerGroup,
 		topic:         topic,
 		handler:       handler,
 	}, nil
 }
 
-// Start begins consuming messages in a blocking loop.
-func (c *ConsumerKafka) Start(ctx context.Context) error {
-	for {
-		if err := c.consumerGroup.Consume(ctx, []string{c.topic}, c); err != nil {
-			log.Printf("Error consuming from topic %s: %v", c.topic, err)
+// Consume starts the consumer group and listens for messages. This is a blocking call.
+func (c *consumerKafka) Consume(ctx context.Context) error {
+	log.Printf("Consumer for topic '%s' starting...", c.topic)
 
-			continue
+	for {
+		// `Consume` should be called inside an infinite loop, when a
+		// server-side rebalance happens, the consumer session will end
+		// and `Consume` will return.
+		if err := c.consumerGroup.Consume(ctx, []string{c.topic}, c); err != nil {
+			log.Printf("Error from consumer for topic %s: %v", c.topic, err)
+			// If context is canceled, we should stop.
+			if ctx.Err() != nil {
+				return err
+			}
 		}
 
-		// Check if context was canceled
+		// Check if context was canceled, signaling that we should stop.
 		if ctx.Err() != nil {
+			log.Printf("Context canceled for topic %s. Exiting consumer loop.", c.topic)
+
 			return ctx.Err()
 		}
 	}
 }
 
+// Topic returns the consumer's topic.
+func (c *consumerKafka) Topic() string {
+	return c.topic
+}
+
 // Close shuts down the consumer group.
-func (c *ConsumerKafka) Close() error {
+func (c *consumerKafka) Close() error {
+	log.Printf("Closing consumer for topic: %s", c.topic)
+
 	if c.consumerGroup != nil {
 		return c.consumerGroup.Close()
 	}
@@ -90,33 +91,50 @@ func (c *ConsumerKafka) Close() error {
 	return nil
 }
 
-// Setup is called before consuming messages.
-func (c *ConsumerKafka) Setup(sarama.ConsumerGroupSession) error { return nil }
+// Setup is run at the beginning of a new session, before ConsumeClaim.
+func (c *consumerKafka) Setup(sarama.ConsumerGroupSession) error {
+	log.Printf("Consumer group session started for topic: %s", c.topic)
 
-// Cleanup is called after consuming messages.
-func (c *ConsumerKafka) Cleanup(sarama.ConsumerGroupSession) error { return nil }
+	return nil
+}
 
-// ConsumeClaim processes messages from the claim.
-func (c *ConsumerKafka) ConsumeClaim(
+// Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited.
+func (c *consumerKafka) Cleanup(sarama.ConsumerGroupSession) error {
+	log.Printf("Consumer group session ended for topic: %s", c.topic)
+
+	return nil
+}
+
+// ConsumeClaim must start a consumer loop of ConsumerGroupClaim's Messages().
+func (c *consumerKafka) ConsumeClaim(
 	session sarama.ConsumerGroupSession,
 	claim sarama.ConsumerGroupClaim,
 ) error {
-	for msg := range claim.Messages() {
-		var evt BaseEvent
-		if err := json.Unmarshal(msg.Value, &evt); err != nil {
-			log.Printf("Failed to unmarshal message: %v", err)
+	// The `ConsumeClaim` function is called for each claimed partition.
+	// It must run in a loop to process messages from the claim's Messages channel.
+	for {
+		select {
+		case message, ok := <-claim.Messages():
+			if !ok {
+				log.Printf("Message channel closed for topic: %s", c.topic)
 
-			continue
+				return nil
+			}
+
+			// Call the specific handler with the message value.
+			err := c.handler(session.Context(), message.Value)
+			if err != nil {
+				log.Printf("Handler error for topic %s: %v", c.topic, err)
+				// Here you could implement retry logic, or send to a dead-letter queue.
+				// For now, we just log and continue.
+			}
+
+			// Mark the message as processed.
+			session.MarkMessage(message, "")
+
+		// Should return when the session is canceled, which happens on a rebalance.
+		case <-session.Context().Done():
+			return nil
 		}
-
-		if err := c.handler(&evt); err != nil {
-			log.Printf("Handler error: %v", err)
-
-			continue
-		}
-
-		session.MarkMessage(msg, "")
 	}
-
-	return nil
 }

@@ -536,7 +536,15 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 		return errors.New("failed to verify email")
 	}
 
-	s.logger.Info("User email verified", "user_id", user.ID, "email", user.Email)
+	// Publish email verification requested event
+	evt := event.NewUserVerifiedEvent(
+		user.ID,
+		user.Email,
+	)
+
+	if err = s.userVerifiedProducer.Send(ctx, evt); err != nil {
+		s.logger.Error("failed to publish user verified event", "error", err)
+	}
 
 	return nil
 }
@@ -579,8 +587,17 @@ func (s *AuthService) ResendVerification(
 		return errors.New("failed to set verification token")
 	}
 
-	// TODO: Send verification email
-	s.logger.Info("Verification email resent", "user_id", user.ID, "email", user.Email)
+	// Publish email verification event
+	s.logger.Info("sending email verification event")
+
+	evt := event.NewEmailVerificationRequestedEvent(
+		user.ID,
+		user.Email,
+	)
+
+	if err = s.emailVerificationRequestedProducer.Send(ctx, evt); err != nil {
+		s.logger.Error("failed to publish email verification event", "error", err)
+	}
 
 	return nil
 }

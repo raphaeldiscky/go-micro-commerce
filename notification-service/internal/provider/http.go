@@ -11,7 +11,7 @@ import (
 )
 
 // SetupHTTP initializes the HTTP server routes and middleware.
-func SetupHTTP(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
+func SetupHTTP(_ *config.Config, e *echo.Echo, _ logger.Logger) {
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
 }

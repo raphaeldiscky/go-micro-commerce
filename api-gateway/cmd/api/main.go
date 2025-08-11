@@ -1,4 +1,4 @@
-// Package main implements the API for the product service.
+// Package main implements the API for the api gateway
 package main
 
 import (

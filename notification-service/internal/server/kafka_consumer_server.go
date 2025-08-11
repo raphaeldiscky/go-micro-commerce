@@ -3,49 +3,95 @@ package server
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/smtputils"
+
+	pkgConfig "github.com/raphaeldiscky/go-micro-template/pkg/config"
 
 	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 )
 
+// KafkaConsumerServer represents a server for consuming messages from Kafka topics.
 type KafkaConsumerServer struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	appLogger logger.Logger
 	consumers []mq.KafkaConsumer
+	wg        sync.WaitGroup
 }
 
-func NewKafkaConsumerServer(cfg *config.Config) *KafkaConsumerServer {
+// NewKafkaConsumerServer creates a new Kafka consumer server.
+func NewKafkaConsumerServer(cfg *config.Config, appLogger logger.Logger) *KafkaConsumerServer {
 	ctx, cancel := context.WithCancel(context.Background())
+	mailer := smtputils.NewMailer(&pkgConfig.SMTPConfig{
+		Host:  cfg.SMTP.Host,
+		Email: cfg.SMTP.Email,
+		Port:  cfg.SMTP.Port,
+	})
+	consumers := provider.SetupKafkaConsumers(cfg.Kafka, appLogger, mailer)
+
 	return &KafkaConsumerServer{
 		ctx:       ctx,
 		cancel:    cancel,
-		consumers: provider.SetupKafkaConsumers(cfg.Kafka),
+		appLogger: appLogger,
+		consumers: consumers,
 	}
 }
 
+// Start begins the Kafka consumer server.
 func (s *KafkaConsumerServer) Start() error {
 	s.appLogger.Info("Running Kafka consumer server...")
+
 	for _, consumer := range s.consumers {
-		go consumer.Consume(s.ctx)
+		s.wg.Add(1)
+
+		go func(c mq.KafkaConsumer) {
+			defer s.wg.Done()
+
+			if err := c.Consume(s.ctx); err != nil {
+				s.appLogger.Errorf("Consumer error for topic %s: %v", c.Topic(), err)
+			}
+		}(consumer)
 	}
+
 	s.appLogger.Info("Kafka server is running...")
+
 	return nil
 }
 
+// Shutdown gracefully stops the Kafka consumer server.
 func (s *KafkaConsumerServer) Shutdown() {
 	s.appLogger.Info("Attempting to shut down the Kafka server...")
-	time.Sleep(10 * time.Second)
 
+	// Cancel the context to signal all consumers to stop
 	s.cancel()
+
+	// Wait for all consumers to finish gracefully
+	done := make(chan struct{})
+	go func() {
+		s.wg.Wait()
+		close(done)
+	}()
+
+	// Wait for graceful shutdown or timeout
+	select {
+	case <-done:
+		s.appLogger.Info("All consumers stopped gracefully")
+	case <-time.After(30 * time.Second):
+		s.appLogger.Warn("Timeout waiting for consumers to stop")
+	}
+
+	// Close all consumers
 	for _, consumer := range s.consumers {
 		if err := consumer.Close(); err != nil {
 			s.appLogger.Errorf("Error closing consumer %v: %v", consumer.Topic(), err)
 		}
 	}
 
-	s.appLogger.Info("Kafka server shut down gracefully")
+	s.appLogger.Info("Kafka server shut down completed")
 }

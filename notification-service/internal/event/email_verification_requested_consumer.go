@@ -1,42 +1,51 @@
 package event
 
 import (
-	"sync"
+	"context"
+	"fmt"
+	"log"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/bytedance/sonic"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/smtputils"
+
+	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/constant"
 )
 
+// EmailVerificationRequestedEvent represents the email verification event payload.
 type EmailVerificationRequestedEvent struct {
-	Token string `json:"token"`
+	UserID string `json:"user_id"`
+	Email  string `json:"email"`
+	Token  string `json:"token"`
 }
 
-type EmailVerificationRequestedConsumer struct {
-	Consumer *mq.KafkaConsumer
-	topic    string
-	wg       *sync.WaitGroup
+// EmailVerificationConsumer handles the logic for processing email verification events.
+type EmailVerificationConsumer struct {
+	mailer smtputils.Mailer
 }
 
-func NewEmailVerificationRequestedConsumer(consumer *mq.KafkaConsumer, topic string) *EmailVerificationRequestedConsumer {
-	return &EmailVerificationRequestedConsumer{
-		Consumer: consumer,
-		topic:    topic,
-		wg:       &sync.WaitGroup{},
+// NewEmailVerificationConsumer creates a new consumer for email verification events.
+// It requires a mailer to be injected as a dependency.
+func NewEmailVerificationConsumer(mailer smtputils.Mailer) *EmailVerificationConsumer {
+	return &EmailVerificationConsumer{
+		mailer: mailer,
 	}
 }
 
-// // Consume starts the Kafka consumer for the email verification requested events.
-// func (c *EmailVerificationRequestedConsumer) Consume(ctx context.Context) error {
-// 	c.wg.Add(1)
-// 	c.Consumer.Start()
-// }
+// Handler is the method that implements mq.KafkaHandler. It contains the business logic.
+func (c *EmailVerificationConsumer) Handler(ctx context.Context, body []byte) error {
+	var event EmailVerificationRequestedEvent
+	if err := sonic.Unmarshal(body, &event); err != nil {
+		log.Printf("failed to unmarshal EmailVerificationRequestedEvent: %s", err)
 
-// // Handler for email verification requested events.
-// func (c *EmailVerificationRequestedConsumer) Handler() error {
-// 	var event EmailVerificationRequestedEvent
-// 	if err := msg.Unmarshal(&event); err != nil {
-// 		return err
-// 	}
+		return nil
+	}
 
-// 	// Process the email verification requested event.
-// 	return nil
-// }
+	log.Printf("Processing email verification for: %s", event.Email)
+
+	// Here you would have more complex logic, e.g., fetching a template
+	subject := constant.SendVerificationSubject
+	messageBody := fmt.Sprintf(constant.SendVerificationTemplate, event.Token)
+
+	// Use the injected mailer to send the email
+	return c.mailer.SendMail(ctx, event.Email, subject, messageBody)
+}

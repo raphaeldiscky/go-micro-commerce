@@ -6,14 +6,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-// SMTPConfig holds the SMTP server configuration.
+// SMTPConfig holds the configuration for the SMTP server.
 type SMTPConfig struct {
 	Host  string `mapstructure:"SMTP_HOST"`
 	Email string `mapstructure:"SMTP_EMAIL"`
 	Port  int    `mapstructure:"SMTP_PORT"`
 }
 
-// initSMTPConfig returns the SMTP configuration.
+// initSMTPConfig initializes the SMTP configuration.
 func initSMTPConfig() *SMTPConfig {
 	// Set defaults
 	viper.SetDefault("SMTP_HOST", "localhost")
@@ -23,7 +23,7 @@ func initSMTPConfig() *SMTPConfig {
 	smtpConfig := &SMTPConfig{}
 
 	if err := viper.Unmarshal(&smtpConfig); err != nil {
-		log.Fatalf("error mapping jwt config: %v", err)
+		log.Fatalf("error mapping smtp config: %v", err)
 	}
 
 	return smtpConfig

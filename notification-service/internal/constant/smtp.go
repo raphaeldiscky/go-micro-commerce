@@ -1,11 +1,14 @@
 package constant
 
 const (
+	// SendVerificationSubject is the subject for email verification.
 	SendVerificationSubject = "[Go Microservices] Email Verification"
-	AccountVerifiedSubject  = "[Go Microservices] Account Verified"
+	// AccountVerifiedSubject is the subject for account verification.
+	AccountVerifiedSubject = "[Go Microservices] Account Verified"
 )
 
 const (
+	// SendVerificationTemplate is the email template for sending verification emails.
 	SendVerificationTemplate = `
 <!DOCTYPE html>
 	<html lang="en">
@@ -24,7 +27,7 @@ const (
 	</body>
 </html>
 	`
-
+	// AccountVerifiedTemplate is the email template for sending account verified emails.
 	AccountVerifiedTemplate = `
 <!DOCTYPE html>
 	<html lang="en">

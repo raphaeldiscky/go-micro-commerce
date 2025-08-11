@@ -51,6 +51,7 @@ func NewKafkaSyncProducer(cfg *KafkaProducerConfig) (*KafkaSyncProducer, error) 
 	if cfg.Acks == 0 {
 		config.Producer.RequiredAcks = sarama.WaitForAll
 	}
+
 	config.Producer.Retry.Max = cfg.RetryMax
 	config.Producer.Retry.Backoff = time.Millisecond * time.Duration(cfg.FlushFrequency)
 
@@ -74,6 +75,7 @@ func NewKafkaAsyncProducer(cfg *KafkaProducerConfig) (*KafkaAsyncProducer, error
 	if cfg.Acks == 0 {
 		config.Producer.RequiredAcks = sarama.WaitForAll
 	}
+
 	config.Producer.Retry.Max = cfg.RetryMax
 	config.Producer.Retry.Backoff = time.Millisecond * time.Duration(cfg.FlushFrequency)
 
@@ -141,8 +143,10 @@ func (p *KafkaSyncProducer) ProduceSync(topic string, evt BaseEvent) error {
 func (p *KafkaSyncProducer) CloseSync() error {
 	if p.producer != nil {
 		log.Println("Closing Kafka sync producer")
+
 		return p.producer.Close()
 	}
+
 	return nil
 }
 
@@ -178,6 +182,7 @@ func (p *KafkaAsyncProducer) ProduceAsync(ctx context.Context, topic string, evt
 	case p.producer.Input() <- message:
 		log.Printf("Event sent to async producer - Topic: %s, Type: %s",
 			topic, metadata.EventType)
+
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -202,6 +207,7 @@ func (p *KafkaAsyncProducer) CloseAsync() error {
 
 		return p.producer.Close()
 	}
+
 	return nil
 }
 
@@ -240,6 +246,7 @@ func (p *KafkaAsyncProducer) handleRetries() {
 		select {
 		case <-retryTicker.C:
 			// Process all messages in retry channel
+		inner:
 			for {
 				select {
 				case msg := <-p.RetryChan:
@@ -260,7 +267,7 @@ func (p *KafkaAsyncProducer) handleRetries() {
 					}
 				default:
 					// No more messages to retry
-					break
+					break inner
 				}
 			}
 		case <-p.ctx.Done():

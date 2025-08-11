@@ -16,6 +16,12 @@ type JWTConfig struct {
 
 // initJWTConfig initializes the JWT configuration.
 func initJWTConfig() *JWTConfig {
+	// Set defaults
+	viper.SetDefault("JWT_ALLOWED_ALGS", []string{"HS256"})
+	viper.SetDefault("JWT_ISSUER", "example.com")
+	viper.SetDefault("JWT_SECRET_KEY", "supersecretkey")
+	viper.SetDefault("JWT_TOKEN_DURATION", 3600)
+
 	jwtConfig := &JWTConfig{}
 
 	if err := viper.Unmarshal(&jwtConfig); err != nil {

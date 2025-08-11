@@ -21,7 +21,7 @@ func NewAppHandler() *AppHandler {
 func (c *AppHandler) Health(e echo.Context) error {
 	return e.JSON(http.StatusOK, map[string]interface{}{
 		"status":  "healthy",
-		"service": "auth-service",
+		"service": "notification-service",
 	})
 }
 

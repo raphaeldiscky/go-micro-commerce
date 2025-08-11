@@ -16,7 +16,7 @@ import (
 
 // Start initializes the application workers.
 func Start(cfg *config.Config, appLogger logger.Logger) {
-	providers, err := provider.SetupGlobal(cfg)
+	_, err := provider.SetupGlobal(cfg)
 	if err != nil {
 		appLogger.Fatal("Failed to setup providers:", err)
 	}
@@ -30,7 +30,9 @@ func Start(cfg *config.Config, appLogger logger.Logger) {
 			Use:   "serve-all",
 			Short: "Run all",
 			Run: func(_ *cobra.Command, _ []string) {
-				runHTTPWorker(ctx, cfg, appLogger, providers)
+				runHTTPWorker(ctx, cfg, appLogger)
+			},
+			PreRun: func(_ *cobra.Command, _ []string) {
 				runKafkaWorker(ctx, cfg, appLogger)
 			},
 		},
