@@ -19,7 +19,7 @@ const (
 const (
 	UserVerificationTopic = "user.verification" // EmailVerificationRequested, EmailVerified
 	// UserVerificationTopicNumPartitions is the number of partitions for the user verification topic.
-	UserVerificationTopicNumPartitions = 1
+	UserVerificationTopicNumPartitions = 3
 	// UserVerificationTopicReplicationFactor is the replication factor for the user verification topic.
 	UserVerificationTopicReplicationFactor = 1
 	// UserSecurityTopic is the topic for user security events.

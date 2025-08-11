@@ -57,12 +57,11 @@ func NewSessionRepository(db DBTX) SessionRepositoryInterface {
 // Create creates a new session.
 func (r *sessionRepository) Create(ctx context.Context, session *entity.Session) error {
 	query := `
-		INSERT INTO sessions (id, user_id, refresh_token, is_active, ip_address, user_agent, expires_at, created_at, updated_at, last_used_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		INSERT INTO sessions (user_id, refresh_token, is_active, ip_address, user_agent, expires_at, created_at, updated_at, last_used_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 	`
 
 	_, err := r.db.Exec(ctx, query,
-		session.ID,
 		session.UserID,
 		session.RefreshToken,
 		session.IsActive,

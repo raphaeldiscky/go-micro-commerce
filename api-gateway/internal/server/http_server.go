@@ -27,17 +27,17 @@ type HTTPServer struct {
 func NewHTTPServer(
 	gw *gateway.Gateway,
 	cfg *config.Config,
-	lgr logger.Logger,
+	appLogger logger.Logger,
 ) *HTTPServer {
 	e := echo.New()
 
-	RegisterMiddlewares(e, lgr)
-	provider.SetupHTTP(e, cfg, lgr, gw)
+	RegisterMiddlewares(e)
+	provider.SetupHTTP(e, cfg, appLogger, gw)
 
 	return &HTTPServer{
 		echo:   e,
 		config: cfg,
-		logger: lgr,
+		logger: appLogger,
 	}
 }
 
@@ -75,7 +75,7 @@ func (s *HTTPServer) Shutdown() {
 }
 
 // RegisterMiddlewares registers custom middleware for the HTTP server.
-func RegisterMiddlewares(e *echo.Echo, lgr logger.Logger) {
+func RegisterMiddlewares(e *echo.Echo) {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())

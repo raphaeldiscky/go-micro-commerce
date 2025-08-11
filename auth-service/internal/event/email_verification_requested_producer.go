@@ -19,18 +19,18 @@ type EmailVerificationRequestedPayload struct {
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata KafkaMetadata
-	Payload  EmailVerificationRequestedPayload
+	metadata KafkaMetadata
+	payload  EmailVerificationRequestedPayload
 }
 
 // GetPayload returns the data associated with the EmailVerificationRequestedEvent.
 func (e *EmailVerificationRequestedEvent) GetPayload() interface{} {
-	return e.Payload
+	return e.payload
 }
 
 // GetMetadata returns the metadata associated with the EmailVerificationRequestedEvent.
 func (e *EmailVerificationRequestedEvent) GetMetadata() KafkaMetadata {
-	return e.Metadata
+	return e.metadata
 }
 
 // NewEmailVerificationRequestedEvent creates a new EmailVerificationRequestedEvent.
@@ -39,14 +39,14 @@ func NewEmailVerificationRequestedEvent(
 	email string,
 ) *EmailVerificationRequestedEvent {
 	return &EmailVerificationRequestedEvent{
-		Metadata: KafkaMetadata{
+		metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeEmailVerificationRequested,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceAuthService,
 		},
-		Payload: EmailVerificationRequestedPayload{
+		payload: EmailVerificationRequestedPayload{
 			UserID: userID,
 			Email:  email,
 		},

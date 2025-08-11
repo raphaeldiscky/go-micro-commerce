@@ -22,18 +22,18 @@ type ProductCreatedPayload struct {
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata mq.KafkaMetadata // Use the correct type from mq package
-	Payload  ProductCreatedPayload
+	metadata mq.KafkaMetadata // Use the correct type from mq package
+	payload  ProductCreatedPayload
 }
 
 // GetPayload returns the data associated with the ProductCreatedEvent.
 func (e *ProductCreatedEvent) GetPayload() interface{} {
-	return e.Payload
+	return e.payload
 }
 
 // GetMetadata returns the metadata associated with the ProductCreatedEvent.
 func (e *ProductCreatedEvent) GetMetadata() mq.KafkaMetadata { // Use the correct type from mq package
-	return e.Metadata
+	return e.metadata
 }
 
 // NewProductCreatedEvent creates a new ProductCreatedEvent.
@@ -44,14 +44,14 @@ func NewProductCreatedEvent(
 	quantity int,
 ) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
-		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
+		metadata: mq.KafkaMetadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductCreated,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		Payload: ProductCreatedPayload{
+		payload: ProductCreatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,

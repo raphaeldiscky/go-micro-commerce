@@ -23,6 +23,8 @@ func NewKafkaAdmin(opt *KafkaAdminConfig) *KafkaAdmin {
 		log.Fatalf("failed to create kafka admin: %v", err)
 	}
 
+	log.Println("Kafka admin client created successfully")
+
 	return &KafkaAdmin{
 		Client: client,
 	}
@@ -49,4 +51,6 @@ func (admin *KafkaAdmin) CreateTopic(topic string, numPartitions, replicationFac
 			log.Fatalf("failed to create topic: %v", err)
 		}
 	}
+
+	log.Println("Kafka topic created successfully")
 }

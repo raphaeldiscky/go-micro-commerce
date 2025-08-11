@@ -35,7 +35,7 @@ func NewHTTPServer(
 	e.Validator = validation.NewValidator()
 
 	// Middleware
-	RegisterMiddlewares(e, appLogger)
+	RegisterMiddlewares(e)
 
 	// Setup HTTP
 	provider.SetupHTTP(cfg, e, appLogger, providers)
@@ -81,7 +81,7 @@ func (s *HTTPServer) Shutdown() {
 }
 
 // RegisterMiddlewares registers custom middleware for the HTTP server.
-func RegisterMiddlewares(e *echo.Echo, appLogger logger.Logger) {
+func RegisterMiddlewares(e *echo.Echo) {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())

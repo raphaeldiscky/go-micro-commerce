@@ -38,11 +38,11 @@ type AuthServiceInterface interface {
 	RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error)
 	Logout(ctx context.Context, req *dto.LogoutRequest) error
 	LogoutAllSessions(ctx context.Context, userID uuid.UUID) error
-	GetProfile(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error)
-	UpdateProfile(
+	GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error)
+	UpdateUser(
 		ctx context.Context,
 		userID uuid.UUID,
-		req *dto.UpdateProfileRequest,
+		req *dto.UpdateUserRequest,
 	) (*dto.UserResponse, error)
 	ChangePassword(ctx context.Context, userID uuid.UUID, req *dto.ChangePasswordRequest) error
 	VerifyEmail(ctx context.Context, req *dto.VerifyEmailRequest) error
@@ -196,7 +196,7 @@ func (s *AuthService) Register(
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
 			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
-			User:         s.userToUserResponse(user),
+			User:         dto.MapToUserResponse(user),
 		}
 
 		return nil
@@ -287,7 +287,7 @@ func (s *AuthService) Login(
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
 			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
-			User:         s.userToUserResponse(user),
+			User:         dto.MapToUserResponse(user),
 		}
 
 		return nil
@@ -370,12 +370,12 @@ func (s *AuthService) RefreshToken(
 		RefreshToken: newRefreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
-		User:         s.userToUserResponse(user),
+		User:         dto.MapToUserResponse(user),
 	}, nil
 }
 
-// GetProfile gets user profile.
-func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
+// GetUser gets user profile.
+func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
 	userRepo := s.dataStore.UserRepository()
 
 	user, err := userRepo.GetByID(ctx, userID)
@@ -389,16 +389,16 @@ func (s *AuthService) GetProfile(ctx context.Context, userID uuid.UUID) (*dto.Us
 		return nil, errors.New("failed to get user")
 	}
 
-	userResponse := s.userToUserResponse(user)
+	userResponse := dto.MapToUserResponse(user)
 
 	return userResponse, nil
 }
 
-// UpdateProfile updates user profile.
-func (s *AuthService) UpdateProfile(
+// UpdateUser updates user profile.
+func (s *AuthService) UpdateUser(
 	ctx context.Context,
 	userID uuid.UUID,
-	req *dto.UpdateProfileRequest,
+	req *dto.UpdateUserRequest,
 ) (*dto.UserResponse, error) {
 	res := new(dto.UserResponse)
 
@@ -450,7 +450,8 @@ func (s *AuthService) UpdateProfile(
 		}
 
 		s.logger.Info("User profile updated", "user_id", userID)
-		res = s.userToUserResponse(updatedUser)
+
+		res = dto.MapToUserResponse(updatedUser)
 
 		return nil
 	})
@@ -624,24 +625,6 @@ func (s *AuthService) generateVerificationToken() (string, error) {
 	}
 
 	return hex.EncodeToString(bytes), nil
-}
-
-// userToUserResponse converts entity.User to dto.UserResponse.
-func (s *AuthService) userToUserResponse(user *entity.User) *dto.UserResponse {
-	return &dto.UserResponse{
-		ID:              user.ID,
-		Email:           user.Email,
-		Username:        user.Username,
-		FirstName:       user.FirstName,
-		LastName:        user.LastName,
-		Roles:           user.Roles,
-		IsActive:        user.IsActive,
-		IsEmailVerified: user.IsEmailVerified,
-		EmailVerifiedAt: user.EmailVerifiedAt,
-		LastLoginAt:     user.LastLoginAt,
-		CreatedAt:       user.CreatedAt,
-		UpdatedAt:       user.UpdatedAt,
-	}
 }
 
 // GetActiveSessions returns all active sessions for a user.

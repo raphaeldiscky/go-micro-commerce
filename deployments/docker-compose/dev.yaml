@@ -1,58 +1,64 @@
 services:
   auth-service:
     build:
-      context: ../../
+      context: ../..
       dockerfile: auth-service/Dockerfile
     container_name: auth-service
+    volumes:
+      - ../../auth-service/.env:/app/.env
     restart: always
     ports:
-      - "8001:8001"
+      - "8081:8081"
     networks:
       - go-micro-template
 
   product-service:
     build:
-      context: ../../
+      context: ../..
       dockerfile: product-service/Dockerfile
     container_name: product-service
+    volumes:
+      - ../../product-service/.env:/app/.env
     restart: always
     ports:
-      - "8002:8002"
+      - "8082:8082"
     networks:
       - go-micro-template
 
   order-service:
     build:
-      context: ../../
+      context: ../..
       dockerfile: order-service/Dockerfile
     container_name: order-service
     restart: always
     ports:
-      - "8003:8003"
+      - "8083:8083"
     networks:
       - go-micro-template
 
   notification-service:
     build:
-      context: ../../
+      context: ../..
       dockerfile: notification-service/Dockerfile
     container_name: notification-service
+    volumes:
+      - ../../notification-service/.env:/app/.env
     restart: always
     ports:
-      - "8004:8004"
-    depends_on:
-      - mailhog
+      - "8084:8084"
     networks:
       - go-micro-template
 
   api-gateway:
     build:
-      context: ../../
+      context: ../..
       dockerfile: api-gateway/Dockerfile
     container_name: api-gateway
+    volumes:
+      - ../../api-gateway/.env:/app/.env
     restart: always
     ports:
-      - "8000:8000"
+      - "8080:8080"
     depends_on:
       - auth-service
       - product-service

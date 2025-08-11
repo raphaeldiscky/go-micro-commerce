@@ -138,8 +138,8 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 	})
 }
 
-// GetProfile retrieves the user's profile.
-func (h *AuthHandler) GetProfile(c echo.Context) error {
+// GetUser retrieves the user's user.
+func (h *AuthHandler) GetUser(c echo.Context) error {
 	userIDStr, ok := c.Get("userID").(string)
 	if !ok {
 		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
@@ -156,7 +156,7 @@ func (h *AuthHandler) GetProfile(c echo.Context) error {
 		})
 	}
 
-	profile, err := h.authService.GetProfile(c.Request().Context(), userID)
+	user, err := h.authService.GetUser(c.Request().Context(), userID)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Code:    http.StatusInternalServerError,
@@ -164,11 +164,11 @@ func (h *AuthHandler) GetProfile(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, profile)
+	return c.JSON(http.StatusOK, user)
 }
 
-// UpdateProfile updates the user's profile.
-func (h *AuthHandler) UpdateProfile(c echo.Context) error {
+// UpdateUser updates the user's user.
+func (h *AuthHandler) UpdateUser(c echo.Context) error {
 	userIDStr, ok := c.Get("userID").(string)
 	if !ok {
 		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
@@ -185,7 +185,7 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		})
 	}
 
-	var req dto.UpdateProfileRequest
+	var req dto.UpdateUserRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Code:    http.StatusBadRequest,
@@ -200,7 +200,7 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		})
 	}
 
-	profile, err := h.authService.UpdateProfile(c.Request().Context(), userID, &req)
+	user, err := h.authService.UpdateUser(c.Request().Context(), userID, &req)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Code:    http.StatusInternalServerError,
@@ -208,5 +208,63 @@ func (h *AuthHandler) UpdateProfile(c echo.Context) error {
 		})
 	}
 
-	return c.JSON(http.StatusOK, profile)
+	return c.JSON(http.StatusOK, user)
+}
+
+// VerifyEmail verify user's email.
+func (h *AuthHandler) VerifyEmail(c echo.Context) error {
+	var req dto.VerifyEmailRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid request format",
+		})
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
+
+	if err := h.authService.VerifyEmail(c.Request().Context(), &req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Email successfully verified",
+	})
+}
+
+// ResendVerification handles resend email verification.
+func (h *AuthHandler) ResendVerification(c echo.Context) error {
+	var req dto.ResendVerificationRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid request format",
+		})
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		})
+	}
+
+	if err := h.authService.ResendVerification(c.Request().Context(), &req); err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "Verification email resent successfully",
+	})
 }

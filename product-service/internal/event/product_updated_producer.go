@@ -23,18 +23,18 @@ type ProductUpdatedPayload struct {
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	Metadata KafkaMetadata
-	Payload  ProductUpdatedPayload
+	metadata KafkaMetadata
+	payload  ProductUpdatedPayload
 }
 
 // GetPayload returns the data associated with the ProductUpdatedEvent.
 func (e *ProductUpdatedEvent) GetPayload() interface{} {
-	return e.Payload
+	return e.payload
 }
 
 // GetMetadata returns the metadata associated with the ProductUpdatedEvent.
 func (e *ProductUpdatedEvent) GetMetadata() KafkaMetadata {
-	return e.Metadata
+	return e.metadata
 }
 
 // NewProductUpdatedEvent creates a new ProductUpdatedEvent.
@@ -45,14 +45,14 @@ func NewProductUpdatedEvent(
 	quantity int,
 ) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
-		Metadata: KafkaMetadata{
+		metadata: KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypeProductUpdated,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceProductService,
 		},
-		Payload: ProductUpdatedPayload{
+		payload: ProductUpdatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,

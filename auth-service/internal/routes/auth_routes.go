@@ -16,11 +16,13 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	auth := v1.Group("")
 	auth.POST("/register", h.Register)
 	auth.POST("/login", h.Login)
-	auth.POST("/refresh", h.RefreshToken)
+	auth.POST("/refresh-token", h.RefreshToken)
 	auth.POST("/logout", h.Logout)
+	auth.POST("/verify", h.VerifyEmail)
+	auth.POST("/resend-verification", h.ResendVerification)
 
 	// User routes (protected)
 	users := v1.Group("/users")
-	users.GET("/:id", h.GetProfile)
-	users.PUT("/:id", h.UpdateProfile)
+	users.GET("/:id", h.GetUser)
+	users.PUT("/:id", h.UpdateUser)
 }

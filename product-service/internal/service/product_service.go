@@ -77,7 +77,7 @@ func (s *ProductService) CreateProduct(
 			return err
 		}
 
-		res = s.mapToResponse(savedProduct)
+		res = dto.MapToProductResponse(savedProduct)
 
 		return nil
 	})
@@ -104,7 +104,7 @@ func (s *ProductService) GetProduct(
 		return nil, httperror.NewProductNotFoundError()
 	}
 
-	return s.mapToResponse(product), nil
+	return dto.MapToProductResponse(product), nil
 }
 
 // GetProducts retrieves products with pagination and filtering.
@@ -132,7 +132,7 @@ func (s *ProductService) GetProducts(
 
 	productResponses := make([]dto.ProductResponse, len(products))
 	for i, product := range products {
-		productResponses[i] = *s.mapToResponse(product)
+		productResponses[i] = *dto.MapToProductResponse(product)
 	}
 
 	return &dto.ProductListResponse{
@@ -193,7 +193,7 @@ func (s *ProductService) UpdateProduct(
 			return err
 		}
 
-		res = s.mapToResponse(updatedProduct)
+		res = dto.MapToProductResponse(updatedProduct)
 
 		return nil
 	})
@@ -236,16 +236,4 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 	}
 
 	return nil
-}
-
-// mapToResponse converts domain entity to DTO response.
-func (s *ProductService) mapToResponse(product *entity.Product) *dto.ProductResponse {
-	return &dto.ProductResponse{
-		ID:        product.ID,
-		Name:      product.Name,
-		Price:     product.Price,
-		Quantity:  product.Quantity,
-		CreatedAt: product.CreatedAt,
-		UpdatedAt: product.UpdatedAt,
-	}
 }

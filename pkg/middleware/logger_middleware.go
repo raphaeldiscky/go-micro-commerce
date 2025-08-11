@@ -33,6 +33,7 @@ func Logger(lgr logger.Logger) echo.MiddlewareFunc {
 			// If there's no error, log the request as successful.
 			if err == nil {
 				lgr.WithFields(params).Info("incoming request")
+
 				return nil
 			}
 
