@@ -12,7 +12,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"go.uber.org/zap"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
@@ -40,8 +39,8 @@ type Config struct {
 	Config           *config.Config
 }
 
-// New creates a new API Gateway instance.
-func New(cfg Config) *Gateway {
+// NewAPIGateway creates a new API Gateway instance.
+func NewAPIGateway(cfg Config) *Gateway {
 	return &Gateway{
 		logger:           cfg.Logger,
 		serviceDiscovery: cfg.ServiceDiscovery,
@@ -61,8 +60,8 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
 		if err != nil {
 			gw.logger.Error("Failed to get service endpoint",
-				zap.String("service", serviceName),
-				zap.Error(err))
+				"service", serviceName,
+				"error", err)
 
 			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
 		}
@@ -76,8 +75,8 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 
 		if err != nil {
 			gw.logger.Error("Circuit breaker rejected request",
-				zap.String("service", serviceName),
-				zap.Error(err))
+				"service", serviceName,
+				"error", err)
 
 			// Record metrics
 			gw.metrics.RecordGatewayRequest(
@@ -93,7 +92,7 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 		response, ok := result.(*ProxyResponse)
 		if !ok {
 			gw.logger.Error("Invalid response type from circuit breaker",
-				zap.String("service", serviceName))
+				"service", serviceName)
 
 			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 		}
@@ -201,7 +200,7 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
-			gw.logger.Warn("Failed to close response body", zap.Error(closeErr))
+			gw.logger.Warn("Failed to close response body", "error", closeErr)
 		}
 	}()
 
@@ -283,8 +282,8 @@ func (gw *Gateway) CreateReverseProxy(serviceName string) echo.HandlerFunc {
 		// Handle errors
 		proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, err error) {
 			gw.logger.Error("Proxy error",
-				zap.String("service", serviceName),
-				zap.Error(err))
+				"service", serviceName,
+				"error", err)
 			http.Error(w, "Bad Gateway", http.StatusBadGateway)
 		}
 

@@ -5,85 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
-	"github.com/sony/gobreaker"
-	"go.uber.org/zap"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 )
-
-// CircuitBreakerService manages circuit breakers for different services.
-type CircuitBreakerService struct {
-	breakers map[string]*gobreaker.CircuitBreaker
-	mutex    sync.RWMutex
-	logger   *zap.Logger
-}
-
-// NewCircuitBreaker creates a new circuit breaker service.
-func NewCircuitBreaker() *CircuitBreakerService {
-	logger, err := zap.NewProduction()
-	if err != nil {
-		// Logger initialization failed, use a no-op logger to avoid fmt.Printf
-		logger = zap.NewNop()
-	}
-
-	return &CircuitBreakerService{
-		breakers: make(map[string]*gobreaker.CircuitBreaker),
-		logger:   logger,
-	}
-}
-
-// GetBreaker returns a circuit breaker for the given service.
-func (cb *CircuitBreakerService) GetBreaker(serviceName string) *gobreaker.CircuitBreaker {
-	cb.mutex.RLock()
-	breaker, exists := cb.breakers[serviceName]
-	cb.mutex.RUnlock()
-
-	if exists {
-		return breaker
-	}
-
-	cb.mutex.Lock()
-	defer cb.mutex.Unlock()
-
-	// Double-check pattern
-	if breaker, exists := cb.breakers[serviceName]; exists {
-		return breaker
-	}
-
-	// Create new circuit breaker
-	settings := gobreaker.Settings{
-		Name:        serviceName,
-		MaxRequests: 3,
-		Interval:    10 * time.Second,
-		Timeout:     30 * time.Second,
-		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-
-			return counts.Requests >= 3 && failureRatio >= 0.6
-		},
-		OnStateChange: func(name string, from gobreaker.State, to gobreaker.State) {
-			cb.logger.Info("Circuit breaker state changed",
-				zap.String("service", name),
-				zap.String("from", from.String()),
-				zap.String("to", to.String()))
-		},
-	}
-
-	breaker = gobreaker.NewCircuitBreaker(settings)
-	cb.breakers[serviceName] = breaker
-
-	return breaker
-}
-
-// Execute executes a request through the circuit breaker.
-func (cb *CircuitBreakerService) Execute(
-	serviceName string,
-	req func() (interface{}, error),
-) (interface{}, error) {
-	breaker := cb.GetBreaker(serviceName)
-
-	return breaker.Execute(req)
-}
 
 // LoadBalancer interface for service load balancing.
 type LoadBalancer interface {
@@ -94,12 +18,14 @@ type LoadBalancer interface {
 type RoundRobinLoadBalancer struct {
 	counters map[string]int
 	mutex    sync.RWMutex
+	logger   logger.Logger
 }
 
-// NewLoadBalancer creates a new round-robin load balancer.
-func NewLoadBalancer() *RoundRobinLoadBalancer {
+// NewLoadBalancerService creates a new round-robin load balancer.
+func NewLoadBalancerService(appLogger logger.Logger) *RoundRobinLoadBalancer {
 	return &RoundRobinLoadBalancer{
 		counters: make(map[string]int),
+		logger:   appLogger,
 	}
 }
 
@@ -182,25 +108,25 @@ func (wlb *WeightedLoadBalancer) SelectEndpoint(
 	return endpoints[0], nil
 }
 
-// HealthAwareLoadBalancer wraps another load balancer with health checking.
-type HealthAwareLoadBalancer struct {
+// HealthAwareLoadBalancerService wraps another load balancer with health checking.
+type HealthAwareLoadBalancerService struct {
 	underlying LoadBalancer
 	discovery  Discovery
 }
 
-// NewHealthAwareLoadBalancer creates a health-aware load balancer.
-func NewHealthAwareLoadBalancer(
+// NewHealthAwareLoadBalancerService creates a health-aware load balancer.
+func NewHealthAwareLoadBalancerService(
 	underlying LoadBalancer,
 	discovery Discovery,
-) *HealthAwareLoadBalancer {
-	return &HealthAwareLoadBalancer{
+) *HealthAwareLoadBalancerService {
+	return &HealthAwareLoadBalancerService{
 		underlying: underlying,
 		discovery:  discovery,
 	}
 }
 
 // SelectEndpoint selects a healthy endpoint.
-func (hlb *HealthAwareLoadBalancer) SelectEndpoint(
+func (hlb *HealthAwareLoadBalancerService) SelectEndpoint(
 	serviceName string,
 	endpoints []string,
 ) (string, error) {
