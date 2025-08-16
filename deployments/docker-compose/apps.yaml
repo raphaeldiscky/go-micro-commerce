@@ -102,13 +102,13 @@ services:
       postgres-auth:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       kafka-1:
-        condition: service_started
+        condition: service_healthy
       kafka-2:
-        condition: service_started
+        condition: service_healthy
       kafka-3:
-        condition: service_started
+        condition: service_healthy
       consul:
         condition: service_healthy
     deploy:
@@ -142,13 +142,13 @@ services:
       postgres-product:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       kafka-1:
-        condition: service_started
+        condition: service_healthy
       kafka-2:
-        condition: service_started
+        condition: service_healthy
       kafka-3:
-        condition: service_started
+        condition: service_healthy
       consul:
         condition: service_healthy
     healthcheck:
@@ -198,13 +198,13 @@ services:
       postgres-order:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
       kafka-1:
-        condition: service_started
+        condition: service_healthy
       kafka-2:
-        condition: service_started
+        condition: service_healthy
       kafka-3:
-        condition: service_started
+        condition: service_healthy
       consul:
         condition: service_healthy
     restart: unless-stopped
