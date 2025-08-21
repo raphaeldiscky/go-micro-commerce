@@ -15,8 +15,7 @@ type AppConfig struct {
 
 // initAppConfig initializes the application configuration from environment variables.
 func initAppConfig() *AppConfig {
-	viper.SetDefault("APP_NAME"
-, "api-gateway")
+	viper.SetDefault("APP_NAME", "api-gateway")
 	viper.SetDefault("APP_ENVIRONMENT", "development")
 
 	appConfig := &AppConfig{}
