@@ -41,7 +41,8 @@ func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provid
 
 	authService := service.NewAuthService(
 		providers.DataStore,
-		cfg.JWT,
+		providers.JWTUtils,
+		providers.BcryptHasher,
 		appLogger,
 		emailVerificationRequestedProducer,
 		userVerifiedProducer,

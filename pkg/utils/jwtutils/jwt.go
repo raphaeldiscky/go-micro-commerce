@@ -1,9 +1,8 @@
-// Package jwtutils provides utilities for working with JSON Web Tokens (JWT).
+// Package jwtutils provides JWT token generation and validation utilities.
 package jwtutils
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -12,153 +11,178 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/config"
 )
 
-var (
-	// ErrInvalidToken indicates that the token is not valid.
-	ErrInvalidToken = errors.New("token is not valid")
-	// ErrTokenExpired indicates that the token has expired.
-	ErrTokenExpired = errors.New("token has expired")
-	// ErrInvalidSignature indicates that the token signature is invalid.
-	ErrInvalidSignature = errors.New("token signature is invalid")
-	// ErrMissingClaims indicates that the token claims are missing or invalid.
-	ErrMissingClaims = errors.New("token claims are missing or invalid")
-)
-
-// JWTUtil is an interface for JWT token generation and parsing.
-type JWTUtil interface {
-	Sign(payload *JWTPayload) (string, error)
-	Parse(token string) (*JWTClaims, error)
-	Validate(token string) error // Additional validation method
+// JWTInterface defines the methods for JWT utilities.
+type JWTInterface interface {
+	GenerateAccessToken(userID, email string, roles []string, isActive bool) (string, error)
+	GenerateRefreshToken(userID string) (string, error)
+	ValidateRefreshToken(tokenString string) (*RefreshTokenClaims, error)
+	ValidateAccessToken(tokenString string) (*AccessTokenClaims, error)
+	GetExpirationTime(tokenString string) (int64, error)
 }
 
-// JWTClaims represents the claims contained within a JWT.
-type JWTClaims struct {
+// RefreshTokenClaims represents the claims in a refresh token.
+type RefreshTokenClaims struct {
+	UserID string `json:"user_id"`
+	Type   string `json:"type"`
 	jwt.RegisteredClaims
-	UserID int64  `json:"user_id"`
-	Email  string `json:"email"`
 }
 
-// JWTPayload represents the payload contained within a JWT.
-type JWTPayload struct {
-	UserID int64
-	Email  string
+// AccessTokenClaims represents the claims in an access token.
+type AccessTokenClaims struct {
+	UserID   string   `json:"user_id"`
+	Email    string   `json:"email"`
+	Roles    []string `json:"roles"`
+	IsActive bool     `json:"is_active"`
+	jwt.RegisteredClaims
 }
 
-// jwtUtil is a concrete implementation of the JWTUtil interface.
-type jwtUtil struct {
+// JWTUtils implements JWTUtilsInterface.
+type JWTUtils struct {
 	config *config.JWTConfig
 }
 
-// NewJWTUtil creates a new instance of JWTUtil.
-func NewJWTUtil(cfg *config.JWTConfig) JWTUtil {
-	// Add basic validation for config
-	if cfg == nil {
-		panic("JWT config cannot be nil")
-	}
-
-	if cfg.SecretKey == "" {
-		panic("JWT secret key cannot be empty")
-	}
-
-	if cfg.TokenDuration <= 0 {
-		panic("JWT token duration must be positive")
-	}
-
-	return &jwtUtil{
+// NewJWTUtils creates a new JWTUtils instance.
+func NewJWTUtils(cfg *config.JWTConfig) JWTInterface {
+	return &JWTUtils{
 		config: cfg,
 	}
 }
 
-// Sign generates a new JWT token for the given payload.
-func (j *jwtUtil) Sign(payload *JWTPayload) (string, error) {
-	if payload == nil {
-		return "", errors.New("payload cannot be nil")
-	}
+// GenerateAccessToken generates a JWT access token for the given user.
+func (j *JWTUtils) GenerateAccessToken(
+	userID, email string,
+	roles []string,
+	isActive bool,
+) (string, error) {
+	now := time.Now()
 
-	currentTime := time.Now()
-	expirationTime := currentTime.Add(time.Duration(j.config.TokenDuration) * time.Minute)
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, JWTClaims{
-		UserID: payload.UserID,
-		Email:  payload.Email,
+	claims := &AccessTokenClaims{
+		UserID:   userID,
+		Email:    email,
+		Roles:    roles,
+		IsActive: isActive,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ID:        uuid.NewString(),
-			IssuedAt:  jwt.NewNumericDate(currentTime),
-			ExpiresAt: jwt.NewNumericDate(expirationTime),
-			NotBefore: jwt.NewNumericDate(currentTime), // Token is valid from now
+			ExpiresAt: jwt.NewNumericDate(now.Add(j.config.ExpirationTime)),
+			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    j.config.Issuer,
 		},
-	})
-
-	signedToken, err := token.SignedString([]byte(j.config.SecretKey))
-	if err != nil {
-		return "", fmt.Errorf("failed to sign JWT token: %w", err)
 	}
 
-	return signedToken, nil
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	return token.SignedString([]byte(j.config.Secret))
 }
 
-// Parse parses the JWT token and returns the claims.
-func (j *jwtUtil) Parse(token string) (*JWTClaims, error) {
-	if token == "" {
-		return nil, errors.New("token cannot be empty")
+// GenerateRefreshToken generates a JWT refresh token for the given user.
+func (j *JWTUtils) GenerateRefreshToken(userID string) (string, error) {
+	now := time.Now()
+
+	claims := &RefreshTokenClaims{
+		UserID: userID,
+		Type:   "refresh",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(now.Add(j.config.RefreshTime)),
+			IssuedAt:  jwt.NewNumericDate(now),
+			Issuer:    j.config.Issuer,
+		},
 	}
 
-	parser := jwt.NewParser(
-		jwt.WithValidMethods(j.config.AllowedAlgs),
-		jwt.WithIssuer(j.config.Issuer),
-		jwt.WithIssuedAt(),
-	)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return j.parseClaims(parser, token)
+	return token.SignedString([]byte(j.config.Secret))
 }
 
-// Validate validates the JWT token without returning claims.
-func (j *jwtUtil) Validate(token string) error {
-	_, err := j.Parse(token)
-
-	return err
-}
-
-// parseClaims parses the JWT token and returns the claims.
-func (j *jwtUtil) parseClaims(parser *jwt.Parser, token string) (*JWTClaims, error) {
-	parsedToken, err := parser.ParseWithClaims(
-		token,
-		&JWTClaims{},
-		func(t *jwt.Token) (interface{}, error) {
-			// Verify the signing method
-			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
+// ValidateRefreshToken validates and parses a refresh token.
+func (j *JWTUtils) ValidateRefreshToken(tokenString string) (*RefreshTokenClaims, error) {
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&RefreshTokenClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("invalid signing method")
 			}
 
-			return []byte(j.config.SecretKey), nil
+			return []byte(j.config.Secret), nil
 		},
 	)
 	if err != nil {
-		// Provide more specific error messages
-		if errors.Is(err, jwt.ErrTokenExpired) {
-			return nil, ErrTokenExpired
-		}
-
-		if errors.Is(err, jwt.ErrSignatureInvalid) {
-			return nil, ErrInvalidSignature
-		}
-
-		return nil, fmt.Errorf("failed to parse token: %w", err)
+		return nil, err
 	}
 
-	claims, ok := parsedToken.Claims.(*JWTClaims)
-	if !ok || !parsedToken.Valid {
-		return nil, ErrInvalidToken
+	claims, ok := token.Claims.(*RefreshTokenClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
 	}
 
-	// Additional validation
-	if claims.UserID <= 0 {
-		return nil, ErrMissingClaims
-	}
-
-	if claims.Email == "" {
-		return nil, ErrMissingClaims
+	// Ensure it's actually a refresh token
+	if claims.Type != "refresh" {
+		return nil, errors.New("not a refresh token")
 	}
 
 	return claims, nil
+}
+
+// ValidateAccessToken validates and parses an access token.
+func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, error) {
+	token, err := jwt.ParseWithClaims(
+		tokenString,
+		&AccessTokenClaims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, errors.New("invalid signing method")
+			}
+
+			return []byte(j.config.Secret), nil
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	claims, ok := token.Claims.(*AccessTokenClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid token")
+	}
+
+	return claims, nil
+}
+
+// GetUserIDFromRefreshToken extracts user ID from a refresh token string.
+func (j *JWTUtils) GetUserIDFromRefreshToken(tokenString string) (uuid.UUID, error) {
+	claims, err := j.ValidateRefreshToken(tokenString)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		return uuid.Nil, errors.New("invalid user ID in token")
+	}
+
+	return userID, nil
+}
+
+// GetUserIDFromAccessToken extracts user ID from an access token string.
+func (j *JWTUtils) GetUserIDFromAccessToken(tokenString string) (uuid.UUID, error) {
+	claims, err := j.ValidateAccessToken(tokenString)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		return uuid.Nil, errors.New("invalid user ID in token")
+	}
+
+	return userID, nil
+}
+
+// GetExpirationTime extracts the expiration time from a token string.
+func (j *JWTUtils) GetExpirationTime(tokenString string) (int64, error) {
+	claims, err := j.ValidateAccessToken(tokenString)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(time.Until(claims.ExpiresAt.Time).Seconds()), nil
 }

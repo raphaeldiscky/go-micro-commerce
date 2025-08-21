@@ -24,6 +24,10 @@ type ConsulConfig struct {
 
 // initServiceDiscoveryConfig initializes the service discovery configuration from environment variables.
 func initServiceDiscoveryConfig() *ServiceDiscoveryConfig {
+	viper.SetDefault("SERVICE_DISCOVERY_TYPE", "consul")
+	viper.SetDefault("SERVICE_DISCOVERY_ADDRESS", "localhost:8500")
+	viper.SetDefault("SERVICE_DISCOVERY_TIMEOUT", 5*time.Second)
+
 	serviceDiscoveryConfig := &ServiceDiscoveryConfig{}
 
 	if err := viper.Unmarshal(&serviceDiscoveryConfig); err != nil {

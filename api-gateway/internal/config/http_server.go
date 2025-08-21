@@ -16,6 +16,11 @@ type HTTPServerConfig struct {
 
 // initHTTPServerConfig initializes the HTTP server configuration from environment variables.
 func initHTTPServerConfig() *HTTPServerConfig {
+	viper.SetDefault("HTTP_SERVER_HOST", "localhost")
+	viper.SetDefault("HTTP_SERVER_PORT", 8080)
+	viper.SetDefault("HTTP_SERVER_GRACE_PERIOD", 5)
+	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", 10)
+
 	httpServerConfig := &HTTPServerConfig{}
 
 	if err := viper.Unmarshal(&httpServerConfig); err != nil {

@@ -13,6 +13,7 @@ type Config struct {
 	Logger     *LoggerConfig
 	HTTPServer *HTTPServerConfig
 	JWT        *JWTConfig
+	Bcrypt     *BcryptConfig
 	Postgres   *PostgresConfig
 	Kafka      *KafkaConfig
 	Consul     *ConsulConfig
@@ -30,6 +31,7 @@ func LoadConfig() (*Config, error) {
 		Postgres:   initPostgresConfig(),
 		Kafka:      initKafkaConfig(),
 		JWT:        initJWTConfig(),
+		Bcrypt:     initBcryptConfig(),
 		Consul:     initConsulConfig(),
 	}
 

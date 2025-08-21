@@ -9,13 +9,12 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/encryptutils"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
@@ -54,7 +53,8 @@ type AuthServiceInterface interface {
 // AuthService implements AuthServiceInterface.
 type AuthService struct {
 	dataStore                          repository.DataStore
-	jwtConfig                          *config.JWTConfig
+	jwtUtils                           jwtutils.JWTInterface
+	hasher                             encryptutils.HasherInterface
 	logger                             logger.Logger
 	emailVerificationRequestedProducer mq.KafkaProducerInterface
 	userVerifiedProducer               mq.KafkaProducerInterface
@@ -63,14 +63,16 @@ type AuthService struct {
 // NewAuthService creates a new AuthService.
 func NewAuthService(
 	dataStore repository.DataStore,
-	jwtConfig *config.JWTConfig,
+	jwtUtils jwtutils.JWTInterface,
+	hasher encryptutils.HasherInterface,
 	appLogger logger.Logger,
 	emailVerificationRequestedProducer mq.KafkaProducerInterface,
 	userVerifiedProducer mq.KafkaProducerInterface,
 ) AuthServiceInterface {
 	return &AuthService{
 		dataStore:                          dataStore,
-		jwtConfig:                          jwtConfig,
+		jwtUtils:                           jwtUtils,
+		hasher:                             hasher,
 		logger:                             appLogger,
 		emailVerificationRequestedProducer: emailVerificationRequestedProducer,
 		userVerifiedProducer:               userVerifiedProducer,
@@ -88,6 +90,7 @@ func (s *AuthService) Register(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		userRepo := ds.UserRepository()
 		sessionRepo := ds.SessionRepository()
+
 		// Check if email already exists
 		emailExists, err := userRepo.EmailExists(ctx, req.Email)
 		if err != nil {
@@ -113,7 +116,7 @@ func (s *AuthService) Register(
 		}
 
 		// Hash password
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		hashedPassword, err := s.hasher.Hash(req.Password)
 		if err != nil {
 			s.logger.Error("Failed to hash password", "error", err)
 
@@ -132,7 +135,7 @@ func (s *AuthService) Register(
 		user := &entity.User{
 			Email:                   req.Email,
 			Username:                req.Username,
-			PasswordHash:            string(hashedPassword),
+			PasswordHash:            hashedPassword,
 			FirstName:               req.FirstName,
 			LastName:                req.LastName,
 			Roles:                   []string{"user"},
@@ -149,15 +152,20 @@ func (s *AuthService) Register(
 			return err
 		}
 
-		// Generate tokens
-		accessToken, err := s.generateAccessToken(user)
+		// Generate tokens using JWT utils
+		accessToken, err := s.jwtUtils.GenerateAccessToken(
+			user.ID.String(),
+			user.Email,
+			user.Roles,
+			user.IsActive,
+		)
 		if err != nil {
 			s.logger.Error("Failed to generate access token", "error", err)
 
 			return err
 		}
 
-		refreshToken, err := s.generateRefreshToken(user)
+		refreshToken, err := s.jwtUtils.GenerateRefreshToken(user.ID.String())
 		if err != nil {
 			s.logger.Error("Failed to generate refresh token", "error", err)
 
@@ -193,11 +201,18 @@ func (s *AuthService) Register(
 			s.logger.Error("failed to publish email verification event", "error", err)
 		}
 
+		expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
+		if err != nil {
+			s.logger.Error("Failed to get access token expiration time", "error", err)
+
+			return err
+		}
+
 		res = &dto.AuthResponse{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
-			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+			ExpiresIn:    expTime,
 			User:         dto.MapToUserResponse(user),
 		}
 
@@ -221,6 +236,7 @@ func (s *AuthService) Login(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		userRepo := ds.UserRepository()
 		sessionRepo := ds.SessionRepository()
+
 		// Get user by email
 		user, err := userRepo.GetByEmail(ctx, req.Email)
 		if err != nil {
@@ -241,7 +257,7 @@ func (s *AuthService) Login(
 		}
 
 		// Verify password
-		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		if !s.hasher.Check(req.Password, user.PasswordHash) {
 			return httperror.NewInvalidCredentialError()
 		}
 
@@ -251,15 +267,20 @@ func (s *AuthService) Login(
 			// Don't fail the login for this
 		}
 
-		// Generate tokens
-		accessToken, err := s.generateAccessToken(user)
+		// Generate tokens using JWT utils
+		accessToken, err := s.jwtUtils.GenerateAccessToken(
+			user.ID.String(),
+			user.Email,
+			user.Roles,
+			user.IsActive,
+		)
 		if err != nil {
 			s.logger.Error("Failed to generate access token", "error", err)
 
 			return err
 		}
 
-		refreshToken, err := s.generateRefreshToken(user)
+		refreshToken, err := s.jwtUtils.GenerateRefreshToken(user.ID.String())
 		if err != nil {
 			s.logger.Error("Failed to generate refresh token", "error", err)
 
@@ -282,13 +303,18 @@ func (s *AuthService) Login(
 			return err
 		}
 
-		s.logger.Info("User logged in", "userID", user.ID, "email", user.Email)
+		expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
+		if err != nil {
+			s.logger.Error("Failed to get access token expiration time", "error", err)
+
+			return err
+		}
 
 		res = &dto.AuthResponse{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
-			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+			ExpiresIn:    expTime,
 			User:         dto.MapToUserResponse(user),
 		}
 
@@ -307,30 +333,15 @@ func (s *AuthService) RefreshToken(
 	req *dto.RefreshTokenRequest,
 ) (*dto.AuthResponse, error) {
 	userRepo := s.dataStore.UserRepository()
-	// Parse and validate refresh token
-	token, err := jwt.Parse(req.RefreshToken, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
-		}
 
-		return []byte(s.jwtConfig.Secret), nil
-	})
+	// Validate refresh token using JWT utils
+	claims, err := s.jwtUtils.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
 		return nil, httperror.NewInvalidRefreshTokenError()
 	}
 
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok || !token.Valid {
-		return nil, httperror.NewInvalidRefreshTokenError()
-	}
-
-	// Extract user ID from claims
-	userIDStr, ok := claims["user_id"].(string)
-	if !ok {
-		return nil, errors.New("invalid token claims")
-	}
-
-	userID, err := uuid.Parse(userIDStr)
+	// Parse user ID from claims
+	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
 		return nil, errors.New("invalid user ID in token")
 	}
@@ -352,26 +363,38 @@ func (s *AuthService) RefreshToken(
 		return nil, errors.New("user account is inactive")
 	}
 
-	// Generate new tokens
-	accessToken, err := s.generateAccessToken(user)
+	// Generate new tokens using JWT utils
+	accessToken, err := s.jwtUtils.GenerateAccessToken(
+		user.ID.String(),
+		user.Email,
+		user.Roles,
+		user.IsActive,
+	)
 	if err != nil {
 		s.logger.Error("Failed to generate access token", "error", err)
 
 		return nil, errors.New("failed to generate access token")
 	}
 
-	newRefreshToken, err := s.generateRefreshToken(user)
+	newRefreshToken, err := s.jwtUtils.GenerateRefreshToken(user.ID.String())
 	if err != nil {
 		s.logger.Error("Failed to generate refresh token", "error", err)
 
 		return nil, errors.New("failed to generate refresh token")
 	}
 
+	expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
+	if err != nil {
+		s.logger.Error("Failed to get access token expiration time", "error", err)
+
+		return nil, err
+	}
+
 	return &dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+		ExpiresIn:    expTime,
 		User:         dto.MapToUserResponse(user),
 	}, nil
 }
@@ -406,6 +429,7 @@ func (s *AuthService) UpdateUser(
 
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		userRepo := ds.UserRepository()
+
 		// Get existing user
 		user, err := userRepo.GetByID(ctx, userID)
 		if err != nil {
@@ -490,6 +514,7 @@ func (s *AuthService) ChangePassword(
 	req *dto.ChangePasswordRequest,
 ) error {
 	userRepo := s.dataStore.UserRepository()
+
 	// Get user
 	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -503,12 +528,12 @@ func (s *AuthService) ChangePassword(
 	}
 
 	// Verify current password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+	if !s.hasher.Check(req.CurrentPassword, user.PasswordHash) {
 		return errors.New("current password is incorrect")
 	}
 
 	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := s.hasher.Hash(req.NewPassword)
 	if err != nil {
 		s.logger.Error("Failed to hash password", "error", err)
 
@@ -516,7 +541,7 @@ func (s *AuthService) ChangePassword(
 	}
 
 	// Update password
-	user.PasswordHash = string(hashedPassword)
+	user.PasswordHash = hashedPassword
 
 	_, err = userRepo.Update(ctx, user)
 	if err != nil {
@@ -533,6 +558,7 @@ func (s *AuthService) ChangePassword(
 // VerifyEmail verifies user email.
 func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailRequest) error {
 	userRepo := s.dataStore.UserRepository()
+
 	// Get user by verification token
 	user, err := userRepo.GetByEmailVerificationToken(ctx, req.Token)
 	if err != nil {
@@ -558,19 +584,13 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 	}
 
 	// Publish email verification requested event
-	evt := event.NewUserVerifiedEvent(
-		user.ID,
-		user.Email,
-	)
+	evt := event.NewUserVerifiedEvent(user.ID, user.Email)
 
 	s.logger.Info(
 		"sending user verified event",
-		"user_id",
-		user.ID,
-		"email",
-		user.Email,
-		"event",
-		evt,
+		"user_id", user.ID,
+		"email", user.Email,
+		"event", evt,
 	)
 
 	if err = s.userVerifiedProducer.Send(ctx, evt); err != nil {
@@ -586,6 +606,7 @@ func (s *AuthService) ResendVerification(
 	req *dto.ResendVerificationRequest,
 ) error {
 	userRepo := s.dataStore.UserRepository()
+
 	// Get user by email
 	user, err := userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
@@ -632,38 +653,6 @@ func (s *AuthService) ResendVerification(
 	}
 
 	return nil
-}
-
-// generateAccessToken generates a JWT access token.
-func (s *AuthService) generateAccessToken(user *entity.User) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id":   user.ID.String(),
-		"email":     user.Email,
-		"roles":     user.Roles,
-		"is_active": user.IsActive,
-		"exp":       time.Now().Add(s.jwtConfig.ExpirationTime).Unix(),
-		"iat":       time.Now().Unix(),
-		"iss":       s.jwtConfig.Issuer,
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString([]byte(s.jwtConfig.Secret))
-}
-
-// generateRefreshToken generates a JWT refresh token.
-func (s *AuthService) generateRefreshToken(user *entity.User) (string, error) {
-	claims := jwt.MapClaims{
-		"user_id": user.ID.String(),
-		"exp":     time.Now().Add(s.jwtConfig.RefreshTime).Unix(),
-		"iat":     time.Now().Unix(),
-		"iss":     s.jwtConfig.Issuer,
-		"type":    "refresh",
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	return token.SignedString([]byte(s.jwtConfig.Secret))
 }
 
 // generateVerificationToken generates a random verification token.

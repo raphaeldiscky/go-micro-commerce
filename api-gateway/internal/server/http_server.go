@@ -28,11 +28,12 @@ func NewHTTPServer(
 	gw *gateway.Gateway,
 	cfg *config.Config,
 	appLogger logger.Logger,
+	providers *provider.Providers,
 ) *HTTPServer {
 	e := echo.New()
 
 	RegisterMiddlewares(e)
-	provider.SetupHTTP(e, cfg, appLogger, gw)
+	provider.SetupHTTP(e, cfg, appLogger, gw, providers)
 
 	return &HTTPServer{
 		echo:   e,

@@ -12,10 +12,16 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/provider"
 )
 
 // Start initializes the application workers.
 func Start(cfg *config.Config, appLogger logger.Logger, gw *gateway.Gateway) {
+	providers, err := provider.SetupGlobal(cfg)
+	if err != nil {
+		appLogger.Fatal("Failed to setup providers:", err)
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
@@ -25,7 +31,7 @@ func Start(cfg *config.Config, appLogger logger.Logger, gw *gateway.Gateway) {
 			Use:   "serve-all",
 			Short: "Run all",
 			Run: func(_ *cobra.Command, _ []string) {
-				runHTTPWorker(ctx, cfg, appLogger, gw)
+				runHTTPWorker(ctx, cfg, appLogger, gw, providers)
 			},
 		},
 	}

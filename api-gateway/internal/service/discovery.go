@@ -32,7 +32,7 @@ type ConsulDiscoveryService struct {
 func NewConsulDiscoveryService(
 	cfg *config.ServiceDiscoveryConfig,
 	appLogger logger.Logger,
-) (*ConsulDiscoveryService, error) {
+) *ConsulDiscoveryService {
 	consulConfig := api.DefaultConfig()
 	consulConfig.Address = cfg.Consul.Address
 	consulConfig.Datacenter = cfg.Consul.Datacenter
@@ -40,7 +40,7 @@ func NewConsulDiscoveryService(
 
 	client, err := api.NewClient(consulConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create consul client: %w", err)
+		return nil
 	}
 
 	sd := &ConsulDiscoveryService{
@@ -53,7 +53,7 @@ func NewConsulDiscoveryService(
 	// Start background cache refresh
 	go sd.refreshCache()
 
-	return sd, nil
+	return sd
 }
 
 // GetServiceEndpoint returns a healthy endpoint for the given service.

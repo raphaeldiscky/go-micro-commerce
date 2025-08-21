@@ -17,12 +17,12 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	lgr := logger.NewLogrusLogger(cfg.Logger.Level)
+	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
 
 	consulCleanup := setupConsulRegistration(cfg)
 	defer consulCleanup()
 
-	worker.Start(cfg, lgr)
+	worker.Start(cfg, appLogger)
 }
 
 // setupConsulRegistration handles Consul service registration and returns a cleanup function.
