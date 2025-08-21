@@ -48,7 +48,7 @@ func (s *ServiceRegistration) Register(serviceName, address string, port int) er
 		Tags:    []string{"http", "api", "microservice"},
 		Check: &api.AgentServiceCheck{
 			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
-			Interval:                       "1s",
+			Interval:                       "30s",
 			Timeout:                        "10s",
 			DeregisterCriticalServiceAfter: "60s",
 		},

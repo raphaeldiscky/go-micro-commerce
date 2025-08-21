@@ -82,7 +82,7 @@ func (sd *ConsulDiscoveryService) RegisterService(serviceName, address string, p
 		Port:    port,
 		Check: &api.AgentServiceCheck{
 			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
-			Interval:                       "1s",
+			Interval:                       "10s",
 			Timeout:                        "5s",
 			DeregisterCriticalServiceAfter: "30s",
 		},
