@@ -3,6 +3,7 @@ package provider
 import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
 
 	pkgConfig "github.com/raphaeldiscky/go-micro-template/pkg/config"
@@ -13,9 +14,10 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore  repository.DataStore
-	KafkaAdmin *mq.KafkaAdmin
-	JWTUtils   jwtutils.Interface
+	DataStore    repository.DataStore
+	KafkaAdmin   *mq.KafkaAdmin
+	JWTUtils     jwtutils.JWTInterface
+	BcryptHasher encryptutils.HasherInterface
 }
 
 // SetupGlobal initializes and returns the providers.
@@ -47,6 +49,8 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 		AllowedAlgs:    cfg.JWT.AllowedAlgs,
 	})
 
+	bcryptHasher := encryptutils.NewBcryptHasher(cfg.Bcrypt.Cost)
+
 	// Setup datastore
 	dataStore := repository.NewDataStore(pgPool)
 
@@ -56,8 +60,9 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 	})
 
 	return &Providers{
-		DataStore:  dataStore,
-		KafkaAdmin: kafkaAdmin,
-		JWTUtils:   jwtUtils,
+		DataStore:    dataStore,
+		KafkaAdmin:   kafkaAdmin,
+		JWTUtils:     jwtUtils,
+		BcryptHasher: bcryptHasher,
 	}, nil
 }

@@ -12,10 +12,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
-	"golang.org/x/crypto/bcrypt"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
@@ -54,8 +53,8 @@ type AuthServiceInterface interface {
 // AuthService implements AuthServiceInterface.
 type AuthService struct {
 	dataStore                          repository.DataStore
-	jwtUtils                           jwtutils.Interface
-	jwtConfig                          *config.JWTConfig
+	jwtUtils                           jwtutils.JWTInterface
+	hasher                             encryptutils.HasherInterface
 	logger                             logger.Logger
 	emailVerificationRequestedProducer mq.KafkaProducerInterface
 	userVerifiedProducer               mq.KafkaProducerInterface
@@ -64,8 +63,8 @@ type AuthService struct {
 // NewAuthService creates a new AuthService.
 func NewAuthService(
 	dataStore repository.DataStore,
-	jwtUtils jwtutils.Interface,
-	jwtConfig *config.JWTConfig,
+	jwtUtils jwtutils.JWTInterface,
+	hasher encryptutils.HasherInterface,
 	appLogger logger.Logger,
 	emailVerificationRequestedProducer mq.KafkaProducerInterface,
 	userVerifiedProducer mq.KafkaProducerInterface,
@@ -73,7 +72,7 @@ func NewAuthService(
 	return &AuthService{
 		dataStore:                          dataStore,
 		jwtUtils:                           jwtUtils,
-		jwtConfig:                          jwtConfig,
+		hasher:                             hasher,
 		logger:                             appLogger,
 		emailVerificationRequestedProducer: emailVerificationRequestedProducer,
 		userVerifiedProducer:               userVerifiedProducer,
@@ -117,7 +116,7 @@ func (s *AuthService) Register(
 		}
 
 		// Hash password
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		hashedPassword, err := s.hasher.Hash(req.Password)
 		if err != nil {
 			s.logger.Error("Failed to hash password", "error", err)
 
@@ -136,7 +135,7 @@ func (s *AuthService) Register(
 		user := &entity.User{
 			Email:                   req.Email,
 			Username:                req.Username,
-			PasswordHash:            string(hashedPassword),
+			PasswordHash:            hashedPassword,
 			FirstName:               req.FirstName,
 			LastName:                req.LastName,
 			Roles:                   []string{"user"},
@@ -202,11 +201,18 @@ func (s *AuthService) Register(
 			s.logger.Error("failed to publish email verification event", "error", err)
 		}
 
+		expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
+		if err != nil {
+			s.logger.Error("Failed to get access token expiration time", "error", err)
+
+			return err
+		}
+
 		res = &dto.AuthResponse{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
-			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+			ExpiresIn:    expTime,
 			User:         dto.MapToUserResponse(user),
 		}
 
@@ -251,7 +257,7 @@ func (s *AuthService) Login(
 		}
 
 		// Verify password
-		if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		if !s.hasher.Check(req.Password, user.PasswordHash) {
 			return httperror.NewInvalidCredentialError()
 		}
 
@@ -297,13 +303,18 @@ func (s *AuthService) Login(
 			return err
 		}
 
-		s.logger.Info("User logged in", "userID", user.ID, "email", user.Email)
+		expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
+		if err != nil {
+			s.logger.Error("Failed to get access token expiration time", "error", err)
+
+			return err
+		}
 
 		res = &dto.AuthResponse{
 			AccessToken:  accessToken,
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
-			ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+			ExpiresIn:    expTime,
 			User:         dto.MapToUserResponse(user),
 		}
 
@@ -372,11 +383,18 @@ func (s *AuthService) RefreshToken(
 		return nil, errors.New("failed to generate refresh token")
 	}
 
+	expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
+	if err != nil {
+		s.logger.Error("Failed to get access token expiration time", "error", err)
+
+		return nil, err
+	}
+
 	return &dto.AuthResponse{
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 		TokenType:    "Bearer",
-		ExpiresIn:    int64(s.jwtConfig.ExpirationTime.Seconds()),
+		ExpiresIn:    expTime,
 		User:         dto.MapToUserResponse(user),
 	}, nil
 }
@@ -510,12 +528,12 @@ func (s *AuthService) ChangePassword(
 	}
 
 	// Verify current password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.CurrentPassword)); err != nil {
+	if !s.hasher.Check(req.CurrentPassword, user.PasswordHash) {
 		return errors.New("current password is incorrect")
 	}
 
 	// Hash new password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := s.hasher.Hash(req.NewPassword)
 	if err != nil {
 		s.logger.Error("Failed to hash password", "error", err)
 
@@ -523,7 +541,7 @@ func (s *AuthService) ChangePassword(
 	}
 
 	// Update password
-	user.PasswordHash = string(hashedPassword)
+	user.PasswordHash = hashedPassword
 
 	_, err = userRepo.Update(ctx, user)
 	if err != nil {

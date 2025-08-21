@@ -15,11 +15,11 @@ import (
 
 // AuthMiddleware handles authentication-related middleware.
 type AuthMiddleware struct {
-	jwtUtils jwtutils.Interface
+	jwtUtils jwtutils.JWTInterface
 }
 
 // NewAuthMiddleware creates a new AuthMiddleware instance.
-func NewAuthMiddleware(jwtUtils jwtutils.Interface) *AuthMiddleware {
+func NewAuthMiddleware(jwtUtils jwtutils.JWTInterface) *AuthMiddleware {
 	return &AuthMiddleware{
 		jwtUtils: jwtUtils,
 	}

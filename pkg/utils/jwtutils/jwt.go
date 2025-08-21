@@ -11,12 +11,13 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/config"
 )
 
-// Interface defines the methods for JWT utilities.
-type Interface interface {
+// JWTInterface defines the methods for JWT utilities.
+type JWTInterface interface {
 	GenerateAccessToken(userID, email string, roles []string, isActive bool) (string, error)
 	GenerateRefreshToken(userID string) (string, error)
 	ValidateRefreshToken(tokenString string) (*RefreshTokenClaims, error)
 	ValidateAccessToken(tokenString string) (*AccessTokenClaims, error)
+	GetExpirationTime(tokenString string) (int64, error)
 }
 
 // RefreshTokenClaims represents the claims in a refresh token.
@@ -41,7 +42,7 @@ type JWTUtils struct {
 }
 
 // NewJWTUtils creates a new JWTUtils instance.
-func NewJWTUtils(cfg *config.JWTConfig) Interface {
+func NewJWTUtils(cfg *config.JWTConfig) JWTInterface {
 	return &JWTUtils{
 		config: cfg,
 	}
@@ -174,4 +175,14 @@ func (j *JWTUtils) GetUserIDFromAccessToken(tokenString string) (uuid.UUID, erro
 	}
 
 	return userID, nil
+}
+
+// GetExpirationTime extracts the expiration time from a token string.
+func (j *JWTUtils) GetExpirationTime(tokenString string) (int64, error) {
+	claims, err := j.ValidateAccessToken(tokenString)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(time.Until(claims.ExpiresAt.Time).Seconds()), nil
 }
