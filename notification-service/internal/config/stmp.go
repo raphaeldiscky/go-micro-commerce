@@ -17,8 +17,8 @@ type SMTPConfig struct {
 func initSMTPConfig() *SMTPConfig {
 	// Set defaults
 	viper.SetDefault("SMTP_HOST", "localhost")
-	viper.SetDefault("SMTP_EMAIL", "no-reply@example.com")
-	viper.SetDefault("SMTP_PORT", 587)
+	viper.SetDefault("SMTP_EMAIL", "zundria.putra@gmail.com")
+	viper.SetDefault("SMTP_PORT", 1025)
 
 	smtpConfig := &SMTPConfig{}
 

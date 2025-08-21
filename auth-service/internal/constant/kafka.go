@@ -8,7 +8,6 @@ const (
 
 // Auth Service Event Types.
 const (
-
 	// KafkaEventTypeEmailVerificationRequested is the event type for email verification requested events.
 	KafkaEventTypeEmailVerificationRequested = "EmailVerificationRequested"
 	// KafkaEventTypeUserVerified is the event type for user verified events.

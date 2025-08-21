@@ -211,13 +211,46 @@ func (h *AuthHandler) UpdateUser(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
+// DeleteUser handles user deletion.
+func (h *AuthHandler) DeleteUser(c echo.Context) error {
+	userIDStr := c.Param("id")
+	if userIDStr == "" {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "User ID is required",
+		})
+	}
+
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid user ID format",
+		})
+	}
+
+	if err := h.authService.DeleteUser(c.Request().Context(), userID); err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		})
+	}
+
+	return c.JSON(http.StatusOK, dto.SuccessResponse{
+		Message: "User successfully deleted",
+	})
+}
+
 // VerifyEmail verify user's email.
 func (h *AuthHandler) VerifyEmail(c echo.Context) error {
-	var req dto.VerifyEmailRequest
+	req := dto.VerifyEmailRequest{
+		Token: c.QueryParam("token"),
+	}
+
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
 			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
+			Message: err.Error(),
 		})
 	}
 
