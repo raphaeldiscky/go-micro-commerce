@@ -18,8 +18,8 @@ type UserVerifiedPayload struct {
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata KafkaMetadata
-	Payload  UserVerifiedPayload
+	Metadata mq.KafkaMetadata    `json:"metadata"`
+	Payload  UserVerifiedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the UserVerifiedEvent.

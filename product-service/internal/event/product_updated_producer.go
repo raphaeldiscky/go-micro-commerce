@@ -22,8 +22,8 @@ type ProductUpdatedPayload struct {
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	Metadata KafkaMetadata
-	Payload  ProductUpdatedPayload
+	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Payload  ProductUpdatedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the ProductUpdatedEvent.

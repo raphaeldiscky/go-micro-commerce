@@ -18,8 +18,8 @@ type EmailVerificationRequestedPayload struct {
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata KafkaMetadata
-	Payload  EmailVerificationRequestedPayload
+	Metadata mq.KafkaMetadata                  `json:"metadata"`
+	Payload  EmailVerificationRequestedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the EmailVerificationRequestedEvent.

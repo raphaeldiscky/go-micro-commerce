@@ -43,10 +43,6 @@ func NewConsulDiscoveryService(
 		return nil, fmt.Errorf("failed to create consul client: %w", err)
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to create logger: %w", err)
-	}
-
 	sd := &ConsulDiscoveryService{
 		client: client,
 		config: *cfg,

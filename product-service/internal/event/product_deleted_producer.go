@@ -17,8 +17,8 @@ type ProductDeletedPayload struct {
 
 // ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
-	Metadata KafkaMetadata
-	Payload  ProductDeletedPayload
+	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Payload  ProductDeletedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the ProductDeletedEvent.

@@ -21,8 +21,8 @@ type ProductCreatedPayload struct {
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata mq.KafkaMetadata // Use the correct type from mq package
-	Payload  ProductCreatedPayload
+	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Payload  ProductCreatedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the ProductCreatedEvent.
