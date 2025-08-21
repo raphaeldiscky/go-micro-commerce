@@ -9,7 +9,6 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"go.uber.org/zap"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/constant"
@@ -24,10 +23,10 @@ type MonitoringHandler struct {
 }
 
 // NewMonitoringHandler creates a new monitoring handler.
-func NewMonitoringHandler(cfg *config.Config, lgr logger.Logger) *MonitoringHandler {
+func NewMonitoringHandler(cfg *config.Config, appLogger logger.Logger) *MonitoringHandler {
 	return &MonitoringHandler{
 		config:    cfg,
-		logger:    lgr,
+		logger:    appLogger,
 		startTime: time.Now(),
 	}
 }
@@ -160,8 +159,8 @@ func (h *MonitoringHandler) TestTrace(c echo.Context) error {
 	spanID := tracing.GetSpanID(spanCtx)
 
 	h.logger.Info("Test trace created",
-		zap.String("trace_id", traceID),
-		zap.String("span_id", spanID),
+		"trace_id", traceID,
+		"span_id", spanID,
 	)
 
 	response := map[string]interface{}{
@@ -190,8 +189,8 @@ func (h *MonitoringHandler) TestError(c echo.Context) error {
 	tracing.SetSpanError(spanCtx, testErr)
 
 	h.logger.Error("Test error created for monitoring",
-		zap.Error(testErr),
-		zap.String("trace_id", tracing.GetTraceID(spanCtx)),
+		"error", testErr,
+		"trace_id", tracing.GetTraceID(spanCtx),
 	)
 
 	response := map[string]interface{}{

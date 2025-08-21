@@ -22,22 +22,21 @@ func main() {
 	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
 
 	// Initialize services
-	discoveryService, err := service.NewConsulServiceDiscovery(cfg.ServiceDiscovery)
+	discoveryService, err := service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
 	if err != nil {
 		log.Fatal("Failed to initialize service discovery", err)
 	}
 
 	// Initialize circuit breaker
-	circuitBreaker := service.NewCircuitBreaker()
-
+	circuitBreaker := service.NewCircuitBreakerService(appLogger)
 	// Initialize load balancer
-	loadBalancer := service.NewLoadBalancer()
+	loadBalancer := service.NewLoadBalancerService(appLogger)
 
 	// Initialize metrics
 	metricsInstance := metrics.NewMetrics()
 
 	// Initialize API Gateway
-	gw := gateway.New(gateway.Config{
+	gw := gateway.NewAPIGateway(gateway.Config{
 		Logger:           appLogger,
 		ServiceDiscovery: discoveryService,
 		CircuitBreaker:   circuitBreaker,

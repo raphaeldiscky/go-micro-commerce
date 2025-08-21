@@ -82,8 +82,12 @@ func (s *HTTPServer) Shutdown() {
 
 // RegisterMiddlewares registers custom middleware for the HTTP server.
 func RegisterMiddlewares(e *echo.Echo) {
-	e.Use(middleware.Logger())
+	e.Use(middleware.RequestID())
+	e.Use(middleware.LoggerWithConfig(
+		middleware.LoggerConfig{
+			Format: "[${time_rfc3339}] ${method} ${uri} ${status} ${latency_human}\n",
+		},
+	))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
-	e.Use(middleware.RequestID())
 }

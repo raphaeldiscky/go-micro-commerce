@@ -4,17 +4,17 @@ http:
     # Main API Gateway - handles all external traffic
     api-gateway:
       rule: "Host(`api.localhost`)"
-      service: api-gateway-service
+      service: api-gateway
       entryPoints:
         - web
       middlewares:
         - rate-limit
         - auth-headers
 
-      # Direct access to Auth Service (for testing/admin)
+    # Direct access to Auth Service (for testing/admin)
     auth-service:
       rule: "Host(`auth.localhost`)"
-      service: auth-service-service
+      service: auth-service
       entryPoints:
         - web
       middlewares:
@@ -23,14 +23,14 @@ http:
     # Direct access to Product Service (for testing/admin)
     product-service:
       rule: "Host(`products.localhost`)"
-      service: product-service-service
+      service: product-service
       entryPoints:
         - web
       middlewares:
         - rate-limit
 
   services:
-    api-gateway-service:
+    api-gateway:
       loadBalancer:
         servers:
           - url: "http://api-gateway:8080"
@@ -41,27 +41,27 @@ http:
           headers:
             Host: api-gateway
 
-      auth-service-service:
-        loadBalancer:
-          servers:
-            - url: "http://auth-service:8081"
-          healthCheck:
-            path: /health
-            interval: 30s
-            timeout: 10s
-            headers:
-              Host: auth-service
+    auth-service:
+      loadBalancer:
+        servers:
+          - url: "http://auth-service:8081"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: auth-service
 
-      product-service-service:
-        loadBalancer:
-          servers:
-            - url: "http://product-service:8082"
-          healthCheck:
-            path: /health
-            interval: 30s
-            timeout: 10s
-            headers:
-              Host: product-service
+    product-service:
+      loadBalancer:
+        servers:
+          - url: "http://product-service:8082"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: product-service
 
   middlewares:
     rate-limit:

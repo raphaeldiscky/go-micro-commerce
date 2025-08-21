@@ -18,7 +18,7 @@ type ConsulConfig struct {
 func initConsulConfig() *ConsulConfig {
 	// Set defaults
 	viper.SetDefault("CONSUL_ADDRESS", "localhost:8500")
-	viper.SetDefault("SERVICE_NAME", "product-service")
+	viper.SetDefault("SERVICE_NAME", "notification-service")
 	viper.SetDefault("SERVICE_HOST", "192.168.0.107")
 	viper.SetDefault("CONSUL_ENABLED", true)
 
