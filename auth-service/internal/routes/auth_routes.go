@@ -25,4 +25,5 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	users := v1.Group("/users")
 	users.GET("/:id", h.GetUser)
 	users.PUT("/:id", h.UpdateUser)
+	users.DELETE("/:id", h.DeleteUser)
 }

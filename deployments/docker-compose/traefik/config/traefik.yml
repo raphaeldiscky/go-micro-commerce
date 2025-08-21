@@ -29,6 +29,15 @@ http:
       middlewares:
         - rate-limit
 
+    # DDirect access to Notification Service (for testing/admin)
+    notification-service:
+      rule: "Host(`notifications.localhost`)"
+      service: notification-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
   services:
     api-gateway:
       loadBalancer:
@@ -62,6 +71,17 @@ http:
           timeout: 10s
           headers:
             Host: product-service
+
+    notification-service:
+      loadBalancer:
+        servers:
+          - url: "http://notification-service:8084"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: notification-service
 
   middlewares:
     rate-limit:

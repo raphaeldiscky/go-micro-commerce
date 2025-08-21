@@ -221,7 +221,7 @@ open http://localhost:3000
 curl -X PUT http://localhost:8500/v1/agent/service/register \
 -H "Content-Type: application/json" \
 -d '{
-  "ID": "auth-service-manual",
+  "ID": "auth-service-Raphael-8081",
   "Name": "auth-service",
   "Tags": ["http", "api", "microservice"],
   "Address": "192.168.0.107",

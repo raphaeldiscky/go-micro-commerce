@@ -6,18 +6,18 @@ const (
 	KafkaSourceNotificationService = "notification-service"
 )
 
-// Notification Service Event Types.
+// Auth Service Event Types.
 const (
-	// KafkaEventTypeEmailSent is the event type for email sent events.
-	KafkaEventTypeEmailSent = "EmailSent"
-	// KafkaEventTypeEmailFailed is the event type for email failed events.
-	KafkaEventTypeEmailFailed = "EmailFailed"
+	// KafkaEventTypeEmailVerificationRequested is the event type for email verification requested events.
+	KafkaEventTypeEmailVerificationRequested = "EmailVerificationRequested"
+	// KafkaEventTypeUserVerified is the event type for user verified events.
+	KafkaEventTypeUserVerified = "UserVerified"
 )
 
 // Topics that Notification Service produces to.
 const (
 	// UserVerificationTopic is the topic for user verification events.
-	UserVerificationTopic = "user.verification"
+	UserVerificationTopic = "user.verification" // EmailVerificationRequested, UserVerified
 )
 
 // Consumer groups for Notification Service (consuming from other services).

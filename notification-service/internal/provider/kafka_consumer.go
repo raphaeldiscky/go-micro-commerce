@@ -18,25 +18,21 @@ func SetupKafkaConsumers(
 ) []mq.KafkaConsumer {
 	var consumers []mq.KafkaConsumer
 
-	// 1. Create the business logic handler for email verification
-	emailVerificationHandler := event.NewEmailVerificationConsumer(mailer)
-
-	// 2. Create the generic Kafka consumer, injecting the business logic handler
-	emailConsumer, err := mq.NewConsumerKafka(
+	userVerificationConsumer, err := mq.NewConsumerKafka(
 		cfg.Brokers,
 		constant.UserVerificationTopic,
 		constant.ConsumerGroupNotificationUserEvents,
-		emailVerificationHandler.Handler,
+		event.NewUserVerificationConsumer(mailer, appLogger).Handler,
 	)
 	if err != nil {
-		appLogger.Errorf("Failed to create email verification consumer: %v", err)
+		appLogger.Errorf("Failed to create user verification lifecycle consumer: %v", err)
 		// In a real app, you might want to panic here as the service cannot run.
 		return nil
 	}
 
-	consumers = append(consumers, emailConsumer)
+	consumers = append(consumers, userVerificationConsumer)
 
-	// --- Add more consumers here following the same pattern ---
+	// --- Add more consumers for different topics e.g. user.security here following the same pattern ---
 	// example:
 	// passwordResetHandler := event.NewPasswordResetConsumer(mailer)
 	// passwordResetConsumer, err := mq.NewConsumerKafka(...)

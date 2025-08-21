@@ -3,6 +3,7 @@ package mq
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/IBM/sarama"
@@ -32,6 +33,10 @@ func NewConsumerKafka(
 	topic, groupID string,
 	handler KafkaHandler,
 ) (KafkaConsumer, error) {
+	if err := TestKafkaConnection(brokers); err != nil {
+		return nil, fmt.Errorf("kafka connection test failed: %w", err)
+	}
+
 	config := sarama.NewConfig()
 	config.Version = sarama.V2_8_0_0 // Or your desired Kafka version
 	config.Consumer.Offsets.Initial = sarama.OffsetOldest
@@ -40,14 +45,44 @@ func NewConsumerKafka(
 	// Create a consumer group
 	consumerGroup, err := sarama.NewConsumerGroup(brokers, groupID, config)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create consumer group: %w", err)
 	}
+
+	log.Printf("Successfully created consumer for topic: %s, group: %s", topic, groupID)
 
 	return &consumerKafka{
 		consumerGroup: consumerGroup,
 		topic:         topic,
 		handler:       handler,
 	}, nil
+}
+
+// TestKafkaConnection tests the connection to the Kafka brokers.
+func TestKafkaConnection(brokers []string) error {
+	config := sarama.NewConfig()
+	config.Version = sarama.V2_8_0_0
+
+	// Create a simple client to test connection
+	client, err := sarama.NewClient(brokers, config)
+	if err != nil {
+		return fmt.Errorf("failed to create Kafka client: %w", err)
+	}
+
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("Error closing Kafka client: %v", err)
+		}
+	}()
+
+	// Test if we can get broker list
+	brokersList := client.Brokers()
+	if len(brokersList) == 0 {
+		return fmt.Errorf("no brokers available")
+	}
+
+	log.Printf("Successfully connected to Kafka. Available brokers: %d", len(brokersList))
+
+	return nil
 }
 
 // Consume starts the consumer group and listens for messages. This is a blocking call.
@@ -125,15 +160,21 @@ func (c *consumerKafka) ConsumeClaim(
 			err := c.handler(session.Context(), message.Value)
 			if err != nil {
 				log.Printf("Handler error for topic %s: %v", c.topic, err)
-				// Here you could implement retry logic, or send to a dead-letter queue.
-				// For now, we just log and continue.
+				// TODO: Implement retry logic or dead letter queue
+				// For now, we'll still mark the message to avoid infinite reprocessing
+				// In production, you might want to:
+				// - Retry with exponential backoff
+				// - Send to dead letter queue after max retries
+				// - Or don't mark the message (but this can cause infinite loops)
 			}
 
-			// Mark the message as processed.
+			// Only mark message as processed after handling (success or failure)
 			session.MarkMessage(message, "")
 
 		// Should return when the session is canceled, which happens on a rebalance.
 		case <-session.Context().Done():
+			log.Printf("Session context canceled for topic: %s", c.topic)
+
 			return nil
 		}
 	}

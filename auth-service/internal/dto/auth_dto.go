@@ -62,7 +62,7 @@ type ChangePasswordRequest struct {
 
 // VerifyEmailRequest represents an email verification request.
 type VerifyEmailRequest struct {
-	Token string `json:"token" validate:"required"`
+	Token string `query:"token" validate:"required"`
 }
 
 // ResendVerificationRequest represents a request to resend email verification.

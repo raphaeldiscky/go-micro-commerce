@@ -14,6 +14,7 @@ import (
 type EmailVerificationRequestedPayload struct {
 	UserID uuid.UUID `json:"user_id"`
 	Email  string    `json:"email"`
+	Token  string    `json:"token"`
 }
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
@@ -36,6 +37,7 @@ func (e *EmailVerificationRequestedEvent) GetMetadata() KafkaMetadata {
 func NewEmailVerificationRequestedEvent(
 	userID uuid.UUID,
 	email string,
+	token string,
 ) *EmailVerificationRequestedEvent {
 	return &EmailVerificationRequestedEvent{
 		Metadata: KafkaMetadata{
@@ -48,6 +50,7 @@ func NewEmailVerificationRequestedEvent(
 		Payload: EmailVerificationRequestedPayload{
 			UserID: userID,
 			Email:  email,
+			Token:  token,
 		},
 	}
 }

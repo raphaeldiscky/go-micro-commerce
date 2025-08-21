@@ -44,6 +44,7 @@ type AuthServiceInterface interface {
 		userID uuid.UUID,
 		req *dto.UpdateUserRequest,
 	) (*dto.UserResponse, error)
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
 	ChangePassword(ctx context.Context, userID uuid.UUID, req *dto.ChangePasswordRequest) error
 	VerifyEmail(ctx context.Context, req *dto.VerifyEmailRequest) error
 	ResendVerification(ctx context.Context, req *dto.ResendVerificationRequest) error
@@ -185,6 +186,7 @@ func (s *AuthService) Register(
 		evt := event.NewEmailVerificationRequestedEvent(
 			user.ID,
 			user.Email,
+			verificationToken,
 		)
 
 		if err = s.emailVerificationRequestedProducer.Send(ctx, evt); err != nil {
@@ -462,6 +464,25 @@ func (s *AuthService) UpdateUser(
 	return res, nil
 }
 
+// DeleteUser deletes a user.
+func (s *AuthService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	userRepo := s.dataStore.UserRepository()
+	if err := userRepo.Delete(ctx, userID); err != nil {
+		s.logger.Error("Failed to delete user", "error", err)
+
+		return errors.New("failed to delete user")
+	}
+
+	sessionRepo := s.dataStore.SessionRepository()
+	if err := sessionRepo.DeactivateAllUserSessions(ctx, userID); err != nil {
+		s.logger.Error("Failed to delete user sessions", "error", err)
+	}
+
+	s.logger.Info("User deleted", "user_id", userID)
+
+	return nil
+}
+
 // ChangePassword changes user password.
 func (s *AuthService) ChangePassword(
 	ctx context.Context,
@@ -516,7 +537,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 	user, err := userRepo.GetByEmailVerificationToken(ctx, req.Token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("invalid verification token")
+			return errors.New("invalid verification token: " + req.Token)
 		}
 
 		s.logger.Error("Failed to get user by verification token", "error", err)
@@ -593,6 +614,7 @@ func (s *AuthService) ResendVerification(
 	evt := event.NewEmailVerificationRequestedEvent(
 		user.ID,
 		user.Email,
+		verificationToken,
 	)
 
 	if err = s.emailVerificationRequestedProducer.Send(ctx, evt); err != nil {
