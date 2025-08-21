@@ -14,7 +14,7 @@ type LoggerConfig struct {
 // initLoggerConfig initializes the logger configuration.
 func initLoggerConfig() *LoggerConfig {
 	// Set defaults
-	viper.SetDefault("LOGGER_LEVEL", 1)
+	viper.SetDefault("LOGGER_LEVEL", 4)
 
 	loggerConfig := &LoggerConfig{}
 

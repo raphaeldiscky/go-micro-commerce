@@ -282,7 +282,7 @@ func (s *AuthService) Login(
 			return err
 		}
 
-		s.logger.Info("User logged in", "user_id", user.ID, "email", user.Email)
+		s.logger.Info("User logged in", "userID", user.ID, "email", user.Email)
 
 		res = &dto.AuthResponse{
 			AccessToken:  accessToken,
@@ -563,6 +563,16 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 		user.Email,
 	)
 
+	s.logger.Info(
+		"sending user verified event",
+		"user_id",
+		user.ID,
+		"email",
+		user.Email,
+		"event",
+		evt,
+	)
+
 	if err = s.userVerifiedProducer.Send(ctx, evt); err != nil {
 		s.logger.Error("failed to publish user verified event", "error", err)
 	}
@@ -609,7 +619,7 @@ func (s *AuthService) ResendVerification(
 	}
 
 	// Publish email verification event
-	s.logger.Info("sending email verification event")
+	s.logger.Info("resending email verification event")
 
 	evt := event.NewEmailVerificationRequestedEvent(
 		user.ID,

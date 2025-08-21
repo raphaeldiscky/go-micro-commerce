@@ -23,6 +23,7 @@ func SetupKafkaConsumers(
 		constant.UserVerificationTopic,
 		constant.ConsumerGroupNotificationUserEvents,
 		event.NewUserVerificationConsumer(mailer, appLogger).Handler,
+		appLogger,
 	)
 	if err != nil {
 		appLogger.Errorf("Failed to create user verification lifecycle consumer: %v", err)

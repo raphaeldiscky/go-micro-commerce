@@ -4,9 +4,10 @@ package mq
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"github.com/IBM/sarama"
+
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 )
 
 // KafkaHandler is a function type for handling Kafka messages.
@@ -25,6 +26,7 @@ type consumerKafka struct {
 	consumerGroup sarama.ConsumerGroup
 	topic         string
 	handler       KafkaHandler // The business logic handler for a message.
+	appLogger     logger.Logger
 }
 
 // NewConsumerKafka creates and configures a new Kafka consumer.
@@ -32,8 +34,9 @@ func NewConsumerKafka(
 	brokers []string,
 	topic, groupID string,
 	handler KafkaHandler,
+	appLogger logger.Logger,
 ) (KafkaConsumer, error) {
-	if err := TestKafkaConnection(brokers); err != nil {
+	if err := TestKafkaConnection(brokers, appLogger); err != nil {
 		return nil, fmt.Errorf("kafka connection test failed: %w", err)
 	}
 
@@ -48,17 +51,18 @@ func NewConsumerKafka(
 		return nil, fmt.Errorf("failed to create consumer group: %w", err)
 	}
 
-	log.Printf("Successfully created consumer for topic: %s, group: %s", topic, groupID)
+	appLogger.Infof("Successfully created consumer for topic: %s, group: %s", topic, groupID)
 
 	return &consumerKafka{
 		consumerGroup: consumerGroup,
 		topic:         topic,
 		handler:       handler,
+		appLogger:     appLogger,
 	}, nil
 }
 
 // TestKafkaConnection tests the connection to the Kafka brokers.
-func TestKafkaConnection(brokers []string) error {
+func TestKafkaConnection(brokers []string, appLogger logger.Logger) error {
 	config := sarama.NewConfig()
 	config.Version = sarama.V2_8_0_0
 
@@ -70,7 +74,7 @@ func TestKafkaConnection(brokers []string) error {
 
 	defer func() {
 		if err := client.Close(); err != nil {
-			log.Printf("Error closing Kafka client: %v", err)
+			appLogger.Errorf("Error closing Kafka client: %v", err)
 		}
 	}()
 
@@ -80,21 +84,21 @@ func TestKafkaConnection(brokers []string) error {
 		return fmt.Errorf("no brokers available")
 	}
 
-	log.Printf("Successfully connected to Kafka. Available brokers: %d", len(brokersList))
+	appLogger.Infof("Successfully connected to Kafka. Available brokers: %d", len(brokersList))
 
 	return nil
 }
 
 // Consume starts the consumer group and listens for messages. This is a blocking call.
 func (c *consumerKafka) Consume(ctx context.Context) error {
-	log.Printf("Consumer for topic '%s' starting...", c.topic)
+	c.appLogger.Infof("Consumer for topic '%s' starting...", c.topic)
 
 	for {
 		// `Consume` should be called inside an infinite loop, when a
 		// server-side rebalance happens, the consumer session will end
 		// and `Consume` will return.
 		if err := c.consumerGroup.Consume(ctx, []string{c.topic}, c); err != nil {
-			log.Printf("Error from consumer for topic %s: %v", c.topic, err)
+			c.appLogger.Errorf("Error from consumer for topic %s: %v", c.topic, err)
 			// If context is canceled, we should stop.
 			if ctx.Err() != nil {
 				return err
@@ -103,7 +107,7 @@ func (c *consumerKafka) Consume(ctx context.Context) error {
 
 		// Check if context was canceled, signaling that we should stop.
 		if ctx.Err() != nil {
-			log.Printf("Context canceled for topic %s. Exiting consumer loop.", c.topic)
+			c.appLogger.Infof("Context canceled for topic %s. Exiting consumer loop.", c.topic)
 
 			return ctx.Err()
 		}
@@ -117,7 +121,7 @@ func (c *consumerKafka) Topic() string {
 
 // Close shuts down the consumer group.
 func (c *consumerKafka) Close() error {
-	log.Printf("Closing consumer for topic: %s", c.topic)
+	c.appLogger.Infof("Closing consumer for topic: %s", c.topic)
 
 	if c.consumerGroup != nil {
 		return c.consumerGroup.Close()
@@ -128,14 +132,14 @@ func (c *consumerKafka) Close() error {
 
 // Setup is run at the beginning of a new session, before ConsumeClaim.
 func (c *consumerKafka) Setup(sarama.ConsumerGroupSession) error {
-	log.Printf("Consumer group session started for topic: %s", c.topic)
+	c.appLogger.Infof("Consumer group session started for topic: %s", c.topic)
 
 	return nil
 }
 
 // Cleanup is run at the end of a session, once all ConsumeClaim goroutines have exited.
 func (c *consumerKafka) Cleanup(sarama.ConsumerGroupSession) error {
-	log.Printf("Consumer group session ended for topic: %s", c.topic)
+	c.appLogger.Infof("Consumer group session ended for topic: %s", c.topic)
 
 	return nil
 }
@@ -151,7 +155,7 @@ func (c *consumerKafka) ConsumeClaim(
 		select {
 		case message, ok := <-claim.Messages():
 			if !ok {
-				log.Printf("Message channel closed for topic: %s", c.topic)
+				c.appLogger.Infof("Message channel closed for topic: %s", c.topic)
 
 				return nil
 			}
@@ -159,7 +163,7 @@ func (c *consumerKafka) ConsumeClaim(
 			// Call the specific handler with the message value.
 			err := c.handler(session.Context(), message.Value)
 			if err != nil {
-				log.Printf("Handler error for topic %s: %v", c.topic, err)
+				c.appLogger.Errorf("Handler error for topic %s: %v", c.topic, err)
 				// TODO: Implement retry logic or dead letter queue
 				// For now, we'll still mark the message to avoid infinite reprocessing
 				// In production, you might want to:
@@ -173,7 +177,7 @@ func (c *consumerKafka) ConsumeClaim(
 
 		// Should return when the session is canceled, which happens on a rebalance.
 		case <-session.Context().Done():
-			log.Printf("Session context canceled for topic: %s", c.topic)
+			c.appLogger.Infof("Session context canceled for topic: %s", c.topic)
 
 			return nil
 		}
