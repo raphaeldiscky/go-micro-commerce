@@ -52,5 +52,5 @@ func (admin *KafkaAdmin) CreateTopic(topic string, numPartitions, replicationFac
 		}
 	}
 
-	log.Println("Kafka topic created successfully")
+	log.Println("Kafka topic created successfully:", topic)
 }

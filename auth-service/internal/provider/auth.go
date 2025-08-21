@@ -30,7 +30,7 @@ func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provid
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   true, // Enable error returns for better error handling
-		Acks:           sarama.WaitForLocal,
+		Acks:           sarama.WaitForAll,
 	})
 	if err != nil {
 		log.Fatalf("failed to create Kafka async producer: %v", err)

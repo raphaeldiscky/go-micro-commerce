@@ -27,8 +27,8 @@ func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
-		ReturnErrors:   true, // Enable error returns for better error handling
-		Acks:           sarama.WaitForLocal,
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
+		Acks:           sarama.WaitForAll,
 	})
 	if err != nil {
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)

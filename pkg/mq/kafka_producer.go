@@ -91,11 +91,15 @@ func NewKafkaAsyncProducer(cfg *KafkaProducerConfig) (*KafkaAsyncProducer, error
 		ctx:       ctx,
 		cancel:    cancel,
 	}
-
-	// Start error handling and retry goroutines
-	asyncProducer.wg.Add(2)
+	// background goroutines
+	asyncProducer.wg.Add(1)
 	go asyncProducer.handleErrors()
+
+	asyncProducer.wg.Add(1)
 	go asyncProducer.handleRetries()
+
+	asyncProducer.wg.Add(1)
+	go asyncProducer.handleSuccesses()
 
 	return asyncProducer, nil
 }
@@ -211,6 +215,23 @@ func (p *KafkaAsyncProducer) CloseAsync() error {
 	return nil
 }
 
+// handleSuccesses handles successful message deliveries.
+func (p *KafkaAsyncProducer) handleSuccesses() {
+	defer p.wg.Done()
+
+	for {
+		select {
+		case msg := <-p.producer.Successes():
+			if msg != nil {
+				log.Printf("Message delivered successfully: topic=%s, partition=%d, offset=%d",
+					msg.Topic, msg.Partition, msg.Offset)
+			}
+		case <-p.ctx.Done():
+			return
+		}
+	}
+}
+
 // handleErrors handles errors that occur during message production.
 func (p *KafkaAsyncProducer) handleErrors() {
 	defer p.wg.Done()
@@ -239,7 +260,7 @@ func (p *KafkaAsyncProducer) handleErrors() {
 func (p *KafkaAsyncProducer) handleRetries() {
 	defer p.wg.Done()
 
-	retryTicker := time.NewTicker(5 * time.Second) // Retry every 5 seconds
+	retryTicker := time.NewTicker(2 * time.Second) // Retry every 2 seconds
 	defer retryTicker.Stop()
 
 	for {
