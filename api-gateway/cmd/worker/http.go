@@ -7,6 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/provider"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/server"
 )
 
@@ -16,8 +17,9 @@ func runHTTPWorker(
 	cfg *config.Config,
 	appLogger logger.Logger,
 	gw *gateway.Gateway,
+	providers *provider.Providers,
 ) {
-	srv := server.NewHTTPServer(gw, cfg, appLogger)
+	srv := server.NewHTTPServer(gw, cfg, appLogger, providers)
 	go func() {
 		if err := srv.Start(); err != nil {
 			appLogger.Errorf("HTTP server failed to start: %v", err)

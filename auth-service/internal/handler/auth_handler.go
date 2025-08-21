@@ -229,6 +229,14 @@ func (h *AuthHandler) DeleteUser(c echo.Context) error {
 		})
 	}
 
+	_, err = h.authService.GetUser(c.Request().Context(), userID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		})
+	}
+
 	if err := h.authService.DeleteUser(c.Request().Context(), userID); err != nil {
 		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
 			Code:    http.StatusInternalServerError,

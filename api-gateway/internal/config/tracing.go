@@ -19,6 +19,14 @@ type TracingConfig struct {
 
 // initTracingConfig initializes the tracing configuration from environment variables.
 func initTracingConfig() *TracingConfig {
+	viper.SetDefault("TRACING_ENABLED", true)
+	viper.SetDefault("TRACING_URL", "http://localhost:14268/api/traces")
+	viper.SetDefault("TRACING_SERVICE_NAME", "my-app")
+	viper.SetDefault("TRACING_SAMPLING_RATE", 1.0)
+	viper.SetDefault("TRACING_ENVIRONMENT", "development")
+	viper.SetDefault("TRACING_BATCH_TIMEOUT", 5)
+	viper.SetDefault("TRACING_EXPORT_TIMEOUT", 5)
+
 	tracingConfig := &TracingConfig{}
 
 	if err := viper.Unmarshal(&tracingConfig); err != nil {

@@ -17,6 +17,7 @@ type JWTConfig struct {
 	AuthScheme     string        `mapstructure:"JWT_AUTH_SCHEME"`
 	SigningMethod  string        `mapstructure:"JWT_SIGNING_METHOD"`
 	ContextKey     string        `mapstructure:"JWT_CONTEXT_KEY"`
+	AllowedAlgs    []string      `mapstructure:"JWT_ALLOWED_ALGS"`
 }
 
 // initJWTConfig initializes the JWT configuration from environment variables.
@@ -30,6 +31,7 @@ func initJWTConfig() *JWTConfig {
 	viper.SetDefault("JWT_AUTH_SCHEME", "Bearer")
 	viper.SetDefault("JWT_SIGNING_METHOD", "HS256")
 	viper.SetDefault("JWT_CONTEXT_KEY", "user")
+	viper.SetDefault("JWT_ALLOWED_ALGS", []string{"HS256"})
 
 	jwtConfig := &JWTConfig{}
 

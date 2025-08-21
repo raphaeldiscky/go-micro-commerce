@@ -17,6 +17,11 @@ type RateLimitConfig struct {
 
 // initRateLimitConfig initializes the rate limit configuration from environment variables.
 func initRateLimitConfig() *RateLimitConfig {
+	viper.SetDefault("RATE_LIMIT_ENABLED", true)
+	viper.SetDefault("RATE_LIMIT_REQUESTS", 100)
+	viper.SetDefault("RATE_LIMIT_WINDOW", 1*time.Minute)
+	viper.SetDefault("RATE_LIMIT_BURST_LIMIT", 10)
+
 	rateLimitConfig := &RateLimitConfig{}
 
 	if err := viper.Unmarshal(&rateLimitConfig); err != nil {
