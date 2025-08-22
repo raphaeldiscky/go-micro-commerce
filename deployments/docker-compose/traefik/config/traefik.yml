@@ -29,7 +29,16 @@ http:
       middlewares:
         - rate-limit
 
-    # DDirect access to Notification Service (for testing/admin)
+    # Direct access to Order Service (for testing/admin)
+    order-service:
+      rule: "Host(`orders.localhost`)"
+      service: order-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
+    # Direct access to Notification Service (for testing/admin)
     notification-service:
       rule: "Host(`notifications.localhost`)"
       service: notification-service
@@ -71,6 +80,17 @@ http:
           timeout: 10s
           headers:
             Host: product-service
+
+    order-service:
+      loadBalancer:
+        servers:
+          - url: "http://order-service:8083"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: order-service
 
     notification-service:
       loadBalancer:
