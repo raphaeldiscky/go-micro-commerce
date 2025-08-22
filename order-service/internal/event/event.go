@@ -2,8 +2,9 @@
 package event
 
 import (
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 )
 
 type (

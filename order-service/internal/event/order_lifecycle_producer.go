@@ -5,9 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/shopspring/decimal"
+
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 )
 
 // OrderLifecyclePayload holds the data for the Order Lifecycle event.
@@ -16,7 +17,6 @@ type OrderLifecyclePayload struct {
 	UserID     uuid.UUID            `json:"user_id"`
 	Status     constant.OrderStatus `json:"status"`
 	TotalPrice decimal.Decimal      `json:"total_price"`
-	Email      string               `json:"email"`
 }
 
 // OrderLifecycleEvent is the envelope for all Order events.
@@ -47,7 +47,6 @@ func NewOrderLifecycleEvent(
 	newStatus constant.OrderStatus,
 	userID uuid.UUID,
 	totalPrice decimal.Decimal,
-	email string,
 ) *OrderLifecycleEvent {
 	return &OrderLifecycleEvent{
 		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
@@ -62,7 +61,6 @@ func NewOrderLifecycleEvent(
 			UserID:     userID,
 			Status:     newStatus,
 			TotalPrice: totalPrice,
-			Email:      email,
 		},
 	}
 }

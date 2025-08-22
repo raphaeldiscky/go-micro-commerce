@@ -20,9 +20,9 @@ type CreateOrderItemRequest struct {
 
 // CreateOrderRequest represents the request to create a new order.
 type CreateOrderRequest struct {
-	CustomerID    uuid.UUID                `json:"customer_id" validate:"required"`
+	CustomerID    uuid.UUID                `json:"customer_id"    validate:"required"`
 	CustomerEmail string                   `json:"customer_email" validate:"required,email"`
-	Items         []CreateOrderItemRequest `json:"items"       validate:"required,min=1,dive"`
+	Items         []CreateOrderItemRequest `json:"items"          validate:"required,min=1,dive"`
 }
 
 // UpdateOrderItemRequest represents an item in update order request.
@@ -60,8 +60,8 @@ type OrderResponse struct {
 
 // GetOrdersRequest represents pagination and filtering parameters.
 type GetOrdersRequest struct {
-	Limit int64 `json:"limit"  validate:"min=1,max=100"`
-	Page  int64 `json:"page"   validate:"min=1"`
+	Limit int64 `json:"limit" validate:"min=1,max=100"`
+	Page  int64 `json:"page"  validate:"min=1"`
 }
 
 // UpdateOrderStatusRequest represents the request to update order status.
@@ -93,5 +93,6 @@ func MapToOrderItemResponses(items []entity.OrderItem) []OrderItemResponse {
 			Price:     item.Price,
 		})
 	}
+
 	return responses
 }

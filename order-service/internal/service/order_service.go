@@ -31,7 +31,6 @@ type OrderServiceInterface interface {
 		ctx context.Context,
 		req dto.GetOrdersRequest,
 	) ([]dto.OrderResponse, *pkgDto.PageMetaData, error)
-	UpdateOrder(ctx context.Context, req dto.UpdateOrderRequest) (*dto.OrderResponse, error)
 	UpdateOrderStatus(
 		ctx context.Context,
 		id uuid.UUID,
@@ -67,9 +66,9 @@ func (s *OrderService) CreateOrder(
 
 	err := s.dataStore.Atomic(ctx, func(tx repository.DataStore) error {
 		orderRepo := tx.OrderRepository()
-
 		// Convert DTO items to entity items
 		var orderItems []entity.OrderItem
+
 		for _, item := range req.Items {
 			orderItem := entity.OrderItem{
 				ID:        uuid.New(),
@@ -141,7 +140,9 @@ func (s *OrderService) GetOrdersByCustomer(
 	req dto.GetOrdersRequest,
 ) ([]dto.OrderResponse, *pkgDto.PageMetaData, error) {
 	var orders []*entity.Order
+
 	var total int64
+
 	var err error
 
 	orderRepo := s.dataStore.OrderRepository()
@@ -173,7 +174,9 @@ func (s *OrderService) GetOrders(
 	req dto.GetOrdersRequest,
 ) ([]dto.OrderResponse, *pkgDto.PageMetaData, error) {
 	var orders []*entity.Order
+
 	var total int64
+
 	var err error
 
 	orderRepo := s.dataStore.OrderRepository()
@@ -199,87 +202,11 @@ func (s *OrderService) GetOrders(
 	return res, metadata, nil
 }
 
-// UpdateOrder updates an existing order.
-func (s *OrderService) UpdateOrder(
-	ctx context.Context,
-	req dto.UpdateOrderRequest,
-) (*dto.OrderResponse, error) {
-	res := new(dto.OrderResponse)
-
-	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		orderRepo := ds.OrderRepository()
-
-		// Check if order exists
-		existingOrder, err := orderRepo.FindByID(ctx, req.ID)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to get order")
-		}
-
-		if existingOrder == nil {
-			return httperror.NewOrderNotFoundError()
-		}
-
-		// Update status if provided
-		if req.Status != nil {
-			if err := existingOrder.UpdateStatus(*req.Status); err != nil {
-				return httperror.NewBadRequestError("invalid order status")
-			}
-		}
-
-		// Update items if provided
-		if req.Items != nil {
-			// Convert DTO items to entity items
-			var orderItems []entity.OrderItem
-			for _, item := range req.Items {
-				orderItem := entity.OrderItem{
-					ID:        uuid.New(),
-					OrderID:   existingOrder.ID,
-					ProductID: item.ProductID,
-					Quantity:  item.Quantity,
-					Price:     item.Price,
-				}
-				orderItems = append(orderItems, orderItem)
-			}
-
-			// Update items in the order (this would need to be implemented in the entity)
-			if err := existingOrder.UpdateItems(orderItems); err != nil {
-				return httperror.NewBadRequestError("invalid order items")
-			}
-		}
-
-		// Save updated order
-		updatedOrder, err := orderRepo.Update(ctx, existingOrder)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to update order")
-		}
-
-		// Publish domain event
-		evt := event.NewOrderUpdatedEvent(
-			updatedOrder.ID,
-			updatedOrder.CustomerID,
-			updatedOrder.Status,
-			updatedOrder.TotalPrice,
-		)
-		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
-			return httperror.NewInternalServerError("failed to send order updated event")
-		}
-
-		res = dto.MapToOrderResponse(updatedOrder)
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
 // UpdateOrderStatus updates only the status of an order.
 func (s *OrderService) UpdateOrderStatus(
 	ctx context.Context,
 	id uuid.UUID,
-	status entity.OrderStatus,
+	status constant.OrderStatus,
 ) (*dto.OrderResponse, error) {
 	res := new(dto.OrderResponse)
 
@@ -308,10 +235,11 @@ func (s *OrderService) UpdateOrderStatus(
 		}
 
 		// Publish domain event
-		evt := event.NewOrderStatusUpdatedEvent(
+		evt := event.NewOrderLifecycleEvent(
 			updatedOrder.ID,
+			status,
 			updatedOrder.CustomerID,
-			updatedOrder.Status,
+			updatedOrder.TotalPrice,
 		)
 		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send order status updated event")
@@ -343,13 +271,13 @@ func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
 			return httperror.NewOrderNotFoundError()
 		}
 
-		// Check if order can be cancelled
+		// Check if order can be canceled
 		if !existingOrder.CanBeCancelled() {
-			return httperror.NewBadRequestError("order cannot be cancelled in current status")
+			return httperror.NewBadRequestError("order cannot be canceled in current status")
 		}
 
-		// Update status to cancelled
-		if err := existingOrder.UpdateStatus(entity.OrderStatusCanceled); err != nil {
+		// Update status to canceled
+		if err := existingOrder.UpdateStatus(constant.OrderStatusCanceled); err != nil {
 			return httperror.NewBadRequestError("failed to cancel order")
 		}
 
@@ -359,13 +287,14 @@ func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
 		}
 
 		// Publish domain event
-		evt := event.NewOrderCancelledEvent(
+		evt := event.NewOrderLifecycleEvent(
 			existingOrder.ID,
+			constant.OrderStatusCanceled,
 			existingOrder.CustomerID,
 			existingOrder.TotalPrice,
 		)
 		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
-			return httperror.NewInternalServerError("failed to send order cancelled event")
+			return httperror.NewInternalServerError("failed to send order canceled event")
 		}
 
 		return nil
@@ -385,7 +314,7 @@ func (s *OrderService) PayOrder(
 		orderRepo := ds.OrderRepository()
 
 		// Check if order exists
-		existingOrder, err := orderRepo.FindByID(ctx, req.ID)
+		existingOrder, err := orderRepo.FindByID(ctx, req.OrderID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get order")
 		}
@@ -400,7 +329,7 @@ func (s *OrderService) PayOrder(
 		}
 
 		// Update status to paid
-		if err := existingOrder.UpdateStatus(entity.OrderStatusPaid); err != nil {
+		if err := existingOrder.UpdateStatus(constant.OrderStatusPaid); err != nil {
 			return httperror.NewBadRequestError("failed to pay order")
 		}
 
@@ -411,8 +340,9 @@ func (s *OrderService) PayOrder(
 		}
 
 		// Publish domain event
-		evt := event.NewOrderPaidEvent(
+		evt := event.NewOrderLifecycleEvent(
 			updatedOrder.ID,
+			constant.OrderStatusPaid,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
 		)

@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
-
 	"github.com/shopspring/decimal"
+
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 )
 
 // Order represents an order in the marketplace.
@@ -61,9 +61,11 @@ func (o *Order) validate() error {
 		if item.ProductID == uuid.Nil {
 			return fmt.Errorf("item[%d]: product_id must not be empty", i)
 		}
+
 		if item.Quantity <= 0 {
 			return fmt.Errorf("item[%d]: quantity must be greater than 0", i)
 		}
+
 		if item.Price.LessThanOrEqual(decimal.Zero) {
 			return fmt.Errorf("item[%d]: price must be greater than 0", i)
 		}
@@ -72,15 +74,22 @@ func (o *Order) validate() error {
 		if productSeen[item.ProductID] {
 			return fmt.Errorf("item[%d]: duplicate product_id %s", i, item.ProductID)
 		}
+
 		productSeen[item.ProductID] = true
 
 		// accumulate total for cross-check
-		totalCalculated = totalCalculated.Add(item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))))
+		totalCalculated = totalCalculated.Add(
+			item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))),
+		)
 	}
 
 	// cross-check with order total
 	if !o.TotalPrice.Equal(totalCalculated) {
-		return fmt.Errorf("total_price mismatch: expected %s, got %s", totalCalculated, o.TotalPrice)
+		return fmt.Errorf(
+			"total_price mismatch: expected %s, got %s",
+			totalCalculated,
+			o.TotalPrice,
+		)
 	}
 
 	return nil
@@ -119,8 +128,12 @@ func (o *Order) UpdateStatus(status constant.OrderStatus) error {
 }
 
 // AddItem adds an item to the order and recalculates total price.
-func (o *Order) AddItem(item OrderItem) error {
-	o.Items = append(o.Items, item)
+func (o *Order) AddItem(item *OrderItem) error {
+	if item == nil {
+		return errors.New("item must not be nil")
+	}
+
+	o.Items = append(o.Items, *item)
 
 	// Recalculate total price
 	totalPrice := decimal.Zero
@@ -160,17 +173,17 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 	return o.validate()
 }
 
-// CanBeCancelled checks if order can be cancelled
+// CanBeCancelled checks if order can be canceled.
 func (o *Order) CanBeCancelled() bool {
 	return o.Status != constant.OrderStatusDelivered && o.Status != constant.OrderStatusCanceled
 }
 
-// CanBePaid checks if order can be paid
+// CanBePaid checks if order can be paid.
 func (o *Order) CanBePaid() bool {
 	return o.Status == constant.OrderStatusPending || o.Status == constant.OrderStatusConfirmed
 }
 
-// UpdateItems updates order items and recalculates total
+// UpdateItems updates order items and recalculates total.
 func (o *Order) UpdateItems(items []OrderItem) error {
 	o.Items = items
 	// Recalculate total price logic here

@@ -11,9 +11,6 @@ const (
 	// KafkaEventTypeOrderCreated is when customer places an order (pending).
 	// Needed by: inventory reservation, payment service, fraud detection.
 	KafkaEventTypeOrderCreated = "OrderCreated"
-	// KafkaEventTypeOrderUpdated is when an order is updated (pending).
-	// Needed by: inventory management, notification service.
-	KafkaEventTypeOrderUpdated = "OrderUpdated"
 	// KafkaEventTypeOrderConfirmed is after validation & inventory check (confirmed).
 	// Needed by: payment service, notification service.
 	KafkaEventTypeOrderConfirmed = "OrderConfirmed"

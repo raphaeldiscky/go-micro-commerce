@@ -16,7 +16,6 @@ func SetupOrderRoutes(e *echo.Echo, h *handler.OrderHandler) {
 	orders.GET("", h.GetOrders)
 	orders.GET("/:orderID", h.GetOrder)
 	orders.GET("/customer/:customerID", h.GetOrdersByCustomer)
-	orders.PUT("/:orderID", h.UpdateOrder)
 	orders.POST("/cancel/:orderID", h.CancelOrder)
 	orders.POST("/pay/:orderID", h.PayOrder)
 }

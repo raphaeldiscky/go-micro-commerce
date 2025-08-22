@@ -83,7 +83,9 @@ func (r *OrderRepositoryPostgres) Create(
 		order.Status,
 		order.TotalPrice,
 	)
+
 	var createdOrder entity.Order
+
 	err := row.Scan(
 		&createdOrder.ID,
 		&createdOrder.CreatedAt,
@@ -92,14 +94,12 @@ func (r *OrderRepositoryPostgres) Create(
 		&createdOrder.Status,
 		&createdOrder.TotalPrice,
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create order: %w", err)
 	}
 
-	// Insert order items
 	if len(order.Items) > 0 {
-		insertItemQuery := `
+		const insertItemQuery = `
 			INSERT INTO order_items (id, order_id, product_id, quantity, price)
 			VALUES ($1, $2, $3, $4, $5)
 		`
@@ -158,7 +158,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 	}
 
 	// Get order items
-	itemsQuery := `
+	const itemsQuery = `
 		SELECT id, order_id, product_id, quantity, price
 		FROM order_items
 		WHERE order_id = $1
@@ -303,7 +303,6 @@ func (r *OrderRepositoryPostgres) Update(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, error) {
-
 	// Update order
 	updateOrderQuery := `
 		UPDATE orders

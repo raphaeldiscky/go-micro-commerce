@@ -70,6 +70,7 @@ func (h *OrderHandler) GetOrder(c echo.Context) error {
 // GetOrdersByCustomer handles GET /orders/customer/:customerId.
 func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 	var req dto.GetOrdersRequest
+
 	param := c.Param("customerId")
 
 	customerID, err := uuid.Parse(param)
@@ -96,7 +97,11 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 		return err
 	}
 
-	orders, paging, err := h.orderService.GetOrdersByCustomer(c.Request().Context(), customerID, req)
+	orders, paging, err := h.orderService.GetOrdersByCustomer(
+		c.Request().Context(),
+		customerID,
+		req,
+	)
 	if err != nil {
 		return err
 	}
@@ -148,37 +153,12 @@ func (h *OrderHandler) GetOrders(c echo.Context) error {
 	return echoutils.ResponseOKPagination(c, orders, paging)
 }
 
-// UpdateOrder handles PUT /orders/:orderID.
-func (h *OrderHandler) UpdateOrder(c echo.Context) error {
-	var req dto.UpdateOrderRequest
-	param := c.Param("orderID")
-	orderID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
-	}
-
-	req.ID = orderID
-
-	if err := c.Validate(&req); err != nil {
-		return err
-	}
-
-	order, err := h.orderService.UpdateOrder(c.Request().Context(), req)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseOK(c, order)
-}
-
 // UpdateOrderStatus handles PATCH /orders/:orderID/status.
 func (h *OrderHandler) UpdateOrderStatus(c echo.Context) error {
 	var req dto.UpdateOrderStatusRequest
+
 	param := c.Param("orderID")
+
 	orderID, err := uuid.Parse(param)
 	if err != nil {
 		return err
@@ -206,7 +186,6 @@ func (h *OrderHandler) CancelOrder(c echo.Context) error {
 
 	orderID, err := uuid.Parse(param)
 	if err != nil {
-
 		return err
 	}
 
@@ -221,7 +200,9 @@ func (h *OrderHandler) CancelOrder(c echo.Context) error {
 // PayOrder handles POST /orders/:id/pay.
 func (h *OrderHandler) PayOrder(c echo.Context) error {
 	var req dto.PayOrderRequest
+
 	param := c.Param("id")
+
 	orderID, err := uuid.Parse(param)
 	if err != nil {
 		return err
