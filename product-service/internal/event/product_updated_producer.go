@@ -13,11 +13,10 @@ import (
 
 // ProductUpdatedPayload holds the data for the product updated event.
 type ProductUpdatedPayload struct {
-	ProductID    uuid.UUID             `json:"product_id"`
-	Name         string                `json:"name"`
-	Price        decimal.Decimal       `json:"price"`
-	Quantity     int                   `json:"quantity"`
-	PreviousData ProductCreatedPayload `json:"previous_data,omitempty"` // Optional field for previous product data
+	ProductID uuid.UUID       `json:"product_id"`
+	Name      string          `json:"name"`
+	Price     decimal.Decimal `json:"price"`
+	Quantity  int             `json:"quantity"`
 }
 
 // ProductUpdatedEvent is the envelope for product update events.

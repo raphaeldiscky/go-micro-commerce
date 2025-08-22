@@ -9,7 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/server"
 )
 
-func runKafkaWorker(ctx context.Context, cfg *config.Config, appLogger logger.Logger) {
+func runKafkaConsumerWorker(ctx context.Context, cfg *config.Config, appLogger logger.Logger) {
 	srv := server.NewKafkaConsumerServer(cfg, appLogger)
 	go func() {
 		if err := srv.Start(); err != nil {

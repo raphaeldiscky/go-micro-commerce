@@ -19,6 +19,7 @@ type DBTX interface {
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	OrderRepository() OrderRepositoryInterface
+	ProductRepository() ProductRepositoryInterface
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -57,4 +58,9 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 // OrderRepository returns a new OrderRepository.
 func (s *dataStore) OrderRepository() OrderRepositoryInterface {
 	return NewOrderRepositoryPostgres(s.db)
+}
+
+// ProductRepository returns a new ProductRepository.
+func (s *dataStore) ProductRepository() ProductRepositoryInterface {
+	return NewProductRepositoryPostgres(s.db)
 }

@@ -28,27 +28,7 @@ const (
 	KafkaEventTypeOrderCanceled = "OrderCanceled"
 )
 
-// Order Payment Events.
-const (
-	// KafkaEventTypePaymentProcessed is the event type for payment processing events.
-	KafkaEventTypePaymentProcessed = "PaymentProcessed"
-	// KafkaEventTypePaymentFailed is the event type for payment failure events.
-	KafkaEventTypePaymentFailed = "PaymentFailed"
-	// KafkaEventTypePaymentRefunded is the event type for payment refund events.
-	KafkaEventTypePaymentRefunded = "PaymentRefunded"
-)
-
-// Order Inventory Events.
-const (
-	// KafkaEventTypeInventoryReserved is the event type for inventory reservation events.
-	KafkaEventTypeInventoryReserved = "InventoryReserved"
-	// KafkaEventTypeInventoryReleased is the event type for inventory release events.
-	KafkaEventTypeInventoryReleased = "InventoryReleased"
-	// KafkaEventTypeInventoryUpdated is the event type for inventory update events.
-	KafkaEventTypeInventoryUpdated = "InventoryUpdated"
-)
-
-// Topics that Auth Service produces to.
+// Topics that Order Service produces to.
 const (
 	// TopicOrderLifecycle is the topic for order lifecycle events.
 	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
@@ -60,14 +40,4 @@ const (
 	TopicOrderPayment = "order.payment" // PaymentProcessed, PaymentFailed, PaymentRefunded
 	// TopicOrderInventory is the topic for order inventory events.
 	TopicOrderInventory = "order.inventory" // InventoryReserved, InventoryReleased, InventoryUpdated
-)
-
-// Consumer groups for Order Service (consuming from other services).
-const (
-	// ConsumerGroupOrderAuthEvents is the consumer group for auth service events.
-	ConsumerGroupOrderUserEvents = "order-service.user-events" // For user lifecycle
-	// ConsumerGroupOrderProductEvents is the consumer group for product events.
-	ConsumerGroupOrderProductEvents = "order-service.product-events" // For product availability
-	// ConsumerGroupOrderInventoryEvents is the consumer group for inventory events.
-	ConsumerGroupOrderInventoryEvents = "order-service.inventory-events" // For inventory management
 )
