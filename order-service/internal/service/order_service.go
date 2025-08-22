@@ -74,7 +74,6 @@ func (s *OrderService) CreateOrder(
 				ID:        uuid.New(),
 				ProductID: item.ProductID,
 				Quantity:  item.Quantity,
-				Price:     item.Price,
 			}
 			orderItems = append(orderItems, orderItem)
 		}

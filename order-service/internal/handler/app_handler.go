@@ -20,7 +20,7 @@ func (c *AppHandler) Health(e echo.Context) error {
 	return e.JSON(http.StatusOK, dto.WebResponse[any]{
 		Data: map[string]interface{}{
 			"status":  "healthy",
-			"service": "product-service",
+			"service": "order-service",
 		},
 		Message: "service is healthy",
 	})

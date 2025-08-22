@@ -33,7 +33,10 @@ func NewOrderHandler(
 
 // CreateOrder handles POST /orders.
 func (h *OrderHandler) CreateOrder(c echo.Context) error {
-	var req dto.CreateOrderRequest
+	req := dto.CreateOrderRequest{
+		CustomerID:    echoutils.GetUserIDFromContext(c),
+		CustomerEmail: echoutils.GetEmailFromContext(c),
+	}
 	if err := c.Bind(&req); err != nil {
 		return err
 	}

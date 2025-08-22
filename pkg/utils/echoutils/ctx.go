@@ -2,35 +2,48 @@
 package echoutils
 
 import (
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 )
 
-// GetUserID retrieves the user ID (UUID) from the context safely.
-func GetUserID(ctx echo.Context) (userID string, ok bool) {
+// GetUserIDFromContext retrieves the user ID (UUID) from the context safely.
+func GetUserIDFromContext(ctx echo.Context) uuid.UUID {
 	val, ok := ctx.Get(constant.CtxUserID).(string)
+	if !ok {
+		return uuid.Nil
+	}
 
-	return val, ok
+	return uuid.MustParse(val)
 }
 
-// GetEmail retrieves the user email from the context safely.
-func GetEmail(ctx echo.Context) (email string, ok bool) {
+// GetEmailFromContext retrieves the user email from the context safely.
+func GetEmailFromContext(ctx echo.Context) string {
 	val, ok := ctx.Get(constant.CtxEmail).(string)
+	if !ok {
+		return ""
+	}
 
-	return val, ok
+	return val
 }
 
-// GetRoles retrieves the user roles from the context safely.
-func GetRoles(ctx echo.Context) (roles []string, ok bool) {
+// GetRolesFromContext retrieves the user roles from the context safely.
+func GetRolesFromContext(ctx echo.Context) []string {
 	val, ok := ctx.Get(constant.CtxRoles).([]string)
+	if !ok {
+		return nil
+	}
 
-	return val, ok
+	return val
 }
 
-// IsActive checks if the user is active based on the context safely.
-func IsActive(ctx echo.Context) (isActive, ok bool) {
+// GetIsActiveFromContext checks if the user is active based on the context safely.
+func GetIsActiveFromContext(ctx echo.Context) bool {
 	val, ok := ctx.Get(constant.CtxIsActive).(bool)
+	if !ok {
+		return false
+	}
 
-	return val, ok
+	return val
 }

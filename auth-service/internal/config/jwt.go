@@ -23,7 +23,7 @@ type JWTConfig struct {
 // initJWTConfig initializes the JWT configuration from environment variables.
 func initJWTConfig() *JWTConfig {
 	// Set defaults
-	viper.SetDefault("JWT_SECRET", "your-secret-key-change-in-production")
+	viper.SetDefault("JWT_SECRET", "secret")
 	viper.SetDefault("JWT_EXPIRATION_TIME", "24h")
 	viper.SetDefault("JWT_REFRESH_TIME", "72h")
 	viper.SetDefault("JWT_ISSUER", "auth-service")
