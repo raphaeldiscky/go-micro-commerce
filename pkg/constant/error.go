@@ -4,8 +4,8 @@ package constant
 const (
 	// InternalServerErrorMessage indicates an unexpected server error.
 	InternalServerErrorMessage = "currently our server is facing unexpected error, please try again later"
-	// MissingBodyRequestErrorMessage indicates that the request body is missing.
-	MissingBodyRequestErrorMessage = "missing body request"
+	// EOFErrorMessage indicates that the request body is missing.
+	EOFErrorMessage = "missing body request"
 	// JSONSyntaxErrorMessage indicates that the JSON syntax is invalid.
 	JSONSyntaxErrorMessage = "invalid JSON syntax"
 	// JSONUnMarshallTypeErrorMessage indicates that the JSON value could not be unmarshalled into the expected type.

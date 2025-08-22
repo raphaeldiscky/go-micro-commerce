@@ -94,9 +94,7 @@ func (s *AuthService) Register(
 		// Check if email already exists
 		emailExists, err := userRepo.EmailExists(ctx, req.Email)
 		if err != nil {
-			s.logger.Error("Failed to check email existence", "error", err)
-
-			return err
+			return httperror.NewInternalServerError("failed to check email")
 		}
 
 		if emailExists {
@@ -106,9 +104,7 @@ func (s *AuthService) Register(
 		// Check if username already exists
 		usernameExists, err := userRepo.UsernameExists(ctx, req.Username)
 		if err != nil {
-			s.logger.Error("Failed to check username existence", "error", err)
-
-			return err
+			return httperror.NewInternalServerError("failed to check username")
 		}
 
 		if usernameExists {
@@ -118,17 +114,13 @@ func (s *AuthService) Register(
 		// Hash password
 		hashedPassword, err := s.hasher.Hash(req.Password)
 		if err != nil {
-			s.logger.Error("Failed to hash password", "error", err)
-
-			return err
+			return httperror.NewInvalidCredentialError()
 		}
 
 		// Generate email verification token
 		verificationToken, err := s.generateVerificationToken()
 		if err != nil {
-			s.logger.Error("Failed to generate verification token", "error", err)
-
-			return err
+			return httperror.NewInvalidCredentialError()
 		}
 
 		// Create user
@@ -147,9 +139,7 @@ func (s *AuthService) Register(
 		*user.EmailVerificationSentAt = time.Now()
 
 		if err := userRepo.Create(ctx, user); err != nil {
-			s.logger.Error("Failed to create user", "error", err)
-
-			return err
+			return httperror.NewInternalServerError("failed to create user")
 		}
 
 		// Generate tokens using JWT utils
@@ -160,16 +150,12 @@ func (s *AuthService) Register(
 			user.IsActive,
 		)
 		if err != nil {
-			s.logger.Error("Failed to generate access token", "error", err)
-
-			return err
+			return httperror.NewInvalidCredentialError()
 		}
 
 		refreshToken, err := s.jwtUtils.GenerateRefreshToken(user.ID.String())
 		if err != nil {
-			s.logger.Error("Failed to generate refresh token", "error", err)
-
-			return err
+			return httperror.NewInvalidRefreshTokenError()
 		}
 
 		// Create session
@@ -183,9 +169,7 @@ func (s *AuthService) Register(
 		}
 
 		if err := sessionRepo.Create(ctx, session); err != nil {
-			s.logger.Error("Failed to create session", "error", err)
-
-			return err
+			return httperror.NewInternalServerError("failed to create session")
 		}
 
 		// Publish email verification event
@@ -350,17 +334,17 @@ func (s *AuthService) RefreshToken(
 	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, httperror.NewNotFoundError("user not found")
 		}
 
 		s.logger.Error("Failed to get user by ID", "error", err)
 
-		return nil, errors.New("failed to get user")
+		return nil, httperror.NewInternalServerError("failed to get user")
 	}
 
 	// Check if user is still active
 	if !user.IsActive {
-		return nil, errors.New("user account is inactive")
+		return nil, httperror.NewForbiddenError("user account is inactive")
 	}
 
 	// Generate new tokens using JWT utils
@@ -373,21 +357,21 @@ func (s *AuthService) RefreshToken(
 	if err != nil {
 		s.logger.Error("Failed to generate access token", "error", err)
 
-		return nil, errors.New("failed to generate access token")
+		return nil, httperror.NewInternalServerError("failed to generate access token")
 	}
 
 	newRefreshToken, err := s.jwtUtils.GenerateRefreshToken(user.ID.String())
 	if err != nil {
 		s.logger.Error("Failed to generate refresh token", "error", err)
 
-		return nil, errors.New("failed to generate refresh token")
+		return nil, httperror.NewInternalServerError("failed to generate refresh token")
 	}
 
 	expTime, err := s.jwtUtils.GetExpirationTime(accessToken)
 	if err != nil {
 		s.logger.Error("Failed to get access token expiration time", "error", err)
 
-		return nil, err
+		return nil, httperror.NewInternalServerError("failed to get access token expiration time")
 	}
 
 	return &dto.AuthResponse{
@@ -406,12 +390,12 @@ func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserR
 	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("user not found")
+			return nil, httperror.NewNotFoundError("user not found")
 		}
 
 		s.logger.Error("Failed to get user by ID", "error", err)
 
-		return nil, errors.New("failed to get user")
+		return nil, httperror.NewInternalServerError("failed to get user")
 	}
 
 	userResponse := dto.MapToUserResponse(user)
@@ -434,12 +418,12 @@ func (s *AuthService) UpdateUser(
 		user, err := userRepo.GetByID(ctx, userID)
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
-				return errors.New("user not found")
+				return httperror.NewNotFoundError("user not found")
 			}
 
 			s.logger.Error("Failed to get user by ID", "error", err)
 
-			return errors.New("failed to get user")
+			return httperror.NewInternalServerError("failed to get user")
 		}
 
 		// Update fields if provided
@@ -457,11 +441,11 @@ func (s *AuthService) UpdateUser(
 			if err != nil {
 				s.logger.Error("Failed to check username existence", "error", err)
 
-				return errors.New("failed to check username existence")
+				return httperror.NewInternalServerError("failed to check username existence")
 			}
 
 			if usernameExists {
-				return errors.New("username already taken")
+				return httperror.NewUserAlreadyExistError()
 			}
 
 			user.Username = req.Username
@@ -472,7 +456,7 @@ func (s *AuthService) UpdateUser(
 		if err != nil {
 			s.logger.Error("Failed to update user", "error", err)
 
-			return errors.New("failed to update user")
+			return httperror.NewInternalServerError("failed to update user")
 		}
 
 		s.logger.Info("User profile updated", "user_id", userID)
@@ -494,7 +478,7 @@ func (s *AuthService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	if err := userRepo.Delete(ctx, userID); err != nil {
 		s.logger.Error("Failed to delete user", "error", err)
 
-		return errors.New("failed to delete user")
+		return httperror.NewInternalServerError("failed to delete user")
 	}
 
 	sessionRepo := s.dataStore.SessionRepository()
@@ -519,17 +503,17 @@ func (s *AuthService) ChangePassword(
 	user, err := userRepo.GetByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("user not found")
+			return httperror.NewNotFoundError("user not found")
 		}
 
 		s.logger.Error("Failed to get user by ID", "error", err)
 
-		return errors.New("failed to get user")
+		return httperror.NewInternalServerError("failed to get user")
 	}
 
 	// Verify current password
 	if !s.hasher.Check(req.CurrentPassword, user.PasswordHash) {
-		return errors.New("current password is incorrect")
+		return httperror.NewInvalidCredentialError()
 	}
 
 	// Hash new password
@@ -537,7 +521,7 @@ func (s *AuthService) ChangePassword(
 	if err != nil {
 		s.logger.Error("Failed to hash password", "error", err)
 
-		return errors.New("failed to hash password")
+		return httperror.NewInternalServerError("failed to hash password")
 	}
 
 	// Update password
@@ -547,7 +531,7 @@ func (s *AuthService) ChangePassword(
 	if err != nil {
 		s.logger.Error("Failed to update user password", "error", err)
 
-		return errors.New("failed to update password")
+		return httperror.NewInternalServerError("failed to update password")
 	}
 
 	s.logger.Info("User password changed", "user_id", userID)
@@ -563,24 +547,24 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 	user, err := userRepo.GetByEmailVerificationToken(ctx, req.Token)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("invalid verification token: " + req.Token)
+			return httperror.NewInvalidCredentialError()
 		}
 
 		s.logger.Error("Failed to get user by verification token", "error", err)
 
-		return errors.New("verification failed")
+		return httperror.NewInternalServerError("verification failed")
 	}
 
 	// Check if email is already verified
 	if user.IsEmailVerified {
-		return errors.New("email already verified")
+		return httperror.NewBadRequestError("email already verified")
 	}
 
 	// Verify email
 	if err := userRepo.VerifyEmail(ctx, user.ID); err != nil {
 		s.logger.Error("Failed to verify email", "error", err)
 
-		return errors.New("failed to verify email")
+		return httperror.NewInternalServerError("failed to verify email")
 	}
 
 	// Publish email verification requested event
@@ -611,17 +595,17 @@ func (s *AuthService) ResendVerification(
 	user, err := userRepo.GetByEmail(ctx, req.Email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return errors.New("user not found")
+			return httperror.NewNotFoundError("user not found")
 		}
 
 		s.logger.Error("Failed to get user by email", "error", err)
 
-		return errors.New("failed to get user")
+		return httperror.NewInternalServerError("failed to get user")
 	}
 
 	// Check if email is already verified
 	if user.IsEmailVerified {
-		return errors.New("email already verified")
+		return httperror.NewBadRequestError("email already verified")
 	}
 
 	// Generate new verification token
@@ -629,14 +613,14 @@ func (s *AuthService) ResendVerification(
 	if err != nil {
 		s.logger.Error("Failed to generate verification token", "error", err)
 
-		return errors.New("failed to generate verification token")
+		return httperror.NewInternalServerError("failed to generate verification token")
 	}
 
 	// Set new verification token
 	if err := userRepo.SetEmailVerificationToken(ctx, user.ID, verificationToken); err != nil {
 		s.logger.Error("Failed to set verification token", "error", err)
 
-		return errors.New("failed to set verification token")
+		return httperror.NewInternalServerError("failed to set verification token")
 	}
 
 	// Publish email verification event
@@ -700,25 +684,25 @@ func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error 
 	sessionRepo := s.dataStore.SessionRepository()
 
 	if req.RefreshToken == "" {
-		return errors.New("refresh token is required")
+		return httperror.NewInvalidCredentialError()
 	}
 
 	session, err := sessionRepo.GetByRefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		s.logger.Error("failed to find session by refresh token", "error", err)
 
-		return errors.New("invalid session")
+		return httperror.NewInvalidCredentialError()
 	}
 
 	if session == nil {
-		return errors.New("session not found")
+		return httperror.NewInvalidCredentialError()
 	}
 
 	err = sessionRepo.DeactivateSession(ctx, session.ID)
 	if err != nil {
 		s.logger.Error("failed to deactivate session", "sessionID", session.ID, "error", err)
 
-		return err
+		return httperror.NewInternalServerError("failed to deactivate session")
 	}
 
 	s.logger.Info("user logged out", "sessionID", session.ID, "userID", session.UserID)
@@ -734,7 +718,7 @@ func (s *AuthService) LogoutAllSessions(ctx context.Context, userID uuid.UUID) e
 	if err != nil {
 		s.logger.Error("failed to logout all sessions", "userID", userID, "error", err)
 
-		return err
+		return httperror.NewInternalServerError("failed to logout all sessions")
 	}
 
 	s.logger.Info("logged out all sessions for user", "userID", userID)

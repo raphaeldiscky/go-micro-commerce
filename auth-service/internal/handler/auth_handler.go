@@ -2,11 +2,10 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/service"
@@ -30,17 +29,11 @@ func NewAuthHandler(authService service.AuthServiceInterface, lgr logger.Logger)
 func (h *AuthHandler) Register(c echo.Context) error {
 	var req dto.RegisterRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
-		})
+		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	clientIP := c.RealIP()
@@ -48,30 +41,21 @@ func (h *AuthHandler) Register(c echo.Context) error {
 
 	response, err := h.authService.Register(c.Request().Context(), &req, clientIP, userAgent)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusCreated, response)
+	return echoutils.ResponseCreated(c, response)
 }
 
 // Login handles user login.
 func (h *AuthHandler) Login(c echo.Context) error {
 	var req dto.LoginRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
-		})
+		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	clientIP := c.RealIP()
@@ -79,233 +63,149 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	response, err := h.authService.Login(c.Request().Context(), &req, clientIP, userAgent)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Code:    http.StatusUnauthorized,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return echoutils.ResponseCreated(c, response)
 }
 
 // RefreshToken handles token refresh.
 func (h *AuthHandler) RefreshToken(c echo.Context) error {
 	var req dto.RefreshTokenRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
-		})
+		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	response, err := h.authService.RefreshToken(c.Request().Context(), &req)
 	if err != nil {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Code:    http.StatusUnauthorized,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return echoutils.ResponseOK(c, response)
 }
 
 // Logout handles user logout.
 func (h *AuthHandler) Logout(c echo.Context) error {
 	var req dto.LogoutRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
-		})
+		return err
 	}
 
 	if err := h.authService.Logout(c.Request().Context(), &req); err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "Successfully logged out",
-	})
+	return echoutils.ResponseOKPlain(c)
 }
 
 // GetUser retrieves the user's user.
 func (h *AuthHandler) GetUser(c echo.Context) error {
-	userIDStr, ok := c.Get("userID").(string)
-	if !ok {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Code:    http.StatusUnauthorized,
-			Message: "User ID not found in context",
-		})
-	}
+	param := c.Param("userID")
 
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := uuid.Parse(param)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid user ID format",
-		})
+		return err
 	}
 
 	user, err := h.authService.GetUser(c.Request().Context(), userID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, user)
+	return echoutils.ResponseOK(c, user)
 }
 
 // UpdateUser updates the user's user.
 func (h *AuthHandler) UpdateUser(c echo.Context) error {
-	userIDStr, ok := c.Get("userID").(string)
-	if !ok {
-		return c.JSON(http.StatusUnauthorized, dto.ErrorResponse{
-			Code:    http.StatusUnauthorized,
-			Message: "User ID not found in context",
-		})
-	}
+	param := c.Param("userID")
 
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := uuid.Parse(param)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid user ID format",
-		})
+		return err
 	}
 
 	var req dto.UpdateUserRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
-		})
+		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	user, err := h.authService.UpdateUser(c.Request().Context(), userID, &req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, user)
+	return echoutils.ResponseCreated(c, user)
 }
 
 // DeleteUser handles user deletion.
 func (h *AuthHandler) DeleteUser(c echo.Context) error {
-	userIDStr := c.Param("id")
-	if userIDStr == "" {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "User ID is required",
-		})
-	}
+	param := c.Param("userID")
 
-	userID, err := uuid.Parse(userIDStr)
+	userID, err := uuid.Parse(param)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid user ID format",
-		})
+		return err
 	}
 
 	_, err = h.authService.GetUser(c.Request().Context(), userID)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	if err := h.authService.DeleteUser(c.Request().Context(), userID); err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "User successfully deleted",
-	})
+	if err := h.authService.LogoutAllSessions(c.Request().Context(), userID); err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOKPlain(c)
 }
 
 // VerifyEmail verify user's email.
 func (h *AuthHandler) VerifyEmail(c echo.Context) error {
+	queryParam := c.QueryParam("token")
 	req := dto.VerifyEmailRequest{
-		Token: c.QueryParam("token"),
+		Token: queryParam,
 	}
 
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	if err := h.authService.VerifyEmail(c.Request().Context(), &req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "Email successfully verified",
-	})
+	return echoutils.ResponseOKPlain(c)
 }
 
 // ResendVerification handles resend email verification.
 func (h *AuthHandler) ResendVerification(c echo.Context) error {
 	var req dto.ResendVerificationRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: "Invalid request format",
-		})
+		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, dto.ErrorResponse{
-			Code:    http.StatusBadRequest,
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	if err := h.authService.ResendVerification(c.Request().Context(), &req); err != nil {
-		return c.JSON(http.StatusInternalServerError, dto.ErrorResponse{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, dto.SuccessResponse{
-		Message: "Verification email resent successfully",
-	})
+	return echoutils.ResponseOKPlain(c)
 }
