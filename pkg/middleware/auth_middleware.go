@@ -3,7 +3,6 @@ package middleware
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
@@ -81,8 +80,6 @@ func (m *AuthMiddleware) parseAccessToken(c echo.Context) (string, error) {
 	if accessToken == "" {
 		return "", fmt.Errorf("missing Authorization header")
 	}
-
-	log.Printf("Authorization header: %s", accessToken)
 
 	splitToken := strings.Split(accessToken, " ")
 	if len(splitToken) != 2 || splitToken[0] != "Bearer" {

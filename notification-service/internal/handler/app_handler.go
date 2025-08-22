@@ -26,3 +26,10 @@ func (c *AppHandler) Health(e echo.Context) error {
 		Message: "service is healthy",
 	})
 }
+
+// RouteNotFound handles 404 errors.
+func (c *AppHandler) RouteNotFound(e echo.Context) error {
+	return e.JSON(http.StatusNotFound, dto.WebResponse[any]{
+		Message: "route not found",
+	})
+}

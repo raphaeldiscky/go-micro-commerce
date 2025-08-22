@@ -3,7 +3,6 @@ package jwtutils
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -136,13 +135,7 @@ func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, 
 			return []byte(j.config.Secret), nil
 		},
 	)
-
-	log.Printf("Validating access token: %s", tokenString)
-	log.Printf("Token valid: %v", token.Valid)
-
 	if err != nil {
-		log.Printf("Error validating token: %v", err)
-
 		return nil, err
 	}
 

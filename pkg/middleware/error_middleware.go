@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -41,7 +42,7 @@ func ErrorHandler() echo.MiddlewareFunc {
 
 				var e4 *httperror.ResponseError
 
-				var e5 *echo.HTTPError
+				var e6 *echo.HTTPError
 
 				switch {
 				case errors.As(err, &e):
@@ -54,10 +55,14 @@ func ErrorHandler() echo.MiddlewareFunc {
 					return handleParseTimeError(c, e3)
 				case errors.As(err, &e4):
 					return c.JSON(e4.GetCode(), dto.WebResponse[any]{Message: e4.DisplayMessage()})
-				case errors.As(err, &e5):
-					code := e5.Code
+				case isUUIDError(err):
+					return c.JSON(http.StatusBadRequest, dto.WebResponse[any]{
+						Message: "invalid UUID format",
+					})
+				case errors.As(err, &e6):
+					code := e6.Code
 
-					message, ok := e5.Message.(string)
+					message, ok := e6.Message.(string)
 					if !ok {
 						message = constant.InternalServerErrorMessage
 					}
@@ -129,4 +134,14 @@ func handleValidationError(c echo.Context, err validator.ValidationErrors) error
 		Message: constant.ValidationErrorMessage,
 		Errors:  ve,
 	})
+}
+
+// isUUIDError checks if the error is from uuid.Parse.
+func isUUIDError(err error) bool {
+	// Check if error message contains UUID-related keywords
+	errMsg := err.Error()
+
+	return strings.Contains(errMsg, "invalid UUID") ||
+		strings.Contains(errMsg, "UUID") ||
+		strings.Contains(errMsg, "invalid length")
 }
