@@ -70,7 +70,7 @@ type ProductUpdatedProducer struct {
 func NewProductUpdatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
 	return &ProductUpdatedProducer{
 		Producer: producer,
-		topic:    constant.ProductLifecycleTopic,
+		topic:    constant.TopicProductLifecycle,
 	}
 }
 

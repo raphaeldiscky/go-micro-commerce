@@ -57,7 +57,7 @@ type ProductDeletedProducer struct {
 func NewProductDeletedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
 	return &ProductDeletedProducer{
 		Producer: producer,
-		topic:    constant.ProductLifecycleTopic,
+		topic:    constant.TopicProductLifecycle,
 	}
 }
 

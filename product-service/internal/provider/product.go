@@ -17,9 +17,9 @@ import (
 // SetupProduct initializes the product-related routes and services.
 func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.ProductLifecycleTopic,
-		constant.ProductLifecycleTopicNumPartitions,
-		constant.ProductLifecycleTopicReplicationFactor,
+		constant.TopicProductLifecycle,
+		constant.TopicProductLifecycleNumPartitions,
+		constant.TopicProductLifecycleReplicationFactor,
 	)
 
 	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{

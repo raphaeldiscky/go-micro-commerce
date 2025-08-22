@@ -19,9 +19,9 @@ import (
 // SetupAuth initializes the authentication-related components.
 func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.UserVerificationTopic,
-		constant.UserVerificationTopicNumPartitions,
-		constant.UserVerificationTopicReplicationFactor,
+		constant.TopicUserVerification,
+		constant.TopicUserVerificationNumPartitions,
+		constant.TopicUserVerificationReplicationFactor,
 	)
 
 	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{

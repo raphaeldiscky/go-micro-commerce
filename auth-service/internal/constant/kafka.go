@@ -16,11 +16,11 @@ const (
 
 // Topics that Auth Service produces to.
 const (
-	UserVerificationTopic = "user.verification" // EmailVerificationRequested, EmailVerified
-	// UserVerificationTopicNumPartitions is the number of partitions for the user verification topic.
-	UserVerificationTopicNumPartitions = 3
-	// UserVerificationTopicReplicationFactor is the replication factor for the user verification topic.
-	UserVerificationTopicReplicationFactor = 1
-	// UserSecurityTopic is the topic for user security events.
-	UserSecurityTopic = "user.security" // PasswordResetRequested, PasswordChanged
+	TopicUserVerification = "user.verification" // EmailVerificationRequested, EmailVerified
+	// TopicUserVerificationNumPartitions is the number of partitions for the user verification topic.
+	TopicUserVerificationNumPartitions = 3
+	// TopicUserVerificationReplicationFactor is the replication factor for the user verification topic.
+	TopicUserVerificationReplicationFactor = 1
+	// TopicUserSecurity is the topic for user security events.
+	TopicUserSecurity = "user.security" // PasswordResetRequested, PasswordChanged
 )

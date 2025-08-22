@@ -16,8 +16,8 @@ const (
 
 // Topics that Notification Service produces to.
 const (
-	// UserVerificationTopic is the topic for user verification events.
-	UserVerificationTopic = "user.verification" // EmailVerificationRequested, UserVerified
+	// TopicUserVerification is the topic for user verification events.
+	TopicUserVerification = "user.verification" // EmailVerificationRequested, UserVerified
 )
 
 // Consumer groups for Notification Service (consuming from other services).

@@ -20,7 +20,7 @@ func SetupKafkaConsumers(
 
 	userVerificationConsumer, err := mq.NewConsumerKafka(
 		cfg.Brokers,
-		constant.UserVerificationTopic,
+		constant.TopicUserVerification,
 		constant.ConsumerGroupNotificationUserEvents,
 		event.NewUserVerificationConsumer(mailer, appLogger).Handler,
 		appLogger,
