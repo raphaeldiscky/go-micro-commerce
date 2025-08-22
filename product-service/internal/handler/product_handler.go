@@ -128,15 +128,15 @@ func (h *ProductHandler) UpdateProduct(c echo.Context) error {
 		return err
 	}
 
-	if err := c.Validate(&reqBody); err != nil {
-		return err
-	}
-
 	req := dto.UpdateProductRequest{
 		ID:       productID,
 		Name:     reqBody.Name,
 		Price:    reqBody.Price,
 		Quantity: reqBody.Quantity,
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
 	}
 
 	product, err := h.productService.UpdateProduct(c.Request().Context(), req)
