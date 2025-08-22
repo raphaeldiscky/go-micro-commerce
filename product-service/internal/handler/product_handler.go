@@ -2,8 +2,6 @@
 package handler
 
 import (
-	"strconv"
-
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
@@ -72,28 +70,20 @@ func (h *ProductHandler) GetProduct(c echo.Context) error {
 // GetProducts handles GET /products.
 func (h *ProductHandler) GetProducts(c echo.Context) error {
 	var req dto.GetProductsRequest
-
-	limitParam := c.QueryParam("limit")
-	if limitParam != "" {
-		if limit, err := strconv.ParseInt(limitParam, 10, 64); err == nil && limit > 0 {
-			req.Limit = limit
-		}
-	}
-
-	if req.Limit == 0 {
-		req.Limit = pkgConstant.DefaultLimit
-	}
-
-	pageParam := c.QueryParam("page")
-	if pageParam != "" {
-		if page, err := strconv.ParseInt(pageParam, 10, 64); err == nil && page > 0 {
-			req.Page = page
-		}
-	}
-
-	if req.Page == 0 {
-		req.Page = pkgConstant.DefaultPage
-	}
+	req.Limit = pageutils.ParseQueryInt64(
+		c,
+		"limit",
+		pkgConstant.DefaultLimit,
+		1,
+		100,
+	) // min=1, max=100
+	req.Page = pageutils.ParseQueryInt64(
+		c,
+		"page",
+		pkgConstant.DefaultPage,
+		1,
+		0,
+	) // min=1, max=0 (no max)
 
 	if err := c.Validate(&req); err != nil {
 		return err
@@ -106,9 +96,9 @@ func (h *ProductHandler) GetProducts(c echo.Context) error {
 
 	paging.Links = pageutils.NewLinks(
 		c.Request(),
-		int(paging.Page),
-		int(paging.Size),
-		int(paging.TotalPage),
+		paging.Page,
+		paging.Size,
+		paging.TotalPage,
 	)
 
 	return echoutils.ResponseOKPagination(c, products, paging)

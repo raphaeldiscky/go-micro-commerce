@@ -15,7 +15,7 @@ const (
 )
 
 // NewLinks creates a new Links instance for pagination.
-func NewLinks(r *http.Request, page, size, totalPage int) *dto.Links {
+func NewLinks(r *http.Request, page, size, totalPage int64) *dto.Links {
 	host := r.Host
 	path := r.URL.Path
 
@@ -27,11 +27,11 @@ func NewLinks(r *http.Request, page, size, totalPage int) *dto.Links {
 
 	// Preserve existing queries
 	queries := r.URL.Query()
-	queries.Set("size", strconv.Itoa(size))
+	queries.Set("size", strconv.FormatInt(size, 10))
 
 	// Self link
 	selfQueries := cloneQuery(queries)
-	selfQueries.Set("page", strconv.Itoa(page))
+	selfQueries.Set("page", strconv.FormatInt(page, 10))
 	selfLink := fmt.Sprintf(linkFormat, host, path, selfQueries.Encode())
 
 	// First link
@@ -42,7 +42,7 @@ func NewLinks(r *http.Request, page, size, totalPage int) *dto.Links {
 	// Last link
 	lastQueries := cloneQuery(queries)
 	if totalPage > 0 {
-		lastQueries.Set("page", strconv.Itoa(totalPage))
+		lastQueries.Set("page", strconv.FormatInt(totalPage, 10))
 	} else {
 		lastQueries.Set("page", "1")
 	}
@@ -65,25 +65,25 @@ func NewLinks(r *http.Request, page, size, totalPage int) *dto.Links {
 }
 
 // createNextLink creates the next link for pagination.
-func createNextLink(queries url.Values, host, path string, page, totalPage int) string {
+func createNextLink(queries url.Values, host, path string, page, totalPage int64) string {
 	if page >= totalPage { // no next page
 		return ""
 	}
 
 	q := cloneQuery(queries)
-	q.Set("page", strconv.Itoa(page+1))
+	q.Set("page", strconv.FormatInt(page+1, 10))
 
 	return fmt.Sprintf(linkFormat, host, path, q.Encode())
 }
 
 // createPrevLink creates the previous link for pagination.
-func createPrevLink(queries url.Values, host, path string, page int) string {
+func createPrevLink(queries url.Values, host, path string, page int64) string {
 	if page <= 1 { // no previous page
 		return ""
 	}
 
 	q := cloneQuery(queries)
-	q.Set("page", strconv.Itoa(page-1))
+	q.Set("page", strconv.FormatInt(page-1, 10))
 
 	return fmt.Sprintf(linkFormat, host, path, q.Encode())
 }
