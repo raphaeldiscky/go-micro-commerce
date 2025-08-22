@@ -18,10 +18,13 @@ type AuthHandler struct {
 }
 
 // NewAuthHandler creates a new auth handler.
-func NewAuthHandler(authService service.AuthServiceInterface, lgr logger.Logger) *AuthHandler {
+func NewAuthHandler(
+	authService service.AuthServiceInterface,
+	appLogger logger.Logger,
+) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
-		logger:      lgr,
+		logger:      appLogger,
 	}
 }
 

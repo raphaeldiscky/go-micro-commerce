@@ -2,16 +2,17 @@
 package handler
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/pageutils"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
+	pkgConstant "github.com/raphaeldiscky/go-micro-template/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
@@ -36,111 +37,103 @@ func NewProductHandler(
 func (h *ProductHandler) CreateProduct(c echo.Context) error {
 	var req dto.CreateProductRequest
 	if err := c.Bind(&req); err != nil {
-		httpErr := httperror.NewInvalidRequestBodyError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+		return err
 	}
 
-	// Validate request using go-playground validator
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return err
 	}
 
 	product, err := h.productService.CreateProduct(c.Request().Context(), req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return err
 	}
 
-	return c.JSON(http.StatusCreated, product)
+	return echoutils.ResponseCreated(c, product)
 }
 
-// GetProduct handles GET /products/:id.
+// GetProduct handles GET /products/:productID.
 func (h *ProductHandler) GetProduct(c echo.Context) error {
-	idParam := c.Param("id")
+	param := c.Param("productID")
 
-	id, err := uuid.Parse(idParam)
+	productID, err := uuid.Parse(param)
 	if err != nil {
-		httpErr := httperror.NewInvalidProductIDError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+		return err
 	}
 
-	product, err := h.productService.GetProduct(c.Request().Context(), id)
+	product, err := h.productService.GetProduct(c.Request().Context(), productID)
 	if err != nil {
-		if err.Error() == constant.ProductNotFoundErrorMessage {
-			httpErr := httperror.NewProductNotFoundError()
-
-			return c.JSON(httpErr.GetCode(), httpErr)
-		}
-
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, product)
+	return echoutils.ResponseOK(c, product)
 }
 
 // GetProducts handles GET /products.
 func (h *ProductHandler) GetProducts(c echo.Context) error {
 	var req dto.GetProductsRequest
 
-	// Parse query parameters
 	limitParam := c.QueryParam("limit")
 	if limitParam != "" {
-		if limit, err := strconv.Atoi(limitParam); err == nil && limit > 0 {
+		if limit, err := strconv.ParseInt(limitParam, 10, 64); err == nil && limit > 0 {
 			req.Limit = limit
 		}
 	}
 
 	if req.Limit == 0 {
-		req.Limit = 10 // Default limit
+		req.Limit = pkgConstant.DefaultLimit
 	}
 
-	offsetParam := c.QueryParam("offset")
-	if offsetParam != "" {
-		if offset, err := strconv.Atoi(offsetParam); err == nil && offset >= 0 {
-			req.Offset = offset
+	pageParam := c.QueryParam("page")
+	if pageParam != "" {
+		if page, err := strconv.ParseInt(pageParam, 10, 64); err == nil && page > 0 {
+			req.Page = page
 		}
 	}
 
-	// Validate query parameters using go-playground validator
+	if req.Page == 0 {
+		req.Page = pkgConstant.DefaultPage
+	}
+
 	if err := c.Validate(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return err
 	}
 
-	products, err := h.productService.GetProducts(c.Request().Context(), req)
+	products, paging, err := h.productService.GetProducts(c.Request().Context(), req)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, products)
+	paging.Links = pageutils.NewLinks(
+		c.Request(),
+		int(paging.Page),
+		int(paging.Size),
+		int(paging.TotalPage),
+	)
+
+	return echoutils.ResponseOKPagination(c, products, paging)
 }
 
-// UpdateProduct handles PUT /products/:id.
+// UpdateProduct handles PUT /products/:productID.
 func (h *ProductHandler) UpdateProduct(c echo.Context) error {
-	idParam := c.Param("id")
+	param := c.Param("productID")
 
-	id, err := uuid.Parse(idParam)
+	productID, err := uuid.Parse(param)
 	if err != nil {
-		httpErr := httperror.NewInvalidProductIDError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+		return err
 	}
 
 	var reqBody dto.UpdateProductRequest
-
 	if err := c.Bind(&reqBody); err != nil {
-		httpErr := httperror.NewInvalidRequestBodyError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+		return err
 	}
 
-	// Validate request using go-playground validator
 	if err := c.Validate(&reqBody); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": err.Error()})
+		return err
 	}
 
 	req := dto.UpdateProductRequest{
-		ID:       id,
+		ID:       productID,
 		Name:     reqBody.Name,
 		Price:    reqBody.Price,
 		Quantity: reqBody.Quantity,
@@ -148,39 +141,25 @@ func (h *ProductHandler) UpdateProduct(c echo.Context) error {
 
 	product, err := h.productService.UpdateProduct(c.Request().Context(), req)
 	if err != nil {
-		if err.Error() == constant.ProductNotFoundErrorMessage {
-			httpErr := httperror.NewProductNotFoundError()
-
-			return c.JSON(httpErr.GetCode(), httpErr)
-		}
-
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return err
 	}
 
-	return c.JSON(http.StatusOK, product)
+	return echoutils.ResponseOK(c, product)
 }
 
-// DeleteProduct handles DELETE /products/:id.
+// DeleteProduct handles DELETE /products/:productID.
 func (h *ProductHandler) DeleteProduct(c echo.Context) error {
-	idParam := c.Param("id")
+	param := c.Param("productID")
 
-	id, err := uuid.Parse(idParam)
+	productID, err := uuid.Parse(param)
 	if err != nil {
-		httpErr := httperror.NewInvalidProductIDError()
-
-		return c.JSON(httpErr.GetCode(), httpErr)
+		return err
 	}
 
-	err = h.productService.DeleteProduct(c.Request().Context(), id)
+	err = h.productService.DeleteProduct(c.Request().Context(), productID)
 	if err != nil {
-		if err.Error() == constant.ProductNotFoundErrorMessage {
-			httpErr := httperror.NewProductNotFoundError()
-
-			return c.JSON(httpErr.GetCode(), httpErr)
-		}
-
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return err
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return echoutils.ResponseOKPlain(c)
 }
