@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-00010101000000-000000000000
+	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-20250822082838-0a883c017315
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0

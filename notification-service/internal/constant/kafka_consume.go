@@ -1,11 +1,6 @@
 // Package constant defines constants used in the order service for Kafka topics and event types.
 package constant
 
-// Notification Service Source.
-const (
-	KafkaSourceNotificationService = "notification-service"
-)
-
 // Auth Service Event Types.
 const (
 	// KafkaEventTypeEmailVerificationRequested is the event type for email verification requested events.
@@ -14,7 +9,7 @@ const (
 	KafkaEventTypeUserVerified = "UserVerified"
 )
 
-// Topics that Notification Service produces to.
+// Topics that Notification Service consumes from other services.
 const (
 	// TopicUserVerification is the topic for user verification events.
 	TopicUserVerification = "user.verification" // EmailVerificationRequested, UserVerified

@@ -33,7 +33,7 @@ func Start(cfg *config.Config, appLogger logger.Logger) {
 				runHTTPWorker(ctx, cfg, appLogger)
 			},
 			PreRun: func(_ *cobra.Command, _ []string) {
-				go runKafkaWorker(ctx, cfg, appLogger)
+				go runKafkaConsumerWorker(ctx, cfg, appLogger)
 			},
 		},
 	}
