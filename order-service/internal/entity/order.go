@@ -15,7 +15,6 @@ import (
 // Order represents an order in the marketplace.
 type Order struct {
 	ID         uuid.UUID
-	RequestID  uuid.UUID
 	CustomerID uuid.UUID
 	Status     constant.OrderStatus
 	TotalPrice decimal.Decimal

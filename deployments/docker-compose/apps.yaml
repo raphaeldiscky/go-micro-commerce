@@ -21,7 +21,7 @@ services:
       - HTTP_SERVER_PORT=8080
       - SERVER_READ_TIMEOUT=15s
       - SERVER_WRITE_TIMEOUT=15s
-      - JWT_SECRET=your-256-bit-secret-key-here-change-in-production
+      - JWT_SECRET=secret
       - JWT_EXPIRATION_TIME=24h
       - JWT_REFRESH_TIME=72h
       - JWT_ISSUER=api-gateway

@@ -20,4 +20,12 @@ const (
 	InvalidURLParamErrorMessage = "expected a numeric value but got '%s'"
 	// RequestDuplicateErrorMessage indicates that the request is a duplicate.
 	RequestDuplicateErrorMessage = "request duplicate"
+	// MissingXUserIDErrorMessage indicates that the X-UserID header is missing.
+	MissingXUserIDErrorMessage = "missing X-UserID header"
+	// MissingXEmailErrorMessage indicates that the X-Email header is missing.
+	MissingXEmailErrorMessage = "missing X-Email header"
+	// MissingXRolesErrorMessage indicates that the X-Roles header is missing.
+	MissingXRolesErrorMessage = "missing X-Roles header"
+	// MissingXIsActiveErrorMessage indicates that the X-IsActive header is missing.
+	MissingXIsActiveErrorMessage = "missing X-IsActive header"
 )

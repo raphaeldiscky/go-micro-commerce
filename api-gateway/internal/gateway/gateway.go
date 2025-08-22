@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
@@ -174,6 +177,9 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 	// Copy headers (excluding hop-by-hop headers)
 	gw.copyHeaders(c.Request().Header, req.Header)
 
+	// Add user headers
+	gw.addUserHeaders(c, req)
+
 	// Add tracing headers
 	headers := make(map[string]string)
 	tracing.InjectHeaders(c.Request().Context(), headers)
@@ -275,8 +281,10 @@ func (gw *Gateway) CreateReverseProxy(serviceName string) echo.HandlerFunc {
 		originalDirector := proxy.Director
 		proxy.Director = func(req *http.Request) {
 			originalDirector(req)
+			gw.copyHeaders(c.Request().Header, req.Header)
 			req.Header.Set("X-Gateway", "api-gateway")
 			req.Header.Set("X-Forwarded-For", c.RealIP())
+			gw.addUserHeaders(c, req)
 		}
 
 		// Handle errors
@@ -293,35 +301,31 @@ func (gw *Gateway) CreateReverseProxy(serviceName string) echo.HandlerFunc {
 	}
 }
 
-// DebugServices returns information about discovered services.
-func (gw *Gateway) DebugServices() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		services := []string{
-			"product-service",
-			"auth-service",
-			"order-service",
-			"notification-service",
+// addUserHeaders adds user information headers to the request.
+func (gw *Gateway) addUserHeaders(c echo.Context, req *http.Request) {
+	// Get user information from context (set by Authorization middleware)
+	if userID := c.Get(constant.CtxUserID); userID != nil {
+		if id, ok := userID.(uuid.UUID); ok {
+			req.Header.Set("X-UserID", id.String())
 		}
-		result := make(map[string]interface{})
+	}
 
-		for _, serviceName := range services {
-			endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
-			if err != nil {
-				result[serviceName] = map[string]string{
-					"status": "unavailable",
-					"error":  err.Error(),
-				}
-			} else {
-				result[serviceName] = map[string]string{
-					"status":   "available",
-					"endpoint": endpoint,
-				}
-			}
+	if email := c.Get(constant.CtxEmail); email != nil {
+		if emailStr, ok := email.(string); ok {
+			req.Header.Set("X-Email", emailStr)
 		}
+	}
 
-		return c.JSON(http.StatusOK, map[string]interface{}{
-			"services":  result,
-			"timestamp": time.Now().Unix(),
-		})
+	if roles := c.Get(constant.CtxRoles); roles != nil {
+		if rolesSlice, ok := roles.([]string); ok {
+			// Join roles with comma or send as JSON
+			req.Header.Set("X-Roles", strings.Join(rolesSlice, ","))
+		}
+	}
+
+	if isActive := c.Get(constant.CtxIsActive); isActive != nil {
+		if active, ok := isActive.(bool); ok {
+			req.Header.Set("X-IsActive", strconv.FormatBool(active))
+		}
 	}
 }

@@ -2,7 +2,6 @@
 package handler
 
 import (
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
@@ -107,12 +106,7 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 
 // GetUser retrieves the user's user.
 func (h *AuthHandler) GetUser(c echo.Context) error {
-	param := c.Param("userID")
-
-	userID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
+	userID := echoutils.GetUserIDFromContext(c)
 
 	user, err := h.authService.GetUser(c.Request().Context(), userID)
 	if err != nil {
@@ -124,12 +118,7 @@ func (h *AuthHandler) GetUser(c echo.Context) error {
 
 // UpdateUser updates the user's user.
 func (h *AuthHandler) UpdateUser(c echo.Context) error {
-	param := c.Param("userID")
-
-	userID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
+	userID := echoutils.GetUserIDFromContext(c)
 
 	var req dto.UpdateUserRequest
 	if err := c.Bind(&req); err != nil {
@@ -146,31 +135,6 @@ func (h *AuthHandler) UpdateUser(c echo.Context) error {
 	}
 
 	return echoutils.ResponseCreated(c, user)
-}
-
-// DeleteUser handles user deletion.
-func (h *AuthHandler) DeleteUser(c echo.Context) error {
-	param := c.Param("userID")
-
-	userID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
-
-	_, err = h.authService.GetUser(c.Request().Context(), userID)
-	if err != nil {
-		return err
-	}
-
-	if err := h.authService.DeleteUser(c.Request().Context(), userID); err != nil {
-		return err
-	}
-
-	if err := h.authService.LogoutAllSessions(c.Request().Context(), userID); err != nil {
-		return err
-	}
-
-	return echoutils.ResponseOKPlain(c)
 }
 
 // VerifyEmail verify user's email.

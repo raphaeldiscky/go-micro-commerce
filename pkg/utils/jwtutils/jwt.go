@@ -141,7 +141,7 @@ func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, 
 
 	claims, ok := token.Claims.(*AccessTokenClaims)
 	if !ok || !token.Valid {
-		return nil, errors.New("invalid token")
+		return nil, errors.New("invalid token test 2")
 	}
 
 	return claims, nil
