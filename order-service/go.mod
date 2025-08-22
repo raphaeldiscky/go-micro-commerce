@@ -17,6 +17,8 @@ require (
 	github.com/stretchr/testify v1.10.0
 )
 
+replace github.com/raphaeldiscky/go-micro-template/pkg => ../pkg
+
 require (
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
