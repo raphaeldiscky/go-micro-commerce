@@ -30,8 +30,7 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer pgPool.Close()
-	// Setup datastore
+
 	dataStore := repository.NewDataStore(pgPool)
 	// Setup kafka admin
 	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{

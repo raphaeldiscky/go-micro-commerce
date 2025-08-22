@@ -68,7 +68,7 @@ func (sd *ConsulDiscoveryService) GetServiceEndpoint(serviceName string) (string
 
 	// Simple round-robin for now (could be enhanced with load balancing)
 	endpoint := endpoints[0]
-	sd.logger.Debug("Selected endpoint", "service", serviceName, "endpoint", endpoint)
+	sd.logger.Debug("selected endpoint", "service", serviceName, "endpoint", endpoint)
 
 	return endpoint, nil
 }
@@ -100,7 +100,7 @@ func (sd *ConsulDiscoveryService) DeregisterService(serviceID string) error {
 func (sd *ConsulDiscoveryService) HealthCheck(serviceName string) bool {
 	services, _, err := sd.client.Health().Service(serviceName, "", true, nil)
 	if err != nil {
-		sd.logger.Error("Health check failed", "service", serviceName, "error", err)
+		sd.logger.Error("health check failed", "service", serviceName, "error", err)
 
 		return false
 	}
@@ -122,7 +122,7 @@ func (sd *ConsulDiscoveryService) refreshCache() {
 func (sd *ConsulDiscoveryService) updateCache() {
 	services, _, err := sd.client.Catalog().Services(nil)
 	if err != nil {
-		sd.logger.Error("Failed to fetch services", "error", err)
+		sd.logger.Error("failed to fetch services", "error", err)
 
 		return
 	}
@@ -157,5 +157,5 @@ func (sd *ConsulDiscoveryService) updateCache() {
 	sd.cache = newCache
 	sd.mutex.Unlock()
 
-	sd.logger.Debug("Service cache updated", "services", len(newCache))
+	sd.logger.Debug("service cache updated", "services", len(newCache))
 }

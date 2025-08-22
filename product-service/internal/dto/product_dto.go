@@ -35,18 +35,10 @@ type ProductResponse struct {
 	UpdatedAt time.Time       `json:"updated_at"`
 }
 
-// ProductListResponse represents a list of products.
-type ProductListResponse struct {
-	Products []ProductResponse `json:"products"`
-	Total    int64             `json:"total"`
-	Limit    int               `json:"limit"`
-	Offset   int               `json:"offset"`
-}
-
 // GetProductsRequest represents pagination and filtering parameters.
 type GetProductsRequest struct {
-	Limit  int `json:"limit"  validate:"min=1,max=100"`
-	Offset int `json:"offset" validate:"min=0"`
+	Limit int64 `json:"limit" validate:"min=1,max=100"`
+	Page  int64 `json:"page"  validate:"min=1"`
 }
 
 // MapToProductResponse converts domain entity to DTO response.

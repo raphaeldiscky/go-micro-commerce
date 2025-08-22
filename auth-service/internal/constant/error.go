@@ -20,4 +20,6 @@ const (
 	UserAlreadyVerifiedErrorMessage = "user already verified"
 	// TokenAlreadyExistErrorMessage is returned when a verification token was recently sent.
 	TokenAlreadyExistErrorMessage = "token was recently sent, please wait before"
+	// InternalServerErrorMessage is returned for internal server errors.
+	InternalServerErrorMessage = "internal server error"
 )

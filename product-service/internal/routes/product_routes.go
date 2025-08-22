@@ -14,7 +14,7 @@ func SetupProductRoutes(e *echo.Echo, h *handler.ProductHandler) {
 	products := v1.Group("")
 	products.POST("", h.CreateProduct)
 	products.GET("", h.GetProducts)
-	products.GET("/:id", h.GetProduct)
-	products.PUT("/:id", h.UpdateProduct)
-	products.DELETE("/:id", h.DeleteProduct)
+	products.GET("/:productID", h.GetProduct)
+	products.PUT("/:productID", h.UpdateProduct)
+	products.DELETE("/:productID", h.DeleteProduct)
 }

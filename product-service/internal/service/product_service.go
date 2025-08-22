@@ -6,6 +6,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/pageutils"
+
+	pkgDto "github.com/raphaeldiscky/go-micro-template/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
@@ -18,7 +21,10 @@ import (
 type ProductServiceInterface interface {
 	CreateProduct(ctx context.Context, req dto.CreateProductRequest) (*dto.ProductResponse, error)
 	GetProduct(ctx context.Context, id uuid.UUID) (*dto.ProductResponse, error)
-	GetProducts(ctx context.Context, req dto.GetProductsRequest) (*dto.ProductListResponse, error)
+	GetProducts(
+		ctx context.Context,
+		req dto.GetProductsRequest,
+	) ([]dto.ProductResponse, *pkgDto.PageMetaData, error)
 	UpdateProduct(ctx context.Context, req dto.UpdateProductRequest) (*dto.ProductResponse, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
 }
@@ -63,7 +69,7 @@ func (s *ProductService) CreateProduct(
 		// Save to repository
 		savedProduct, err := productRepo.Create(ctx, product)
 		if err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to create product")
 		}
 
 		evt := event.NewProductCreatedEvent(
@@ -74,7 +80,7 @@ func (s *ProductService) CreateProduct(
 		)
 
 		if err := s.productCreatedProducer.Send(ctx, evt); err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to send product created event")
 		}
 
 		res = dto.MapToProductResponse(savedProduct)
@@ -97,7 +103,7 @@ func (s *ProductService) GetProduct(
 
 	product, err := productRepo.FindByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, httperror.NewInternalServerError("failed to get product")
 	}
 
 	if product == nil {
@@ -111,7 +117,7 @@ func (s *ProductService) GetProduct(
 func (s *ProductService) GetProducts(
 	ctx context.Context,
 	req dto.GetProductsRequest,
-) (*dto.ProductListResponse, error) {
+) ([]dto.ProductResponse, *pkgDto.PageMetaData, error) {
 	var products []*entity.Product
 
 	var total int64
@@ -119,28 +125,26 @@ func (s *ProductService) GetProducts(
 	var err error
 
 	productRepo := s.dataStore.ProductRepository()
+	offset := pageutils.GetOffset(req.Page, req.Limit)
 
-	products, err = productRepo.FindAll(ctx, req.Limit, req.Offset)
+	products, err = productRepo.FindAll(ctx, req.Limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, nil, httperror.NewInternalServerError("failed to get products")
+	}
+
+	res := make([]dto.ProductResponse, len(products))
+	for i, product := range products {
+		res[i] = *dto.MapToProductResponse(product)
 	}
 
 	total, err = productRepo.Count(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, httperror.NewInternalServerError("failed to count products")
 	}
 
-	productResponses := make([]dto.ProductResponse, len(products))
-	for i, product := range products {
-		productResponses[i] = *dto.MapToProductResponse(product)
-	}
+	metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
 
-	return &dto.ProductListResponse{
-		Products: productResponses,
-		Total:    total,
-		Limit:    req.Limit,
-		Offset:   req.Offset,
-	}, nil
+	return res, metadata, nil
 }
 
 // UpdateProduct updates an existing product.
@@ -156,30 +160,29 @@ func (s *ProductService) UpdateProduct(
 
 		existingProduct, err := productRepo.FindByID(ctx, req.ID)
 		if err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to get product")
 		}
 
 		if existingProduct == nil {
 			return httperror.NewProductNotFoundError()
 		}
 
-		// Update fields
 		if err := existingProduct.UpdateName(req.Name); err != nil {
-			return err
+			return httperror.NewBadRequestError("invalid product name")
 		}
 
 		if err := existingProduct.UpdatePrice(req.Price); err != nil {
-			return err
+			return httperror.NewBadRequestError("invalid product price")
 		}
 
 		if err := existingProduct.UpdateQuantity(req.Quantity); err != nil {
-			return err
+			return httperror.NewBadRequestError("invalid product quantity")
 		}
 
 		// Save updated product
 		updatedProduct, err := productRepo.Update(ctx, existingProduct)
 		if err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to update product")
 		}
 
 		// Produce domain event
@@ -190,7 +193,7 @@ func (s *ProductService) UpdateProduct(
 			updatedProduct.Quantity,
 		)
 		if err := s.productUpdatedProducer.Send(ctx, evt); err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to send product updated event")
 		}
 
 		res = dto.MapToProductResponse(updatedProduct)
@@ -211,7 +214,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 
 		exists, err := productRepo.Exists(ctx, id)
 		if err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to check product existence")
 		}
 
 		if !exists {
@@ -220,13 +223,13 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 
 		// Delete product
 		if err := productRepo.Delete(ctx, id); err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to delete product")
 		}
 
 		// Produce domain event
 		evt := event.NewProductDeletedEvent(id)
 		if err := s.productDeletedProducer.Send(ctx, evt); err != nil {
-			return err
+			return httperror.NewInternalServerError("failed to send product deleted event")
 		}
 
 		return nil

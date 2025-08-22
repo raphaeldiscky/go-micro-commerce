@@ -9,9 +9,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
 )
 
@@ -29,25 +31,6 @@ func NewMonitoringHandler(cfg *config.Config, appLogger logger.Logger) *Monitori
 		logger:    appLogger,
 		startTime: time.Now(),
 	}
-}
-
-// HealthResponse represents the health check response.
-type HealthResponse struct {
-	Status    string            `json:"status"`
-	Timestamp time.Time         `json:"timestamp"`
-	Uptime    string            `json:"uptime"`
-	Version   string            `json:"version"`
-	Checks    map[string]string `json:"checks"`
-}
-
-// MetricsResponse represents basic application metrics.
-type MetricsResponse struct {
-	Timestamp      time.Time `json:"timestamp"`
-	Uptime         string    `json:"uptime"`
-	MemoryUsage    uint64    `json:"memory_usage_bytes"`
-	GoroutineCount int       `json:"goroutine_count"`
-	RequestCount   int64     `json:"request_count,omitempty"`
-	ErrorCount     int64     `json:"error_count,omitempty"`
 }
 
 // Health returns the health status of the API gateway.
@@ -72,19 +55,14 @@ func (h *MonitoringHandler) Health(c echo.Context) error {
 		}
 	}
 
-	response := HealthResponse{
+	response := dto.HealthResponse{
 		Status:    status,
 		Timestamp: time.Now(),
 		Uptime:    uptime.String(),
 		Checks:    checks,
 	}
 
-	httpStatus := http.StatusOK
-	if status != constant.HealthyStatus {
-		httpStatus = http.StatusServiceUnavailable
-	}
-
-	return c.JSON(httpStatus, response)
+	return echoutils.ResponseOK(c, response)
 }
 
 // Ready returns the readiness status of the API gateway.
@@ -96,7 +74,7 @@ func (h *MonitoringHandler) Ready(c echo.Context) error {
 		"timestamp": time.Now(),
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return echoutils.ResponseOK(c, response)
 }
 
 // Metrics returns basic application metrics.
@@ -107,14 +85,14 @@ func (h *MonitoringHandler) Metrics(c echo.Context) error {
 
 	uptime := time.Since(h.startTime)
 
-	response := MetricsResponse{
+	response := dto.MetricsResponse{
 		Timestamp:      time.Now(),
 		Uptime:         uptime.String(),
 		MemoryUsage:    m.Alloc,
 		GoroutineCount: runtime.NumGoroutine(),
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return echoutils.ResponseOK(c, response)
 }
 
 // Info returns general information about the API gateway.
@@ -133,7 +111,7 @@ func (h *MonitoringHandler) Info(c echo.Context) error {
 		},
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return echoutils.ResponseOK(c, response)
 }
 
 // TestTrace creates a test trace for monitoring validation.
@@ -171,7 +149,7 @@ func (h *MonitoringHandler) TestTrace(c echo.Context) error {
 		"timestamp": time.Now(),
 	}
 
-	return c.JSON(http.StatusOK, response)
+	return echoutils.ResponseOK(c, response)
 }
 
 // TestError creates a test error for monitoring validation.
@@ -195,13 +173,18 @@ func (h *MonitoringHandler) TestError(c echo.Context) error {
 
 	response := map[string]interface{}{
 		"status":    "error",
-		"message":   "Test error created successfully",
 		"error":     testErr.Error(),
 		"trace_id":  tracing.GetTraceID(spanCtx),
 		"timestamp": time.Now(),
 	}
 
-	return c.JSON(http.StatusInternalServerError, response)
+	return echoutils.ResponseJSON(
+		c,
+		http.StatusInternalServerError,
+		"Test error created successfully",
+		response,
+		nil,
+	)
 }
 
 // checkMemory performs a basic memory usage check.

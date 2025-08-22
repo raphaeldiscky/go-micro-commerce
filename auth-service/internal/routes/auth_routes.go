@@ -23,7 +23,7 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 
 	// User routes (protected)
 	users := v1.Group("/users")
-	users.GET("/:id", h.GetUser)
-	users.PUT("/:id", h.UpdateUser)
-	users.DELETE("/:id", h.DeleteUser)
+	users.GET("/:userID", h.GetUser)
+	users.PUT("/:userID", h.UpdateUser)
+	users.DELETE("/:userID", h.DeleteUser)
 }
