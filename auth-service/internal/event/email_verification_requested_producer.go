@@ -67,7 +67,7 @@ func NewEmailVerificationRequestedProducer(
 ) mq.KafkaProducerInterface {
 	return &EmailVerificationRequestedProducer{
 		Producer: producer,
-		topic:    constant.UserVerificationTopic,
+		topic:    constant.TopicUserVerification,
 	}
 }
 

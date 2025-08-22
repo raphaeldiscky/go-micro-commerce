@@ -62,7 +62,7 @@ type UserVerifiedProducer struct {
 func NewUserVerifiedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
 	return &UserVerifiedProducer{
 		Producer: producer,
-		topic:    constant.UserVerificationTopic,
+		topic:    constant.TopicUserVerification,
 	}
 }
 
