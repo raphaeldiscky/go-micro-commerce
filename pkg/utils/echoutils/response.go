@@ -43,8 +43,8 @@ func ResponseJSON[T any](
 	paging *dto.PageMetaData,
 ) error {
 	return ctx.JSON(statusCode, dto.WebResponse[T]{
-		Message: message,
-		Data:    data,
-		Paging:  paging,
+		Message:    message,
+		Data:       data,
+		Pagination: paging,
 	})
 }

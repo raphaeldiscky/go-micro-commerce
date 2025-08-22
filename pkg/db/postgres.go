@@ -4,6 +4,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,6 +50,8 @@ func NewPostgresConnection(cfg *PostgresConfig) (*pgxpool.Pool, error) {
 	if err := pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
+
+	log.Printf("PostgreSQL connection established to %s:%d/%s", cfg.Host, cfg.Port, cfg.Name)
 
 	return pool, nil
 }
