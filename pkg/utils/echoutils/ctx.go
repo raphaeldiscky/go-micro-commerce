@@ -10,12 +10,11 @@ import (
 
 // GetUserIDFromContext retrieves the user ID (UUID) from the context safely.
 func GetUserIDFromContext(ctx echo.Context) uuid.UUID {
-	val, ok := ctx.Get(constant.CtxUserID).(string)
-	if !ok {
-		return uuid.Nil
+	if val, ok := ctx.Get(constant.CtxUserID).(uuid.UUID); ok {
+		return val
 	}
 
-	return uuid.MustParse(val)
+	return uuid.Nil
 }
 
 // GetEmailFromContext retrieves the user email from the context safely.

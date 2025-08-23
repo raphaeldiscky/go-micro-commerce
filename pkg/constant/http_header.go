@@ -10,3 +10,10 @@ const (
 	// XIsActive is the header for the user active status.
 	XIsActive = "X-IsActive"
 )
+
+const (
+	// RoleAdmin is the role for administrators.
+	RoleAdmin = "admin"
+	// RoleUser is the role for regular users (default).
+	RoleUser = "user"
+)
