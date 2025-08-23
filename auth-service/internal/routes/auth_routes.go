@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 
 	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/middleware"
 )
 
 // SetupAuthRoutes sets up all authentication routes.
@@ -13,16 +14,17 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	v1 := e.Group("/v1")
 
 	// Public routes (no authentication required)
-	auth := v1.Group("")
-	auth.POST("/register", h.Register)
-	auth.POST("/login", h.Login)
-	auth.POST("/refresh-token", h.RefreshToken)
-	auth.POST("/logout", h.Logout)
-	auth.POST("/verify", h.VerifyEmail)
-	auth.POST("/resend-verification", h.ResendVerification)
+	public := v1.Group("")
+	public.POST("/register", h.Register)
+	public.POST("/login", h.Login)
+	public.POST("/refresh-token", h.RefreshToken)
+	public.POST("/logout", h.Logout)
+	public.POST("/verify", h.VerifyEmail)
+	public.POST("/resend-verification", h.ResendVerification)
 
 	// User routes (protected)
-	users := v1.Group("/users")
-	users.GET("/", h.GetUser)
-	users.PUT("/", h.UpdateUser)
+	protected := v1.Group("/users")
+	protected.Use(middleware.AuthMiddleware)
+	protected.GET("", h.GetUser)
+	protected.PUT("", h.UpdateUser)
 }

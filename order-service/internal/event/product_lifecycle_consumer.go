@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
@@ -41,15 +42,44 @@ func (c *ProductLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 	}
 
 	switch meta.Metadata.EventType {
-	case constant.KafkaEventTypeProductUpdated:
-		return c.handleUpdatedProduct(ctx, body)
 	case constant.KafkaEventTypeProductCreated:
 		return c.handleCreatedProduct(ctx, body)
+	case constant.KafkaEventTypeProductUpdated:
+		return c.handleUpdatedProduct(ctx, body)
 	case constant.KafkaEventTypeProductDeleted:
 		return c.handleDeletedProduct(ctx, body)
 	default:
 		return fmt.Errorf("unknown event type: %s", meta.Metadata.EventType)
 	}
+}
+
+// handleCreatedProduct.
+func (c *ProductLifecycleConsumer) handleCreatedProduct(ctx context.Context, body []byte) error {
+	var event ProductCreatedEvent
+	if err := sonic.Unmarshal(body, &event); err != nil {
+		return fmt.Errorf("failed to unmarshal product created event: %w", err)
+	}
+
+	c.logger.Infof("Handling product created event for product ID: %s", event.Payload.ProductID)
+
+	// Add your business logic here for handling the created product event.
+	return c.datastore.Atomic(ctx, func(ds repository.DataStore) error {
+		product := &entity.Product{
+			ID:        event.Payload.ProductID,
+			Name:      event.Payload.Name,
+			Price:     event.Payload.Price,
+			Quantity:  event.Payload.Quantity,
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		}
+
+		_, err := ds.ProductRepository().Create(ctx, product)
+		if err != nil {
+			return fmt.Errorf("failed to create product: %w", err)
+		}
+
+		return nil
+	})
 }
 
 // handleUpdatedProduct.
@@ -71,37 +101,11 @@ func (c *ProductLifecycleConsumer) handleUpdatedProduct(ctx context.Context, bod
 		product.Name = event.Payload.Name
 		product.Price = event.Payload.Price
 		product.Quantity = event.Payload.Quantity
+		product.UpdatedAt = time.Now().UTC()
 
 		_, err = ds.ProductRepository().Update(ctx, product)
 		if err != nil {
 			return fmt.Errorf("failed to update product: %w", err)
-		}
-
-		return nil
-	})
-}
-
-// handleCreatedProduct.
-func (c *ProductLifecycleConsumer) handleCreatedProduct(ctx context.Context, body []byte) error {
-	var event ProductCreatedEvent
-	if err := sonic.Unmarshal(body, &event); err != nil {
-		return fmt.Errorf("failed to unmarshal product created event: %w", err)
-	}
-
-	c.logger.Infof("Handling product created event for product ID: %s", event.Payload.ProductID)
-
-	// Add your business logic here for handling the created product event.
-	return c.datastore.Atomic(ctx, func(ds repository.DataStore) error {
-		product := &entity.Product{
-			ID:       event.Payload.ProductID,
-			Name:     event.Payload.Name,
-			Price:    event.Payload.Price,
-			Quantity: event.Payload.Quantity,
-		}
-
-		_, err := ds.ProductRepository().Create(ctx, product)
-		if err != nil {
-			return fmt.Errorf("failed to create product: %w", err)
 		}
 
 		return nil
