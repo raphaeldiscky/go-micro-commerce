@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 
+	"github.com/bsm/redislock"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -20,19 +21,22 @@ type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	OrderRepository() OrderRepositoryInterface
 	ProductRepository() ProductRepositoryInterface
+	LockRepository() LockRepositoryInterface
 }
 
 // dataStore is a struct that implements the DataStore interface.
 type dataStore struct {
 	pool *pgxpool.Pool
 	db   DBTX
+	rdl  *redislock.Client
 }
 
 // NewDataStore creates a new DataStore.
-func NewDataStore(pool *pgxpool.Pool) DataStore {
+func NewDataStore(pool *pgxpool.Pool, rdl *redislock.Client) DataStore {
 	return &dataStore{
 		pool: pool,
 		db:   pool,
+		rdl:  rdl,
 	}
 }
 
@@ -63,4 +67,9 @@ func (s *dataStore) OrderRepository() OrderRepositoryInterface {
 // ProductRepository returns a new ProductRepository.
 func (s *dataStore) ProductRepository() ProductRepositoryInterface {
 	return NewProductRepositoryPostgres(s.db)
+}
+
+// LockRepository returns a new LockRepository.
+func (s *dataStore) LockRepository() LockRepositoryInterface {
+	return NewLockRepository(s.rdl)
 }
