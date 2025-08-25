@@ -101,7 +101,15 @@ services:
     depends_on:
       postgres-auth:
         condition: service_healthy
-      redis:
+      redis-1:
+        condition: service_healthy
+      redis-2:
+        condition: service_healthy
+      redis-3:
+        condition: service_healthy
+      redis-4:
+        condition: service_healthy
+      redis-5:
         condition: service_healthy
       kafka-1:
         condition: service_healthy
@@ -141,7 +149,15 @@ services:
     depends_on:
       postgres-product:
         condition: service_healthy
-      redis:
+      redis-1:
+        condition: service_healthy
+      redis-2:
+        condition: service_healthy
+      redis-3:
+        condition: service_healthy
+      redis-4:
+        condition: service_healthy
+      redis-5:
         condition: service_healthy
       kafka-1:
         condition: service_healthy
@@ -197,7 +213,15 @@ services:
     depends_on:
       postgres-order:
         condition: service_healthy
-      redis:
+      redis-1:
+        condition: service_healthy
+      redis-2:
+        condition: service_healthy
+      redis-3:
+        condition: service_healthy
+      redis-4:
+        condition: service_healthy
+      redis-5:
         condition: service_healthy
       kafka-1:
         condition: service_healthy

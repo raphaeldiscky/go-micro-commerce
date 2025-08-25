@@ -1,53 +1,108 @@
 services:
-  # Single Redis instance - good for most projects
-  redis:
-    image: redis:7.2-alpine
-    container_name: redis
+  # redis-1 is now designated as the cluster creator.
+  # It will wait for all other nodes to be healthy before initializing the cluster.
+  redis-1:
+    image: "bitnami/redis-cluster:8.2.1"
+    container_name: redis-1
     ports:
-      - "6379:6379"
-    command: >
-      redis-server 
-      --appendonly yes 
-      --maxmemory 512mb 
-      --maxmemory-policy allkeys-lru
-      --save 900 1
-      --save 300 10
-      --save 60 10000
+      - "6379:6379" # Use the default port for the creator for easier access
+      - "16379:16379"
+    environment:
+      - REDIS_PASSWORD=supersecret
+      - REDIS_CLUSTER_REPLICAS=1
+      - REDIS_NODES=redis-1 redis-2 redis-3 redis-4 redis-5 redis-6
+      - REDIS_CLUSTER_CREATOR=yes # This node will create the cluster
+    networks:
+      - go-micro-template
     volumes:
-      - redis_data:/data
-      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - redis-1_data:/bitnami/redis/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "supersecret", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  redis-2: &redis-node-common
+    image: "bitnami/redis-cluster:8.2.1"
+    container_name: redis-2
+    environment:
+      - REDIS_PASSWORD=supersecret
+      - REDIS_CLUSTER_REPLICAS=1
+      - REDIS_NODES=redis-1 redis-2 redis-3 redis-4 redis-5 redis-6
     networks:
       - go-micro-template
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "redis-cli", "-a", "supersecret", "ping"]
+      interval: 15s
+      timeout: 5s
       retries: 3
-    deploy:
-      resources:
-        limits:
-          memory: 600m
+      start_period: 30s
+    ports:
+      - "6380:6379"
+      - "16380:16379"
+    volumes:
+      - redis-2_data:/bitnami/redis/data
 
-  # Redis Insight for development (optional but helpful)
+  redis-3:
+    <<: *redis-node-common
+    container_name: redis-3
+    ports:
+      - "6381:6379"
+      - "16381:16379"
+    volumes:
+      - redis-3_data:/bitnami/redis/data
+
+  redis-4:
+    <<: *redis-node-common
+    container_name: redis-4
+    ports:
+      - "6382:6379"
+      - "16382:16379"
+    volumes:
+      - redis-4_data:/bitnami/redis/data
+
+  redis-5:
+    <<: *redis-node-common
+    container_name: redis-5
+    ports:
+      - "6383:6379"
+      - "16383:16379"
+    volumes:
+      - redis-5_data:/bitnami/redis/data
+
+  redis-6:
+    <<: *redis-node-common
+    container_name: redis-6
+    ports:
+      - "6384:6379"
+      - "16384:16379"
+    volumes:
+      - redis-6_data:/bitnami/redis/data
+
   redis-insight:
-    image: redislabs/redisinsight:2.70
+    image: redis/redisinsight:2.70
     container_name: redis-insight
     ports:
-      - "8001:8001"
-    environment:
-      - RIPORT=8001
+      - "5540:5540"
     volumes:
       - redis_insight_data:/db
     networks:
       - go-micro-template
     depends_on:
-      - redis
+      redis-1:
+        condition: service_healthy
+
+volumes:
+  redis-1_data:
+  redis-2_data:
+  redis-3_data:
+  redis-4_data:
+  redis-5_data:
+  redis-6_data:
+  redis_insight_data:
 
 networks:
   go-micro-template:
     name: go-micro-template
     external: true
-
-volumes:
-  redis_data:
-  redis_insight_data:

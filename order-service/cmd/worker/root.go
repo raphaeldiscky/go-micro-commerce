@@ -16,13 +16,13 @@ import (
 
 // Start initializes and starts the worker services.
 func Start(cfg *config.Config, appLogger logger.Logger) {
-	providers, err := provider.SetupGlobal(cfg)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
+
+	providers, err := provider.SetupGlobal(ctx, cfg)
 	if err != nil {
 		appLogger.Fatal("Failed to setup providers:", err)
 	}
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
 
 	rootCmd := &cobra.Command{}
 	cmd := []*cobra.Command{
