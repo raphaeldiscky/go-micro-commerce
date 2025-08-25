@@ -15,14 +15,14 @@ import (
 func GetXUserID(ctx echo.Context) (uuid.UUID, bool) {
 	xUserID := ctx.Request().Header.Get(constant.XUserID)
 	if xUserID == "" {
-		log.Printf("failed to get X-UserID from headers")
+		log.Printf("failed to get X-User-ID from headers")
 
 		return uuid.Nil, false
 	}
 
 	userID, err := uuid.Parse(xUserID)
 	if err != nil {
-		log.Printf("failed to parse X-UserID as UUID: %v", err)
+		log.Printf("failed to parse X-User-ID as UUID: %v", err)
 
 		return uuid.Nil, false
 	}
@@ -78,4 +78,16 @@ func GetXIsActive(ctx echo.Context) (isActive, ok bool) {
 	}
 
 	return isActive, true
+}
+
+// GetXRequestID retrieves the X-RequestID header from the context.
+func GetXRequestID(ctx echo.Context) (string, bool) {
+	xRequestID := ctx.Request().Header.Get(constant.XRequestID)
+	if xRequestID == "" {
+		log.Printf("failed to get X-Request-ID from headers")
+
+		return "", false
+	}
+
+	return xRequestID, true
 }

@@ -110,7 +110,7 @@ func (sd *ConsulDiscoveryService) HealthCheck(serviceName string) bool {
 
 // refreshCache periodically refreshes the service cache.
 func (sd *ConsulDiscoveryService) refreshCache() {
-	ticker := time.NewTicker(30 * time.Second)
+	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 
 	for range ticker.C {

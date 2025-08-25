@@ -290,7 +290,7 @@ tasks:
           sh ./scripts/sqlc.sh {{.SERVICE}}
         fi
 
-  jwt:
-    desc: Generate JWT keys
+  uuid:
+    desc: Generate UUID
     cmds:
-      - node ./scripts/generate-jwt.js
+      - bash ./scripts/uuid.sh

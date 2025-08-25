@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
@@ -84,7 +85,11 @@ func (s *HTTPServer) Shutdown() {
 
 // RegisterMiddlewares registers custom middleware for the HTTP server.
 func RegisterMiddlewares(e *echo.Echo) {
-	e.Use(middleware.RequestID())
+	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
+		Generator: func() string {
+			return uuid.New().String()
+		},
+	}))
 	e.Use(middleware.LoggerWithConfig(
 		middleware.LoggerConfig{
 			Format: "[${time_rfc3339}] ${method} ${uri} ${status} ${latency_human}\n",
