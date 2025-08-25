@@ -5,7 +5,7 @@ services:
     container_name: kafka-1
     ports:
       - "9092:9094"
-    environment: &kafka-env-1
+    environment: &kafka-env
       KAFKA_CFG_NODE_ID: 1
       KAFKA_CFG_PROCESS_ROLES: controller,broker
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
@@ -52,7 +52,7 @@ services:
     ports:
       - "9093:9094"
     environment:
-      <<: *kafka-env-1
+      <<: *kafka-env
       KAFKA_CFG_NODE_ID: 2
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:9093
     volumes:
@@ -76,7 +76,7 @@ services:
     ports:
       - "9094:9094"
     environment:
-      <<: *kafka-env-1
+      <<: *kafka-env
       KAFKA_CFG_NODE_ID: 3
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,EXTERNAL://localhost:9094
     volumes:
