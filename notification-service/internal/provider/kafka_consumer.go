@@ -26,7 +26,7 @@ func SetupKafkaConsumers(
 		appLogger,
 	)
 	if err != nil {
-		appLogger.Errorf("Failed to create user verification lifecycle consumer: %v", err)
+		appLogger.Errorf("failed to create user verification lifecycle consumer: %v", err)
 		// In a real app, you might want to panic here as the service cannot run.
 		return nil
 	}
@@ -39,7 +39,7 @@ func SetupKafkaConsumers(
 	// passwordResetConsumer, err := mq.NewConsumerKafka(...)
 	// consumers = append(consumers, passwordResetConsumer)
 
-	appLogger.Infof("Successfully created %d Kafka consumers", len(consumers))
+	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
 	return consumers
 }

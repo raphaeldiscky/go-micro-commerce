@@ -46,7 +46,9 @@ func (c *UserVerificationConsumer) Handler(ctx context.Context, body []byte) err
 	case constant.KafkaEventTypeUserVerified:
 		return c.handleUserVerified(ctx, body)
 	default:
-		return fmt.Errorf("unknown event type: %s", meta.Metadata.EventType)
+		c.logger.Warnf("ignoring event type: %s", meta.Metadata.EventType)
+
+		return nil
 	}
 }
 

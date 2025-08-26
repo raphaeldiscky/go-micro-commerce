@@ -25,14 +25,14 @@ func SetupKafkaConsumers(
 		appLogger,
 	)
 	if err != nil {
-		appLogger.Errorf("Failed to create product lifecycle consumer: %v", err)
+		appLogger.Errorf("failed to create product lifecycle consumer: %v", err)
 		// In a real app, you might want to panic here as the service cannot run.
 		return nil
 	}
 
 	consumers = append(consumers, productsConsumer)
 
-	appLogger.Infof("Successfully created %d Kafka consumers", len(consumers))
+	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
 	return consumers
 }

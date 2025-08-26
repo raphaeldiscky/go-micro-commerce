@@ -4,6 +4,8 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -19,11 +21,17 @@ type ProductRepositoryInterface interface {
 	// FindByID retrieves a product by its ID
 	FindByID(ctx context.Context, id uuid.UUID) (*entity.Product, error)
 
+	// FindByIDsForUpdate retrieves products by their IDs
+	FindByIDsForUpdate(ctx context.Context, ids []uuid.UUID) ([]*entity.Product, error)
+
 	// FindAll retrieves all products with optional pagination
 	FindAll(ctx context.Context, limit, offset int64) ([]*entity.Product, error)
 
 	// Update updates an existing product
 	Update(ctx context.Context, product *entity.Product) (*entity.Product, error)
+
+	// BulkUpdateQuantity updates the quantity of multiple products in the database.
+	BulkUpdateQuantity(ctx context.Context, products []*entity.Product) error
 
 	// Delete removes a product by ID
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -125,6 +133,43 @@ func (r *ProductRepositoryPostgres) Update(
 	return &updatedProduct, nil
 }
 
+// BulkUpdateQuantity updates the quantity of multiple products in the database.
+func (r *ProductRepositoryPostgres) BulkUpdateQuantity(
+	ctx context.Context,
+	products []*entity.Product,
+) error {
+	if len(products) == 0 {
+		return nil
+	}
+
+	query := `
+		INSERT INTO
+			products (id, name, price, quantity)
+		VALUES
+			%s
+		ON CONFLICT (id) DO UPDATE
+		SET
+			quantity = EXCLUDED.quantity,
+			updated_at = CURRENT_TIMESTAMP
+	`
+
+	valueStrings := make([]string, 0, len(products))
+	valueArgs := make([]interface{}, 0, len(products)*4)
+
+	i := 1
+	for _, product := range products {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d)", i, i+1, i+2, i+3))
+		valueArgs = append(valueArgs, product.ID, product.Name, product.Price, product.Quantity)
+		i += 4
+	}
+
+	query = fmt.Sprintf(query, strings.Join(valueStrings, ","))
+
+	_, err := r.db.Exec(ctx, query, valueArgs...)
+
+	return err
+}
+
 // Delete deletes a product from the database.
 func (r *ProductRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM products WHERE id = $1`
@@ -173,6 +218,56 @@ func (r *ProductRepositoryPostgres) FindByID(
 	}
 
 	return &product, nil
+}
+
+// FindByIDsForUpdate finds products by their IDs.
+func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
+	ctx context.Context,
+	ids []uuid.UUID,
+) ([]*entity.Product, error) {
+	if len(ids) == 0 {
+		return []*entity.Product{}, nil
+	}
+
+	// Build the SQL query with the correct number of placeholders
+	query := `
+		SELECT id, name, price, quantity, created_at, updated_at
+		FROM products
+		WHERE id = ANY($1)
+		FOR UPDATE
+	`
+
+	rows, err := r.db.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []*entity.Product
+
+	for rows.Next() {
+		var product entity.Product
+
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, &product)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return products, nil
 }
 
 // FindAll finds all products with pagination.

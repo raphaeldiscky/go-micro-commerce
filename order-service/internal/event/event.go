@@ -5,6 +5,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
 )
 
 type (
@@ -37,4 +38,17 @@ func mapStatusToEventType(status constant.OrderStatus) string {
 	default:
 		return "unknown"
 	}
+}
+
+// mapOrderItemsToPayload maps order items to their payload representation.
+func mapOrderItemsToPayload(items []entity.OrderItem) []OrderItemPayload {
+	payloadItems := make([]OrderItemPayload, len(items))
+	for i, item := range items {
+		payloadItems[i] = OrderItemPayload{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	return payloadItems
 }

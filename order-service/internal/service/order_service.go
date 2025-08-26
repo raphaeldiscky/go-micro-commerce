@@ -159,6 +159,7 @@ func (s *OrderService) CreateOrder(
 			constant.OrderStatusPending,
 			savedOrder.CustomerID,
 			savedOrder.TotalPrice,
+			savedOrder.Items,
 		)
 
 		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
@@ -302,6 +303,7 @@ func (s *OrderService) UpdateOrderStatus(
 			status,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
+			updatedOrder.Items,
 		)
 		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send order status updated event")
@@ -344,7 +346,8 @@ func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
 		}
 
 		// Save updated order
-		if _, err := orderRepo.Update(ctx, existingOrder); err != nil {
+		updatedOrder, err := orderRepo.Update(ctx, existingOrder)
+		if err != nil {
 			return httperror.NewInternalServerError("failed to cancel order")
 		}
 
@@ -352,8 +355,9 @@ func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
 		evt := event.NewOrderLifecycleEvent(
 			existingOrder.ID,
 			constant.OrderStatusCanceled,
-			existingOrder.CustomerID,
-			existingOrder.TotalPrice,
+			updatedOrder.CustomerID,
+			updatedOrder.TotalPrice,
+			updatedOrder.Items,
 		)
 		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send order canceled event")
@@ -407,6 +411,7 @@ func (s *OrderService) PayOrder(
 			constant.OrderStatusPaid,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
+			updatedOrder.Items,
 		)
 		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send order paid event")
