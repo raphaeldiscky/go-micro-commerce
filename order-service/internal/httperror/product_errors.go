@@ -1,4 +1,3 @@
-// Package httperror provides custom error responses for the Order service.
 package httperror
 
 import (
@@ -10,9 +9,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 )
 
-// NewOrderNotFoundError creates a new Order not found error.
-func NewOrderNotFoundError() *httperror.ResponseError {
-	msg := constant.OrderNotFoundErrorMessage
+// NewProductNotFoundError creates a new Product not found error.
+func NewProductNotFoundError() *httperror.ResponseError {
+	msg := constant.ProductNotFoundErrorMessage
 	err := errors.New(msg)
 
 	return httperror.NewResponseError(err, http.StatusNotFound, msg)

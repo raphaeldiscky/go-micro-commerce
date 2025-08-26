@@ -68,39 +68,66 @@ func (s *OrderService) CreateOrder(
 ) (*dto.OrderResponse, error) {
 	res := new(dto.OrderResponse)
 
-	s.logger.Infof("internal CreateOrder service request: %+v", req)
-
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 		productRepo := ds.ProductRepository()
-		// Convert DTO items to entity items
+
+		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err != nil {
+			return err
+		}
+
+		if order != nil && order.CustomerID == req.CustomerID {
+			res = dto.MapToOrderResponse(order)
+
+			return nil
+		}
+
+		productIDs := make([]uuid.UUID, len(req.Items))
+		for i, item := range req.Items {
+			productIDs[i] = item.ProductID
+		}
+
+		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
+		if err != nil {
+			return err
+		}
+
+		if len(products) != len(productIDs) {
+			return httperror.NewInternalServerError("failed to get all products")
+		}
+
 		var orderItems []entity.OrderItem
 
-		for _, item := range req.Items {
-			product, err := productRepo.FindByID(ctx, item.ProductID)
-			if err != nil {
-				return httperror.NewInvalidRequestBodyError()
+		for i, product := range products {
+			if product.Quantity < req.Items[i].Quantity {
+				return httperror.NewInsufficientProductStockError()
 			}
 
+			product.Quantity -= req.Items[i].Quantity
 			orderItem := entity.OrderItem{
 				ID:        uuid.New(),
-				ProductID: item.ProductID,
-				Quantity:  item.Quantity,
+				ProductID: product.ID,
+				Quantity:  req.Items[i].Quantity,
 				Price:     product.Price,
 			}
 			orderItems = append(orderItems, orderItem)
 		}
 
+		if err := productRepo.BulkUpdateQuantity(ctx, products); err != nil {
+			return err
+		}
+
 		// Create domain entity
-		order, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
 		if err != nil {
-			return httperror.NewInvalidRequestBodyError()
+			return err
 		}
 
 		// Save to repository
-		savedOrder, err := orderRepo.Create(ctx, order)
+		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
-			return httperror.NewInternalServerError("failed to create order")
+			return err
 		}
 
 		// Publish domain event

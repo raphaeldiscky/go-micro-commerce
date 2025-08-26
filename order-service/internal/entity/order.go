@@ -4,7 +4,6 @@ package entity
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -117,8 +116,6 @@ func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, 
 		TotalPrice:     totalPrice.Round(2),
 		Items:          items,
 	}
-
-	log.Printf("Creating new order: %+v\n", order)
 
 	if err := order.validate(); err != nil {
 		return nil, err
