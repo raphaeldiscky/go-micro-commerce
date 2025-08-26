@@ -20,5 +20,7 @@ CREATE TABLE IF NOT EXISTS order_items(
 );
 CREATE INDEX IF NOT EXISTS idx_order_status ON orders (status);
 CREATE INDEX IF NOT EXISTS idx_order_created_at ON orders (created_at);
+CREATE INDEX IF NOT EXISTS idx_order_customer_id ON orders (customer_id);
+CREATE INDEX IF NOT EXISTS idx_order_idempotency_key ON orders (idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_fk_order_item_order_id ON order_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_fk_order_item_product_id ON order_items (product_id);
