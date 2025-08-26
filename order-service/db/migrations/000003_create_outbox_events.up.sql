@@ -5,7 +5,7 @@ CREATE TABLE outbox_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     aggregate_type TEXT NOT NULL, -- 'order', 'product', 'payment', etc. base on table name
     aggregate_id UUID NOT NULL,
-    event_type TEXT NOT NULL,
+    event_type TEXT NOT NULL, -- 'OrderCreated', 'ProductUpdated', etc.
     topic TEXT NOT NULL,
     event_data JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
@@ -39,8 +39,8 @@ COMMENT ON TABLE outbox_events IS 'Stores events to be published to message brok
 COMMENT ON COLUMN outbox_events.id IS 'Unique identifier for the outbox event';
 COMMENT ON COLUMN outbox_events.aggregate_type IS 'Type of aggregate that generated the event (order, product, payment, etc.)';
 COMMENT ON COLUMN outbox_events.aggregate_id IS 'ID of the aggregate that generated the event';
-COMMENT ON COLUMN outbox_events.event_type IS 'Type of event (order.created, product.updated, etc.)';
-COMMENT ON COLUMN outbox_events.topic IS 'Kafka topic where the event should be published';
+COMMENT ON COLUMN outbox_events.event_type IS 'Type of event (OrderCreated, ProductUpdated, etc.)';
+COMMENT ON COLUMN outbox_events.topic IS 'Kafka topic (order.lifecycle, product.lifecycle, user.verification, etc.) where the event should be published';
 COMMENT ON COLUMN outbox_events.event_data IS 'Complete event payload in JSON format';
 COMMENT ON COLUMN outbox_events.status IS 'Current processing status of the event';
 COMMENT ON COLUMN outbox_events.created_at IS 'When the event was first created';
