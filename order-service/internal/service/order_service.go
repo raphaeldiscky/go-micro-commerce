@@ -84,8 +84,8 @@ func (s *OrderService) CreateOrder(
 	}
 
 	defer func() {
-		if err := lock.Release(ctx); err != nil {
-			s.logger.Errorf("failed to release lock: %v", err)
+		if err := lockRepo.Release(ctx, lock); err != nil {
+			s.logger.Warnf("failed to release lock: %v", err)
 		}
 	}()
 

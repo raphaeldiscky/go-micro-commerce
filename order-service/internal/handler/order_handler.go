@@ -39,18 +39,12 @@ func (h *OrderHandler) CreateOrder(c echo.Context) error {
 	}
 
 	if err := c.Bind(&req); err != nil {
-		h.logger.Errorf("Bind error: %v", err)
-
 		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
-		h.logger.Errorf("Validation error: %v", err)
-
 		return err
 	}
-
-	h.logger.Infof("CreateOrder request 2: %+v", req)
 
 	order, err := h.orderService.CreateOrder(c.Request().Context(), req)
 	if err != nil {

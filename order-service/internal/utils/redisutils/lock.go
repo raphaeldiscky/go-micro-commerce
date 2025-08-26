@@ -9,5 +9,5 @@ import (
 
 // NewLockKey creates a new lock key for Redis.
 func NewLockKey(idempotencyKey, userID uuid.UUID) string {
-	return fmt.Sprintf("lock:%v-%v", idempotencyKey, userID)
+	return fmt.Sprintf("lock:%v:%v", idempotencyKey, userID)
 }
