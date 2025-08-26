@@ -62,8 +62,8 @@ func NewRedisCluster(ctx context.Context, cfg *RedisClusterConfig) (*redis.Clust
 		return nil, fmt.Errorf("failed to connect to redis cluster: %w", err)
 	}
 
-	log.Printf("Redis cluster ping response: %s", status)
-	log.Printf("connected to Redis cluster at %v", cfg.Addrs)
+	log.Printf("redis cluster ping response: %s", status)
+	log.Printf("connected to redis cluster at %v", cfg.Addrs)
 
 	return rdb, nil
 }
@@ -94,8 +94,8 @@ func NewRedis(ctx context.Context, cfg *RedisConfig) (*redis.Client, error) {
 		return nil, fmt.Errorf("failed to connect to redis: %w", err)
 	}
 
-	log.Printf("Redis ping response: %s", status)
-	log.Printf("connected to Redis at %s", cfg.Addr)
+	log.Printf("redis ping response: %s", status)
+	log.Printf("connected to redis at %s", cfg.Addr)
 
 	return rdb, nil
 }

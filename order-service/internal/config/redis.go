@@ -25,12 +25,12 @@ func initRedisConfig() *RedisConfig {
 	viper.SetDefault(
 		"REDIS_ADDRS",
 		[]string{
-			"localhost:6379",
-			"localhost:6380",
-			"localhost:6381",
-			"localhost:6382",
-			"localhost:6383",
-			"localhost:6384",
+			"localhost:6379", // redis-1 mapped (cluster)
+			"localhost:6380", // redis-2 mapped
+			"localhost:6381", // redis-3 mapped
+			"localhost:6382", // redis-4 mapped
+			"localhost:6383", // redis-5 mapped
+			"localhost:6384", // redis-6 mapped
 		},
 	)
 	viper.SetDefault("REDIS_PASSWORD", "supersecret")

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/bsm/redislock"
@@ -45,6 +46,8 @@ func (r *LockRepository) Get(
 			return nil, httperror.NewRequestDuplicateError()
 		}
 
+		log.Printf("failed to obtain lock: %v", err)
+
 		return nil, err
 	}
 
@@ -54,6 +57,8 @@ func (r *LockRepository) Get(
 // Release releases a distributed lock.
 func (r *LockRepository) Release(ctx context.Context, lock *redislock.Lock) error {
 	if err := lock.Release(ctx); err != nil {
+		log.Printf("failed to release lock: %v", err)
+
 		return err
 	}
 

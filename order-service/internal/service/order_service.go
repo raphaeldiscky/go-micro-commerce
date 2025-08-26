@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 
+	"github.com/bsm/redislock"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
@@ -17,6 +18,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/utils/redisutils"
 )
 
 // OrderServiceInterface defines the interface for order business operations.
@@ -61,14 +63,35 @@ func NewOrderService(
 	}
 }
 
-// CreateOrder creates a new order.
+//nolint:gocyclo,revive,cyclop // ignore complexity, CreateOrder is large but intentional
 func (s *OrderService) CreateOrder(
 	ctx context.Context,
 	req dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
+	lockRepo := s.dataStore.LockRepository()
+	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
+	ttl := constant.CreateOrderTTL
+	opt := &redislock.Options{
+		RetryStrategy: redislock.LimitRetry(
+			redislock.LinearBackoff(constant.CreateOrderRetryInterval),
+			constant.CreateOrderRetryLimit,
+		),
+	}
+
+	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := lockRepo.Release(ctx, lock); err != nil {
+			s.logger.Warnf("failed to release lock: %v", err)
+		}
+	}()
+
 	res := new(dto.OrderResponse)
 
-	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 		productRepo := ds.ProductRepository()
 
