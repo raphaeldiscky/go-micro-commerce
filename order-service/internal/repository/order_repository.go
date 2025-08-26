@@ -137,7 +137,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, created_at, updated_at, customer_id, status, total_price
+		SELECT id, idempotency_key, created_at, updated_at, customer_id, status, total_price
 		FROM orders
 		WHERE id = $1
 	`
@@ -148,6 +148,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 
 	err := row.Scan(
 		&order.ID,
+		&order.IdempotencyKey,
 		&order.CreatedAt,
 		&order.UpdatedAt,
 		&order.CustomerID,
@@ -377,37 +378,43 @@ func (r *OrderRepositoryPostgres) Update(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, error) {
-	// Update order
+	// Update the order itself
 	updateOrderQuery := `
 		UPDATE orders
-		SET updated_at = $2, customer_id = $3, status = $4, total_price = $5
-		WHERE id = $1
-		RETURNING id, created_at, updated_at, customer_id, status, total_price
+		SET customer_id = $1,
+			idempotency_key = $2,
+			status = $3,
+			total_price = $4,
+			updated_at = $5
+		WHERE id = $6
+		RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(
 		ctx,
 		updateOrderQuery,
-		order.ID,
-		order.UpdatedAt,
-		order.CustomerID,
-		order.Status,
-		order.TotalPrice,
+		order.CustomerID,     // $1
+		order.IdempotencyKey, // $2
+		order.Status,         // $3
+		order.TotalPrice,     // $4
+		order.UpdatedAt,      // $5
+		order.ID,             // $6
 	)
 
 	var updatedOrder entity.Order
 
 	err := row.Scan(
 		&updatedOrder.ID,
-		&updatedOrder.CreatedAt,
-		&updatedOrder.UpdatedAt,
+		&updatedOrder.IdempotencyKey,
 		&updatedOrder.CustomerID,
 		&updatedOrder.Status,
 		&updatedOrder.TotalPrice,
+		&updatedOrder.CreatedAt,
+		&updatedOrder.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, nil // order not found
 		}
 
 		return nil, fmt.Errorf("failed to scan updated order: %w", err)
@@ -419,13 +426,12 @@ func (r *OrderRepositoryPostgres) Update(
 		return nil, fmt.Errorf("failed to delete existing order items: %w", err)
 	}
 
-	// Insert new items
+	// Insert new items if provided
 	if len(order.Items) > 0 {
 		insertItemQuery := `
 			INSERT INTO order_items (id, order_id, product_id, quantity, price)
 			VALUES ($1, $2, $3, $4, $5)
 		`
-
 		for _, item := range order.Items {
 			_, err = r.db.Exec(
 				ctx,
@@ -442,6 +448,7 @@ func (r *OrderRepositoryPostgres) Update(
 		}
 	}
 
+	// Attach updated items back to the result
 	updatedOrder.Items = order.Items
 
 	return &updatedOrder, nil

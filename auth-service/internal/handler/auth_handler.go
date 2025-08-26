@@ -104,8 +104,8 @@ func (h *AuthHandler) Logout(c echo.Context) error {
 	return echoutils.ResponseOKPlain(c)
 }
 
-// GetUser retrieves the user's user.
-func (h *AuthHandler) GetUser(c echo.Context) error {
+// GetLoggedInUser retrieves the user's user.
+func (h *AuthHandler) GetLoggedInUser(c echo.Context) error {
 	userID := echoutils.GetUserIDFromContext(c)
 
 	user, err := h.authService.GetUser(c.Request().Context(), userID)
@@ -116,8 +116,8 @@ func (h *AuthHandler) GetUser(c echo.Context) error {
 	return echoutils.ResponseOK(c, user)
 }
 
-// UpdateUser updates the user's user.
-func (h *AuthHandler) UpdateUser(c echo.Context) error {
+// UpdateLoggedInUser updates the user's user.
+func (h *AuthHandler) UpdateLoggedInUser(c echo.Context) error {
 	userID := echoutils.GetUserIDFromContext(c)
 
 	var req dto.UpdateUserRequest

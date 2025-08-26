@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
@@ -39,8 +40,8 @@ type OrderServiceInterface interface {
 		id uuid.UUID,
 		status constant.OrderStatus,
 	) (*dto.OrderResponse, error)
-	CancelOrder(ctx context.Context, id uuid.UUID) error
-	PayOrder(ctx context.Context, req dto.PayOrderRequest) (*dto.OrderResponse, error)
+	CancelOrder(ctx context.Context, req dto.CancelOrderRequest, id uuid.UUID) error
+	PayOrder(ctx context.Context, req dto.PayOrderRequest, id uuid.UUID) (*dto.OrderResponse, error)
 }
 
 // OrderService implements the OrderServiceInterface.
@@ -321,8 +322,33 @@ func (s *OrderService) UpdateOrderStatus(
 }
 
 // CancelOrder cancels an order.
-func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
-	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+func (s *OrderService) CancelOrder(
+	ctx context.Context,
+	req dto.CancelOrderRequest,
+	id uuid.UUID,
+) error {
+	lockRepo := s.dataStore.LockRepository()
+	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
+	ttl := constant.CreateOrderTTL
+	opt := &redislock.Options{
+		RetryStrategy: redislock.LimitRetry(
+			redislock.LinearBackoff(constant.CreateOrderRetryInterval),
+			constant.CreateOrderRetryLimit,
+		),
+	}
+
+	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if err := lockRepo.Release(ctx, lock); err != nil {
+			s.logger.Warnf("failed to release lock: %v", err)
+		}
+	}()
+
+	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 
 		// Check if order exists
@@ -340,9 +366,19 @@ func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
 			return httperror.NewBadRequestError("order cannot be canceled in current status")
 		}
 
+		if existingOrder.IdempotencyKey == req.IdempotencyKey {
+			return httperror.NewBadRequestError(
+				fmt.Sprintf(
+					"idempotency key for update conflict, existing key: %s , updated key: %s",
+					existingOrder.IdempotencyKey,
+					req.IdempotencyKey,
+				),
+			)
+		}
+
 		// Update status to canceled
 		if err := existingOrder.UpdateStatus(constant.OrderStatusCanceled); err != nil {
-			return httperror.NewBadRequestError("failed to cancel order")
+			return httperror.NewBadRequestError("failed to cancel order entity")
 		}
 
 		// Save updated order
@@ -365,22 +401,47 @@ func (s *OrderService) CancelOrder(ctx context.Context, id uuid.UUID) error {
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 // PayOrder processes payment for an order.
 func (s *OrderService) PayOrder(
 	ctx context.Context,
 	req dto.PayOrderRequest,
+	id uuid.UUID,
 ) (*dto.OrderResponse, error) {
+	lockRepo := s.dataStore.LockRepository()
+	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
+	ttl := constant.CreateOrderTTL
+	opt := &redislock.Options{
+		RetryStrategy: redislock.LimitRetry(
+			redislock.LinearBackoff(constant.CreateOrderRetryInterval),
+			constant.CreateOrderRetryLimit,
+		),
+	}
+
+	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := lockRepo.Release(ctx, lock); err != nil {
+			s.logger.Warnf("failed to release lock: %v", err)
+		}
+	}()
+
 	res := new(dto.OrderResponse)
 
-	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 
 		// Check if order exists
-		existingOrder, err := orderRepo.FindByID(ctx, req.OrderID)
+		existingOrder, err := orderRepo.FindByID(ctx, id)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get order")
 		}
@@ -394,16 +455,38 @@ func (s *OrderService) PayOrder(
 			return httperror.NewBadRequestError("order cannot be paid in current status")
 		}
 
-		// Update status to paid
-		if err := existingOrder.UpdateStatus(constant.OrderStatusPaid); err != nil {
-			return httperror.NewBadRequestError("failed to pay order")
+		if existingOrder.IdempotencyKey == req.IdempotencyKey {
+			return httperror.NewBadRequestError(
+				fmt.Sprintf(
+					"idempotency key for update conflict, existing key: %s , updated key: %s",
+					existingOrder.IdempotencyKey,
+					req.IdempotencyKey,
+				),
+			)
 		}
 
-		// Save updated order
-		updatedOrder, err := orderRepo.Update(ctx, existingOrder)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to pay order")
+		updatedOrder := existingOrder
+		updatedOrder.IdempotencyKey = req.IdempotencyKey
+		// Update status to paid
+		if err := updatedOrder.UpdateStatus(constant.OrderStatusPaid); err != nil {
+			return httperror.NewBadRequestError("failed to update order status entity")
 		}
+
+		// Set idempotency key
+		updatedOrder.IdempotencyKey = req.IdempotencyKey
+
+		s.logger.Infof("---5 passes: %+v", updatedOrder)
+
+		// Save updated order
+		updatedOrder, err = orderRepo.Update(ctx, updatedOrder)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to update order")
+		}
+
+		s.logger.Infof("existing key: %+v", existingOrder.IdempotencyKey)
+		s.logger.Infof("updated key: %+v", updatedOrder.IdempotencyKey)
+
+		s.logger.Infof("---6 passes: %+v", req)
 
 		// Publish domain event
 		evt := event.NewOrderLifecycleEvent(

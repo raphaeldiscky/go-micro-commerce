@@ -25,6 +25,6 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	// User routes (protected)
 	protected := v1.Group("/users")
 	protected.Use(middleware.AuthMiddleware)
-	protected.GET("", h.GetUser)
-	protected.PUT("", h.UpdateUser)
+	protected.GET("", h.GetLoggedInUser)
+	protected.PUT("", h.UpdateLoggedInUser)
 }

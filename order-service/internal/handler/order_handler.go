@@ -54,8 +54,12 @@ func (h *OrderHandler) CreateOrder(c echo.Context) error {
 	return echoutils.ResponseCreated(c, order)
 }
 
-// GetOrder handles GET /orders/:orderID.
-func (h *OrderHandler) GetOrder(c echo.Context) error {
+// GetOrderByID retrieves a single order by its ID.
+//
+// Route: GET /orders/:orderID
+//
+// Authentication: Requires admin privileges.
+func (h *OrderHandler) GetOrderByID(c echo.Context) error {
 	param := c.Param("orderID")
 
 	orderID, err := uuid.Parse(param)
@@ -71,11 +75,15 @@ func (h *OrderHandler) GetOrder(c echo.Context) error {
 	return echoutils.ResponseOK(c, order)
 }
 
-// GetOrdersByCustomer handles GET /orders/customer/:customerId.
+// GetOrdersByCustomer retrieves a list of orders by customer ID.
+//
+// Route: GET /orders/customer/:customerId
+//
+// Authentication: Requires admin privileges.
 func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 	var req dto.GetOrdersRequest
 
-	param := c.Param("customerId")
+	param := c.Param("customerID")
 
 	customerID, err := uuid.Parse(param)
 	if err != nil {
@@ -120,7 +128,11 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 	return echoutils.ResponseOKPagination(c, orders, paging)
 }
 
-// GetOrders handles GET /orders.
+// GetOrders retrieves a list of orders with pagination.
+//
+// Route: GET /orders
+//
+// Authentication: Requires admin privileges.
 func (h *OrderHandler) GetOrders(c echo.Context) error {
 	var req dto.GetOrdersRequest
 	req.Limit = pageutils.ParseQueryInt64(
@@ -157,7 +169,58 @@ func (h *OrderHandler) GetOrders(c echo.Context) error {
 	return echoutils.ResponseOKPagination(c, orders, paging)
 }
 
-// UpdateOrderStatus handles PATCH /orders/:orderID/status.
+// GetLoggedInOrders retrieves a list of orders for the logged-in user with pagination.
+//
+// Route: GET /orders/user
+//
+// Authentication: Requires user authentication.
+func (h *OrderHandler) GetLoggedInOrders(c echo.Context) error {
+	var req dto.GetOrdersRequest
+	req.Limit = pageutils.ParseQueryInt64(
+		c,
+		"limit",
+		pkgConstant.DefaultLimit,
+		1,
+		100,
+	) // min=1, max=100
+	req.Page = pageutils.ParseQueryInt64(
+		c,
+		"page",
+		pkgConstant.DefaultPage,
+		1,
+		0,
+	) // min=1, max=0 (no max)
+
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	customerID := echoutils.GetUserIDFromContext(c)
+
+	orders, paging, err := h.orderService.GetOrdersByCustomer(
+		c.Request().Context(),
+		customerID,
+		req,
+	)
+	if err != nil {
+		return err
+	}
+
+	paging.Links = pageutils.NewLinks(
+		c.Request(),
+		paging.Page,
+		paging.Size,
+		paging.TotalPage,
+	)
+
+	return echoutils.ResponseOKPagination(c, orders, paging)
+}
+
+// UpdateOrderStatus updates the status of an existing order.
+//
+// Route: PATCH /orders/:orderID/status
+//
+// Authentication: Requires user authentication.
 func (h *OrderHandler) UpdateOrderStatus(c echo.Context) error {
 	var req dto.UpdateOrderStatusRequest
 
@@ -193,7 +256,12 @@ func (h *OrderHandler) CancelOrder(c echo.Context) error {
 		return err
 	}
 
-	err = h.orderService.CancelOrder(c.Request().Context(), orderID)
+	req := dto.CancelOrderRequest{
+		CustomerID:    echoutils.GetUserIDFromContext(c),
+		CustomerEmail: echoutils.GetEmailFromContext(c),
+	}
+
+	err = h.orderService.CancelOrder(c.Request().Context(), req, orderID)
 	if err != nil {
 		return err
 	}
@@ -201,28 +269,33 @@ func (h *OrderHandler) CancelOrder(c echo.Context) error {
 	return echoutils.ResponseOKPlain(c)
 }
 
-// PayOrder handles POST /orders/:id/pay.
+// PayOrder handles POST /orders/pay/:orderID.
+//
+// Route: POST /orders/pay/:orderID
+//
+// Authentication: Requires user authentication.
 func (h *OrderHandler) PayOrder(c echo.Context) error {
-	var req dto.PayOrderRequest
-
-	param := c.Param("id")
+	param := c.Param("orderID")
 
 	orderID, err := uuid.Parse(param)
 	if err != nil {
 		return err
 	}
 
+	req := dto.PayOrderRequest{
+		CustomerID:    echoutils.GetUserIDFromContext(c),
+		CustomerEmail: echoutils.GetEmailFromContext(c),
+	}
+
 	if err := c.Bind(&req); err != nil {
 		return err
 	}
-
-	req.OrderID = orderID
 
 	if err := c.Validate(&req); err != nil {
 		return err
 	}
 
-	order, err := h.orderService.PayOrder(c.Request().Context(), req)
+	order, err := h.orderService.PayOrder(c.Request().Context(), req, orderID)
 	if err != nil {
 		return err
 	}
