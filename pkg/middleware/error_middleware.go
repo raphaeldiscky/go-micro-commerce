@@ -3,11 +3,8 @@ package middleware
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"log"
 	"net/http"
-	"runtime"
 	"strings"
 	"time"
 
@@ -28,12 +25,6 @@ func ErrorHandler() echo.MiddlewareFunc {
 			if err == nil {
 				return nil
 			}
-
-			// Log error with file + line
-			log.Printf("Error occurred at %s: %+v\n",
-				fileLine(3), // skip 3 levels to point to where error originated
-				err,
-			)
 
 			// Handle different error types
 			{
@@ -89,8 +80,6 @@ func ErrorHandler() echo.MiddlewareFunc {
 						)
 					}
 
-					log.Printf("Unexpected error at %s: %+v\n", fileLine(3), err)
-
 					return c.JSON(
 						http.StatusInternalServerError,
 						dto.WebResponse[any]{Message: constant.InternalServerErrorMessage},
@@ -99,18 +88,6 @@ func ErrorHandler() echo.MiddlewareFunc {
 			}
 		}
 	}
-}
-
-// helper to get file + line + function.
-func fileLine(skip int) string {
-	pc, file, line, ok := runtime.Caller(skip)
-	if !ok {
-		return "unknown:0"
-	}
-
-	fn := runtime.FuncForPC(pc).Name()
-
-	return fmt.Sprintf("%s:%d (%s)", file, line, fn)
 }
 
 // handleJSONSyntaxError handles JSON syntax errors.
