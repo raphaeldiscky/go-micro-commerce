@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
 	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
@@ -48,6 +49,7 @@ func RequireAdminRole(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		roles := echoutils.GetRolesFromContext(c)
 
+		log.Infof("user roles: %v", roles)
 		// Check if user has the admin role
 		if slices.Contains(roles, constant.RoleAdmin) {
 			return next(c)

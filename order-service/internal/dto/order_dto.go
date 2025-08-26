@@ -77,9 +77,10 @@ type UpdateOrderStatusRequest struct {
 
 // CancelOrderRequest represents the request to cancel an order.
 type CancelOrderRequest struct {
-	CustomerID    uuid.UUID
-	CustomerEmail string
-	OrderID       uuid.UUID `json:"order_id" validate:"required"`
+	CustomerID     uuid.UUID
+	CustomerEmail  string
+	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
+	Reason         string    `json:"reason"          validate:"required,min=5,max=255"`
 }
 
 // MapToOrderResponse converts domain entity to DTO response.
