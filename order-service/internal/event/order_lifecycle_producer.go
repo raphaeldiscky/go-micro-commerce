@@ -9,7 +9,14 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
 )
+
+// OrderItemPayload holds the data for each item in the order.
+type OrderItemPayload struct {
+	ProductID uuid.UUID `json:"product_id"`
+	Quantity  int       `json:"quantity"`
+}
 
 // OrderLifecyclePayload holds the data for the Order Lifecycle event.
 type OrderLifecyclePayload struct {
@@ -17,6 +24,7 @@ type OrderLifecyclePayload struct {
 	UserID     uuid.UUID            `json:"user_id"`
 	Status     constant.OrderStatus `json:"status"`
 	TotalPrice decimal.Decimal      `json:"total_price"`
+	Items      []OrderItemPayload   `json:"items"`
 }
 
 // OrderLifecycleEvent is the envelope for all Order events.
@@ -47,6 +55,7 @@ func NewOrderLifecycleEvent(
 	newStatus constant.OrderStatus,
 	userID uuid.UUID,
 	totalPrice decimal.Decimal,
+	items []entity.OrderItem,
 ) *OrderLifecycleEvent {
 	return &OrderLifecycleEvent{
 		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
@@ -61,6 +70,7 @@ func NewOrderLifecycleEvent(
 			UserID:     userID,
 			Status:     newStatus,
 			TotalPrice: totalPrice,
+			Items:      mapOrderItemsToPayload(items),
 		},
 	}
 }

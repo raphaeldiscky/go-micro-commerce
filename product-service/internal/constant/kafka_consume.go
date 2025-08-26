@@ -1,9 +1,16 @@
 // Package constant defines constants used in the order service for Kafka topics and event types.
 package constant
 
-// Order Service Source.
+// Topics that Product Service consumes from.
 const (
-	KafkaSourceOrderService = "order-service"
+	// TopicOrderLifecycle is the topic for order lifecycle events.
+	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
+)
+
+// Consumer groups for Product Service.
+const (
+	// ConsumerGroupProductOrderEvents is the consumer group for order lifecycle events.
+	ConsumerGroupProductOrderEvents = "product-service.order-events"
 )
 
 // Order Lifecycle Events.
@@ -26,14 +33,4 @@ const (
 	// KafkaEventTypeOrderCanceled is when canceled by system or customer (canceled)
 	// Needed by: inventory release, refund, analytics.
 	KafkaEventTypeOrderCanceled = "OrderCanceled"
-)
-
-// Topics that Order Service produces to.
-const (
-	// TopicOrderLifecycle is the topic for order lifecycle events.
-	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
-	// TopicOrderLifecycleNumPartitions is the number of partitions for the order lifecycle topic.
-	TopicOrderLifecycleNumPartitions = 3
-	// TopicOrderLifecycleReplicationFactor is the replication factor for the order lifecycle topic.
-	TopicOrderLifecycleReplicationFactor = 1
 )

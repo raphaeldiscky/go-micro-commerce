@@ -51,7 +51,7 @@ func NewConsumerKafka(
 		return nil, fmt.Errorf("failed to create consumer group: %w", err)
 	}
 
-	appLogger.Infof("Successfully created consumer for topic: %s, group: %s", topic, groupID)
+	appLogger.Infof("successfully created consumer for topic: %s, group: %s", topic, groupID)
 
 	return &consumerKafka{
 		consumerGroup: consumerGroup,
@@ -84,7 +84,7 @@ func TestKafkaConnection(brokers []string, appLogger logger.Logger) error {
 		return fmt.Errorf("no brokers available")
 	}
 
-	appLogger.Infof("Successfully connected to Kafka. Available brokers: %d", len(brokersList))
+	appLogger.Infof("successfully connected to Kafka. Available brokers: %d", len(brokersList))
 
 	return nil
 }
