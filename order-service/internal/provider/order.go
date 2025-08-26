@@ -38,6 +38,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 
 	orderService := service.NewOrderService(
 		providers.DataStore,
+		appLogger,
 		orderLifecycleProducer,
 	)
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)

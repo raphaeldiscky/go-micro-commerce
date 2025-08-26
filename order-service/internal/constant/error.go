@@ -15,3 +15,10 @@ const (
 	// PriceMustBeGreaterThanZeroErrorMessage is the message returned when price is invalid.
 	PriceMustBeGreaterThanZeroErrorMessage = "price must be greater than 0"
 )
+
+const (
+	// ProductNotFoundErrorMessage is the message returned when a product is not found.
+	ProductNotFoundErrorMessage = "product not found"
+	// InsufficientProductStockErrorMessage is the message returned when there is insufficient product stock.
+	InsufficientProductStockErrorMessage = "insufficient product stock"
+)

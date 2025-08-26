@@ -5,6 +5,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-template/pkg/utils/pageutils"
 
@@ -43,16 +44,19 @@ type OrderServiceInterface interface {
 // OrderService implements the OrderServiceInterface.
 type OrderService struct {
 	dataStore              repository.DataStore
+	logger                 logger.Logger
 	orderLifecycleProducer mq.KafkaProducerInterface
 }
 
 // NewOrderService creates a new instance of OrderService.
 func NewOrderService(
 	dataStore repository.DataStore,
+	appLogger logger.Logger,
 	orderLifecycleProducer mq.KafkaProducerInterface,
 ) OrderServiceInterface {
 	return &OrderService{
 		dataStore:              dataStore,
+		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
 	}
 }
@@ -64,30 +68,66 @@ func (s *OrderService) CreateOrder(
 ) (*dto.OrderResponse, error) {
 	res := new(dto.OrderResponse)
 
-	err := s.dataStore.Atomic(ctx, func(tx repository.DataStore) error {
-		orderRepo := tx.OrderRepository()
-		// Convert DTO items to entity items
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		orderRepo := ds.OrderRepository()
+		productRepo := ds.ProductRepository()
+
+		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err != nil {
+			return err
+		}
+
+		if order != nil && order.CustomerID == req.CustomerID {
+			res = dto.MapToOrderResponse(order)
+
+			return nil
+		}
+
+		productIDs := make([]uuid.UUID, len(req.Items))
+		for i, item := range req.Items {
+			productIDs[i] = item.ProductID
+		}
+
+		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
+		if err != nil {
+			return err
+		}
+
+		if len(products) != len(productIDs) {
+			return httperror.NewInternalServerError("failed to get all products")
+		}
+
 		var orderItems []entity.OrderItem
 
-		for _, item := range req.Items {
+		for i, product := range products {
+			if product.Quantity < req.Items[i].Quantity {
+				return httperror.NewInsufficientProductStockError()
+			}
+
+			product.Quantity -= req.Items[i].Quantity
 			orderItem := entity.OrderItem{
 				ID:        uuid.New(),
-				ProductID: item.ProductID,
-				Quantity:  item.Quantity,
+				ProductID: product.ID,
+				Quantity:  req.Items[i].Quantity,
+				Price:     product.Price,
 			}
 			orderItems = append(orderItems, orderItem)
 		}
 
+		if err := productRepo.BulkUpdateQuantity(ctx, products); err != nil {
+			return err
+		}
+
 		// Create domain entity
-		order, err := entity.NewOrder(req.CustomerID, orderItems)
+		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
 		if err != nil {
-			return httperror.NewInvalidRequestBodyError()
+			return err
 		}
 
 		// Save to repository
-		savedOrder, err := orderRepo.Create(ctx, order)
+		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
-			return httperror.NewInternalServerError("failed to create order")
+			return err
 		}
 
 		// Publish domain event

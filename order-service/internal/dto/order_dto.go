@@ -19,9 +19,15 @@ type CreateOrderItemRequest struct {
 
 // CreateOrderRequest represents the request to create a new order.
 type CreateOrderRequest struct {
-	CustomerID    uuid.UUID                `json:"customer_id"    validate:"required"`
-	CustomerEmail string                   `json:"customer_email" validate:"required,email"`
-	Items         []CreateOrderItemRequest `json:"items"          validate:"required,min=1,dive"`
+	CustomerID     uuid.UUID
+	CustomerEmail  string
+	IdempotencyKey uuid.UUID                `json:"idempotency_key" validate:"required"` // generated from client
+	Items          []CreateOrderItemRequest `json:"items"           validate:"required,min=1,dive"`
+}
+
+// ClientCreateOrderRequest represents the request to create a new order from the client.
+type ClientCreateOrderRequest struct {
+	Items []CreateOrderItemRequest `json:"items" validate:"required,min=1,dive"`
 }
 
 // UpdateOrderItemRequest represents an item in update order request.
@@ -65,7 +71,15 @@ type GetOrdersRequest struct {
 
 // UpdateOrderStatusRequest represents the request to update order status.
 type UpdateOrderStatusRequest struct {
-	Status constant.OrderStatus `json:"status" validate:"required"`
+	Status  constant.OrderStatus `json:"status"   validate:"required"`
+	OrderID uuid.UUID            `json:"order_id" validate:"required"`
+}
+
+// CancelOrderRequest represents the request to cancel an order.
+type CancelOrderRequest struct {
+	CustomerID    uuid.UUID
+	CustomerEmail string
+	OrderID       uuid.UUID `json:"order_id" validate:"required"`
 }
 
 // MapToOrderResponse converts domain entity to DTO response.

@@ -14,13 +14,14 @@ import (
 
 // Order represents an order in the marketplace.
 type Order struct {
-	ID         uuid.UUID
-	CustomerID uuid.UUID
-	Status     constant.OrderStatus
-	TotalPrice decimal.Decimal
-	Items      []OrderItem
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID             uuid.UUID
+	IdempotencyKey uuid.UUID // generated from client
+	CustomerID     uuid.UUID
+	Status         constant.OrderStatus
+	TotalPrice     decimal.Decimal
+	Items          []OrderItem
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // OrderItem represents an item in an order.
@@ -38,6 +39,10 @@ type OrderItem struct {
 func (o *Order) validate() error {
 	if o.CustomerID == uuid.Nil {
 		return errors.New("customer_id must not be empty")
+	}
+
+	if o.IdempotencyKey == uuid.Nil {
+		return errors.New("idempotency_key must not be empty")
 	}
 
 	if o.TotalPrice.LessThan(decimal.Zero) {
@@ -95,20 +100,21 @@ func (o *Order) validate() error {
 }
 
 // NewOrder creates a new order with validation.
-func NewOrder(customerID uuid.UUID, items []OrderItem) (*Order, error) {
+func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, error) {
 	totalPrice := decimal.Zero
 	for _, item := range items {
 		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))))
 	}
 
 	order := &Order{
-		ID:         uuid.New(),
-		CreatedAt:  time.Now(),
-		UpdatedAt:  time.Now(),
-		CustomerID: customerID,
-		Status:     constant.OrderStatusPending,
-		TotalPrice: totalPrice.Round(2),
-		Items:      items,
+		ID:             uuid.New(),
+		IdempotencyKey: idempotencyKey,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+		CustomerID:     customerID,
+		Status:         constant.OrderStatusPending,
+		TotalPrice:     totalPrice.Round(2),
+		Items:          items,
 	}
 
 	if err := order.validate(); err != nil {

@@ -28,6 +28,9 @@ type OrderRepositoryInterface interface {
 		limit, offset int64,
 	) ([]*entity.Order, error)
 
+	// FindByIdempotencyKey retrieves an order by its idempotency key
+	FindByIdempotencyKey(ctx context.Context, idempotencyKey uuid.UUID) (*entity.Order, error)
+
 	// FindAll retrieves all orders with optional pagination
 	FindAll(ctx context.Context, limit, offset int64) ([]*entity.Order, error)
 
@@ -69,30 +72,32 @@ func (r *OrderRepositoryPostgres) Create(
 ) (*entity.Order, error) {
 	// Insert order
 	insertOrderQuery := `
-		INSERT INTO orders (id, created_at, updated_at, customer_id, status, total_price)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, created_at, updated_at, customer_id, status, total_price
+		INSERT INTO orders (id, idempotency_key, customer_id, status, total_price, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
 	`
 	row := r.db.QueryRow(
 		ctx,
 		insertOrderQuery,
 		order.ID,
-		order.CreatedAt,
-		order.UpdatedAt,
+		order.IdempotencyKey,
 		order.CustomerID,
 		order.Status,
 		order.TotalPrice,
+		order.CreatedAt,
+		order.UpdatedAt,
 	)
 
 	var createdOrder entity.Order
 
 	err := row.Scan(
 		&createdOrder.ID,
-		&createdOrder.CreatedAt,
-		&createdOrder.UpdatedAt,
+		&createdOrder.IdempotencyKey,
 		&createdOrder.CustomerID,
 		&createdOrder.Status,
 		&createdOrder.TotalPrice,
+		&createdOrder.CreatedAt,
+		&createdOrder.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create order: %w", err)
@@ -165,6 +170,75 @@ func (r *OrderRepositoryPostgres) FindByID(
 	`
 
 	rows, err := r.db.Query(ctx, itemsQuery, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query order items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []entity.OrderItem
+
+	for rows.Next() {
+		var item entity.OrderItem
+
+		err := rows.Scan(
+			&item.ID,
+			&item.OrderID,
+			&item.ProductID,
+			&item.Quantity,
+			&item.Price,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order item: %w", err)
+		}
+
+		items = append(items, item)
+	}
+
+	order.Items = items
+
+	return &order, nil
+}
+
+// FindByIdempotencyKey retrieves an order by its idempotency key.
+func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
+	ctx context.Context,
+	idempotencyKey uuid.UUID,
+) (*entity.Order, error) {
+	// Get order
+	orderQuery := `
+		SELECT id, created_at, updated_at, customer_id, status, total_price
+		FROM orders
+		WHERE idempotency_key = $1
+	`
+
+	row := r.db.QueryRow(ctx, orderQuery, idempotencyKey)
+
+	var order entity.Order
+
+	err := row.Scan(
+		&order.ID,
+		&order.CreatedAt,
+		&order.UpdatedAt,
+		&order.CustomerID,
+		&order.Status,
+		&order.TotalPrice,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil // no order found
+		}
+
+		return nil, fmt.Errorf("failed to scan order: %w", err)
+	}
+
+	// Get order items
+	const itemsQuery = `
+		SELECT id, order_id, product_id, quantity, price
+		FROM order_items
+		WHERE order_id = $1
+	`
+
+	rows, err := r.db.Query(ctx, itemsQuery, order.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query order items: %w", err)
 	}
