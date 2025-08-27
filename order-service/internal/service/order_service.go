@@ -12,6 +12,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-template/pkg/utils/pageutils"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/redisutils"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-template/pkg/dto"
 
@@ -21,7 +22,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/repository"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/utils/redisutils"
 )
 
 // OrderServiceInterface defines the interface for order business operations.
