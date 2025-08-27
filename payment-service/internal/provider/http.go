@@ -14,5 +14,5 @@ import (
 func SetupHTTP(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
-	SetupOrder(cfg, e, appLogger, providers)
+	SetupPayment(cfg, e, appLogger, providers)
 }

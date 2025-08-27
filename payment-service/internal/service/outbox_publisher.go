@@ -18,30 +18,30 @@ import (
 
 // OutboxPublisher is responsible for publishing outbox events.
 type OutboxPublisher struct {
-	dataStore              repository.DataStore
-	logger                 logger.Logger
-	orderLifecycleProducer mq.KafkaProducerInterface
-	orderDLQProducer       mq.KafkaProducerInterface
-	config                 config.OutboxPublisherConfig
-	eventRegistry          *mq.EventRegistry
+	dataStore                repository.DataStore
+	logger                   logger.Logger
+	paymentLifecycleProducer mq.KafkaProducerInterface
+	paymentDLQProducer       mq.KafkaProducerInterface
+	config                   config.OutboxPublisherConfig
+	eventRegistry            *mq.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	orderLifecycleProducer mq.KafkaProducerInterface,
-	orderDLQProducer mq.KafkaProducerInterface,
+	paymentLifecycleProducer mq.KafkaProducerInterface,
+	paymentDLQProducer mq.KafkaProducerInterface,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *mq.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
-		dataStore:              dataStore,
-		logger:                 appLogger,
-		orderLifecycleProducer: orderLifecycleProducer,
-		orderDLQProducer:       orderDLQProducer,
-		config:                 cfg,
-		eventRegistry:          eventRegistry,
+		dataStore:                dataStore,
+		logger:                   appLogger,
+		paymentLifecycleProducer: paymentLifecycleProducer,
+		paymentDLQProducer:       paymentDLQProducer,
+		config:                   cfg,
+		eventRegistry:            eventRegistry,
 	}
 }
 
@@ -128,7 +128,7 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	}
 
 	// Publish to Kafka
-	if err := p.orderLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
+	if err := p.paymentLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
 		p.handleProcessingError(ctx, outboxEvent.ID, "failed to publish event to Kafka", err)
 
 		return err
@@ -184,8 +184,8 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ
-	evt := event.NewOrderDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
-	if dlqErr := p.orderDLQProducer.Send(ctx, evt); dlqErr != nil {
+	evt := event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+	if dlqErr := p.paymentDLQProducer.Send(ctx, evt); dlqErr != nil {
 		p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
 	}
 	// Mark as permanently failed in the database

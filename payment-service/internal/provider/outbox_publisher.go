@@ -18,14 +18,14 @@ func SetupOutboxPublisher(
 	providers *Providers,
 ) *service.OutboxPublisher {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderLifecycle,
-		constant.TopicOrderLifecycleNumPartitions,
-		constant.TopicOrderLifecycleReplicationFactor,
+		constant.TopicPaymentLifecycle,
+		constant.TopicPaymentLifecycleNumPartitions,
+		constant.TopicPaymentLifecycleReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderDLQ,
-		constant.TopicOrderDLQNumPartitions,
-		constant.TopicOrderDLQReplicationFactor,
+		constant.TopicPaymentDLQ,
+		constant.TopicPaymentDLQNumPartitions,
+		constant.TopicPaymentDLQReplicationFactor,
 	)
 
 	registry := mq.NewEventRegistry()
@@ -42,11 +42,11 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(constant.KafkaEventTypeOrderCreated, &event.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypeOrderCanceled, &event.OrderLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentCreated, &event.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentCanceled, &event.PaymentLifecycleEvent{})
 
-	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
-	orderDLQProducer := event.NewOrderDLQProducer(asyncProducer)
+	orderLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
+	orderDLQProducer := event.NewPaymentDLQProducer(asyncProducer)
 
 	// Create outbox publisher
 	outboxPublisher := service.NewOutboxPublisher(

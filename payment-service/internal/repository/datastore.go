@@ -19,8 +19,7 @@ type DBTX interface {
 // DataStore is an interface that wraps the database access methods.
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
-	OrderRepository() OrderRepositoryInterface
-	ProductRepository() ProductRepositoryInterface
+	PaymentRepository() PaymentRepositoryInterface
 	LockRepository() LockRepositoryInterface
 	OutboxRepository() OutboxRepositoryInterface
 }
@@ -60,14 +59,9 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 	return tx.Commit(ctx)
 }
 
-// OrderRepository returns a new OrderRepository.
-func (s *dataStore) OrderRepository() OrderRepositoryInterface {
-	return NewOrderRepositoryPostgres(s.db)
-}
-
-// ProductRepository returns a new ProductRepository.
-func (s *dataStore) ProductRepository() ProductRepositoryInterface {
-	return NewProductRepositoryPostgres(s.db)
+// PaymentRepository returns a new PaymentRepository.
+func (s *dataStore) PaymentRepository() PaymentRepositoryInterface {
+	return NewPaymentRepositoryPostgres(s.db)
 }
 
 // LockRepository returns a new LockRepository.

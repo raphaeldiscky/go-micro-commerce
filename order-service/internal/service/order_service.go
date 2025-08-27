@@ -496,18 +496,11 @@ func (s *OrderService) PayOrder(
 		// Set idempotency key
 		updatedOrder.IdempotencyKey = req.IdempotencyKey
 
-		s.logger.Infof("---5 passes: %+v", updatedOrder)
-
 		// Save updated order
 		updatedOrder, err = orderRepo.Update(ctx, updatedOrder)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to update order")
 		}
-
-		s.logger.Infof("existing key: %+v", existingOrder.IdempotencyKey)
-		s.logger.Infof("updated key: %+v", updatedOrder.IdempotencyKey)
-
-		s.logger.Infof("---6 passes: %+v", req)
 
 		// Publish domain event
 		evt := event.NewOrderLifecycleEvent(

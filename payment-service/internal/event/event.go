@@ -5,7 +5,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/entity"
 )
 
 type (
@@ -20,35 +19,22 @@ type AsyncProducer interface {
 	ProduceAsync(topic string, event BaseEvent) error
 }
 
-// mapStatusToEventType maps order status to Kafka event type.
-func mapStatusToEventType(status constant.OrderStatus) string {
+// mapStatusToEventType maps payment status to Kafka event type.
+func mapStatusToEventType(status constant.PaymentStatus) string {
 	switch status {
-	case constant.OrderStatusPending:
-		return constant.KafkaEventTypeOrderCreated
-	case constant.OrderStatusConfirmed:
-		return constant.KafkaEventTypeOrderConfirmed
-	case constant.OrderStatusPaid:
-		return constant.KafkaEventTypeOrderPaid
-	case constant.OrderStatusShipped:
-		return constant.KafkaEventTypeOrderShipped
-	case constant.OrderStatusDelivered:
-		return constant.KafkaEventTypeOrderDelivered
-	case constant.OrderStatusCanceled:
-		return constant.KafkaEventTypeOrderCanceled
+	case constant.PaymentStatusPending:
+		return constant.KafkaEventTypePaymentCreated
+	case constant.PaymentStatusConfirmed:
+		return constant.KafkaEventTypePaymentConfirmed
+	case constant.PaymentStatusPaid:
+		return constant.KafkaEventTypePaymentPaid
+	case constant.PaymentStatusShipped:
+		return constant.KafkaEventTypePaymentShipped
+	case constant.PaymentStatusDelivered:
+		return constant.KafkaEventTypePaymentDelivered
+	case constant.PaymentStatusCanceled:
+		return constant.KafkaEventTypePaymentCanceled
 	default:
 		return "unknown"
 	}
-}
-
-// mapOrderItemsToPayload maps order items to their payload representation.
-func mapOrderItemsToPayload(items []entity.OrderItem) []OrderItemPayload {
-	payloadItems := make([]OrderItemPayload, len(items))
-	for i, item := range items {
-		payloadItems[i] = OrderItemPayload{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-		}
-	}
-
-	return payloadItems
 }

@@ -1,4 +1,4 @@
-// Package httperror provides custom error responses for the Order service.
+// Package httperror provides custom error responses for the Payment service.
 package httperror
 
 import (
@@ -10,9 +10,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
 )
 
-// NewOrderNotFoundError creates a new Order not found error.
-func NewOrderNotFoundError() *httperror.ResponseError {
-	msg := constant.OrderNotFoundErrorMessage
+// NewPaymentNotFoundError creates a new Payment not found error.
+func NewPaymentNotFoundError() *httperror.ResponseError {
+	msg := constant.PaymentNotFoundErrorMessage
 	err := errors.New(msg)
 
 	return httperror.NewResponseError(err, http.StatusNotFound, msg)
