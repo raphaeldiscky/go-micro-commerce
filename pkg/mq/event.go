@@ -1,10 +1,17 @@
 package mq
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+// GenericEvent wraps any event with metadata.
+type GenericEvent struct {
+	Metadata KafkaMetadata   `json:"metadata"`
+	Payload  json.RawMessage `json:"payload"`
+}
 
 // BaseEvent represents a base event interface.
 type BaseEvent interface {

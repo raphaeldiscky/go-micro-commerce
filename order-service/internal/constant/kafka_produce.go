@@ -28,6 +28,11 @@ const (
 	KafkaEventTypeOrderCanceled = "OrderCanceled"
 )
 
+// DLQ Event Types.
+const (
+	KafkaEventTypeOrderDLQ = "OrderDLQ"
+)
+
 // Topics that Order Service produces to.
 const (
 	// TopicOrderLifecycle is the topic for order lifecycle events.
@@ -36,4 +41,13 @@ const (
 	TopicOrderLifecycleNumPartitions = 3
 	// TopicOrderLifecycleReplicationFactor is the replication factor for the order lifecycle topic.
 	TopicOrderLifecycleReplicationFactor = 1
+)
+
+const (
+	// TopicOrderDLQ is the dead-letter queue topic for failed order events.
+	TopicOrderDLQ = "order.dlq"
+	// TopicOrderDLQNumPartitions is the number of partitions for the order DLQ topic.
+	TopicOrderDLQNumPartitions = 1
+	// TopicOrderDLQReplicationFactor is the replication factor for the order DLQ topic.
+	TopicOrderDLQReplicationFactor = 1
 )

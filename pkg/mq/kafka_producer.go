@@ -240,7 +240,7 @@ func (p *KafkaAsyncProducer) handleErrors() {
 		select {
 		case err := <-p.producer.Errors():
 			if err != nil {
-				log.Printf("Failed to send message: %v", err.Err)
+				log.Printf("failed to send message: %v", err.Err)
 
 				// Add to retry channel if there's space
 				select {
