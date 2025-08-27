@@ -57,6 +57,7 @@ get_service_port() {
     "auth-service") echo "15432" ;;
     "product-service") echo "25432" ;;
     "order-service") echo "35432" ;;
+    "payment-service") echo "45432" ;;
     *) echo "" ;;
   esac
 }

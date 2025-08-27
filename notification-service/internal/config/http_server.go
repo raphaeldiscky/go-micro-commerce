@@ -18,7 +18,7 @@ type HTTPServerConfig struct {
 func initHTTPServerConfig() *HTTPServerConfig {
 	// Set defaults
 	viper.SetDefault("HTTP_SERVER_HOST", "localhost")
-	viper.SetDefault("HTTP_SERVER_PORT", 8084)
+	viper.SetDefault("HTTP_SERVER_PORT", 8085)
 	viper.SetDefault("HTTP_SERVER_GRACE_PERIOD", 10)
 	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", 30)
 

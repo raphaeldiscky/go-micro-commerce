@@ -38,6 +38,15 @@ http:
       middlewares:
         - rate-limit
 
+    # Direct access to Payment Service (for testing/admin)
+    payment-service:
+      rule: "Host(`payments.localhost`)"
+      service: payment-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
     # Direct access to Notification Service (for testing/admin)
     notification-service:
       rule: "Host(`notifications.localhost`)"
@@ -92,10 +101,21 @@ http:
           headers:
             Host: order-service
 
+    payment-service:
+      loadBalancer:
+        servers:
+          - url: "http://payment-service:8084"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: payment-service
+
     notification-service:
       loadBalancer:
         servers:
-          - url: "http://notification-service:8084"
+          - url: "http://notification-service:8085"
         healthCheck:
           path: /health
           interval: 30s
