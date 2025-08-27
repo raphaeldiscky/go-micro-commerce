@@ -6,8 +6,8 @@ CREATE TABLE outbox_events (
     aggregate_type TEXT NOT NULL, -- 'order', 'product', 'payment', etc. base on table name
     aggregate_id UUID NOT NULL,
     event_type TEXT NOT NULL, -- 'OrderCreated', 'ProductUpdated', etc.
-    topic TEXT NOT NULL,
-    event_data JSONB NOT NULL,
+    topic TEXT NOT NULL, -- 'order.lifecycle', 'product.lifecycle', 'user.verification', etc.
+    payload JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT NOW(),
     processed_at TIMESTAMPTZ,
@@ -41,7 +41,7 @@ COMMENT ON COLUMN outbox_events.aggregate_type IS 'Type of aggregate that genera
 COMMENT ON COLUMN outbox_events.aggregate_id IS 'ID of the aggregate that generated the event';
 COMMENT ON COLUMN outbox_events.event_type IS 'Type of event (OrderCreated, ProductUpdated, etc.)';
 COMMENT ON COLUMN outbox_events.topic IS 'Kafka topic (order.lifecycle, product.lifecycle, user.verification, etc.) where the event should be published';
-COMMENT ON COLUMN outbox_events.event_data IS 'Complete event payload in JSON format';
+COMMENT ON COLUMN outbox_events.payload IS 'Complete event payload in JSON format';
 COMMENT ON COLUMN outbox_events.status IS 'Current processing status of the event';
 COMMENT ON COLUMN outbox_events.created_at IS 'When the event was first created';
 COMMENT ON COLUMN outbox_events.processed_at IS 'When the event was successfully processed';

@@ -21,19 +21,29 @@ func Start(cfg *config.Config, appLogger logger.Logger) {
 
 	providers, err := provider.SetupGlobal(ctx, cfg)
 	if err != nil {
-		appLogger.Fatal("Failed to setup providers:", err)
+		appLogger.Fatal("failed to setup providers:", err)
 	}
 
-	rootCmd := &cobra.Command{}
+	rootCmd := &cobra.Command{
+		Use: "order-service",
+	}
 	cmd := []*cobra.Command{
 		{
 			Use:   "serve-all",
 			Short: "Run all",
 			Run: func(_ *cobra.Command, _ []string) {
-				runHTTPWorker(ctx, cfg, appLogger, providers)
-			},
-			PreRun: func(_ *cobra.Command, _ []string) {
+				go runHTTPWorker(ctx, cfg, appLogger, providers)
 				go runKafkaConsumerWorker(ctx, cfg, appLogger, providers)
+				go runOutboxPublisherWorker(ctx, cfg, appLogger, providers)
+
+				<-ctx.Done()
+			},
+		},
+		{
+			Use:   "outbox-publisher",
+			Short: "Run only the outbox publisher worker",
+			Run: func(_ *cobra.Command, _ []string) {
+				runOutboxPublisherWorker(ctx, cfg, appLogger, providers)
 			},
 		},
 	}

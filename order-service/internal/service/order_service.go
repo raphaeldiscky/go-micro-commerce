@@ -3,7 +3,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
@@ -95,6 +97,7 @@ func (s *OrderService) CreateOrder(
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 		productRepo := ds.ProductRepository()
+		outboxRepo := ds.OutboxRepository()
 
 		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
 		if err != nil {
@@ -163,8 +166,26 @@ func (s *OrderService) CreateOrder(
 			savedOrder.Items,
 		)
 
-		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
-			return httperror.NewInternalServerError("failed to send order created event")
+		payload, err := json.Marshal(evt)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to marshal order event")
+		}
+
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "order",
+			AggregateID:   savedOrder.ID,
+			EventType:     constant.KafkaEventTypeOrderCreated,
+			Topic:         constant.TopicOrderLifecycle,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return err
 		}
 
 		res = dto.MapToOrderResponse(savedOrder)
