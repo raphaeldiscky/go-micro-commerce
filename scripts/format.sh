@@ -9,6 +9,7 @@ SERVICES=(
   "product-service"
   "pkg"
   "api-gateway"
+  "payment-service"
 )
 
 format_service() {

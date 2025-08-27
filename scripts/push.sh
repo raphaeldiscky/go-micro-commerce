@@ -7,6 +7,7 @@ SERVICES=(
   "notification-service"
   "order-service"
   "product-service"
+  "payment-service"
   "api-gateway"
 )
 
@@ -63,7 +64,7 @@ build_and_push_image() {
     "$CURDIR"; then
     print_success "Successfully built image: $image_name"
   else
-    print_error "Failed to build image for $service"
+    print_error "failed to build image for $service"
     return 1
   fi
   
@@ -72,7 +73,7 @@ build_and_push_image() {
   if docker push "$image_name"; then
     print_success "Successfully pushed image: $image_name"
   else
-    print_error "Failed to push image for $service"
+    print_error "failed to push image for $service"
     return 1
   fi
   
@@ -175,7 +176,7 @@ if [ -n "$SERVICE_NAME" ]; then
     echo ""
     print_status "Image available at: ${REGISTRY}/${SERVICE_NAME}:${TAG}"
   else
-    print_error "Failed to build and push image for $SERVICE_NAME"
+    print_error "failed to build and push image for $SERVICE_NAME"
     exit 1
   fi
 else
@@ -205,7 +206,7 @@ else
   
   if [ ${#failed_services[@]} -gt 0 ]; then
     echo ""
-    print_error "Failed to build and push ${#failed_services[@]} service(s):"
+    print_error "failed to build and push ${#failed_services[@]} service(s):"
     for service in "${failed_services[@]}"; do
       echo " $service"
     done

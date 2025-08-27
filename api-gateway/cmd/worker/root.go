@@ -19,7 +19,7 @@ import (
 func Start(cfg *config.Config, appLogger logger.Logger, gw *gateway.Gateway) {
 	providers, err := provider.SetupGlobal(cfg)
 	if err != nil {
-		appLogger.Fatal("Failed to setup providers:", err)
+		appLogger.Fatal("failed to setup providers:", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

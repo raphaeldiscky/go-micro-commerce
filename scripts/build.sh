@@ -8,6 +8,7 @@ SERVICES=(
   "order-service"
   "product-service"
   "api-gateway"
+  "payment-service"
 )
 
 # Configuration
@@ -64,7 +65,7 @@ build_image() {
     "$CURDIR"; then
     print_success "Successfully built image: $image_name"
   else
-    print_error "Failed to build image for $service"
+    print_error "failed to build image for $service"
     return 1
   fi
   
@@ -140,7 +141,7 @@ if [ -n "$SERVICE_NAME" ]; then
     echo ""
     print_status "Image available locally: ${REGISTRY}/${SERVICE_NAME}:${TAG}"
   else
-    print_error "Failed to build image for $SERVICE_NAME"
+    print_error "failed to build image for $SERVICE_NAME"
     exit 1
   fi
 else
@@ -170,7 +171,7 @@ else
   
   if [ ${#failed_services[@]} -gt 0 ]; then
     echo ""
-    print_error "Failed to build ${#failed_services[@]} service(s):"
+    print_error "failed to build ${#failed_services[@]} service(s):"
     for service in "${failed_services[@]}"; do
       echo " $service"
     done

@@ -10,6 +10,7 @@ SERVICES=(
   "product-service"
   "order-service"
   "notification-service"
+  "payment-service"
   "api-gateway"
   "pkg"
 )
