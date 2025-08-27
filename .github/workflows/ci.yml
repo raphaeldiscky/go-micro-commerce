@@ -42,6 +42,10 @@ jobs:
               - 'order-service/**'
               - 'go.mod'
               - 'go.sum'
+            payment-service:
+              - 'payment-service/**'
+              - 'go.mod'
+              - 'go.sum'
             notification-service:
               - 'notification-service/**'
               - 'go.mod'
