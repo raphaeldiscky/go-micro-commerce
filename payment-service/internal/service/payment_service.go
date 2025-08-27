@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/utils/redisutils"
 
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/repository"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/utils/redisutils"
 )
 
 // PaymentServiceInterface defines the interface for order business operations.
