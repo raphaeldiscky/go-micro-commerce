@@ -1,53 +1,53 @@
-// Package constant defines constants used in the order service for Kafka topics and event types.
+// Package constant defines constants used in the payment service for Kafka topics and event types.
 package constant
 
-// Order Service Source.
+// Payment Service Source.
 const (
-	KafkaSourceOrderService = "payment-service"
+	KafkaSourcePaymentService = "payment-service"
 )
 
-// Order Lifecycle Events.
+// Payment Lifecycle Events.
 const (
-	// KafkaEventTypeOrderCreated is when customer places an order (pending).
+	// KafkaEventTypePaymentCreated is when customer places an payment (pending).
 	// Needed by: inventory reservation, payment service, fraud detection.
-	KafkaEventTypeOrderCreated = "OrderCreated"
-	// KafkaEventTypeOrderConfirmed is after validation & inventory check (confirmed).
+	KafkaEventTypePaymentCreated = "PaymentCreated"
+	// KafkaEventTypePaymentConfirmed is after validation & inventory check (confirmed).
 	// Needed by: payment service, notification service.
-	KafkaEventTypeOrderConfirmed = "OrderConfirmed"
-	// KafkaEventTypeOrderPaid is when payment succeeded (paid).
+	KafkaEventTypePaymentConfirmed = "PaymentConfirmed"
+	// KafkaEventTypePaymentPaid is when payment succeeded (paid).
 	// Needed by: shipping service, accounting, notification service.
-	KafkaEventTypeOrderPaid = "OrderPaid"
-	// KafkaEventTypeOrderShipped is when order handed to logistics (shipped).
+	KafkaEventTypePaymentPaid = "PaymentPaid"
+	// KafkaEventTypePaymentShipped is when payment handed to logistics (shipped).
 	// Needed by: notification service, delivery tracking.
-	KafkaEventTypeOrderShipped = "OrderShipped"
-	// KafkaEventTypeOrderDelivered is after customer received package (delivered).
+	KafkaEventTypePaymentShipped = "PaymentShipped"
+	// KafkaEventTypePaymentDelivered is after customer received package (delivered).
 	// Needed by: loyalty points, analytics.
-	KafkaEventTypeOrderDelivered = "OrderDelivered"
-	// KafkaEventTypeOrderCanceled is when canceled by system or customer (canceled)
+	KafkaEventTypePaymentDelivered = "PaymentDelivered"
+	// KafkaEventTypePaymentCanceled is when canceled by system or customer (canceled)
 	// Needed by: inventory release, refund, analytics.
-	KafkaEventTypeOrderCanceled = "OrderCanceled"
+	KafkaEventTypePaymentCanceled = "PaymentCanceled"
 )
 
 // DLQ Event Types.
 const (
-	KafkaEventTypeOrderDLQ = "OrderDLQ"
+	KafkaEventTypePaymentDLQ = "PaymentDLQ"
 )
 
-// Topics that Order Service produces to.
+// Topics that Payment Service produces to.
 const (
-	// TopicOrderLifecycle is the topic for order lifecycle events.
-	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
-	// TopicOrderLifecycleNumPartitions is the number of partitions for the order lifecycle topic.
-	TopicOrderLifecycleNumPartitions = 3
-	// TopicOrderLifecycleReplicationFactor is the replication factor for the order lifecycle topic.
-	TopicOrderLifecycleReplicationFactor = 1
+	// TopicPaymentLifecycle is the topic for payment lifecycle events.
+	TopicPaymentLifecycle = "payment.lifecycle" // PaymentCreated, PaymentUpdated, PaymentCancelled, PaymentCompleted, PaymentShipped, PaymentDelivered
+	// TopicPaymentLifecycleNumPartitions is the number of partitions for the payment lifecycle topic.
+	TopicPaymentLifecycleNumPartitions = 3
+	// TopicPaymentLifecycleReplicationFactor is the replication factor for the payment lifecycle topic.
+	TopicPaymentLifecycleReplicationFactor = 1
 )
 
 const (
-	// TopicOrderDLQ is the dead-letter queue topic for failed order events.
-	TopicOrderDLQ = "order.dlq"
-	// TopicOrderDLQNumPartitions is the number of partitions for the order DLQ topic.
-	TopicOrderDLQNumPartitions = 1
-	// TopicOrderDLQReplicationFactor is the replication factor for the order DLQ topic.
-	TopicOrderDLQReplicationFactor = 1
+	// TopicPaymentDLQ is the dead-letter queue topic for failed payment events.
+	TopicPaymentDLQ = "payment.dlq"
+	// TopicPaymentDLQNumPartitions is the number of partitions for the payment DLQ topic.
+	TopicPaymentDLQNumPartitions = 1
+	// TopicPaymentDLQReplicationFactor is the replication factor for the payment DLQ topic.
+	TopicPaymentDLQReplicationFactor = 1
 )

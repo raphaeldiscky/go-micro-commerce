@@ -17,20 +17,20 @@ func SetupKafkaConsumers(
 ) []mq.KafkaConsumer {
 	var consumers []mq.KafkaConsumer
 
-	productsConsumer, err := mq.NewConsumerKafka(
+	ordersConsumer, err := mq.NewConsumerKafka(
 		cfg.Brokers,
-		constant.TopicProductLifecycle,
-		constant.ConsumerGroupOrderProductEvents,
-		event.NewProductLifecycleConsumer(appLogger, providers.DataStore).Handler,
+		constant.TopicOrderLifecycle,
+		constant.ConsumerGroupPaymentOrderEvents,
+		event.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {
-		appLogger.Errorf("failed to create product lifecycle consumer: %v", err)
+		appLogger.Errorf("failed to create payment lifecycle consumer: %v", err)
 		// In a real app, you might want to panic here as the service cannot run.
 		return nil
 	}
 
-	consumers = append(consumers, productsConsumer)
+	consumers = append(consumers, ordersConsumer)
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 

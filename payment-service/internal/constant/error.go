@@ -1,16 +1,16 @@
-// Package constant defines error messages used throughout the order service.
+// Package constant defines error messages used throughout the payment service.
 package constant
 
 const (
 	// FailedToPingDatabase indicates an error when the database connection cannot be established.
 	FailedToPingDatabase = "failed to ping database: %w"
-	// OrderNotFoundErrorMessage is the message returned when a order is not found.
-	OrderNotFoundErrorMessage = "order not found"
+	// PaymentNotFoundErrorMessage is the message returned when a paymentis not found.
+	PaymentNotFoundErrorMessage = "payment not found"
 	// InvalidRequestBodyErrorMessage is the message returned when request body is invalid.
 	InvalidRequestBodyErrorMessage = "invalid request body"
-	// InvalidOrderIDErrorMessage is the message returned when order ID is invalid.
-	InvalidOrderIDErrorMessage = "invalid order ID"
-	// NameRequiredErrorMessage is the message returned when order name is missing.
+	// InvalidPaymentIDErrorMessage is the message returned when paymentID is invalid.
+	InvalidPaymentIDErrorMessage = "invalid paymentID"
+	// NameRequiredErrorMessage is the message returned when payment name is missing.
 	NameRequiredErrorMessage = "name is required"
 	// PriceMustBeGreaterThanZeroErrorMessage is the message returned when price is invalid.
 	PriceMustBeGreaterThanZeroErrorMessage = "price must be greater than 0"

@@ -14,12 +14,12 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/service"
 )
 
-// SetupOrder initializes the order-related routes and services.
-func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
+// SetupPayment initializes the order-related routes and services.
+func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderLifecycle,
-		constant.TopicOrderLifecycleNumPartitions,
-		constant.TopicOrderLifecycleReplicationFactor,
+		constant.TopicPaymentLifecycle,
+		constant.TopicPaymentLifecycleNumPartitions,
+		constant.TopicPaymentLifecycleReplicationFactor,
 	)
 
 	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
@@ -34,14 +34,14 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
+	orderLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
 
-	orderService := service.NewOrderService(
+	orderService := service.NewPaymentService(
 		providers.DataStore,
 		appLogger,
 		orderLifecycleProducer,
 	)
-	orderHandler := handler.NewOrderHandler(orderService, appLogger)
+	orderHandler := handler.NewPaymentHandler(orderService, appLogger)
 
-	routes.SetupOrderRoutes(e, orderHandler)
+	routes.SetupPaymentRoutes(e, orderHandler)
 }

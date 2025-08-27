@@ -12,22 +12,22 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
 )
 
-// Order represents an order in the marketplace.
-type Order struct {
+// Payment represents an order in the marketplace.
+type Payment struct {
 	ID             uuid.UUID
 	IdempotencyKey uuid.UUID // generated from client
 	CustomerID     uuid.UUID
-	Status         constant.OrderStatus
+	Status         constant.PaymentStatus
 	TotalPrice     decimal.Decimal
-	Items          []OrderItem
+	Items          []PaymentItem
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
 
-// OrderItem represents an item in an order.
-type OrderItem struct {
+// PaymentItem represents an item in an order.
+type PaymentItem struct {
 	ID        uuid.UUID
-	OrderID   uuid.UUID
+	PaymentID uuid.UUID
 	ProductID uuid.UUID
 	Quantity  int
 	Price     decimal.Decimal
@@ -36,7 +36,7 @@ type OrderItem struct {
 }
 
 // validate performs business rule validation.
-func (o *Order) validate() error {
+func (o *Payment) validate() error {
 	if o.CustomerID == uuid.Nil {
 		return errors.New("customer_id must not be empty")
 	}
@@ -99,20 +99,20 @@ func (o *Order) validate() error {
 	return nil
 }
 
-// NewOrder creates a new order with validation.
-func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, error) {
+// NewPayment creates a new order with validation.
+func NewPayment(customerID, idempotencyKey uuid.UUID, items []PaymentItem) (*Payment, error) {
 	totalPrice := decimal.Zero
 	for _, item := range items {
 		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))))
 	}
 
-	order := &Order{
+	order := &Payment{
 		ID:             uuid.New(),
 		IdempotencyKey: idempotencyKey,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 		CustomerID:     customerID,
-		Status:         constant.OrderStatusPending,
+		Status:         constant.PaymentStatusPending,
 		TotalPrice:     totalPrice.Round(2),
 		Items:          items,
 	}
@@ -125,7 +125,7 @@ func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, 
 }
 
 // UpdateStatus updates the order status with validation.
-func (o *Order) UpdateStatus(status constant.OrderStatus) error {
+func (o *Payment) UpdateStatus(status constant.PaymentStatus) error {
 	o.Status = status
 	o.UpdatedAt = time.Now()
 
@@ -133,7 +133,7 @@ func (o *Order) UpdateStatus(status constant.OrderStatus) error {
 }
 
 // AddItem adds an item to the order and recalculates total price.
-func (o *Order) AddItem(item *OrderItem) error {
+func (o *Payment) AddItem(item *PaymentItem) error {
 	if item == nil {
 		return errors.New("item must not be nil")
 	}
@@ -155,7 +155,7 @@ func (o *Order) AddItem(item *OrderItem) error {
 }
 
 // RemoveItem removes an item from the order and recalculates total price.
-func (o *Order) RemoveItem(itemID uuid.UUID) error {
+func (o *Payment) RemoveItem(itemID uuid.UUID) error {
 	for i, item := range o.Items {
 		if item.ID == itemID {
 			o.Items = append(o.Items[:i], o.Items[i+1:]...)
@@ -179,17 +179,17 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 }
 
 // CanBeCancelled checks if order can be canceled.
-func (o *Order) CanBeCancelled() bool {
-	return o.Status != constant.OrderStatusDelivered && o.Status != constant.OrderStatusCanceled
+func (o *Payment) CanBeCancelled() bool {
+	return o.Status != constant.PaymentStatusDelivered && o.Status != constant.PaymentStatusCanceled
 }
 
 // CanBePaid checks if order can be paid.
-func (o *Order) CanBePaid() bool {
-	return o.Status == constant.OrderStatusPending || o.Status == constant.OrderStatusConfirmed
+func (o *Payment) CanBePaid() bool {
+	return o.Status == constant.PaymentStatusPending || o.Status == constant.PaymentStatusConfirmed
 }
 
 // UpdateItems updates order items and recalculates total.
-func (o *Order) UpdateItems(items []OrderItem) error {
+func (o *Payment) UpdateItems(items []PaymentItem) error {
 	o.Items = items
 	// Recalculate total price logic here
 	return o.validate()

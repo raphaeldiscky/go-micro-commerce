@@ -18,9 +18,9 @@ func NewInvalidRequestBodyError() *httperror.ResponseError {
 	return httperror.NewResponseError(err, http.StatusBadRequest, msg)
 }
 
-// NewInvalidOrderIDError creates a new invalid Order ID error.
-func NewInvalidOrderIDError() *httperror.ResponseError {
-	msg := constant.InvalidOrderIDErrorMessage
+// NewInvalidPaymentIDError creates a new invalid Payment ID error.
+func NewInvalidPaymentIDError() *httperror.ResponseError {
+	msg := constant.InvalidPaymentIDErrorMessage
 	err := errors.New(msg)
 
 	return httperror.NewResponseError(err, http.StatusBadRequest, msg)
