@@ -37,7 +37,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 
 	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
 
-	productClient, err := client.NewProductClient(cfg.Client.ProductURL)
+	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
 	if err != nil {
 		appLogger.Fatalf("failed to create product client: %v", err)
 	}

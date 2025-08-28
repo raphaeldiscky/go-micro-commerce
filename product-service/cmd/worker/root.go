@@ -18,22 +18,25 @@ import (
 func Start(cfg *config.Config, appLogger logger.Logger) {
 	providers, err := provider.SetupGlobal(cfg)
 	if err != nil {
-		appLogger.Fatal("Failed to setup providers:", err)
+		appLogger.Fatal("failed to setup providers:", err)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	rootCmd := &cobra.Command{}
+	rootCmd := &cobra.Command{
+		Use: "product-service",
+	}
 	cmd := []*cobra.Command{
 		{
 			Use:   "serve-all",
 			Short: "Run all",
 			Run: func(_ *cobra.Command, _ []string) {
-				runHTTPWorker(ctx, cfg, appLogger, providers)
-			},
-			PreRun: func(_ *cobra.Command, _ []string) {
+				go runHTTPWorker(ctx, cfg, appLogger, providers)
+				go runGRPCWorker(ctx, cfg, appLogger, providers)
 				go runKafkaConsumerWorker(ctx, cfg, appLogger, providers)
+
+				<-ctx.Done()
 			},
 		},
 	}

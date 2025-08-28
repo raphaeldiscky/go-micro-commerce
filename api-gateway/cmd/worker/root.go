@@ -25,7 +25,9 @@ func Start(cfg *config.Config, appLogger logger.Logger, gw *gateway.Gateway) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	rootCmd := &cobra.Command{}
+	rootCmd := &cobra.Command{
+		Use: "api-gateway",
+	}
 	cmd := []*cobra.Command{
 		{
 			Use:   "serve-all",

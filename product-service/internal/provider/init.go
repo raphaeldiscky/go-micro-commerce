@@ -6,12 +6,14 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore  repository.DataStore
-	KafkaAdmin *mq.KafkaAdmin
+	DataStore      repository.DataStore
+	KafkaAdmin     *mq.KafkaAdmin
+	ProductService service.ProductServiceInterface
 }
 
 // SetupGlobal initializes all providers.

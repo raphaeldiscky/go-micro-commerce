@@ -9,6 +9,7 @@ package product
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -21,6 +22,55 @@ const (
 	// Verify that runtime/protoimpl is sufficiently up-to-date.
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
+
+type HealthStatus int32
+
+const (
+	HealthStatus_UNKNOWN     HealthStatus = 0
+	HealthStatus_SERVING     HealthStatus = 1
+	HealthStatus_NOT_SERVING HealthStatus = 2
+)
+
+// Enum value maps for HealthStatus.
+var (
+	HealthStatus_name = map[int32]string{
+		0: "UNKNOWN",
+		1: "SERVING",
+		2: "NOT_SERVING",
+	}
+	HealthStatus_value = map[string]int32{
+		"UNKNOWN":     0,
+		"SERVING":     1,
+		"NOT_SERVING": 2,
+	}
+)
+
+func (x HealthStatus) Enum() *HealthStatus {
+	p := new(HealthStatus)
+	*p = x
+	return p
+}
+
+func (x HealthStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (HealthStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_product_proto_enumTypes[0].Descriptor()
+}
+
+func (HealthStatus) Type() protoreflect.EnumType {
+	return &file_product_proto_enumTypes[0]
+}
+
+func (x HealthStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use HealthStatus.Descriptor instead.
+func (HealthStatus) EnumDescriptor() ([]byte, []int) {
+	return file_product_proto_rawDescGZIP(), []int{0}
+}
 
 type GetProductsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -194,11 +244,55 @@ func (x *Product) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+type HealthResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"` // e.g., "SERVING"
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HealthResponse) Reset() {
+	*x = HealthResponse{}
+	mi := &file_product_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HealthResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HealthResponse) ProtoMessage() {}
+
+func (x *HealthResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_product_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
+func (*HealthResponse) Descriptor() ([]byte, []int) {
+	return file_product_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *HealthResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 var File_product_proto protoreflect.FileDescriptor
 
 const file_product_proto_rawDesc = "" +
 	"\n" +
-	"\rproduct.proto\x12\aproduct\x1a\x1fgoogle/protobuf/timestamp.proto\"&\n" +
+	"\rproduct.proto\x12\aproduct\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bgoogle/protobuf/empty.proto\"&\n" +
 	"\x12GetProductsRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\"C\n" +
 	"\x13GetProductsResponse\x12,\n" +
@@ -211,9 +305,16 @@ const file_product_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt2Z\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"(\n" +
+	"\x0eHealthResponse\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status*9\n" +
+	"\fHealthStatus\x12\v\n" +
+	"\aUNKNOWN\x10\x00\x12\v\n" +
+	"\aSERVING\x10\x01\x12\x0f\n" +
+	"\vNOT_SERVING\x10\x022\x95\x01\n" +
 	"\x0eProductService\x12H\n" +
-	"\vGetProducts\x12\x1b.product.GetProductsRequest\x1a\x1c.product.GetProductsResponseB:Z8github.com/raphaeldiscky/go-micro-template/proto/productb\x06proto3"
+	"\vGetProducts\x12\x1b.product.GetProductsRequest\x1a\x1c.product.GetProductsResponse\x129\n" +
+	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x17.product.HealthResponseB:Z8github.com/raphaeldiscky/go-micro-template/proto/productb\x06proto3"
 
 var (
 	file_product_proto_rawDescOnce sync.Once
@@ -227,21 +328,27 @@ func file_product_proto_rawDescGZIP() []byte {
 	return file_product_proto_rawDescData
 }
 
-var file_product_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_product_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_product_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_product_proto_goTypes = []any{
-	(*GetProductsRequest)(nil),    // 0: product.GetProductsRequest
-	(*GetProductsResponse)(nil),   // 1: product.GetProductsResponse
-	(*Product)(nil),               // 2: product.Product
-	(*timestamppb.Timestamp)(nil), // 3: google.protobuf.Timestamp
+	(HealthStatus)(0),             // 0: product.HealthStatus
+	(*GetProductsRequest)(nil),    // 1: product.GetProductsRequest
+	(*GetProductsResponse)(nil),   // 2: product.GetProductsResponse
+	(*Product)(nil),               // 3: product.Product
+	(*HealthResponse)(nil),        // 4: product.HealthResponse
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),         // 6: google.protobuf.Empty
 }
 var file_product_proto_depIdxs = []int32{
-	2, // 0: product.GetProductsResponse.products:type_name -> product.Product
-	3, // 1: product.Product.created_at:type_name -> google.protobuf.Timestamp
-	3, // 2: product.Product.updated_at:type_name -> google.protobuf.Timestamp
-	0, // 3: product.ProductService.GetProducts:input_type -> product.GetProductsRequest
-	1, // 4: product.ProductService.GetProducts:output_type -> product.GetProductsResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
+	3, // 0: product.GetProductsResponse.products:type_name -> product.Product
+	5, // 1: product.Product.created_at:type_name -> google.protobuf.Timestamp
+	5, // 2: product.Product.updated_at:type_name -> google.protobuf.Timestamp
+	1, // 3: product.ProductService.GetProducts:input_type -> product.GetProductsRequest
+	6, // 4: product.ProductService.Health:input_type -> google.protobuf.Empty
+	2, // 5: product.ProductService.GetProducts:output_type -> product.GetProductsResponse
+	4, // 6: product.ProductService.Health:output_type -> product.HealthResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -257,13 +364,14 @@ func file_product_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_product_proto_rawDesc), len(file_product_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   3,
+			NumEnums:      1,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_product_proto_goTypes,
 		DependencyIndexes: file_product_proto_depIdxs,
+		EnumInfos:         file_product_proto_enumTypes,
 		MessageInfos:      file_product_proto_msgTypes,
 	}.Build()
 	File_product_proto = out.File

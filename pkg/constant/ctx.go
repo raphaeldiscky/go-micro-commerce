@@ -1,12 +1,15 @@
 package constant
 
+// ContextKey is a custom type for context keys to avoid collisions.
+type ContextKey string
+
 const (
 	// CtxUserID is the context key for the user ID.
-	CtxUserID = "user_id"
+	CtxUserID ContextKey = "user_id"
 	// CtxEmail is the context key for the user email.
-	CtxEmail = "email"
+	CtxEmail ContextKey = "email"
 	// CtxRoles is the context key for the user roles.
-	CtxRoles = "roles"
+	CtxRoles ContextKey = "roles"
 	// CtxIsActive is the context key for the user active status.
-	CtxIsActive = "is_active"
+	CtxIsActive ContextKey = "is_active"
 )

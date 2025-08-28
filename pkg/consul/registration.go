@@ -1,4 +1,4 @@
-// Package consul provides service registration with Consul for the services.
+// Package consul provides service registration with Consul for HTTP and gRPC services.
 package consul
 
 import (
@@ -8,10 +8,20 @@ import (
 	"github.com/hashicorp/consul/api"
 )
 
+// ServiceType represents the type of service (HTTP or gRPC).
+type ServiceType string
+
+const (
+	// ServiceTypeHTTP represents HTTP service type for Consul registration.
+	ServiceTypeHTTP ServiceType = "http"
+	// ServiceTypeGRPC represents gRPC service type for Consul registration.
+	ServiceTypeGRPC ServiceType = "grpc"
+)
+
 // ServiceRegistration handles Consul service registration.
 type ServiceRegistration struct {
-	client    *api.Client
-	serviceID string
+	client     *api.Client
+	serviceIDs []string
 }
 
 // NewServiceRegistration creates a new Consul service registration client.
@@ -29,28 +39,64 @@ func NewServiceRegistration(consulAddr string) (*ServiceRegistration, error) {
 	}, nil
 }
 
-// Register registers the product service with Consul.
-func (s *ServiceRegistration) Register(serviceName, address string, port int) error {
+// RegisterHTTP registers an HTTP service with Consul.
+func (s *ServiceRegistration) RegisterHTTP(serviceName, address string, port int) error {
+	return s.register(serviceName, address, port, ServiceTypeHTTP)
+}
+
+// RegisterGRPC registers a gRPC service with Consul.
+func (s *ServiceRegistration) RegisterGRPC(serviceName, address string, port int) error {
+	return s.register(serviceName, address, port, ServiceTypeGRPC)
+}
+
+// register registers a service with Consul based on service type.
+func (s *ServiceRegistration) register(
+	serviceName, address string,
+	port int,
+	serviceType ServiceType,
+) error {
 	// Generate unique service ID
 	hostname, err := os.Hostname()
 	if err != nil {
 		return fmt.Errorf("failed to get hostname: %w", err)
 	}
 
-	s.serviceID = fmt.Sprintf("%s-%s-%d", serviceName, hostname, port)
+	serviceID := fmt.Sprintf("%s-%s-%d", serviceName, hostname, port)
 
-	// Service registration
-	registration := &api.AgentServiceRegistration{
-		ID:      s.serviceID,
-		Name:    serviceName,
-		Address: address,
-		Port:    port,
-		Tags:    []string{"http", "api", "microservice"},
-		Check: &api.AgentServiceCheck{
+	var tags []string
+
+	var check *api.AgentServiceCheck
+
+	switch serviceType {
+	case ServiceTypeHTTP:
+		tags = []string{"http", "api", "microservice"}
+		check = &api.AgentServiceCheck{
 			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
 			Interval:                       "30s",
 			Timeout:                        "10s",
 			DeregisterCriticalServiceAfter: "60s",
+		}
+	case ServiceTypeGRPC:
+		tags = []string{"grpc", "api", "microservice"}
+		// For gRPC health checks, use TCP check since we have custom health method
+		check = &api.AgentServiceCheck{
+			TCP:                            fmt.Sprintf("%s:%d", address, port),
+			Interval:                       "30s",
+			Timeout:                        "10s",
+			DeregisterCriticalServiceAfter: "60s",
+		}
+	}
+
+	// Service registration
+	registration := &api.AgentServiceRegistration{
+		ID:      serviceID,
+		Name:    serviceName,
+		Address: address,
+		Port:    port,
+		Tags:    tags,
+		Check:   check,
+		Meta: map[string]string{
+			"protocol": string(serviceType),
 		},
 	}
 
@@ -59,18 +105,23 @@ func (s *ServiceRegistration) Register(serviceName, address string, port int) er
 		return fmt.Errorf("failed to register service with consul: %w", err)
 	}
 
+	// Track registered service IDs
+	s.serviceIDs = append(s.serviceIDs, serviceID)
+
 	return nil
 }
 
-// Deregister removes the service from Consul.
+// Deregister removes all registered services from Consul.
 func (s *ServiceRegistration) Deregister() error {
-	if s.serviceID == "" {
+	if len(s.serviceIDs) == 0 {
 		return nil
 	}
 
-	err := s.client.Agent().ServiceDeregister(s.serviceID)
-	if err != nil {
-		return fmt.Errorf("failed to deregister service: %w", err)
+	for _, serviceID := range s.serviceIDs {
+		err := s.client.Agent().ServiceDeregister(serviceID)
+		if err != nil {
+			return fmt.Errorf("failed to deregister service %s: %w", serviceID, err)
+		}
 	}
 
 	return nil

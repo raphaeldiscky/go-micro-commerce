@@ -40,14 +40,24 @@ func setupConsulRegistration(cfg *config.Config) func() {
 		return func() {}
 	}
 
-	if err := consulClient.Register(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
-		log.Printf("Failed to register with Consul: %v", err)
+	if err := consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+		log.Printf("Failed to register HTTP service with Consul: %v", err)
 
 		return func() {}
 	}
 
-	log.Printf("Service registered with Consul: %s at %s:%d",
+	// Register gRPC service with Consul
+	grpcServiceName := cfg.Consul.ServiceName + "-grpc"
+	if err := consulClient.RegisterGRPC(grpcServiceName, cfg.Consul.ServiceHost, cfg.GRPCServer.Port); err != nil {
+		log.Printf("Failed to register gRPC service with Consul: %v", err)
+
+		return func() {}
+	}
+
+	log.Printf("HTTP service registered with Consul: %s at %s:%d",
 		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
+	log.Printf("gRPC service registered with Consul: %s at %s:%d",
+		grpcServiceName, cfg.Consul.ServiceHost, cfg.GRPCServer.Port)
 
 	return func() {
 		if err := consulClient.Deregister(); err != nil {

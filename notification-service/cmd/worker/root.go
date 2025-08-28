@@ -24,16 +24,18 @@ func Start(cfg *config.Config, appLogger logger.Logger) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	rootCmd := &cobra.Command{}
+	rootCmd := &cobra.Command{
+		Use: "notification-service",
+	}
 	cmd := []*cobra.Command{
 		{
 			Use:   "serve-all",
 			Short: "Run all",
 			Run: func(_ *cobra.Command, _ []string) {
-				runHTTPWorker(ctx, cfg, appLogger)
-			},
-			PreRun: func(_ *cobra.Command, _ []string) {
+				go runHTTPWorker(ctx, cfg, appLogger)
 				go runKafkaConsumerWorker(ctx, cfg, appLogger)
+
+				<-ctx.Done()
 			},
 		},
 	}

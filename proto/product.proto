@@ -5,10 +5,12 @@ package product;
 option go_package = "github.com/raphaeldiscky/go-micro-template/proto/product";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 // Product service definition
 service ProductService {
   rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
 }
 
 message GetProductsRequest {
@@ -28,3 +30,12 @@ message Product {
   google.protobuf.Timestamp updated_at = 6;
 }
 
+message HealthResponse {
+  string status = 1; // e.g., "SERVING"
+}
+
+enum HealthStatus {
+  UNKNOWN = 0;
+  SERVING = 1;
+  NOT_SERVING = 2;
+}

@@ -8,12 +8,16 @@ import (
 
 // ClientConfig holds the configuration for external clients.
 type ClientConfig struct {
-	ProductURL string `mapstructure:"PRODUCT_URL"`
+	ProductGRPCHost     string `mapstructure:"PRODUCT_GRPC_HOST"`
+	ProductGRPCPort     int    `mapstructure:"PRODUCT_GRPC_PORT"`
+	UseServiceDiscovery bool   `mapstructure:"USE_SERVICE_DISCOVERY"`
 }
 
 // initClientConfig initializes the client configuration.
 func initClientConfig() *ClientConfig {
-	viper.SetDefault("PRODUCT_URL", "localhost:8081")
+	viper.SetDefault("PRODUCT_GRPC_HOST", "localhost")
+	viper.SetDefault("PRODUCT_GRPC_PORT", 9502)
+	viper.SetDefault("USE_SERVICE_DISCOVERY", true)
 
 	clientCfg := &ClientConfig{}
 

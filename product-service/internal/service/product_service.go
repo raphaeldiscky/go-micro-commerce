@@ -25,6 +25,7 @@ type ProductServiceInterface interface {
 		ctx context.Context,
 		req dto.GetProductsRequest,
 	) ([]dto.ProductResponse, *pkgDto.PageMetaData, error)
+	GetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]dto.ProductResponse, error)
 	UpdateProduct(ctx context.Context, req dto.UpdateProductRequest) (*dto.ProductResponse, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
 }
@@ -145,6 +146,26 @@ func (s *ProductService) GetProducts(
 	metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
 
 	return res, metadata, nil
+}
+
+// GetProductsByIDs retrieves products by their IDs.
+func (s *ProductService) GetProductsByIDs(
+	ctx context.Context,
+	ids []uuid.UUID,
+) ([]dto.ProductResponse, error) {
+	productRepo := s.dataStore.ProductRepository()
+
+	products, err := productRepo.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, httperror.NewInternalServerError("failed to get products")
+	}
+
+	res := make([]dto.ProductResponse, len(products))
+	for i, product := range products {
+		res[i] = *dto.MapToProductResponse(product)
+	}
+
+	return res, nil
 }
 
 // UpdateProduct updates an existing product.

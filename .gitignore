@@ -31,3 +31,4 @@ BIN
 
 .env
 .env.local
+CLAUDE.md

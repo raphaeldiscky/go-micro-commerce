@@ -24,6 +24,9 @@ type ProductRepositoryInterface interface {
 	// FindByIDsForUpdate retrieves products by their IDs
 	FindByIDsForUpdate(ctx context.Context, ids []uuid.UUID) ([]*entity.Product, error)
 
+	// FindByIDs retrieves products by their IDs without locking
+	FindByIDs(ctx context.Context, ids []uuid.UUID) ([]*entity.Product, error)
+
 	// FindAll retrieves all products with optional pagination
 	FindAll(ctx context.Context, limit, offset int64) ([]*entity.Product, error)
 
@@ -235,6 +238,55 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 		FROM products
 		WHERE id = ANY($1)
 		FOR UPDATE
+	`
+
+	rows, err := r.db.Query(ctx, query, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var products []*entity.Product
+
+	for rows.Next() {
+		var product entity.Product
+
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, &product)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+// FindByIDs finds products by their IDs without locking.
+func (r *ProductRepositoryPostgres) FindByIDs(
+	ctx context.Context,
+	ids []uuid.UUID,
+) ([]*entity.Product, error) {
+	if len(ids) == 0 {
+		return []*entity.Product{}, nil
+	}
+
+	// Build the SQL query with the correct number of placeholders
+	query := `
+		SELECT id, name, price, quantity, created_at, updated_at
+		FROM products
+		WHERE id = ANY($1)
 	`
 
 	rows, err := r.db.Query(ctx, query, ids)
