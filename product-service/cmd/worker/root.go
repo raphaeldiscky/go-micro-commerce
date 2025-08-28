@@ -21,6 +21,9 @@ func Start(cfg *config.Config, appLogger logger.Logger) {
 		appLogger.Fatal("failed to setup providers:", err)
 	}
 
+	// Initialize ProductService early to avoid race conditions
+	provider.InitializeProductService(cfg, appLogger, providers)
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 

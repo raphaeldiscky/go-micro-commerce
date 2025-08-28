@@ -16,6 +16,19 @@ import (
 
 // SetupProduct initializes the product-related routes and services.
 func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
+	// If ProductService is not initialized, initialize it
+	if providers.ProductService == nil {
+		InitializeProductService(cfg, appLogger, providers)
+	}
+
+	// Set up HTTP routes
+	productHandler := handler.NewProductHandler(providers.ProductService, appLogger)
+	routes.SetupProductRoutes(e, productHandler)
+}
+
+// InitializeProductService initializes only the ProductService without HTTP routes.
+// This is used to ensure ProductService is available for gRPC server without race conditions.
+func InitializeProductService(cfg *config.Config, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
 		constant.TopicProductLifecycle,
 		constant.TopicProductLifecycleNumPartitions,
@@ -44,9 +57,6 @@ func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 		productUpdatedProducer,
 		productDeletedProducer,
 	)
-	productHandler := handler.NewProductHandler(productService, appLogger)
-
-	routes.SetupProductRoutes(e, productHandler)
 
 	providers.ProductService = productService
 }

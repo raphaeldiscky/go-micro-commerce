@@ -69,7 +69,10 @@ func (h *OrderHandler) CreateOrderWithProto(c echo.Context) error {
 		return err
 	}
 
-	order, err := h.orderService.CreateOrderWithProto(c.Request().Context(), req)
+	// Create context with user information for gRPC calls
+	ctx := echoutils.ContextWithUserInfo(c)
+
+	order, err := h.orderService.CreateOrderWithProto(ctx, req)
 	if err != nil {
 		return err
 	}

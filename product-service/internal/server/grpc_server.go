@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -78,7 +79,7 @@ func (s *GRPCServer) GetProducts(
 
 // Health returns the health status of the product service.
 func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
-	return &pb.HealthResponse{Status: "SERVING"}, nil
+	return &pb.HealthResponse{Status: constant.GRPCHealthServing}, nil
 }
 
 // StartGRPC runs the gRPC server.
