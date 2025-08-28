@@ -1,18 +1,29 @@
 #!/bin/bash
 
-# Install protoc-gen-go and protoc-gen-go-grpc if not already installed
-go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+set -e
 
-# Create output directory
-mkdir -p proto/
+# Check if protoc-gen-go is installed
+if ! command -v protoc-gen-go &> /dev/null; then
+  echo "Installing protoc-gen-go..."
+  go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+fi
 
-# Generate Go code from proto files
-# Specify the directory containing your .proto files as the --proto_path
-# Then refer to the .proto files relative to that path
-protoc --proto_path=./proto \
-       --go_out=./proto --go_opt=paths=source_relative \
-       --go-grpc_out=./proto --go-grpc_opt=paths=source_relative \
-       ./proto/*.proto
+# Check if protoc-gen-go-grpc is installed
+if ! command -v protoc-gen-go-grpc &> /dev/null; then
+  echo "Installing protoc-gen-go-grpc..."
+  go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+fi
+
+# Clean up old generated files
+find proto -name "*.pb.go" -delete
+
+# Generate Go code from all proto files recursively
+echo "Generating Go code from proto files..."
+find proto -name "*.proto" | while read -r file; do
+  protoc --proto_path=proto \
+         --go_out=. --go_opt=module=github.com/raphaeldiscky/go-micro-template \
+         --go-grpc_out=. --go-grpc_opt=module=github.com/raphaeldiscky/go-micro-template \
+         "$file"
+done
 
 echo "Protocol buffer files generated successfully!"
