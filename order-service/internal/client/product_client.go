@@ -12,6 +12,7 @@ import (
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	grpcAuth "github.com/raphaeldiscky/go-micro-template/pkg/grpc"
@@ -32,6 +33,9 @@ type ProductClient struct {
 	conn         *grpc.ClientConn
 	client       product.ProductServiceClient
 	consulClient *api.Client
+	serviceName  string
+	clientCfg    *config.ClientConfig
+	consulCfg    *config.ConsulConfig
 }
 
 // NewProductClient creates a new ProductClient instance with gRPC connection.
@@ -57,7 +61,14 @@ func NewProductClient(
 
 	client := product.NewProductServiceClient(conn)
 
-	return &ProductClient{conn: conn, client: client, consulClient: consulClient}, nil
+	return &ProductClient{
+		conn:         conn,
+		client:       client,
+		consulClient: consulClient,
+		serviceName:  "product-service-grpc",
+		clientCfg:    clientCfg,
+		consulCfg:    consulCfg,
+	}, nil
 }
 
 // shouldUseServiceDiscovery checks if service discovery should be used.
@@ -98,14 +109,36 @@ func createStaticConnection(clientCfg *config.ClientConfig) (*grpc.ClientConn, e
 	return createGRPCConnection(address)
 }
 
-// createGRPCConnection creates a gRPC connection with common options.
+// createGRPCConnection creates a gRPC connection with common options and resilience features.
 func createGRPCConnection(address string) (*grpc.ClientConn, error) {
 	clientAuth := grpcAuth.NewClientAuthInterceptor()
+
+	// Configure keepalive parameters for automatic reconnection
+	kacp := keepalive.ClientParameters{
+		Time:                30 * time.Second, // Send keepalive pings every 30 seconds (less aggressive)
+		Timeout:             5 * time.Second,  // Wait 5 seconds for ping ack before considering the connection dead
+		PermitWithoutStream: false,            // Only send keepalive pings when there are active streams
+	}
 
 	conn, err := grpc.NewClient(
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithUnaryInterceptor(clientAuth.ForwardUserAuth()),
+		grpc.WithKeepaliveParams(kacp),
+		// Enable automatic reconnection with reasonable retry policy
+		grpc.WithDefaultServiceConfig(`{
+			"methodConfig": [{
+				"name": [{"service": "product.ProductService"}],
+				"retryPolicy": {
+					"MaxAttempts": 3,
+					"InitialBackoff": "0.1s",
+					"MaxBackoff": "1s", 
+					"BackoffMultiplier": 2.0,
+					"RetryableStatusCodes": [ "UNAVAILABLE", "DEADLINE_EXCEEDED" ]
+				}
+			}],
+			"loadBalancingPolicy": "round_robin"
+		}`),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to product-service: %w", err)

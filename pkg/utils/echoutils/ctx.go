@@ -2,6 +2,8 @@
 package echoutils
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
@@ -45,4 +47,29 @@ func GetIsActiveFromContext(ctx echo.Context) bool {
 	}
 
 	return val
+}
+
+// ContextWithUserInfo creates a Go context with user information from Echo context.
+// This is useful for passing user info to gRPC clients that need authentication headers.
+func ContextWithUserInfo(c echo.Context) context.Context {
+	ctx := c.Request().Context()
+
+	// Extract user info from Echo context and add to Go context
+	if userID := GetUserIDFromContext(c); userID != uuid.Nil {
+		ctx = context.WithValue(ctx, constant.CtxUserID, userID)
+	}
+
+	if email := GetEmailFromContext(c); email != "" {
+		ctx = context.WithValue(ctx, constant.CtxEmail, email)
+	}
+
+	if roles := GetRolesFromContext(c); len(roles) > 0 {
+		ctx = context.WithValue(ctx, constant.CtxRoles, roles)
+	}
+
+	if isActive := GetIsActiveFromContext(c); isActive {
+		ctx = context.WithValue(ctx, constant.CtxIsActive, isActive)
+	}
+
+	return ctx
 }
