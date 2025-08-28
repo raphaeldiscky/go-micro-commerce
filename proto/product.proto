@@ -2,20 +2,25 @@ syntax = "proto3";
 
 package product;
 
-option go_package = "github.com/raphaeldiscky/go-micro-template/proto/marketplace/v1;marketplacev1";
+option go_package = "github.com/raphaeldiscky/go-micro-template/proto/product";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 // Product service definition
 service ProductService {
-  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
-  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
-  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
-  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
-  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
 }
 
-// Product messages
+message GetProductsRequest {
+  repeated string ids = 1; // product UUIDs
+}
+
+message GetProductsResponse {
+  repeated Product products = 1;
+}
+
 message Product {
   string id = 1;
   string name = 2;
@@ -25,50 +30,12 @@ message Product {
   google.protobuf.Timestamp updated_at = 6;
 }
 
-message CreateProductRequest {
-  string name = 1;
-  double price = 2;
-  int32 quantity = 3;
+message HealthResponse {
+  string status = 1; // e.g., "SERVING"
 }
 
-message CreateProductResponse {
-  Product product = 1;
-}
-
-message GetProductRequest {
-  string id = 1;
-}
-
-message GetProductResponse {
-  Product product = 1;
-}
-
-message ListProductsRequest {
-  int32 page = 1;
-  int32 page_size = 2;
-}
-
-message ListProductsResponse {
-  repeated Product products = 1;
-  int32 total = 2;
-  int32 page = 3;
-  int32 page_size = 4;
-}
-
-message UpdateProductRequest {
-  string id = 1;
-  string name = 2;
-  double price = 3;
-}
-
-message UpdateProductResponse {
-  Product product = 1;
-}
-
-message DeleteProductRequest {
-  string id = 1;
-}
-
-message DeleteProductResponse {
-  bool success = 1;
+enum HealthStatus {
+  UNKNOWN = 0;
+  SERVING = 1;
+  NOT_SERVING = 2;
 }

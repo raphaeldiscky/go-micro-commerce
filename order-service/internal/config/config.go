@@ -17,6 +17,7 @@ type Config struct {
 	Redis           *RedisConfig
 	Consul          *ConsulConfig
 	OutboxPublisher *OutboxPublisherConfig
+	Client          *ClientConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -40,6 +41,7 @@ func LoadConfig() (*Config, error) {
 		Redis:           initRedisConfig(),
 		Consul:          initConsulConfig(),
 		OutboxPublisher: initOutboxPublisherConfig(),
+		Client:          initClientConfig(),
 	}
 
 	return cfg, nil

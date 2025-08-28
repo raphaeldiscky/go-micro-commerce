@@ -24,7 +24,9 @@ func Start(cfg *config.Config, appLogger logger.Logger) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
-	rootCmd := &cobra.Command{}
+	rootCmd := &cobra.Command{
+		Use: "auth-service",
+	}
 	cmd := []*cobra.Command{
 		{
 			Use:   "serve-all",

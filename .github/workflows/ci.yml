@@ -28,26 +28,38 @@ jobs:
           filters: |
             api-gateway:
               - 'api-gateway/**'
-              - 'go.mod' # Also trigger if shared dependencies change
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod' 
               - 'go.sum'
             auth-service:
               - 'auth-service/**'
+              - 'pkg/**'
+              - 'proto/**'
               - 'go.mod'
               - 'go.sum'
             product-service:
               - 'product-service/**'
+              - 'pkg/**'
+              - 'proto/**'
               - 'go.mod'
               - 'go.sum'
             order-service:
               - 'order-service/**'
+              - 'pkg/**'
+              - 'proto/**'
               - 'go.mod'
               - 'go.sum'
             payment-service:
               - 'payment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
               - 'go.mod'
               - 'go.sum'
             notification-service:
               - 'notification-service/**'
+              - 'pkg/**'
+              - 'proto/**'
               - 'go.mod'
               - 'go.sum'
 

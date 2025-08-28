@@ -40,7 +40,7 @@ func setupConsulRegistration(cfg *config.Config) func() {
 		return func() {}
 	}
 
-	if err := consulClient.Register(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+	if err := consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
 		log.Printf("Failed to register with Consul: %v", err)
 
 		return func() {}

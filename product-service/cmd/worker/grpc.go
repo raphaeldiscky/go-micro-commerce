@@ -10,19 +10,18 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
 )
 
-func runHTTPWorker(
+func runGRPCWorker(
 	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,
 ) {
-	srv := server.NewHTTPServer(cfg, appLogger, providers)
+	srv := server.NewGRPCServer(providers.ProductService, appLogger, cfg)
 	go func() {
-		if err := srv.StartHTTP(); err != nil {
-			appLogger.Errorf("HTTP server failed to start: %v", err)
+		if err := srv.StartGRPC(); err != nil {
+			appLogger.Errorf("gRPC server failed to start: %v", err)
 		}
 	}()
-
 	<-ctx.Done()
 	srv.Shutdown()
 }

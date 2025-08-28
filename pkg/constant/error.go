@@ -22,10 +22,16 @@ const (
 	RequestDuplicateErrorMessage = "request duplicate"
 	// MissingXUserIDErrorMessage indicates that the X-UserID header is missing.
 	MissingXUserIDErrorMessage = "missing X-UserID header"
+	// InvalidXuserIDFormateErrorMessage indicates that the X-UserID header format is wrong.
+	InvalidXuserIDFormateErrorMessage = "invalid X-UserID header format"
 	// MissingXEmailErrorMessage indicates that the X-Email header is missing.
 	MissingXEmailErrorMessage = "missing X-Email header"
 	// MissingXRolesErrorMessage indicates that the X-Roles header is missing.
 	MissingXRolesErrorMessage = "missing X-Roles header"
 	// MissingXIsActiveErrorMessage indicates that the X-IsActive header is missing.
 	MissingXIsActiveErrorMessage = "missing X-IsActive header"
+	// InvalidXIsActiveFormatErrorMessage indicates that the X-IsActive header format is wrong.
+	InvalidXIsActiveFormatErrorMessage = "invalid X-IsActive header format"
+	// MissingMetadataErrorMessage indicates that the metadata is missing.
+	MissingMetadataErrorMessage = "missing metadata"
 )

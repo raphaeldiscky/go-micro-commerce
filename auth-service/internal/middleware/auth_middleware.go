@@ -34,10 +34,10 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return httperror.NewMissingXIsActiveError()
 		}
 
-		ctx.Set(constant.CtxUserID, userID)
-		ctx.Set(constant.CtxEmail, email)
-		ctx.Set(constant.CtxRoles, roles)
-		ctx.Set(constant.CtxIsActive, isActive)
+		ctx.Set(string(constant.CtxUserID), userID)
+		ctx.Set(string(constant.CtxEmail), email)
+		ctx.Set(string(constant.CtxRoles), roles)
+		ctx.Set(string(constant.CtxIsActive), isActive)
 
 		return next(ctx)
 	}

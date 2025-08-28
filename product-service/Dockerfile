@@ -7,12 +7,16 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
-COPY product-service/ ./product-service/
+COPY proto/ ./proto/
+COPY product-service/go.mod product-service/go.sum ./product-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/product-service
 
 RUN go mod download
+
+# Copy the rest of the service files
+COPY product-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go
@@ -31,7 +35,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/product-service/main .
 
-EXPOSE 8082
+EXPOSE 8082 50052
 
 # Switch to the non-root user
 USER appuser

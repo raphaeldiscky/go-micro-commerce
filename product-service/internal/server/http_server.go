@@ -50,8 +50,8 @@ func NewHTTPServer(
 	}
 }
 
-// Start starts the HTTP server.
-func (s *HTTPServer) Start() error {
+// StartHTTP starts the HTTP server.
+func (s *HTTPServer) StartHTTP() error {
 	port := strconv.Itoa(s.config.HTTPServer.Port)
 	server := &http.Server{
 		Addr:              ":" + port,

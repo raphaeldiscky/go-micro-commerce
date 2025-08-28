@@ -64,10 +64,10 @@ func (m *AuthMiddleware) Authorization() echo.MiddlewareFunc {
 			}
 
 			// Set user information in context
-			c.Set(constant.CtxUserID, userID)
-			c.Set(constant.CtxEmail, claims.Email)
-			c.Set(constant.CtxRoles, claims.Roles)
-			c.Set(constant.CtxIsActive, claims.IsActive)
+			c.Set(string(constant.CtxUserID), userID)
+			c.Set(string(constant.CtxEmail), claims.Email)
+			c.Set(string(constant.CtxRoles), claims.Roles)
+			c.Set(string(constant.CtxIsActive), claims.IsActive)
 
 			return next(c)
 		}

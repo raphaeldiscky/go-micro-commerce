@@ -47,4 +47,6 @@ func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 	productHandler := handler.NewProductHandler(productService, appLogger)
 
 	routes.SetupProductRoutes(e, productHandler)
+
+	providers.ProductService = productService
 }

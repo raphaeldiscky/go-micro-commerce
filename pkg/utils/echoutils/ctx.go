@@ -10,7 +10,7 @@ import (
 
 // GetUserIDFromContext retrieves the user ID (UUID) from the context safely.
 func GetUserIDFromContext(ctx echo.Context) uuid.UUID {
-	if val, ok := ctx.Get(constant.CtxUserID).(uuid.UUID); ok {
+	if val, ok := ctx.Get(string(constant.CtxUserID)).(uuid.UUID); ok {
 		return val
 	}
 
@@ -19,7 +19,7 @@ func GetUserIDFromContext(ctx echo.Context) uuid.UUID {
 
 // GetEmailFromContext retrieves the user email from the context safely.
 func GetEmailFromContext(ctx echo.Context) string {
-	val, ok := ctx.Get(constant.CtxEmail).(string)
+	val, ok := ctx.Get(string(constant.CtxEmail)).(string)
 	if !ok {
 		return ""
 	}
@@ -29,7 +29,7 @@ func GetEmailFromContext(ctx echo.Context) string {
 
 // GetRolesFromContext retrieves the user roles from the context safely.
 func GetRolesFromContext(ctx echo.Context) []string {
-	val, ok := ctx.Get(constant.CtxRoles).([]string)
+	val, ok := ctx.Get(string(constant.CtxRoles)).([]string)
 	if !ok {
 		return nil
 	}
@@ -39,7 +39,7 @@ func GetRolesFromContext(ctx echo.Context) []string {
 
 // GetIsActiveFromContext checks if the user is active based on the context safely.
 func GetIsActiveFromContext(ctx echo.Context) bool {
-	val, ok := ctx.Get(constant.CtxIsActive).(bool)
+	val, ok := ctx.Get(string(constant.CtxIsActive)).(bool)
 	if !ok {
 		return false
 	}

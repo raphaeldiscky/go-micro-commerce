@@ -6,6 +6,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
 
+	"github.com/raphaeldiscky/go-micro-template/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/event"
@@ -36,8 +37,14 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 
 	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
 
+	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
+	if err != nil {
+		appLogger.Fatalf("failed to create product client: %v", err)
+	}
+
 	orderService := service.NewOrderService(
 		providers.DataStore,
+		productClient,
 		appLogger,
 		orderLifecycleProducer,
 	)
