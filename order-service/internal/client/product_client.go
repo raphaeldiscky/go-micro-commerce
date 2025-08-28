@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/consul/api"
+	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-template/proto/product"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
@@ -223,7 +224,7 @@ func (pc *ProductClient) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if resp.Status != "SERVING" {
+	if resp.Status != constant.GRPCHealthServing {
 		return fmt.Errorf("service unhealthy: %s", resp.Status)
 	}
 
