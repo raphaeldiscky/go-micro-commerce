@@ -7,12 +7,15 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
-COPY payment-service/ ./payment-service/
+COPY payment-service/go.mod payment-service/go.sum ./payment-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/payment-service
 
 RUN go mod download
+
+# Copy the rest of the service files
+COPY payment-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go

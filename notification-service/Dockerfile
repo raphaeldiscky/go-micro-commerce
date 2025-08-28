@@ -7,12 +7,15 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
-COPY notification-service/ ./notification-service/
+COPY notification-service/go.mod notification-service/go.sum ./notification-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/notification-service
 
 RUN go mod download
+
+# Copy the rest of the service files
+COPY notification-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go
@@ -31,7 +34,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/notification-service/main .
 
-EXPOSE 8084
+EXPOSE 8085
 
 # Switch to the non-root user
 USER appuser

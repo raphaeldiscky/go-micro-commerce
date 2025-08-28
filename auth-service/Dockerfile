@@ -7,12 +7,15 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
-COPY auth-service/ ./auth-service/
+COPY auth-service/go.mod auth-service/go.sum ./auth-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/auth-service
 
 RUN go mod download
+
+# Copy the rest of the service files
+COPY auth-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go

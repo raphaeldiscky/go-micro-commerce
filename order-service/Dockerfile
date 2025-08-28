@@ -7,12 +7,16 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
-COPY order-service/ ./order-service/
+COPY proto/ ./proto/
+COPY order-service/go.mod order-service/go.sum ./order-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/order-service
 
 RUN go mod download
+
+# Copy the rest of the service files
+COPY order-service/ ./
 
 # Build the Go application.
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go
