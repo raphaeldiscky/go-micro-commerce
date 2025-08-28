@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	grpcAuth "github.com/raphaeldiscky/go-micro-template/pkg/grpc"
@@ -96,6 +97,9 @@ func (s *GRPCServer) StartGRPC() error {
 		grpc.UnaryInterceptor(authInterceptor.ServiceToServiceAuth()),
 	)
 	pb.RegisterProductServiceServer(s.grpcServer, s)
+
+	// Enable gRPC reflection for development
+	reflection.Register(s.grpcServer)
 
 	s.logger.Infof("gRPC server listening on %s", address)
 

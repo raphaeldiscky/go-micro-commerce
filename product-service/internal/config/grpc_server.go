@@ -17,7 +17,7 @@ type GRPCServerConfig struct {
 func initGRPCServerConfig() *GRPCServerConfig {
 	// Set defaults
 	viper.SetDefault("GRPC_SERVER_HOST", "localhost")
-	viper.SetDefault("GRPC_SERVER_PORT", 9502)
+	viper.SetDefault("GRPC_SERVER_PORT", 50052)
 	viper.SetDefault("GRPC_SERVER_GRACE_PERIOD", 10)
 
 	grpcServerConfig := &GRPCServerConfig{}

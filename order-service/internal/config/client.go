@@ -16,7 +16,7 @@ type ClientConfig struct {
 // initClientConfig initializes the client configuration.
 func initClientConfig() *ClientConfig {
 	viper.SetDefault("PRODUCT_GRPC_HOST", "localhost")
-	viper.SetDefault("PRODUCT_GRPC_PORT", 9502)
+	viper.SetDefault("PRODUCT_GRPC_PORT", 50052)
 	viper.SetDefault("USE_SERVICE_DISCOVERY", true)
 
 	clientCfg := &ClientConfig{}
