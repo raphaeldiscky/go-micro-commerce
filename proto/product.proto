@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package marketplace.v1;
+package product;
 
 option go_package = "github.com/raphaeldiscky/go-micro-template/proto/marketplace/v1;marketplacev1";
 
