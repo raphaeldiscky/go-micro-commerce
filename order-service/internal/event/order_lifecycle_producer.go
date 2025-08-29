@@ -105,6 +105,7 @@ func NewOrderPaymentRequestEvent(
 	orderID uuid.UUID,
 	customerID uuid.UUID,
 	totalPrice decimal.Decimal,
+	currency string,
 	paymentMethod constant.PaymentMethod,
 ) *OrderPaymentRequestEvent {
 	return &OrderPaymentRequestEvent{
@@ -119,7 +120,7 @@ func NewOrderPaymentRequestEvent(
 			OrderID:       orderID,
 			CustomerID:    customerID,
 			TotalPrice:    totalPrice,
-			Currency:      "IDR", // Default currency
+			Currency:      currency,
 			PaymentMethod: paymentMethod,
 		},
 	}

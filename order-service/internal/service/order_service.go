@@ -270,20 +270,27 @@ func (s *OrderService) CreateOrderWithProto(
 
 		var orderItems []entity.OrderItem
 
+		s.logger.Infof("-----1------: %+v", productIDs)
+
 		for i, product := range products {
 			if product.Quantity < req.Items[i].Quantity {
 				return httperror.NewInsufficientProductStockError()
 			}
 
 			product.Quantity -= req.Items[i].Quantity
+			now := time.Now()
 			orderItem := entity.OrderItem{
 				ID:        uuid.New(),
 				ProductID: product.ID,
 				Quantity:  req.Items[i].Quantity,
 				Price:     product.Price,
+				CreatedAt: now,
+				UpdatedAt: now,
 			}
 			orderItems = append(orderItems, orderItem)
 		}
+
+		s.logger.Infof("-----2------: %+v", orderItems)
 
 		// Create domain entity
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
@@ -291,11 +298,15 @@ func (s *OrderService) CreateOrderWithProto(
 			return err
 		}
 
+		s.logger.Infof("-----3-----: %+v", orderItems)
+
 		// Save to repository
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
 			return err
 		}
+
+		s.logger.Infof("-----4------: %+v", savedOrder)
 
 		// Publish domain event
 		evt := event.NewOrderLifecycleEvent(
@@ -310,6 +321,8 @@ func (s *OrderService) CreateOrderWithProto(
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal order event")
 		}
+
+		s.logger.Infof("-----5------: %+v", payload)
 
 		outboxEvent := &entity.OutboxEvent{
 			ID:            uuid.New(),
@@ -327,6 +340,8 @@ func (s *OrderService) CreateOrderWithProto(
 		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return err
 		}
+
+		s.logger.Infof("-----6------: %+v", savedOrder)
 
 		res = dto.MapToOrderResponse(savedOrder)
 
@@ -643,6 +658,7 @@ func (s *OrderService) RequestPaymentOrder(
 			updatedOrder.ID,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
+			"IDR", // Default currency
 			req.PaymentMethod,
 		)
 

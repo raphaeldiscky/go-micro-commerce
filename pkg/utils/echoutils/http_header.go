@@ -11,7 +11,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 )
 
-// GetXUserID retrieves the X-UserID header from the context as UUID.
+// GetXUserID retrieves the X-User-ID header from the context as UUID.
 func GetXUserID(ctx echo.Context) (uuid.UUID, bool) {
 	xUserID := ctx.Request().Header.Get(constant.XUserID)
 	if xUserID == "" {

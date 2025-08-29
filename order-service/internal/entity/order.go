@@ -85,6 +85,10 @@ func (o *Order) validate() error {
 		totalCalculated = totalCalculated.Add(
 			item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))),
 		)
+
+		if item.CreatedAt.After(item.UpdatedAt) {
+			return fmt.Errorf("item[%d]: created_at must be before updated_at", i)
+		}
 	}
 
 	// cross-check with order total
@@ -106,8 +110,16 @@ func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, 
 		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))))
 	}
 
+	orderID := uuid.New()
+
+	for i := range items {
+		items[i].OrderID = orderID
+		items[i].CreatedAt = time.Now()
+		items[i].UpdatedAt = time.Now()
+	}
+
 	order := &Order{
-		ID:             uuid.New(),
+		ID:             orderID,
 		IdempotencyKey: idempotencyKey,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
