@@ -268,9 +268,6 @@ func (s *OrderService) CreateOrderWithProto(
 			return httperror.NewInternalServerError("failed to get all products")
 		}
 
-		s.logger.Infof("-----0------: %+v", req.Items)
-		s.logger.Infof("-----1------: %+v", products)
-
 		var orderItems []entity.OrderItem
 
 		for i, product := range products {

@@ -98,7 +98,7 @@ func (a *AuthInterceptor) extractUserInfoFromMetadata(ctx context.Context) (*Use
 
 	roles := strings.Split(rolesValues[0], ",")
 
-	// Extract X-IsActive
+	// Extract X-Is-Active
 	isActiveValues := md[strings.ToLower(constant.XIsActive)]
 	if len(isActiveValues) == 0 {
 		return nil, status.Error(codes.Unauthenticated, constant.MissingXIsActiveErrorMessage)

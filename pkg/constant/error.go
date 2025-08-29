@@ -28,10 +28,10 @@ const (
 	MissingXEmailErrorMessage = "missing X-Email header"
 	// MissingXRolesErrorMessage indicates that the X-Roles header is missing.
 	MissingXRolesErrorMessage = "missing X-Roles header"
-	// MissingXIsActiveErrorMessage indicates that the X-IsActive header is missing.
-	MissingXIsActiveErrorMessage = "missing X-IsActive header"
-	// InvalidXIsActiveFormatErrorMessage indicates that the X-IsActive header format is wrong.
-	InvalidXIsActiveFormatErrorMessage = "invalid X-IsActive header format"
+	// MissingXIsActiveErrorMessage indicates that the X-Is-Active header is missing.
+	MissingXIsActiveErrorMessage = "missing X-Is-Active header"
+	// InvalidXIsActiveFormatErrorMessage indicates that the X-Is-Active header format is wrong.
+	InvalidXIsActiveFormatErrorMessage = "invalid X-Is-Active header format"
 	// MissingMetadataErrorMessage indicates that the metadata is missing.
 	MissingMetadataErrorMessage = "missing metadata"
 )
