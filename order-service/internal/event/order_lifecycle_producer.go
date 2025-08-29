@@ -27,10 +27,35 @@ type OrderLifecyclePayload struct {
 	Items      []OrderItemPayload   `json:"items"`
 }
 
+// OrderPaymentRequestPayload holds the data for payment request events.
+type OrderPaymentRequestPayload struct {
+	OrderID       uuid.UUID              `json:"order_id"`
+	CustomerID    uuid.UUID              `json:"customer_id"`
+	TotalPrice    decimal.Decimal        `json:"total_price"`
+	Currency      string                 `json:"currency"`
+	PaymentMethod constant.PaymentMethod `json:"payment_method"`
+}
+
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
 	Metadata mq.KafkaMetadata      `json:"metadata"`
 	Payload  OrderLifecyclePayload `json:"payload"`
+}
+
+// OrderPaymentRequestEvent is the envelope for payment request events.
+type OrderPaymentRequestEvent struct {
+	Metadata mq.KafkaMetadata           `json:"metadata"`
+	Payload  OrderPaymentRequestPayload `json:"payload"`
+}
+
+// GetPayload returns the data associated with the OrderPaymentRequestEvent.
+func (e *OrderPaymentRequestEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the OrderPaymentRequestEvent.
+func (e *OrderPaymentRequestEvent) GetMetadata() mq.KafkaMetadata {
+	return e.Metadata
 }
 
 // GetPayload returns the data associated with the OrderLifecycleEvent.
@@ -71,6 +96,31 @@ func NewOrderLifecycleEvent(
 			Status:     newStatus,
 			TotalPrice: totalPrice,
 			Items:      mapOrderItemsToPayload(items),
+		},
+	}
+}
+
+// NewOrderPaymentRequestEvent creates a new OrderPaymentRequestEvent.
+func NewOrderPaymentRequestEvent(
+	orderID uuid.UUID,
+	customerID uuid.UUID,
+	totalPrice decimal.Decimal,
+	paymentMethod constant.PaymentMethod,
+) *OrderPaymentRequestEvent {
+	return &OrderPaymentRequestEvent{
+		Metadata: mq.KafkaMetadata{
+			EventID:     uuid.New(),
+			EventType:   constant.KafkaEventTypeOrderPaymentRequested,
+			AggregateID: orderID,
+			OccurredAt:  time.Now().UTC(),
+			Source:      constant.KafkaSourceOrderService,
+		},
+		Payload: OrderPaymentRequestPayload{
+			OrderID:       orderID,
+			CustomerID:    customerID,
+			TotalPrice:    totalPrice,
+			Currency:      "IDR", // Default currency
+			PaymentMethod: paymentMethod,
 		},
 	}
 }

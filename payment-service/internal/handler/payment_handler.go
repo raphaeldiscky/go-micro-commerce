@@ -13,35 +13,35 @@ import (
 
 // PaymentHandler handles HTTP requests for Payment operations.
 type PaymentHandler struct {
-	orderService service.PaymentServiceInterface
-	logger       logger.Logger
+	paymentService service.PaymentServiceInterface
+	logger         logger.Logger
 }
 
 // NewPaymentHandler creates a new instance of PaymentHandler.
 func NewPaymentHandler(
-	orderService service.PaymentServiceInterface,
+	paymentService service.PaymentServiceInterface,
 	appLogger logger.Logger,
 ) *PaymentHandler {
 	return &PaymentHandler{
-		orderService: orderService,
-		logger:       appLogger,
+		paymentService: paymentService,
+		logger:         appLogger,
 	}
 }
 
-// PayOrder handles POST /orders/pay/:orderID.
+// ProcessPayment handles POST /payments/:paymentID/process.
 //
-// Route: POST /orders/pay/:orderID
+// Route: POST /payments/:paymentID/process
 //
 // Authentication: Requires user authentication.
-func (h *PaymentHandler) PayOrder(c echo.Context) error {
-	param := c.Param("orderID")
+func (h *PaymentHandler) ProcessPayment(c echo.Context) error {
+	param := c.Param("paymentID")
 
-	orderID, err := uuid.Parse(param)
+	paymentID, err := uuid.Parse(param)
 	if err != nil {
 		return err
 	}
 
-	req := dto.PaymentRequest{
+	req := dto.ProcessPaymentRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
@@ -54,10 +54,31 @@ func (h *PaymentHandler) PayOrder(c echo.Context) error {
 		return err
 	}
 
-	order, err := h.orderService.PayPayment(c.Request().Context(), req, orderID)
+	payment, err := h.paymentService.ProcessPayment(c.Request().Context(), paymentID, req)
 	if err != nil {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, order)
+	return echoutils.ResponseOK(c, payment)
+}
+
+// GetPaymentByOrderID handles GET /payments/order/:orderID.
+//
+// Route: GET /payments/order/:orderID
+//
+// Authentication: Requires user authentication.
+func (h *PaymentHandler) GetPaymentByOrderID(c echo.Context) error {
+	param := c.Param("orderID")
+
+	orderID, err := uuid.Parse(param)
+	if err != nil {
+		return err
+	}
+
+	payment, err := h.paymentService.GetPaymentByOrderID(c.Request().Context(), orderID)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, payment)
 }

@@ -1,9 +1,8 @@
-// Package entity defines the Product entity and its validation logic.
+// Package entity defines the Payment entity and its validation logic.
 package entity
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,185 +11,130 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
 )
 
-// Payment represents an order in the marketplace.
+// Payment represents a payment transaction in the marketplace.
 type Payment struct {
-	ID             uuid.UUID
-	IdempotencyKey uuid.UUID // generated from client
-	CustomerID     uuid.UUID
-	Status         constant.PaymentStatus
-	TotalPrice     decimal.Decimal
-	Items          []PaymentItem
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-}
-
-// PaymentItem represents an item in an order.
-type PaymentItem struct {
-	ID        uuid.UUID
-	PaymentID uuid.UUID
-	ProductID uuid.UUID
-	Quantity  int
-	Price     decimal.Decimal
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID                 uuid.UUID
+	OrderID            uuid.UUID // Reference to order from order-service
+	Amount             decimal.Decimal
+	Currency           string
+	Status             constant.PaymentStatus
+	PaymentMethod      constant.PaymentMethod
+	PaymentGateway     *string
+	GatewayReferenceID *string
+	GatewayResponse    map[string]interface{} // JSONB data
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	CompletedAt        *time.Time
+	FailedAt           *time.Time
 }
 
 // validate performs business rule validation.
-func (o *Payment) validate() error {
-	if o.CustomerID == uuid.Nil {
-		return errors.New("customer_id must not be empty")
+func (p *Payment) validate() error {
+	if p.OrderID == uuid.Nil {
+		return errors.New("order_id must not be empty")
 	}
 
-	if o.IdempotencyKey == uuid.Nil {
-		return errors.New("idempotency_key must not be empty")
+	if p.Amount.LessThanOrEqual(decimal.Zero) {
+		return errors.New("amount must be greater than zero")
 	}
 
-	if o.TotalPrice.LessThan(decimal.Zero) {
-		return errors.New("total_price must not be negative")
+	if p.Currency == "" {
+		return errors.New("currency must not be empty")
 	}
 
-	if len(o.Items) == 0 {
-		return errors.New("order must have at least one item")
+	if len(p.Currency) != 3 {
+		return errors.New("currency must be a 3-character ISO code")
 	}
 
-	if o.CreatedAt.After(o.UpdatedAt) {
-		return errors.New("created_at must be before updated_at")
+	if p.CreatedAt.After(p.UpdatedAt) {
+		return errors.New("created_at must be before or equal to updated_at")
 	}
 
-	// Validate each order item
-	productSeen := make(map[uuid.UUID]bool)
-	totalCalculated := decimal.Zero
-
-	for i, item := range o.Items {
-		if item.ProductID == uuid.Nil {
-			return fmt.Errorf("item[%d]: product_id must not be empty", i)
-		}
-
-		if item.Quantity <= 0 {
-			return fmt.Errorf("item[%d]: quantity must be greater than 0", i)
-		}
-
-		if item.Price.LessThanOrEqual(decimal.Zero) {
-			return fmt.Errorf("item[%d]: price must be greater than 0", i)
-		}
-
-		// prevent duplicate products
-		if productSeen[item.ProductID] {
-			return fmt.Errorf("item[%d]: duplicate product_id %s", i, item.ProductID)
-		}
-
-		productSeen[item.ProductID] = true
-
-		// accumulate total for cross-check
-		totalCalculated = totalCalculated.Add(
-			item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))),
-		)
-	}
-
-	// cross-check with order total
-	if !o.TotalPrice.Equal(totalCalculated) {
-		return fmt.Errorf(
-			"total_price mismatch: expected %s, got %s",
-			totalCalculated,
-			o.TotalPrice,
-		)
-	}
+	// Status validation is handled by database constraints
+	// PaymentMethod validation is handled by database constraints
 
 	return nil
 }
 
-// NewPayment creates a new order with validation.
-func NewPayment(customerID, idempotencyKey uuid.UUID, items []PaymentItem) (*Payment, error) {
-	totalPrice := decimal.Zero
-	for _, item := range items {
-		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))))
+// NewPayment creates a new payment with validation.
+func NewPayment(
+	orderID uuid.UUID,
+	amount decimal.Decimal,
+	currency string,
+	paymentMethod constant.PaymentMethod,
+) (*Payment, error) {
+	now := time.Now()
+	payment := &Payment{
+		ID:            uuid.New(),
+		OrderID:       orderID,
+		Amount:        amount.Round(2),
+		Currency:      currency,
+		Status:        constant.PaymentStatusPending,
+		PaymentMethod: paymentMethod,
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
-	order := &Payment{
-		ID:             uuid.New(),
-		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		CustomerID:     customerID,
-		Status:         constant.PaymentStatusPending,
-		TotalPrice:     totalPrice.Round(2),
-		Items:          items,
-	}
-
-	if err := order.validate(); err != nil {
+	if err := payment.validate(); err != nil {
 		return nil, err
 	}
 
-	return order, nil
+	return payment, nil
 }
 
-// UpdateStatus updates the order status with validation.
-func (o *Payment) UpdateStatus(status constant.PaymentStatus) error {
-	o.Status = status
-	o.UpdatedAt = time.Now()
+// UpdateStatus updates the payment status with validation.
+func (p *Payment) UpdateStatus(status constant.PaymentStatus) error {
+	p.Status = status
+	p.UpdatedAt = time.Now()
 
-	return o.validate()
-}
-
-// AddItem adds an item to the order and recalculates total price.
-func (o *Payment) AddItem(item *PaymentItem) error {
-	if item == nil {
-		return errors.New("item must not be nil")
+	// Set completion/failure timestamps
+	switch status {
+	case constant.PaymentStatusCompleted:
+		now := time.Now()
+		p.CompletedAt = &now
+	case constant.PaymentStatusFailed:
+		now := time.Now()
+		p.FailedAt = &now
+	case constant.PaymentStatusPending,
+		constant.PaymentStatusProcessing,
+		constant.PaymentStatusRefunded:
+		// No action needed
+	default:
+		return errors.New("invalid payment status")
 	}
 
-	o.Items = append(o.Items, *item)
-
-	// Recalculate total price
-	totalPrice := decimal.Zero
-	for _, orderItem := range o.Items {
-		totalPrice = totalPrice.Add(
-			orderItem.Price.Mul(decimal.NewFromInt(int64(orderItem.Quantity))),
-		)
-	}
-
-	o.TotalPrice = totalPrice.Round(2)
-	o.UpdatedAt = time.Now()
-
-	return o.validate()
+	return p.validate()
 }
 
-// RemoveItem removes an item from the order and recalculates total price.
-func (o *Payment) RemoveItem(itemID uuid.UUID) error {
-	for i, item := range o.Items {
-		if item.ID == itemID {
-			o.Items = append(o.Items[:i], o.Items[i+1:]...)
+// SetGatewayReference sets the payment gateway reference information.
+func (p *Payment) SetGatewayReference(
+	gateway, referenceID string,
+	response map[string]interface{},
+) error {
+	p.PaymentGateway = &gateway
+	p.GatewayReferenceID = &referenceID
+	p.GatewayResponse = response
+	p.UpdatedAt = time.Now()
 
-			break
-		}
-	}
-
-	// Recalculate total price
-	totalPrice := decimal.Zero
-	for _, orderItem := range o.Items {
-		totalPrice = totalPrice.Add(
-			orderItem.Price.Mul(decimal.NewFromInt(int64(orderItem.Quantity))),
-		)
-	}
-
-	o.TotalPrice = totalPrice.Round(2)
-	o.UpdatedAt = time.Now()
-
-	return o.validate()
+	return p.validate()
 }
 
-// CanBeCancelled checks if order can be canceled.
-func (o *Payment) CanBeCancelled() bool {
-	return o.Status != constant.PaymentStatusDelivered && o.Status != constant.PaymentStatusCanceled
+// CanBeProcessed checks if payment can be processed.
+func (p *Payment) CanBeProcessed() bool {
+	return p.Status == constant.PaymentStatusPending
 }
 
-// CanBePaid checks if order can be paid.
-func (o *Payment) CanBePaid() bool {
-	return o.Status == constant.PaymentStatusPending || o.Status == constant.PaymentStatusConfirmed
+// CanBeRefunded checks if payment can be refunded.
+func (p *Payment) CanBeRefunded() bool {
+	return p.Status == constant.PaymentStatusCompleted
 }
 
-// UpdateItems updates order items and recalculates total.
-func (o *Payment) UpdateItems(items []PaymentItem) error {
-	o.Items = items
-	// Recalculate total price logic here
-	return o.validate()
+// IsCompleted checks if payment is completed.
+func (p *Payment) IsCompleted() bool {
+	return p.Status == constant.PaymentStatusCompleted
+}
+
+// IsFailed checks if payment has failed.
+func (p *Payment) IsFailed() bool {
+	return p.Status == constant.PaymentStatusFailed
 }

@@ -15,6 +15,9 @@ import (
 
 // PaymentRepositoryInterface defines the interface for payment data operations.
 type PaymentRepositoryInterface interface {
+	// Create creates a new payment
+	Create(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
+
 	// Update updates an existing payment
 	Update(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
 
@@ -23,6 +26,9 @@ type PaymentRepositoryInterface interface {
 
 	// FindByID retrieves a payment by its ID.
 	FindByID(ctx context.Context, id uuid.UUID) (*entity.Payment, error)
+
+	// FindByOrderID retrieves a payment by its order ID.
+	FindByOrderID(ctx context.Context, orderID uuid.UUID) (*entity.Payment, error)
 }
 
 // PaymentRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
@@ -37,30 +43,95 @@ func NewPaymentRepositoryPostgres(db DBTX) PaymentRepositoryInterface {
 	}
 }
 
+// Create creates a new payment.
+func (r *PaymentRepositoryPostgres) Create(
+	ctx context.Context,
+	payment *entity.Payment,
+) (*entity.Payment, error) {
+	query := `
+		INSERT INTO payments (
+			id, order_id, amount, currency, status, payment_method, 
+			payment_gateway, gateway_reference_id, gateway_response,
+			created_at, updated_at, completed_at, failed_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		RETURNING id, order_id, amount, currency, status, payment_method,
+			payment_gateway, gateway_reference_id, gateway_response,
+			created_at, updated_at, completed_at, failed_at
+	`
+
+	row := r.db.QueryRow(
+		ctx,
+		query,
+		payment.ID,
+		payment.OrderID,
+		payment.Amount,
+		payment.Currency,
+		payment.Status,
+		payment.PaymentMethod,
+		payment.PaymentGateway,
+		payment.GatewayReferenceID,
+		payment.GatewayResponse,
+		payment.CreatedAt,
+		payment.UpdatedAt,
+		payment.CompletedAt,
+		payment.FailedAt,
+	)
+
+	var createdPayment entity.Payment
+
+	err := row.Scan(
+		&createdPayment.ID,
+		&createdPayment.OrderID,
+		&createdPayment.Amount,
+		&createdPayment.Currency,
+		&createdPayment.Status,
+		&createdPayment.PaymentMethod,
+		&createdPayment.PaymentGateway,
+		&createdPayment.GatewayReferenceID,
+		&createdPayment.GatewayResponse,
+		&createdPayment.CreatedAt,
+		&createdPayment.UpdatedAt,
+		&createdPayment.CompletedAt,
+		&createdPayment.FailedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create payment: %w", err)
+	}
+
+	return &createdPayment, nil
+}
+
 // FindByID retrieves a payment by its ID.
 func (r *PaymentRepositoryPostgres) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Payment, error) {
-	// Get payment
-	paymentQuery := `
-		SELECT id, idempotency_key, created_at, updated_at, customer_id, status, total_price
+	query := `
+		SELECT id, order_id, amount, currency, status, payment_method,
+			payment_gateway, gateway_reference_id, gateway_response,
+			created_at, updated_at, completed_at, failed_at
 		FROM payments
 		WHERE id = $1
 	`
 
-	row := r.db.QueryRow(ctx, paymentQuery, id)
+	row := r.db.QueryRow(ctx, query, id)
 
 	var payment entity.Payment
 
 	err := row.Scan(
 		&payment.ID,
-		&payment.IdempotencyKey,
+		&payment.OrderID,
+		&payment.Amount,
+		&payment.Currency,
+		&payment.Status,
+		&payment.PaymentMethod,
+		&payment.PaymentGateway,
+		&payment.GatewayReferenceID,
+		&payment.GatewayResponse,
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
-		&payment.CustomerID,
-		&payment.Status,
-		&payment.TotalPrice,
+		&payment.CompletedAt,
+		&payment.FailedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -70,39 +141,48 @@ func (r *PaymentRepositoryPostgres) FindByID(
 		return nil, fmt.Errorf("failed to scan payment: %w", err)
 	}
 
-	// Get payment items
-	const itemsQuery = `
-		SELECT id, payment_id, product_id, quantity, price
-		FROM payment_items
-		WHERE payment_id = $1
+	return &payment, nil
+}
+
+// FindByOrderID retrieves a payment by its order ID.
+func (r *PaymentRepositoryPostgres) FindByOrderID(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (*entity.Payment, error) {
+	query := `
+		SELECT id, order_id, amount, currency, status, payment_method,
+			payment_gateway, gateway_reference_id, gateway_response,
+			created_at, updated_at, completed_at, failed_at
+		FROM payments
+		WHERE order_id = $1
 	`
 
-	rows, err := r.db.Query(ctx, itemsQuery, id)
+	row := r.db.QueryRow(ctx, query, orderID)
+
+	var payment entity.Payment
+
+	err := row.Scan(
+		&payment.ID,
+		&payment.OrderID,
+		&payment.Amount,
+		&payment.Currency,
+		&payment.Status,
+		&payment.PaymentMethod,
+		&payment.PaymentGateway,
+		&payment.GatewayReferenceID,
+		&payment.GatewayResponse,
+		&payment.CreatedAt,
+		&payment.UpdatedAt,
+		&payment.CompletedAt,
+		&payment.FailedAt,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query payment items: %w", err)
-	}
-	defer rows.Close()
-
-	var items []entity.PaymentItem
-
-	for rows.Next() {
-		var item entity.PaymentItem
-
-		err := rows.Scan(
-			&item.ID,
-			&item.PaymentID,
-			&item.ProductID,
-			&item.Quantity,
-			&item.Price,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan payment item: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
 		}
 
-		items = append(items, item)
+		return nil, fmt.Errorf("failed to scan payment: %w", err)
 	}
-
-	payment.Items = items
 
 	return &payment, nil
 }
@@ -112,39 +192,58 @@ func (r *PaymentRepositoryPostgres) Update(
 	ctx context.Context,
 	payment *entity.Payment,
 ) (*entity.Payment, error) {
-	// Update the payment itself
-	updatePaymentQuery := `
+	query := `
 		UPDATE payments
-		SET customer_id = $1,
-			idempotency_key = $2,
-			status = $3,
-			total_price = $4,
-			updated_at = $5
-		WHERE id = $6
-		RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
+		SET order_id = $2,
+			amount = $3,
+			currency = $4,
+			status = $5,
+			payment_method = $6,
+			payment_gateway = $7,
+			gateway_reference_id = $8,
+			gateway_response = $9,
+			updated_at = $10,
+			completed_at = $11,
+			failed_at = $12
+		WHERE id = $1
+		RETURNING id, order_id, amount, currency, status, payment_method,
+			payment_gateway, gateway_reference_id, gateway_response,
+			created_at, updated_at, completed_at, failed_at
 	`
 
 	row := r.db.QueryRow(
 		ctx,
-		updatePaymentQuery,
-		payment.CustomerID,     // $1
-		payment.IdempotencyKey, // $2
-		payment.Status,         // $3
-		payment.TotalPrice,     // $4
-		payment.UpdatedAt,      // $5
-		payment.ID,             // $6
+		query,
+		payment.ID,
+		payment.OrderID,
+		payment.Amount,
+		payment.Currency,
+		payment.Status,
+		payment.PaymentMethod,
+		payment.PaymentGateway,
+		payment.GatewayReferenceID,
+		payment.GatewayResponse,
+		payment.UpdatedAt,
+		payment.CompletedAt,
+		payment.FailedAt,
 	)
 
 	var updatedPayment entity.Payment
 
 	err := row.Scan(
 		&updatedPayment.ID,
-		&updatedPayment.IdempotencyKey,
-		&updatedPayment.CustomerID,
+		&updatedPayment.OrderID,
+		&updatedPayment.Amount,
+		&updatedPayment.Currency,
 		&updatedPayment.Status,
-		&updatedPayment.TotalPrice,
+		&updatedPayment.PaymentMethod,
+		&updatedPayment.PaymentGateway,
+		&updatedPayment.GatewayReferenceID,
+		&updatedPayment.GatewayResponse,
 		&updatedPayment.CreatedAt,
 		&updatedPayment.UpdatedAt,
+		&updatedPayment.CompletedAt,
+		&updatedPayment.FailedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -154,41 +253,10 @@ func (r *PaymentRepositoryPostgres) Update(
 		return nil, fmt.Errorf("failed to scan updated payment: %w", err)
 	}
 
-	// Delete existing items
-	_, err = r.db.Exec(ctx, "DELETE FROM payment_items WHERE payment_id = $1", payment.ID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to delete existing payment items: %w", err)
-	}
-
-	// Insert new items if provided
-	if len(payment.Items) > 0 {
-		insertItemQuery := `
-			INSERT INTO payment_items (id, payment_id, product_id, quantity, price)
-			VALUES ($1, $2, $3, $4, $5)
-		`
-		for _, item := range payment.Items {
-			_, err = r.db.Exec(
-				ctx,
-				insertItemQuery,
-				item.ID,
-				payment.ID,
-				item.ProductID,
-				item.Quantity,
-				item.Price,
-			)
-			if err != nil {
-				return nil, fmt.Errorf("failed to insert payment item: %w", err)
-			}
-		}
-	}
-
-	// Attach updated items back to the result
-	updatedPayment.Items = payment.Items
-
 	return &updatedPayment, nil
 }
 
-// UpdateStatus updates only the status of an payment.
+// UpdateStatus updates only the status of a payment.
 func (r *PaymentRepositoryPostgres) UpdateStatus(
 	ctx context.Context,
 	id uuid.UUID,
@@ -196,7 +264,10 @@ func (r *PaymentRepositoryPostgres) UpdateStatus(
 ) error {
 	query := `
 		UPDATE payments
-		SET status = $2, updated_at = NOW()
+		SET status = $2, 
+			updated_at = NOW(),
+			completed_at = CASE WHEN $2 = 'completed' THEN NOW() ELSE completed_at END,
+			failed_at = CASE WHEN $2 = 'failed' THEN NOW() ELSE failed_at END
 		WHERE id = $1
 	`
 

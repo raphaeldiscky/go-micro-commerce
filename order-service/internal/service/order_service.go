@@ -48,7 +48,11 @@ type OrderServiceInterface interface {
 		status constant.OrderStatus,
 	) (*dto.OrderResponse, error)
 	CancelOrder(ctx context.Context, req dto.CancelOrderRequest, id uuid.UUID) error
-	PayOrder(ctx context.Context, req dto.PayOrderRequest, id uuid.UUID) (*dto.OrderResponse, error)
+	RequestPaymentOrder(
+		ctx context.Context,
+		req dto.PayOrderRequest,
+		id uuid.UUID,
+	) (*dto.OrderResponse, error)
 }
 
 // OrderService implements the OrderServiceInterface.
@@ -565,8 +569,8 @@ func (s *OrderService) CancelOrder(
 	return nil
 }
 
-// PayOrder processes payment for an order.
-func (s *OrderService) PayOrder(
+// RequestPaymentOrder initiates payment processing for an order by publishing a payment request event.
+func (s *OrderService) RequestPaymentOrder(
 	ctx context.Context,
 	req dto.PayOrderRequest,
 	id uuid.UUID,
@@ -596,6 +600,7 @@ func (s *OrderService) PayOrder(
 
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
+		outboxRepo := ds.OutboxRepository()
 
 		// Check if order exists
 		existingOrder, err := orderRepo.FindByID(ctx, id)
@@ -622,14 +627,9 @@ func (s *OrderService) PayOrder(
 			)
 		}
 
+		// Update idempotency key but keep order in pending status
+		// Payment service will update the order status when payment completes
 		updatedOrder := existingOrder
-		updatedOrder.IdempotencyKey = req.IdempotencyKey
-		// Update status to paid
-		if err := updatedOrder.UpdateStatus(constant.OrderStatusPaid); err != nil {
-			return httperror.NewBadRequestError("failed to update order status entity")
-		}
-
-		// Set idempotency key
 		updatedOrder.IdempotencyKey = req.IdempotencyKey
 
 		// Save updated order
@@ -638,16 +638,34 @@ func (s *OrderService) PayOrder(
 			return httperror.NewInternalServerError("failed to update order")
 		}
 
-		// Publish domain event
-		evt := event.NewOrderLifecycleEvent(
+		// Publish payment request event to payment service
+		evt := event.NewOrderPaymentRequestEvent(
 			updatedOrder.ID,
-			constant.OrderStatusPaid,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
-			updatedOrder.Items,
+			req.PaymentMethod,
 		)
-		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
-			return httperror.NewInternalServerError("failed to send order paid event")
+
+		payload, err := json.Marshal(evt)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to marshal payment request event")
+		}
+
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "order",
+			AggregateID:   updatedOrder.ID,
+			EventType:     constant.KafkaEventTypeOrderPaymentRequested,
+			Topic:         constant.TopicOrderLifecycle,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return httperror.NewInternalServerError("failed to create payment request event")
 		}
 
 		res = dto.MapToOrderResponse(updatedOrder)

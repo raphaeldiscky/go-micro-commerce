@@ -18,7 +18,7 @@ func SetupOrderRoutes(e *echo.Echo, h *handler.OrderHandler) {
 	protected.POST("/proto", h.CreateOrderWithProto)
 	protected.GET("/user", h.GetLoggedInOrders)
 	protected.POST("/cancel/:orderID", h.CancelOrder)
-	protected.POST("/pay/:orderID", h.PayOrder)
+	protected.POST("/payment-request/:orderID", h.RequestPaymentOrder)
 
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)

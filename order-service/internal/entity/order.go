@@ -185,7 +185,7 @@ func (o *Order) CanBeCancelled() bool {
 
 // CanBePaid checks if order can be paid.
 func (o *Order) CanBePaid() bool {
-	return o.Status == constant.OrderStatusPending || o.Status == constant.OrderStatusConfirmed
+	return o.Status == constant.OrderStatusPending
 }
 
 // UpdateItems updates order items and recalculates total.
