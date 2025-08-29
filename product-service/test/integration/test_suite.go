@@ -1,156 +1,186 @@
 // Package integration provides integration tests for the product service.
 package integration
 
-// import (
-// 	"bytes"
-// 	"context"
-// 	"encoding/json"
-// 	"errors"
-// 	"fmt"
-// 	"net/http"
-// 	"time"
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"time"
 
-// 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-// 	"github.com/stretchr/testify/require"
-// 	"github.com/stretchr/testify/suite"
+	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
-// )
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+)
 
-// // TestSuite holds all integration tests.
-// type TestSuite struct {
-// 	suite.Suite
-// 	tcSetup        *TestContainersSetup
-// 	httpServer     *server.HTTPServer
-// 	baseURL        string
-// 	productService service.ProductServiceInterface
-// 	ctx            context.Context
-// }
+// mockKafkaProducer is a mock implementation of KafkaProducerInterface for testing.
+type mockKafkaProducer struct{}
 
-// // SetupSuite runs once before all tests.
-// func (s *TestSuite) SetupSuite() {
-// 	s.ctx = context.Background()
+func (m *mockKafkaProducer) Send(_ context.Context, _ mq.BaseEvent) error {
+	// Do nothing - just simulate successful send for testing
+	return nil
+}
 
-// 	// Setup testcontainers
-// 	s.tcSetup = NewTestContainersSetup()
-// 	err := s.tcSetup.SetupPostgres()
-// 	require.NoError(s.T(), err)
+func (m *mockKafkaProducer) Topic() string {
+	return "test-topic"
+}
 
-// 	// Setup logger
-// 	appLogger := logger.NewLogrusLogger(4) // Debug level
+// TestSuite holds all integration tests.
+type TestSuite struct {
+	suite.Suite
+	tcSetup        *TestContainersSetup
+	httpServer     *server.HTTPServer
+	baseURL        string
+	productService service.ProductServiceInterface
+	ctx            context.Context
+}
 
-// 	// Setup dataStore
-// 	dataStore := repository.NewDataStore(s.tcSetup.DbPool)
+// SetupSuite runs once before all tests.
+func (s *TestSuite) SetupSuite() {
+	s.ctx = context.Background()
 
-// 	// Setup product service with nil Kafka producers for testing
-// 	s.productService = service.NewProductService(dataStore, nil, nil, nil)
+	// Setup testcontainers
+	s.tcSetup = NewTestContainersSetup()
+	err := s.tcSetup.SetupPostgres()
+	require.NoError(s.T(), err)
 
-// 	// Create test providers
-// 	testProviders := &provider.Providers{
-// 		DataStore:  dataStore,
-// 		KafkaAdmin: nil, // nil for testing
-// 	}
+	// Setup logger
+	appLogger := logger.NewLogrusLogger(4) // Debug level
 
-// 	// Create a test config
-// 	testConfig := &config.Config{
-// 		HTTPServer: &config.HTTPServerConfig{
-// 			Port: 10080 + (int(time.Now().UnixNano()/1000000) % 1000),
-// 		},
-// 	}
+	// Setup dataStore
+	dataStore := repository.NewDataStore(s.tcSetup.DbPool)
 
-// 	// Setup HTTP server
-// 	s.httpServer = server.NewHTTPServer(testConfig, appLogger, testProviders)
+	// Setup product service with mock Kafka producers for testing
+	mockProducer := &mockKafkaProducer{}
+	s.productService = service.NewProductService(
+		dataStore,
+		mockProducer,
+		mockProducer,
+		mockProducer,
+	)
 
-// 	// Start HTTP server in goroutine
-// 	go func() {
-// 		if err := s.httpServer.Start(); err != nil {
-// 			if !errors.Is(err, http.ErrServerClosed) {
-// 				s.T().Errorf("HTTP server error: %v", err)
-// 			}
-// 		}
-// 	}()
+	// Create test providers with product service already set to bypass Kafka initialization
+	testProviders := &provider.Providers{
+		DataStore:      dataStore,
+		KafkaAdmin:     nil,              // nil for testing
+		ProductService: s.productService, // Pre-initialize to avoid Kafka setup
+	}
 
-// 	// Wait for server to start
-// 	time.Sleep(300 * time.Millisecond)
+	// Create a test config
+	testConfig := &config.Config{
+		HTTPServer: &config.HTTPServerConfig{
+			Port:        10080 + (int(time.Now().UnixNano()/1000000) % 1000),
+			GracePeriod: 5,
+		},
+		App: &config.AppConfig{
+			Environment: "test", // Set to test environment
+		},
+	}
 
-// 	s.baseURL = fmt.Sprintf("http://localhost:%d", testConfig.HTTPServer.Port)
+	// Setup HTTP server
+	s.httpServer = server.NewHTTPServer(testConfig, appLogger, testProviders)
 
-// 	// Verify server is running
-// 	resp, err := http.NewRequestWithContext(s.ctx, http.MethodGet, s.baseURL+"/health", http.NoBody)
-// 	require.NoError(s.T(), err)
+	// Start HTTP server in goroutine
+	go func() {
+		if err := s.httpServer.StartHTTP(); err != nil {
+			if !errors.Is(err, http.ErrServerClosed) {
+				s.T().Errorf("HTTP server error: %v", err)
+			}
+		}
+	}()
 
-// 	client := &http.Client{Timeout: 5 * time.Second}
-// 	resp2, err := client.Do(resp)
-// 	require.NoError(s.T(), err)
-// 	require.Equal(s.T(), http.StatusOK, resp2.StatusCode)
+	// Wait for server to start
+	time.Sleep(300 * time.Millisecond)
 
-// 	if err := resp2.Body.Close(); err != nil {
-// 		s.T().Errorf("failed to close response body: %v", err)
-// 	}
-// }
+	s.baseURL = fmt.Sprintf("http://localhost:%d", testConfig.HTTPServer.Port)
 
-// // TearDownSuite runs once after all tests.
-// func (s *TestSuite) TearDownSuite() {
-// 	if s.httpServer != nil {
-// 		s.httpServer.Shutdown()
-// 	}
+	// Verify server is running
+	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, s.baseURL+"/health", http.NoBody)
+	require.NoError(s.T(), err)
 
-// 	if s.tcSetup != nil {
-// 		s.tcSetup.Cleanup()
-// 	}
-// }
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	require.NoError(s.T(), err)
+	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
-// // SetupTest runs before each test.
-// func (s *TestSuite) SetupTest() {
-// 	// Clean up products table before each test
-// 	err := s.tcSetup.CleanupData()
-// 	require.NoError(s.T(), err)
-// }
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// // Helper methods for making HTTP requests.
-// func (s *TestSuite) makeRequest(
-// 	method string,
-// 	endpoint string,
-// 	body interface{},
-// ) (*http.Response, error) {
-// 	var reqBody []byte
+// TearDownSuite runs once after all tests.
+func (s *TestSuite) TearDownSuite() {
+	if s.httpServer != nil {
+		s.httpServer.Shutdown()
+	}
 
-// 	var err error
+	if s.tcSetup != nil {
+		s.tcSetup.Cleanup()
+	}
+}
 
-// 	if body != nil {
-// 		reqBody, err = json.Marshal(body)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 	}
+// SetupTest runs before each test.
+func (s *TestSuite) SetupTest() {
+	// Clean up products table before each test
+	err := s.tcSetup.CleanupData()
+	require.NoError(s.T(), err)
+}
 
-// 	req, err := http.NewRequestWithContext(
-// 		s.ctx,
-// 		method,
-// 		s.baseURL+endpoint,
-// 		bytes.NewBuffer(reqBody),
-// 	)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+// Helper methods for making HTTP requests.
+func (s *TestSuite) makeRequest(
+	method string,
+	endpoint string,
+	body interface{},
+) (*http.Response, error) {
+	var reqBody []byte
 
-// 	req.Header.Set("Content-Type", "application/json")
+	var err error
 
-// 	client := &http.Client{Timeout: 10 * time.Second}
+	if body != nil {
+		reqBody, err = json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-// 	return client.Do(req)
-// }
+	req, err := http.NewRequestWithContext(
+		s.ctx,
+		method,
+		s.baseURL+endpoint,
+		bytes.NewBuffer(reqBody),
+	)
+	if err != nil {
+		return nil, err
+	}
 
-// func (s *TestSuite) parseResponse(resp *http.Response, target interface{}) error {
-// 	defer func() {
-// 		if err := resp.Body.Close(); err != nil {
-// 			s.T().Errorf("failed to close response body: %v", err)
-// 		}
-// 	}()
+	req.Header.Set("Content-Type", "application/json")
 
-// 	return json.NewDecoder(resp.Body).Decode(target)
-// }
+	// Add mock authentication headers for testing
+	req.Header.Set("X-User-ID", "550e8400-e29b-41d4-a716-446655440000") // Valid UUID format
+	req.Header.Set("X-Email", "test@example.com")
+	req.Header.Set("X-Roles", "admin,user")
+	req.Header.Set("X-IsActive", "true")
+
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	return client.Do(req)
+}
+
+func (s *TestSuite) parseResponse(resp *http.Response, target interface{}) error {
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			s.T().Errorf("failed to close response body: %v", err)
+		}
+	}()
+
+	return json.NewDecoder(resp.Body).Decode(target)
+}

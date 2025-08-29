@@ -1,80 +1,95 @@
 package integration
 
-// // ProductGetTestSuite holds product retrieval tests.
-// type ProductGetTestSuite struct {
-// 	TestSuite
-// }
+import (
+	"fmt"
+	"net/http"
+	"testing"
 
-// func (s *ProductGetTestSuite) TestGetProduct() {
-// 	// First create a product
-// 	createReq := dto.CreateProductRequest{
-// 		Name:     "Test Product",
-// 		Price:    decimal.NewFromFloat(19.99),
-// 		Quantity: 50,
-// 	}
+	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
-// 	resp, err := s.makeRequest("POST", "/v1", createReq)
-// 	s.NoError(err)
+	productDto "github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
+)
 
-// 	var createdProduct dto.ProductResponse
-// 	err = s.parseResponse(resp, &createdProduct)
-// 	s.NoError(err)
+// ProductGetTestSuite holds product retrieval tests.
+type ProductGetTestSuite struct {
+	TestSuite
+}
 
-// 	// Close response body after parsing
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+func (s *ProductGetTestSuite) TestGetProduct() {
+	// First create a product
+	createReq := productDto.CreateProductRequest{
+		Name:     "Test Product",
+		Price:    decimal.NewFromFloat(19.99),
+		Quantity: 50,
+	}
 
-// 	// Test getting the product
-// 	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", createdProduct.ID), nil)
-// 	s.NoError(err)
+	resp, err := s.makeRequest("POST", "/v1", createReq)
+	require.NoError(s.T(), err)
 
-// 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			s.T().Errorf("failed to close response body: %v", cerr)
+		}
+	}()
+	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 
-// 	var product dto.ProductResponse
-// 	err = s.parseResponse(resp, &product)
-// 	s.NoError(err)
+	var createResponse dto.WebResponse[productDto.ProductResponse]
+	err = s.parseResponse(resp, &createResponse)
+	require.NoError(s.T(), err)
 
-// 	// Close response body after parsing
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	// Test getting the product
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", createResponse.Data.ID), nil)
+	require.NoError(s.T(), err)
 
-// 	assert.Equal(s.T(), createdProduct.ID, product.ID)
-// 	assert.Equal(s.T(), "Test Product", product.Name)
-// 	assert.True(s.T(), product.Price.Equal(decimal.NewFromFloat(19.99)))
-// 	assert.Equal(s.T(), 50, product.Quantity)
-// }
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			s.T().Errorf("failed to close response body: %v", cerr)
+		}
+	}()
+	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
-// func (s *ProductGetTestSuite) TestGetProductNotFound() {
-// 	nonExistentID := uuid.New()
+	var getResponse dto.WebResponse[productDto.ProductResponse]
+	err = s.parseResponse(resp, &getResponse)
+	require.NoError(s.T(), err)
 
-// 	resp, err := s.makeRequest("GET", fmt.Sprintf("/v1/%s", nonExistentID), nil)
-// 	s.NoError(err)
+	assert.Equal(s.T(), createResponse.Data.ID, getResponse.Data.ID)
+	assert.Equal(s.T(), "Test Product", getResponse.Data.Name)
+	assert.True(s.T(), getResponse.Data.Price.Equal(decimal.NewFromFloat(19.99)))
+	assert.Equal(s.T(), 50, getResponse.Data.Quantity)
+}
 
-// 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
+func (s *ProductGetTestSuite) TestGetProductNotFound() {
+	nonExistentID := uuid.New()
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
-// }
+	resp, err := s.makeRequest("GET", fmt.Sprintf("/v1/%s", nonExistentID), nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 
-// func (s *ProductGetTestSuite) TestGetProductInvalidID() {
-// 	resp, err := s.makeRequest("GET", "/v1/invalid-uuid", nil)
-// 	s.NoError(err)
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// 	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
+func (s *ProductGetTestSuite) TestGetProductInvalidID() {
+	resp, err := s.makeRequest("GET", "/v1/invalid-uuid", nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
-// }
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// // TestProductGetSuite runs the product retrieval test suite.
-// func TestProductGetSuite(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("Skipping integration tests in short mode")
-// 	}
+// TestProductGetSuite runs the product retrieval test suite.
+func TestProductGetSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration tests in short mode")
+	}
 
-// 	suite.Run(t, new(ProductGetTestSuite))
-// }
+	suite.Run(t, new(ProductGetTestSuite))
+}

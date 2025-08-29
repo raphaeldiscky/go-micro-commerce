@@ -1,98 +1,97 @@
 package integration
 
-// import (
-// 	"fmt"
-// 	"net/http"
-// 	"testing"
+import (
+	"fmt"
+	"net/http"
+	"testing"
 
-// 	"github.com/google/uuid"
-// 	"github.com/shopspring/decimal"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
-// 	"github.com/stretchr/testify/suite"
+	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
-// )
+	productDto "github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
+)
 
-// // ProductDeleteTestSuite holds product deletion tests.
-// type ProductDeleteTestSuite struct {
-// 	TestSuite
-// }
+// ProductDeleteTestSuite holds product deletion tests.
+type ProductDeleteTestSuite struct {
+	TestSuite
+}
 
-// func (s *ProductDeleteTestSuite) TestDeleteProduct() {
-// 	// First create a product
-// 	createReq := dto.CreateProductRequest{
-// 		Name:     "Product to Delete",
-// 		Price:    decimal.NewFromFloat(15.00),
-// 		Quantity: 10,
-// 	}
+func (s *ProductDeleteTestSuite) TestDeleteProduct() {
+	// First create a product
+	createReq := productDto.CreateProductRequest{
+		Name:     "Product to Delete",
+		Price:    decimal.NewFromFloat(15.00),
+		Quantity: 10,
+	}
 
-// 	resp, err := s.makeRequest("POST", "/v1", createReq)
-// 	s.NoError(err)
+	resp, err := s.makeRequest("POST", "/v1", createReq)
+	require.NoError(s.T(), err)
 
-// 	var createdProduct dto.ProductResponse
-// 	err = s.parseResponse(resp, &createdProduct)
-// 	s.NoError(err)
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			s.T().Errorf("failed to close response body: %v", cerr)
+		}
+	}()
+	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 
-// 	// Close response body after parsing
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	var createResponse dto.WebResponse[productDto.ProductResponse]
+	err = s.parseResponse(resp, &createResponse)
+	require.NoError(s.T(), err)
 
-// 	// Delete the product
-// 	resp, err = s.makeRequest(
-// 		"DELETE",
-// 		fmt.Sprintf("/v1/%s", createdProduct.ID),
-// 		nil,
-// 	)
-// 	s.NoError(err)
+	// Delete the product
+	resp, err = s.makeRequest(
+		"DELETE",
+		fmt.Sprintf("/v1/%s", createResponse.Data.ID),
+		nil,
+	)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
-// 	assert.Equal(s.T(), http.StatusNoContent, resp.StatusCode)
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	// Verify product is deleted
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", createResponse.Data.ID), nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 
-// 	// Verify product is deleted
-// 	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", createdProduct.ID), nil)
-// 	s.NoError(err)
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
+func (s *ProductDeleteTestSuite) TestDeleteProductNotFound() {
+	nonExistentID := uuid.New()
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
-// }
+	resp, err := s.makeRequest("DELETE", fmt.Sprintf("/v1/%s", nonExistentID), nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 
-// func (s *ProductDeleteTestSuite) TestDeleteProductNotFound() {
-// 	nonExistentID := uuid.New()
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// 	resp, err := s.makeRequest("DELETE", fmt.Sprintf("/v1/%s", nonExistentID), nil)
-// 	s.NoError(err)
+func (s *ProductDeleteTestSuite) TestDeleteProductInvalidID() {
+	resp, err := s.makeRequest("DELETE", "/v1/invalid-uuid", nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
 
-// 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode) // 404
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
-// }
+// TestProductDeleteSuite runs the product deletion test suite.
+func TestProductDeleteSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration tests in short mode")
+	}
 
-// func (s *ProductDeleteTestSuite) TestDeleteProductInvalidID() {
-// 	resp, err := s.makeRequest("DELETE", "/v1/invalid-uuid", nil)
-// 	s.NoError(err)
-
-// 	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
-
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
-// }
-
-// // TestProductDeleteSuite runs the product deletion test suite.
-// func TestProductDeleteSuite(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("Skipping integration tests in short mode")
-// 	}
-
-// 	suite.Run(t, new(ProductDeleteTestSuite))
-// }
+	suite.Run(t, new(ProductDeleteTestSuite))
+}

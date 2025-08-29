@@ -1,101 +1,110 @@
 package integration
 
-// import (
-// 	"fmt"
-// 	"net/http"
-// 	"testing"
+import (
+	"fmt"
+	"net/http"
+	"testing"
 
-// 	"github.com/shopspring/decimal"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/require"
-// 	"github.com/stretchr/testify/suite"
+	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 
-// 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
-// )
+	productDto "github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
+)
 
-// // ProductWorkflowTestSuite holds the test suite.
-// type ProductWorkflowTestSuite struct {
-// 	TestSuite
-// }
+// ProductWorkflowTestSuite holds the test suite.
+type ProductWorkflowTestSuite struct {
+	TestSuite
+}
 
-// func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
-// 	// --- Create ---
-// 	createReq := dto.CreateProductRequest{
-// 		Name:     "Workflow Test Product",
-// 		Price:    decimal.NewFromFloat(99.99),
-// 		Quantity: 100,
-// 	}
+func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
+	// --- Create ---
+	createReq := productDto.CreateProductRequest{
+		Name:     "Workflow Test Product",
+		Price:    decimal.NewFromFloat(99.99),
+		Quantity: 100,
+	}
 
-// 	resp, err := s.makeRequest("POST", "/api/v1/products", createReq)
-// 	require.NoError(s.T(), err)
+	resp, err := s.makeRequest("POST", "/v1", createReq)
+	require.NoError(s.T(), err)
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			s.T().Errorf("failed to close response body: %v", cerr)
+		}
+	}()
+	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 
-// 	var product dto.ProductResponse
+	var createResponse dto.WebResponse[productDto.ProductResponse]
 
-// 	require.NoError(s.T(), s.parseResponse(resp, &product))
-// 	productID := product.ID
+	require.NoError(s.T(), s.parseResponse(resp, &createResponse))
+	productID := createResponse.Data.ID
 
-// 	// --- Read ---
-// 	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", productID), nil)
-// 	require.NoError(s.T(), err)
+	// --- Read ---
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", productID), nil)
+	require.NoError(s.T(), err)
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			s.T().Errorf("failed to close response body: %v", cerr)
+		}
+	}()
+	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
-// 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
-// 	require.NoError(s.T(), s.parseResponse(resp, &product))
-// 	assert.Equal(s.T(), "Workflow Test Product", product.Name)
+	var getResponse dto.WebResponse[productDto.ProductResponse]
 
-// 	// --- Update ---
-// 	updateReq := dto.UpdateProductRequest{
-// 		ID:       productID,
-// 		Name:     "Updated Workflow Product",
-// 		Price:    decimal.NewFromFloat(149.99),
-// 		Quantity: 150,
-// 	}
+	require.NoError(s.T(), s.parseResponse(resp, &getResponse))
+	assert.Equal(s.T(), "Workflow Test Product", getResponse.Data.Name)
+	assert.True(s.T(), getResponse.Data.Price.Equal(decimal.NewFromFloat(99.99)))
+	assert.Equal(s.T(), 100, getResponse.Data.Quantity)
 
-// 	resp, err = s.makeRequest("PUT", fmt.Sprintf("/api/v1/products/%s", productID), updateReq)
-// 	require.NoError(s.T(), err)
+	// --- Update ---
+	updateReq := productDto.UpdateProductRequest{
+		ID:       productID,
+		Name:     "Updated Workflow Product",
+		Price:    decimal.NewFromFloat(149.99),
+		Quantity: 150,
+	}
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	resp, err = s.makeRequest("PUT", fmt.Sprintf("/v1/%s", productID), updateReq)
+	require.NoError(s.T(), err)
 
-// 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
-// 	require.NoError(s.T(), s.parseResponse(resp, &product))
-// 	assert.Equal(s.T(), "Updated Workflow Product", product.Name)
-// 	assert.True(s.T(), product.Price.Equal(decimal.NewFromFloat(149.99)))
+	defer func() {
+		if cerr := resp.Body.Close(); cerr != nil {
+			s.T().Errorf("failed to close response body: %v", cerr)
+		}
+	}()
+	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
-// 	// --- Delete ---
-// 	resp, err = s.makeRequest("DELETE", fmt.Sprintf("/api/v1/products/%s", productID), nil)
-// 	require.NoError(s.T(), err)
+	var updateResponse dto.WebResponse[productDto.ProductResponse]
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	require.NoError(s.T(), s.parseResponse(resp, &updateResponse))
+	assert.Equal(s.T(), "Updated Workflow Product", updateResponse.Data.Name)
+	assert.True(s.T(), updateResponse.Data.Price.Equal(decimal.NewFromFloat(149.99)))
+	assert.Equal(s.T(), 150, updateResponse.Data.Quantity)
 
-// 	assert.Equal(s.T(), http.StatusNoContent, resp.StatusCode)
+	// --- Delete ---
+	resp, err = s.makeRequest("DELETE", fmt.Sprintf("/v1/%s", productID), nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
-// 	// --- Confirm Deletion ---
-// 	resp, err = s.makeRequest("GET", fmt.Sprintf("/api/v1/products/%s", productID), nil)
-// 	require.NoError(s.T(), err)
+	// --- Confirm Deletion ---
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", productID), nil)
+	require.NoError(s.T(), err)
+	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
 
-// 	if cerr := resp.Body.Close(); cerr != nil {
-// 		require.NoError(s.T(), cerr)
-// 	}
+	if err := resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+}
 
-// 	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
-// }
+// Entrypoint to run the test suite.
+func TestProductWorkflowSuite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration tests in short mode")
+	}
 
-// // Entrypoint to run the test suite.
-// func TestProductWorkflowSuite(t *testing.T) {
-// 	if testing.Short() {
-// 		t.Skip("Skipping integration tests in short mode")
-// 	}
-
-// 	suite.Run(t, new(ProductWorkflowTestSuite))
-// }
+	suite.Run(t, new(ProductWorkflowTestSuite))
+}
