@@ -259,6 +259,10 @@ func (s *OrderService) CreateOrderWithProto(
 			productIDs[i] = item.ProductID
 		}
 
+		if s.productClient == nil {
+			return httperror.NewServiceUnavailableError("product service is currently unavailable")
+		}
+
 		products, err := s.productClient.GetProducts(ctx, productIDs)
 		if err != nil {
 			return err

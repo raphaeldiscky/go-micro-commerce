@@ -52,6 +52,9 @@ func NewProductClient(
 
 	if shouldUseServiceDiscovery(clientCfg, consulCfg) {
 		conn, consulClient, err = createConsulConnection(consulCfg)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		conn, err = createStaticConnection(clientCfg)
 	}
