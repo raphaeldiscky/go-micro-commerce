@@ -20,18 +20,18 @@ const (
 	InvalidURLParamErrorMessage = "expected a numeric value but got '%s'"
 	// RequestDuplicateErrorMessage indicates that the request is a duplicate.
 	RequestDuplicateErrorMessage = "request duplicate"
-	// MissingXUserIDErrorMessage indicates that the X-UserID header is missing.
-	MissingXUserIDErrorMessage = "missing X-UserID header"
-	// InvalidXuserIDFormateErrorMessage indicates that the X-UserID header format is wrong.
-	InvalidXuserIDFormateErrorMessage = "invalid X-UserID header format"
+	// MissingXUserIDErrorMessage indicates that the X-User-ID header is missing.
+	MissingXUserIDErrorMessage = "missing X-User-ID header"
+	// InvalidXuserIDFormateErrorMessage indicates that the X-User-ID header format is wrong.
+	InvalidXuserIDFormateErrorMessage = "invalid X-User-ID header format"
 	// MissingXEmailErrorMessage indicates that the X-Email header is missing.
 	MissingXEmailErrorMessage = "missing X-Email header"
 	// MissingXRolesErrorMessage indicates that the X-Roles header is missing.
 	MissingXRolesErrorMessage = "missing X-Roles header"
-	// MissingXIsActiveErrorMessage indicates that the X-IsActive header is missing.
-	MissingXIsActiveErrorMessage = "missing X-IsActive header"
-	// InvalidXIsActiveFormatErrorMessage indicates that the X-IsActive header format is wrong.
-	InvalidXIsActiveFormatErrorMessage = "invalid X-IsActive header format"
+	// MissingXIsActiveErrorMessage indicates that the X-Is-Active header is missing.
+	MissingXIsActiveErrorMessage = "missing X-Is-Active header"
+	// InvalidXIsActiveFormatErrorMessage indicates that the X-Is-Active header format is wrong.
+	InvalidXIsActiveFormatErrorMessage = "invalid X-Is-Active header format"
 	// MissingMetadataErrorMessage indicates that the metadata is missing.
 	MissingMetadataErrorMessage = "missing metadata"
 )

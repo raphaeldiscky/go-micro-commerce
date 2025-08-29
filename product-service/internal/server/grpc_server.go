@@ -17,7 +17,6 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-template/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
 )
 
@@ -55,11 +54,7 @@ func (s *GRPCServer) GetProducts(
 		ids[i] = uid
 	}
 
-	var bodyReq dto.GetProductsRequest
-	bodyReq.Limit = int64(len(ids))
-	bodyReq.Page = 1
-
-	products, _, err := s.productService.GetProducts(ctx, bodyReq)
+	products, err := s.productService.GetProductsByIDs(ctx, ids)
 	if err != nil {
 		return nil, err
 	}

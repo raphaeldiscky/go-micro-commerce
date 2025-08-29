@@ -22,6 +22,7 @@ type DataStore interface {
 	PaymentRepository() PaymentRepositoryInterface
 	LockRepository() LockRepositoryInterface
 	OutboxRepository() OutboxRepositoryInterface
+	InboxRepository() InboxRepositoryInterface
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -72,4 +73,9 @@ func (s *dataStore) LockRepository() LockRepositoryInterface {
 // OutboxRepository returns a new OutboxRepository.
 func (s *dataStore) OutboxRepository() OutboxRepositoryInterface {
 	return NewOutboxRepository(s.db)
+}
+
+// InboxRepository returns a new InboxRepository.
+func (s *dataStore) InboxRepository() InboxRepositoryInterface {
+	return NewInboxRepository(s.db)
 }

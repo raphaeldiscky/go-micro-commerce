@@ -24,16 +24,14 @@ func mapStatusToEventType(status constant.PaymentStatus) string {
 	switch status {
 	case constant.PaymentStatusPending:
 		return constant.KafkaEventTypePaymentCreated
-	case constant.PaymentStatusConfirmed:
-		return constant.KafkaEventTypePaymentConfirmed
-	case constant.PaymentStatusPaid:
+	case constant.PaymentStatusProcessing:
+		return "PaymentProcessing"
+	case constant.PaymentStatusCompleted:
 		return constant.KafkaEventTypePaymentPaid
-	case constant.PaymentStatusShipped:
-		return constant.KafkaEventTypePaymentShipped
-	case constant.PaymentStatusDelivered:
-		return constant.KafkaEventTypePaymentDelivered
-	case constant.PaymentStatusCanceled:
-		return constant.KafkaEventTypePaymentCanceled
+	case constant.PaymentStatusFailed:
+		return "PaymentFailed"
+	case constant.PaymentStatusRefunded:
+		return "PaymentRefunded"
 	default:
 		return "unknown"
 	}

@@ -25,8 +25,6 @@ func mapStatusToEventType(status constant.OrderStatus) string {
 	switch status {
 	case constant.OrderStatusPending:
 		return constant.KafkaEventTypeOrderCreated
-	case constant.OrderStatusConfirmed:
-		return constant.KafkaEventTypeOrderConfirmed
 	case constant.OrderStatusPaid:
 		return constant.KafkaEventTypeOrderPaid
 	case constant.OrderStatusShipped:

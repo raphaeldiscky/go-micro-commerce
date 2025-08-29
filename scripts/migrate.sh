@@ -64,7 +64,7 @@ get_service_port() {
 
 # Function to get all services
 get_all_services() {
-  echo "auth-service product-service order-service"
+  echo "auth-service product-service order-service payment-service"
 }
 
 # Function to run migration for a single service

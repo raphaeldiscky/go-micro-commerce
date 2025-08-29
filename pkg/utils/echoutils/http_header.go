@@ -11,7 +11,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
 )
 
-// GetXUserID retrieves the X-UserID header from the context as UUID.
+// GetXUserID retrieves the X-User-ID header from the context as UUID.
 func GetXUserID(ctx echo.Context) (uuid.UUID, bool) {
 	xUserID := ctx.Request().Header.Get(constant.XUserID)
 	if xUserID == "" {
@@ -61,18 +61,18 @@ func GetXRoles(ctx echo.Context) ([]string, bool) {
 	return roles, true
 }
 
-// GetXIsActive retrieves the X-IsActive header from the context.
+// GetXIsActive retrieves the X-Is-Active header from the context.
 func GetXIsActive(ctx echo.Context) (isActive, ok bool) {
 	xIsActive := ctx.Request().Header.Get(constant.XIsActive)
 	if xIsActive == "" {
-		log.Printf("failed to get X-IsActive from headers")
+		log.Printf("failed to get X-Is-Active from headers")
 
 		return false, false
 	}
 
 	isActive, err := strconv.ParseBool(xIsActive)
 	if err != nil {
-		log.Printf("failed to parse X-IsActive: %v", err)
+		log.Printf("failed to parse X-Is-Active: %v", err)
 
 		return false, false
 	}

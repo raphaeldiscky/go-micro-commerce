@@ -4,10 +4,8 @@ package constant
 type OrderStatus string
 
 const (
-	// OrderStatusPending indicates that the order is pending.
+	// OrderStatusPending indicates that the order is pending (inventory reversed and need to be paid).
 	OrderStatusPending OrderStatus = "pending"
-	// OrderStatusConfirmed indicates that the order has been confirmed.
-	OrderStatusConfirmed OrderStatus = "confirmed"
 	// OrderStatusPaid indicates that the order has been paid.
 	OrderStatusPaid OrderStatus = "paid"
 	// OrderStatusShipped indicates that the order has been shipped.

@@ -72,11 +72,14 @@ func (r *OrderRepositoryPostgres) Create(
 ) (*entity.Order, error) {
 	// Insert order
 	insertOrderQuery := `
-		INSERT INTO orders (id, idempotency_key, customer_id, status, total_price, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
-		RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
-	`
-	row := r.db.QueryRow(
+        INSERT INTO orders (id, idempotency_key, customer_id, status, total_price, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
+    `
+
+	var createdOrder entity.Order
+	// Scan into the existing order object to ensure consistency
+	err := r.db.QueryRow(
 		ctx,
 		insertOrderQuery,
 		order.ID,
@@ -86,11 +89,7 @@ func (r *OrderRepositoryPostgres) Create(
 		order.TotalPrice,
 		order.CreatedAt,
 		order.UpdatedAt,
-	)
-
-	var createdOrder entity.Order
-
-	err := row.Scan(
+	).Scan(
 		&createdOrder.ID,
 		&createdOrder.IdempotencyKey,
 		&createdOrder.CustomerID,
@@ -105,19 +104,21 @@ func (r *OrderRepositoryPostgres) Create(
 
 	if len(order.Items) > 0 {
 		const insertItemQuery = `
-			INSERT INTO order_items (id, order_id, product_id, quantity, price)
-			VALUES ($1, $2, $3, $4, $5)
-		`
+            INSERT INTO order_items (id, order_id, product_id, quantity, price, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+        `
 
 		for _, item := range order.Items {
 			_, err = r.db.Exec(
 				ctx,
 				insertItemQuery,
 				item.ID,
-				order.ID,
+				createdOrder.ID,
 				item.ProductID,
 				item.Quantity,
 				item.Price,
+				item.CreatedAt,
+				item.UpdatedAt,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to insert order item: %w", err)
@@ -207,7 +208,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, created_at, updated_at, customer_id, status, total_price
+		SELECT id, idempotency_key, created_at, updated_at, customer_id, status, total_price
 		FROM orders
 		WHERE idempotency_key = $1
 	`
@@ -218,6 +219,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 
 	err := row.Scan(
 		&order.ID,
+		&order.IdempotencyKey,
 		&order.CreatedAt,
 		&order.UpdatedAt,
 		&order.CustomerID,

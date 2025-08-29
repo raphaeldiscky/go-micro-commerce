@@ -11,9 +11,9 @@ const (
 	// KafkaEventTypeOrderCreated is when customer places an order (pending).
 	// Needed by: inventory reservation, payment service, fraud detection.
 	KafkaEventTypeOrderCreated = "OrderCreated"
-	// KafkaEventTypeOrderConfirmed is after validation & inventory check (confirmed).
-	// Needed by: payment service, notification service.
-	KafkaEventTypeOrderConfirmed = "OrderConfirmed"
+	// KafkaEventTypeOrderPaymentRequested is when payment is requested for an order (pending).
+	// Needed by: payment service to create payment record and process payment.
+	KafkaEventTypeOrderPaymentRequested = "OrderPaymentRequested"
 	// KafkaEventTypeOrderPaid is when payment succeeded (paid).
 	// Needed by: shipping service, accounting, notification service.
 	KafkaEventTypeOrderPaid = "OrderPaid"

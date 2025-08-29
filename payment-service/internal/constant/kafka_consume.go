@@ -20,7 +20,8 @@ const (
 	KafkaEventTypeOrderUpdated = "OrderUpdated"
 	// KafkaEventTypeOrderDeleted is the event type for order deleted events.
 	KafkaEventTypeOrderDeleted = "OrderDeleted"
-	// KafkaEventTypeOrderDeleted is the event type for order deleted events.
+	// KafkaEventTypeOrderPaymentRequested is the event type for payment request events.
+	KafkaEventTypeOrderPaymentRequested = "OrderPaymentRequested"
 )
 
 // Order Payment Events.

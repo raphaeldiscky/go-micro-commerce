@@ -168,7 +168,7 @@ func (s *TestSuite) makeRequest(
 	req.Header.Set("X-User-ID", "550e8400-e29b-41d4-a716-446655440000") // Valid UUID format
 	req.Header.Set("X-Email", "test@example.com")
 	req.Header.Set("X-Roles", "admin,user")
-	req.Header.Set("X-IsActive", "true")
+	req.Header.Set("X-Is-Active", "true")
 
 	client := &http.Client{Timeout: 10 * time.Second}
 

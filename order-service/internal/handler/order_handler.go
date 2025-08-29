@@ -295,12 +295,12 @@ func (h *OrderHandler) CancelOrder(c echo.Context) error {
 	return echoutils.ResponseOKPlain(c)
 }
 
-// PayOrder handles POST /orders/pay/:orderID.
+// RequestPaymentOrder handles POST /orders/pay/:orderID.
 //
 // Route: POST /orders/pay/:orderID
 //
 // Authentication: Requires user authentication.
-func (h *OrderHandler) PayOrder(c echo.Context) error {
+func (h *OrderHandler) RequestPaymentOrder(c echo.Context) error {
 	param := c.Param("orderID")
 
 	orderID, err := uuid.Parse(param)
@@ -321,7 +321,7 @@ func (h *OrderHandler) PayOrder(c echo.Context) error {
 		return err
 	}
 
-	order, err := h.orderService.PayOrder(c.Request().Context(), req, orderID)
+	order, err := h.orderService.RequestPaymentOrder(c.Request().Context(), req, orderID)
 	if err != nil {
 		return err
 	}
