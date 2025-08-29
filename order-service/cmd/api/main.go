@@ -2,7 +2,11 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/consul"
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
@@ -19,41 +23,52 @@ func main() {
 
 	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
 
-	consulCleanup := setupConsulRegistration(cfg)
+	// Create main context with signal handling
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer cancel()
+
+	// Setup Consul registration
+	consulCleanup := setupConsulRegistration(cfg, appLogger)
 	defer consulCleanup()
 
-	worker.Start(cfg, appLogger)
+	// Start worker with graceful shutdown
+	if err := worker.Start(ctx, cfg, appLogger); err != nil {
+		appLogger.Fatalf("Worker failed to start: %v", err)
+	}
+
+	appLogger.Info("Application shutdown completed")
 }
 
 // setupConsulRegistration handles Consul service registration and returns a cleanup function.
-func setupConsulRegistration(cfg *config.Config) func() {
+func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func() {
 	if !cfg.Consul.Enabled {
-		log.Println("Consul service discovery is disabled")
+		appLogger.Infof("Consul service discovery is disabled")
 
 		return func() {}
 	}
 
 	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address)
 	if err != nil {
-		log.Printf("Failed to create Consul client: %v", err)
+		appLogger.Errorf("Failed to create Consul client: %v", err)
 
 		return func() {}
 	}
 
 	if err := consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
-		log.Printf("Failed to register with Consul: %v", err)
+		appLogger.Errorf("Failed to register with Consul: %v", err)
 
 		return func() {}
 	}
 
-	log.Printf("Service registered with Consul: %s at %s:%d",
+	appLogger.Infof("Service registered with Consul: %s at %s:%d",
 		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
 
 	return func() {
 		if err := consulClient.Deregister(); err != nil {
-			log.Printf("Failed to deregister from Consul: %v", err)
+			appLogger.Errorf("Failed to deregister from Consul: %v", err)
 		} else {
-			log.Println("Service deregistered from Consul")
+			appLogger.Infof("Service deregistered from Consul")
 		}
 	}
 }

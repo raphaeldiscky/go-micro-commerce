@@ -56,6 +56,31 @@ func (p *OutboxPublisher) Start(ctx context.Context) {
 	p.logger.Info("outbox publisher started successfully")
 }
 
+// Shutdown gracefully shuts down the outbox publisher.
+func (p *OutboxPublisher) Shutdown(_ context.Context) error {
+	p.logger.Info("Shutting down outbox publisher...")
+
+	// The publisher should stop automatically when its context is canceled
+	// If there are any resources that need explicit cleanup, do it here
+
+	// Close Kafka producers if they need explicit closing
+	if closer, ok := p.orderLifecycleProducer.(interface{ Close() error }); ok {
+		if err := closer.Close(); err != nil {
+			p.logger.Errorf("Error closing order lifecycle producer: %v", err)
+		}
+	}
+
+	if closer, ok := p.orderDLQProducer.(interface{ Close() error }); ok {
+		if err := closer.Close(); err != nil {
+			p.logger.Errorf("Error closing order DLQ producer: %v", err)
+		}
+	}
+
+	p.logger.Info("Outbox publisher shut down completed")
+
+	return nil
+}
+
 // processLoop periodically processes pending outbox events.
 func (p *OutboxPublisher) processLoop(ctx context.Context) {
 	ticker := time.NewTicker(p.config.PollInterval)
