@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -128,11 +127,6 @@ func (r *OrderRepositoryPostgres) Create(
 	}
 
 	createdOrder.Items = order.Items
-	for i := range createdOrder.Items {
-		createdOrder.Items[i].OrderID = createdOrder.ID
-	}
-
-	log.Printf("-----repo 2-------: %+v", createdOrder)
 
 	return &createdOrder, nil
 }

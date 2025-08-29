@@ -268,9 +268,10 @@ func (s *OrderService) CreateOrderWithProto(
 			return httperror.NewInternalServerError("failed to get all products")
 		}
 
-		var orderItems []entity.OrderItem
+		s.logger.Infof("-----0------: %+v", req.Items)
+		s.logger.Infof("-----1------: %+v", products)
 
-		s.logger.Infof("-----1------: %+v", productIDs)
+		var orderItems []entity.OrderItem
 
 		for i, product := range products {
 			if product.Quantity < req.Items[i].Quantity {
@@ -290,23 +291,17 @@ func (s *OrderService) CreateOrderWithProto(
 			orderItems = append(orderItems, orderItem)
 		}
 
-		s.logger.Infof("-----2------: %+v", orderItems)
-
 		// Create domain entity
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
 		if err != nil {
 			return err
 		}
 
-		s.logger.Infof("-----3-----: %+v", orderItems)
-
 		// Save to repository
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
 			return err
 		}
-
-		s.logger.Infof("-----4------: %+v", savedOrder)
 
 		// Publish domain event
 		evt := event.NewOrderLifecycleEvent(
@@ -321,8 +316,6 @@ func (s *OrderService) CreateOrderWithProto(
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal order event")
 		}
-
-		s.logger.Infof("-----5------: %+v", payload)
 
 		outboxEvent := &entity.OutboxEvent{
 			ID:            uuid.New(),
@@ -340,8 +333,6 @@ func (s *OrderService) CreateOrderWithProto(
 		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return err
 		}
-
-		s.logger.Infof("-----6------: %+v", savedOrder)
 
 		res = dto.MapToOrderResponse(savedOrder)
 
