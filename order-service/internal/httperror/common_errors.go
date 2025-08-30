@@ -34,3 +34,10 @@ func NewInternalServerError(message string) *httperror.ResponseError {
 
 	return httperror.NewResponseError(err, http.StatusInternalServerError, message)
 }
+
+// NewServiceUnavailableError returns a 503 error.
+func NewServiceUnavailableError(message string) *httperror.ResponseError {
+	err := errors.New(message)
+
+	return httperror.NewResponseError(err, http.StatusServiceUnavailable, message)
+}

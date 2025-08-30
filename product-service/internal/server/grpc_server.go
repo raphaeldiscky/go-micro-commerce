@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
@@ -77,8 +76,8 @@ func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResp
 	return &pb.HealthResponse{Status: constant.GRPCHealthServing}, nil
 }
 
-// StartGRPC runs the gRPC server.
-func (s *GRPCServer) StartGRPC() error {
+// Start runs the gRPC server.
+func (s *GRPCServer) Start() error {
 	address := fmt.Sprintf("%s:%d", s.cfg.GRPCServer.Host, s.cfg.GRPCServer.Port)
 	lis, err := net.Listen("tcp", address)
 	if err != nil {
@@ -103,28 +102,30 @@ func (s *GRPCServer) StartGRPC() error {
 }
 
 // Shutdown gracefully shuts down the gRPC server.
-func (s *GRPCServer) Shutdown() {
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Duration(s.cfg.GRPCServer.GracePeriod)*time.Second,
-	)
-	defer cancel()
-
+func (s *GRPCServer) Shutdown(ctx context.Context) error {
 	s.logger.Info("Attempting to shut down the gRPC server...")
 
-	if s.grpcServer != nil {
-		stopped := make(chan struct{})
-		go func() {
-			s.grpcServer.GracefulStop()
-			close(stopped)
-		}()
+	if s.grpcServer == nil {
+		s.logger.Info("gRPC server was not started, nothing to shut down")
 
-		select {
-		case <-ctx.Done():
-			s.logger.Warn("Graceful shutdown timed out, forcing stop...")
-			s.grpcServer.Stop()
-		case <-stopped:
-			s.logger.Info("gRPC server shut down gracefully")
-		}
+		return nil
+	}
+
+	stopped := make(chan struct{})
+	go func() {
+		s.grpcServer.GracefulStop()
+		close(stopped)
+	}()
+
+	select {
+	case <-ctx.Done():
+		s.logger.Warn("Graceful shutdown timed out, forcing stop...")
+		s.grpcServer.Stop()
+
+		return ctx.Err()
+	case <-stopped:
+		s.logger.Info("gRPC server shut down gracefully")
+
+		return nil
 	}
 }

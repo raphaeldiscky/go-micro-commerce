@@ -3,8 +3,9 @@ package server
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"sync"
-	"time"
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
@@ -20,7 +21,7 @@ import (
 type KafkaConsumerServer struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
-	appLogger logger.Logger
+	logger    logger.Logger
 	consumers []mq.KafkaConsumer
 	wg        sync.WaitGroup
 }
@@ -38,14 +39,14 @@ func NewKafkaConsumerServer(cfg *config.Config, appLogger logger.Logger) *KafkaC
 	return &KafkaConsumerServer{
 		ctx:       ctx,
 		cancel:    cancel,
-		appLogger: appLogger,
+		logger:    appLogger,
 		consumers: consumers,
 	}
 }
 
 // Start begins the Kafka consumer server.
 func (s *KafkaConsumerServer) Start() error {
-	s.appLogger.Info("Running Kafka consumer server...")
+	s.logger.Info("Running Kafka consumer server...")
 
 	for _, consumer := range s.consumers {
 		s.wg.Add(1)
@@ -54,44 +55,60 @@ func (s *KafkaConsumerServer) Start() error {
 			defer s.wg.Done()
 
 			if err := c.Consume(s.ctx); err != nil {
-				s.appLogger.Errorf("Consumer error for topic %s: %v", c.Topic(), err)
+				if errors.Is(err, context.Canceled) {
+					s.logger.Infof("Consumer for topic %s stopped gracefully", c.Topic())
+				} else {
+					s.logger.Errorf("Consumer error for topic %s: %v", c.Topic(), err)
+				}
+			} else {
+				s.logger.Infof("Consumer for topic %s stopped", c.Topic())
 			}
 		}(consumer)
 	}
 
-	s.appLogger.Info("Kafka server is running...")
+	s.logger.Info("Kafka server is running...")
 
 	return nil
 }
 
 // Shutdown gracefully stops the Kafka consumer server.
-func (s *KafkaConsumerServer) Shutdown() {
-	s.appLogger.Info("Attempting to shut down the Kafka server...")
+func (s *KafkaConsumerServer) Shutdown(ctx context.Context) error {
+	s.logger.Info("Attempting to shut down the Kafka server...")
 
-	// Cancel the context to signal all consumers to stop
+	// Cancel the internal context to signal all consumers to stop
 	s.cancel()
 
-	// Wait for all consumers to finish gracefully
+	// Wait for all consumers to finish gracefully or timeout
 	done := make(chan struct{})
 	go func() {
 		s.wg.Wait()
 		close(done)
 	}()
 
-	// Wait for graceful shutdown or timeout
 	select {
 	case <-done:
-		s.appLogger.Info("All consumers stopped gracefully")
-	case <-time.After(30 * time.Second):
-		s.appLogger.Warn("Timeout waiting for consumers to stop")
+		s.logger.Info("All consumers stopped gracefully")
+	case <-ctx.Done():
+		s.logger.Warn("Shutdown timeout reached while waiting for consumers")
 	}
 
 	// Close all consumers
+	var closeErrors []error
+
 	for _, consumer := range s.consumers {
 		if err := consumer.Close(); err != nil {
-			s.appLogger.Errorf("Error closing consumer %v: %v", consumer.Topic(), err)
+			s.logger.Errorf("Error closing consumer %v: %v", consumer.Topic(), err)
+			closeErrors = append(closeErrors, err)
 		}
 	}
 
-	s.appLogger.Info("Kafka server shut down completed")
+	if len(closeErrors) > 0 {
+		s.logger.Errorf("Kafka server shutdown completed with %d errors", len(closeErrors))
+
+		return fmt.Errorf("kafka server shutdown errors: %v", closeErrors)
+	}
+
+	s.logger.Info("Kafka server shut down completed successfully")
+
+	return nil
 }

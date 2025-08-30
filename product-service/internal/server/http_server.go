@@ -50,8 +50,8 @@ func NewHTTPServer(
 	}
 }
 
-// StartHTTP starts the HTTP server.
-func (s *HTTPServer) StartHTTP() error {
+// Start starts the HTTP server.
+func (s *HTTPServer) Start() error {
 	port := strconv.Itoa(s.config.HTTPServer.Port)
 	server := &http.Server{
 		Addr:              ":" + port,
@@ -68,20 +68,18 @@ func (s *HTTPServer) StartHTTP() error {
 }
 
 // Shutdown gracefully shuts down the HTTP server.
-func (s *HTTPServer) Shutdown() {
-	ctx, cancel := context.WithTimeout(
-		context.Background(),
-		time.Duration(s.config.HTTPServer.GracePeriod)*time.Second,
-	)
-	defer cancel()
-
+func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	s.logger.Info("Attempting to shut down the HTTP server...")
 
 	if err := s.echo.Shutdown(ctx); err != nil {
-		s.logger.Fatal("Error shutting down HTTP server:", err)
+		s.logger.Errorf("Error shutting down HTTP server: %v", err)
+
+		return err
 	}
 
 	s.logger.Info("HTTP server shut down gracefully")
+
+	return nil
 }
 
 // RegisterMiddlewares registers custom middleware for the HTTP server.

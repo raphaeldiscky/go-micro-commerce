@@ -91,7 +91,7 @@ func (s *TestSuite) SetupSuite() {
 
 	// Start HTTP server in goroutine
 	go func() {
-		if err := s.httpServer.StartHTTP(); err != nil {
+		if err := s.httpServer.Start(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				s.T().Errorf("HTTP server error: %v", err)
 			}
@@ -120,7 +120,8 @@ func (s *TestSuite) SetupSuite() {
 // TearDownSuite runs once after all tests.
 func (s *TestSuite) TearDownSuite() {
 	if s.httpServer != nil {
-		s.httpServer.Shutdown()
+		err := s.httpServer.Shutdown(s.ctx)
+		require.NoError(s.T(), err)
 	}
 
 	if s.tcSetup != nil {

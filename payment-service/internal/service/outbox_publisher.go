@@ -80,12 +80,12 @@ func (p *OutboxPublisher) cleanupLoop(ctx context.Context) {
 	ticker := time.NewTicker(p.config.CleanupInterval)
 	defer ticker.Stop()
 
-	p.logger.Infof("starting cleanup loop with interval: %v", p.config.CleanupInterval)
+	p.logger.Infof("starting outbox cleanup loop with interval: %v", p.config.CleanupInterval)
 
 	for {
 		select {
 		case <-ctx.Done():
-			p.logger.Info("cleanup loop shutting down")
+			p.logger.Info("outbox cleanup loop shutting down")
 
 			return
 		case <-ticker.C:

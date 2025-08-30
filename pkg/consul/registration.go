@@ -72,18 +72,18 @@ func (s *ServiceRegistration) register(
 		tags = []string{"http", "api", "microservice"}
 		check = &api.AgentServiceCheck{
 			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
-			Interval:                       "30s",
-			Timeout:                        "10s",
-			DeregisterCriticalServiceAfter: "60s",
+			Interval:                       "10s",
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
 		}
 	case ServiceTypeGRPC:
 		tags = []string{"grpc", "api", "microservice"}
 		// For gRPC health checks, use TCP check since we have custom health method
 		check = &api.AgentServiceCheck{
 			TCP:                            fmt.Sprintf("%s:%d", address, port),
-			Interval:                       "30s",
-			Timeout:                        "10s",
-			DeregisterCriticalServiceAfter: "60s",
+			Interval:                       "10s",
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
 		}
 	}
 
@@ -105,7 +105,6 @@ func (s *ServiceRegistration) register(
 		return fmt.Errorf("failed to register service with consul: %w", err)
 	}
 
-	// Track registered service IDs
 	s.serviceIDs = append(s.serviceIDs, serviceID)
 
 	return nil
