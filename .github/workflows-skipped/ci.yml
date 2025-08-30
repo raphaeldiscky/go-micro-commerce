@@ -1,0 +1,142 @@
+name: Build and Push Service Images
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  # This job's purpose is to figure out which services need to be built.
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      # It will output a JSON array of service names that have changed.
+      services: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Use Path Filter to detect changes
+        # This action checks which files have changed based on the paths.
+        # Each service directory is a key.
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod' 
+              - 'go.sum'
+            auth-service:
+              - 'auth-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            product-service:
+              - 'product-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            order-service:
+              - 'order-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            payment-service:
+              - 'payment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            notification-service:
+              - 'notification-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+
+  # This job runs for each service that was detected in the previous job.
+  build-and-push:
+    # It requires 'detect-changes' to finish successfully.
+    needs: detect-changes
+    # Only run this job if there are actually changed services.
+    if: ${{ needs.detect-changes.outputs.services != '[]' }}
+    runs-on: ubuntu-latest
+    # The 'matrix' strategy creates a parallel job for each service name
+    # in the JSON array from the 'detect-changes' job output.
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # --- LINT AND TEST STEPS ADDED HERE ---
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.23" # Updated to match go.mod requirement
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.service }}-
+
+      - name: Install Task runner
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Go Dependencies
+        run: task install_tools
+
+      - name: Run Linter for ${{ matrix.service }}
+        run: task lint SERVICE=${{ matrix.service }}
+
+      - name: Run Tests for ${{ matrix.service }}
+        run: task test SERVICE=${{ matrix.service }}
+      # --- END OF LINT AND TEST STEPS ---
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        # This uses a temporary token that is automatically created for the workflow run.
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        # This step generates the image name and tags automatically.
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/go-micro-template/${{ matrix.service }}
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: . # Use root as context to access pkg directory
+          file: ./${{ matrix.service }}/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
