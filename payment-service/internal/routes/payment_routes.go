@@ -4,8 +4,8 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/middleware"
 )
 
 // SetupPaymentRoutes sets up all payment routes.

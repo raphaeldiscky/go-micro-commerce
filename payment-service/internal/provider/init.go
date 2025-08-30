@@ -4,12 +4,12 @@ import (
 	"context"
 
 	"github.com/bsm/redislock"
-	"github.com/raphaeldiscky/go-micro-template/pkg/db"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
 // Providers holds all initialized providers.

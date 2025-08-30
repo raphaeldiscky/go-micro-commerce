@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/encryptutils"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/httperror"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/repository"
 )
 
 // AuthServiceInterface defines the methods for the auth service.

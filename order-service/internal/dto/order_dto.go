@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
 // CreateOrderItemRequest represents an item in create order request.

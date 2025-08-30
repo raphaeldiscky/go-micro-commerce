@@ -3,7 +3,7 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/handler"
 )
 
 // SetupMonitoringRoutes registers all monitoring routes.

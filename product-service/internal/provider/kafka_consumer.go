@@ -1,12 +1,12 @@
 package provider
 
 import (
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/event"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the product service.

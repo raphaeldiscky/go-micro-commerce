@@ -5,15 +5,15 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/event"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/routes"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/service"
 )
 
 // SetupAuth initializes the authentication-related components.

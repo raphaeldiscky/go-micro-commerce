@@ -19,7 +19,7 @@ services:
       - vault_logs:/vault/logs
       - ./vault/config:/vault/config:ro
     networks:
-      - go-micro-template
+      - go-micro-commerce
     command: ["vault", "server", "-dev", "-dev-root-token-id=dev-root-token"]
     healthcheck:
       test: ["CMD", "vault", "status"]
@@ -32,8 +32,8 @@ services:
         limits:
           memory: 256m
 networks:
-  go-micro-template:
-    name: go-micro-template
+  go-micro-commerce:
+    name: go-micro-commerce
     external: true
 
 volumes:

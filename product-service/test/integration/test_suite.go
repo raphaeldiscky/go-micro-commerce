@@ -10,16 +10,16 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/server"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
 
 // mockKafkaProducer is a mock implementation of KafkaProducerInterface for testing.

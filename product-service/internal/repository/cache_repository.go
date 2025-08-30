@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/utils/redisutils"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/utils/redisutils"
 )
 
 // CacheRepositoryInterface defines the interface for cache operations.

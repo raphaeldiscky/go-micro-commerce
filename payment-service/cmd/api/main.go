@@ -8,11 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/consul"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/consul"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/cmd/worker"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/cmd/worker"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 )
 
 func main() {

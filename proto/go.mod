@@ -1,4 +1,4 @@
-module github.com/raphaeldiscky/go-micro-template/proto
+module github.com/raphaeldiscky/go-micro-commerce/proto
 
 go 1.23.6
 

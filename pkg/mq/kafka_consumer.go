@@ -7,7 +7,7 @@ import (
 
 	"github.com/IBM/sarama"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // KafkaHandler is a function type for handling Kafka messages.

@@ -1,13 +1,13 @@
 package provider
 
 import (
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/smtputils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
 
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/event"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the notification service.

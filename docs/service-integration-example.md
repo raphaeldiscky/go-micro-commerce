@@ -333,7 +333,7 @@ Update your service in `apps.yaml`:
 ```yaml
 services:
   product-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/product-service
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/product-service
     container_name: product-service
     environment:
       - HTTP_SERVER_PORT=8082
@@ -343,7 +343,7 @@ services:
       - DB_PORT=5432
       # ... other environment variables
     networks:
-      - go-micro-template
+      - go-micro-commerce
     depends_on:
       consul:
         condition: service_healthy
@@ -368,7 +368,7 @@ services:
 
    ```bash
    # Create network
-   docker network create go-micro-template
+   docker network create go-micro-commerce
 
    # Start Consul and Traefik
    docker-compose -f deployments/docker-compose/api-gateway-enhanced.yaml up -d

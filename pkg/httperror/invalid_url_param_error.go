@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // NewInvalidURLParamError creates a new ResponseError for invalid URL parameters.

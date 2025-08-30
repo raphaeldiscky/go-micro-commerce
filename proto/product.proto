@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package product;
 
-option go_package = "github.com/raphaeldiscky/go-micro-template/proto/product";
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/product";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";

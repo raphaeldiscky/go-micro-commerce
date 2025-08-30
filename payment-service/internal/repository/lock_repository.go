@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/bsm/redislock"
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
 )
 
 // LockRepositoryInterface defines the interface for acquiring distributed locks.

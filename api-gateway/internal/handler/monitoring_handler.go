@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
 )
 
 // MonitoringHandler handles monitoring and health check endpoints.

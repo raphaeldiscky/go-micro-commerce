@@ -17,7 +17,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 )
 
 // InitTracing initializes OpenTelemetry tracing.

@@ -34,7 +34,7 @@ services:
     volumes:
       - kafka_1_data:/bitnami/kafka
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -58,7 +58,7 @@ services:
     volumes:
       - kafka_2_data:/bitnami/kafka
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -82,7 +82,7 @@ services:
     volumes:
       - kafka_3_data:/bitnami/kafka
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -109,7 +109,7 @@ services:
       KAFKA_CLUSTERS_0_NAME: kafka-kraft-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
     networks:
-      - go-micro-template
+      - go-micro-commerce
     restart: unless-stopped
 
 volumes:
@@ -121,6 +121,6 @@ volumes:
     driver: local
 
 networks:
-  go-micro-template:
-    name: go-micro-template
+  go-micro-commerce:
+    name: go-micro-commerce
     external: true

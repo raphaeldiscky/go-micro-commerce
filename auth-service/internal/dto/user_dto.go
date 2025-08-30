@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
+import "github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 
 // MapToUserResponse converts entity.User to dto.UserResponse.
 func MapToUserResponse(user *entity.User) *UserResponse {

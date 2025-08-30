@@ -10,7 +10,7 @@ services:
     ports:
       - "15432:5432"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -34,7 +34,7 @@ services:
     ports:
       - "25432:5432"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -58,7 +58,7 @@ services:
     ports:
       - "35432:5432"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -82,7 +82,7 @@ services:
     ports:
       - "45432:5432"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -102,6 +102,6 @@ volumes:
   postgres-payment_data:
 
 networks:
-  go-micro-template:
-    name: go-micro-template
+  go-micro-commerce:
+    name: go-micro-commerce
     external: true

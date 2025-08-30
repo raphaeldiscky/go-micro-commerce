@@ -3,11 +3,11 @@ package provider
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/routes"
 )
 
 // SetupHTTP initializes the HTTP server routes and middleware.

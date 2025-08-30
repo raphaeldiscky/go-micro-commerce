@@ -4,8 +4,8 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/middleware"
 )
 
 // SetupProductRoutes sets up all product routes.

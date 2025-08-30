@@ -3,13 +3,13 @@ package provider
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/db"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
 
 // Providers holds all initialized providers.

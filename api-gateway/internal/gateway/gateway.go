@@ -13,13 +13,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/tracing"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
 // Gateway represents the API Gateway.

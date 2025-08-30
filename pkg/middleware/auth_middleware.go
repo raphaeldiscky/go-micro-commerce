@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 )
 
 // AuthMiddleware handles authentication-related middleware.

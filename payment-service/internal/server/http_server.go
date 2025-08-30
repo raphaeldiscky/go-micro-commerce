@@ -10,13 +10,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	custommiddleware "github.com/raphaeldiscky/go-micro-template/pkg/middleware"
+	custommiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/validation"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/validation"
 )
 
 // HTTPServer wraps the Echo server.

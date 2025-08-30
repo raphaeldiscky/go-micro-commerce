@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 )
 
 // SessionRepositoryInterface defines the contract for session repository.

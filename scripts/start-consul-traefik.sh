@@ -40,12 +40,12 @@ fi
 print_success "Docker is running"
 
 # Create network if it doesn't exist
-if ! docker network ls | grep -q go-micro-template; then
-    print_status "Creating Docker network 'go-micro-template'..."
-    docker network create go-micro-template
+if ! docker network ls | grep -q go-micro-commerce; then
+    print_status "Creating Docker network 'go-micro-commerce'..."
+    docker network create go-micro-commerce
     print_success "Network created"
 else
-    print_success "Network 'go-micro-template' already exists"
+    print_success "Network 'go-micro-commerce' already exists"
 fi
 
 # Navigate to the docker-compose directory
