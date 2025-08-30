@@ -9,14 +9,49 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/server"
 )
 
-func runKafkaConsumerWorker(ctx context.Context, cfg *config.Config, appLogger logger.Logger) {
-	srv := server.NewKafkaConsumerServer(cfg, appLogger)
+// KafkaConsumerWorker wraps the Kafka consumer server as a Worker.
+type KafkaConsumerWorker struct {
+	server *server.KafkaConsumerServer
+	logger logger.Logger
+}
+
+// NewKafkaConsumerWorker creates a new Kafka consumer worker.
+func NewKafkaConsumerWorker(
+	cfg *config.Config,
+	appLogger logger.Logger,
+) *KafkaConsumerWorker {
+	return &KafkaConsumerWorker{
+		server: server.NewKafkaConsumerServer(cfg, appLogger),
+		logger: appLogger,
+	}
+}
+
+// Name returns the name of the worker.
+func (w *KafkaConsumerWorker) Name() string {
+	return "Kafka Consumer"
+}
+
+// Start starts the Kafka consumer server.
+func (w *KafkaConsumerWorker) Start(ctx context.Context) error {
+	// Start server in goroutine
+	errChan := make(chan error, 1)
+
 	go func() {
-		if err := srv.Start(); err != nil {
-			appLogger.Errorf("Kafka server failed to start: %v", err)
+		if err := w.server.Start(); err != nil {
+			errChan <- err
 		}
 	}()
 
-	<-ctx.Done()
-	srv.Shutdown()
+	// Wait for context cancellation or server error
+	select {
+	case <-ctx.Done():
+		return nil // Context canceled, normal shutdown
+	case err := <-errChan:
+		return err // Server error
+	}
+}
+
+// Shutdown gracefully shuts down the Kafka consumer worker.
+func (w *KafkaConsumerWorker) Shutdown(ctx context.Context) error {
+	return w.server.Shutdown(ctx)
 }

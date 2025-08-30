@@ -48,7 +48,7 @@ func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) err
 	cmd := []*cobra.Command{
 		{
 			Use:   "serve-all",
-			Short: "Run all services",
+			Short: "Run all workers",
 			RunE: func(_ *cobra.Command, _ []string) error {
 				return manager.runAllWorkers(ctx)
 			},
@@ -107,7 +107,7 @@ func (wm *Manager) shutdown() error {
 	wm.logger.Info("Starting graceful shutdown...")
 
 	// Create shutdown context with timeout
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
 
 	// Shutdown workers in reverse order

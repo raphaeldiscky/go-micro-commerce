@@ -23,16 +23,13 @@ func main() {
 
 	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
 
-	// Create main context with signal handling
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	defer cancel()
 
-	// Setup Consul registration
 	consulCleanup := setupConsulRegistration(cfg, appLogger)
 	defer consulCleanup()
 
-	// Start worker with graceful shutdown
 	if err := worker.Start(ctx, cfg, appLogger); err != nil {
 		appLogger.Fatalf("Worker failed to start: %v", err)
 	}
@@ -50,14 +47,10 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 
 	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address)
 	if err != nil {
-		appLogger.Errorf("Failed to create Consul client: %v", err)
-
 		return func() {}
 	}
 
 	if err := consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
-		appLogger.Errorf("Failed to register with Consul: %v", err)
-
 		return func() {}
 	}
 

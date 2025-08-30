@@ -105,7 +105,6 @@ func (s *ServiceRegistration) register(
 		return fmt.Errorf("failed to register service with consul: %w", err)
 	}
 
-	// Track registered service IDs
 	s.serviceIDs = append(s.serviceIDs, serviceID)
 
 	return nil

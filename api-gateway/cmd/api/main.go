@@ -2,7 +2,11 @@
 package main
 
 import (
+	"context"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
 
@@ -20,6 +24,11 @@ func main() {
 	}
 
 	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
+
+	ctx, cancel := signal.NotifyContext(context.Background(),
+		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	defer cancel()
+
 	discoveryService := service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
 	circuitBreaker := service.NewCircuitBreakerService(appLogger)
 	loadBalancer := service.NewLoadBalancerService(appLogger)
@@ -35,5 +44,9 @@ func main() {
 		Config:           cfg,
 	})
 
-	worker.Start(cfg, appLogger, gw)
+	if err := worker.Start(ctx, cfg, gw, appLogger); err != nil {
+		appLogger.Fatalf("Worker failed to start: %v", err)
+	}
+
+	appLogger.Info("Application shutdown completed")
 }

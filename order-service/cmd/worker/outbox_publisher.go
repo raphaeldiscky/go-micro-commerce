@@ -50,12 +50,15 @@ func (w *OutboxPublisherWorker) Start(ctx context.Context) error {
 }
 
 // Shutdown gracefully shuts down the outbox publisher.
-func (w *OutboxPublisherWorker) Shutdown(ctx context.Context) error {
+func (w *OutboxPublisherWorker) Shutdown(_ context.Context) error {
 	w.logger.Info("Stopping outbox publisher...")
 
+	// Cancel the publisher context to stop processing loops
 	if w.cancel != nil {
 		w.cancel()
 	}
 
-	return w.publisher.Shutdown(ctx)
+	w.logger.Info("Outbox publisher stopped successfully")
+
+	return nil
 }
