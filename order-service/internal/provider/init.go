@@ -50,8 +50,8 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 		return nil, err
 	}
 
-	redisClient := redislock.New(redisClusterClient)
-	dataStore := repository.NewDataStore(pgPool, redisClient)
+	lockClient := redislock.New(redisClusterClient)
+	dataStore := repository.NewDataStore(pgPool, lockClient)
 	// Setup kafka admin
 	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{
 		Brokers: cfg.Kafka.Brokers,
