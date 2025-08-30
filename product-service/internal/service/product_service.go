@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
@@ -15,6 +16,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-template/product-service/internal/utils/redisutils"
 )
 
 // ProductServiceInterface defines the interface for product business operations.
@@ -84,6 +86,14 @@ func (s *ProductService) CreateProduct(
 			return httperror.NewInternalServerError("failed to send product created event")
 		}
 
+		// Invalidate list cache when new product is created
+		cacheRepo := tx.CacheRepository()
+
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
+		}
+
 		res = dto.MapToProductResponse(savedProduct)
 
 		return nil
@@ -95,13 +105,21 @@ func (s *ProductService) CreateProduct(
 	return res, nil
 }
 
-// GetProduct retrieves a product by ID.
+// GetProduct retrieves a product by ID with caching.
 func (s *ProductService) GetProduct(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ProductResponse, error) {
+	cacheRepo := s.dataStore.CacheRepository()
 	productRepo := s.dataStore.ProductRepository()
 
+	// Try cache first if available
+	cachedProduct, err := cacheRepo.GetProduct(ctx, id)
+	if err == nil && cachedProduct != nil {
+		return dto.MapToProductResponse(cachedProduct), nil
+	}
+
+	// Cache miss or unavailable, get from database
 	product, err := productRepo.FindByID(ctx, id)
 	if err != nil {
 		return nil, httperror.NewInternalServerError("failed to get product")
@@ -111,24 +129,46 @@ func (s *ProductService) GetProduct(
 		return nil, httperror.NewProductNotFoundError()
 	}
 
+	// Store in cache for future requests if cache is available
+	err = cacheRepo.SetProduct(ctx, product, 15*time.Minute)
+	if err != nil {
+		return nil, err
+	}
+
 	return dto.MapToProductResponse(product), nil
 }
 
-// GetProducts retrieves products with pagination and filtering.
+// GetProducts retrieves products with pagination and caching.
 func (s *ProductService) GetProducts(
 	ctx context.Context,
 	req dto.GetProductsRequest,
 ) ([]dto.ProductResponse, *pkgDto.PageMetaData, error) {
-	var products []*entity.Product
-
-	var total int64
-
-	var err error
-
+	cacheRepo := s.dataStore.CacheRepository()
 	productRepo := s.dataStore.ProductRepository()
+
+	// Try cache first if available
+	cachedProducts, err := cacheRepo.GetProducts(ctx, req.Page, req.Limit)
+	if err == nil && cachedProducts != nil {
+		res := make([]dto.ProductResponse, len(cachedProducts))
+		for i, product := range cachedProducts {
+			res[i] = *dto.MapToProductResponse(product)
+		}
+
+		// Still need to get total count for metadata (could be cached separately)
+		total, err := productRepo.Count(ctx)
+		if err != nil {
+			return nil, nil, httperror.NewInternalServerError("failed to count products")
+		}
+
+		metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
+
+		return res, metadata, nil
+	}
+
+	// Cache miss or unavailable, get from database
 	offset := pageutils.GetOffset(req.Page, req.Limit)
 
-	products, err = productRepo.FindAll(ctx, req.Limit, offset)
+	products, err := productRepo.FindAll(ctx, req.Limit, offset)
 	if err != nil {
 		return nil, nil, httperror.NewInternalServerError("failed to get products")
 	}
@@ -138,9 +178,15 @@ func (s *ProductService) GetProducts(
 		res[i] = *dto.MapToProductResponse(product)
 	}
 
-	total, err = productRepo.Count(ctx)
+	total, err := productRepo.Count(ctx)
 	if err != nil {
 		return nil, nil, httperror.NewInternalServerError("failed to count products")
+	}
+
+	// Store in cache for future requests if cache is available
+	err = cacheRepo.SetProducts(ctx, req.Page, req.Limit, products, 15*time.Minute)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
@@ -217,6 +263,19 @@ func (s *ProductService) UpdateProduct(
 			return httperror.NewInternalServerError("failed to send product updated event")
 		}
 
+		// Invalidate cache for updated product
+		cacheRepo := ds.CacheRepository()
+
+		err = cacheRepo.DeleteProduct(ctx, updatedProduct.ID)
+		if err != nil {
+			return err
+		}
+
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
+		}
+
 		res = dto.MapToProductResponse(updatedProduct)
 
 		return nil
@@ -251,6 +310,19 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 		evt := event.NewProductDeletedEvent(id)
 		if err := s.productDeletedProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send product deleted event")
+		}
+
+		// Invalidate cache for deleted product
+		cacheRepo := ds.CacheRepository()
+
+		err = cacheRepo.DeleteProduct(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
 		}
 
 		return nil

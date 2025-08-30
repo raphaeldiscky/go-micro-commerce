@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 // DBTX is an interface that wraps the database transaction methods.
@@ -19,19 +20,22 @@ type DBTX interface {
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	ProductRepository() ProductRepositoryInterface
+	CacheRepository() CacheRepositoryInterface
 }
 
 // dataStore is a struct that implements the DataStore interface.
 type dataStore struct {
-	pool *pgxpool.Pool
-	db   DBTX
+	pool        *pgxpool.Pool
+	db          DBTX
+	cacheClient redis.UniversalClient
 }
 
 // NewDataStore creates a new DataStore.
-func NewDataStore(pool *pgxpool.Pool) DataStore {
+func NewDataStore(pool *pgxpool.Pool, cacheClient redis.UniversalClient) DataStore {
 	return &dataStore{
-		pool: pool,
-		db:   pool,
+		pool:        pool,
+		db:          pool,
+		cacheClient: cacheClient,
 	}
 }
 
@@ -42,7 +46,7 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 		return err
 	}
 
-	err = fn(&dataStore{pool: s.pool, db: tx})
+	err = fn(&dataStore{pool: s.pool, db: tx, cacheClient: s.cacheClient})
 	if err != nil {
 		if errRollback := tx.Rollback(ctx); errRollback != nil {
 			return err
@@ -57,4 +61,9 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 // ProductRepository returns a new ProductRepository.
 func (s *dataStore) ProductRepository() ProductRepositoryInterface {
 	return NewProductRepositoryPostgres(s.db)
+}
+
+// CacheRepository returns a new CacheRepository.
+func (s *dataStore) CacheRepository() CacheRepositoryInterface {
+	return NewCacheRepositoryRedis(s.cacheClient)
 }
