@@ -32,7 +32,7 @@ type Worker interface {
 
 // Start initializes and starts the worker services.
 func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) error {
-	providers, err := provider.SetupGlobal(cfg)
+	providers, err := provider.SetupGlobal(ctx, cfg)
 	if err != nil {
 		appLogger.Fatal("failed to setup providers:", err)
 	}

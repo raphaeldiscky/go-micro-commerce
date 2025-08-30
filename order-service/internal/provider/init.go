@@ -6,6 +6,7 @@ import (
 	"github.com/bsm/redislock"
 	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/order-service/internal/repository"
@@ -34,7 +35,7 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 		return nil, err
 	}
 
-	redisClusterClient, err := db.NewRedisCluster(ctx, &db.RedisClusterConfig{
+	redisClusterClient, err := redis.NewRedisCluster(ctx, &redis.ClusterConfig{
 		Addrs:           cfg.Redis.Addrs,
 		Password:        cfg.Redis.Password,
 		DialTimeout:     cfg.Redis.DialTimeout,

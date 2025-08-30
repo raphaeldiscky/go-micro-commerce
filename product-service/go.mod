@@ -13,6 +13,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-20250822082838-0a883c017315
 	github.com/raphaeldiscky/go-micro-template/proto v0.0.0-00010101000000-000000000000
+	github.com/redis/go-redis/v9 v9.12.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
@@ -31,7 +32,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
-	github.com/redis/go-redis/v9 v9.12.1 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.12.0 // indirect

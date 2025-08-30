@@ -1,5 +1,5 @@
-// Package db provides utility functions for working with Redis.
-package db
+// Package redis provides utility functions for working with Redis.
+package redis
 
 import (
 	"context"
@@ -10,8 +10,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// RedisClusterConfig holds the configuration for Redis Cluster.
-type RedisClusterConfig struct {
+// ClusterConfig holds the configuration for Redis Cluster.
+type ClusterConfig struct {
 	Addrs           []string
 	Password        string
 	DialTimeout     int
@@ -23,8 +23,8 @@ type RedisClusterConfig struct {
 	MaxConnLifetime int
 }
 
-// RedisConfig holds the configuration for standalone Redis.
-type RedisConfig struct {
+// Config holds the configuration for standalone Redis.
+type Config struct {
 	Addr            string
 	DialTimeout     int
 	ReadTimeout     int
@@ -36,7 +36,7 @@ type RedisConfig struct {
 }
 
 // NewRedisCluster initializes a Redis Cluster client and verifies the connection.
-func NewRedisCluster(ctx context.Context, cfg *RedisClusterConfig) (*redis.ClusterClient, error) {
+func NewRedisCluster(ctx context.Context, cfg *ClusterConfig) (*redis.ClusterClient, error) {
 	rdb := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs:           cfg.Addrs,
 		Password:        cfg.Password,
@@ -69,7 +69,7 @@ func NewRedisCluster(ctx context.Context, cfg *RedisClusterConfig) (*redis.Clust
 }
 
 // NewRedis initializes a standalone Redis client and verifies the connection.
-func NewRedis(ctx context.Context, cfg *RedisConfig) (*redis.Client, error) {
+func NewRedis(ctx context.Context, cfg *Config) (*redis.Client, error) {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:            cfg.Addr,
 		DialTimeout:     time.Duration(cfg.DialTimeout) * time.Second,

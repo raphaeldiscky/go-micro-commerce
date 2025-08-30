@@ -56,8 +56,8 @@ func (s *TestSuite) SetupSuite() {
 	// Setup logger
 	appLogger := logger.NewLogrusLogger(4) // Debug level
 
-	// Setup dataStore
-	dataStore := repository.NewDataStore(s.tcSetup.DbPool)
+	// Setup dataStore with nil Redis client for testing (cache will be bypassed)
+	dataStore := repository.NewDataStore(s.tcSetup.DbPool, nil)
 
 	// Setup product service with mock Kafka producers for testing
 	mockProducer := &mockKafkaProducer{}

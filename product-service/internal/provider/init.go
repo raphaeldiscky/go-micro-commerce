@@ -1,8 +1,11 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/raphaeldiscky/go-micro-template/pkg/db"
 	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-template/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-template/product-service/internal/repository"
@@ -17,7 +20,7 @@ type Providers struct {
 }
 
 // SetupGlobal initializes all providers.
-func SetupGlobal(cfg *config.Config) (*Providers, error) {
+func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
@@ -33,7 +36,22 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 		return nil, err
 	}
 
-	dataStore := repository.NewDataStore(pgPool)
+	redisClusterClient, err := redis.NewRedisCluster(ctx, &redis.ClusterConfig{
+		Addrs:           cfg.Redis.Addrs,
+		Password:        cfg.Redis.Password,
+		DialTimeout:     cfg.Redis.DialTimeout,
+		ReadTimeout:     cfg.Redis.ReadTimeout,
+		WriteTimeout:    cfg.Redis.WriteTimeout,
+		MinIdleConn:     cfg.Redis.MinIdleConn,
+		MaxIdleConn:     cfg.Redis.MaxIdleConn,
+		MaxActiveConn:   cfg.Redis.MaxActiveConn,
+		MaxConnLifetime: cfg.Redis.MaxConnLifetime,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	dataStore := repository.NewDataStore(pgPool, redisClusterClient)
 	// Setup kafka admin
 	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{
 		Brokers: cfg.Kafka.Brokers,
