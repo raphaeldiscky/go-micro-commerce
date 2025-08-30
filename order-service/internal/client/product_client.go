@@ -8,18 +8,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/consul/api"
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/proto/product"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/proto/product"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	grpcAuth "github.com/raphaeldiscky/go-micro-template/pkg/grpc"
+	grpcAuth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
 // ProductClientInterface defines methods available for fetching products.

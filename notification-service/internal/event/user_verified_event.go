@@ -2,7 +2,7 @@ package event
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 )
 
 // UserVerifiedPayload holds the data for the user verified event.

@@ -13,7 +13,7 @@ services:
       - REDIS_NODES=redis-1 redis-2 redis-3 redis-4 redis-5 redis-6
       - REDIS_CLUSTER_CREATOR=yes # This node will create the cluster
     networks:
-      - go-micro-template
+      - go-micro-commerce
     volumes:
       - redis-1_data:/bitnami/redis/data
     healthcheck:
@@ -31,7 +31,7 @@ services:
       - REDIS_CLUSTER_REPLICAS=1
       - REDIS_NODES=redis-1 redis-2 redis-3 redis-4 redis-5 redis-6
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "supersecret", "ping"]
       interval: 15s
@@ -88,7 +88,7 @@ services:
     volumes:
       - redis_insight_data:/db
     networks:
-      - go-micro-template
+      - go-micro-commerce
     depends_on:
       redis-1:
         condition: service_healthy
@@ -103,6 +103,6 @@ volumes:
   redis_insight_data:
 
 networks:
-  go-micro-template:
-    name: go-micro-template
+  go-micro-commerce:
+    name: go-micro-commerce
     external: true

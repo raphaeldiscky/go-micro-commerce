@@ -1,4 +1,4 @@
-module github.com/raphaeldiscky/go-micro-template/product-service
+module github.com/raphaeldiscky/go-micro-commerce/product-service
 
 go 1.23.8
 
@@ -11,8 +11,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-20250822082838-0a883c017315
-	github.com/raphaeldiscky/go-micro-template/proto v0.0.0-00010101000000-000000000000
+	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20250822082838-0a883c017315
+	github.com/raphaeldiscky/go-micro-commerce/proto v0.0.0-00010101000000-000000000000
 	github.com/redis/go-redis/v9 v9.12.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/viper v1.20.1
@@ -44,9 +44,9 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/raphaeldiscky/go-micro-template/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 
-replace github.com/raphaeldiscky/go-micro-template/proto => ../proto
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
 
 require (
 	dario.cat/mergo v1.0.1 // indirect

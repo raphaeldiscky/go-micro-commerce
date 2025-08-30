@@ -3,10 +3,10 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/gateway"
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/middleware/metrics"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
 )
 
 // SetupGatewayRoutes sets up the API gateway routes.

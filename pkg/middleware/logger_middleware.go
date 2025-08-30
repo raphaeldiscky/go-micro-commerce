@@ -8,8 +8,8 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // Logger middleware logs incoming requests and their duration.

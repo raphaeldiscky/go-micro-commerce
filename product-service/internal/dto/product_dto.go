@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
 
 // CreateProductRequest represents the request to create a new product.

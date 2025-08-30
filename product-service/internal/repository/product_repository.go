@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
 
 // ProductRepositoryInterface defines the interface for product data operations.

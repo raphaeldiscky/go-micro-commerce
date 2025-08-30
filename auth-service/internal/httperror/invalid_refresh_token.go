@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 )
 
 // NewInvalidRefreshTokenError is return when refresh token invalid.

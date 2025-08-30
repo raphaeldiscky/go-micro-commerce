@@ -1,15 +1,15 @@
 package provider
 
 import (
-	"github.com/raphaeldiscky/go-micro-template/pkg/db"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/encryptutils"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
-	pkgConfig "github.com/raphaeldiscky/go-micro-template/pkg/config"
+	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/repository"
 )
 
 // Providers holds all initialized providers.

@@ -21,8 +21,8 @@ find proto -name "*.pb.go" -delete
 echo "Generating Go code from proto files..."
 find proto -name "*.proto" | while read -r file; do
   protoc --proto_path=proto \
-         --go_out=. --go_opt=module=github.com/raphaeldiscky/go-micro-template \
-         --go-grpc_out=. --go-grpc_opt=module=github.com/raphaeldiscky/go-micro-template \
+         --go_out=. --go_opt=module=github.com/raphaeldiscky/go-micro-commerce \
+         --go-grpc_out=. --go-grpc_opt=module=github.com/raphaeldiscky/go-micro-commerce \
          "$file"
 done
 

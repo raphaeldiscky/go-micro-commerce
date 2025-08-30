@@ -4,7 +4,7 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/handler"
 )
 
 // SetupAppRoutes sets up all app routes.

@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/sony/gobreaker"
 )
 

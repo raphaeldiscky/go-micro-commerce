@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // NewProductNotFoundError creates a new Product not found error.

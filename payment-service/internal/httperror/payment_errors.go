@@ -5,9 +5,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 )
 
 // NewPaymentNotFoundError creates a new Payment not found error.

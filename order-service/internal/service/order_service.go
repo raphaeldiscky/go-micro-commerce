@@ -9,20 +9,20 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/pageutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgDto "github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/client"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/event"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/httperror"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/repository"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/utils/redisutils"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
 
 // OrderServiceInterface defines the interface for order business operations.

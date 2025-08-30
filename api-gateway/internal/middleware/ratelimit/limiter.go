@@ -9,7 +9,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"golang.org/x/time/rate"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 )
 
 // RateLimiter manages rate limiting for different clients.

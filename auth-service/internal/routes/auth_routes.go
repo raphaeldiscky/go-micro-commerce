@@ -4,8 +4,8 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/middleware"
 )
 
 // SetupAuthRoutes sets up all authentication routes.

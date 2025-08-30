@@ -314,7 +314,7 @@ const file_product_proto_rawDesc = "" +
 	"\vNOT_SERVING\x10\x022\x95\x01\n" +
 	"\x0eProductService\x12H\n" +
 	"\vGetProducts\x12\x1b.product.GetProductsRequest\x1a\x1c.product.GetProductsResponse\x129\n" +
-	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x17.product.HealthResponseB:Z8github.com/raphaeldiscky/go-micro-template/proto/productb\x06proto3"
+	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x17.product.HealthResponseB:Z8github.com/raphaeldiscky/go-micro-commerce/proto/productb\x06proto3"
 
 var (
 	file_product_proto_rawDescOnce sync.Once

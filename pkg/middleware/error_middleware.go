@@ -11,10 +11,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/validationutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/validationutils"
 )
 
 // ErrorHandler is a middleware function that handles errors.

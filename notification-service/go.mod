@@ -1,13 +1,13 @@
-module github.com/raphaeldiscky/go-micro-template/notification-service
+module github.com/raphaeldiscky/go-micro-commerce/notification-service
 
 go 1.23.8
 
 toolchain go1.23.12
 
-replace github.com/raphaeldiscky/go-micro-template/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 
 require (
-	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-00010101000000-000000000000
+	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-00010101000000-000000000000
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 )

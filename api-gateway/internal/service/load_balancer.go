@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // LoadBalancer interface for service load balancing.

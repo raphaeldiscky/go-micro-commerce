@@ -3,11 +3,11 @@ package worker
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/server"
 )
 
 // HTTPWorker wraps the HTTP server as a Worker.

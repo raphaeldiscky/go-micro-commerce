@@ -6,17 +6,17 @@ import (
 	"net"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	grpcAuth "github.com/raphaeldiscky/go-micro-template/pkg/grpc"
-	pb "github.com/raphaeldiscky/go-micro-template/proto/product"
+	grpcAuth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
 
 // GRPCServer is the gRPC server for product service.

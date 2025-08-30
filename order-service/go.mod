@@ -1,4 +1,4 @@
-module github.com/raphaeldiscky/go-micro-template/order-service
+module github.com/raphaeldiscky/go-micro-commerce/order-service
 
 go 1.23.8
 
@@ -15,8 +15,8 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/labstack/gommon v0.4.2
-	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-20250822082838-0a883c017315
-	github.com/raphaeldiscky/go-micro-template/proto v0.0.0-00010101000000-000000000000
+	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20250822082838-0a883c017315
+	github.com/raphaeldiscky/go-micro-commerce/proto v0.0.0-00010101000000-000000000000
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -25,9 +25,9 @@ require (
 	google.golang.org/protobuf v1.36.8
 )
 
-replace github.com/raphaeldiscky/go-micro-template/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 
-replace github.com/raphaeldiscky/go-micro-template/proto => ../proto
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
 
 require (
 	github.com/armon/go-metrics v0.4.1 // indirect

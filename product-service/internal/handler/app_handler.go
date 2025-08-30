@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 // AppHandler handles application-level requests.

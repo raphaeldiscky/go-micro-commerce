@@ -4,7 +4,7 @@ services:
   # Traefik is an API Gateway for external traffic, and those services are internal.
   # The api-gateway is responsible for routing to them internally.
   api-gateway:
-    image: ghcr.io/raphaeldiscky/go-micro-template/api-gateway:latest
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway:latest
     build:
       context: ../..
       dockerfile: api-gateway/Dockerfile
@@ -14,7 +14,7 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     environment:
       - APP_ENVIRONMENT="development"
       - SERVICE_NAME="api-gateway"
@@ -76,7 +76,7 @@ services:
           memory: 700m
 
   auth-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/auth-service:latest
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service:latest
     container_name: auth-service
     build:
       context: ../..
@@ -87,7 +87,7 @@ services:
     ports:
       - "8081:8081"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     environment:
       - HTTP_SERVER_PORT=8081
       - DB_HOST=postgres-auth
@@ -127,7 +127,7 @@ services:
           memory: 700m
 
   product-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/product-service:latest
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/product-service:latest
     container_name: product-service
     build:
       context: ../..
@@ -137,7 +137,7 @@ services:
     ports:
       - "8082:8082"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     environment:
       - HTTP_SERVER_PORT=8082
       - DB_HOST=postgres-product
@@ -193,7 +193,7 @@ services:
           memory: 700m
 
   order-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/order-service:latest
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/order-service:latest
     container_name: order-service
     build:
       context: ../..
@@ -203,7 +203,7 @@ services:
     ports:
       - "8083:8083"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     environment:
       - HTTP_SERVER_PORT=8083
       - DB_HOST=postgres-order
@@ -244,7 +244,7 @@ services:
           memory: 700m
 
   payment-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/payment-service:latest
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/payment-service:latest
     container_name: payment-service
     build:
       context: ../..
@@ -254,7 +254,7 @@ services:
     ports:
       - "8084:8084"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     environment:
       - HTTP_SERVER_PORT=8084
       - DB_HOST=postgres-payment
@@ -295,7 +295,7 @@ services:
           memory: 700m
 
   notification-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/notification-service
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/notification-service
     container_name: notification-service
     build:
       context: ../..
@@ -305,7 +305,7 @@ services:
     ports:
       - "8085:8085"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     environment:
       - HTTP_SERVER_PORT=8085
       - SMTP_HOST=smtp.gmail.com
@@ -322,6 +322,6 @@ services:
           memory: 700m
 
 networks:
-  go-micro-template:
-    name: go-micro-template
+  go-micro-commerce:
+    name: go-micro-commerce
     external: true
