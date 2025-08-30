@@ -83,7 +83,7 @@ consul:
     - consul_data:/consul/data
     - ./consul/config:/consul/config:ro
   networks:
-    - go-micro-template
+    - go-micro-commerce
   healthcheck:
     test: ["CMD", "consul", "members"]
     interval: 30s
@@ -140,7 +140,7 @@ traefik:
     - ./traefik/config:/etc/traefik/dynamic:ro
     - /var/run/docker.sock:/var/run/docker.sock:ro # For Docker provider (optional)
   networks:
-    - go-micro-template
+    - go-micro-commerce
   depends_on:
     consul:
       condition: service_healthy
@@ -304,14 +304,14 @@ Update your `apps.yaml` to work with Traefik:
 ```yaml
 services:
   api-gateway:
-    image: ghcr.io/raphaeldiscky/go-micro-template/api-gateway
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway
     container_name: api-gateway
     environment:
       - SERVER_PORT=8080
       - CONSUL_ADDRESS=consul:8500
       # ... other env vars
     networks:
-      - go-micro-template
+      - go-micro-commerce
     labels:
       # Traefik labels for service discovery
       - "traefik.enable=true"
@@ -324,14 +324,14 @@ services:
         condition: service_healthy
 
   product-service:
-    image: ghcr.io/raphaeldiscky/go-micro-template/product-service
+    image: ghcr.io/raphaeldiscky/go-micro-commerce/product-service
     container_name: product-service
     environment:
       - HTTP_SERVER_PORT=8082
       - CONSUL_ADDRESS=consul:8500
       # ... other env vars
     networks:
-      - go-micro-template
+      - go-micro-commerce
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.product-service.rule=Host(`products.localhost`)"
@@ -375,7 +375,7 @@ services:
 
 ```bash
 # Create the external network first
-docker network create go-micro-template
+docker network create go-micro-commerce
 
 # Start Consul and Traefik
 docker-compose -f deployments/docker-compose/api-gateway.yaml up -d

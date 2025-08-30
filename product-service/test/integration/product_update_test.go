@@ -6,13 +6,13 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	productDto "github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
+	productDto "github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 )
 
 // ProductUpdateTestSuite holds product update tests.

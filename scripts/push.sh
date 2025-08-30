@@ -12,7 +12,7 @@ SERVICES=(
 )
 
 # Configuration
-REGISTRY="${REGISTRY:-ghcr.io/raphaeldiscky/go-micro-template}"
+REGISTRY="${REGISTRY:-ghcr.io/raphaeldiscky/go-micro-commerce}"
 TAG="${TAG:-latest}"
 CURDIR=$(pwd)
 
@@ -111,7 +111,7 @@ show_usage() {
   echo "Build and push Docker images for microservices"
   echo ""
   echo "OPTIONS:"
-  echo "  -r, --registry REGISTRY   Docker registry (default: ghcr.io/raphaeldiscky/go-micro-template)"
+  echo "  -r, --registry REGISTRY   Docker registry (default: ghcr.io/raphaeldiscky/go-micro-commerce)"
   echo "  -t, --tag TAG            Image tag (default: latest)"
   echo "  -h, --help               Show this help message"
   echo ""

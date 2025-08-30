@@ -18,7 +18,7 @@ services:
       - "--web.enable-lifecycle"
       - "--web.enable-admin-api"
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -48,7 +48,7 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -70,7 +70,7 @@ services:
       - loki_data:/loki
       - ./monitoring/config/loki-config.yaml:/etc/loki/local-config.yaml:ro
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -97,7 +97,7 @@ services:
       - tempo_data:/var/tempo
       - ./monitoring/config/tempo-config.yaml:/etc/tempo.yaml:ro
     networks:
-      - go-micro-template
+      - go-micro-commerce
     healthcheck:
       test:
         [
@@ -132,15 +132,15 @@ services:
     volumes:
       - ./monitoring/config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     networks:
-      - go-micro-template
+      - go-micro-commerce
     depends_on:
       - prometheus
       - loki
       - tempo
 
 networks:
-  go-micro-template:
-    name: go-micro-template
+  go-micro-commerce:
+    name: go-micro-commerce
     external: true
 
 volumes:

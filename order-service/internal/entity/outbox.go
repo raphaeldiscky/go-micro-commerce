@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // OutboxEvent represents an event that is to be processed by the outbox.

@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/spf13/cobra"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/provider"
 )
 
 // Manager manages all workers and their lifecycle.

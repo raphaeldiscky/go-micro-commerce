@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 )
 
 // ProductUpdatedPayload holds the data for the product updated event.

@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 )
 
 // Payment represents a payment transaction in the marketplace.

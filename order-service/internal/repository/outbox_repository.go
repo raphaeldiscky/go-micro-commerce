@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
 // OutboxRepositoryInterface defines the methods for interacting with the outbox.

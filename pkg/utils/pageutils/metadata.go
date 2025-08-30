@@ -3,7 +3,7 @@ package pageutils
 import (
 	"math"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 // NewMetadata creates a new PageMetaData instance.

@@ -1,4 +1,4 @@
-module github.com/raphaeldiscky/go-micro-template/pkg
+module github.com/raphaeldiscky/go-micro-commerce/pkg
 
 go 1.23.8
 

@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/gomail.v2"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/config"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 )
 
 // Mailer defines an interface for sending emails.

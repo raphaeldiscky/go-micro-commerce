@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/config"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 )
 
 // JWTInterface defines the methods for JWT utilities.

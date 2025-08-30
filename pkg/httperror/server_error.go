@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // NewServerError creates a new ResponseError for internal server errors.

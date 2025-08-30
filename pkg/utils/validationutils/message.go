@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // TagToMsg converts a validator.FieldError into a user-friendly error message.

@@ -1,4 +1,4 @@
-module github.com/raphaeldiscky/go-micro-template/api-gateway
+module github.com/raphaeldiscky/go-micro-commerce/api-gateway
 
 go 1.23.8
 
@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/consul/api v1.32.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/prometheus/client_golang v1.20.4
-	github.com/raphaeldiscky/go-micro-template/pkg v0.0.0-20250807134202-b01862310e8d
+	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20250807134202-b01862310e8d
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -87,4 +87,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/raphaeldiscky/go-micro-template/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg

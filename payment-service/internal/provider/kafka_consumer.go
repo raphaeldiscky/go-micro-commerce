@@ -1,12 +1,12 @@
 package provider
 
 import (
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the order service.

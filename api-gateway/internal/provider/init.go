@@ -1,12 +1,12 @@
 package provider
 
 import (
-	"github.com/raphaeldiscky/go-micro-template/pkg/middleware"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/jwtutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
-	pkgConfig "github.com/raphaeldiscky/go-micro-template/pkg/config"
+	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
-	"github.com/raphaeldiscky/go-micro-template/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 )
 
 // Providers holds all initialized providers.

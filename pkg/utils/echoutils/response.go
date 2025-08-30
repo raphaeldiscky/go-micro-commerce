@@ -5,8 +5,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 // ResponseOK sends a 200 OK response.

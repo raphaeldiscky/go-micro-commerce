@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
 // ProductLifecycleConsumer handles the logic for processing product created events.

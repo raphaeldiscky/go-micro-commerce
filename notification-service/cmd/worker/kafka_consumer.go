@@ -3,10 +3,10 @@ package worker
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/server"
 )
 
 // KafkaConsumerWorker wraps the Kafka consumer server as a Worker.

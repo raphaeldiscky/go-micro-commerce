@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // ClientAuthInterceptor provides client-side authentication interceptor.

@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/smtputils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
 
-	pkgConfig "github.com/raphaeldiscky/go-micro-template/pkg/config"
+	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/notification-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/provider"
 )
 
 // KafkaConsumerServer represents a server for consuming messages from Kafka topics.

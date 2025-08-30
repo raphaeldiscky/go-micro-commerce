@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 )
 
 // UserRepositoryInterface defines the methods for user repository.

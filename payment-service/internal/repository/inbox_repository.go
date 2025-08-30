@@ -10,8 +10,8 @@ import (
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 )
 
 // InboxRepositoryInterface defines the methods for interacting with the inbox.

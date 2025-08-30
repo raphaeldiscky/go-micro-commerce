@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 const (

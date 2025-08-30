@@ -8,13 +8,13 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-template/payment-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
 // OrderItemPayload holds the data for each item in the order.

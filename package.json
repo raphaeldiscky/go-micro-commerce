@@ -1,5 +1,5 @@
 {
-  "name": "go-micro-template",
+  "name": "go-micro-commerce",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -7,14 +7,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/raphaeldiscky/go-micro-template.git"
+    "url": "git+https://github.com/raphaeldiscky/go-micro-commerce.git"
   },
   "author": "",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/raphaeldiscky/go-micro-template/issues"
+    "url": "https://github.com/raphaeldiscky/go-micro-commerce/issues"
   },
-  "homepage": "https://github.com/raphaeldiscky/go-micro-template#readme",
+  "homepage": "https://github.com/raphaeldiscky/go-micro-commerce#readme",
   "devDependencies": {
     "@commitlint/cli": "19.8.1",
     "@commitlint/config-conventional": "19.8.1",

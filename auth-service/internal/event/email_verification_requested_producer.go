@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-template/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
-	"github.com/raphaeldiscky/go-micro-template/auth-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 )
 
 // EmailVerificationRequestedPayload holds the data for the email verification requested event.

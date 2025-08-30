@@ -122,7 +122,7 @@ open http://localhost:9000
 ### Common Issues
 
 1. **Service Dependencies**: Make sure infrastructure services are running first
-2. **Network Issues**: Ensure all services are on the `go-micro-template` network
+2. **Network Issues**: Ensure all services are on the `go-micro-commerce` network
 3. **Health Check Failures**: Check if services are responding on `/health`
 4. **DNS Resolution**: Use container names (not localhost) for inter-service communication
 

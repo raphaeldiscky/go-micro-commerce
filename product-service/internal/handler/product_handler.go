@@ -4,14 +4,14 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/pageutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgConstant "github.com/raphaeldiscky/go-micro-template/pkg/constant"
+	pkgConstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-template/product-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
 
 // ProductHandler handles HTTP requests for product operations.

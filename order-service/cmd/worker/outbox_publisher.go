@@ -3,11 +3,11 @@ package worker
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-template/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-template/order-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
 // OutboxPublisherWorker wraps the outbox publisher as a Worker.

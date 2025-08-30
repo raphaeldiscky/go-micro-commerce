@@ -7,9 +7,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
-	"github.com/raphaeldiscky/go-micro-template/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-template/pkg/httperror"
-	"github.com/raphaeldiscky/go-micro-template/pkg/utils/echoutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // AuthMiddleware is a middleware function that checks for the presence of user information in the context.
