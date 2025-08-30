@@ -27,12 +27,15 @@ type UpdateProductRequest struct {
 
 // ProductResponse represents a product in API responses.
 type ProductResponse struct {
-	ID        uuid.UUID       `json:"id"`
-	Name      string          `json:"name"`
-	Price     decimal.Decimal `json:"price"`
-	Quantity  int             `json:"quantity"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID                uuid.UUID       `json:"id"`
+	Name              string          `json:"name"`
+	Price             decimal.Decimal `json:"price"`
+	Quantity          int             `json:"quantity"`
+	Version           int64           `json:"version"`
+	AllocatedQuantity int             `json:"allocated_quantity"`
+	AvailableQuantity int             `json:"available_quantity"` // computed field
+	CreatedAt         time.Time       `json:"created_at"`
+	UpdatedAt         time.Time       `json:"updated_at"`
 }
 
 // GetProductsRequest represents pagination and filtering parameters.
@@ -41,14 +44,30 @@ type GetProductsRequest struct {
 	Page  int64 `json:"page"  validate:"min=1"`
 }
 
+// ReserveProductsRequest represents the request to reserve products for an order.
+type ReserveProductsRequest struct {
+	OrderID string                   `json:"order_id" validate:"required"`
+	Items   []ProductReservationItem `json:"items"    validate:"required,dive"`
+}
+
+// ProductReservationItem represents a single product reservation.
+type ProductReservationItem struct {
+	ProductID       uuid.UUID `json:"product_id"       validate:"required"`
+	Quantity        int       `json:"quantity"         validate:"required,min=1"`
+	ExpectedVersion int64     `json:"expected_version" validate:"required,min=1"`
+}
+
 // MapToProductResponse converts domain entity to DTO response.
 func MapToProductResponse(product *entity.Product) *ProductResponse {
 	return &ProductResponse{
-		ID:        product.ID,
-		Name:      product.Name,
-		Price:     product.Price,
-		Quantity:  product.Quantity,
-		CreatedAt: product.CreatedAt,
-		UpdatedAt: product.UpdatedAt,
+		ID:                product.ID,
+		Name:              product.Name,
+		Price:             product.Price,
+		Quantity:          product.Quantity,
+		Version:           product.Version,
+		AllocatedQuantity: product.AllocatedQuantity,
+		AvailableQuantity: product.GetAvailableStock(),
+		CreatedAt:         product.CreatedAt,
+		UpdatedAt:         product.UpdatedAt,
 	}
 }

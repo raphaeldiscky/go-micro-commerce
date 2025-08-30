@@ -263,6 +263,7 @@ func (s *OrderService) CreateOrderWithProto(
 			return httperror.NewServiceUnavailableError("product service is currently unavailable")
 		}
 
+		// First, get products to check availability and get current versions
 		products, err := s.productClient.GetProducts(ctx, productIDs)
 		if err != nil {
 			return err
@@ -272,14 +273,35 @@ func (s *OrderService) CreateOrderWithProto(
 			return httperror.NewInternalServerError("failed to get all products")
 		}
 
-		var orderItems []entity.OrderItem
+		// Check availability and prepare reservation items
+		reservationItems := make([]client.ProductReservationItem, len(req.Items))
 
-		for i, product := range products {
-			if product.Quantity < req.Items[i].Quantity {
+		for i, item := range req.Items {
+			product := &products[i]
+			if product.GetAvailableStock() < item.Quantity {
 				return httperror.NewInsufficientProductStockError()
 			}
 
-			product.Quantity -= req.Items[i].Quantity
+			reservationItems[i] = client.ProductReservationItem{
+				ProductID:       item.ProductID,
+				Quantity:        item.Quantity,
+				ExpectedVersion: product.Version,
+			}
+		}
+
+		// Reserve stock with optimistic locking
+		reservedProducts, err := s.productClient.ReserveProducts(
+			ctx,
+			order.ID,
+			reservationItems,
+		)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to reserve products: " + err.Error())
+		}
+
+		var orderItems []entity.OrderItem
+
+		for i, product := range reservedProducts {
 			now := time.Now()
 			orderItem := entity.OrderItem{
 				ID:        uuid.New(),

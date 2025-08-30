@@ -33,8 +33,18 @@ type ProductRepositoryInterface interface {
 	// Update updates an existing product
 	Update(ctx context.Context, product *entity.Product) (*entity.Product, error)
 
+	// UpdateWithOptimisticLock updates a product using optimistic locking
+	UpdateWithOptimisticLock(
+		ctx context.Context,
+		product *entity.Product,
+		expectedVersion int64,
+	) (*entity.Product, error)
+
 	// BulkUpdateQuantity updates the quantity of multiple products in the database.
 	BulkUpdateQuantity(ctx context.Context, products []*entity.Product) error
+
+	// ReserveStock reserves stock for products atomically with optimistic locking
+	ReserveStock(ctx context.Context, reservations []ProductReservation) ([]*entity.Product, error)
 
 	// Delete removes a product by ID
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -44,6 +54,13 @@ type ProductRepositoryInterface interface {
 
 	// Count returns the total number of products
 	Count(ctx context.Context) (int64, error)
+}
+
+// ProductReservation represents a stock reservation request.
+type ProductReservation struct {
+	ProductID       uuid.UUID
+	Quantity        int
+	ExpectedVersion int64
 }
 
 // ProductRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
@@ -64,9 +81,9 @@ func (r *ProductRepositoryPostgres) Create(
 	product *entity.Product,
 ) (*entity.Product, error) {
 	query := `
-		INSERT INTO products (id, name, price, quantity, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id, name, price, quantity, created_at, updated_at
+		INSERT INTO products (id, name, price, quantity, version, allocated_quantity, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
@@ -74,6 +91,8 @@ func (r *ProductRepositoryPostgres) Create(
 		product.Name,
 		product.Price,
 		product.Quantity,
+		product.Version,
+		product.AllocatedQuantity,
 		product.CreatedAt,
 		product.UpdatedAt,
 	)
@@ -85,6 +104,8 @@ func (r *ProductRepositoryPostgres) Create(
 		&savedProduct.Name,
 		&savedProduct.Price,
 		&savedProduct.Quantity,
+		&savedProduct.Version,
+		&savedProduct.AllocatedQuantity,
 		&savedProduct.CreatedAt,
 		&savedProduct.UpdatedAt,
 	)
@@ -102,9 +123,9 @@ func (r *ProductRepositoryPostgres) Update(
 ) (*entity.Product, error) {
 	query := `
 		UPDATE products 
-		SET name = $2, price = $3, quantity = $4, updated_at = $5
+		SET name = $2, price = $3, quantity = $4, version = $5, allocated_quantity = $6, updated_at = $7
 		WHERE id = $1
-		RETURNING id, name, price, quantity, created_at, updated_at
+		RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
@@ -112,6 +133,8 @@ func (r *ProductRepositoryPostgres) Update(
 		product.Name,
 		product.Price,
 		product.Quantity,
+		product.Version,
+		product.AllocatedQuantity,
 		product.UpdatedAt,
 	)
 
@@ -122,6 +145,8 @@ func (r *ProductRepositoryPostgres) Update(
 		&updatedProduct.Name,
 		&updatedProduct.Price,
 		&updatedProduct.Quantity,
+		&updatedProduct.Version,
+		&updatedProduct.AllocatedQuantity,
 		&updatedProduct.CreatedAt,
 		&updatedProduct.UpdatedAt,
 	)
@@ -157,7 +182,7 @@ func (r *ProductRepositoryPostgres) BulkUpdateQuantity(
 	`
 
 	valueStrings := make([]string, 0, len(products))
-	valueArgs := make([]interface{}, 0, len(products)*4)
+	valueArgs := make([]any, 0, len(products)*4)
 
 	i := 1
 	for _, product := range products {
@@ -195,7 +220,7 @@ func (r *ProductRepositoryPostgres) FindByID(
 	id uuid.UUID,
 ) (*entity.Product, error) {
 	query := `
-		SELECT id, name, price, quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
 		FROM products
 		WHERE id = $1
 	`
@@ -209,6 +234,8 @@ func (r *ProductRepositoryPostgres) FindByID(
 		&product.Name,
 		&product.Price,
 		&product.Quantity,
+		&product.Version,
+		&product.AllocatedQuantity,
 		&product.CreatedAt,
 		&product.UpdatedAt,
 	)
@@ -234,7 +261,7 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 
 	// Build the SQL query with the correct number of placeholders
 	query := `
-		SELECT id, name, price, quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
 		FROM products
 		WHERE id = ANY($1)
 		FOR UPDATE
@@ -256,6 +283,8 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 			&product.Name,
 			&product.Price,
 			&product.Quantity,
+			&product.Version,
+			&product.AllocatedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
@@ -284,7 +313,7 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 
 	// Build the SQL query with the correct number of placeholders
 	query := `
-		SELECT id, name, price, quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
 		FROM products
 		WHERE id = ANY($1)
 	`
@@ -305,6 +334,8 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 			&product.Name,
 			&product.Price,
 			&product.Quantity,
+			&product.Version,
+			&product.AllocatedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
@@ -328,7 +359,7 @@ func (r *ProductRepositoryPostgres) FindAll(
 	limit, offset int64,
 ) ([]*entity.Product, error) {
 	query := `
-		SELECT id, name, price, quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
 		FROM products
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -350,6 +381,8 @@ func (r *ProductRepositoryPostgres) FindAll(
 			&product.Name,
 			&product.Price,
 			&product.Quantity,
+			&product.Version,
+			&product.AllocatedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
@@ -393,4 +426,110 @@ func (r *ProductRepositoryPostgres) Exists(ctx context.Context, id uuid.UUID) (b
 	}
 
 	return exists, nil
+}
+
+// UpdateWithOptimisticLock updates a product using optimistic locking.
+func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
+	ctx context.Context,
+	product *entity.Product,
+	expectedVersion int64,
+) (*entity.Product, error) {
+	query := `
+		UPDATE products 
+		SET name = $2, price = $3, quantity = $4, version = $5, allocated_quantity = $6, updated_at = $7
+		WHERE id = $1 AND version = $8
+		RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+	`
+
+	row := r.db.QueryRow(ctx, query,
+		product.ID,
+		product.Name,
+		product.Price,
+		product.Quantity,
+		product.Version,
+		product.AllocatedQuantity,
+		product.UpdatedAt,
+		expectedVersion,
+	)
+
+	var updatedProduct entity.Product
+
+	err := row.Scan(
+		&updatedProduct.ID,
+		&updatedProduct.Name,
+		&updatedProduct.Price,
+		&updatedProduct.Quantity,
+		&updatedProduct.Version,
+		&updatedProduct.AllocatedQuantity,
+		&updatedProduct.CreatedAt,
+		&updatedProduct.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("optimistic lock conflict: product version mismatch")
+		}
+
+		return nil, err
+	}
+
+	return &updatedProduct, nil
+}
+
+// ReserveStock reserves stock for products atomically with optimistic locking.
+func (r *ProductRepositoryPostgres) ReserveStock(
+	ctx context.Context,
+	reservations []ProductReservation,
+) ([]*entity.Product, error) {
+	if len(reservations) == 0 {
+		return []*entity.Product{}, nil
+	}
+
+	var reservedProducts []*entity.Product
+
+	// Process each reservation atomically
+	for _, reservation := range reservations {
+		query := `
+			UPDATE products 
+			SET allocated_quantity = allocated_quantity + $2, 
+				version = version + 1, 
+				updated_at = CURRENT_TIMESTAMP
+			WHERE id = $1 
+			  AND version = $3 
+			  AND (quantity - allocated_quantity) >= $2
+			RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		`
+
+		row := r.db.QueryRow(ctx, query,
+			reservation.ProductID,
+			reservation.Quantity,
+			reservation.ExpectedVersion,
+		)
+
+		var product entity.Product
+
+		err := row.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.Version,
+			&product.AllocatedQuantity,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf(
+					"reservation failed for product %s: insufficient stock or version conflict",
+					reservation.ProductID,
+				)
+			}
+
+			return nil, err
+		}
+
+		reservedProducts = append(reservedProducts, &product)
+	}
+
+	return reservedProducts, nil
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/consul/api"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/proto/product"
 	"github.com/shopspring/decimal"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -17,14 +16,27 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	grpcAuth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
+// ProductReservationItem represents a product reservation request.
+type ProductReservationItem struct {
+	ProductID       uuid.UUID
+	Quantity        int
+	ExpectedVersion int64
+}
+
 // ProductClientInterface defines methods available for fetching products.
 type ProductClientInterface interface {
 	GetProducts(ctx context.Context, ids []uuid.UUID) ([]entity.Product, error)
+	ReserveProducts(
+		ctx context.Context,
+		idempotencyKey uuid.UUID,
+		items []ProductReservationItem,
+	) ([]entity.Product, error)
 	HealthCheck(ctx context.Context) error
 	Close() error
 }
@@ -32,7 +44,7 @@ type ProductClientInterface interface {
 // ProductClient is a gRPC client for interacting with the product service.
 type ProductClient struct {
 	conn         *grpc.ClientConn
-	client       product.ProductServiceClient
+	client       pb.ProductServiceClient
 	consulClient *api.Client
 	serviceName  string
 	clientCfg    *config.ClientConfig
@@ -63,7 +75,7 @@ func NewProductClient(
 		return nil, err
 	}
 
-	client := product.NewProductServiceClient(conn)
+	client := pb.NewProductServiceClient(conn)
 
 	return &ProductClient{
 		conn:         conn,
@@ -181,7 +193,7 @@ func (pc *ProductClient) GetProducts(
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	resp, err := pc.client.GetProducts(ctx, &product.GetProductsRequest{Ids: stringIDs})
+	resp, err := pc.client.GetProducts(ctx, &pb.GetProductsRequest{Ids: stringIDs})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetProducts: %w", err)
 	}
@@ -205,12 +217,79 @@ func (pc *ProductClient) GetProducts(
 		}
 
 		products[i] = entity.Product{
-			ID:        uid,
-			Name:      p.Name,
-			Price:     decimal.NewFromFloat(p.Price), // safely convert double → decimal
-			Quantity:  int(p.Quantity),
-			CreatedAt: createdAt,
-			UpdatedAt: updatedAt,
+			ID:                uid,
+			Name:              p.Name,
+			Price:             decimal.NewFromFloat(p.Price), // safely convert double → decimal
+			Quantity:          int(p.Quantity),
+			Version:           p.Version,
+			AllocatedQuantity: int(p.AllocatedQuantity),
+			CreatedAt:         createdAt,
+			UpdatedAt:         updatedAt,
+		}
+	}
+
+	return products, nil
+}
+
+// ReserveProducts reserves stock for products with optimistic locking.
+func (pc *ProductClient) ReserveProducts(
+	ctx context.Context,
+	orderID uuid.UUID,
+	items []ProductReservationItem,
+) ([]entity.Product, error) {
+	// Convert to protobuf format
+	pbItems := make([]*pb.ProductQuantity, len(items))
+	for i, item := range items {
+		pbItems[i] = &pb.ProductQuantity{
+			ProductId: item.ProductID.String(),
+			Quantity:  int32(item.Quantity),
+			Version:   item.ExpectedVersion,
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	resp, err := pc.client.ReserveProducts(ctx, &pb.ReserveProductsRequest{
+		OrderId: orderID.String(),
+		Items:   pbItems,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to call ReserveProducts: %w", err)
+	}
+
+	if !resp.Success {
+		return nil, fmt.Errorf("reservation failed: %s", resp.ErrorMessage)
+	}
+
+	// Convert response to entities
+	products := make([]entity.Product, len(resp.ReservedProducts))
+
+	for i, p := range resp.ReservedProducts {
+		uid, err := uuid.Parse(p.Id)
+		if err != nil {
+			return nil, fmt.Errorf("invalid product ID from product-service: %w", err)
+		}
+
+		// Convert protobuf Timestamp → time.Time safely
+		var createdAt, updatedAt time.Time
+		if p.CreatedAt != nil {
+			createdAt = p.CreatedAt.AsTime()
+		}
+
+		if p.UpdatedAt != nil {
+			updatedAt = p.UpdatedAt.AsTime()
+		}
+
+		products[i] = entity.Product{
+			ID:                uid,
+			Name:              p.Name,
+			Price:             decimal.NewFromFloat(p.Price),
+			Quantity:          int(p.Quantity),
+			Version:           p.Version,
+			AllocatedQuantity: int(p.AllocatedQuantity),
+			CreatedAt:         createdAt,
+			UpdatedAt:         updatedAt,
 		}
 	}
 
