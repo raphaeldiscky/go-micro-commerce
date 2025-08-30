@@ -126,7 +126,6 @@ tasks:
   start_infra:
     desc: Start local infrastructure using docker-compose
     cmds:
-      - docker network rm go-micro-commerce
       - docker network create --driver bridge go-micro-commerce
       - docker compose -f {{.INFRA_DC_FILE}} up -d
 
@@ -155,6 +154,7 @@ tasks:
           echo "Stopping leftover containers attached to go-micro-commerce network..."
           docker rm -f $CONTAINERS
         fi
+      - docker network rm go-micro-commerce
 
   stop_dev:
     desc: Stop local development using docker-compose
