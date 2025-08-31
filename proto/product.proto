@@ -23,7 +23,7 @@ message GetProductsResponse {
 }
 
 message ReserveProductsRequest {
-  string order_id = 1;
+  string idempotency_key = 1;
   repeated ProductQuantity items = 2;
 }
 

@@ -83,8 +83,8 @@ func (s *GRPCServer) ReserveProducts(
 ) (*pb.ReserveProductsResponse, error) {
 	// Convert protobuf request to service DTO
 	reserveReq := dto.ReserveProductsRequest{
-		OrderID: req.OrderId,
-		Items:   make([]dto.ProductReservationItem, len(req.Items)),
+		IdempotencyKey: req.IdempotencyKey,
+		Items:          make([]dto.ProductReservationItem, len(req.Items)),
 	}
 
 	for i, item := range req.Items {

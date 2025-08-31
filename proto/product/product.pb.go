@@ -161,11 +161,11 @@ func (x *GetProductsResponse) GetProducts() []*Product {
 }
 
 type ReserveProductsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	Items         []*ProductQuantity     `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	IdempotencyKey string                 `protobuf:"bytes,1,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
+	Items          []*ProductQuantity     `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ReserveProductsRequest) Reset() {
@@ -198,9 +198,9 @@ func (*ReserveProductsRequest) Descriptor() ([]byte, []int) {
 	return file_product_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *ReserveProductsRequest) GetOrderId() string {
+func (x *ReserveProductsRequest) GetIdempotencyKey() string {
 	if x != nil {
-		return x.OrderId
+		return x.IdempotencyKey
 	}
 	return ""
 }
@@ -484,9 +484,9 @@ const file_product_proto_rawDesc = "" +
 	"\x12GetProductsRequest\x12\x10\n" +
 	"\x03ids\x18\x01 \x03(\tR\x03ids\"C\n" +
 	"\x13GetProductsResponse\x12,\n" +
-	"\bproducts\x18\x01 \x03(\v2\x10.product.ProductR\bproducts\"c\n" +
-	"\x16ReserveProductsRequest\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\tR\aorderId\x12.\n" +
+	"\bproducts\x18\x01 \x03(\v2\x10.product.ProductR\bproducts\"q\n" +
+	"\x16ReserveProductsRequest\x12'\n" +
+	"\x0fidempotency_key\x18\x01 \x01(\tR\x0eidempotencyKey\x12.\n" +
 	"\x05items\x18\x02 \x03(\v2\x18.product.ProductQuantityR\x05items\"f\n" +
 	"\x0fProductQuantity\x12\x1d\n" +
 	"\n" +

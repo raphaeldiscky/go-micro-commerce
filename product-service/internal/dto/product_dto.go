@@ -46,8 +46,8 @@ type GetProductsRequest struct {
 
 // ReserveProductsRequest represents the request to reserve products for an order.
 type ReserveProductsRequest struct {
-	OrderID string                   `json:"order_id" validate:"required"`
-	Items   []ProductReservationItem `json:"items"    validate:"required,dive"`
+	IdempotencyKey string                   `json:"idempotency_key" validate:"required"`
+	Items          []ProductReservationItem `json:"items"           validate:"required,dive"`
 }
 
 // ProductReservationItem represents a single product reservation.

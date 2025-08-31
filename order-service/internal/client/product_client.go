@@ -234,7 +234,7 @@ func (pc *ProductClient) GetProducts(
 // ReserveProducts reserves stock for products with optimistic locking.
 func (pc *ProductClient) ReserveProducts(
 	ctx context.Context,
-	orderID uuid.UUID,
+	idempotencyKey uuid.UUID,
 	items []ProductReservationItem,
 ) ([]entity.Product, error) {
 	// Convert to protobuf format
@@ -251,8 +251,8 @@ func (pc *ProductClient) ReserveProducts(
 	defer cancel()
 
 	resp, err := pc.client.ReserveProducts(ctx, &pb.ReserveProductsRequest{
-		OrderId: orderID.String(),
-		Items:   pbItems,
+		IdempotencyKey: idempotencyKey.String(),
+		Items:          pbItems,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to call ReserveProducts: %w", err)
