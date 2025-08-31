@@ -18,12 +18,14 @@ import (
 
 // OutboxPublisher is responsible for publishing outbox events.
 type OutboxPublisher struct {
-	dataStore              repository.DataStore
-	logger                 logger.Logger
-	orderLifecycleProducer mq.KafkaProducerInterface
-	orderDLQProducer       mq.KafkaProducerInterface
-	config                 config.OutboxPublisherConfig
-	eventRegistry          *mq.EventRegistry
+	dataStore                repository.DataStore
+	logger                   logger.Logger
+	orderLifecycleProducer   mq.KafkaProducerInterface
+	orderDLQProducer         mq.KafkaProducerInterface
+	paymentLifecycleProducer mq.KafkaProducerInterface
+	paymentDLQProducer       mq.KafkaProducerInterface
+	config                   config.OutboxPublisherConfig
+	eventRegistry            *mq.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
@@ -32,16 +34,20 @@ func NewOutboxPublisher(
 	appLogger logger.Logger,
 	orderLifecycleProducer mq.KafkaProducerInterface,
 	orderDLQProducer mq.KafkaProducerInterface,
+	paymentLifecycleProducer mq.KafkaProducerInterface,
+	paymentDLQProducer mq.KafkaProducerInterface,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *mq.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
-		dataStore:              dataStore,
-		logger:                 appLogger,
-		orderLifecycleProducer: orderLifecycleProducer,
-		orderDLQProducer:       orderDLQProducer,
-		config:                 cfg,
-		eventRegistry:          eventRegistry,
+		dataStore:                dataStore,
+		logger:                   appLogger,
+		orderLifecycleProducer:   orderLifecycleProducer,
+		orderDLQProducer:         orderDLQProducer,
+		paymentLifecycleProducer: paymentLifecycleProducer,
+		paymentDLQProducer:       paymentDLQProducer,
+		config:                   cfg,
+		eventRegistry:            eventRegistry,
 	}
 }
 
@@ -112,7 +118,12 @@ func (p *OutboxPublisher) processPendingEvents(ctx context.Context) {
 
 // processEvent processes a single outbox event.
 func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.OutboxEvent) error {
-	p.logger.Infof("processing event %s of type %s", outboxEvent.ID, outboxEvent.EventType)
+	p.logger.Infof(
+		"processing event %s of type %s on topic %s",
+		outboxEvent.ID,
+		outboxEvent.EventType,
+		outboxEvent.Topic,
+	)
 
 	// Mark as processing
 	if err := p.dataStore.OutboxRepository().MarkAsProcessing(ctx, outboxEvent.ID); err != nil {
@@ -127,8 +138,20 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 		return err
 	}
 
+	// Route to the appropriate producer based on topic
+	var producer mq.KafkaProducerInterface
+
+	switch outboxEvent.Topic {
+	case constant.TopicOrderLifecycle:
+		producer = p.orderLifecycleProducer
+	case constant.TopicPaymentLifecycle:
+		producer = p.paymentLifecycleProducer
+	default:
+		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
+	}
+
 	// Publish to Kafka
-	if err := p.orderLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
+	if err := producer.Send(ctx, kafkaEvent); err != nil {
 		p.handleProcessingError(ctx, outboxEvent.ID, "failed to publish event to Kafka", err)
 
 		return err
@@ -183,10 +206,29 @@ func (p *OutboxPublisher) handleProcessingError(
 		return
 	}
 
-	// Move to DLQ
-	evt := event.NewOrderDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
-	if dlqErr := p.orderDLQProducer.Send(ctx, evt); dlqErr != nil {
-		p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
+	// Move to DLQ - route to appropriate DLQ based on topic
+	var dlqProducer mq.KafkaProducerInterface
+
+	var evt mq.BaseEvent
+
+	switch outboxEvent.Topic {
+	case constant.TopicOrderLifecycle:
+		dlqProducer = p.orderDLQProducer
+		evt = event.NewOrderDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+	case constant.TopicPaymentLifecycle:
+		dlqProducer = p.paymentDLQProducer
+		evt = event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+	default:
+		p.logger.Errorf("unknown topic for DLQ: %s, skipping DLQ send", outboxEvent.Topic)
+		// Don't send to any DLQ - just log and mark as failed
+		dlqProducer = nil
+		evt = nil
+	}
+
+	if dlqProducer != nil && evt != nil {
+		if dlqErr := dlqProducer.Send(ctx, evt); dlqErr != nil {
+			p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
+		}
 	}
 	// Mark as permanently failed in the database
 	if markErr := p.dataStore.OutboxRepository().MarkAsFailed(ctx, eventID, errorMsg); markErr != nil {

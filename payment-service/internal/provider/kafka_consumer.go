@@ -9,7 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
 )
 
-// SetupKafkaConsumers initializes the Kafka consumers for the order service.
+// SetupKafkaConsumers initializes the Kafka consumers for the payment service.
 func SetupKafkaConsumers(
 	cfg *config.KafkaConfig,
 	appLogger logger.Logger,
@@ -17,6 +17,7 @@ func SetupKafkaConsumers(
 ) []mq.KafkaConsumer {
 	var consumers []mq.KafkaConsumer
 
+	// Consumer for order lifecycle events (order created, updated, deleted)
 	ordersConsumer, err := mq.NewConsumerKafka(
 		cfg.Brokers,
 		constant.TopicOrderLifecycle,
@@ -25,12 +26,26 @@ func SetupKafkaConsumers(
 		appLogger,
 	)
 	if err != nil {
-		appLogger.Errorf("failed to create payment lifecycle consumer: %v", err)
-		// In a real app, you might want to panic here as the service cannot run.
+		appLogger.Errorf("failed to create order lifecycle consumer: %v", err)
+
 		return nil
 	}
 
-	consumers = append(consumers, ordersConsumer)
+	// Consumer for payment request events from order service
+	paymentRequestConsumer, err := mq.NewConsumerKafka(
+		cfg.Brokers,
+		constant.TopicPaymentLifecycle,
+		constant.ConsumerGroupPaymentEvents,
+		event.NewPaymentRequestConsumer(appLogger, providers.DataStore).Handler,
+		appLogger,
+	)
+	if err != nil {
+		appLogger.Errorf("failed to create payment request consumer: %v", err)
+
+		return nil
+	}
+
+	consumers = append(consumers, ordersConsumer, paymentRequestConsumer)
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 

@@ -43,7 +43,8 @@ func SetupOutboxPublisher(
 	}
 
 	registry.Register(constant.KafkaEventTypePaymentCreated, &event.PaymentLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentCanceled, &event.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentFailed, &event.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentCompleted, &event.PaymentLifecycleEvent{})
 
 	orderLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
 	orderDLQProducer := event.NewPaymentDLQProducer(asyncProducer)

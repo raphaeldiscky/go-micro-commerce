@@ -8,24 +8,16 @@ const (
 
 // Payment Lifecycle Events.
 const (
-	// KafkaEventTypePaymentCreated is when customer places an payment (pending).
-	// Needed by: inventory reservation, payment service, fraud detection.
+	// KafkaEventTypePaymentCreated is the event type for payment created events.
 	KafkaEventTypePaymentCreated = "PaymentCreated"
-	// KafkaEventTypePaymentConfirmed is after validation & inventory check (confirmed).
-	// Needed by: payment service, notification service.
-	KafkaEventTypePaymentConfirmed = "PaymentConfirmed"
-	// KafkaEventTypePaymentPaid is when payment succeeded (paid).
-	// Needed by: shipping service, accounting, notification service.
-	KafkaEventTypePaymentPaid = "PaymentPaid"
-	// KafkaEventTypePaymentShipped is when payment handed to logistics (shipped).
-	// Needed by: notification service, delivery tracking.
-	KafkaEventTypePaymentShipped = "PaymentShipped"
-	// KafkaEventTypePaymentDelivered is after customer received package (delivered).
-	// Needed by: loyalty points, analytics.
-	KafkaEventTypePaymentDelivered = "PaymentDelivered"
-	// KafkaEventTypePaymentCanceled is when canceled by system or customer (canceled)
-	// Needed by: inventory release, refund, analytics.
-	KafkaEventTypePaymentCanceled = "PaymentCanceled"
+	// KafkaEventTypePaymentProcessing is the event type for payment processing events.
+	KafkaEventTypePaymentProcessing = "PaymentProcessing"
+	// KafkaEventTypePaymentCompleted is the event type for payment completed events.
+	KafkaEventTypePaymentCompleted = "PaymentCompleted"
+	// KafkaEventTypePaymentFailed is the event type for payment failure events.
+	KafkaEventTypePaymentFailed = "PaymentFailed"
+	// KafkaEventTypePaymentRefunded is the event type for payment refund events.
+	KafkaEventTypePaymentRefunded = "PaymentRefunded"
 )
 
 // DLQ Event Types.

@@ -671,7 +671,7 @@ func (s *OrderService) RequestPaymentOrder(
 		}
 
 		// Publish payment request event to payment service
-		evt := event.NewOrderPaymentRequestEvent(
+		evt := event.NewPaymentLifecycleEvent(
 			updatedOrder.ID,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
@@ -686,10 +686,10 @@ func (s *OrderService) RequestPaymentOrder(
 
 		outboxEvent := &entity.OutboxEvent{
 			ID:            uuid.New(),
-			AggregateType: "order",
+			AggregateType: "payment",
 			AggregateID:   updatedOrder.ID,
-			EventType:     constant.KafkaEventTypeOrderPaymentRequested,
-			Topic:         constant.TopicOrderLifecycle,
+			EventType:     constant.KafkaEventTypePaymentRequested,
+			Topic:         constant.TopicPaymentLifecycle,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

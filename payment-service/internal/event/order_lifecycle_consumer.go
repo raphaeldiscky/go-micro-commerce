@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
@@ -128,8 +127,6 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 			processingErr = c.processUpdatedOrder(ctx, ds, body)
 		case constant.KafkaEventTypeOrderDeleted:
 			processingErr = c.processDeletedOrder(ctx, ds, body)
-		case constant.KafkaEventTypeOrderPaymentRequested:
-			processingErr = c.processPaymentRequested(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown event type: %s", meta.Metadata.EventType)
 			// Mark as processed even for unknown events to avoid reprocessing
@@ -265,108 +262,6 @@ func (c *OrderLifecycleConsumer) processDeletedOrder(
 	} else {
 		c.logger.Infof("No payment found for deleted order %s", event.Payload.OrderID)
 	}
-
-	return nil
-}
-
-// processPaymentRequested handles payment request events from the order service.
-func (c *OrderLifecycleConsumer) processPaymentRequested(
-	ctx context.Context,
-	ds repository.DataStore,
-	body []byte,
-) error {
-	var event OrderPaymentRequestEvent
-	if err := sonic.Unmarshal(body, &event); err != nil {
-		return fmt.Errorf("failed to unmarshal payment request event: %w", err)
-	}
-
-	c.logger.Infof("Handling payment request for order ID: %s, amount: %s",
-		event.Payload.OrderID, event.Payload.TotalPrice)
-
-	// Create payment service instance (this should be injected in real implementation)
-	// For now, we'll use the datastore to create payment directly
-	paymentRepo := ds.PaymentRepository()
-	outboxRepo := ds.OutboxRepository()
-
-	// Check if payment already exists for this order
-	existingPayment, err := paymentRepo.FindByOrderID(ctx, event.Payload.OrderID)
-	if err != nil {
-		return fmt.Errorf("failed to check existing payment: %w", err)
-	}
-
-	if existingPayment != nil {
-		c.logger.Infof(
-			"Payment already exists for order %s, skipping creation",
-			event.Payload.OrderID,
-		)
-
-		return nil
-	}
-
-	// Map payment method string to constant
-	var paymentMethod constant.PaymentMethod
-
-	switch event.Payload.PaymentMethod {
-	case "credit_card":
-		paymentMethod = constant.PaymentMethodCreditCard
-	case "debit_card":
-		paymentMethod = constant.PaymentMethodDebitCard
-	case "paypal":
-		paymentMethod = constant.PaymentMethodPayPal
-	case "bank_transfer":
-		paymentMethod = constant.PaymentMethodBankTransfer
-	default:
-		paymentMethod = constant.PaymentMethodCreditCard // Default
-	}
-
-	// Create new payment entity
-	payment, err := entity.NewPayment(
-		event.Payload.OrderID,
-		event.Payload.TotalPrice,
-		event.Payload.Currency,
-		paymentMethod,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create payment entity: %w", err)
-	}
-
-	// Save payment
-	savedPayment, err := paymentRepo.Create(ctx, payment)
-	if err != nil {
-		return fmt.Errorf("failed to save payment: %w", err)
-	}
-
-	// Create payment created event for the outbox
-	paymentEvt := NewPaymentLifecycleEvent(
-		savedPayment.OrderID,
-		constant.PaymentStatusPending,
-		savedPayment.Amount,
-	)
-
-	payload, err := sonic.Marshal(paymentEvt)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payment event: %w", err)
-	}
-
-	outboxEvent := &entity.OutboxEvent{
-		ID:            uuid.New(),
-		AggregateType: "payment",
-		AggregateID:   savedPayment.ID,
-		EventType:     constant.KafkaEventTypePaymentCreated,
-		Topic:         constant.TopicPaymentLifecycle,
-		Payload:       payload,
-		Status:        constant.OutboxStatusPending,
-		CreatedAt:     time.Now().UTC(),
-		ScheduledFor:  time.Now().UTC(),
-		Attempts:      0,
-	}
-
-	if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
-		return fmt.Errorf("failed to create payment created event: %w", err)
-	}
-
-	c.logger.Infof("Successfully created payment %s for order %s",
-		savedPayment.ID, event.Payload.OrderID)
 
 	return nil
 }

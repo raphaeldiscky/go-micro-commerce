@@ -1,15 +1,18 @@
 package constant
 
-// Topics that Order Service consumes from other services.
+// Topics that Payment Service consumes from other services.
 const (
 	// TopicOrderLifecycle is the topic for order lifecycle events.
 	TopicOrderLifecycle = "order.lifecycle"
+	// Note: TopicPaymentLifecycle is defined in kafka_produce.go to avoid redeclaration.
 )
 
-// Consumer groups for Order Service (consuming from other services).
+// Consumer groups for Payment Service (consuming from other services).
 const (
 	// ConsumerGroupPaymentOrderEvents is the consumer group for order events.
 	ConsumerGroupPaymentOrderEvents = "payment-service.order-events" // For order lifecycle
+	// ConsumerGroupPaymentEvents is the consumer group for payment request events.
+	ConsumerGroupPaymentEvents = "payment-service.payment-events" // For payment requests
 )
 
 // Order Service Event Types.
@@ -20,16 +23,10 @@ const (
 	KafkaEventTypeOrderUpdated = "OrderUpdated"
 	// KafkaEventTypeOrderDeleted is the event type for order deleted events.
 	KafkaEventTypeOrderDeleted = "OrderDeleted"
-	// KafkaEventTypeOrderPaymentRequested is the event type for payment request events.
-	KafkaEventTypeOrderPaymentRequested = "OrderPaymentRequested"
 )
 
-// Order Payment Events.
+// Payment Request Event Types from Order Service.
 const (
-	// KafkaEventTypePaymentProcessed is the event type for payment processing events.
-	KafkaEventTypePaymentProcessed = "PaymentProcessed"
-	// KafkaEventTypePaymentFailed is the event type for payment failure events.
-	KafkaEventTypePaymentFailed = "PaymentFailed"
-	// KafkaEventTypePaymentRefunded is the event type for payment refund events.
-	KafkaEventTypePaymentRefunded = "PaymentRefunded"
+	// KafkaEventTypePaymentRequested is the event type for payment request events.
+	KafkaEventTypePaymentRequested = "PaymentRequested"
 )
