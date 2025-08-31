@@ -29,7 +29,7 @@ type OrderItem struct {
 	ID        uuid.UUID
 	OrderID   uuid.UUID
 	ProductID uuid.UUID
-	Quantity  int
+	Quantity  int64
 	Price     decimal.Decimal
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -83,7 +83,7 @@ func (o *Order) validate() error {
 
 		// accumulate total for cross-check
 		totalCalculated = totalCalculated.Add(
-			item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))),
+			item.Price.Mul(decimal.NewFromInt(item.Quantity)),
 		)
 
 		if item.CreatedAt.After(item.UpdatedAt) {
@@ -107,7 +107,7 @@ func (o *Order) validate() error {
 func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, error) {
 	totalPrice := decimal.Zero
 	for _, item := range items {
-		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(int64(item.Quantity))))
+		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(item.Quantity)))
 	}
 
 	orderID := uuid.New()
@@ -156,7 +156,7 @@ func (o *Order) AddItem(item *OrderItem) error {
 	totalPrice := decimal.Zero
 	for _, orderItem := range o.Items {
 		totalPrice = totalPrice.Add(
-			orderItem.Price.Mul(decimal.NewFromInt(int64(orderItem.Quantity))),
+			orderItem.Price.Mul(decimal.NewFromInt(orderItem.Quantity)),
 		)
 	}
 
@@ -180,7 +180,7 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 	totalPrice := decimal.Zero
 	for _, orderItem := range o.Items {
 		totalPrice = totalPrice.Add(
-			orderItem.Price.Mul(decimal.NewFromInt(int64(orderItem.Quantity))),
+			orderItem.Price.Mul(decimal.NewFromInt(orderItem.Quantity)),
 		)
 	}
 

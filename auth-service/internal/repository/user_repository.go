@@ -23,7 +23,7 @@ type UserRepositoryInterface interface {
 	GetByEmailVerificationToken(ctx context.Context, token string) (*entity.User, error)
 	Update(ctx context.Context, user *entity.User) (*entity.User, error)
 	Delete(ctx context.Context, id uuid.UUID) error
-	List(ctx context.Context, limit, offset int) ([]*entity.User, error)
+	List(ctx context.Context, limit, offset int64) ([]*entity.User, error)
 	Count(ctx context.Context) (int64, error)
 
 	// User status operations
@@ -254,7 +254,7 @@ func (r *UserRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error
 // List retrieves a list of users with pagination.
 func (r *UserRepositoryPostgres) List(
 	ctx context.Context,
-	limit, offset int,
+	limit, offset int64,
 ) ([]*entity.User, error) {
 	query := `
 		SELECT id, email, username, password_hash, first_name, last_name,

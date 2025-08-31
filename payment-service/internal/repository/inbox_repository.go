@@ -19,7 +19,7 @@ type InboxRepositoryInterface interface {
 	// Create inserts a new inbox event or returns existing if duplicate message_id.
 	Create(ctx context.Context, event *entity.InboxEvent) (*entity.InboxEvent, error)
 	// GetEventsForProcessing retrieves events that are ready for processing.
-	GetEventsForProcessing(ctx context.Context, limit int) ([]*entity.InboxEvent, error)
+	GetEventsForProcessing(ctx context.Context, limit int64) ([]*entity.InboxEvent, error)
 	// MarkAsProcessing updates an event status to processing.
 	MarkAsProcessing(ctx context.Context, id uuid.UUID) error
 	// MarkAsProcessed updates an event status to processed.
@@ -119,7 +119,7 @@ func (r *InboxRepository) Create(
 // GetEventsForProcessing retrieves events ready for processing.
 func (r *InboxRepository) GetEventsForProcessing(
 	ctx context.Context,
-	limit int,
+	limit int64,
 ) ([]*entity.InboxEvent, error) {
 	query := `
 		SELECT 

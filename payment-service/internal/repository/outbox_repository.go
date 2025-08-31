@@ -19,7 +19,7 @@ type OutboxRepositoryInterface interface {
 	// Create inserts a new outbox event.
 	Create(ctx context.Context, event *entity.OutboxEvent) error
 	// GetEventsForProcessing retrieves events that are ready for processing.
-	GetEventsForProcessing(ctx context.Context, limit int) ([]*entity.OutboxEvent, error)
+	GetEventsForProcessing(ctx context.Context, limit int64) ([]*entity.OutboxEvent, error)
 	// MarkAsProcessing updates an event status to processing.
 	MarkAsProcessing(ctx context.Context, id uuid.UUID) error
 	// MarkAsProcessed updates an event status to processed.
@@ -86,7 +86,7 @@ func (r *OutboxRepository) Create(ctx context.Context, event *entity.OutboxEvent
 // GetEventsForProcessing retrieves events ready for processing.
 func (r *OutboxRepository) GetEventsForProcessing(
 	ctx context.Context,
-	limit int,
+	limit int64,
 ) ([]*entity.OutboxEvent, error) {
 	query := `
 		SELECT 

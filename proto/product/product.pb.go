@@ -215,7 +215,7 @@ func (x *ReserveProductsRequest) GetItems() []*ProductQuantity {
 type ProductQuantity struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	Quantity      int64                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	Version       int64                  `protobuf:"varint,3,opt,name=version,proto3" json:"version,omitempty"` // for optimistic locking
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -258,7 +258,7 @@ func (x *ProductQuantity) GetProductId() string {
 	return ""
 }
 
-func (x *ProductQuantity) GetQuantity() int32 {
+func (x *ProductQuantity) GetQuantity() int64 {
 	if x != nil {
 		return x.Quantity
 	}
@@ -333,17 +333,17 @@ func (x *ReserveProductsResponse) GetErrorMessage() string {
 }
 
 type Product struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Id                string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Price             float64                `protobuf:"fixed64,3,opt,name=price,proto3" json:"price,omitempty"`
-	Quantity          int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	Version           int64                  `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                                              // for optimistic locking
-	AllocatedQuantity int32                  `protobuf:"varint,6,opt,name=allocated_quantity,json=allocatedQuantity,proto3" json:"allocated_quantity,omitempty"` // quantity reserved for orders
-	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt         *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Price            float64                `protobuf:"fixed64,3,opt,name=price,proto3" json:"price,omitempty"`
+	Quantity         int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	Version          int64                  `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                                           // for optimistic locking
+	ReservedQuantity int64                  `protobuf:"varint,6,opt,name=reserved_quantity,json=reservedQuantity,proto3" json:"reserved_quantity,omitempty"` // quantity reserved for orders
+	CreatedAt        *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt        *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
@@ -397,7 +397,7 @@ func (x *Product) GetPrice() float64 {
 	return 0
 }
 
-func (x *Product) GetQuantity() int32 {
+func (x *Product) GetQuantity() int64 {
 	if x != nil {
 		return x.Quantity
 	}
@@ -411,9 +411,9 @@ func (x *Product) GetVersion() int64 {
 	return 0
 }
 
-func (x *Product) GetAllocatedQuantity() int32 {
+func (x *Product) GetReservedQuantity() int64 {
 	if x != nil {
-		return x.AllocatedQuantity
+		return x.ReservedQuantity
 	}
 	return 0
 }
@@ -491,19 +491,19 @@ const file_product_proto_rawDesc = "" +
 	"\x0fProductQuantity\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\x12\x18\n" +
+	"\bquantity\x18\x02 \x01(\x03R\bquantity\x12\x18\n" +
 	"\aversion\x18\x03 \x01(\x03R\aversion\"\x97\x01\n" +
 	"\x17ReserveProductsResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12=\n" +
 	"\x11reserved_products\x18\x02 \x03(\v2\x10.product.ProductR\x10reservedProducts\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x9e\x02\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\x9c\x02\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05price\x18\x03 \x01(\x01R\x05price\x12\x1a\n" +
-	"\bquantity\x18\x04 \x01(\x05R\bquantity\x12\x18\n" +
-	"\aversion\x18\x05 \x01(\x03R\aversion\x12-\n" +
-	"\x12allocated_quantity\x18\x06 \x01(\x05R\x11allocatedQuantity\x129\n" +
+	"\bquantity\x18\x04 \x01(\x03R\bquantity\x12\x18\n" +
+	"\aversion\x18\x05 \x01(\x03R\aversion\x12+\n" +
+	"\x11reserved_quantity\x18\x06 \x01(\x03R\x10reservedQuantity\x129\n" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +

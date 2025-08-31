@@ -64,12 +64,12 @@ func (s *GRPCServer) GetProducts(
 	for i := range products {
 		p := &products[i]
 		resp.Products = append(resp.Products, &pb.Product{
-			Id:                p.ID.String(),
-			Name:              p.Name,
-			Price:             p.Price.InexactFloat64(),
-			Quantity:          int32(p.Quantity),
-			Version:           p.Version,
-			AllocatedQuantity: int32(p.AllocatedQuantity),
+			Id:               p.ID.String(),
+			Name:             p.Name,
+			Price:            p.Price.InexactFloat64(),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
 		})
 	}
 
@@ -98,7 +98,7 @@ func (s *GRPCServer) ReserveProducts(
 
 		reserveReq.Items[i] = dto.ProductReservationItem{
 			ProductID:       productID,
-			Quantity:        int(item.Quantity),
+			Quantity:        item.Quantity,
 			ExpectedVersion: item.Version,
 		}
 	}
@@ -121,12 +121,12 @@ func (s *GRPCServer) ReserveProducts(
 	for i := range reservedProducts {
 		p := &reservedProducts[i]
 		resp.ReservedProducts[i] = &pb.Product{
-			Id:                p.ID.String(),
-			Name:              p.Name,
-			Price:             p.Price.InexactFloat64(),
-			Quantity:          int32(p.Quantity),
-			Version:           p.Version,
-			AllocatedQuantity: int32(p.AllocatedQuantity),
+			Id:               p.ID.String(),
+			Name:             p.Name,
+			Price:            p.Price.InexactFloat64(),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
 		}
 	}
 

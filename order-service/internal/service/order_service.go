@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/bsm/redislock"
@@ -243,6 +244,8 @@ func (s *OrderService) CreateOrderWithProto(
 		orderRepo := ds.OrderRepository()
 		outboxRepo := ds.OutboxRepository()
 
+		log.Println("=====2======", req)
+
 		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
 		if err != nil {
 			return err
@@ -292,7 +295,7 @@ func (s *OrderService) CreateOrderWithProto(
 		// Reserve stock with optimistic locking
 		reservedProducts, err := s.productClient.ReserveProducts(
 			ctx,
-			order.ID,
+			req.IdempotencyKey,
 			reservationItems,
 		)
 		if err != nil {

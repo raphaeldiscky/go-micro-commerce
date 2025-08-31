@@ -14,7 +14,7 @@ import (
 type CreateProductRequest struct {
 	Name     string          `json:"name"     validate:"required,min=1,max=255"`
 	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gte"`
-	Quantity int             `json:"quantity" validate:"required,min=0"`
+	Quantity int64           `json:"quantity" validate:"required,min=0"`
 }
 
 // UpdateProductRequest represents the request to update a product.
@@ -22,7 +22,7 @@ type UpdateProductRequest struct {
 	ID       uuid.UUID       `json:"id"       validate:"required"`
 	Name     string          `json:"name"     validate:"required,min=1,max=255"`
 	Price    decimal.Decimal `json:"price"    validate:"required,decimal_gte"`
-	Quantity int             `json:"quantity" validate:"required,min=0"`
+	Quantity int64           `json:"quantity" validate:"required,min=0"`
 }
 
 // ProductResponse represents a product in API responses.
@@ -30,10 +30,10 @@ type ProductResponse struct {
 	ID                uuid.UUID       `json:"id"`
 	Name              string          `json:"name"`
 	Price             decimal.Decimal `json:"price"`
-	Quantity          int             `json:"quantity"`
+	Quantity          int64           `json:"quantity"`
 	Version           int64           `json:"version"`
-	AllocatedQuantity int             `json:"allocated_quantity"`
-	AvailableQuantity int             `json:"available_quantity"` // computed field
+	ReservedQuantity  int64           `json:"reserved_quantity"`
+	AvailableQuantity int64           `json:"available_quantity"` // computed field
 	CreatedAt         time.Time       `json:"created_at"`
 	UpdatedAt         time.Time       `json:"updated_at"`
 }
@@ -53,7 +53,7 @@ type ReserveProductsRequest struct {
 // ProductReservationItem represents a single product reservation.
 type ProductReservationItem struct {
 	ProductID       uuid.UUID `json:"product_id"       validate:"required"`
-	Quantity        int       `json:"quantity"         validate:"required,min=1"`
+	Quantity        int64     `json:"quantity"         validate:"required,min=1"`
 	ExpectedVersion int64     `json:"expected_version" validate:"required,min=1"`
 }
 
@@ -65,7 +65,7 @@ func MapToProductResponse(product *entity.Product) *ProductResponse {
 		Price:             product.Price,
 		Quantity:          product.Quantity,
 		Version:           product.Version,
-		AllocatedQuantity: product.AllocatedQuantity,
+		ReservedQuantity:  product.ReservedQuantity,
 		AvailableQuantity: product.GetAvailableStock(),
 		CreatedAt:         product.CreatedAt,
 		UpdatedAt:         product.UpdatedAt,

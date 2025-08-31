@@ -59,7 +59,7 @@ type ProductRepositoryInterface interface {
 // ProductReservation represents a stock reservation request.
 type ProductReservation struct {
 	ProductID       uuid.UUID
-	Quantity        int
+	Quantity        int64
 	ExpectedVersion int64
 }
 
@@ -81,9 +81,9 @@ func (r *ProductRepositoryPostgres) Create(
 	product *entity.Product,
 ) (*entity.Product, error) {
 	query := `
-		INSERT INTO products (id, name, price, quantity, version, allocated_quantity, created_at, updated_at)
+		INSERT INTO products (id, name, price, quantity, version, reserved_quantity, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-		RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
@@ -92,7 +92,7 @@ func (r *ProductRepositoryPostgres) Create(
 		product.Price,
 		product.Quantity,
 		product.Version,
-		product.AllocatedQuantity,
+		product.ReservedQuantity,
 		product.CreatedAt,
 		product.UpdatedAt,
 	)
@@ -105,7 +105,7 @@ func (r *ProductRepositoryPostgres) Create(
 		&savedProduct.Price,
 		&savedProduct.Quantity,
 		&savedProduct.Version,
-		&savedProduct.AllocatedQuantity,
+		&savedProduct.ReservedQuantity,
 		&savedProduct.CreatedAt,
 		&savedProduct.UpdatedAt,
 	)
@@ -123,9 +123,9 @@ func (r *ProductRepositoryPostgres) Update(
 ) (*entity.Product, error) {
 	query := `
 		UPDATE products 
-		SET name = $2, price = $3, quantity = $4, version = $5, allocated_quantity = $6, updated_at = $7
+		SET name = $2, price = $3, quantity = $4, version = $5, reserved_quantity = $6, updated_at = $7
 		WHERE id = $1
-		RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
@@ -134,7 +134,7 @@ func (r *ProductRepositoryPostgres) Update(
 		product.Price,
 		product.Quantity,
 		product.Version,
-		product.AllocatedQuantity,
+		product.ReservedQuantity,
 		product.UpdatedAt,
 	)
 
@@ -146,7 +146,7 @@ func (r *ProductRepositoryPostgres) Update(
 		&updatedProduct.Price,
 		&updatedProduct.Quantity,
 		&updatedProduct.Version,
-		&updatedProduct.AllocatedQuantity,
+		&updatedProduct.ReservedQuantity,
 		&updatedProduct.CreatedAt,
 		&updatedProduct.UpdatedAt,
 	)
@@ -220,7 +220,7 @@ func (r *ProductRepositoryPostgres) FindByID(
 	id uuid.UUID,
 ) (*entity.Product, error) {
 	query := `
-		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 		FROM products
 		WHERE id = $1
 	`
@@ -235,7 +235,7 @@ func (r *ProductRepositoryPostgres) FindByID(
 		&product.Price,
 		&product.Quantity,
 		&product.Version,
-		&product.AllocatedQuantity,
+		&product.ReservedQuantity,
 		&product.CreatedAt,
 		&product.UpdatedAt,
 	)
@@ -261,7 +261,7 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 
 	// Build the SQL query with the correct number of placeholders
 	query := `
-		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 		FROM products
 		WHERE id = ANY($1)
 		FOR UPDATE
@@ -284,7 +284,7 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 			&product.Price,
 			&product.Quantity,
 			&product.Version,
-			&product.AllocatedQuantity,
+			&product.ReservedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
@@ -313,7 +313,7 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 
 	// Build the SQL query with the correct number of placeholders
 	query := `
-		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 		FROM products
 		WHERE id = ANY($1)
 	`
@@ -335,7 +335,7 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 			&product.Price,
 			&product.Quantity,
 			&product.Version,
-			&product.AllocatedQuantity,
+			&product.ReservedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
@@ -359,7 +359,7 @@ func (r *ProductRepositoryPostgres) FindAll(
 	limit, offset int64,
 ) ([]*entity.Product, error) {
 	query := `
-		SELECT id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 		FROM products
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -382,7 +382,7 @@ func (r *ProductRepositoryPostgres) FindAll(
 			&product.Price,
 			&product.Quantity,
 			&product.Version,
-			&product.AllocatedQuantity,
+			&product.ReservedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)
@@ -436,9 +436,9 @@ func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
 ) (*entity.Product, error) {
 	query := `
 		UPDATE products 
-		SET name = $2, price = $3, quantity = $4, version = $5, allocated_quantity = $6, updated_at = $7
+		SET name = $2, price = $3, quantity = $4, version = $5, reserved_quantity = $6, updated_at = $7
 		WHERE id = $1 AND version = $8
-		RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+		RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(ctx, query,
@@ -447,7 +447,7 @@ func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
 		product.Price,
 		product.Quantity,
 		product.Version,
-		product.AllocatedQuantity,
+		product.ReservedQuantity,
 		product.UpdatedAt,
 		expectedVersion,
 	)
@@ -460,7 +460,7 @@ func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
 		&updatedProduct.Price,
 		&updatedProduct.Quantity,
 		&updatedProduct.Version,
-		&updatedProduct.AllocatedQuantity,
+		&updatedProduct.ReservedQuantity,
 		&updatedProduct.CreatedAt,
 		&updatedProduct.UpdatedAt,
 	)
@@ -490,13 +490,13 @@ func (r *ProductRepositoryPostgres) ReserveStock(
 	for _, reservation := range reservations {
 		query := `
 			UPDATE products 
-			SET allocated_quantity = allocated_quantity + $2, 
+			SET reserved_quantity = reserved_quantity + $2, 
 				version = version + 1, 
 				updated_at = CURRENT_TIMESTAMP
 			WHERE id = $1 
 			  AND version = $3 
-			  AND (quantity - allocated_quantity) >= $2
-			RETURNING id, name, price, quantity, version, allocated_quantity, created_at, updated_at
+			  AND (quantity - reserved_quantity) >= $2
+			RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 		`
 
 		row := r.db.QueryRow(ctx, query,
@@ -513,7 +513,7 @@ func (r *ProductRepositoryPostgres) ReserveStock(
 			&product.Price,
 			&product.Quantity,
 			&product.Version,
-			&product.AllocatedQuantity,
+			&product.ReservedQuantity,
 			&product.CreatedAt,
 			&product.UpdatedAt,
 		)

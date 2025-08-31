@@ -24,7 +24,7 @@ type InboxEvent struct {
 	CreatedAt     time.Time
 	ProcessedAt   *time.Time
 	ScheduledFor  time.Time
-	Attempts      int
+	Attempts      int64
 	LastError     *string
 	CorrelationID *uuid.UUID // For tracing requests across services
 	CausationID   *uuid.UUID // For linking cause-and-effect events
@@ -103,6 +103,6 @@ func (e *InboxEvent) IsReadyForProcessing() bool {
 }
 
 // CanBeRetried checks if the event can be retried based on attempts.
-func (e *InboxEvent) CanBeRetried(maxAttempts int) bool {
+func (e *InboxEvent) CanBeRetried(maxAttempts int64) bool {
 	return e.Attempts < maxAttempts
 }

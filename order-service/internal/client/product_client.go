@@ -25,7 +25,7 @@ import (
 // ProductReservationItem represents a product reservation request.
 type ProductReservationItem struct {
 	ProductID       uuid.UUID
-	Quantity        int
+	Quantity        int64
 	ExpectedVersion int64
 }
 
@@ -217,14 +217,14 @@ func (pc *ProductClient) GetProducts(
 		}
 
 		products[i] = entity.Product{
-			ID:                uid,
-			Name:              p.Name,
-			Price:             decimal.NewFromFloat(p.Price), // safely convert double → decimal
-			Quantity:          int(p.Quantity),
-			Version:           p.Version,
-			AllocatedQuantity: int(p.AllocatedQuantity),
-			CreatedAt:         createdAt,
-			UpdatedAt:         updatedAt,
+			ID:               uid,
+			Name:             p.Name,
+			Price:            decimal.NewFromFloat(p.Price), // safely convert double → decimal
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
+			CreatedAt:        createdAt,
+			UpdatedAt:        updatedAt,
 		}
 	}
 
@@ -242,7 +242,7 @@ func (pc *ProductClient) ReserveProducts(
 	for i, item := range items {
 		pbItems[i] = &pb.ProductQuantity{
 			ProductId: item.ProductID.String(),
-			Quantity:  int32(item.Quantity),
+			Quantity:  item.Quantity,
 			Version:   item.ExpectedVersion,
 		}
 	}
@@ -282,14 +282,14 @@ func (pc *ProductClient) ReserveProducts(
 		}
 
 		products[i] = entity.Product{
-			ID:                uid,
-			Name:              p.Name,
-			Price:             decimal.NewFromFloat(p.Price),
-			Quantity:          int(p.Quantity),
-			Version:           p.Version,
-			AllocatedQuantity: int(p.AllocatedQuantity),
-			CreatedAt:         createdAt,
-			UpdatedAt:         updatedAt,
+			ID:               uid,
+			Name:             p.Name,
+			Price:            decimal.NewFromFloat(p.Price),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
+			CreatedAt:        createdAt,
+			UpdatedAt:        updatedAt,
 		}
 	}
 

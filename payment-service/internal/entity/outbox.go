@@ -20,6 +20,6 @@ type OutboxEvent struct {
 	CreatedAt     time.Time
 	ProcessedAt   *time.Time
 	ScheduledFor  time.Time
-	Attempts      int
+	Attempts      int64
 	LastError     *string
 }
