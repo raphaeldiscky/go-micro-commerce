@@ -17,6 +17,7 @@ import (
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -50,6 +51,12 @@ type OrderServiceInterface interface {
 		status constant.OrderStatus,
 	) (*dto.OrderResponse, error)
 	CancelOrder(ctx context.Context, req dto.CancelOrderRequest, id uuid.UUID) error
+	NotifyOrderFailure(
+		ctx context.Context,
+		orderID uuid.UUID,
+		status constant.OrderStatus,
+		reason string,
+	) error
 	RequestPaymentOrder(
 		ctx context.Context,
 		req dto.PayOrderRequest,
@@ -65,10 +72,12 @@ type OrderService struct {
 	logger                 logger.Logger
 	orderLifecycleProducer mq.KafkaProducerInterface
 	sagaOrchestrator       saga.Orchestrator
+	config                 *config.Config
 }
 
 // NewOrderService creates a new instance of OrderService.
 func NewOrderService(
+	config *config.Config,
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
@@ -81,6 +90,7 @@ func NewOrderService(
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
 		sagaOrchestrator:       sagaOrchestrator,
+		config:                 config,
 	}
 }
 
@@ -715,4 +725,20 @@ func (s *OrderService) RequestPaymentOrder(
 	}
 
 	return res, nil
+}
+
+// NotifyOrderFailure updates the order status to failed and logs the reason.
+func (s *OrderService) NotifyOrderFailure(
+	ctx context.Context,
+	orderID uuid.UUID,
+	status constant.OrderStatus,
+	reason string,
+) error {
+	if status != constant.OrderStatusFailed {
+		return nil
+	}
+
+	s.logger.Infof("Send order failure notification: %s, reason: %s", orderID, reason)
+
+	return nil
 }

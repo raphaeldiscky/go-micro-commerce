@@ -19,6 +19,8 @@ type Order struct {
 	CustomerID     uuid.UUID
 	Status         constant.OrderStatus
 	TotalPrice     decimal.Decimal
+	TotalTax       decimal.Decimal
+	TotalDiscount  decimal.Decimal
 	Items          []OrderItem
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -31,6 +33,8 @@ type OrderItem struct {
 	ProductID uuid.UUID
 	Quantity  int64
 	Price     decimal.Decimal
+	Tax       decimal.Decimal
+	Discount  decimal.Decimal
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

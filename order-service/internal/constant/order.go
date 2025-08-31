@@ -18,4 +18,6 @@ const (
 	OrderStatusDelivered OrderStatus = "delivered"
 	// OrderStatusCanceled indicates that the order has been canceled.
 	OrderStatusCanceled OrderStatus = "canceled"
+	// OrderStatusFailed indicates that the order has failed.
+	OrderStatusFailed OrderStatus = "failed"
 )

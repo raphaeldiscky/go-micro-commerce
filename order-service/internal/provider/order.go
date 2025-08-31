@@ -73,6 +73,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 	)
 
 	orderService := service.NewOrderService(
+		cfg,
 		providers.DataStore,
 		productClient,
 		appLogger,

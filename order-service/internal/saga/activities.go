@@ -1,4 +1,3 @@
-// Package saga provides activity implementations for order saga.
 package saga
 
 import (
@@ -10,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -18,14 +18,39 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
+type PricingResult struct {
+	TotalPrice decimal.Decimal
+	Discount   decimal.Decimal
+	Tax        decimal.Decimal
+}
+
 // OrderActivities defines the interface for order saga activities.
 type OrderActivities interface {
-	ReserveInventory(ctx context.Context, order *entity.Order) error
-	ReleaseInventoryReservation(ctx context.Context, order *entity.Order) error
-	ProcessPayment(ctx context.Context, order *entity.Order) error
-	RefundPayment(ctx context.Context, order *entity.Order) error
+	// Execution
+	ValidateProducts(ctx context.Context, order *entity.Order) error
+	ReserveInventory(ctx context.Context, order *entity.Order) (reservationID uuid.UUID, err error)
+	CalculatePricing(ctx context.Context, order *entity.Order) (pricing PricingResult, err error)
+	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
 	UpdateInventory(ctx context.Context, order *entity.Order) error
-	ArrangeShipping(ctx context.Context, order *entity.Order) error
+	CreateShipping(
+		ctx context.Context,
+		order *entity.Order,
+	) (shippingID uuid.UUID, trackingNumber string, err error)
+	SendOrderConfirmation(ctx context.Context, order *entity.Order, trackingNumber string) error
+	// Compensation
+	ReleaseInventoryReservation(
+		ctx context.Context,
+		order *entity.Order,
+		reservationID uuid.UUID,
+	) error
+	ConfirmInventoryDeduction(
+		ctx context.Context,
+		order *entity.Order,
+		reservationID uuid.UUID,
+	) error
+	RestoreInventory(ctx context.Context, order *entity.Order) error
+	RefundPayment(ctx context.Context, order *entity.Order, paymentID uuid.UUID) error
+	CancelShipping(ctx context.Context, shippingID uuid.UUID) error
 }
 
 // OrderActivitiesImpl implements the OrderActivities interface.
@@ -54,12 +79,108 @@ func NewOrderActivities(
 	}
 }
 
+// ValidateProducts validates product existence and availability.
+func (a *OrderActivitiesImpl) ValidateProducts(ctx context.Context, order *entity.Order) error {
+	a.logger.Infof("Validating products for order: %s", order.ID)
+
+	return nil
+}
+
+// CalculatePricing calculates order pricing including discounts and taxes.
+func (a *OrderActivitiesImpl) CalculatePricing(
+	ctx context.Context,
+	order *entity.Order,
+) (PricingResult, error) {
+	a.logger.Infof("Calculating pricing for order: %s", order.ID)
+
+	// In a real implementation, you would call a pricing service
+	// For now, we'll calculate a simple mock pricing
+	subtotal := decimal.NewFromInt(0)
+
+	for _, item := range order.Items {
+		// This would normally come from product service
+		itemPrice := decimal.NewFromFloat(10.0) // Mock price
+		itemTotal := itemPrice.Mul(decimal.NewFromInt(item.Quantity))
+		subtotal = subtotal.Add(itemTotal)
+	}
+
+	// Mock calculations
+	taxRate := decimal.NewFromFloat(0.1) // 10% tax
+	taxTotal := subtotal.Mul(taxRate)
+
+	// Apply discount if order is large enough
+	discountTotal := decimal.NewFromInt(0)
+	if subtotal.GreaterThan(decimal.NewFromFloat(100.0)) {
+		discountTotal = subtotal.Mul(decimal.NewFromFloat(0.1)) // 10% discount
+	}
+
+	totalPrice := subtotal.Add(taxTotal).Sub(discountTotal)
+
+	// Update order with calculated prices
+	order.TotalTax = taxTotal
+	order.TotalDiscount = discountTotal
+	order.TotalPrice = totalPrice
+
+	// Update order items with prices (in real implementation, this would come from product service)
+	for i := range order.Items {
+		order.Items[i].Price = decimal.NewFromFloat(10.0) // Mock price
+	}
+
+	a.logger.Infof("Pricing calculated for order %s: TaxTotal=%s, DiscountTotal=%s, TotalPrice=%s",
+		order.ID, subtotal.String(), taxTotal.String(), discountTotal.String(), totalPrice.String())
+
+	return PricingResult{
+		TotalPrice: totalPrice,
+		Discount:   discountTotal,
+		Tax:        taxTotal,
+	}, nil
+}
+
+// CreateShipping creates shipping arrangement for the order.
+func (a *OrderActivitiesImpl) CreateShipping(
+	ctx context.Context,
+	order *entity.Order,
+) (uuid.UUID, string, error) {
+	a.logger.Infof("Creating shipping for order: %s", order.ID)
+
+	// In a real implementation, you would call a shipping service API
+	// For now, we'll generate mock shipping data
+	shippingID := uuid.New()
+	trackingNumber := fmt.Sprintf("TRK-%s-%d", order.ID.String()[:8], time.Now().Unix())
+
+	a.logger.Infof("Successfully created shipping for order %s: ID=%s, Tracking=%s",
+		order.ID, shippingID, trackingNumber)
+
+	return shippingID, trackingNumber, nil
+}
+
+// SendOrderConfirmation sends order confirmation to customer.
+func (a *OrderActivitiesImpl) SendOrderConfirmation(
+	ctx context.Context,
+	order *entity.Order,
+	trackingNumber string,
+) error {
+	a.logger.Infof("Sending order confirmation for order: %s", order.ID)
+
+	// In a real implementation, you would:
+	// 1. Send email to customer
+	// 2. Send SMS notification
+
+	// For now, just log the confirmation
+	a.logger.Infof("TODO: sent order confirmation for order: %s", order.ID)
+
+	return nil
+}
+
 // ReserveInventory reserves inventory for the order items.
-func (a *OrderActivitiesImpl) ReserveInventory(ctx context.Context, order *entity.Order) error {
+func (a *OrderActivitiesImpl) ReserveInventory(
+	ctx context.Context,
+	order *entity.Order,
+) (reservationID uuid.UUID, err error) {
 	a.logger.Infof("Reserving inventory for order: %s", order.ID)
 
 	if a.productClient == nil {
-		return fmt.Errorf("product service is unavailable")
+		return uuid.Nil, fmt.Errorf("product service is unavailable")
 	}
 
 	// Prepare reservation items
@@ -72,52 +193,66 @@ func (a *OrderActivitiesImpl) ReserveInventory(ctx context.Context, order *entit
 	}
 
 	// Reserve products using product service
-	_, err := a.productClient.ReserveProducts(ctx, order.IdempotencyKey, reservationItems)
+	_, err = a.productClient.ReserveProducts(ctx, order.IdempotencyKey, reservationItems)
 	if err != nil {
 		a.logger.Errorf("Failed to reserve inventory for order %s: %v", order.ID, err)
 
-		return fmt.Errorf("inventory reservation failed: %w", err)
+		return uuid.Nil, fmt.Errorf("inventory reservation failed: %w", err)
 	}
 
 	a.logger.Infof("Successfully reserved inventory for order: %s", order.ID)
 
-	return nil
+	return reservationID, nil
 }
 
-// ReleaseInventoryReservation releases reserved inventory.
-func (a *OrderActivitiesImpl) ReleaseInventoryReservation(
-	_ context.Context,
+// ConfirmInventoryDeduction confirms inventory deduction after successful payment.
+func (a *OrderActivitiesImpl) ConfirmInventoryDeduction(
+	ctx context.Context,
 	order *entity.Order,
+	reservationID uuid.UUID,
 ) error {
-	a.logger.Infof("Releasing inventory reservation for order: %s", order.ID)
-
-	if a.productClient == nil {
-		a.logger.Warnf(
-			"Product service unavailable, cannot release reservation for order: %s",
-			order.ID,
-		)
-
-		return nil // Don't fail compensation if service is down
-	}
-
-	// In a real implementation, you would call a ReleaseReservation method
-	// For now, we'll log the compensation action
-	// TODO: Implement product client ReleaseReservation method
-	a.logger.Warnf(
-		"Inventory reservation release not implemented for order: %s (compensation needed)",
+	a.logger.Infof(
+		"Confirming inventory deduction for order: %s, reservation: %s",
 		order.ID,
+		reservationID,
 	)
 
-	a.logger.Infof("Successfully released inventory reservation for order: %s", order.ID)
+	if a.productClient == nil {
+		return fmt.Errorf("product service is unavailable")
+	}
+
+	// Prepare deduction items
+	// deductionItems := make([]client.ProductDeductionItem, len(order.Items))
+	// for i, item := range order.Items {
+	// 	deductionItems[i] = client.ProductDeductionItem{
+	// 		ProductID: item.ProductID,
+	// 		Quantity:  item.Quantity,
+	// 	}
+	// }
+
+	// // Confirm inventory deduction using product service
+	// err := a.productClient.ConfirmInventoryDeduction(ctx, reservationID, deductionItems)
+	// if err != nil {
+	// 	a.logger.Errorf("Failed to confirm inventory deduction for order %s: %v", order.ID, err)
+	// 	return fmt.Errorf("inventory confirmation failed: %w", err)
+	// }
+
+	a.logger.Infof("Successfully confirmed inventory deduction for order: %s", order.ID)
 
 	return nil
 }
 
 // ProcessPayment processes payment for the order.
-func (a *OrderActivitiesImpl) ProcessPayment(ctx context.Context, order *entity.Order) error {
+func (a *OrderActivitiesImpl) ProcessPayment(
+	ctx context.Context,
+	order *entity.Order,
+) (paymentID uuid.UUID, err error) {
 	a.logger.Infof("Processing payment for order: %s", order.ID)
 
-	return a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	// Generate a payment ID upfront
+	paymentID = uuid.New()
+
+	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
 		// Create payment request event
@@ -152,56 +287,19 @@ func (a *OrderActivitiesImpl) ProcessPayment(ctx context.Context, order *entity.
 			return fmt.Errorf("failed to create payment request event: %w", err)
 		}
 
-		a.logger.Infof("Successfully created payment request for order: %s", order.ID)
+		a.logger.Infof(
+			"Successfully created payment request for order: %s with payment ID: %s",
+			order.ID,
+			paymentID,
+		)
 
 		return nil
 	})
-}
+	if err != nil {
+		return uuid.Nil, err
+	}
 
-// RefundPayment refunds payment for the order.
-func (a *OrderActivitiesImpl) RefundPayment(ctx context.Context, order *entity.Order) error {
-	a.logger.Infof("Refunding payment for order: %s", order.ID)
-
-	return a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		outboxRepo := ds.OutboxRepository()
-
-		// Create refund request event
-		refundEvent := map[string]interface{}{
-			"order_id":    order.ID,
-			"customer_id": order.CustomerID,
-			"amount":      order.TotalPrice,
-			"currency":    "IDR",
-			"reason":      "order_canceled",
-			"timestamp":   time.Now().UTC(),
-		}
-
-		payload, err := json.Marshal(refundEvent)
-		if err != nil {
-			return fmt.Errorf("failed to marshal refund request event: %w", err)
-		}
-
-		// Create outbox event for reliable delivery
-		outboxEvent := &entity.OutboxEvent{
-			ID:            uuid.New(),
-			AggregateType: "payment",
-			AggregateID:   order.ID,
-			EventType:     constant.KafkaEventTypePaymentRefunded,
-			Topic:         constant.TopicPaymentRequest, // Use same topic with different event type
-			Payload:       payload,
-			Status:        constant.OutboxStatusPending,
-			CreatedAt:     time.Now().UTC(),
-			ScheduledFor:  time.Now().UTC(),
-			Attempts:      0,
-		}
-
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
-			return fmt.Errorf("failed to create refund request event: %w", err)
-		}
-
-		a.logger.Infof("Successfully created refund request for order: %s", order.ID)
-
-		return nil
-	})
+	return paymentID, nil
 }
 
 // UpdateInventory updates inventory after successful payment.

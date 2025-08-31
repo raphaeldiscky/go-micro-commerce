@@ -18,6 +18,7 @@ type Config struct {
 	Consul          *ConsulConfig
 	OutboxPublisher *OutboxPublisherConfig
 	Client          *ClientConfig
+	Saga            *SagaConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -42,6 +43,7 @@ func LoadConfig() (*Config, error) {
 		Consul:          initConsulConfig(),
 		OutboxPublisher: initOutboxPublisherConfig(),
 		Client:          initClientConfig(),
+		Saga:            initSagaConfig(),
 	}
 
 	return cfg, nil
