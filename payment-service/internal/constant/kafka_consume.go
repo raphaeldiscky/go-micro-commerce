@@ -1,10 +1,17 @@
 package constant
 
+// Sources.
+const (
+	// KafkaSourceOrderService is the source service for order events.
+	KafkaSourceOrderService = "order-service"
+)
+
 // Topics that Payment Service consumes from other services.
 const (
 	// TopicOrderLifecycle is the topic for order lifecycle events.
 	TopicOrderLifecycle = "order.lifecycle"
-	// Note: TopicPaymentLifecycle is defined in kafka_produce.go to avoid redeclaration.
+	// TopicPaymentRequest is the topic for payment request events.
+	TopicPaymentRequest = "payment.request"
 )
 
 // Consumer groups for Payment Service (consuming from other services).

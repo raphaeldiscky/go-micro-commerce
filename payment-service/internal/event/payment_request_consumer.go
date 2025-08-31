@@ -66,8 +66,8 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		"payment", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		"payment.lifecycle", // topic
-		"order-service",     // source service
+		constant.TopicPaymentRequest,     // topic
+		constant.KafkaSourceOrderService, // source service
 		json.RawMessage(body),
 		nil, // correlation_id
 		nil, // causation_id

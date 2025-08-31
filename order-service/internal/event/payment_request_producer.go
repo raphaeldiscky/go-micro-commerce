@@ -11,8 +11,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
-// PaymentLifecyclePayload holds the data for payment request events.
-type PaymentLifecyclePayload struct {
+// PaymentRequestPayload holds the data for payment request events.
+type PaymentRequestPayload struct {
 	OrderID       uuid.UUID              `json:"order_id"`
 	CustomerID    uuid.UUID              `json:"customer_id"`
 	TotalPrice    decimal.Decimal        `json:"total_price"`
@@ -20,37 +20,37 @@ type PaymentLifecyclePayload struct {
 	PaymentMethod constant.PaymentMethod `json:"payment_method"`
 }
 
-// PaymentLifecycleEvent is the envelope for payment request events.
-type PaymentLifecycleEvent struct {
-	Metadata mq.KafkaMetadata        `json:"metadata"`
-	Payload  PaymentLifecyclePayload `json:"payload"`
+// PaymentRequestEvent is the envelope for payment request events.
+type PaymentRequestEvent struct {
+	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Payload  PaymentRequestPayload `json:"payload"`
 }
 
-// PaymentLifecycleProducer is responsible for producing Payment Lifecycle events.
-type PaymentLifecycleProducer struct {
+// PaymentRequestProducer is responsible for producing Payment Lifecycle events.
+type PaymentRequestProducer struct {
 	Producer *mq.KafkaAsyncProducer
 	topic    string
 }
 
-// GetPayload returns the data associated with the PaymentLifecycleEvent.
-func (e *PaymentLifecycleEvent) GetPayload() interface{} {
+// GetPayload returns the data associated with the PaymentRequestEvent.
+func (e *PaymentRequestEvent) GetPayload() interface{} {
 	return e.Payload
 }
 
-// GetMetadata returns the metadata associated with the PaymentLifecycleEvent.
-func (e *PaymentLifecycleEvent) GetMetadata() mq.KafkaMetadata {
+// GetMetadata returns the metadata associated with the PaymentRequestEvent.
+func (e *PaymentRequestEvent) GetMetadata() mq.KafkaMetadata {
 	return e.Metadata
 }
 
-// NewPaymentLifecycleEvent creates a new PaymentLifecycleEvent.
-func NewPaymentLifecycleEvent(
+// NewPaymentRequestEvent creates a new PaymentRequestEvent.
+func NewPaymentRequestEvent(
 	orderID uuid.UUID,
 	customerID uuid.UUID,
 	totalPrice decimal.Decimal,
 	currency string,
 	paymentMethod constant.PaymentMethod,
-) *PaymentLifecycleEvent {
-	return &PaymentLifecycleEvent{
+) *PaymentRequestEvent {
+	return &PaymentRequestEvent{
 		Metadata: mq.KafkaMetadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypePaymentRequested,
@@ -58,7 +58,7 @@ func NewPaymentLifecycleEvent(
 			OccurredAt:  time.Now().UTC(),
 			Source:      constant.KafkaSourceOrderService,
 		},
-		Payload: PaymentLifecyclePayload{
+		Payload: PaymentRequestPayload{
 			OrderID:       orderID,
 			CustomerID:    customerID,
 			TotalPrice:    totalPrice,
@@ -68,20 +68,20 @@ func NewPaymentLifecycleEvent(
 	}
 }
 
-// NewPaymentLifecycleProducer creates a new instance of PaymentLifecycleProducer.
-func NewPaymentLifecycleProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
-	return &PaymentLifecycleProducer{
+// NewPaymentRequestProducer creates a new instance of PaymentRequestProducer.
+func NewPaymentRequestProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+	return &PaymentRequestProducer{
 		Producer: producer,
-		topic:    constant.TopicPaymentLifecycle,
+		topic:    constant.TopicPaymentRequest,
 	}
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentLifecycleProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *PaymentRequestProducer) Send(ctx context.Context, event mq.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 
 // Topic returns the topic name.
-func (p *PaymentLifecycleProducer) Topic() string {
+func (p *PaymentRequestProducer) Topic() string {
 	return p.topic
 }
