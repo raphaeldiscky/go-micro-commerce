@@ -2,6 +2,10 @@ package integration
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -83,23 +87,49 @@ func (tc *TestContainersSetup) CleanupData() error {
 	return err
 }
 
-// createProductsTable creates the products table for testing.
+// createProductsTable creates the products table for testing by running actual migrations.
 func (tc *TestContainersSetup) createProductsTable() error {
-	query := `
-		CREATE TABLE IF NOT EXISTS products (
-			id UUID PRIMARY KEY,
-			name VARCHAR(255) NOT NULL,
-			price DECIMAL(10,2) NOT NULL,
-			quantity INTEGER NOT NULL DEFAULT 0,
-			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-			updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-		);
+	// Run the actual migration files
+	migrationFiles := []string{
+		"../../db/migrations/000001_create_table_products.up.sql",
+		"../../db/migrations/000002_add_version_and_reserved_quantity_for_optimistic_locking.up.sql",
+	}
 
-		CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
-		CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at);
-	`
+	for _, migrationFile := range migrationFiles {
+		if err := tc.runMigrationFile(migrationFile); err != nil {
+			return err
+		}
+	}
 
-	_, err := tc.DbPool.Exec(tc.ctx, query)
+	return nil
+}
+
+// runMigrationFile reads and executes a migration file.
+func (tc *TestContainersSetup) runMigrationFile(filePath string) error {
+	// Get the absolute path
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return err
+	}
+
+	// Security check: ensure the file is a .sql file in the migrations directory
+	if !strings.HasSuffix(absPath, ".sql") {
+		return fmt.Errorf("invalid file type: only .sql files are allowed")
+	}
+
+	// Additional validation: ensure path contains migrations directory
+	if !strings.Contains(absPath, "migrations") {
+		return fmt.Errorf("invalid path: file must be in migrations directory")
+	}
+
+	// Read the migration file
+	query, err := os.ReadFile(absPath) // #nosec G304 - path is validated above
+	if err != nil {
+		return err
+	}
+
+	// Execute the migration
+	_, err = tc.DbPool.Exec(tc.ctx, string(query))
 
 	return err
 }

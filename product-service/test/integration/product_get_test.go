@@ -60,7 +60,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 	assert.Equal(s.T(), createResponse.Data.ID, getResponse.Data.ID)
 	assert.Equal(s.T(), "Test Product", getResponse.Data.Name)
 	assert.True(s.T(), getResponse.Data.Price.Equal(decimal.NewFromFloat(19.99)))
-	assert.Equal(s.T(), 50, getResponse.Data.Quantity)
+	assert.Equal(s.T(), int64(50), getResponse.Data.Quantity)
 }
 
 func (s *ProductGetTestSuite) TestGetProductNotFound() {
