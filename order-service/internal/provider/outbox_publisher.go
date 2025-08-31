@@ -44,6 +44,7 @@ func SetupOutboxPublisher(
 
 	registry.Register(constant.KafkaEventTypeOrderCreated, &event.OrderLifecycleEvent{})
 	registry.Register(constant.KafkaEventTypeOrderCanceled, &event.OrderLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypeOrderPaymentRequested, &event.OrderLifecycleEvent{})
 
 	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
 	orderDLQProducer := event.NewOrderDLQProducer(asyncProducer)

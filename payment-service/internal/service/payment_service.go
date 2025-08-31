@@ -244,9 +244,9 @@ func (s *PaymentService) ProcessPayment(
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}
 
-		eventType := constant.KafkaEventTypePaymentPaid
+		eventType := constant.KafkaEventTypePaymentCompleted
 		if finalStatus == constant.PaymentStatusFailed {
-			eventType = "PaymentFailed"
+			eventType = constant.KafkaEventTypePaymentFailed
 		}
 
 		outboxEvent := &entity.OutboxEvent{

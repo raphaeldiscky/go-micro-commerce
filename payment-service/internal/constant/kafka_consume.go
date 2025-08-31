@@ -23,13 +23,3 @@ const (
 	// KafkaEventTypeOrderPaymentRequested is the event type for payment request events.
 	KafkaEventTypeOrderPaymentRequested = "OrderPaymentRequested"
 )
-
-// Order Payment Events.
-const (
-	// KafkaEventTypePaymentProcessed is the event type for payment processing events.
-	KafkaEventTypePaymentProcessed = "PaymentProcessed"
-	// KafkaEventTypePaymentFailed is the event type for payment failure events.
-	KafkaEventTypePaymentFailed = "PaymentFailed"
-	// KafkaEventTypePaymentRefunded is the event type for payment refund events.
-	KafkaEventTypePaymentRefunded = "PaymentRefunded"
-)
