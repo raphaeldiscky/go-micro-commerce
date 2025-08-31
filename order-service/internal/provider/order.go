@@ -12,6 +12,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
@@ -37,6 +38,21 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 
 	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
 
+	// Create payment request producer for saga
+	paymentRequestAsyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+		Brokers:        cfg.Kafka.Brokers,
+		RetryMax:       cfg.Kafka.RetryMax,
+		FlushFrequency: cfg.Kafka.FlushFrequency,
+		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
+		Acks:           sarama.WaitForAll,
+	})
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka async producer for payment requests: %v", err)
+	}
+
+	paymentRequestProducer := event.NewPaymentRequestProducer(paymentRequestAsyncProducer)
+
 	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
 	if err != nil {
 		appLogger.Warnf(
@@ -47,11 +63,21 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		productClient = nil
 	}
 
+	// Create saga orchestrator
+	sagaOrchestrator := saga.NewSagaOrchestrator(
+		providers.DataStore,
+		productClient,
+		paymentRequestProducer,
+		orderLifecycleProducer,
+		appLogger,
+	)
+
 	orderService := service.NewOrderService(
 		providers.DataStore,
 		productClient,
 		appLogger,
 		orderLifecycleProducer,
+		sagaOrchestrator,
 	)
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)
 

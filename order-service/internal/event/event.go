@@ -33,6 +33,10 @@ func mapStatusToEventType(status constant.OrderStatus) string {
 		return constant.KafkaEventTypeOrderDelivered
 	case constant.OrderStatusCanceled:
 		return constant.KafkaEventTypeOrderCanceled
+	case constant.OrderStatusConfirmed:
+		return constant.KafkaEventTypeOrderConfirmed
+	case constant.OrderStatusProcessing:
+		return constant.KafkaEventTypeOrderProcessing
 	default:
 		return "unknown"
 	}

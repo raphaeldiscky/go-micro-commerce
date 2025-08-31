@@ -23,6 +23,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
 
@@ -54,6 +55,7 @@ type OrderServiceInterface interface {
 		req dto.PayOrderRequest,
 		id uuid.UUID,
 	) (*dto.OrderResponse, error)
+	CreateOrderWithSaga(ctx context.Context, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
 }
 
 // OrderService implements the OrderServiceInterface.
@@ -62,6 +64,7 @@ type OrderService struct {
 	productClient          client.ProductClientInterface
 	logger                 logger.Logger
 	orderLifecycleProducer mq.KafkaProducerInterface
+	sagaOrchestrator       saga.Orchestrator
 }
 
 // NewOrderService creates a new instance of OrderService.
@@ -70,12 +73,14 @@ func NewOrderService(
 	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
 	orderLifecycleProducer mq.KafkaProducerInterface,
+	sagaOrchestrator saga.Orchestrator,
 ) OrderServiceInterface {
 	return &OrderService{
 		dataStore:              dataStore,
 		productClient:          productClient,
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
+		sagaOrchestrator:       sagaOrchestrator,
 	}
 }
 
