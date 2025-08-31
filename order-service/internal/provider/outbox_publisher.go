@@ -28,9 +28,9 @@ func SetupOutboxPublisher(
 		constant.TopicOrderDLQReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentLifecycle,
-		constant.TopicPaymentLifecycleNumPartitions,
-		constant.TopicPaymentLifecycleReplicationFactor,
+		constant.TopicPaymentRequest,
+		constant.TopicPaymentRequestNumPartitions,
+		constant.TopicPaymentRequestReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
 		constant.TopicPaymentDLQ,
@@ -54,11 +54,11 @@ func SetupOutboxPublisher(
 
 	registry.Register(constant.KafkaEventTypeOrderCreated, &event.OrderLifecycleEvent{})
 	registry.Register(constant.KafkaEventTypeOrderCanceled, &event.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentRequested, &event.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentRequested, &event.PaymentRequestEvent{})
 
 	// Producers
 	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
-	paymentLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
+	paymentRequestProducer := event.NewPaymentRequestProducer(asyncProducer)
 
 	// DLQ
 	orderDLQProducer := event.NewOrderDLQProducer(asyncProducer)
@@ -70,7 +70,7 @@ func SetupOutboxPublisher(
 		appLogger,
 		orderLifecycleProducer,
 		orderDLQProducer,
-		paymentLifecycleProducer,
+		paymentRequestProducer,
 		paymentDLQProducer,
 		*cfg.OutboxPublisher,
 		registry,

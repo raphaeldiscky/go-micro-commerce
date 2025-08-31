@@ -33,12 +33,12 @@ const (
 
 // Topics that Order Service produces to.
 const (
-	// TopicPaymentLifecycle is the topic for payment events.
-	TopicPaymentLifecycle = "payment.lifecycle"
-	// TopicPaymentLifecycleNumPartitions is the number of partitions for the payment lifecycle topic.
-	TopicPaymentLifecycleNumPartitions = 3
-	// TopicPaymentLifecycleReplicationFactor is the replication factor for the payment lifecycle topic.
-	TopicPaymentLifecycleReplicationFactor = 1
+	// TopicPaymentRequest is the topic for payment events.
+	TopicPaymentRequest = "payment.request"
+	// TopicPaymentRequestNumPartitions is the number of partitions for the payment request topic.
+	TopicPaymentRequestNumPartitions = 3
+	// TopicPaymentRequestReplicationFactor is the replication factor for the payment request topic.
+	TopicPaymentRequestReplicationFactor = 1
 	// KafkaEventTypePaymentRequested is when payment is requested for an order (pending).
 	// Needed by: payment service to create payment record and process payment.
 	KafkaEventTypePaymentRequested = "PaymentRequested"

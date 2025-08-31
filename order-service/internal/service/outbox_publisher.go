@@ -18,14 +18,14 @@ import (
 
 // OutboxPublisher is responsible for publishing outbox events.
 type OutboxPublisher struct {
-	dataStore                repository.DataStore
-	logger                   logger.Logger
-	orderLifecycleProducer   mq.KafkaProducerInterface
-	orderDLQProducer         mq.KafkaProducerInterface
-	paymentLifecycleProducer mq.KafkaProducerInterface
-	paymentDLQProducer       mq.KafkaProducerInterface
-	config                   config.OutboxPublisherConfig
-	eventRegistry            *mq.EventRegistry
+	dataStore              repository.DataStore
+	logger                 logger.Logger
+	orderLifecycleProducer mq.KafkaProducerInterface
+	orderDLQProducer       mq.KafkaProducerInterface
+	paymentRequestProducer mq.KafkaProducerInterface
+	paymentDLQProducer     mq.KafkaProducerInterface
+	config                 config.OutboxPublisherConfig
+	eventRegistry          *mq.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
@@ -34,20 +34,20 @@ func NewOutboxPublisher(
 	appLogger logger.Logger,
 	orderLifecycleProducer mq.KafkaProducerInterface,
 	orderDLQProducer mq.KafkaProducerInterface,
-	paymentLifecycleProducer mq.KafkaProducerInterface,
+	paymentRequestProducer mq.KafkaProducerInterface,
 	paymentDLQProducer mq.KafkaProducerInterface,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *mq.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
-		dataStore:                dataStore,
-		logger:                   appLogger,
-		orderLifecycleProducer:   orderLifecycleProducer,
-		orderDLQProducer:         orderDLQProducer,
-		paymentLifecycleProducer: paymentLifecycleProducer,
-		paymentDLQProducer:       paymentDLQProducer,
-		config:                   cfg,
-		eventRegistry:            eventRegistry,
+		dataStore:              dataStore,
+		logger:                 appLogger,
+		orderLifecycleProducer: orderLifecycleProducer,
+		orderDLQProducer:       orderDLQProducer,
+		paymentRequestProducer: paymentRequestProducer,
+		paymentDLQProducer:     paymentDLQProducer,
+		config:                 cfg,
+		eventRegistry:          eventRegistry,
 	}
 }
 
@@ -144,8 +144,8 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	switch outboxEvent.Topic {
 	case constant.TopicOrderLifecycle:
 		producer = p.orderLifecycleProducer
-	case constant.TopicPaymentLifecycle:
-		producer = p.paymentLifecycleProducer
+	case constant.TopicPaymentRequest:
+		producer = p.paymentRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
 	}
@@ -215,7 +215,7 @@ func (p *OutboxPublisher) handleProcessingError(
 	case constant.TopicOrderLifecycle:
 		dlqProducer = p.orderDLQProducer
 		evt = event.NewOrderDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
-	case constant.TopicPaymentLifecycle:
+	case constant.TopicPaymentRequest:
 		dlqProducer = p.paymentDLQProducer
 		evt = event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
 	default:
