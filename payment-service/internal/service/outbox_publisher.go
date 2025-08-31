@@ -112,7 +112,12 @@ func (p *OutboxPublisher) processPendingEvents(ctx context.Context) {
 
 // processEvent processes a single outbox event.
 func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.OutboxEvent) error {
-	p.logger.Infof("processing event %s of type %s", outboxEvent.ID, outboxEvent.EventType)
+	p.logger.Infof(
+		"processing event %s of type %s on topic %s",
+		outboxEvent.ID,
+		outboxEvent.EventType,
+		outboxEvent.Topic,
+	)
 
 	// Mark as processing
 	if err := p.dataStore.OutboxRepository().MarkAsProcessing(ctx, outboxEvent.ID); err != nil {

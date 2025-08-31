@@ -8,12 +8,15 @@ const (
 
 // Order Lifecycle Events.
 const (
+	// TopicOrderLifecycle is the topic for order lifecycle events.
+	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
+	// TopicOrderLifecycleNumPartitions is the number of partitions for the order lifecycle topic.
+	TopicOrderLifecycleNumPartitions = 3
+	// TopicOrderLifecycleReplicationFactor is the replication factor for the order lifecycle topic.
+	TopicOrderLifecycleReplicationFactor = 1
 	// KafkaEventTypeOrderCreated is when customer places an order (pending).
 	// Needed by: inventory reservation, payment service, fraud detection.
 	KafkaEventTypeOrderCreated = "OrderCreated"
-	// KafkaEventTypeOrderPaymentRequested is when payment is requested for an order (pending).
-	// Needed by: payment service to create payment record and process payment.
-	KafkaEventTypeOrderPaymentRequested = "OrderPaymentRequested"
 	// KafkaEventTypeOrderPaid is when payment succeeded (paid).
 	// Needed by: shipping service, accounting, notification service.
 	KafkaEventTypeOrderPaid = "OrderPaid"
@@ -28,26 +31,35 @@ const (
 	KafkaEventTypeOrderCanceled = "OrderCanceled"
 )
 
-// DLQ Event Types.
-const (
-	KafkaEventTypeOrderDLQ = "OrderDLQ"
-)
-
 // Topics that Order Service produces to.
 const (
-	// TopicOrderLifecycle is the topic for order lifecycle events.
-	TopicOrderLifecycle = "order.lifecycle" // OrderCreated, OrderUpdated, OrderCancelled, OrderCompleted, OrderShipped, OrderDelivered
-	// TopicOrderLifecycleNumPartitions is the number of partitions for the order lifecycle topic.
-	TopicOrderLifecycleNumPartitions = 3
-	// TopicOrderLifecycleReplicationFactor is the replication factor for the order lifecycle topic.
-	TopicOrderLifecycleReplicationFactor = 1
+	// TopicPaymentLifecycle is the topic for payment events.
+	TopicPaymentLifecycle = "payment.lifecycle"
+	// TopicPaymentLifecycleNumPartitions is the number of partitions for the payment lifecycle topic.
+	TopicPaymentLifecycleNumPartitions = 3
+	// TopicPaymentLifecycleReplicationFactor is the replication factor for the payment lifecycle topic.
+	TopicPaymentLifecycleReplicationFactor = 1
+	// KafkaEventTypePaymentRequested is when payment is requested for an order (pending).
+	// Needed by: payment service to create payment record and process payment.
+	KafkaEventTypePaymentRequested = "PaymentRequested"
 )
 
 const (
 	// TopicOrderDLQ is the dead-letter queue topic for failed order events.
 	TopicOrderDLQ = "order.dlq"
+	// TopicPaymentDLQ is the dead-letter queue topic for failed payment events.
+	TopicPaymentDLQ = "payment.dlq"
+	// KafkaEventTypeOrderDLQ is the event type for order DLQ events.
+	KafkaEventTypeOrderDLQ = "OrderDLQ"
+	// KafkaEventTypePaymentDLQ is the event type for payment DLQ events.
+	KafkaEventTypePaymentDLQ = "PaymentDLQ"
 	// TopicOrderDLQNumPartitions is the number of partitions for the order DLQ topic.
 	TopicOrderDLQNumPartitions = 1
 	// TopicOrderDLQReplicationFactor is the replication factor for the order DLQ topic.
 	TopicOrderDLQReplicationFactor = 1
+	// TopicPaymentDLQNumPartitions is the number of partitions for the payment DLQ topic.
+	TopicPaymentDLQNumPartitions = 1
+	// TopicPaymentDLQReplicationFactor is the replication factor for the payment DLQ topic.
+	TopicPaymentDLQReplicationFactor = 1
+	// TopicOrderDLQNumPartitions is the number of partitions for the order DLQ topic.
 )
