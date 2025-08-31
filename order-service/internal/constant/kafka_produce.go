@@ -19,6 +19,13 @@ const (
 	KafkaEventTypeOrderCreated = "OrderCreated"
 	// KafkaEventTypeOrderPaid is when payment succeeded (paid).
 	// Needed by: shipping service, accounting, notification service.
+	// KafkaEventTypeOrderProcessing is when order is being processed (processing).
+	KafkaEventTypeOrderProcessing = "OrderProcessing"
+	// KafkaEventTypeOrderConfirmed is when order is confirmed (confirmed).
+	// Needed by: inventory service to update stock, notification service.
+	KafkaEventTypeOrderConfirmed = "OrderConfirmed"
+	// KafkaEventTypeOrderPaid is when payment succeeded (paid).
+	// Needed by: shipping service, accounting, notification service.
 	KafkaEventTypeOrderPaid = "OrderPaid"
 	// KafkaEventTypeOrderShipped is when order handed to logistics (shipped).
 	// Needed by: notification service, delivery tracking.
@@ -29,6 +36,9 @@ const (
 	// KafkaEventTypeOrderCanceled is when canceled by system or customer (canceled)
 	// Needed by: inventory release, refund, analytics.
 	KafkaEventTypeOrderCanceled = "OrderCanceled"
+	// KafkaEventTypeOrderFailed is when order processing failed (failed).
+	// Needed by: notification service, analytics.
+	KafkaEventTypeOrderFailed = "OrderFailed"
 )
 
 // Topics that Order Service produces to.

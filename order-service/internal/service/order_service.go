@@ -17,12 +17,14 @@ import (
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
 
@@ -49,11 +51,18 @@ type OrderServiceInterface interface {
 		status constant.OrderStatus,
 	) (*dto.OrderResponse, error)
 	CancelOrder(ctx context.Context, req dto.CancelOrderRequest, id uuid.UUID) error
+	NotifyOrderFailure(
+		ctx context.Context,
+		orderID uuid.UUID,
+		status constant.OrderStatus,
+		reason string,
+	) error
 	RequestPaymentOrder(
 		ctx context.Context,
 		req dto.PayOrderRequest,
 		id uuid.UUID,
 	) (*dto.OrderResponse, error)
+	CreateOrderWithSaga(ctx context.Context, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
 }
 
 // OrderService implements the OrderServiceInterface.
@@ -62,20 +71,26 @@ type OrderService struct {
 	productClient          client.ProductClientInterface
 	logger                 logger.Logger
 	orderLifecycleProducer mq.KafkaProducerInterface
+	sagaOrchestrator       saga.Orchestrator
+	config                 *config.Config
 }
 
 // NewOrderService creates a new instance of OrderService.
 func NewOrderService(
+	cfg *config.Config,
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
 	orderLifecycleProducer mq.KafkaProducerInterface,
+	sagaOrchestrator saga.Orchestrator,
 ) OrderServiceInterface {
 	return &OrderService{
 		dataStore:              dataStore,
 		productClient:          productClient,
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
+		sagaOrchestrator:       sagaOrchestrator,
+		config:                 cfg,
 	}
 }
 
@@ -710,4 +725,20 @@ func (s *OrderService) RequestPaymentOrder(
 	}
 
 	return res, nil
+}
+
+// NotifyOrderFailure updates the order status to failed and logs the reason.
+func (s *OrderService) NotifyOrderFailure(
+	_ context.Context,
+	orderID uuid.UUID,
+	status constant.OrderStatus,
+	reason string,
+) error {
+	if status != constant.OrderStatusFailed {
+		return nil
+	}
+
+	s.logger.Infof("Send order failure notification: %s, reason: %s", orderID, reason)
+
+	return nil
 }

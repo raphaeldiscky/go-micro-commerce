@@ -99,7 +99,9 @@ func MapToOrderResponse(order *entity.Order) *OrderResponse {
 // MapToOrderItemResponses converts domain entities to DTO responses.
 func MapToOrderItemResponses(items []entity.OrderItem) []OrderItemResponse {
 	var responses []OrderItemResponse
-	for _, item := range items {
+
+	for i := range items {
+		item := &items[i]
 		responses = append(responses, OrderItemResponse{
 			ID:        item.ID,
 			ProductID: item.ProductID,

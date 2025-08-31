@@ -18,11 +18,16 @@ type Config struct {
 	Consul          *ConsulConfig
 	OutboxPublisher *OutboxPublisherConfig
 	Client          *ClientConfig
+	Saga            *SagaConfig
+	Jobs            *JobsConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
 func LoadConfig() (*Config, error) {
 	viper.AutomaticEnv()
+
+	// Set default values
+	setJobsDefaults()
 
 	configPath := parseConfigPath()
 	viper.SetConfigFile(configPath + "/.env")
@@ -42,6 +47,8 @@ func LoadConfig() (*Config, error) {
 		Consul:          initConsulConfig(),
 		OutboxPublisher: initOutboxPublisherConfig(),
 		Client:          initClientConfig(),
+		Saga:            initSagaConfig(),
+		Jobs:            initJobsConfig(),
 	}
 
 	return cfg, nil

@@ -101,6 +101,29 @@ func (h *OrderHandler) GetOrderByID(c echo.Context) error {
 	return echoutils.ResponseOK(c, order)
 }
 
+// CreateOrderWithSaga handles POST /orders/saga with saga pattern processing.
+func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
+	req := dto.CreateOrderRequest{
+		CustomerID:    echoutils.GetUserIDFromContext(c),
+		CustomerEmail: echoutils.GetEmailFromContext(c),
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	order, err := h.orderService.CreateOrderWithSaga(c.Request().Context(), req)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseCreated(c, order)
+}
+
 // GetOrdersByCustomer retrieves a list of orders by customer ID.
 //
 // Route: GET /orders/customer/:customerId

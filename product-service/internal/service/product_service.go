@@ -3,6 +3,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,6 +34,18 @@ type ProductServiceInterface interface {
 	ReserveProducts(
 		ctx context.Context,
 		req dto.ReserveProductsRequest,
+	) ([]dto.ProductResponse, error)
+	ReleaseProducts(
+		ctx context.Context,
+		req dto.ReleaseProductsRequest,
+	) error
+	DeductProducts(
+		ctx context.Context,
+		req dto.DeductProductsRequest,
+	) ([]dto.ProductResponse, error)
+	RestoreProducts(
+		ctx context.Context,
+		req dto.RestoreProductsRequest,
 	) ([]dto.ProductResponse, error)
 }
 
@@ -344,9 +357,9 @@ func (s *ProductService) ReserveProducts(
 	req dto.ReserveProductsRequest,
 ) ([]dto.ProductResponse, error) {
 	// Convert DTO to repository format
-	reservations := make([]repository.ProductReservation, len(req.Items))
+	reservations := make([]entity.ProductReservation, len(req.Items))
 	for i, item := range req.Items {
-		reservations[i] = repository.ProductReservation{
+		reservations[i] = entity.ProductReservation{
 			ProductID:       item.ProductID,
 			Quantity:        item.Quantity,
 			ExpectedVersion: item.ExpectedVersion,
@@ -361,7 +374,7 @@ func (s *ProductService) ReserveProducts(
 		productRepo := ds.ProductRepository()
 
 		// Reserve stock with optimistic locking
-		reservedProducts, err = productRepo.ReserveStock(ctx, reservations)
+		reservedProducts, err = productRepo.ReserveProducts(ctx, reservations)
 		if err != nil {
 			return err
 		}
@@ -390,6 +403,205 @@ func (s *ProductService) ReserveProducts(
 	// Convert to DTO responses
 	res := make([]dto.ProductResponse, len(reservedProducts))
 	for i, product := range reservedProducts {
+		res[i] = *dto.MapToProductResponse(product)
+	}
+
+	return res, nil
+}
+
+// ReleaseProducts releases reserved stock for products.
+func (s *ProductService) ReleaseProducts(
+	ctx context.Context,
+	req dto.ReleaseProductsRequest,
+) error {
+	return s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		productRepo := ds.ProductRepository()
+
+		// Get the products to release
+		productIDs := make([]uuid.UUID, len(req.Items))
+		for i, item := range req.Items {
+			productIDs[i] = item.ProductID
+		}
+
+		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
+		if err != nil {
+			return fmt.Errorf("failed to find products for release: %w", err)
+		}
+
+		// Release reserved quantities
+		for i, product := range products {
+			releaseQuantity := req.Items[i].Quantity
+			if product.ReservedQuantity < releaseQuantity {
+				return fmt.Errorf("insufficient reserved quantity for product %s", product.ID)
+			}
+
+			product.ReservedQuantity -= releaseQuantity
+			product.Version++
+		}
+
+		// Update products with released quantities
+		for _, product := range products {
+			_, err = productRepo.UpdateWithOptimisticLock(ctx, product, product.Version-1)
+			if err != nil {
+				return fmt.Errorf("failed to release products: %w", err)
+			}
+		}
+
+		// Invalidate cache
+		cacheRepo := ds.CacheRepository()
+		for _, product := range products {
+			err = cacheRepo.DeleteProduct(ctx, product.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+// DeductProducts confirms the stock deduction for reserved products.
+func (s *ProductService) DeductProducts(
+	ctx context.Context,
+	req dto.DeductProductsRequest,
+) ([]dto.ProductResponse, error) {
+	var updatedProducts []*entity.Product
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		productRepo := ds.ProductRepository()
+
+		// Get the products to confirm
+		productIDs := make([]uuid.UUID, len(req.Items))
+		for i, item := range req.Items {
+			productIDs[i] = item.ProductID
+		}
+
+		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
+		if err != nil {
+			return fmt.Errorf("failed to find products for confirmation: %w", err)
+		}
+
+		// Confirm stock deduction by reducing both quantity and reserved quantity
+		for i, product := range products {
+			deductionQuantity := req.Items[i].Quantity
+			if product.ReservedQuantity < deductionQuantity {
+				return fmt.Errorf("insufficient reserved quantity for product %s", product.ID)
+			}
+
+			if product.Quantity < deductionQuantity {
+				return fmt.Errorf("insufficient total quantity for product %s", product.ID)
+			}
+
+			product.Quantity -= deductionQuantity
+			product.ReservedQuantity -= deductionQuantity
+			product.Version++
+		}
+
+		// Update products with confirmed deductions
+		for _, product := range products {
+			updated, err := productRepo.UpdateWithOptimisticLock(ctx, product, product.Version-1)
+			if err != nil {
+				return fmt.Errorf("failed to confirm stock deduction: %w", err)
+			}
+
+			updatedProducts = append(updatedProducts, updated)
+		}
+
+		// Invalidate cache
+		cacheRepo := ds.CacheRepository()
+		for _, product := range updatedProducts {
+			err = cacheRepo.DeleteProduct(ctx, product.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to DTO responses
+	res := make([]dto.ProductResponse, len(updatedProducts))
+	for i, product := range updatedProducts {
+		res[i] = *dto.MapToProductResponse(product)
+	}
+
+	return res, nil
+}
+
+// RestoreProducts restores stock quantities for products (compensation).
+func (s *ProductService) RestoreProducts(
+	ctx context.Context,
+	req dto.RestoreProductsRequest,
+) ([]dto.ProductResponse, error) {
+	var restoredProducts []*entity.Product
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		productRepo := ds.ProductRepository()
+
+		// Get the products to restore
+		productIDs := make([]uuid.UUID, len(req.Items))
+		for i, item := range req.Items {
+			productIDs[i] = item.ProductID
+		}
+
+		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
+		if err != nil {
+			return fmt.Errorf("failed to find products for restoration: %w", err)
+		}
+
+		// Restore stock quantities
+		for i, product := range products {
+			restoreQuantity := req.Items[i].Quantity
+			product.Quantity += restoreQuantity
+			product.Version++
+		}
+
+		// Update products with restored quantities
+		for _, product := range products {
+			updated, err := productRepo.UpdateWithOptimisticLock(ctx, product, product.Version-1)
+			if err != nil {
+				return fmt.Errorf("failed to restore stocks: %w", err)
+			}
+
+			restoredProducts = append(restoredProducts, updated)
+		}
+
+		// Invalidate cache
+		cacheRepo := ds.CacheRepository()
+		for _, product := range restoredProducts {
+			err = cacheRepo.DeleteProduct(ctx, product.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to DTO responses
+	res := make([]dto.ProductResponse, len(restoredProducts))
+	for i, product := range restoredProducts {
 		res[i] = *dto.MapToProductResponse(product)
 	}
 

@@ -9,13 +9,15 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/job"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore  repository.DataStore
-	KafkaAdmin *mq.KafkaAdmin
+	DataStore    repository.DataStore
+	KafkaAdmin   *mq.KafkaAdmin
+	JobScheduler *job.Scheduler
 }
 
 // SetupGlobal initializes all providers.

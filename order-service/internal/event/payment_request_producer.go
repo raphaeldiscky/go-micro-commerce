@@ -13,6 +13,7 @@ import (
 
 // PaymentRequestPayload holds the data for payment request events.
 type PaymentRequestPayload struct {
+	PaymentID     uuid.UUID              `json:"payment_id"`
 	OrderID       uuid.UUID              `json:"order_id"`
 	CustomerID    uuid.UUID              `json:"customer_id"`
 	TotalPrice    decimal.Decimal        `json:"total_price"`
@@ -59,6 +60,7 @@ func NewPaymentRequestEvent(
 			Source:      constant.KafkaSourceOrderService,
 		},
 		Payload: PaymentRequestPayload{
+			PaymentID:     uuid.New(),
 			OrderID:       orderID,
 			CustomerID:    customerID,
 			TotalPrice:    totalPrice,

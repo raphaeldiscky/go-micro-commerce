@@ -23,6 +23,7 @@ type DataStore interface {
 	ProductRepository() ProductRepositoryInterface
 	LockRepository() LockRepositoryInterface
 	OutboxRepository() OutboxRepositoryInterface
+	SagaStateRepository() SagaStateRepositoryInterface
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -78,4 +79,9 @@ func (s *dataStore) LockRepository() LockRepositoryInterface {
 // OutboxRepository returns a new OutboxRepository.
 func (s *dataStore) OutboxRepository() OutboxRepositoryInterface {
 	return NewOutboxRepository(s.db)
+}
+
+// SagaStateRepository returns a new SagaStateRepository.
+func (s *dataStore) SagaStateRepository() SagaStateRepositoryInterface {
+	return NewSagaStateRepository(s.db)
 }

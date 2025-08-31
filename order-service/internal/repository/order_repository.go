@@ -108,7 +108,9 @@ func (r *OrderRepositoryPostgres) Create(
             VALUES ($1, $2, $3, $4, $5, $6, $7)
         `
 
-		for _, item := range order.Items {
+		for i := 0; i < len(order.Items); i++ {
+			item := &order.Items[i]
+
 			_, err = r.db.Exec(
 				ctx,
 				insertItemQuery,
@@ -434,7 +436,10 @@ func (r *OrderRepositoryPostgres) Update(
 			INSERT INTO order_items (id, order_id, product_id, quantity, price)
 			VALUES ($1, $2, $3, $4, $5)
 		`
-		for _, item := range order.Items {
+
+		for i := 0; i < len(order.Items); i++ {
+			item := &order.Items[i]
+
 			_, err = r.db.Exec(
 				ctx,
 				insertItemQuery,
