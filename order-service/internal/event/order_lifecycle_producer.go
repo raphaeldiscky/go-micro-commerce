@@ -15,7 +15,7 @@ import (
 // OrderItemPayload holds the data for each item in the order.
 type OrderItemPayload struct {
 	ProductID uuid.UUID `json:"product_id"`
-	Quantity  int       `json:"quantity"`
+	Quantity  int64     `json:"quantity"`
 }
 
 // OrderLifecyclePayload holds the data for the Order Lifecycle event.

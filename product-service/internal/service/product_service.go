@@ -30,6 +30,10 @@ type ProductServiceInterface interface {
 	GetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]dto.ProductResponse, error)
 	UpdateProduct(ctx context.Context, req dto.UpdateProductRequest) (*dto.ProductResponse, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
+	ReserveProducts(
+		ctx context.Context,
+		req dto.ReserveProductsRequest,
+	) ([]dto.ProductResponse, error)
 }
 
 // ProductService implements the ProductServiceInterface.
@@ -332,4 +336,62 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 	}
 
 	return nil
+}
+
+// ReserveProducts reserves stock for products atomically with optimistic locking.
+func (s *ProductService) ReserveProducts(
+	ctx context.Context,
+	req dto.ReserveProductsRequest,
+) ([]dto.ProductResponse, error) {
+	// Convert DTO to repository format
+	reservations := make([]repository.ProductReservation, len(req.Items))
+	for i, item := range req.Items {
+		reservations[i] = repository.ProductReservation{
+			ProductID:       item.ProductID,
+			Quantity:        item.Quantity,
+			ExpectedVersion: item.ExpectedVersion,
+		}
+	}
+
+	var reservedProducts []*entity.Product
+
+	var err error
+
+	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		productRepo := ds.ProductRepository()
+
+		// Reserve stock with optimistic locking
+		reservedProducts, err = productRepo.ReserveStock(ctx, reservations)
+		if err != nil {
+			return err
+		}
+
+		// Invalidate cache for reserved products
+		cacheRepo := ds.CacheRepository()
+		for _, product := range reservedProducts {
+			err = cacheRepo.DeleteProduct(ctx, product.ID)
+			if err != nil {
+				return err
+			}
+		}
+
+		// Invalidate list cache patterns
+		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert to DTO responses
+	res := make([]dto.ProductResponse, len(reservedProducts))
+	for i, product := range reservedProducts {
+		res[i] = *dto.MapToProductResponse(product)
+	}
+
+	return res, nil
 }

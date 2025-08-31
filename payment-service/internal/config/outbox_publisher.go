@@ -9,9 +9,9 @@ import (
 
 // OutboxPublisherConfig holds OutboxPublisher service discovery configuration.
 type OutboxPublisherConfig struct {
-	BatchSize        int           `mapstructure:"OUTBOX_BATCH_SIZE"`
+	BatchSize        int64         `mapstructure:"OUTBOX_BATCH_SIZE"`
 	PollInterval     time.Duration `mapstructure:"OUTBOX_POLL_INTERVAL"`
-	MaxRetryAttempts int           `mapstructure:"OUTBOX_MAX_RETRY_ATTEMPTS"`
+	MaxRetryAttempts int64         `mapstructure:"OUTBOX_MAX_RETRY_ATTEMPTS"`
 	RetryBackoff     time.Duration `mapstructure:"OUTBOX_RETRY_BACKOFF"`
 	CleanupInterval  time.Duration `mapstructure:"OUTBOX_CLEANUP_INTERVAL"`
 	RetentionPeriod  time.Duration `mapstructure:"OUTBOX_RETENTION_PERIOD"`

@@ -64,7 +64,7 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 		product := productDto.CreateProductRequest{
 			Name:     fmt.Sprintf("Product %d", i),
 			Price:    decimal.NewFromFloat(float64(i * 10)),
-			Quantity: i * 5,
+			Quantity: int64(i * 5),
 		}
 		resp, err := s.makeRequest("POST", "/v1", product)
 		require.NoError(s.T(), err)

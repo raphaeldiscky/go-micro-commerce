@@ -139,13 +139,8 @@ func (h *AuthHandler) UpdateLoggedInUser(c echo.Context) error {
 
 // VerifyEmail verify user's email.
 func (h *AuthHandler) VerifyEmail(c echo.Context) error {
-	queryParam := c.QueryParam("token")
 	req := dto.VerifyEmailRequest{
-		Token: queryParam,
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
+		Token: c.QueryParam("token"),
 	}
 
 	if err := c.Validate(&req); err != nil {

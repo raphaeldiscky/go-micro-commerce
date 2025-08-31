@@ -65,7 +65,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 	assert.Equal(s.T(), createResponse.Data.ID, updateResponse.Data.ID)
 	assert.Equal(s.T(), "Updated Product", updateResponse.Data.Name)
 	assert.True(s.T(), updateResponse.Data.Price.Equal(decimal.NewFromFloat(35.00)))
-	assert.Equal(s.T(), 30, updateResponse.Data.Quantity)
+	assert.Equal(s.T(), int64(30), updateResponse.Data.Quantity)
 	assert.True(s.T(), updateResponse.Data.UpdatedAt.After(createResponse.Data.UpdatedAt))
 }
 

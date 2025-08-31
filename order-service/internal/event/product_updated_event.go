@@ -12,7 +12,7 @@ type ProductUpdatedPayload struct {
 	ProductID uuid.UUID       `json:"product_id"`
 	Name      string          `json:"name"`
 	Price     decimal.Decimal `json:"price"`
-	Quantity  int             `json:"quantity"`
+	Quantity  int64           `json:"quantity"`
 }
 
 // ProductUpdatedEvent is the envelope for all product events.

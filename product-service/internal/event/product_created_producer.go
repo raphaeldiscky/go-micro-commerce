@@ -16,7 +16,7 @@ type ProductCreatedPayload struct {
 	ProductID uuid.UUID       `json:"product_id"`
 	Name      string          `json:"name"`
 	Price     decimal.Decimal `json:"price"`
-	Quantity  int             `json:"quantity"`
+	Quantity  int64           `json:"quantity"`
 }
 
 // ProductCreatedEvent is the envelope for all product events.
@@ -40,7 +40,7 @@ func NewProductCreatedEvent(
 	productID uuid.UUID,
 	name string,
 	price decimal.Decimal,
-	quantity int,
+	quantity int64,
 ) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
 		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package

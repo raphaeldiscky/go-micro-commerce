@@ -16,7 +16,7 @@ type ProductUpdatedPayload struct {
 	ProductID uuid.UUID       `json:"product_id"`
 	Name      string          `json:"name"`
 	Price     decimal.Decimal `json:"price"`
-	Quantity  int             `json:"quantity"`
+	Quantity  int64           `json:"quantity"`
 }
 
 // ProductUpdatedEvent is the envelope for product update events.
@@ -40,7 +40,7 @@ func NewProductUpdatedEvent(
 	productID uuid.UUID,
 	name string,
 	price decimal.Decimal,
-	quantity int,
+	quantity int64,
 ) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
 		Metadata: KafkaMetadata{

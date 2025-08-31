@@ -14,7 +14,7 @@ import (
 // CreateOrderItemRequest represents an item in create order request.
 type CreateOrderItemRequest struct {
 	ProductID uuid.UUID `json:"product_id" validate:"required"`
-	Quantity  int       `json:"quantity"   validate:"required,min=1"`
+	Quantity  int64     `json:"quantity"   validate:"required,min=1"`
 }
 
 // CreateOrderRequest represents the request to create a new order.
@@ -33,7 +33,7 @@ type ClientCreateOrderRequest struct {
 // UpdateOrderItemRequest represents an item in update order request.
 type UpdateOrderItemRequest struct {
 	ProductID uuid.UUID       `json:"product_id" validate:"required"`
-	Quantity  int             `json:"quantity"   validate:"required,min=1"`
+	Quantity  int64           `json:"quantity"   validate:"required,min=1"`
 	Price     decimal.Decimal `json:"price"      validate:"required,decimal_gt"`
 }
 
@@ -48,7 +48,7 @@ type UpdateOrderRequest struct {
 type OrderItemResponse struct {
 	ID        uuid.UUID       `json:"id"`
 	ProductID uuid.UUID       `json:"product_id"`
-	Quantity  int             `json:"quantity"`
+	Quantity  int64           `json:"quantity"`
 	Price     decimal.Decimal `json:"price"`
 }
 

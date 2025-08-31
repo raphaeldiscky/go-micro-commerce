@@ -58,7 +58,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 	require.NoError(s.T(), s.parseResponse(resp, &getResponse))
 	assert.Equal(s.T(), "Workflow Test Product", getResponse.Data.Name)
 	assert.True(s.T(), getResponse.Data.Price.Equal(decimal.NewFromFloat(99.99)))
-	assert.Equal(s.T(), 100, getResponse.Data.Quantity)
+	assert.Equal(s.T(), int64(100), getResponse.Data.Quantity)
 
 	// --- Update ---
 	updateReq := productDto.UpdateProductRequest{
@@ -83,7 +83,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 	require.NoError(s.T(), s.parseResponse(resp, &updateResponse))
 	assert.Equal(s.T(), "Updated Workflow Product", updateResponse.Data.Name)
 	assert.True(s.T(), updateResponse.Data.Price.Equal(decimal.NewFromFloat(149.99)))
-	assert.Equal(s.T(), 150, updateResponse.Data.Quantity)
+	assert.Equal(s.T(), int64(150), updateResponse.Data.Quantity)
 
 	// --- Delete ---
 	resp, err = s.makeRequest("DELETE", fmt.Sprintf("/v1/%s", productID), nil)

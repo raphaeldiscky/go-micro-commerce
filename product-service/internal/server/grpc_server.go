@@ -16,6 +16,7 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
 
@@ -59,13 +60,74 @@ func (s *GRPCServer) GetProducts(
 	}
 
 	resp := &pb.GetProductsResponse{}
-	for _, p := range products {
+
+	for i := range products {
+		p := &products[i]
 		resp.Products = append(resp.Products, &pb.Product{
-			Id:       p.ID.String(),
-			Name:     p.Name,
-			Price:    p.Price.InexactFloat64(),
-			Quantity: int32(p.Quantity),
+			Id:               p.ID.String(),
+			Name:             p.Name,
+			Price:            p.Price.InexactFloat64(),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
 		})
+	}
+
+	return resp, nil
+}
+
+// ReserveProducts reserves stock for products with optimistic locking.
+func (s *GRPCServer) ReserveProducts(
+	ctx context.Context,
+	req *pb.ReserveProductsRequest,
+) (*pb.ReserveProductsResponse, error) {
+	// Convert protobuf request to service DTO
+	reserveReq := dto.ReserveProductsRequest{
+		IdempotencyKey: req.IdempotencyKey,
+		Items:          make([]dto.ProductReservationItem, len(req.Items)),
+	}
+
+	for i, item := range req.Items {
+		productID, err := uuid.Parse(item.ProductId)
+		if err != nil {
+			return &pb.ReserveProductsResponse{
+				Success:      false,
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
+			}, nil
+		}
+
+		reserveReq.Items[i] = dto.ProductReservationItem{
+			ProductID:       productID,
+			Quantity:        item.Quantity,
+			ExpectedVersion: item.Version,
+		}
+	}
+
+	// Call service method
+	reservedProducts, err := s.productService.ReserveProducts(ctx, reserveReq)
+	if err != nil {
+		return &pb.ReserveProductsResponse{
+			Success:      false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	// Convert service response to protobuf
+	resp := &pb.ReserveProductsResponse{
+		Success:          true,
+		ReservedProducts: make([]*pb.Product, len(reservedProducts)),
+	}
+
+	for i := range reservedProducts {
+		p := &reservedProducts[i]
+		resp.ReservedProducts[i] = &pb.Product{
+			Id:               p.ID.String(),
+			Name:             p.Name,
+			Price:            p.Price.InexactFloat64(),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
+		}
 	}
 
 	return resp, nil

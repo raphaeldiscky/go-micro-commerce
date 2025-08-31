@@ -21,7 +21,7 @@ type OrderDLQPayload struct {
 	OriginalPayload json.RawMessage    `json:"original_payload"`
 	Reason          constant.DLQReason `json:"reason"`
 	LastError       string             `json:"last_error"`
-	Attempts        int                `json:"attempts"`
+	Attempts        int64              `json:"attempts"`
 	CreatedAt       time.Time          `json:"created_at"`
 	LastProcessedAt *time.Time         `json:"last_processed_at"`
 	FailedAt        time.Time          `json:"failed_at"`
