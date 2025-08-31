@@ -71,7 +71,8 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		orderLifecycleProducer,
 		appLogger,
 	)
-
+	jobsScheduler := SetupJobScheduler(cfg, sagaOrchestrator, appLogger, providers)
+	providers.JobScheduler = jobsScheduler
 	orderService := service.NewOrderService(
 		cfg,
 		providers.DataStore,
@@ -80,6 +81,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		orderLifecycleProducer,
 		sagaOrchestrator,
 	)
+
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)
 
 	routes.SetupOrderRoutes(e, orderHandler)

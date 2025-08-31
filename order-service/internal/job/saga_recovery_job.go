@@ -46,25 +46,32 @@ func NewSagaRecoveryJob(
 	}
 }
 
-// Start begins the recovery job.
+// Name returns the name of the job.
+func (j *SagaRecoveryJob) Name() string {
+	return "saga-recovery"
+}
+
+// Interval returns the execution interval of the job.
+func (j *SagaRecoveryJob) Interval() time.Duration {
+	return j.interval
+}
+
+// IsEnabled returns whether the job is enabled.
+func (j *SagaRecoveryJob) IsEnabled() bool {
+	j.mu.RLock()
+	defer j.mu.RUnlock()
+
+	return j.enabled
+}
+
+// Start executes a single iteration of the recovery job.
 func (j *SagaRecoveryJob) Start(ctx context.Context) {
-	j.logger.Info("Starting saga recovery job")
-
-	ticker := time.NewTicker(j.interval)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			j.logger.Info("Stopping saga recovery job")
-
-			return
-		case <-ticker.C:
-			if j.enabled {
-				j.recoverSagas(ctx)
-			}
-		}
+	if !j.IsEnabled() {
+		return
 	}
+
+	j.logger.Debug("Executing saga recovery job")
+	j.recoverSagas(ctx)
 }
 
 // recoverSagas attempts to recover failed sagas with distributed locking.
@@ -229,6 +236,7 @@ func (j *SagaRecoveryJob) Stop() {
 	j.mu.Lock()
 	defer j.mu.Unlock()
 	j.enabled = false
+	j.logger.Info("Saga recovery job stopped")
 }
 
 // Resume enables the recovery job.
