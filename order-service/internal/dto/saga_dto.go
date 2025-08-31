@@ -13,7 +13,7 @@ type SagaStatusResponse struct {
 	SagaID           uuid.UUID           `json:"saga_id"`
 	OrderID          uuid.UUID           `json:"order_id"`
 	Status           constant.SagaStatus `json:"status"`
-	CurrentStep      int                 `json:"current_step"`
+	CurrentStep      int64               `json:"current_step"`
 	ExecutedSteps    []string            `json:"executed_steps"`
 	CompensatedSteps []string            `json:"compensated_steps"`
 	Error            string              `json:"error,omitempty"`

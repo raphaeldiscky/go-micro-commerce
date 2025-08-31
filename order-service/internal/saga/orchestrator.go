@@ -11,6 +11,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -85,8 +86,8 @@ func (o *Orchestrator) ExecuteOrderSagaAsync(
 	order *entity.Order,
 ) {
 	// Create a derived context that inherits values but not cancellation
-	sagaCtx := context.WithValue(context.Background(), "order_id", order.ID)
-	sagaCtx = context.WithValue(sagaCtx, "trace_id", ctx.Value("trace_id"))
+	sagaCtx := context.WithValue(context.Background(), constant.CtxOrderIDKey, order.ID)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
 
 	// Add timeout
 	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.asyncExecutionTimeout)
@@ -158,9 +159,18 @@ func (o *Orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
 	// Update order status to failed/canceled
 }
 
-// getOrder retrieves an order (placeholder - implement based on your architecture).
+// getOrder retrieves an order from the repository.
 func (o *Orchestrator) getOrder(ctx context.Context, orderID uuid.UUID) (*entity.Order, error) {
-	// This should be implemented to retrieve the order from repository
-	// For now, returning an error as placeholder
-	return nil, fmt.Errorf("getOrder not implemented")
+	orderRepo := o.dataStore.OrderRepository()
+
+	order, err := orderRepo.FindByID(ctx, orderID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve order %s: %w", orderID, err)
+	}
+
+	if order == nil {
+		return nil, fmt.Errorf("order not found: %s", orderID)
+	}
+
+	return order, nil
 }

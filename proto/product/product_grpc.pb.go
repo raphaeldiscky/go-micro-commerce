@@ -22,6 +22,9 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	ProductService_GetProducts_FullMethodName     = "/product.ProductService/GetProducts"
 	ProductService_ReserveProducts_FullMethodName = "/product.ProductService/ReserveProducts"
+	ProductService_ReleaseProducts_FullMethodName = "/product.ProductService/ReleaseProducts"
+	ProductService_DeductProducts_FullMethodName  = "/product.ProductService/DeductProducts"
+	ProductService_RestoreProducts_FullMethodName = "/product.ProductService/RestoreProducts"
 	ProductService_Health_FullMethodName          = "/product.ProductService/Health"
 )
 
@@ -33,6 +36,9 @@ const (
 type ProductServiceClient interface {
 	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
 	ReserveProducts(ctx context.Context, in *ReserveProductsRequest, opts ...grpc.CallOption) (*ReserveProductsResponse, error)
+	ReleaseProducts(ctx context.Context, in *ReleaseProductsRequest, opts ...grpc.CallOption) (*ReleaseProductsResponse, error)
+	DeductProducts(ctx context.Context, in *DeductProductsRequest, opts ...grpc.CallOption) (*DeductProductsResponse, error)
+	RestoreProducts(ctx context.Context, in *RestoreProductsRequest, opts ...grpc.CallOption) (*RestoreProductsResponse, error)
 	Health(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthResponse, error)
 }
 
@@ -64,6 +70,36 @@ func (c *productServiceClient) ReserveProducts(ctx context.Context, in *ReserveP
 	return out, nil
 }
 
+func (c *productServiceClient) ReleaseProducts(ctx context.Context, in *ReleaseProductsRequest, opts ...grpc.CallOption) (*ReleaseProductsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReleaseProductsResponse)
+	err := c.cc.Invoke(ctx, ProductService_ReleaseProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *productServiceClient) DeductProducts(ctx context.Context, in *DeductProductsRequest, opts ...grpc.CallOption) (*DeductProductsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeductProductsResponse)
+	err := c.cc.Invoke(ctx, ProductService_DeductProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *productServiceClient) RestoreProducts(ctx context.Context, in *RestoreProductsRequest, opts ...grpc.CallOption) (*RestoreProductsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RestoreProductsResponse)
+	err := c.cc.Invoke(ctx, ProductService_RestoreProducts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *productServiceClient) Health(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HealthResponse)
@@ -82,6 +118,9 @@ func (c *productServiceClient) Health(ctx context.Context, in *emptypb.Empty, op
 type ProductServiceServer interface {
 	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
 	ReserveProducts(context.Context, *ReserveProductsRequest) (*ReserveProductsResponse, error)
+	ReleaseProducts(context.Context, *ReleaseProductsRequest) (*ReleaseProductsResponse, error)
+	DeductProducts(context.Context, *DeductProductsRequest) (*DeductProductsResponse, error)
+	RestoreProducts(context.Context, *RestoreProductsRequest) (*RestoreProductsResponse, error)
 	Health(context.Context, *emptypb.Empty) (*HealthResponse, error)
 	mustEmbedUnimplementedProductServiceServer()
 }
@@ -98,6 +137,15 @@ func (UnimplementedProductServiceServer) GetProducts(context.Context, *GetProduc
 }
 func (UnimplementedProductServiceServer) ReserveProducts(context.Context, *ReserveProductsRequest) (*ReserveProductsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReserveProducts not implemented")
+}
+func (UnimplementedProductServiceServer) ReleaseProducts(context.Context, *ReleaseProductsRequest) (*ReleaseProductsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReleaseProducts not implemented")
+}
+func (UnimplementedProductServiceServer) DeductProducts(context.Context, *DeductProductsRequest) (*DeductProductsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeductProducts not implemented")
+}
+func (UnimplementedProductServiceServer) RestoreProducts(context.Context, *RestoreProductsRequest) (*RestoreProductsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RestoreProducts not implemented")
 }
 func (UnimplementedProductServiceServer) Health(context.Context, *emptypb.Empty) (*HealthResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Health not implemented")
@@ -159,6 +207,60 @@ func _ProductService_ReserveProducts_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProductService_ReleaseProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReleaseProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductServiceServer).ReleaseProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProductService_ReleaseProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductServiceServer).ReleaseProducts(ctx, req.(*ReleaseProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProductService_DeductProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeductProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductServiceServer).DeductProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProductService_DeductProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductServiceServer).DeductProducts(ctx, req.(*DeductProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ProductService_RestoreProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RestoreProductsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProductServiceServer).RestoreProducts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ProductService_RestoreProducts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProductServiceServer).RestoreProducts(ctx, req.(*RestoreProductsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ProductService_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -191,6 +293,18 @@ var ProductService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReserveProducts",
 			Handler:    _ProductService_ReserveProducts_Handler,
+		},
+		{
+			MethodName: "ReleaseProducts",
+			Handler:    _ProductService_ReleaseProducts_Handler,
+		},
+		{
+			MethodName: "DeductProducts",
+			Handler:    _ProductService_DeductProducts_Handler,
+		},
+		{
+			MethodName: "RestoreProducts",
+			Handler:    _ProductService_RestoreProducts_Handler,
 		},
 		{
 			MethodName: "Health",

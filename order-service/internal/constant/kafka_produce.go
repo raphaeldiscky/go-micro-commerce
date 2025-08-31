@@ -36,6 +36,9 @@ const (
 	// KafkaEventTypeOrderCanceled is when canceled by system or customer (canceled)
 	// Needed by: inventory release, refund, analytics.
 	KafkaEventTypeOrderCanceled = "OrderCanceled"
+	// KafkaEventTypeOrderFailed is when order processing failed (failed).
+	// Needed by: notification service, analytics.
+	KafkaEventTypeOrderFailed = "OrderFailed"
 )
 
 // Topics that Order Service produces to.

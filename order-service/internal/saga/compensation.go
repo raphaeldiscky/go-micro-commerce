@@ -8,13 +8,14 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
-// ReleaseInventoryReservation releases reserved inventory.
-func (a *OrderActivitiesImpl) ReleaseInventoryReservation(
+// ReleaseProducts releases reserved products.
+func (a *OrderActivitiesImpl) ReleaseProducts(
 	_ context.Context,
 	order *entity.Order,
 	reservationID uuid.UUID,
@@ -34,13 +35,27 @@ func (a *OrderActivitiesImpl) ReleaseInventoryReservation(
 		return nil // Don't fail compensation if service is down
 	}
 
-	// In a real implementation, you would call a ReleaseReservation method
-	// For now, we'll log the compensation action
-	// TODO: Implement product client ReleaseReservation method
-	a.logger.Warnf(
-		"Inventory reservation release not implemented for order: %s (compensation needed)",
-		order.ID,
-	)
+	// Prepare release items
+	releaseItems := make([]client.ProductReservationItem, len(order.Items))
+
+	for i := range order.Items {
+		item := &order.Items[i]
+		releaseItems[i] = client.ProductReservationItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Release reserved products using product service
+	err := a.productClient.ReleaseProducts(context.Background(), reservationID, releaseItems)
+	if err != nil {
+		a.logger.Warnf(
+			"Failed to release reservation for order %s: %v (compensation may be incomplete)",
+			order.ID,
+			err,
+		)
+		// Still return success to allow compensation to continue
+	}
 
 	a.logger.Infof("Successfully released inventory reservation for order: %s", order.ID)
 
@@ -98,7 +113,7 @@ func (a *OrderActivitiesImpl) RefundPayment(
 }
 
 // CancelShipping cancels shipping arrangement.
-func (a *OrderActivitiesImpl) CancelShipping(ctx context.Context, shippingID uuid.UUID) error {
+func (a *OrderActivitiesImpl) CancelShipping(_ context.Context, shippingID uuid.UUID) error {
 	a.logger.Infof("Canceling shipping: %s", shippingID)
 
 	// In a real implementation, you would call a shipping service API
@@ -110,23 +125,42 @@ func (a *OrderActivitiesImpl) CancelShipping(ctx context.Context, shippingID uui
 	return nil
 }
 
-// RestoreInventory restores inventory for the order.
-func (a *OrderActivitiesImpl) RestoreInventory(ctx context.Context, order *entity.Order) error {
-	a.logger.Infof("Restoring inventory for order: %s", order.ID)
+// RestoreProducts restores stock in case of compensation.
+func (a *OrderActivitiesImpl) RestoreProducts(ctx context.Context, order *entity.Order) error {
+	a.logger.Infof("Restoring products for order: %s", order.ID)
 
 	if a.productClient == nil {
-		return fmt.Errorf("product service is unavailable")
+		a.logger.Warnf(
+			"Product service unavailable, cannot restore stock for order: %s",
+			order.ID,
+		)
+
+		return nil // Don't fail compensation if service is down
 	}
 
-	// In a real implementation, you would call a RestoreInventory method
-	// For now, we'll log the compensation action
-	// TODO: Implement product client RestoreInventory method
-	a.logger.Warnf(
-		"Inventory restoration not implemented for order: %s (compensation needed)",
-		order.ID,
-	)
+	// Prepare restoration items
+	restorationItems := make([]client.ProductRestorationItem, len(order.Items))
 
-	a.logger.Infof("Successfully restored inventory for order: %s", order.ID)
+	for i := range order.Items {
+		item := &order.Items[i]
+		restorationItems[i] = client.ProductRestorationItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Restore products stock using product service
+	_, err := a.productClient.RestoreProducts(ctx, restorationItems)
+	if err != nil {
+		a.logger.Warnf(
+			"Failed to restore stocks for order %s: %v (compensation may be incomplete)",
+			order.ID,
+			err,
+		)
+		// Still return success to allow compensation to continue
+	}
+
+	a.logger.Infof("Successfully restored stock for order: %s", order.ID)
 
 	return nil
 }

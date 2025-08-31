@@ -11,6 +11,9 @@ import "google/protobuf/empty.proto";
 service ProductService {
   rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
   rpc ReserveProducts(ReserveProductsRequest) returns (ReserveProductsResponse);
+  rpc ReleaseProducts(ReleaseProductsRequest) returns (ReleaseProductsResponse);
+  rpc DeductProducts(DeductProductsRequest) returns (DeductProductsResponse);
+  rpc RestoreProducts(RestoreProductsRequest) returns (RestoreProductsResponse);
   rpc Health(google.protobuf.Empty) returns (HealthResponse);
 }
 
@@ -48,6 +51,38 @@ message Product {
   int64 reserved_quantity = 6; // quantity reserved for orders
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp updated_at = 8;
+}
+
+message ReleaseProductsRequest {
+  string reservation_id = 1;
+  repeated ProductQuantity items = 2;
+}
+
+message ReleaseProductsResponse {
+  bool success = 1;
+  string error_message = 2;
+}
+
+message DeductProductsRequest {
+  string reservation_id = 1;
+  repeated ProductQuantity items = 2;
+}
+
+message DeductProductsResponse {
+  bool success = 1;
+  repeated Product updated_products = 2;
+  string error_message = 3;
+}
+
+message RestoreProductsRequest {
+  repeated ProductQuantity items = 1;
+  string reason = 2; // reason for restoration (e.g., "order_cancelled", "payment_failed")
+}
+
+message RestoreProductsResponse {
+  bool success = 1;
+  repeated Product restored_products = 2;
+  string error_message = 3;
 }
 
 message HealthResponse {

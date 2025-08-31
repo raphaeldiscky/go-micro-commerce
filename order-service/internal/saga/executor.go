@@ -22,13 +22,15 @@ type StepResult struct {
 
 // Step represents an enhanced saga step with retry logic.
 type Step struct {
-	Name        string
+	Name        WorkflowStep
 	Execute     func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error)
 	Compensate  func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) error
-	MaxRetries  int
+	MaxRetries  int64
 	RetryDelay  time.Duration
+	Timeout     time.Duration // Individual step timeout
 	Description string
 	Idempotent  bool // Whether this step is idempotent
+	Critical    bool // Whether failure of this step should fail the entire saga
 }
 
 // Executor handles saga execution with state persistence and retry logic.
@@ -36,7 +38,7 @@ type Executor struct {
 	steps      []Step
 	dataStore  repository.DataStore
 	logger     logger.Logger
-	maxRetries int
+	maxRetries int64
 	retryDelay time.Duration
 }
 
@@ -55,7 +57,7 @@ func NewExecutor(
 }
 
 // AddStep adds a step to the saga workflow.
-func (e *Executor) AddStep(step Step) {
+func (e *Executor) AddStep(step *Step) {
 	// Set default retry values if not specified
 	if step.MaxRetries == 0 {
 		step.MaxRetries = e.maxRetries
@@ -65,96 +67,207 @@ func (e *Executor) AddStep(step Step) {
 		step.RetryDelay = e.retryDelay
 	}
 
-	e.steps = append(e.steps, step)
+	e.steps = append(e.steps, *step)
 }
 
 // Execute runs the saga workflow with state persistence and compensation.
 func (e *Executor) Execute(ctx context.Context, order *entity.Order) error {
-	stateRepo := e.dataStore.SagaStateRepository()
-	// Create or retrieve saga state
-	sagaState, err := e.getOrCreateSagaState(ctx, order.ID)
+	sagaState, err := e.initializeSagaState(ctx, order.ID)
 	if err != nil {
 		return fmt.Errorf("failed to initialize saga state: %w", err)
 	}
 
-	// Resume from last successful step if recovering
-	startStep := sagaState.CurrentStep
-
 	if sagaState.Status == constant.SagaStatusCompensating {
-		// If we were compensating, continue compensation
 		return e.compensateFromState(ctx, order, sagaState)
 	}
 
-	// Update status to executing
-	sagaState.Status = constant.SagaStatusExecuting
-	if err := stateRepo.Update(ctx, sagaState); err != nil {
+	if err := e.markSagaAsExecuting(ctx, sagaState); err != nil {
 		return fmt.Errorf("failed to update saga state: %w", err)
 	}
 
-	// Execute steps
-	for i := startStep; i < len(e.steps); i++ {
+	if err := e.executeAllSteps(ctx, order, sagaState); err != nil {
+		return err
+	}
+
+	return e.markSagaAsCompleted(ctx, order, sagaState)
+}
+
+// initializeSagaState creates or retrieves saga state and sets timeout.
+func (e *Executor) initializeSagaState(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (*entity.SagaState, error) {
+	sagaState, err := e.getOrCreateSagaState(ctx, orderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set timeout if not already set
+	if sagaState.TimeoutAt == nil {
+		sagaState.SetTimeout(30 * time.Minute) // Default saga timeout
+	}
+
+	return sagaState, nil
+}
+
+// markSagaAsExecuting updates the saga status to executing.
+func (e *Executor) markSagaAsExecuting(ctx context.Context, sagaState *entity.SagaState) error {
+	stateRepo := e.dataStore.SagaStateRepository()
+	sagaState.Status = constant.SagaStatusExecuting
+	sagaState.UpdatedAt = time.Now().UTC()
+
+	return stateRepo.UpdateWithVersion(ctx, sagaState)
+}
+
+// executeAllSteps executes all saga steps with error handling.
+func (e *Executor) executeAllSteps(
+	ctx context.Context,
+	order *entity.Order,
+	sagaState *entity.SagaState,
+) error {
+	startStep := sagaState.CurrentStep
+
+	for i := startStep; i < int64(len(e.steps)); i++ {
 		step := e.steps[i]
 
-		// Skip if already executed (for idempotent steps)
-		if e.isStepExecuted(sagaState, step.Name) && step.Idempotent {
-			e.logger.Infof("Step %s already executed, skipping", step.Name)
-
+		if e.shouldSkipStep(sagaState, &step) {
 			continue
 		}
 
 		e.logger.Infof("Executing saga step: %s - %s", step.Name, step.Description)
 
-		// Execute step with retry logic
-		result, err := e.executeStepWithRetry(ctx, order, &step, sagaState)
-		if err != nil {
-			e.logger.Errorf("Step %s failed after retries: %v", step.Name, err)
-
-			// Update saga state to compensating
-			sagaState.Status = constant.SagaStatusCompensating
-			sagaState.Error = err.Error()
-
-			if updateErr := stateRepo.Update(ctx, sagaState); updateErr != nil {
-				e.logger.Errorf("Failed to update saga state: %v", updateErr)
-			}
-
-			// Start compensation
-			if compensateErr := e.compensateFromState(ctx, order, sagaState); compensateErr != nil {
-				return fmt.Errorf(
-					"execution failed: %w, compensation failed: %w",
-					err,
-					compensateErr,
-				)
-			}
-
+		if err := e.executeSingleStep(ctx, order, &step, sagaState, i); err != nil {
 			return err
-		}
-
-		// Update saga state with successful step
-		sagaState.ExecutedSteps = append(sagaState.ExecutedSteps, step.Name)
-		sagaState.CurrentStep = i + 1
-
-		if result.Data != nil {
-			for k, v := range result.Data {
-				sagaState.Data[k] = v
-			}
-		}
-
-		sagaState.UpdatedAt = time.Now().UTC()
-
-		if err := stateRepo.Update(ctx, sagaState); err != nil {
-			return fmt.Errorf("failed to update saga state after step %s: %w", step.Name, err)
 		}
 
 		e.logger.Infof("Successfully executed saga step: %s", step.Name)
 	}
 
-	// Mark saga as completed
+	return nil
+}
+
+// shouldSkipStep checks if a step should be skipped.
+func (e *Executor) shouldSkipStep(sagaState *entity.SagaState, step *Step) bool {
+	if e.isStepExecuted(sagaState, step.Name) && step.Idempotent {
+		e.logger.Infof("Step %s already executed, skipping", step.Name)
+
+		return true
+	}
+
+	return false
+}
+
+// executeSingleStep executes a single step and handles errors.
+func (e *Executor) executeSingleStep(
+	ctx context.Context,
+	order *entity.Order,
+	step *Step,
+	sagaState *entity.SagaState,
+	stepIndex int64,
+) error {
+	result, err := e.executeStepWithRetry(ctx, order, step, sagaState)
+	if err != nil {
+		return e.handleStepError(ctx, order, step, sagaState, err)
+	}
+
+	return e.updateSagaStateAfterSuccess(ctx, step, sagaState, result, stepIndex)
+}
+
+// handleStepError handles step execution errors and compensation.
+func (e *Executor) handleStepError(
+	ctx context.Context,
+	order *entity.Order,
+	step *Step,
+	sagaState *entity.SagaState,
+	err error,
+) error {
+	e.logger.Errorf("Step %s failed after retries: %v", step.Name, err)
+
+	sagaErr := CategorizeError(step.Name, err)
+
+	// For non-critical steps that are not retriable, continue with warning
+	if !step.Critical && !sagaErr.IsRetriable() {
+		e.logger.Warnf("Non-critical step %s failed, continuing saga: %v", step.Name, err)
+
+		return nil
+	}
+
+	return e.startCompensation(ctx, order, sagaState, err)
+}
+
+// startCompensation initiates saga compensation.
+func (e *Executor) startCompensation(
+	ctx context.Context,
+	order *entity.Order,
+	sagaState *entity.SagaState,
+	originalErr error,
+) error {
+	stateRepo := e.dataStore.SagaStateRepository()
+
+	// Update saga state to compensating
+	sagaState.Status = constant.SagaStatusCompensating
+	sagaState.Error = originalErr.Error()
+	sagaState.UpdatedAt = time.Now().UTC()
+
+	if updateErr := stateRepo.UpdateWithVersion(ctx, sagaState); updateErr != nil {
+		e.logger.Errorf("Failed to update saga state: %v", updateErr)
+	}
+
+	// Start compensation
+	if compensateErr := e.compensateFromState(ctx, order, sagaState); compensateErr != nil {
+		return fmt.Errorf(
+			"execution failed: %w, compensation failed: %w",
+			originalErr,
+			compensateErr,
+		)
+	}
+
+	return originalErr
+}
+
+// updateSagaStateAfterSuccess updates saga state after successful step execution.
+func (e *Executor) updateSagaStateAfterSuccess(
+	ctx context.Context,
+	step *Step,
+	sagaState *entity.SagaState,
+	result *StepResult,
+	stepIndex int64,
+) error {
+	stateRepo := e.dataStore.SagaStateRepository()
+
+	// Update saga state with successful step
+	sagaState.ExecutedSteps = append(sagaState.ExecutedSteps, string(step.Name))
+	sagaState.CurrentStep = stepIndex + 1
+
+	if result.Data != nil {
+		for k, v := range result.Data {
+			sagaState.Data[k] = v
+		}
+	}
+
+	sagaState.UpdatedAt = time.Now().UTC()
+
+	if err := stateRepo.UpdateWithVersion(ctx, sagaState); err != nil {
+		return fmt.Errorf("failed to update saga state after step %s: %w", step.Name, err)
+	}
+
+	return nil
+}
+
+// markSagaAsCompleted marks the saga as successfully completed.
+func (e *Executor) markSagaAsCompleted(
+	ctx context.Context,
+	order *entity.Order,
+	sagaState *entity.SagaState,
+) error {
+	stateRepo := e.dataStore.SagaStateRepository()
+
 	now := time.Now().UTC()
 	sagaState.Status = constant.SagaStatusCompleted
 	sagaState.CompletedAt = &now
 	sagaState.UpdatedAt = now
 
-	if err := stateRepo.Update(ctx, sagaState); err != nil {
+	if err := stateRepo.UpdateWithVersion(ctx, sagaState); err != nil {
 		return fmt.Errorf("failed to mark saga as completed: %w", err)
 	}
 
@@ -163,35 +276,57 @@ func (e *Executor) Execute(ctx context.Context, order *entity.Order) error {
 	return nil
 }
 
-// executeStepWithRetry executes a step with retry logic.
+// executeStepWithRetry executes a step with retry logic and timeout.
 func (e *Executor) executeStepWithRetry(
 	ctx context.Context,
 	order *entity.Order,
 	step *Step,
 	state *entity.SagaState,
 ) (*StepResult, error) {
-	workflowCtx := NewWorkflowContext(ctx, order.ID, e.logger)
-
 	var lastErr error
 
-	for attempt := 0; attempt <= step.MaxRetries; attempt++ {
+	var attempt int64
+	for attempt = 0; attempt <= step.MaxRetries; attempt++ {
 		if attempt > 0 {
 			e.logger.Infof("Retrying step %s (attempt %d/%d)", step.Name, attempt, step.MaxRetries)
 			time.Sleep(step.RetryDelay * time.Duration(attempt)) // Exponential backoff
 		}
 
-		result, err := step.Execute(workflowCtx, order, state.Data)
+		// Use a function literal to scope defer cancel per iteration
+		result, err := func() (*StepResult, error) {
+			stepCtx := ctx
+
+			var cancel context.CancelFunc
+
+			if step.Timeout > 0 {
+				stepCtx, cancel = context.WithTimeout(ctx, step.Timeout)
+				defer cancel()
+			}
+
+			workflowCtx := NewWorkflowContext(stepCtx, order.ID, e.logger)
+
+			return step.Execute(workflowCtx, order, state.Data)
+		}()
 		if err == nil {
 			return result, nil
 		}
 
 		lastErr = err
+		sagaErr := CategorizeError(step.Name, err)
+
 		e.logger.Warnf("Step %s failed (attempt %d): %v", step.Name, attempt+1, err)
+
+		// Don't retry non-retriable errors
+		if !sagaErr.IsRetriable() {
+			e.logger.Errorf("Step %s failed with non-retriable error: %v", step.Name, err)
+
+			break
+		}
 
 		// Check if context is canceled
 		select {
 		case <-ctx.Done():
-			return nil, fmt.Errorf("context canceled: %w", ctx.Err())
+			return nil, NewTimeoutError(step.Name, "context canceled", ctx.Err())
 		default:
 		}
 	}
@@ -215,7 +350,7 @@ func (e *Executor) compensateFromState(
 
 	// Compensate in reverse order
 	for i := len(state.ExecutedSteps) - 1; i >= 0; i-- {
-		stepName := state.ExecutedSteps[i]
+		stepName := WorkflowStep(state.ExecutedSteps[i])
 
 		// Skip if already compensated
 		if e.isStepCompensated(state, stepName) {
@@ -255,8 +390,9 @@ func (e *Executor) compensateFromState(
 
 			state.Status = constant.SagaStatusFailed
 			state.Error = fmt.Sprintf("compensation failed for step %s: %v", stepName, err)
+			state.UpdatedAt = time.Now().UTC()
 
-			if updateErr := stateRepo.Update(ctx, state); updateErr != nil {
+			if updateErr := stateRepo.UpdateWithVersion(ctx, state); updateErr != nil {
 				e.logger.Errorf("Failed to update saga state: %v", updateErr)
 			}
 
@@ -264,10 +400,10 @@ func (e *Executor) compensateFromState(
 		}
 
 		// Update state
-		state.CompensatedSteps = append(state.CompensatedSteps, stepName)
+		state.CompensatedSteps = append(state.CompensatedSteps, string(stepName))
 		state.UpdatedAt = time.Now().UTC()
 
-		if err := stateRepo.Update(ctx, state); err != nil {
+		if err := stateRepo.UpdateWithVersion(ctx, state); err != nil {
 			e.logger.Errorf("Failed to update saga state after compensation: %v", err)
 		}
 
@@ -280,7 +416,7 @@ func (e *Executor) compensateFromState(
 	state.CompletedAt = &now
 	state.UpdatedAt = now
 
-	if err := stateRepo.Update(ctx, state); err != nil {
+	if err := stateRepo.UpdateWithVersion(ctx, state); err != nil {
 		return fmt.Errorf("failed to mark saga as compensated: %w", err)
 	}
 
@@ -300,7 +436,8 @@ func (e *Executor) compensateStepWithRetry(
 
 	var lastErr error
 
-	for attempt := 0; attempt <= step.MaxRetries; attempt++ {
+	var attempt int64
+	for attempt = 0; attempt <= step.MaxRetries; attempt++ {
 		if attempt > 0 {
 			e.logger.Infof("Retrying compensation for step %s (attempt %d/%d)",
 				step.Name, attempt, step.MaxRetries)
@@ -359,9 +496,9 @@ func (e *Executor) getOrCreateSagaState(
 }
 
 // Helper functions.
-func (e *Executor) isStepExecuted(state *entity.SagaState, stepName string) bool {
+func (e *Executor) isStepExecuted(state *entity.SagaState, stepName WorkflowStep) bool {
 	for _, name := range state.ExecutedSteps {
-		if name == stepName {
+		if name == string(stepName) {
 			return true
 		}
 	}
@@ -369,9 +506,9 @@ func (e *Executor) isStepExecuted(state *entity.SagaState, stepName string) bool
 	return false
 }
 
-func (e *Executor) isStepCompensated(state *entity.SagaState, stepName string) bool {
+func (e *Executor) isStepCompensated(state *entity.SagaState, stepName WorkflowStep) bool {
 	for _, name := range state.CompensatedSteps {
-		if name == stepName {
+		if name == string(stepName) {
 			return true
 		}
 	}

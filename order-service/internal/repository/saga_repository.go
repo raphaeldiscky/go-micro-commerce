@@ -27,6 +27,10 @@ type SagaStateRepositoryInterface interface {
 	FindByOrderID(ctx context.Context, orderID uuid.UUID) (*entity.SagaState, error)
 	// FindPendingOrFailed finds pending or failed sagas for recovery.
 	FindPendingOrFailed(ctx context.Context, limit int64) ([]*entity.SagaState, error)
+	// FindTimeoutSagas finds sagas that have timed out.
+	FindTimeoutSagas(ctx context.Context, limit int64) ([]*entity.SagaState, error)
+	// UpdateWithVersion updates saga state with optimistic locking.
+	UpdateWithVersion(ctx context.Context, state *entity.SagaState) error
 	// MarkAsExecuting updates saga status to executing.
 	MarkAsExecuting(ctx context.Context, id uuid.UUID) error
 	// MarkAsCompensating updates saga status to compensating.
@@ -57,9 +61,10 @@ func (r *SagaStateRepository) Create(ctx context.Context, state *entity.SagaStat
 		INSERT INTO saga_states (
 			id, order_id, status, current_step, 
 			executed_steps, compensated_steps, data, error,
+			version, retry_count, timeout_at,
 			created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 		)`
 
 	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
@@ -88,6 +93,9 @@ func (r *SagaStateRepository) Create(ctx context.Context, state *entity.SagaStat
 		compensatedStepsJSON,
 		dataJSON,
 		state.Error,
+		state.Version,
+		state.RetryCount,
+		state.TimeoutAt,
 		state.CreatedAt,
 		state.UpdatedAt,
 	)
@@ -108,8 +116,11 @@ func (r *SagaStateRepository) Update(ctx context.Context, state *entity.SagaStat
 			compensated_steps = $5,
 			data = $6,
 			error = $7,
-			updated_at = $8,
-			completed_at = $9
+			version = version + 1,
+			retry_count = $8,
+			last_retry_at = $9,
+			updated_at = $10,
+			completed_at = $11
 		WHERE id = $1`
 
 	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
@@ -137,6 +148,8 @@ func (r *SagaStateRepository) Update(ctx context.Context, state *entity.SagaStat
 		compensatedStepsJSON,
 		dataJSON,
 		state.Error,
+		state.RetryCount,
+		state.LastRetryAt,
 		state.UpdatedAt,
 		state.CompletedAt,
 	)
@@ -160,6 +173,7 @@ func (r *SagaStateRepository) FindByID(
 		SELECT 
 			id, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
+			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
 		FROM saga_states
 		WHERE id = $1`
@@ -178,6 +192,7 @@ func (r *SagaStateRepository) FindByOrderID(
 		SELECT 
 			id, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
+			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
 		FROM saga_states
 		WHERE order_id = $1
@@ -198,10 +213,12 @@ func (r *SagaStateRepository) FindPendingOrFailed(
 		SELECT 
 			id, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
+			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
 		FROM saga_states
 		WHERE status IN ($1, $2, $3, $4)
-		AND updated_at < NOW() - INTERVAL '1 minute'
+		AND updated_at < NOW() - INTERVAL '5 minutes'
+		AND (timeout_at IS NULL OR timeout_at > NOW())
 		ORDER BY updated_at ASC
 		LIMIT $5`
 
@@ -237,6 +254,120 @@ func (r *SagaStateRepository) FindPendingOrFailed(
 	return states, nil
 }
 
+// FindTimeoutSagas finds sagas that have timed out.
+func (r *SagaStateRepository) FindTimeoutSagas(
+	ctx context.Context,
+	limit int64,
+) ([]*entity.SagaState, error) {
+	query := `
+		SELECT 
+			id, order_id, status, current_step,
+			executed_steps, compensated_steps, data, error,
+			version, retry_count, last_retry_at, timeout_at,
+			created_at, updated_at, completed_at
+		FROM saga_states
+		WHERE timeout_at IS NOT NULL
+		AND timeout_at <= NOW()
+		AND status IN ($1, $2, $3)
+		ORDER BY timeout_at ASC
+		LIMIT $4`
+
+	rows, err := r.db.Query(
+		ctx,
+		query,
+		string(constant.SagaStatusPending),
+		string(constant.SagaStatusExecuting),
+		string(constant.SagaStatusCompensating),
+		limit,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find timeout sagas: %w", err)
+	}
+	defer rows.Close()
+
+	var states []*entity.SagaState
+
+	for rows.Next() {
+		state, err := scanSagaState(rows)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan saga state: %w", err)
+		}
+
+		states = append(states, state)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating timeout sagas: %w", err)
+	}
+
+	return states, nil
+}
+
+// UpdateWithVersion updates saga state with optimistic locking.
+func (r *SagaStateRepository) UpdateWithVersion(
+	ctx context.Context,
+	state *entity.SagaState,
+) error {
+	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
+	if err != nil {
+		return fmt.Errorf("failed to marshal executed steps: %w", err)
+	}
+
+	compensatedStepsJSON, err := json.Marshal(state.CompensatedSteps)
+	if err != nil {
+		return fmt.Errorf("failed to marshal compensated steps: %w", err)
+	}
+
+	dataJSON, err := json.Marshal(state.Data)
+	if err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	}
+
+	query := `
+		UPDATE saga_states SET
+			status = $2,
+			current_step = $3,
+			executed_steps = $4,
+			compensated_steps = $5,
+			data = $6,
+			error = $7,
+			version = $8 + 1,
+			retry_count = $9,
+			last_retry_at = $10,
+			updated_at = $11,
+			completed_at = $12
+		WHERE id = $1 AND version = $8`
+
+	result, err := r.db.Exec(
+		ctx,
+		query,
+		state.ID,
+		string(state.Status),
+		state.CurrentStep,
+		executedStepsJSON,
+		compensatedStepsJSON,
+		dataJSON,
+		state.Error,
+		state.Version,
+		state.RetryCount,
+		state.LastRetryAt,
+		state.UpdatedAt,
+		state.CompletedAt,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update saga state: %w", err)
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("saga state version conflict or not found: %s", state.ID)
+	}
+
+	// Increment version in memory
+	state.Version++
+
+	return nil
+}
+
 // MarkAsExecuting updates saga status to executing.
 func (r *SagaStateRepository) MarkAsExecuting(ctx context.Context, id uuid.UUID) error {
 	return r.updateStatus(ctx, id, constant.SagaStatusExecuting)
@@ -249,7 +380,7 @@ func (r *SagaStateRepository) MarkAsCompensating(ctx context.Context, id uuid.UU
 
 // MarkAsCompleted updates saga status to completed.
 func (r *SagaStateRepository) MarkAsCompleted(ctx context.Context, id uuid.UUID) error {
-	query := `
+	const query = `
 		UPDATE saga_states 
 		SET status = $2, completed_at = $3
 		WHERE id = $1
@@ -353,6 +484,10 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 	// Use nullable types for columns that can be NULL
 	var errorStr pgtype.Text
 
+	var lastRetryAt pgtype.Timestamptz
+
+	var timeoutAt pgtype.Timestamptz
+
 	var completedAt pgtype.Timestamptz
 
 	err := row.Scan(
@@ -364,6 +499,10 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 		&compensatedStepsJSON,
 		&dataJSON,
 		&errorStr,
+		&state.Version,
+		&state.RetryCount,
+		&lastRetryAt,
+		&timeoutAt,
 		&state.CreatedAt,
 		&state.UpdatedAt,
 		&completedAt,
@@ -396,6 +535,20 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 		state.Error = errorStr.String
 	} else {
 		state.Error = ""
+	}
+
+	// Handle nullable last_retry_at
+	if lastRetryAt.Status == pgtype.Present {
+		state.LastRetryAt = &lastRetryAt.Time
+	} else {
+		state.LastRetryAt = nil
+	}
+
+	// Handle nullable timeout_at
+	if timeoutAt.Status == pgtype.Present {
+		state.TimeoutAt = &timeoutAt.Time
+	} else {
+		state.TimeoutAt = nil
 	}
 
 	// Handle nullable completed_at

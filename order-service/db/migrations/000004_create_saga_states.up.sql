@@ -3,11 +3,15 @@ CREATE TABLE IF NOT EXISTS saga_states (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL,
     status VARCHAR(50) NOT NULL,
-    current_step INT NOT NULL DEFAULT 0,
+    current_step BIGINT NOT NULL DEFAULT 0,
+    version BIGINT NOT NULL DEFAULT 1,
     executed_steps JSONB NOT NULL DEFAULT '[]'::jsonb,
     compensated_steps JSONB NOT NULL DEFAULT '[]'::jsonb,
     data JSONB NOT NULL DEFAULT '{}'::jsonb,
     error TEXT,
+    retry_count BIGINT NOT NULL DEFAULT 0,
+    last_retry_at TIMESTAMPTZ,
+    timeout_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
@@ -24,6 +28,10 @@ CREATE INDEX idx_saga_states_order_id ON saga_states(order_id);
 CREATE INDEX idx_saga_states_status ON saga_states(status);
 CREATE INDEX idx_saga_states_updated_at ON saga_states(updated_at);
 CREATE INDEX idx_saga_states_created_at ON saga_states(created_at);
+CREATE INDEX idx_saga_states_version ON saga_states(version);
+CREATE INDEX idx_saga_states_retry ON saga_states(retry_count, last_retry_at);
+CREATE INDEX idx_saga_states_timeout ON saga_states(timeout_at);
+
 
 -- Composite index for status and updated_at (useful for recovery queries)
 CREATE INDEX idx_saga_states_status_updated 
@@ -31,7 +39,7 @@ CREATE INDEX idx_saga_states_status_updated
 
 -- Partial index for finding sagas that need recovery
 CREATE INDEX idx_saga_states_recovery 
-    ON saga_states(status, updated_at) 
+    ON saga_states(status, updated_at, timeout_at) 
     WHERE status IN ('pending', 'executing', 'failed', 'compensating');
 
 -- Index for finding completed sagas for cleanup
@@ -52,6 +60,10 @@ COMMENT ON COLUMN saga_states.error IS 'Error message if the saga failed';
 COMMENT ON COLUMN saga_states.created_at IS 'Timestamp when the saga was created';
 COMMENT ON COLUMN saga_states.updated_at IS 'Timestamp of the last update';
 COMMENT ON COLUMN saga_states.completed_at IS 'Timestamp when the saga completed or failed';
+COMMENT ON COLUMN saga_states.version IS 'Version number for optimistic locking to prevent race conditions';
+COMMENT ON COLUMN saga_states.retry_count IS 'Number of times this saga has been retried';
+COMMENT ON COLUMN saga_states.last_retry_at IS 'Timestamp of the last retry attempt';
+COMMENT ON COLUMN saga_states.timeout_at IS 'Timestamp when this saga should timeout';
 
 -- Create trigger to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

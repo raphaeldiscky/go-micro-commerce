@@ -65,7 +65,8 @@ func (o *Order) validate() error {
 	productSeen := make(map[uuid.UUID]bool)
 	totalCalculated := decimal.Zero
 
-	for i, item := range o.Items {
+	for i := range o.Items {
+		item := &o.Items[i]
 		if item.ProductID == uuid.Nil {
 			return fmt.Errorf("item[%d]: product_id must not be empty", i)
 		}
@@ -110,8 +111,8 @@ func (o *Order) validate() error {
 // NewOrder creates a new order with validation.
 func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, error) {
 	totalPrice := decimal.Zero
-	for _, item := range items {
-		totalPrice = totalPrice.Add(item.Price.Mul(decimal.NewFromInt(item.Quantity)))
+	for i := range items {
+		totalPrice = totalPrice.Add(items[i].Price.Mul(decimal.NewFromInt(items[i].Quantity)))
 	}
 
 	orderID := uuid.New()
@@ -158,9 +159,9 @@ func (o *Order) AddItem(item *OrderItem) error {
 
 	// Recalculate total price
 	totalPrice := decimal.Zero
-	for _, orderItem := range o.Items {
+	for i := range o.Items {
 		totalPrice = totalPrice.Add(
-			orderItem.Price.Mul(decimal.NewFromInt(orderItem.Quantity)),
+			o.Items[i].Price.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
 		)
 	}
 
@@ -172,8 +173,8 @@ func (o *Order) AddItem(item *OrderItem) error {
 
 // RemoveItem removes an item from the order and recalculates total price.
 func (o *Order) RemoveItem(itemID uuid.UUID) error {
-	for i, item := range o.Items {
-		if item.ID == itemID {
+	for i := range o.Items {
+		if o.Items[i].ID == itemID {
 			o.Items = append(o.Items[:i], o.Items[i+1:]...)
 
 			break
@@ -182,9 +183,9 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 
 	// Recalculate total price
 	totalPrice := decimal.Zero
-	for _, orderItem := range o.Items {
+	for i := range o.Items {
 		totalPrice = totalPrice.Add(
-			orderItem.Price.Mul(decimal.NewFromInt(orderItem.Quantity)),
+			o.Items[i].Price.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
 		)
 	}
 

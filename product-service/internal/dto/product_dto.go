@@ -44,19 +44,6 @@ type GetProductsRequest struct {
 	Page  int64 `json:"page"  validate:"min=1"`
 }
 
-// ReserveProductsRequest represents the request to reserve products for an order.
-type ReserveProductsRequest struct {
-	IdempotencyKey string                   `json:"idempotency_key" validate:"required"`
-	Items          []ProductReservationItem `json:"items"           validate:"required,dive"`
-}
-
-// ProductReservationItem represents a single product reservation.
-type ProductReservationItem struct {
-	ProductID       uuid.UUID `json:"product_id"       validate:"required"`
-	Quantity        int64     `json:"quantity"         validate:"required,min=1"`
-	ExpectedVersion int64     `json:"expected_version" validate:"required,min=1"`
-}
-
 // MapToProductResponse converts domain entity to DTO response.
 func MapToProductResponse(product *entity.Product) *ProductResponse {
 	return &ProductResponse{

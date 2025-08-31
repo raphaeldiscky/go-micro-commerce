@@ -29,6 +29,12 @@ type ProductReservationItem struct {
 	ExpectedVersion int64
 }
 
+// ProductRestorationItem represents a product restoration request.
+type ProductRestorationItem struct {
+	ProductID uuid.UUID
+	Quantity  int64
+}
+
 // ProductClientInterface defines methods available for fetching products.
 type ProductClientInterface interface {
 	GetProducts(ctx context.Context, ids []uuid.UUID) ([]entity.Product, error)
@@ -36,6 +42,20 @@ type ProductClientInterface interface {
 		ctx context.Context,
 		idempotencyKey uuid.UUID,
 		items []ProductReservationItem,
+	) ([]entity.Product, error)
+	ReleaseProducts(
+		ctx context.Context,
+		reservationID uuid.UUID,
+		items []ProductReservationItem,
+	) error
+	DeductProducts(
+		ctx context.Context,
+		reservationID uuid.UUID,
+		items []ProductReservationItem,
+	) error
+	RestoreProducts(
+		ctx context.Context,
+		items []ProductRestorationItem,
 	) ([]entity.Product, error)
 	HealthCheck(ctx context.Context) error
 	Close() error
@@ -266,6 +286,135 @@ func (pc *ProductClient) ReserveProducts(
 	products := make([]entity.Product, len(resp.ReservedProducts))
 
 	for i, p := range resp.ReservedProducts {
+		uid, err := uuid.Parse(p.Id)
+		if err != nil {
+			return nil, fmt.Errorf("invalid product ID from product-service: %w", err)
+		}
+
+		// Convert protobuf Timestamp → time.Time safely
+		var createdAt, updatedAt time.Time
+		if p.CreatedAt != nil {
+			createdAt = p.CreatedAt.AsTime()
+		}
+
+		if p.UpdatedAt != nil {
+			updatedAt = p.UpdatedAt.AsTime()
+		}
+
+		products[i] = entity.Product{
+			ID:               uid,
+			Name:             p.Name,
+			Price:            decimal.NewFromFloat(p.Price),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
+			CreatedAt:        createdAt,
+			UpdatedAt:        updatedAt,
+		}
+	}
+
+	return products, nil
+}
+
+// ReleaseProducts releases reserved stock for products.
+func (pc *ProductClient) ReleaseProducts(
+	ctx context.Context,
+	reservationID uuid.UUID,
+	items []ProductReservationItem,
+) error {
+	// Convert to protobuf format
+	pbItems := make([]*pb.ProductQuantity, len(items))
+	for i, item := range items {
+		pbItems[i] = &pb.ProductQuantity{
+			ProductId: item.ProductID.String(),
+			Quantity:  item.Quantity,
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	resp, err := pc.client.ReleaseProducts(ctx, &pb.ReleaseProductsRequest{
+		ReservationId: reservationID.String(),
+		Items:         pbItems,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to call ReleaseProducts: %w", err)
+	}
+
+	if !resp.Success {
+		return fmt.Errorf("products release failed: %s", resp.ErrorMessage)
+	}
+
+	return nil
+}
+
+// DeductProducts confirms the stock deduction for a reservation.
+func (pc *ProductClient) DeductProducts(
+	ctx context.Context,
+	reservationID uuid.UUID,
+	items []ProductReservationItem,
+) error {
+	// Convert to protobuf format
+	pbItems := make([]*pb.ProductQuantity, len(items))
+	for i, item := range items {
+		pbItems[i] = &pb.ProductQuantity{
+			ProductId: item.ProductID.String(),
+			Quantity:  item.Quantity,
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	resp, err := pc.client.DeductProducts(ctx, &pb.DeductProductsRequest{
+		ReservationId: reservationID.String(),
+		Items:         pbItems,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to call DeductProducts: %w", err)
+	}
+
+	if !resp.Success {
+		return fmt.Errorf("stocks deduction confirmation failed: %s", resp.ErrorMessage)
+	}
+
+	return nil
+}
+
+// RestoreProducts restores stock in case of compensation.
+func (pc *ProductClient) RestoreProducts(
+	ctx context.Context,
+	items []ProductRestorationItem,
+) ([]entity.Product, error) {
+	// Convert to protobuf format
+	pbItems := make([]*pb.ProductQuantity, len(items))
+	for i, item := range items {
+		pbItems[i] = &pb.ProductQuantity{
+			ProductId: item.ProductID.String(),
+			Quantity:  item.Quantity,
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	resp, err := pc.client.RestoreProducts(ctx, &pb.RestoreProductsRequest{
+		Items:  pbItems,
+		Reason: "order_compensation", // Standard reason for saga compensation
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to call RestoreProducts: %w", err)
+	}
+
+	if !resp.Success {
+		return nil, fmt.Errorf("products restoration failed: %s", resp.ErrorMessage)
+	}
+
+	// Convert response to entities
+	products := make([]entity.Product, len(resp.RestoredProducts))
+
+	for i, p := range resp.RestoredProducts {
 		uid, err := uuid.Parse(p.Id)
 		if err != nil {
 			return nil, fmt.Errorf("invalid product ID from product-service: %w", err)

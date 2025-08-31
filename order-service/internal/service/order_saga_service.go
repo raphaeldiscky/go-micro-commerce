@@ -22,9 +22,28 @@ func (s *OrderService) CreateOrderWithSaga(
 	ctx context.Context,
 	req dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
-	// Acquire distributed lock for idempotency
+	lock, err := s.acquireOrderLock(ctx, req.IdempotencyKey, req.CustomerID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to acquire lock: %w", err)
+	}
+	defer s.releaseOrderLock(ctx, lock)
+
+	res, err := s.createOrderWithinTransaction(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.executeSagaWorkflow(ctx, res)
+}
+
+// acquireOrderLock acquires a distributed lock for order creation idempotency.
+func (s *OrderService) acquireOrderLock(
+	ctx context.Context,
+	idempotencyKey uuid.UUID,
+	customerID uuid.UUID,
+) (*redislock.Lock, error) {
 	lockRepo := s.dataStore.LockRepository()
-	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
+	lockKey := redisutils.NewLockKey(idempotencyKey, customerID)
 	ttl := constant.CreateOrderTTL
 	opt := &redislock.Options{
 		RetryStrategy: redislock.LimitRetry(
@@ -33,125 +52,175 @@ func (s *OrderService) CreateOrderWithSaga(
 		),
 	}
 
-	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
-	if err != nil {
-		return nil, fmt.Errorf("failed to acquire lock: %w", err)
+	return lockRepo.Get(ctx, lockKey, ttl, opt)
+}
+
+// releaseOrderLock releases the distributed lock.
+func (s *OrderService) releaseOrderLock(ctx context.Context, lock *redislock.Lock) {
+	lockRepo := s.dataStore.LockRepository()
+	if err := lockRepo.Release(ctx, lock); err != nil {
+		s.logger.Warnf("failed to release lock: %v", err)
 	}
+}
 
-	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
-			s.logger.Warnf("failed to release lock: %v", err)
-		}
-	}()
-
+// createOrderWithinTransaction handles order creation within a transaction.
+func (s *OrderService) createOrderWithinTransaction(
+	ctx context.Context,
+	req dto.CreateOrderRequest,
+) (*dto.OrderResponse, error) {
 	var res *dto.OrderResponse
 
-	// Create order within transaction
-	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 		stateRepo := ds.SagaStateRepository()
 
-		// Check for duplicate order using idempotency key
-		existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		// Check for existing order and handle accordingly
+		existingRes, shouldReturn, err := s.handleExistingOrder(ctx, req, orderRepo, stateRepo)
 		if err != nil {
 			return err
 		}
 
-		if existingOrder != nil && existingOrder.CustomerID == req.CustomerID {
-			// Check if saga already exists for this order
-			sagaState, err := stateRepo.FindByOrderID(ctx, existingOrder.ID)
-			if err != nil {
-				return err
-			}
-			if sagaState != nil {
-				switch sagaState.Status {
-				case constant.SagaStatusCompleted:
-					// Order already processed successfully
-					res = dto.MapToOrderResponse(existingOrder)
-
-					return nil
-				case constant.SagaStatusExecuting, constant.SagaStatusPending:
-					// Saga is still running
-					return fmt.Errorf("order is still being processed")
-				case constant.SagaStatusFailed, constant.SagaStatusCompensated:
-					// Previous attempt failed, allow retry
-					s.logger.Infof("Retrying failed order %s", existingOrder.ID)
-				}
-			}
-
-			res = dto.MapToOrderResponse(existingOrder)
+		if shouldReturn {
+			res = existingRes
 
 			return nil
 		}
 
-		// Create order items from request
-		var orderItems []entity.OrderItem
-
-		for _, item := range req.Items {
-			orderItem := entity.OrderItem{
-				ID:        uuid.New(),
-				ProductID: item.ProductID,
-				Quantity:  item.Quantity,
-				Price:     decimal.Zero, // Will be set by saga
-				CreatedAt: time.Now().UTC(),
-				UpdatedAt: time.Now().UTC(),
-			}
-			orderItems = append(orderItems, orderItem)
-		}
-
-		// Create domain entity
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+		// Create new order if no existing order found
+		newRes, err := s.createNewOrder(ctx, req, orderRepo)
 		if err != nil {
-			return fmt.Errorf("failed to create order entity: %w", err)
+			return err
 		}
 
-		// Set initial status
-		if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
-			return fmt.Errorf("failed to update order status: %w", err)
-		}
-
-		// Save to repository
-		savedOrder, err := orderRepo.Create(ctx, newOrder)
-		if err != nil {
-			return fmt.Errorf("failed to save order: %w", err)
-		}
-
-		res = dto.MapToOrderResponse(savedOrder)
+		res = newRes
 
 		return nil
 	})
+
+	return res, err
+}
+
+// handleExistingOrder checks for duplicate orders and handles saga state.
+func (s *OrderService) handleExistingOrder(
+	ctx context.Context,
+	req dto.CreateOrderRequest,
+	orderRepo repository.OrderRepositoryInterface,
+	stateRepo repository.SagaStateRepositoryInterface,
+) (*dto.OrderResponse, bool, error) {
+	existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if existingOrder == nil || existingOrder.CustomerID != req.CustomerID {
+		return nil, false, nil // No existing order, continue with creation
+	}
+
+	sagaState, err := stateRepo.FindByOrderID(ctx, existingOrder.ID)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if sagaState != nil {
+		switch sagaState.Status {
+		case constant.SagaStatusCompleted:
+			return dto.MapToOrderResponse(existingOrder), true, nil
+		case constant.SagaStatusExecuting,
+			constant.SagaStatusPending,
+			constant.SagaStatusCompensating:
+			return nil, false, fmt.Errorf("order is still being processed")
+		case constant.SagaStatusFailed, constant.SagaStatusCompensated:
+			s.logger.Infof("Retrying failed order %s", existingOrder.ID)
+		}
+	}
+
+	return dto.MapToOrderResponse(existingOrder), true, nil
+}
+
+// createNewOrder creates a new order entity and saves it.
+func (s *OrderService) createNewOrder(
+	ctx context.Context,
+	req dto.CreateOrderRequest,
+	orderRepo repository.OrderRepositoryInterface,
+) (*dto.OrderResponse, error) {
+	orderItems := s.buildOrderItems(req.Items)
+
+	newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create order entity: %w", err)
+	}
+
+	if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
+		return nil, fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	savedOrder, err := orderRepo.Create(ctx, newOrder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save order: %w", err)
+	}
+
+	return dto.MapToOrderResponse(savedOrder), nil
+}
+
+// buildOrderItems creates order items from the request.
+func (s *OrderService) buildOrderItems(items []dto.CreateOrderItemRequest) []entity.OrderItem {
+	orderItems := make([]entity.OrderItem, len(items))
+	for i, item := range items {
+		orderItems[i] = entity.OrderItem{
+			ID:        uuid.New(),
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+			Price:     decimal.Zero, // Will be set by saga
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		}
+	}
+
+	return orderItems
+}
+
+// executeSagaWorkflow executes the saga based on configuration.
+func (s *OrderService) executeSagaWorkflow(
+	ctx context.Context,
+	res *dto.OrderResponse,
+) (*dto.OrderResponse, error) {
+	if s.config.Saga.ExecutionMode == "sync" {
+		return s.handleSyncSagaExecution(ctx, res)
+	}
+
+	s.executeSagaAsynchronously(ctx, res.ID)
+	res.Status = "processing"
+
+	s.logger.Infof(
+		"Your order is being processed. You will receive a confirmation once it's complete.",
+	)
+
+	return res, nil
+}
+
+// handleSyncSagaExecution handles synchronous saga execution and error management.
+func (s *OrderService) handleSyncSagaExecution(
+	ctx context.Context,
+	res *dto.OrderResponse,
+) (*dto.OrderResponse, error) {
+	if err := s.executeSagaSynchronously(ctx, res.ID); err != nil {
+		s.logger.Errorf("Synchronous saga execution failed: %v", err)
+		// Update order status to failed
+		order, updateErr := s.UpdateOrderStatus(ctx, res.ID, constant.OrderStatusFailed)
+		if updateErr != nil {
+			s.logger.Errorf("Failed to update order status: OrderID %v, %v", order.ID, updateErr)
+		}
+
+		return nil, fmt.Errorf("order processing failed: OrderID %v, %w", order.ID, err)
+	}
+
+	// Retrieve updated order
+	updatedOrder, err := s.GetOrder(ctx, res.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// Execute saga based on configuration
-	if s.config.Saga.ExecutionMode == "sync" {
-		// Synchronous execution - wait for saga to complete
-		if err := s.executeSagaSynchronously(ctx, res.ID); err != nil {
-			s.logger.Errorf("Synchronous saga execution failed: %v", err)
-			// Update order status to failed
-			s.UpdateOrderStatus(ctx, res.ID, constant.OrderStatusFailed)
-
-			return nil, fmt.Errorf("order processing failed: %w", err)
-		}
-
-		// Retrieve updated order
-		updatedOrder, err := s.GetOrder(ctx, res.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		return updatedOrder, nil
-	} else {
-		// Asynchronous execution - return immediately
-		s.executeSagaAsynchronously(ctx, res.ID)
-
-		res.Status = "processing"
-
-		s.logger.Infof("Your order is being processed. You will receive a confirmation once it's complete.")
-	}
-
-	return res, nil
+	return updatedOrder, nil
 }
 
 // executeSagaSynchronously executes saga and waits for completion.
@@ -181,8 +250,8 @@ func (s *OrderService) executeSagaAsynchronously(ctx context.Context, orderID uu
 		bgCtx := context.Background()
 
 		// Copy trace ID if present
-		if traceID := ctx.Value("trace_id"); traceID != nil {
-			bgCtx = context.WithValue(bgCtx, "trace_id", traceID)
+		if traceID := ctx.Value(constant.CtxTraceIDKey); traceID != nil {
+			bgCtx = context.WithValue(bgCtx, constant.CtxTraceIDKey, traceID)
 		}
 
 		// Add timeout
@@ -223,7 +292,10 @@ func (s *OrderService) handleSagaError(orderID uuid.UUID, err error) {
 	}
 
 	// Send failure notification
-	s.NotifyOrderFailure(ctx, orderID, updateOrder.Status, err.Error())
+	err = s.NotifyOrderFailure(ctx, orderID, updateOrder.Status, err.Error())
+	if err != nil {
+		s.logger.Errorf("Failed to send order failure notification: %v", err)
+	}
 }
 
 // GetSagaStatus retrieves the current saga execution status.

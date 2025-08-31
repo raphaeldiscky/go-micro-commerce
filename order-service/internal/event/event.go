@@ -37,6 +37,8 @@ func mapStatusToEventType(status constant.OrderStatus) string {
 		return constant.KafkaEventTypeOrderConfirmed
 	case constant.OrderStatusProcessing:
 		return constant.KafkaEventTypeOrderProcessing
+	case constant.OrderStatusFailed:
+		return constant.KafkaEventTypeOrderFailed
 	default:
 		return "unknown"
 	}
@@ -45,7 +47,9 @@ func mapStatusToEventType(status constant.OrderStatus) string {
 // mapOrderItemsToPayload maps order items to their payload representation.
 func mapOrderItemsToPayload(items []entity.OrderItem) []OrderItemPayload {
 	payloadItems := make([]OrderItemPayload, len(items))
-	for i, item := range items {
+
+	for i := range items {
+		item := &items[i]
 		payloadItems[i] = OrderItemPayload{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,

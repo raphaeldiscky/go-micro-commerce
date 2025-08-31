@@ -77,7 +77,7 @@ type OrderService struct {
 
 // NewOrderService creates a new instance of OrderService.
 func NewOrderService(
-	config *config.Config,
+	cfg *config.Config,
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
@@ -90,7 +90,7 @@ func NewOrderService(
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
 		sagaOrchestrator:       sagaOrchestrator,
-		config:                 config,
+		config:                 cfg,
 	}
 }
 
@@ -729,7 +729,7 @@ func (s *OrderService) RequestPaymentOrder(
 
 // NotifyOrderFailure updates the order status to failed and logs the reason.
 func (s *OrderService) NotifyOrderFailure(
-	ctx context.Context,
+	_ context.Context,
 	orderID uuid.UUID,
 	status constant.OrderStatus,
 	reason string,

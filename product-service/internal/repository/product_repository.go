@@ -43,8 +43,11 @@ type ProductRepositoryInterface interface {
 	// BulkUpdateQuantity updates the quantity of multiple products in the database.
 	BulkUpdateQuantity(ctx context.Context, products []*entity.Product) error
 
-	// ReserveStock reserves stock for products atomically with optimistic locking
-	ReserveStock(ctx context.Context, reservations []ProductReservation) ([]*entity.Product, error)
+	// ReserveProducts reserves stock for products atomically with optimistic locking
+	ReserveProducts(
+		ctx context.Context,
+		reservations []entity.ProductReservation,
+	) ([]*entity.Product, error)
 
 	// Delete removes a product by ID
 	Delete(ctx context.Context, id uuid.UUID) error
@@ -54,13 +57,6 @@ type ProductRepositoryInterface interface {
 
 	// Count returns the total number of products
 	Count(ctx context.Context) (int64, error)
-}
-
-// ProductReservation represents a stock reservation request.
-type ProductReservation struct {
-	ProductID       uuid.UUID
-	Quantity        int64
-	ExpectedVersion int64
 }
 
 // ProductRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
@@ -475,10 +471,10 @@ func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
 	return &updatedProduct, nil
 }
 
-// ReserveStock reserves stock for products atomically with optimistic locking.
-func (r *ProductRepositoryPostgres) ReserveStock(
+// ReserveProducts reserves stock for products atomically with optimistic locking.
+func (r *ProductRepositoryPostgres) ReserveProducts(
 	ctx context.Context,
-	reservations []ProductReservation,
+	reservations []entity.ProductReservation,
 ) ([]*entity.Product, error) {
 	if len(reservations) == 0 {
 		return []*entity.Product{}, nil
