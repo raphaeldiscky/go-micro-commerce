@@ -39,9 +39,9 @@ type ProductServiceInterface interface {
 		ctx context.Context,
 		req dto.ReleaseProductsRequest,
 	) error
-	DeductProducts(
+	ConfirmProductsDeduction(
 		ctx context.Context,
-		req dto.DeductProductsRequest,
+		req dto.ConfirmProductsDeductionRequest,
 	) ([]dto.ProductResponse, error)
 	RestoreProducts(
 		ctx context.Context,
@@ -356,40 +356,23 @@ func (s *ProductService) ReserveProducts(
 	ctx context.Context,
 	req dto.ReserveProductsRequest,
 ) ([]dto.ProductResponse, error) {
-	// Convert DTO to repository format
-	reservations := make([]entity.ProductReservation, len(req.Items))
-	for i, item := range req.Items {
-		reservations[i] = entity.ProductReservation{
-			ProductID:       item.ProductID,
-			Quantity:        item.Quantity,
-			ExpectedVersion: item.ExpectedVersion,
-		}
-	}
+	var err error
 
 	var reservedProducts []*entity.Product
-
-	var err error
 
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		productRepo := ds.ProductRepository()
 
-		// Reserve stock with optimistic locking
-		reservedProducts, err = productRepo.ReserveProducts(ctx, reservations)
-		if err != nil {
-			return err
-		}
-
-		// Invalidate cache for reserved products
-		cacheRepo := ds.CacheRepository()
-		for _, product := range reservedProducts {
-			err = cacheRepo.DeleteProduct(ctx, product.ID)
-			if err != nil {
-				return err
+		reservations := make([]entity.ProductReservation, len(req.Items))
+		for i, item := range req.Items {
+			reservations[i] = entity.ProductReservation{
+				ProductID:       item.ProductID,
+				Quantity:        item.Quantity,
+				ExpectedVersion: item.ExpectedVersion,
 			}
 		}
 
-		// Invalidate list cache patterns
-		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		reservedProducts, err = productRepo.ReserveProducts(ctx, reservations)
 		if err != nil {
 			return err
 		}
@@ -402,6 +385,22 @@ func (s *ProductService) ReserveProducts(
 
 	// Convert to DTO responses
 	res := make([]dto.ProductResponse, len(reservedProducts))
+
+	// Invalidate cache for reserved products
+	cacheRepo := s.dataStore.CacheRepository()
+	for _, product := range reservedProducts {
+		err = cacheRepo.DeleteProduct(ctx, product.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Invalidate list cache patterns
+	err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+	if err != nil {
+		return nil, err
+	}
+
 	for i, product := range reservedProducts {
 		res[i] = *dto.MapToProductResponse(product)
 	}
@@ -414,114 +413,66 @@ func (s *ProductService) ReleaseProducts(
 	ctx context.Context,
 	req dto.ReleaseProductsRequest,
 ) error {
-	return s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		productRepo := ds.ProductRepository()
 
-		// Get the products to release
-		productIDs := make([]uuid.UUID, len(req.Items))
+		reservations := make([]entity.ProductReservation, len(req.Items))
 		for i, item := range req.Items {
-			productIDs[i] = item.ProductID
+			reservations[i] = entity.ProductReservation{
+				ProductID:       item.ProductID,
+				Quantity:        item.Quantity,
+				ExpectedVersion: item.ExpectedVersion,
+			}
 		}
 
-		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
+		_, err := productRepo.ReleaseProducts(ctx, reservations)
 		if err != nil {
-			return fmt.Errorf("failed to find products for release: %w", err)
-		}
-
-		// Release reserved quantities
-		for i, product := range products {
-			releaseQuantity := req.Items[i].Quantity
-			if product.ReservedQuantity < releaseQuantity {
-				return fmt.Errorf("insufficient reserved quantity for product %s", product.ID)
-			}
-
-			product.ReservedQuantity -= releaseQuantity
-			product.Version++
-		}
-
-		// Update products with released quantities
-		for _, product := range products {
-			_, err = productRepo.UpdateWithOptimisticLock(ctx, product, product.Version-1)
-			if err != nil {
-				return fmt.Errorf("failed to release products: %w", err)
-			}
-		}
-
-		// Invalidate cache
-		cacheRepo := ds.CacheRepository()
-		for _, product := range products {
-			err = cacheRepo.DeleteProduct(ctx, product.ID)
-			if err != nil {
-				return err
-			}
-		}
-
-		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
-		if err != nil {
-			return err
+			return fmt.Errorf("failed to release products: %w", err)
 		}
 
 		return nil
 	})
+	if err != nil {
+		return err
+	}
+
+	// Invalidate cache
+	cacheRepo := s.dataStore.CacheRepository()
+	for _, item := range req.Items {
+		err = cacheRepo.DeleteProduct(ctx, item.ProductID)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-// DeductProducts confirms the stock deduction for reserved products.
-func (s *ProductService) DeductProducts(
+// ConfirmProductsDeduction confirms the stock deduction for reserved products and removes reserved quantity.
+func (s *ProductService) ConfirmProductsDeduction(
 	ctx context.Context,
-	req dto.DeductProductsRequest,
+	req dto.ConfirmProductsDeductionRequest,
 ) ([]dto.ProductResponse, error) {
 	var updatedProducts []*entity.Product
 
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		productRepo := ds.ProductRepository()
 
-		// Get the products to confirm
-		productIDs := make([]uuid.UUID, len(req.Items))
+		reservations := make([]entity.ProductReservation, len(req.Items))
 		for i, item := range req.Items {
-			productIDs[i] = item.ProductID
-		}
-
-		products, err := productRepo.FindByIDsForUpdate(ctx, productIDs)
-		if err != nil {
-			return fmt.Errorf("failed to find products for confirmation: %w", err)
-		}
-
-		// Confirm stock deduction by reducing both quantity and reserved quantity
-		for i, product := range products {
-			deductionQuantity := req.Items[i].Quantity
-			if product.ReservedQuantity < deductionQuantity {
-				return fmt.Errorf("insufficient reserved quantity for product %s", product.ID)
-			}
-
-			if product.Quantity < deductionQuantity {
-				return fmt.Errorf("insufficient total quantity for product %s", product.ID)
-			}
-
-			product.Quantity -= deductionQuantity
-			product.ReservedQuantity -= deductionQuantity
-			product.Version++
-		}
-
-		// Update products with confirmed deductions
-		for _, product := range products {
-			updated, err := productRepo.UpdateWithOptimisticLock(ctx, product, product.Version-1)
-			if err != nil {
-				return fmt.Errorf("failed to confirm stock deduction: %w", err)
-			}
-
-			updatedProducts = append(updatedProducts, updated)
-		}
-
-		// Invalidate cache
-		cacheRepo := ds.CacheRepository()
-		for _, product := range updatedProducts {
-			err = cacheRepo.DeleteProduct(ctx, product.ID)
-			if err != nil {
-				return err
+			reservations[i] = entity.ProductReservation{
+				ProductID:       item.ProductID,
+				Quantity:        item.Quantity,
+				ExpectedVersion: item.ExpectedVersion,
 			}
 		}
 
-		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+		_, err := productRepo.ConfirmProductsDeduction(ctx, reservations)
 		if err != nil {
 			return err
 		}
@@ -536,6 +487,20 @@ func (s *ProductService) DeductProducts(
 	res := make([]dto.ProductResponse, len(updatedProducts))
 	for i, product := range updatedProducts {
 		res[i] = *dto.MapToProductResponse(product)
+	}
+
+	// Invalidate cache
+	cacheRepo := s.dataStore.CacheRepository()
+	for _, product := range updatedProducts {
+		err = cacheRepo.DeleteProduct(ctx, product.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil
@@ -579,20 +544,6 @@ func (s *ProductService) RestoreProducts(
 			restoredProducts = append(restoredProducts, updated)
 		}
 
-		// Invalidate cache
-		cacheRepo := ds.CacheRepository()
-		for _, product := range restoredProducts {
-			err = cacheRepo.DeleteProduct(ctx, product.ID)
-			if err != nil {
-				return err
-			}
-		}
-
-		err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
-		if err != nil {
-			return err
-		}
-
 		return nil
 	})
 	if err != nil {
@@ -603,6 +554,20 @@ func (s *ProductService) RestoreProducts(
 	res := make([]dto.ProductResponse, len(restoredProducts))
 	for i, product := range restoredProducts {
 		res[i] = *dto.MapToProductResponse(product)
+	}
+
+	// Invalidate cache
+	cacheRepo := s.dataStore.CacheRepository()
+	for _, product := range restoredProducts {
+		err = cacheRepo.DeleteProduct(ctx, product.ID)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil

@@ -20,12 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ProductService_GetProducts_FullMethodName     = "/product.ProductService/GetProducts"
-	ProductService_ReserveProducts_FullMethodName = "/product.ProductService/ReserveProducts"
-	ProductService_ReleaseProducts_FullMethodName = "/product.ProductService/ReleaseProducts"
-	ProductService_DeductProducts_FullMethodName  = "/product.ProductService/DeductProducts"
-	ProductService_RestoreProducts_FullMethodName = "/product.ProductService/RestoreProducts"
-	ProductService_Health_FullMethodName          = "/product.ProductService/Health"
+	ProductService_GetProducts_FullMethodName              = "/product.ProductService/GetProducts"
+	ProductService_ReserveProducts_FullMethodName          = "/product.ProductService/ReserveProducts"
+	ProductService_ReleaseProducts_FullMethodName          = "/product.ProductService/ReleaseProducts"
+	ProductService_ConfirmProductsDeduction_FullMethodName = "/product.ProductService/ConfirmProductsDeduction"
+	ProductService_RestoreProducts_FullMethodName          = "/product.ProductService/RestoreProducts"
+	ProductService_Health_FullMethodName                   = "/product.ProductService/Health"
 )
 
 // ProductServiceClient is the client API for ProductService service.
@@ -35,9 +35,13 @@ const (
 // Product service definition
 type ProductServiceClient interface {
 	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
+	// ReserveProducts reduce quantity initially and adds reserved_quantity
 	ReserveProducts(ctx context.Context, in *ReserveProductsRequest, opts ...grpc.CallOption) (*ReserveProductsResponse, error)
+	// ReleaseProducts re-add quantity and remove reserved_quantity
 	ReleaseProducts(ctx context.Context, in *ReleaseProductsRequest, opts ...grpc.CallOption) (*ReleaseProductsResponse, error)
-	DeductProducts(ctx context.Context, in *DeductProductsRequest, opts ...grpc.CallOption) (*DeductProductsResponse, error)
+	// ConfirmProductsDeduction confirm quantity and remove reserved_quantity
+	ConfirmProductsDeduction(ctx context.Context, in *ConfirmProductsDeductionRequest, opts ...grpc.CallOption) (*ConfirmProductsDeductionResponse, error)
+	// RestoreProducts restore quantity
 	RestoreProducts(ctx context.Context, in *RestoreProductsRequest, opts ...grpc.CallOption) (*RestoreProductsResponse, error)
 	Health(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*HealthResponse, error)
 }
@@ -80,10 +84,10 @@ func (c *productServiceClient) ReleaseProducts(ctx context.Context, in *ReleaseP
 	return out, nil
 }
 
-func (c *productServiceClient) DeductProducts(ctx context.Context, in *DeductProductsRequest, opts ...grpc.CallOption) (*DeductProductsResponse, error) {
+func (c *productServiceClient) ConfirmProductsDeduction(ctx context.Context, in *ConfirmProductsDeductionRequest, opts ...grpc.CallOption) (*ConfirmProductsDeductionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(DeductProductsResponse)
-	err := c.cc.Invoke(ctx, ProductService_DeductProducts_FullMethodName, in, out, cOpts...)
+	out := new(ConfirmProductsDeductionResponse)
+	err := c.cc.Invoke(ctx, ProductService_ConfirmProductsDeduction_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +121,13 @@ func (c *productServiceClient) Health(ctx context.Context, in *emptypb.Empty, op
 // Product service definition
 type ProductServiceServer interface {
 	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
+	// ReserveProducts reduce quantity initially and adds reserved_quantity
 	ReserveProducts(context.Context, *ReserveProductsRequest) (*ReserveProductsResponse, error)
+	// ReleaseProducts re-add quantity and remove reserved_quantity
 	ReleaseProducts(context.Context, *ReleaseProductsRequest) (*ReleaseProductsResponse, error)
-	DeductProducts(context.Context, *DeductProductsRequest) (*DeductProductsResponse, error)
+	// ConfirmProductsDeduction confirm quantity and remove reserved_quantity
+	ConfirmProductsDeduction(context.Context, *ConfirmProductsDeductionRequest) (*ConfirmProductsDeductionResponse, error)
+	// RestoreProducts restore quantity
 	RestoreProducts(context.Context, *RestoreProductsRequest) (*RestoreProductsResponse, error)
 	Health(context.Context, *emptypb.Empty) (*HealthResponse, error)
 	mustEmbedUnimplementedProductServiceServer()
@@ -141,8 +149,8 @@ func (UnimplementedProductServiceServer) ReserveProducts(context.Context, *Reser
 func (UnimplementedProductServiceServer) ReleaseProducts(context.Context, *ReleaseProductsRequest) (*ReleaseProductsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReleaseProducts not implemented")
 }
-func (UnimplementedProductServiceServer) DeductProducts(context.Context, *DeductProductsRequest) (*DeductProductsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeductProducts not implemented")
+func (UnimplementedProductServiceServer) ConfirmProductsDeduction(context.Context, *ConfirmProductsDeductionRequest) (*ConfirmProductsDeductionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConfirmProductsDeduction not implemented")
 }
 func (UnimplementedProductServiceServer) RestoreProducts(context.Context, *RestoreProductsRequest) (*RestoreProductsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RestoreProducts not implemented")
@@ -225,20 +233,20 @@ func _ProductService_ReleaseProducts_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProductService_DeductProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeductProductsRequest)
+func _ProductService_ConfirmProductsDeduction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConfirmProductsDeductionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ProductServiceServer).DeductProducts(ctx, in)
+		return srv.(ProductServiceServer).ConfirmProductsDeduction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ProductService_DeductProducts_FullMethodName,
+		FullMethod: ProductService_ConfirmProductsDeduction_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductServiceServer).DeductProducts(ctx, req.(*DeductProductsRequest))
+		return srv.(ProductServiceServer).ConfirmProductsDeduction(ctx, req.(*ConfirmProductsDeductionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -299,8 +307,8 @@ var ProductService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ProductService_ReleaseProducts_Handler,
 		},
 		{
-			MethodName: "DeductProducts",
-			Handler:    _ProductService_DeductProducts_Handler,
+			MethodName: "ConfirmProductsDeduction",
+			Handler:    _ProductService_ConfirmProductsDeduction_Handler,
 		},
 		{
 			MethodName: "RestoreProducts",

@@ -434,7 +434,6 @@ func (x *Product) GetUpdatedAt() *timestamppb.Timestamp {
 
 type ReleaseProductsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
 	Items         []*ProductQuantity     `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -468,13 +467,6 @@ func (x *ReleaseProductsRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReleaseProductsRequest.ProtoReflect.Descriptor instead.
 func (*ReleaseProductsRequest) Descriptor() ([]byte, []int) {
 	return file_product_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *ReleaseProductsRequest) GetReservationId() string {
-	if x != nil {
-		return x.ReservationId
-	}
-	return ""
 }
 
 func (x *ReleaseProductsRequest) GetItems() []*ProductQuantity {
@@ -536,28 +528,27 @@ func (x *ReleaseProductsResponse) GetErrorMessage() string {
 	return ""
 }
 
-type DeductProductsRequest struct {
+type ConfirmProductsDeductionRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ReservationId string                 `protobuf:"bytes,1,opt,name=reservation_id,json=reservationId,proto3" json:"reservation_id,omitempty"`
 	Items         []*ProductQuantity     `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *DeductProductsRequest) Reset() {
-	*x = DeductProductsRequest{}
+func (x *ConfirmProductsDeductionRequest) Reset() {
+	*x = ConfirmProductsDeductionRequest{}
 	mi := &file_product_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeductProductsRequest) String() string {
+func (x *ConfirmProductsDeductionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeductProductsRequest) ProtoMessage() {}
+func (*ConfirmProductsDeductionRequest) ProtoMessage() {}
 
-func (x *DeductProductsRequest) ProtoReflect() protoreflect.Message {
+func (x *ConfirmProductsDeductionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_product_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -569,26 +560,19 @@ func (x *DeductProductsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeductProductsRequest.ProtoReflect.Descriptor instead.
-func (*DeductProductsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ConfirmProductsDeductionRequest.ProtoReflect.Descriptor instead.
+func (*ConfirmProductsDeductionRequest) Descriptor() ([]byte, []int) {
 	return file_product_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *DeductProductsRequest) GetReservationId() string {
-	if x != nil {
-		return x.ReservationId
-	}
-	return ""
-}
-
-func (x *DeductProductsRequest) GetItems() []*ProductQuantity {
+func (x *ConfirmProductsDeductionRequest) GetItems() []*ProductQuantity {
 	if x != nil {
 		return x.Items
 	}
 	return nil
 }
 
-type DeductProductsResponse struct {
+type ConfirmProductsDeductionResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Success         bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
 	UpdatedProducts []*Product             `protobuf:"bytes,2,rep,name=updated_products,json=updatedProducts,proto3" json:"updated_products,omitempty"`
@@ -597,20 +581,20 @@ type DeductProductsResponse struct {
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *DeductProductsResponse) Reset() {
-	*x = DeductProductsResponse{}
+func (x *ConfirmProductsDeductionResponse) Reset() {
+	*x = ConfirmProductsDeductionResponse{}
 	mi := &file_product_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *DeductProductsResponse) String() string {
+func (x *ConfirmProductsDeductionResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*DeductProductsResponse) ProtoMessage() {}
+func (*ConfirmProductsDeductionResponse) ProtoMessage() {}
 
-func (x *DeductProductsResponse) ProtoReflect() protoreflect.Message {
+func (x *ConfirmProductsDeductionResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_product_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -622,26 +606,26 @@ func (x *DeductProductsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use DeductProductsResponse.ProtoReflect.Descriptor instead.
-func (*DeductProductsResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use ConfirmProductsDeductionResponse.ProtoReflect.Descriptor instead.
+func (*ConfirmProductsDeductionResponse) Descriptor() ([]byte, []int) {
 	return file_product_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *DeductProductsResponse) GetSuccess() bool {
+func (x *ConfirmProductsDeductionResponse) GetSuccess() bool {
 	if x != nil {
 		return x.Success
 	}
 	return false
 }
 
-func (x *DeductProductsResponse) GetUpdatedProducts() []*Product {
+func (x *ConfirmProductsDeductionResponse) GetUpdatedProducts() []*Product {
 	if x != nil {
 		return x.UpdatedProducts
 	}
 	return nil
 }
 
-func (x *DeductProductsResponse) GetErrorMessage() string {
+func (x *ConfirmProductsDeductionResponse) GetErrorMessage() string {
 	if x != nil {
 		return x.ErrorMessage
 	}
@@ -835,17 +819,15 @@ const file_product_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"o\n" +
-	"\x16ReleaseProductsRequest\x12%\n" +
-	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\x12.\n" +
+	"updated_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"H\n" +
+	"\x16ReleaseProductsRequest\x12.\n" +
 	"\x05items\x18\x02 \x03(\v2\x18.product.ProductQuantityR\x05items\"X\n" +
 	"\x17ReleaseProductsResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
-	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"n\n" +
-	"\x15DeductProductsRequest\x12%\n" +
-	"\x0ereservation_id\x18\x01 \x01(\tR\rreservationId\x12.\n" +
-	"\x05items\x18\x02 \x03(\v2\x18.product.ProductQuantityR\x05items\"\x94\x01\n" +
-	"\x16DeductProductsResponse\x12\x18\n" +
+	"\rerror_message\x18\x02 \x01(\tR\ferrorMessage\"Q\n" +
+	"\x1fConfirmProductsDeductionRequest\x12.\n" +
+	"\x05items\x18\x02 \x03(\v2\x18.product.ProductQuantityR\x05items\"\x9e\x01\n" +
+	" ConfirmProductsDeductionResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12;\n" +
 	"\x10updated_products\x18\x02 \x03(\v2\x10.product.ProductR\x0fupdatedProducts\x12#\n" +
 	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"`\n" +
@@ -861,12 +843,12 @@ const file_product_proto_rawDesc = "" +
 	"\fHealthStatus\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\v\n" +
 	"\aSERVING\x10\x01\x12\x0f\n" +
-	"\vNOT_SERVING\x10\x022\xea\x03\n" +
+	"\vNOT_SERVING\x10\x022\x88\x04\n" +
 	"\x0eProductService\x12H\n" +
 	"\vGetProducts\x12\x1b.product.GetProductsRequest\x1a\x1c.product.GetProductsResponse\x12T\n" +
 	"\x0fReserveProducts\x12\x1f.product.ReserveProductsRequest\x1a .product.ReserveProductsResponse\x12T\n" +
-	"\x0fReleaseProducts\x12\x1f.product.ReleaseProductsRequest\x1a .product.ReleaseProductsResponse\x12Q\n" +
-	"\x0eDeductProducts\x12\x1e.product.DeductProductsRequest\x1a\x1f.product.DeductProductsResponse\x12T\n" +
+	"\x0fReleaseProducts\x12\x1f.product.ReleaseProductsRequest\x1a .product.ReleaseProductsResponse\x12o\n" +
+	"\x18ConfirmProductsDeduction\x12(.product.ConfirmProductsDeductionRequest\x1a).product.ConfirmProductsDeductionResponse\x12T\n" +
 	"\x0fRestoreProducts\x12\x1f.product.RestoreProductsRequest\x1a .product.RestoreProductsResponse\x129\n" +
 	"\x06Health\x12\x16.google.protobuf.Empty\x1a\x17.product.HealthResponseB:Z8github.com/raphaeldiscky/go-micro-commerce/proto/productb\x06proto3"
 
@@ -885,22 +867,22 @@ func file_product_proto_rawDescGZIP() []byte {
 var file_product_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_product_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_product_proto_goTypes = []any{
-	(HealthStatus)(0),               // 0: product.HealthStatus
-	(*GetProductsRequest)(nil),      // 1: product.GetProductsRequest
-	(*GetProductsResponse)(nil),     // 2: product.GetProductsResponse
-	(*ReserveProductsRequest)(nil),  // 3: product.ReserveProductsRequest
-	(*ProductQuantity)(nil),         // 4: product.ProductQuantity
-	(*ReserveProductsResponse)(nil), // 5: product.ReserveProductsResponse
-	(*Product)(nil),                 // 6: product.Product
-	(*ReleaseProductsRequest)(nil),  // 7: product.ReleaseProductsRequest
-	(*ReleaseProductsResponse)(nil), // 8: product.ReleaseProductsResponse
-	(*DeductProductsRequest)(nil),   // 9: product.DeductProductsRequest
-	(*DeductProductsResponse)(nil),  // 10: product.DeductProductsResponse
-	(*RestoreProductsRequest)(nil),  // 11: product.RestoreProductsRequest
-	(*RestoreProductsResponse)(nil), // 12: product.RestoreProductsResponse
-	(*HealthResponse)(nil),          // 13: product.HealthResponse
-	(*timestamppb.Timestamp)(nil),   // 14: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),           // 15: google.protobuf.Empty
+	(HealthStatus)(0),                        // 0: product.HealthStatus
+	(*GetProductsRequest)(nil),               // 1: product.GetProductsRequest
+	(*GetProductsResponse)(nil),              // 2: product.GetProductsResponse
+	(*ReserveProductsRequest)(nil),           // 3: product.ReserveProductsRequest
+	(*ProductQuantity)(nil),                  // 4: product.ProductQuantity
+	(*ReserveProductsResponse)(nil),          // 5: product.ReserveProductsResponse
+	(*Product)(nil),                          // 6: product.Product
+	(*ReleaseProductsRequest)(nil),           // 7: product.ReleaseProductsRequest
+	(*ReleaseProductsResponse)(nil),          // 8: product.ReleaseProductsResponse
+	(*ConfirmProductsDeductionRequest)(nil),  // 9: product.ConfirmProductsDeductionRequest
+	(*ConfirmProductsDeductionResponse)(nil), // 10: product.ConfirmProductsDeductionResponse
+	(*RestoreProductsRequest)(nil),           // 11: product.RestoreProductsRequest
+	(*RestoreProductsResponse)(nil),          // 12: product.RestoreProductsResponse
+	(*HealthResponse)(nil),                   // 13: product.HealthResponse
+	(*timestamppb.Timestamp)(nil),            // 14: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                    // 15: google.protobuf.Empty
 }
 var file_product_proto_depIdxs = []int32{
 	6,  // 0: product.GetProductsResponse.products:type_name -> product.Product
@@ -909,20 +891,20 @@ var file_product_proto_depIdxs = []int32{
 	14, // 3: product.Product.created_at:type_name -> google.protobuf.Timestamp
 	14, // 4: product.Product.updated_at:type_name -> google.protobuf.Timestamp
 	4,  // 5: product.ReleaseProductsRequest.items:type_name -> product.ProductQuantity
-	4,  // 6: product.DeductProductsRequest.items:type_name -> product.ProductQuantity
-	6,  // 7: product.DeductProductsResponse.updated_products:type_name -> product.Product
+	4,  // 6: product.ConfirmProductsDeductionRequest.items:type_name -> product.ProductQuantity
+	6,  // 7: product.ConfirmProductsDeductionResponse.updated_products:type_name -> product.Product
 	4,  // 8: product.RestoreProductsRequest.items:type_name -> product.ProductQuantity
 	6,  // 9: product.RestoreProductsResponse.restored_products:type_name -> product.Product
 	1,  // 10: product.ProductService.GetProducts:input_type -> product.GetProductsRequest
 	3,  // 11: product.ProductService.ReserveProducts:input_type -> product.ReserveProductsRequest
 	7,  // 12: product.ProductService.ReleaseProducts:input_type -> product.ReleaseProductsRequest
-	9,  // 13: product.ProductService.DeductProducts:input_type -> product.DeductProductsRequest
+	9,  // 13: product.ProductService.ConfirmProductsDeduction:input_type -> product.ConfirmProductsDeductionRequest
 	11, // 14: product.ProductService.RestoreProducts:input_type -> product.RestoreProductsRequest
 	15, // 15: product.ProductService.Health:input_type -> google.protobuf.Empty
 	2,  // 16: product.ProductService.GetProducts:output_type -> product.GetProductsResponse
 	5,  // 17: product.ProductService.ReserveProducts:output_type -> product.ReserveProductsResponse
 	8,  // 18: product.ProductService.ReleaseProducts:output_type -> product.ReleaseProductsResponse
-	10, // 19: product.ProductService.DeductProducts:output_type -> product.DeductProductsResponse
+	10, // 19: product.ProductService.ConfirmProductsDeduction:output_type -> product.ConfirmProductsDeductionResponse
 	12, // 20: product.ProductService.RestoreProducts:output_type -> product.RestoreProductsResponse
 	13, // 21: product.ProductService.Health:output_type -> product.HealthResponse
 	16, // [16:22] is the sub-list for method output_type

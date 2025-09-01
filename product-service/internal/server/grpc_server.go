@@ -133,6 +133,156 @@ func (s *GRPCServer) ReserveProducts(
 	return resp, nil
 }
 
+// ConfirmProductsDeduction confirms stock deduction for reserved products via gRPC.
+func (s *GRPCServer) ConfirmProductsDeduction(
+	ctx context.Context,
+	req *pb.ConfirmProductsDeductionRequest,
+) (*pb.ConfirmProductsDeductionResponse, error) {
+	// Convert protobuf request to service DTO
+	deductReq := dto.ConfirmProductsDeductionRequest{
+		Items: make([]dto.ProductReservationItem, len(req.Items)),
+	}
+
+	for i, item := range req.Items {
+		productID, err := uuid.Parse(item.ProductId)
+		if err != nil {
+			return &pb.ConfirmProductsDeductionResponse{
+				Success:      false,
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
+			}, nil
+		}
+
+		deductReq.Items[i] = dto.ProductReservationItem{
+			ProductID:       productID,
+			Quantity:        item.Quantity,
+			ExpectedVersion: item.Version,
+		}
+	}
+
+	// Call service method
+	updatedProducts, err := s.productService.ConfirmProductsDeduction(ctx, deductReq)
+	if err != nil {
+		return &pb.ConfirmProductsDeductionResponse{
+			Success:      false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	// Convert service response to protobuf
+	resp := &pb.ConfirmProductsDeductionResponse{
+		Success:         true,
+		UpdatedProducts: make([]*pb.Product, len(updatedProducts)),
+	}
+
+	for i := range updatedProducts {
+		p := &updatedProducts[i]
+		resp.UpdatedProducts[i] = &pb.Product{
+			Id:               p.ID.String(),
+			Name:             p.Name,
+			Price:            p.Price.InexactFloat64(),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
+		}
+	}
+
+	return resp, nil
+}
+
+// ReleaseProducts releases reserved products via gRPC.
+func (s *GRPCServer) ReleaseProducts(
+	ctx context.Context,
+	req *pb.ReleaseProductsRequest,
+) (*pb.ReleaseProductsResponse, error) {
+	// Convert protobuf request to service DTO
+	releaseReq := dto.ReleaseProductsRequest{
+		Items: make([]dto.ProductReservationItem, len(req.Items)),
+	}
+
+	for i, item := range req.Items {
+		productID, err := uuid.Parse(item.ProductId)
+		if err != nil {
+			return &pb.ReleaseProductsResponse{
+				Success:      false,
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
+			}, nil
+		}
+
+		releaseReq.Items[i] = dto.ProductReservationItem{
+			ProductID:       productID,
+			Quantity:        item.Quantity,
+			ExpectedVersion: item.Version,
+		}
+	}
+
+	// Call service method
+	err := s.productService.ReleaseProducts(ctx, releaseReq)
+	if err != nil {
+		return &pb.ReleaseProductsResponse{
+			Success:      false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	return &pb.ReleaseProductsResponse{Success: true}, nil
+}
+
+// RestoreProducts restores products via gRPC.
+func (s *GRPCServer) RestoreProducts(
+	ctx context.Context,
+	req *pb.RestoreProductsRequest,
+) (*pb.RestoreProductsResponse, error) {
+	// Convert protobuf request to service DTO
+	restoreReq := dto.RestoreProductsRequest{
+		Items:  make([]dto.ProductRestorationItem, len(req.Items)),
+		Reason: req.Reason,
+	}
+
+	for i, item := range req.Items {
+		productID, err := uuid.Parse(item.ProductId)
+		if err != nil {
+			return &pb.RestoreProductsResponse{
+				Success:      false,
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
+			}, nil
+		}
+
+		restoreReq.Items[i] = dto.ProductRestorationItem{
+			ProductID: productID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Call service method
+	restoredProducts, err := s.productService.RestoreProducts(ctx, restoreReq)
+	if err != nil {
+		return &pb.RestoreProductsResponse{
+			Success:      false,
+			ErrorMessage: err.Error(),
+		}, nil
+	}
+
+	// Convert service response to protobuf
+	resp := &pb.RestoreProductsResponse{
+		Success:          true,
+		RestoredProducts: make([]*pb.Product, len(restoredProducts)),
+	}
+
+	for i := range restoredProducts {
+		p := &restoredProducts[i]
+		resp.RestoredProducts[i] = &pb.Product{
+			Id:               p.ID.String(),
+			Name:             p.Name,
+			Price:            p.Price.InexactFloat64(),
+			Quantity:         p.Quantity,
+			Version:          p.Version,
+			ReservedQuantity: p.ReservedQuantity,
+		}
+	}
+
+	return resp, nil
+}
+
 // Health returns the health status of the product service.
 func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
 	return &pb.HealthResponse{Status: constant.GRPCHealthServing}, nil

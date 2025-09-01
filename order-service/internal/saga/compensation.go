@@ -18,12 +18,10 @@ import (
 func (a *OrderActivitiesImpl) ReleaseProducts(
 	_ context.Context,
 	order *entity.Order,
-	reservationID uuid.UUID,
 ) error {
 	a.logger.Infof(
 		"Releasing inventory reservation for order: %s, reservation ID: %s",
 		order.ID,
-		reservationID,
 	)
 
 	if a.productClient == nil {
@@ -47,7 +45,7 @@ func (a *OrderActivitiesImpl) ReleaseProducts(
 	}
 
 	// Release reserved products using product service
-	err := a.productClient.ReleaseProducts(context.Background(), reservationID, releaseItems)
+	err := a.productClient.ReleaseProducts(context.Background(), releaseItems)
 	if err != nil {
 		a.logger.Warnf(
 			"Failed to release reservation for order %s: %v (compensation may be incomplete)",

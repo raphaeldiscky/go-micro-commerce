@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/bsm/redislock"
@@ -259,8 +258,6 @@ func (s *OrderService) CreateOrderWithProto(
 		orderRepo := ds.OrderRepository()
 		outboxRepo := ds.OutboxRepository()
 
-		log.Println("=====2======", req)
-
 		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
 		if err != nil {
 			return err
@@ -291,35 +288,9 @@ func (s *OrderService) CreateOrderWithProto(
 			return httperror.NewInternalServerError("failed to get all products")
 		}
 
-		// Check availability and prepare reservation items
-		reservationItems := make([]client.ProductReservationItem, len(req.Items))
-
-		for i, item := range req.Items {
-			product := &products[i]
-			if product.GetAvailableStock() < item.Quantity {
-				return httperror.NewInsufficientProductStockError()
-			}
-
-			reservationItems[i] = client.ProductReservationItem{
-				ProductID:       item.ProductID,
-				Quantity:        item.Quantity,
-				ExpectedVersion: product.Version,
-			}
-		}
-
-		// Reserve stock with optimistic locking
-		reservedProducts, err := s.productClient.ReserveProducts(
-			ctx,
-			req.IdempotencyKey,
-			reservationItems,
-		)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to reserve products: " + err.Error())
-		}
-
 		var orderItems []entity.OrderItem
 
-		for i, product := range reservedProducts {
+		for i, product := range products {
 			now := time.Now()
 			orderItem := entity.OrderItem{
 				ID:        uuid.New(),
