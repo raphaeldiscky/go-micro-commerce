@@ -19,8 +19,8 @@ const (
 	CalculatePricingStep WorkflowStep = "CalculatePricing"
 	// ProcessPaymentStep processes the payment for the order.
 	ProcessPaymentStep WorkflowStep = "ProcessPayment"
-	// DeductProductsStep deducts the products from inventory.
-	DeductProductsStep WorkflowStep = "DeductProducts"
+	// ConfirmProductsDeductionStep deducts the products from inventory.
+	ConfirmProductsDeductionStep WorkflowStep = "ConfirmProductsDeduction"
 	// CreateShippingStep creates a shipping order.
 	CreateShippingStep WorkflowStep = "CreateShipping"
 	// SendOrderConfirmationStep sends an order confirmation.

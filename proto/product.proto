@@ -10,9 +10,13 @@ import "google/protobuf/empty.proto";
 // Product service definition
 service ProductService {
   rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+  // ReserveProducts reduce quantity initially and adds reserved_quantity
   rpc ReserveProducts(ReserveProductsRequest) returns (ReserveProductsResponse);
+  // ReleaseProducts re-add quantity and remove reserved_quantity
   rpc ReleaseProducts(ReleaseProductsRequest) returns (ReleaseProductsResponse);
-  rpc DeductProducts(DeductProductsRequest) returns (DeductProductsResponse);
+  // ConfirmProductsDeduction confirm quantity and remove reserved_quantity
+  rpc ConfirmProductsDeduction(ConfirmProductsDeductionRequest) returns (ConfirmProductsDeductionResponse);
+  // RestoreProducts restore quantity
   rpc RestoreProducts(RestoreProductsRequest) returns (RestoreProductsResponse);
   rpc Health(google.protobuf.Empty) returns (HealthResponse);
 }
@@ -54,7 +58,6 @@ message Product {
 }
 
 message ReleaseProductsRequest {
-  string reservation_id = 1;
   repeated ProductQuantity items = 2;
 }
 
@@ -63,12 +66,11 @@ message ReleaseProductsResponse {
   string error_message = 2;
 }
 
-message DeductProductsRequest {
-  string reservation_id = 1;
+message ConfirmProductsDeductionRequest {
   repeated ProductQuantity items = 2;
 }
 
-message DeductProductsResponse {
+message ConfirmProductsDeductionResponse {
   bool success = 1;
   repeated Product updated_products = 2;
   string error_message = 3;

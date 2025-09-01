@@ -59,27 +59,18 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
 			// Reserve products
-			reservationID, err := s.activities.ReserveProducts(ctx.Context(), order)
+			reservedProducts, err := s.activities.ReserveProducts(ctx.Context(), order)
 			if err != nil {
 				return nil, err
 			}
 
 			return &StepResult{
 				Success: true,
-				Data: map[string]interface{}{
-					"reservation_id": reservationID,
-				},
+				Data:    map[string]interface{}{"reserved_products": reservedProducts},
 			}, nil
 		},
 		Compensate: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) error {
-			reservationID, ok := data["reservation_id"].(uuid.UUID)
-			if !ok {
-				ctx.logger.Warn("No reservation ID found for compensation")
-
-				return nil
-			}
-
-			return s.activities.ReleaseProducts(ctx.Context(), order, reservationID)
+			return s.activities.ReleaseProducts(ctx.Context(), order)
 		},
 	})
 
@@ -146,22 +137,15 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 	// Step 5: Deduct Products
 	executor.AddStep(&Step{
-		Name:        DeductProductsStep,
-		Description: "Deduct products after payment completed",
+		Name:        ConfirmProductsDeductionStep,
+		Description: "Confirms reserved products and release reserved quantity after payment completed",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
 		Timeout:     20 * time.Second,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error) {
-			reservationID, ok := data["reservation_id"].(uuid.UUID)
-			if !ok {
-				ctx.logger.Warn("No reservation ID found for stock confirmation")
-
-				return nil, fmt.Errorf("no reservation ID found")
-			}
-
-			if err := s.activities.DeductProducts(ctx.Context(), order, reservationID); err != nil {
+			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), order); err != nil {
 				return nil, err
 			}
 

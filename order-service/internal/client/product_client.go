@@ -9,13 +9,13 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
-	"github.com/shopspring/decimal"
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
@@ -39,17 +39,15 @@ type ProductClientInterface interface {
 		ctx context.Context,
 		idempotencyKey uuid.UUID,
 		items []ProductReservationItem,
-	) ([]entity.Product, error)
+	) (reservedProducts []entity.Product, err error)
 	ReleaseProducts(
 		ctx context.Context,
-		reservationID uuid.UUID,
 		items []ProductReservationItem,
 	) error
-	DeductProducts(
+	ConfirmProductsDeduction(
 		ctx context.Context,
-		reservationID uuid.UUID,
 		items []ProductReservationItem,
-	) error
+	) (products []entity.Product, err error)
 	RestoreProducts(
 		ctx context.Context,
 		items []ProductRestorationItem,
@@ -113,31 +111,12 @@ func (pc *ProductClient) GetProducts(
 	products := make([]entity.Product, len(resp.Products))
 
 	for i, p := range resp.Products {
-		uid, err := uuid.Parse(p.Id)
+		product, err := dto.MapProtoToProduct(p)
 		if err != nil {
-			return nil, fmt.Errorf("invalid product ID from product-service: %w", err)
+			return nil, err
 		}
 
-		// Convert protobuf Timestamp → time.Time safely
-		var createdAt, updatedAt time.Time
-		if p.CreatedAt != nil {
-			createdAt = p.CreatedAt.AsTime()
-		}
-
-		if p.UpdatedAt != nil {
-			updatedAt = p.UpdatedAt.AsTime()
-		}
-
-		products[i] = entity.Product{
-			ID:               uid,
-			Name:             p.Name,
-			Price:            decimal.NewFromFloat(p.Price), // safely convert double → decimal
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-			CreatedAt:        createdAt,
-			UpdatedAt:        updatedAt,
-		}
+		products[i] = product
 	}
 
 	return products, nil
@@ -178,31 +157,12 @@ func (pc *ProductClient) ReserveProducts(
 	products := make([]entity.Product, len(resp.ReservedProducts))
 
 	for i, p := range resp.ReservedProducts {
-		uid, err := uuid.Parse(p.Id)
+		product, err := dto.MapProtoToProduct(p)
 		if err != nil {
-			return nil, fmt.Errorf("invalid product ID from product-service: %w", err)
+			return nil, err
 		}
 
-		// Convert protobuf Timestamp → time.Time safely
-		var createdAt, updatedAt time.Time
-		if p.CreatedAt != nil {
-			createdAt = p.CreatedAt.AsTime()
-		}
-
-		if p.UpdatedAt != nil {
-			updatedAt = p.UpdatedAt.AsTime()
-		}
-
-		products[i] = entity.Product{
-			ID:               uid,
-			Name:             p.Name,
-			Price:            decimal.NewFromFloat(p.Price),
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-			CreatedAt:        createdAt,
-			UpdatedAt:        updatedAt,
-		}
+		products[i] = product
 	}
 
 	return products, nil
@@ -211,7 +171,6 @@ func (pc *ProductClient) ReserveProducts(
 // ReleaseProducts releases reserved stock for products.
 func (pc *ProductClient) ReleaseProducts(
 	ctx context.Context,
-	reservationID uuid.UUID,
 	items []ProductReservationItem,
 ) error {
 	// Convert to protobuf format
@@ -227,8 +186,7 @@ func (pc *ProductClient) ReleaseProducts(
 	defer cancel()
 
 	resp, err := pc.client.ReleaseProducts(ctx, &pb.ReleaseProductsRequest{
-		ReservationId: reservationID.String(),
-		Items:         pbItems,
+		Items: pbItems,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to call ReleaseProducts: %w", err)
@@ -241,12 +199,11 @@ func (pc *ProductClient) ReleaseProducts(
 	return nil
 }
 
-// DeductProducts confirms the stock deduction for a reservation.
-func (pc *ProductClient) DeductProducts(
+// ConfirmProductsDeduction confirms the reserved stock and removes reserved quantity.
+func (pc *ProductClient) ConfirmProductsDeduction(
 	ctx context.Context,
-	reservationID uuid.UUID,
 	items []ProductReservationItem,
-) error {
+) ([]entity.Product, error) {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))
 	for i, item := range items {
@@ -259,19 +216,29 @@ func (pc *ProductClient) DeductProducts(
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	resp, err := pc.client.DeductProducts(ctx, &pb.DeductProductsRequest{
-		ReservationId: reservationID.String(),
-		Items:         pbItems,
+	resp, err := pc.client.ConfirmProductsDeduction(ctx, &pb.ConfirmProductsDeductionRequest{
+		Items: pbItems,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to call DeductProducts: %w", err)
+		return nil, fmt.Errorf("failed to call ConfirmProductsDeduction: %w", err)
 	}
 
 	if !resp.Success {
-		return fmt.Errorf("stocks deduction confirmation failed: %s", resp.ErrorMessage)
+		return nil, fmt.Errorf("stocks deduction confirmation failed: %s", resp.ErrorMessage)
 	}
 
-	return nil
+	products := make([]entity.Product, len(resp.UpdatedProducts))
+
+	for i, p := range resp.UpdatedProducts {
+		product, err := dto.MapProtoToProduct(p)
+		if err != nil {
+			return nil, err
+		}
+
+		products[i] = product
+	}
+
+	return products, nil
 }
 
 // RestoreProducts restores stock in case of compensation.
@@ -307,31 +274,12 @@ func (pc *ProductClient) RestoreProducts(
 	products := make([]entity.Product, len(resp.RestoredProducts))
 
 	for i, p := range resp.RestoredProducts {
-		uid, err := uuid.Parse(p.Id)
+		product, err := dto.MapProtoToProduct(p)
 		if err != nil {
-			return nil, fmt.Errorf("invalid product ID from product-service: %w", err)
+			return nil, err
 		}
 
-		// Convert protobuf Timestamp → time.Time safely
-		var createdAt, updatedAt time.Time
-		if p.CreatedAt != nil {
-			createdAt = p.CreatedAt.AsTime()
-		}
-
-		if p.UpdatedAt != nil {
-			updatedAt = p.UpdatedAt.AsTime()
-		}
-
-		products[i] = entity.Product{
-			ID:               uid,
-			Name:             p.Name,
-			Price:            decimal.NewFromFloat(p.Price),
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-			CreatedAt:        createdAt,
-			UpdatedAt:        updatedAt,
-		}
+		products[i] = product
 	}
 
 	return products, nil

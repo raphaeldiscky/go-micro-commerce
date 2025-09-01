@@ -29,13 +29,15 @@ type OrderPricing struct {
 type OrderActivities interface {
 	// Execution
 	ValidateProducts(ctx context.Context, order *entity.Order) error
-	ReserveProducts(ctx context.Context, order *entity.Order) (reservationID uuid.UUID, err error)
-	CalculatePricing(ctx context.Context, order *entity.Order) (pricing OrderPricing, err error)
-	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
-	DeductProducts(
+	ReserveProducts(
 		ctx context.Context,
 		order *entity.Order,
-		reservationID uuid.UUID,
+	) (reservedProducts []entity.Product, err error)
+	CalculatePricing(ctx context.Context, order *entity.Order) (pricing OrderPricing, err error)
+	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
+	ConfirmProductsDeduction(
+		ctx context.Context,
+		order *entity.Order,
 	) error
 	CreateShipping(
 		ctx context.Context,
@@ -46,7 +48,6 @@ type OrderActivities interface {
 	ReleaseProducts(
 		ctx context.Context,
 		order *entity.Order,
-		reservationID uuid.UUID,
 	) error
 	RefundPayment(ctx context.Context, order *entity.Order, paymentID uuid.UUID) error
 	RestoreProducts(ctx context.Context, order *entity.Order) error
@@ -108,11 +109,11 @@ func (a *OrderActivitiesImpl) ValidateProducts(_ context.Context, order *entity.
 func (a *OrderActivitiesImpl) ReserveProducts(
 	ctx context.Context,
 	order *entity.Order,
-) (reservationID uuid.UUID, err error) {
+) (reservedProducts []entity.Product, err error) {
 	a.logger.Infof("Reserving products for order: %s", order.ID)
 
 	if a.productClient == nil {
-		return uuid.Nil, NewNonRetriableError(
+		return nil, NewNonRetriableError(
 			ReserveProductsStep,
 			"product service is unavailable",
 			nil,
@@ -130,20 +131,21 @@ func (a *OrderActivitiesImpl) ReserveProducts(
 		}
 	}
 
-	// Generate reservation ID before calling service
-	reservationID = uuid.New()
-
 	// Reserve products using product service
-	_, err = a.productClient.ReserveProducts(ctx, order.IdempotencyKey, reservationItems)
+	reservedProducts, err = a.productClient.ReserveProducts(
+		ctx,
+		order.IdempotencyKey,
+		reservationItems,
+	)
 	if err != nil {
 		a.logger.Errorf("Failed to reserve stock for order %s: %v", order.ID, err)
 
 		// Categorize error based on type
 		if isTemporaryError(err) {
-			return uuid.Nil, NewRetriableError(ReserveProductsStep, "temporary service error", err)
+			return nil, NewRetriableError(ReserveProductsStep, "temporary service error", err)
 		}
 
-		return uuid.Nil, NewNonRetriableError(
+		return nil, NewNonRetriableError(
 			ReserveProductsStep,
 			"stock reservation failed",
 			err,
@@ -152,7 +154,7 @@ func (a *OrderActivitiesImpl) ReserveProducts(
 
 	a.logger.Infof("Successfully reserved stock for order: %s", order.ID)
 
-	return reservationID, nil
+	return reservedProducts, nil
 }
 
 // CalculatePricing calculates order pricing including discounts and taxes.
@@ -269,16 +271,14 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 	return paymentID, nil
 }
 
-// DeductProducts confirms stock deduction after successful payment.
-func (a *OrderActivitiesImpl) DeductProducts(
+// ConfirmProductsDeduction confirms stock deduction after successful payment.
+func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 	ctx context.Context,
 	order *entity.Order,
-	reservationID uuid.UUID,
 ) error {
 	a.logger.Infof(
 		"Confirming inventory deduction for order: %s, reservation: %s",
 		order.ID,
-		reservationID,
 	)
 
 	if a.productClient == nil {
@@ -315,7 +315,7 @@ func (a *OrderActivitiesImpl) DeductProducts(
 		}
 	}
 
-	err := a.productClient.DeductProducts(ctx, reservationID, deductionItems)
+	_, err := a.productClient.ConfirmProductsDeduction(ctx, deductionItems)
 	if err != nil {
 		a.logger.Errorf("Failed to confirm stock deduction for order %s: %v", order.ID, err)
 

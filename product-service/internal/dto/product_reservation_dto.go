@@ -17,14 +17,12 @@ type ProductReservationItem struct {
 
 // ReleaseProductsRequest represents the request to release reserved products.
 type ReleaseProductsRequest struct {
-	ReservationID uuid.UUID                `json:"reservation_id" validate:"required"`
-	Items         []ProductReservationItem `json:"items"          validate:"required,dive"`
+	Items []ProductReservationItem `json:"items" validate:"required,dive"`
 }
 
-// DeductProductsRequest represents the request to confirm product deduction.
-type DeductProductsRequest struct {
-	ReservationID uuid.UUID                `json:"reservation_id" validate:"required"`
-	Items         []ProductReservationItem `json:"items"          validate:"required,dive"`
+// ConfirmProductsDeductionRequest represents the request to confirm product deduction.
+type ConfirmProductsDeductionRequest struct {
+	Items []ProductReservationItem `json:"items" validate:"required,dive"`
 }
 
 // RestoreProductsRequest represents the request to restore products.

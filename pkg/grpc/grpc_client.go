@@ -193,7 +193,7 @@ func buildRetryableCodesString(codes []string) string {
 			result += ", "
 		}
 
-		result += fmt.Sprintf(`"%q"`, code)
+		result += fmt.Sprintf(`%q`, code)
 	}
 
 	return result

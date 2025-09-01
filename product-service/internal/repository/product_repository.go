@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
@@ -49,6 +50,18 @@ type ProductRepositoryInterface interface {
 		reservations []entity.ProductReservation,
 	) ([]*entity.Product, error)
 
+	// ReleaseProducts releases reserved stock for products atomically with optimistic locking
+	ReleaseProducts(
+		ctx context.Context,
+		reservations []entity.ProductReservation,
+	) ([]*entity.Product, error)
+
+	// ConfirmProductsDeduction confirms stock deduction for products atomically with optimistic locking
+	ConfirmProductsDeduction(
+		ctx context.Context,
+		reservations []entity.ProductReservation,
+	) ([]*entity.Product, error)
+
 	// Delete removes a product by ID
 	Delete(ctx context.Context, id uuid.UUID) error
 
@@ -61,7 +74,8 @@ type ProductRepositoryInterface interface {
 
 // ProductRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
 type ProductRepositoryPostgres struct {
-	db DBTX
+	db     DBTX
+	logger logger.Logger
 }
 
 // NewProductRepositoryPostgres creates a new instance of ProductRepositoryPostgres.
@@ -471,7 +485,7 @@ func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
 	return &updatedProduct, nil
 }
 
-// ReserveProducts reserves stock for products atomically with optimistic locking.
+// ReserveProducts reserves stock for multiple products atomically.
 func (r *ProductRepositoryPostgres) ReserveProducts(
 	ctx context.Context,
 	reservations []entity.ProductReservation,
@@ -482,24 +496,36 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 
 	var reservedProducts []*entity.Product
 
-	// Process each reservation atomically
+	// Use a single query for all reservations to maintain atomicity
+	batch := &pgx.Batch{}
+
 	for _, reservation := range reservations {
 		query := `
-			UPDATE products 
-			SET reserved_quantity = reserved_quantity + $2, 
-				version = version + 1, 
-				updated_at = CURRENT_TIMESTAMP
-			WHERE id = $1 
-			  AND version = $3 
-			  AND (quantity - reserved_quantity) >= $2
-			RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
-		`
+            UPDATE products 
+            SET quantity = quantity - $2,
+                reserved_quantity = reserved_quantity + $2, 
+                version = version + 1, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1 
+              AND version = $3 
+              AND quantity >= $2
+            RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
+        `
 
-		row := r.db.QueryRow(ctx, query,
-			reservation.ProductID,
-			reservation.Quantity,
-			reservation.ExpectedVersion,
-		)
+		batch.Queue(query, reservation.ProductID, reservation.Quantity, reservation.ExpectedVersion)
+	}
+
+	// Execute all reservations in single batch
+	results := r.db.SendBatch(ctx, batch)
+	defer func() {
+		err := results.Close()
+		if err != nil {
+			r.logger.Errorf("failed to close batch: %v", err)
+		}
+	}()
+
+	for i := 0; i < batch.Len(); i++ {
+		row := results.QueryRow()
 
 		var product entity.Product
 
@@ -517,7 +543,7 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil, fmt.Errorf(
 					"reservation failed for product %s: insufficient stock or version conflict",
-					reservation.ProductID,
+					reservations[i].ProductID,
 				)
 			}
 
@@ -528,4 +554,138 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 	}
 
 	return reservedProducts, nil
+}
+
+// ReleaseProducts releases reserved stock atomically.
+func (r *ProductRepositoryPostgres) ReleaseProducts(
+	ctx context.Context,
+	releases []entity.ProductReservation,
+) ([]*entity.Product, error) {
+	var updatedProducts []*entity.Product
+
+	batch := &pgx.Batch{}
+
+	for _, release := range releases {
+		query := `
+            UPDATE products 
+            SET quantity = quantity + $2,
+                reserved_quantity = reserved_quantity - $2, 
+                version = version + 1, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1 
+              AND version = $3 
+              AND reserved_quantity >= $2
+            RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
+        `
+
+		batch.Queue(query, release.ProductID, release.Quantity, release.ExpectedVersion)
+	}
+
+	results := r.db.SendBatch(ctx, batch)
+	defer func() {
+		err := results.Close()
+		if err != nil {
+			r.logger.Errorf("failed to close batch: %v", err)
+		}
+	}()
+
+	for i := 0; i < batch.Len(); i++ {
+		row := results.QueryRow()
+
+		var product entity.Product
+
+		err := row.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.Version,
+			&product.ReservedQuantity,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf(
+					"release failed for product %s: insufficient reserved quantity or version conflict",
+					releases[i].ProductID,
+				)
+			}
+
+			return nil, err
+		}
+
+		updatedProducts = append(updatedProducts, &product)
+	}
+
+	return updatedProducts, nil
+}
+
+// ConfirmProductsDeduction confirms stock deduction.
+func (r *ProductRepositoryPostgres) ConfirmProductsDeduction(
+	ctx context.Context,
+	confirmations []entity.ProductReservation,
+) ([]*entity.Product, error) {
+	var updatedProducts []*entity.Product
+
+	batch := &pgx.Batch{}
+
+	for _, confirmation := range confirmations {
+		query := `
+            UPDATE products 
+            SET reserved_quantity = reserved_quantity - $2, 
+                version = version + 1, 
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = $1 
+              AND version = $3 
+              AND reserved_quantity >= $2
+            RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
+        `
+
+		batch.Queue(
+			query,
+			confirmation.ProductID,
+			confirmation.Quantity,
+			confirmation.ExpectedVersion,
+		)
+	}
+
+	results := r.db.SendBatch(ctx, batch)
+	defer func() {
+		err := results.Close()
+		if err != nil {
+			r.logger.Errorf("failed to close batch: %v", err)
+		}
+	}()
+
+	for i := 0; i < batch.Len(); i++ {
+		row := results.QueryRow()
+
+		var product entity.Product
+
+		err := row.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.Version,
+			&product.ReservedQuantity,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf(
+					"confirmation failed for product %s: insufficient reserved quantity or version conflict",
+					confirmations[i].ProductID,
+				)
+			}
+
+			return nil, err
+		}
+
+		updatedProducts = append(updatedProducts, &product)
+	}
+
+	return updatedProducts, nil
 }
