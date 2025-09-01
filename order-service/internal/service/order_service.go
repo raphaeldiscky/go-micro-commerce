@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/bsm/redislock"
@@ -258,8 +257,6 @@ func (s *OrderService) CreateOrderWithProto(
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 		outboxRepo := ds.OutboxRepository()
-
-		log.Println("=====2======", req)
 
 		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
 		if err != nil {

@@ -7,15 +7,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/consul/api"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 	"github.com/shopspring/decimal"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	grpcAuth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
+	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -63,12 +60,8 @@ type ProductClientInterface interface {
 
 // ProductClient is a gRPC client for interacting with the product service.
 type ProductClient struct {
-	conn         *grpc.ClientConn
-	client       pb.ProductServiceClient
-	consulClient *api.Client
-	serviceName  string
-	clientCfg    *config.ClientConfig
-	consulCfg    *config.ConsulConfig
+	grpcClient *grpc.Client
+	client     pb.ProductServiceClient
 }
 
 // NewProductClient creates a new ProductClient instance with gRPC connection.
@@ -76,128 +69,27 @@ func NewProductClient(
 	clientCfg *config.ClientConfig,
 	consulCfg *config.ConsulConfig,
 ) (ProductClientInterface, error) {
-	var conn *grpc.ClientConn
+	// Create gRPC client configuration
+	grpcConfig := pkgConfig.DefaultGRPCClientConfig("product-service-grpc")
 
-	var err error
+	// Configure based on existing client config
+	grpcConfig.UseServiceDiscovery = clientCfg.UseServiceDiscovery
+	grpcConfig.ConsulEnabled = consulCfg.Enabled
+	grpcConfig.ConsulAddress = consulCfg.Address
+	grpcConfig.SetStaticAddress(clientCfg.ProductGRPCHost, clientCfg.ProductGRPCPort)
 
-	var consulClient *api.Client
-
-	if shouldUseServiceDiscovery(clientCfg, consulCfg) {
-		conn, consulClient, err = createConsulConnection(consulCfg)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		conn, err = createStaticConnection(clientCfg)
-	}
-
+	gClient, err := grpc.NewGRPCClient(grpcConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create gRPC client: %w", err)
 	}
 
-	client := pb.NewProductServiceClient(conn)
+	// Create the product service client
+	client := pb.NewProductServiceClient(gClient.GetConnection())
 
 	return &ProductClient{
-		conn:         conn,
-		client:       client,
-		consulClient: consulClient,
-		serviceName:  "product-service-grpc",
-		clientCfg:    clientCfg,
-		consulCfg:    consulCfg,
+		grpcClient: gClient,
+		client:     client,
 	}, nil
-}
-
-// shouldUseServiceDiscovery checks if service discovery should be used.
-func shouldUseServiceDiscovery(
-	clientCfg *config.ClientConfig,
-	consulCfg *config.ConsulConfig,
-) bool {
-	return clientCfg.UseServiceDiscovery && consulCfg.Enabled
-}
-
-// createConsulConnection creates a gRPC connection using Consul service discovery.
-func createConsulConnection(consulCfg *config.ConsulConfig) (*grpc.ClientConn, *api.Client, error) {
-	consulConfig := api.DefaultConfig()
-	consulConfig.Address = consulCfg.Address
-
-	consulClient, err := api.NewClient(consulConfig)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create consul client: %w", err)
-	}
-
-	address, err := getServiceAddress(consulClient, "product-service-grpc")
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get product-service address from consul: %w", err)
-	}
-
-	conn, err := createGRPCConnection(address)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return conn, consulClient, nil
-}
-
-// createStaticConnection creates a gRPC connection using static configuration.
-func createStaticConnection(clientCfg *config.ClientConfig) (*grpc.ClientConn, error) {
-	address := fmt.Sprintf("%s:%d", clientCfg.ProductGRPCHost, clientCfg.ProductGRPCPort)
-
-	return createGRPCConnection(address)
-}
-
-// createGRPCConnection creates a gRPC connection with common options and resilience features.
-func createGRPCConnection(address string) (*grpc.ClientConn, error) {
-	clientAuth := grpcAuth.NewClientAuthInterceptor()
-
-	// Configure keepalive parameters for automatic reconnection
-	kacp := keepalive.ClientParameters{
-		Time:                30 * time.Second, // Send keepalive pings every 30 seconds (less aggressive)
-		Timeout:             5 * time.Second,  // Wait 5 seconds for ping ack before considering the connection dead
-		PermitWithoutStream: false,            // Only send keepalive pings when there are active streams
-	}
-
-	conn, err := grpc.NewClient(
-		address,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(clientAuth.ForwardUserAuth()),
-		grpc.WithKeepaliveParams(kacp),
-		// Enable automatic reconnection with reasonable retry policy
-		grpc.WithDefaultServiceConfig(`{
-			"methodConfig": [{
-				"name": [{"service": "product.ProductService"}],
-				"retryPolicy": {
-					"MaxAttempts": 3,
-					"InitialBackoff": "0.1s",
-					"MaxBackoff": "1s", 
-					"BackoffMultiplier": 2.0,
-					"RetryableStatusCodes": [ "UNAVAILABLE", "DEADLINE_EXCEEDED" ]
-				}
-			}],
-			"loadBalancingPolicy": "round_robin"
-		}`),
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to connect to product-service: %w", err)
-	}
-
-	return conn, nil
-}
-
-// getServiceAddress retrieves the service address from Consul.
-func getServiceAddress(consulClient *api.Client, serviceName string) (string, error) {
-	services, _, err := consulClient.Health().Service(serviceName, "", true, nil)
-	if err != nil {
-		return "", fmt.Errorf("failed to query consul for service %s: %w", serviceName, err)
-	}
-
-	if len(services) == 0 {
-		return "", fmt.Errorf("no healthy instances found for service %s", serviceName)
-	}
-
-	// Use the first healthy instance
-	service := services[0].Service
-
-	return fmt.Sprintf("%s:%d", service.Address, service.Port), nil
 }
 
 // GetProducts fetches product data by IDs.
@@ -464,5 +356,5 @@ func (pc *ProductClient) HealthCheck(ctx context.Context) error {
 
 // Close closes the gRPC connection.
 func (pc *ProductClient) Close() error {
-	return pc.conn.Close()
+	return pc.grpcClient.Close()
 }
