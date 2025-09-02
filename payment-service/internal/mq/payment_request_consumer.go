@@ -12,6 +12,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
@@ -58,8 +60,8 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		"payment", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		constant.TopicPaymentRequest,     // topic
-		constant.KafkaSourceOrderService, // source service
+		event.PaymentRequestTopic,    // topic
+		pkgconstant.OrderServiceName, // source service
 		json.RawMessage(body),
 		nil, // correlation_id
 		nil, // causation_id
@@ -93,7 +95,7 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		var processingErr error
 
 		switch meta.Metadata.EventType {
-		case constant.KafkaEventTypePaymentRequested:
+		case event.PaymentRequestedEventType:
 			processingErr = c.processPaymentRequest(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown payment event type: %s", meta.Metadata.EventType)
@@ -193,8 +195,8 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		ID:            uuid.New(),
 		AggregateType: "payment",
 		AggregateID:   savedPayment.ID,
-		EventType:     constant.KafkaEventTypePaymentCreated,
-		Topic:         constant.TopicPaymentLifecycle,
+		EventType:     event.PaymentCreatedEventType,
+		Topic:         event.PaymentLifecycleTopic,
 		Payload:       paymentEvtPayload,
 		Status:        constant.OutboxStatusPending,
 		CreatedAt:     time.Now().UTC(),

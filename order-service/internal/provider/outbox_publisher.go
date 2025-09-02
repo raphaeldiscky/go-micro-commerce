@@ -2,6 +2,7 @@ package provider
 
 import (
 	"github.com/IBM/sarama"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -18,24 +19,24 @@ func SetupOutboxPublisher(
 	providers *Providers,
 ) *service.OutboxPublisher {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderLifecycle,
-		constant.TopicOrderLifecycleNumPartitions,
-		constant.TopicOrderLifecycleReplicationFactor,
+		event.OrderLifecycleTopic,
+		constant.OrderLifecycleTopicNumPartitions,
+		constant.OrderLifecycleTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderDLQ,
-		constant.TopicOrderDLQNumPartitions,
-		constant.TopicOrderDLQReplicationFactor,
+		event.OrderDLQTopic,
+		constant.OrderDLQTopicNumPartitions,
+		constant.OrderDLQTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentRequest,
-		constant.TopicPaymentRequestNumPartitions,
-		constant.TopicPaymentRequestReplicationFactor,
+		event.PaymentRequestTopic,
+		constant.PaymentRequestTopicNumPartitions,
+		constant.PaymentRequestTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentDLQ,
-		constant.TopicPaymentDLQNumPartitions,
-		constant.TopicPaymentDLQReplicationFactor,
+		event.PaymentDLQTopic,
+		constant.PaymentDLQTopicNumPartitions,
+		constant.PaymentDLQTopicReplicationFactor,
 	)
 
 	registry := kafka.NewEventRegistry()
@@ -52,9 +53,9 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(constant.KafkaEventTypeOrderCreated, &mq.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypeOrderCanceled, &mq.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentRequested, &mq.PaymentRequestEvent{})
+	registry.Register(event.OrderCreatedEventType, &mq.OrderLifecycleEvent{})
+	registry.Register(event.OrderCanceledEventType, &mq.OrderLifecycleEvent{})
+	registry.Register(event.PaymentRequestedEventType, &mq.PaymentRequestEvent{})
 
 	// Producers
 	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)

@@ -10,7 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
@@ -38,10 +38,10 @@ func NewEmailVerificationRequestedEvent(
 	return &EmailVerificationRequestedEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   constant.KafkaEventTypeEmailVerificationRequested,
+			EventType:   event.EmailVerificationRequestedEventType,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourceAuthService,
+			Source:      pkgconstant.AuthServiceName,
 		},
 		Payload: payload.EmailVerificationRequestedPayload{
 			UserID: userID,
@@ -63,7 +63,7 @@ func NewEmailVerificationRequestedProducer(
 ) kafka.ProducerInterface {
 	return &EmailVerificationRequestedProducer{
 		Producer: producer,
-		topic:    constant.TopicUserVerification,
+		topic:    event.UserVerificationTopic,
 	}
 }
 

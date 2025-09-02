@@ -9,7 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // UserVerifiedEvent is the envelope for all user verified events.
@@ -36,10 +36,10 @@ func NewUserVerifiedEvent(
 	return &UserVerifiedEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   constant.KafkaEventTypeUserVerified,
+			EventType:   event.UserVerifiedEventType,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourceAuthService,
+			Source:      pkgconstant.AuthServiceName,
 		},
 		Payload: payload.UserVerifiedPayload{
 			UserID: userID,
@@ -58,7 +58,7 @@ type UserVerifiedProducer struct {
 func NewUserVerifiedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &UserVerifiedProducer{
 		Producer: producer,
-		topic:    constant.TopicUserVerification,
+		topic:    event.UserVerificationTopic,
 	}
 }
 

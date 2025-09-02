@@ -10,6 +10,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
@@ -46,10 +48,10 @@ func NewPaymentRequestEvent(
 	return &PaymentRequestEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   constant.KafkaEventTypePaymentRequested,
+			EventType:   event.PaymentRequestedEventType,
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourceOrderService,
+			Source:      pkgconstant.OrderServiceName,
 		},
 		Payload: payload.PaymentRequestPayload{
 			PaymentID:     uuid.New(),
@@ -66,7 +68,7 @@ func NewPaymentRequestEvent(
 func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentRequestProducer{
 		Producer: producer,
-		topic:    constant.TopicPaymentRequest,
+		topic:    event.PaymentRequestTopic,
 	}
 }
 

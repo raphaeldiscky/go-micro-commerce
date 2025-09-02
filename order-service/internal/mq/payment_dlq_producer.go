@@ -11,14 +11,13 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
 // PaymentDLQEvent is the envelope for all Order events.
 type PaymentDLQEvent struct {
-	Metadata event.Metadata            `json:"metadata"`
-	Payload  payload.PaymentDLQPayload `json:"payload"`
+	Metadata event.Metadata     `json:"metadata"`
+	Payload  payload.DLQPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the PaymentDLQEvent.
@@ -45,12 +44,12 @@ func NewPaymentDLQEvent(
 	return &PaymentDLQEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   constant.KafkaEventTypePaymentDLQ,
+			EventType:   event.PaymentDLQEventType,
 			AggregateID: outboxEvent.AggregateID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourceOrderService,
+			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: payload.PaymentDLQPayload{
+		Payload: payload.DLQPayload{
 			OutboxEventID:   outboxEvent.ID,
 			AggregateType:   outboxEvent.AggregateType,
 			AggregateID:     outboxEvent.AggregateID,
@@ -70,7 +69,7 @@ func NewPaymentDLQEvent(
 func NewPaymentDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentDLQProducer{
 		Producer: producer,
-		topic:    constant.TopicPaymentDLQ,
+		topic:    event.PaymentDLQTopic,
 	}
 }
 

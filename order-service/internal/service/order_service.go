@@ -9,6 +9,7 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
@@ -203,8 +204,8 @@ func (s *OrderService) CreateOrder(
 			ID:            uuid.New(),
 			AggregateType: "order",
 			AggregateID:   savedOrder.ID,
-			EventType:     constant.KafkaEventTypeOrderCreated,
-			Topic:         constant.TopicOrderLifecycle,
+			EventType:     event.OrderCreatedEventType,
+			Topic:         event.OrderLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -334,8 +335,8 @@ func (s *OrderService) CreateOrderWithProto(
 			ID:            uuid.New(),
 			AggregateType: "order",
 			AggregateID:   savedOrder.ID,
-			EventType:     constant.KafkaEventTypeOrderCreated,
-			Topic:         constant.TopicOrderLifecycle,
+			EventType:     event.OrderCreatedEventType,
+			Topic:         event.OrderLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -675,8 +676,8 @@ func (s *OrderService) RequestPaymentOrder(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   updatedOrder.ID,
-			EventType:     constant.KafkaEventTypePaymentRequested,
-			Topic:         constant.TopicPaymentRequest,
+			EventType:     event.PaymentRequestedEventType,
+			Topic:         event.PaymentRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

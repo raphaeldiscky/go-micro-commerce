@@ -10,7 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // ProductCreatedEvent is the envelope for all product events.
@@ -39,10 +39,10 @@ func NewProductCreatedEvent(
 	return &ProductCreatedEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   constant.KafkaEventTypeProductCreated,
+			EventType:   event.ProductCreatedEventType,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourceProductService,
+			Source:      pkgconstant.ProductServiceName,
 		},
 		Payload: payload.ProductCreatedPayload{
 			ProductID: productID,
@@ -63,7 +63,7 @@ type ProductCreatedProducer struct {
 func NewProductCreatedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &ProductCreatedProducer{
 		Producer: producer,
-		topic:    constant.TopicProductLifecycle,
+		topic:    event.ProductLifecycleTopic,
 	}
 }
 

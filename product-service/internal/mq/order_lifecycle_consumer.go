@@ -64,9 +64,9 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 	}
 
 	switch meta.Metadata.EventType {
-	case constant.KafkaEventTypeOrderCreated:
+	case event.OrderCreatedEventType:
 		return c.handleCreatedOrder(ctx, body)
-	case constant.KafkaEventTypeOrderCanceled:
+	case event.OrderCanceledEventType:
 		return c.handleCanceledOrder(ctx, body)
 	default:
 		c.logger.Warnf("ignoring event type: %s", meta.Metadata.EventType)

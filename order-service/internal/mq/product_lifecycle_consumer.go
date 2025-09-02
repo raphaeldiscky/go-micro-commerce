@@ -10,7 +10,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -61,11 +60,11 @@ func (c *ProductLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 	}
 
 	switch meta.Metadata.EventType {
-	case constant.KafkaEventTypeProductCreated:
+	case event.ProductCreatedEventType:
 		return c.handleCreatedProduct(ctx, body)
-	case constant.KafkaEventTypeProductUpdated:
+	case event.ProductUpdatedEventType:
 		return c.handleUpdatedProduct(ctx, body)
-	case constant.KafkaEventTypeProductDeleted:
+	case event.ProductDeletedEventType:
 		return c.handleDeletedProduct(ctx, body)
 	default:
 		c.logger.Warnf("ignoring event type: %s", meta.Metadata.EventType)

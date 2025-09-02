@@ -7,9 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/topic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -51,7 +52,7 @@ func NewOrderLifecycleEvent(
 			EventType:   mapStatusToEventType(newStatus),
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourceOrderService,
+			Source:      pkgconstant.OrderServiceName,
 		},
 		Payload: payload.OrderLifecyclePayload{
 			OrderID:    orderID,
@@ -67,7 +68,7 @@ func NewOrderLifecycleEvent(
 func NewOrderLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &OrderLifecycleProducer{
 		Producer: producer,
-		topic:    topic.OrderLifecycleTopic,
+		topic:    event.OrderLifecycleTopic,
 	}
 }
 

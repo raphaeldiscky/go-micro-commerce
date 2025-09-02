@@ -10,8 +10,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
-// OrderDLQPayload holds the data for the Order DLQ event.
-type OrderDLQPayload struct {
+// DLQPayload holds the data for the DLQ event.
+type DLQPayload struct {
 	OutboxEventID   uuid.UUID          `json:"outbox_event_id"`
 	AggregateType   string             `json:"aggregate_type"`
 	AggregateID     uuid.UUID          `json:"aggregate_id"`

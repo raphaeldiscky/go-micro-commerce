@@ -2,6 +2,8 @@
 package mq
 
 import (
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 )
 
@@ -9,15 +11,15 @@ import (
 func mapStatusToEventType(status constant.PaymentStatus) string {
 	switch status {
 	case constant.PaymentStatusPending:
-		return constant.KafkaEventTypePaymentCreated
+		return event.PaymentCreatedEventType
 	case constant.PaymentStatusProcessing:
-		return constant.KafkaEventTypePaymentProcessing
+		return event.PaymentProcessingEventType
 	case constant.PaymentStatusCompleted:
-		return constant.KafkaEventTypePaymentCompleted
+		return event.PaymentCompletedEventType
 	case constant.PaymentStatusFailed:
-		return constant.KafkaEventTypePaymentFailed
+		return event.PaymentFailedEventType
 	case constant.PaymentStatusRefunded:
-		return constant.KafkaEventTypePaymentRefunded
+		return event.PaymentRefundedEventType
 	default:
 		return "unknown"
 	}

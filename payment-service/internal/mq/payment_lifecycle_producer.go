@@ -9,6 +9,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 )
 
@@ -53,7 +55,7 @@ func NewPaymentLifecycleEvent(
 			EventType:   mapStatusToEventType(newStatus),
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      constant.KafkaSourcePaymentService,
+			Source:      pkgconstant.PaymentServiceName,
 		},
 		Payload: PaymentLifecyclePayload{
 			PaymentID:  orderID,
@@ -67,7 +69,7 @@ func NewPaymentLifecycleEvent(
 func NewPaymentLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentLifecycleProducer{
 		Producer: producer,
-		topic:    constant.TopicPaymentLifecycle,
+		topic:    event.PaymentLifecycleTopic,
 	}
 }
 

@@ -1,9 +1,8 @@
-// Package eventtype contains event types for events.
-package eventtype
+package event
 
 const (
-	// OrderDLQEventType is the event type for order DLQ events.
-	OrderDLQEventType = "OrderDLQ"
+	// OrderLifecycleTopic is the topic for order lifecycle events.
+	OrderLifecycleTopic = "order.lifecycle"
 )
 
 const (
@@ -31,4 +30,9 @@ const (
 	// OrderFailedEventType is when order processing failed (failed).
 	// Needed by: notification service, analytics.
 	OrderFailedEventType = "OrderFailed"
+)
+
+const (
+	// OrderProductEventsConsumerGroup is the consumer group for order product events.
+	OrderProductEventsConsumerGroup = "order-service.product-events"
 )

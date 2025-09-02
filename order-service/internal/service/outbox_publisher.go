@@ -13,7 +13,6 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
@@ -145,9 +144,9 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	var producer kafka.ProducerInterface
 
 	switch outboxEvent.Topic {
-	case constant.TopicOrderLifecycle:
+	case event.OrderLifecycleTopic:
 		producer = p.orderLifecycleProducer
-	case constant.TopicPaymentRequest:
+	case event.PaymentRequestTopic:
 		producer = p.paymentRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
@@ -215,10 +214,10 @@ func (p *OutboxPublisher) handleProcessingError(
 	var evt event.BaseEvent
 
 	switch outboxEvent.Topic {
-	case constant.TopicOrderLifecycle:
+	case event.OrderLifecycleTopic:
 		dlqProducer = p.orderDLQProducer
 		evt = mq.NewOrderDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
-	case constant.TopicPaymentRequest:
+	case event.PaymentRequestTopic:
 		dlqProducer = p.paymentDLQProducer
 		evt = mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	default:

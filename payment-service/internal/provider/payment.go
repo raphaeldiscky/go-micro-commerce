@@ -3,6 +3,7 @@ package provider
 import (
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -17,9 +18,9 @@ import (
 // SetupPayment initializes the order-related routes and services.
 func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentLifecycle,
-		constant.TopicPaymentLifecycleNumPartitions,
-		constant.TopicPaymentLifecycleReplicationFactor,
+		event.PaymentLifecycleTopic,
+		constant.PaymentLifecycleTopicNumPartitions,
+		constant.PaymentLifecycleTopicReplicationFactor,
 	)
 
 	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{

@@ -2,6 +2,7 @@
 package mq
 
 import (
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -12,21 +13,21 @@ import (
 func mapStatusToEventType(status constant.OrderStatus) string {
 	switch status {
 	case constant.OrderStatusPending:
-		return constant.KafkaEventTypeOrderCreated
+		return event.OrderCreatedEventType
 	case constant.OrderStatusPaid:
-		return constant.KafkaEventTypeOrderPaid
+		return event.OrderPaidEventType
 	case constant.OrderStatusShipped:
-		return constant.KafkaEventTypeOrderShipped
+		return event.OrderShippedEventType
 	case constant.OrderStatusDelivered:
-		return constant.KafkaEventTypeOrderDelivered
+		return event.OrderDeliveredEventType
 	case constant.OrderStatusCanceled:
-		return constant.KafkaEventTypeOrderCanceled
+		return event.OrderCanceledEventType
 	case constant.OrderStatusConfirmed:
-		return constant.KafkaEventTypeOrderConfirmed
+		return event.OrderConfirmedEventType
 	case constant.OrderStatusProcessing:
-		return constant.KafkaEventTypeOrderProcessing
+		return event.OrderProcessingEventType
 	case constant.OrderStatusFailed:
-		return constant.KafkaEventTypeOrderFailed
+		return event.OrderFailedEventType
 	default:
 		return "unknown"
 	}

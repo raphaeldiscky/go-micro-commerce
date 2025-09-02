@@ -121,12 +121,8 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		var processingErr error
 
 		switch meta.Metadata.EventType {
-		case constant.KafkaEventTypeOrderCreated:
+		case event.OrderCreatedEventType:
 			processingErr = c.processCreatedOrder(ctx, ds, body)
-		case constant.KafkaEventTypeOrderUpdated:
-			processingErr = c.processUpdatedOrder(ctx, ds, body)
-		case constant.KafkaEventTypeOrderDeleted:
-			processingErr = c.processDeletedOrder(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown event type: %s", meta.Metadata.EventType)
 			// Mark as processed even for unknown events to avoid reprocessing
@@ -172,96 +168,6 @@ func (c *OrderLifecycleConsumer) processCreatedOrder(
 		"Order %s created, payment will be created when payment is requested",
 		evt.Payload.OrderID,
 	)
-
-	return nil
-}
-
-// processUpdatedOrder handles order status updates.
-func (c *OrderLifecycleConsumer) processUpdatedOrder(
-	_ context.Context,
-	_ repository.DataStore,
-	body []byte,
-) error {
-	var evt OrderLifecycleEvent
-	if err := sonic.Unmarshal(body, &evt); err != nil {
-		return fmt.Errorf("failed to unmarshal order updated event: %w", err)
-	}
-
-	c.logger.Infof("Handling order updated event for order ID: %s, status: %s",
-		evt.Payload.OrderID, evt.Payload.Status)
-
-	// Handle specific order status changes that might affect payments
-	switch evt.Payload.Status {
-	case constant.OrderStatusCanceled:
-		// If order is canceled, we might want to refund any completed payments
-		c.logger.Infof("Order %s canceled, checking for payments to refund", evt.Payload.OrderID)
-		// Refund logic can be implemented here
-	case constant.OrderStatusPaid:
-		// Order marked as paid (from external payment processing)
-		c.logger.Infof("Order %s marked as paid externally", evt.Payload.OrderID)
-	case constant.OrderStatusPending, constant.OrderStatusShipped, constant.OrderStatusDelivered:
-		// no action needed
-	default:
-		c.logger.Infof("No payment action needed for order %s status: %s",
-			evt.Payload.OrderID, evt.Payload.Status)
-	}
-
-	return nil
-}
-
-// processDeletedOrder handles order deletion events.
-func (c *OrderLifecycleConsumer) processDeletedOrder(
-	ctx context.Context,
-	ds repository.DataStore,
-	body []byte,
-) error {
-	var evt OrderLifecycleEvent
-
-	if err := sonic.Unmarshal(body, &evt); err != nil {
-		return fmt.Errorf("failed to unmarshal order deleted event: %w", err)
-	}
-
-	c.logger.Infof("Handling order deleted event for order ID: %s", evt.Payload.OrderID)
-
-	// When an order is deleted, we should handle any related payments
-	paymentRepo := ds.PaymentRepository()
-
-	// Find payment for this order
-	payment, err := paymentRepo.FindByOrderID(ctx, evt.Payload.OrderID)
-	if err != nil {
-		return fmt.Errorf("failed to find payment for deleted order: %w", err)
-	}
-
-	if payment != nil {
-		c.logger.Infof("Found payment %s for deleted order %s, current status: %s",
-			payment.ID, evt.Payload.OrderID, payment.Status)
-
-		// Handle payment based on current status
-		switch payment.Status {
-		case constant.PaymentStatusCompleted:
-			// Need to refund completed payments
-			c.logger.Warnf(
-				"Order deleted but payment %s is completed - refund needed",
-				payment.ID,
-			)
-			// Refund logic would go here
-		case constant.PaymentStatusPending, constant.PaymentStatusProcessing:
-			// Cancel pending/processing payments
-			c.logger.Infof("Canceling payment %s due to order deletion", payment.ID)
-
-			if err := payment.UpdateStatus(constant.PaymentStatusFailed); err != nil {
-				return fmt.Errorf("failed to cancel payment: %w", err)
-			}
-
-			if _, err := paymentRepo.Update(ctx, payment); err != nil {
-				return fmt.Errorf("failed to update canceled payment: %w", err)
-			}
-		case constant.PaymentStatusFailed, constant.PaymentStatusRefunded:
-			// No action needed
-		}
-	} else {
-		c.logger.Infof("No payment found for deleted order %s", evt.Payload.OrderID)
-	}
 
 	return nil
 }
