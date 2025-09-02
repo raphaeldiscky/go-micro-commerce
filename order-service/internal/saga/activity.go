@@ -18,13 +18,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
-// OrderPricing represents the pricing details for an order.
-type OrderPricing struct {
-	TotalPrice    decimal.Decimal
-	TotalDiscount decimal.Decimal
-	TotalTax      decimal.Decimal
-}
-
 // OrderActivities defines the interface for order saga activities.
 type OrderActivities interface {
 	// Execution
@@ -33,7 +26,10 @@ type OrderActivities interface {
 		ctx context.Context,
 		order *entity.Order,
 	) (reservedProducts []entity.Product, err error)
-	CalculatePricing(ctx context.Context, order *entity.Order) (pricing OrderPricing, err error)
+	CalculatePricing(
+		ctx context.Context,
+		order *entity.Order,
+	) (pricing entity.OrderPricing, err error)
 	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
 	ConfirmProductsDeduction(
 		ctx context.Context,
@@ -93,7 +89,7 @@ func (a *OrderActivitiesImpl) ValidateProducts(_ context.Context, order *entity.
 		item := &order.Items[i]
 		if item.Quantity <= 0 {
 			return NewBusinessRuleError(
-				ValidateProductsStep,
+				constant.ValidateProductsStep,
 				fmt.Sprintf("invalid quantity %d for product %s", item.Quantity, item.ProductID),
 				nil,
 			)
@@ -114,7 +110,7 @@ func (a *OrderActivitiesImpl) ReserveProducts(
 
 	if a.productClient == nil {
 		return nil, NewNonRetriableError(
-			ReserveProductsStep,
+			constant.ReserveProductsStep,
 			"product service is unavailable",
 			nil,
 		)
@@ -142,11 +138,15 @@ func (a *OrderActivitiesImpl) ReserveProducts(
 
 		// Categorize error based on type
 		if isTemporaryError(err) {
-			return nil, NewRetriableError(ReserveProductsStep, "temporary service error", err)
+			return nil, NewRetriableError(
+				constant.ReserveProductsStep,
+				"temporary service error",
+				err,
+			)
 		}
 
 		return nil, NewNonRetriableError(
-			ReserveProductsStep,
+			constant.ReserveProductsStep,
 			"stock reservation failed",
 			err,
 		)
@@ -161,7 +161,7 @@ func (a *OrderActivitiesImpl) ReserveProducts(
 func (a *OrderActivitiesImpl) CalculatePricing(
 	_ context.Context,
 	order *entity.Order,
-) (OrderPricing, error) {
+) (entity.OrderPricing, error) {
 	a.logger.Infof("Calculating pricing for order: %s", order.ID)
 
 	// In a real implementation, you would call a pricing service
@@ -200,7 +200,7 @@ func (a *OrderActivitiesImpl) CalculatePricing(
 	a.logger.Infof("Pricing calculated for order %s: TaxTotal=%s, DiscountTotal=%s, TotalPrice=%s",
 		order.ID, subtotal.String(), taxTotal.String(), discountTotal.String(), totalPrice.String())
 
-	return OrderPricing{
+	return entity.OrderPricing{
 		TotalPrice:    totalPrice,
 		TotalDiscount: discountTotal,
 		TotalTax:      taxTotal,

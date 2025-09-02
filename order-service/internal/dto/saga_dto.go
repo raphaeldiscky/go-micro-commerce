@@ -8,8 +8,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
-// SagaStatusResponse represents current saga execution status.
-type SagaStatusResponse struct {
+// WorkflowState represents current saga execution state and status.
+type WorkflowState struct {
 	SagaID           uuid.UUID           `json:"saga_id"`
 	OrderID          uuid.UUID           `json:"order_id"`
 	Status           constant.SagaStatus `json:"status"`

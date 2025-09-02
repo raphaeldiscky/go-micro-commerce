@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // ErrorType defines different types of saga errors.
@@ -28,7 +30,7 @@ type Error struct {
 	Type    ErrorType
 	Message string
 	Cause   error
-	Step    WorkflowStep
+	Step    constant.WorkflowStep
 }
 
 // Error returns the error message.
@@ -51,7 +53,7 @@ func (e *Error) IsRetriable() bool {
 }
 
 // NewRetriableError creates a new retriable error.
-func NewRetriableError(step WorkflowStep, message string, cause error) *Error {
+func NewRetriableError(step constant.WorkflowStep, message string, cause error) *Error {
 	return &Error{
 		Type:    ErrorTypeRetriable,
 		Message: message,
@@ -61,7 +63,7 @@ func NewRetriableError(step WorkflowStep, message string, cause error) *Error {
 }
 
 // NewNonRetriableError creates a new non-retriable error.
-func NewNonRetriableError(step WorkflowStep, message string, cause error) *Error {
+func NewNonRetriableError(step constant.WorkflowStep, message string, cause error) *Error {
 	return &Error{
 		Type:    ErrorTypeNonRetriable,
 		Message: message,
@@ -71,7 +73,7 @@ func NewNonRetriableError(step WorkflowStep, message string, cause error) *Error
 }
 
 // NewTimeoutError creates a new timeout error.
-func NewTimeoutError(step WorkflowStep, message string, cause error) *Error {
+func NewTimeoutError(step constant.WorkflowStep, message string, cause error) *Error {
 	return &Error{
 		Type:    ErrorTypeTimeout,
 		Message: message,
@@ -81,7 +83,7 @@ func NewTimeoutError(step WorkflowStep, message string, cause error) *Error {
 }
 
 // NewBusinessRuleError creates a new business rule error.
-func NewBusinessRuleError(step WorkflowStep, message string, cause error) *Error {
+func NewBusinessRuleError(step constant.WorkflowStep, message string, cause error) *Error {
 	return &Error{
 		Type:    ErrorTypeBusinessRule,
 		Message: message,
@@ -91,7 +93,7 @@ func NewBusinessRuleError(step WorkflowStep, message string, cause error) *Error
 }
 
 // CategorizeError categorizes an error based on its type and context.
-func CategorizeError(step WorkflowStep, err error) *Error {
+func CategorizeError(step constant.WorkflowStep, err error) *Error {
 	if err == nil {
 		return nil
 	}

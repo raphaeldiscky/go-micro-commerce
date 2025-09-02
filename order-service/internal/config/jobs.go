@@ -23,6 +23,8 @@ type SagaRecoveryJobConfig struct {
 
 // initJobsConfig initializes the jobs configuration from environment variables.
 func initJobsConfig() *JobsConfig {
+	setJobsDefaults()
+
 	return &JobsConfig{
 		SagaRecovery: &SagaRecoveryJobConfig{
 			Enabled:    viper.GetBool("JOBS_SAGA_RECOVERY_ENABLED"),

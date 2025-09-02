@@ -80,27 +80,6 @@ func (h *OrderHandler) CreateOrderWithProto(c echo.Context) error {
 	return echoutils.ResponseCreated(c, order)
 }
 
-// GetOrderByID retrieves a single order by its ID.
-//
-// Route: GET /orders/:orderID
-//
-// Authentication: Requires admin privileges.
-func (h *OrderHandler) GetOrderByID(c echo.Context) error {
-	param := c.Param("orderID")
-
-	orderID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
-
-	order, err := h.orderService.GetOrder(c.Request().Context(), orderID)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseOK(c, order)
-}
-
 // CreateOrderWithSaga handles POST /orders/saga with saga pattern processing.
 func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 	req := dto.CreateOrderRequest{
@@ -122,6 +101,50 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 	}
 
 	return echoutils.ResponseCreated(c, order)
+}
+
+// CreateOrderWithTemporal handles POST /orders/temporal with Temporal processing.
+func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
+	req := dto.CreateOrderRequest{
+		CustomerID:    echoutils.GetUserIDFromContext(c),
+		CustomerEmail: echoutils.GetEmailFromContext(c),
+	}
+
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	order, err := h.orderService.CreateOrderWithTemporal(c.Request().Context(), req)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseCreated(c, order)
+}
+
+// GetOrderByID retrieves a single order by its ID.
+//
+// Route: GET /orders/:orderID
+//
+// Authentication: Requires admin privileges.
+func (h *OrderHandler) GetOrderByID(c echo.Context) error {
+	param := c.Param("orderID")
+
+	orderID, err := uuid.Parse(param)
+	if err != nil {
+		return err
+	}
+
+	order, err := h.orderService.GetOrder(c.Request().Context(), orderID)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, order)
 }
 
 // GetOrdersByCustomer retrieves a list of orders by customer ID.

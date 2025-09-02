@@ -8,6 +8,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/job"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
@@ -15,9 +16,10 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore    repository.DataStore
-	KafkaAdmin   *kafka.Admin
-	JobScheduler *job.Scheduler
+	DataStore      repository.DataStore
+	KafkaAdmin     *kafka.Admin
+	JobScheduler   *job.Scheduler
+	TemporalClient *client.TemporalClient
 }
 
 // SetupGlobal initializes all providers.
@@ -60,7 +62,8 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 	})
 
 	return &Providers{
-		DataStore:  dataStore,
-		KafkaAdmin: kafkaAdmin,
+		DataStore:      dataStore,
+		KafkaAdmin:     kafkaAdmin,
+		TemporalClient: nil, // will be set up later in worker
 	}, nil
 }

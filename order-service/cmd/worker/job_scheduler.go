@@ -6,6 +6,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/job"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/provider"
 )
 
 // JobSchedulerWorker wraps the job scheduler as a Worker.
@@ -16,11 +17,11 @@ type JobSchedulerWorker struct {
 
 // NewJobSchedulerWorker creates a new job scheduler worker.
 func NewJobSchedulerWorker(
-	scheduler *job.Scheduler,
 	appLogger logger.Logger,
+	providers *provider.Providers,
 ) *JobSchedulerWorker {
 	return &JobSchedulerWorker{
-		scheduler: scheduler,
+		scheduler: providers.JobScheduler,
 		logger:    appLogger,
 	}
 }
