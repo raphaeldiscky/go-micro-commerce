@@ -1,7 +1,6 @@
 package provider
 
 import (
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -19,8 +18,8 @@ func SetupKafkaConsumers(
 
 	ordersConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
-		event.OrderLifecycleTopic,
-		event.ProductOrderEventsConsumerGroup,
+		kafka.OrderLifecycleTopic,
+		kafka.ProductOrderEventsConsumerGroup,
 		mq.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)

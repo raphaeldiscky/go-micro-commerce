@@ -2,7 +2,6 @@ package provider
 
 import (
 	"github.com/IBM/sarama"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -19,12 +18,12 @@ func SetupOutboxPublisher(
 	providers *Providers,
 ) *service.OutboxPublisher {
 	providers.KafkaAdmin.CreateTopic(
-		event.PaymentLifecycleTopic,
+		kafka.PaymentLifecycleTopic,
 		constant.PaymentLifecycleTopicNumPartitions,
 		constant.PaymentLifecycleTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		event.PaymentDLQTopic,
+		kafka.PaymentDLQTopic,
 		constant.PaymentDLQTopicNumPartitions,
 		constant.PaymentDLQTopicReplicationFactor,
 	)
@@ -43,9 +42,9 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(event.PaymentCreatedEventType, &mq.PaymentLifecycleEvent{})
-	registry.Register(event.PaymentFailedEventType, &mq.PaymentLifecycleEvent{})
-	registry.Register(event.PaymentCompletedEventType, &mq.PaymentLifecycleEvent{})
+	registry.Register(kafka.PaymentCreatedEventType, &mq.PaymentLifecycleEvent{})
+	registry.Register(kafka.PaymentFailedEventType, &mq.PaymentLifecycleEvent{})
+	registry.Register(kafka.PaymentCompletedEventType, &mq.PaymentLifecycleEvent{})
 
 	orderLifecycleProducer := mq.NewPaymentLifecycleProducer(asyncProducer)
 	orderDLQProducer := mq.NewPaymentDLQProducer(asyncProducer)

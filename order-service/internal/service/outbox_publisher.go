@@ -144,9 +144,9 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	var producer kafka.ProducerInterface
 
 	switch outboxEvent.Topic {
-	case event.OrderLifecycleTopic:
+	case kafka.OrderLifecycleTopic:
 		producer = p.orderLifecycleProducer
-	case event.PaymentRequestTopic:
+	case kafka.PaymentRequestTopic:
 		producer = p.paymentRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
@@ -214,10 +214,10 @@ func (p *OutboxPublisher) handleProcessingError(
 	var evt event.BaseEvent
 
 	switch outboxEvent.Topic {
-	case event.OrderLifecycleTopic:
+	case kafka.OrderLifecycleTopic:
 		dlqProducer = p.orderDLQProducer
 		evt = mq.NewOrderDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
-	case event.PaymentRequestTopic:
+	case kafka.PaymentRequestTopic:
 		dlqProducer = p.paymentDLQProducer
 		evt = mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	default:

@@ -1,4 +1,4 @@
-package event
+package kafka
 
 const (
 	// OrderLifecycleTopic is the topic for order lifecycle events.

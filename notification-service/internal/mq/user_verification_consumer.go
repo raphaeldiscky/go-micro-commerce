@@ -7,7 +7,6 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
 
@@ -16,14 +15,14 @@ import (
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  payload.UserVerifiedPayload `json:"payload"`
+	Metadata event.Metadata            `json:"metadata"`
+	Payload  event.UserVerifiedPayload `json:"payload"`
 }
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata event.Metadata                            `json:"metadata"`
-	Payload  payload.EmailVerificationRequestedPayload `json:"payload"`
+	Metadata event.Metadata                          `json:"metadata"`
+	Payload  event.EmailVerificationRequestedPayload `json:"payload"`
 }
 
 // UserVerificationConsumer handles the logic for processing user verification requested events.

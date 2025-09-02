@@ -12,6 +12,7 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
 )
 
 // PaymentLifecyclePayload holds the data for the Payment Lifecycle event.
@@ -52,7 +53,7 @@ func NewPaymentLifecycleEvent(
 	return &PaymentLifecycleEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   mapStatusToEventType(newStatus),
+			EventType:   mapper.MapStatusToEventType(newStatus),
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.PaymentServiceName,
@@ -69,7 +70,7 @@ func NewPaymentLifecycleEvent(
 func NewPaymentLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentLifecycleProducer{
 		Producer: producer,
-		topic:    event.PaymentLifecycleTopic,
+		topic:    kafka.PaymentLifecycleTopic,
 	}
 }
 

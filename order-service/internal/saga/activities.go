@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
@@ -240,8 +239,8 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   order.ID,
-			EventType:     event.PaymentRequestedEventType,
-			Topic:         event.PaymentRequestTopic,
+			EventType:     kafka.PaymentRequestedEventType,
+			Topic:         kafka.PaymentRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

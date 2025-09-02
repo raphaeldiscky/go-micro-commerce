@@ -7,7 +7,7 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -16,20 +16,20 @@ import (
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.ProductCreatedPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.ProductCreatedPayload `json:"payload"`
 }
 
 // ProductUpdatedEvent is the envelope for all product events.
 type ProductUpdatedEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.ProductUpdatedPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.ProductUpdatedPayload `json:"payload"`
 }
 
 // ProductDeletedEvent is the envelope for all product events.
 type ProductDeletedEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.ProductDeletedPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.ProductDeletedPayload `json:"payload"`
 }
 
 // ProductLifecycleConsumer handles the logic for processing product created events.
@@ -60,11 +60,11 @@ func (c *ProductLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 	}
 
 	switch meta.Metadata.EventType {
-	case event.ProductCreatedEventType:
+	case kafka.ProductCreatedEventType:
 		return c.handleCreatedProduct(ctx, body)
-	case event.ProductUpdatedEventType:
+	case kafka.ProductUpdatedEventType:
 		return c.handleUpdatedProduct(ctx, body)
-	case event.ProductDeletedEventType:
+	case kafka.ProductDeletedEventType:
 		return c.handleDeletedProduct(ctx, body)
 	default:
 		c.logger.Warnf("ignoring event type: %s", meta.Metadata.EventType)

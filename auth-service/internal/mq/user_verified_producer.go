@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -14,8 +13,8 @@ import (
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  payload.UserVerifiedPayload `json:"payload"`
+	Metadata event.Metadata            `json:"metadata"`
+	Payload  event.UserVerifiedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the UserVerifiedEvent.
@@ -36,12 +35,12 @@ func NewUserVerifiedEvent(
 	return &UserVerifiedEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   event.UserVerifiedEventType,
+			EventType:   kafka.UserVerifiedEventType,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.AuthServiceName,
 		},
-		Payload: payload.UserVerifiedPayload{
+		Payload: event.UserVerifiedPayload{
 			UserID: userID,
 			Email:  email,
 		},
@@ -58,7 +57,7 @@ type UserVerifiedProducer struct {
 func NewUserVerifiedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &UserVerifiedProducer{
 		Producer: producer,
-		topic:    event.UserVerificationTopic,
+		topic:    kafka.UserVerificationTopic,
 	}
 }
 

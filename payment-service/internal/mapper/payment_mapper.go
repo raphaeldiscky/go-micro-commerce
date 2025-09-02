@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
@@ -43,5 +45,23 @@ func MapToPaymentResponse(payment *entity.Payment) *dto.PaymentResponse {
 		UpdatedAt:          payment.UpdatedAt,
 		CompletedAt:        payment.CompletedAt,
 		FailedAt:           payment.FailedAt,
+	}
+}
+
+// MapStatusToEventType maps payment status to Kafka event type.
+func MapStatusToEventType(status constant.PaymentStatus) string {
+	switch status {
+	case constant.PaymentStatusPending:
+		return kafka.PaymentCreatedEventType
+	case constant.PaymentStatusProcessing:
+		return kafka.PaymentProcessingEventType
+	case constant.PaymentStatusCompleted:
+		return kafka.PaymentCompletedEventType
+	case constant.PaymentStatusFailed:
+		return kafka.PaymentFailedEventType
+	case constant.PaymentStatusRefunded:
+		return kafka.PaymentRefundedEventType
+	default:
+		return "unknown"
 	}
 }

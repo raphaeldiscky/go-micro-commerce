@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
@@ -14,12 +13,13 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.OrderLifecyclePayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.OrderLifecyclePayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the OrderLifecycleEvent.
@@ -49,17 +49,17 @@ func NewOrderLifecycleEvent(
 	return &OrderLifecycleEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   mapStatusToEventType(newStatus),
+			EventType:   mapper.MapStatusToEventType(newStatus),
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: payload.OrderLifecyclePayload{
+		Payload: event.OrderLifecyclePayload{
 			OrderID:    orderID,
 			UserID:     userID,
 			Status:     string(newStatus),
 			TotalPrice: totalPrice,
-			Items:      mapOrderItemsToPayload(items),
+			Items:      mapper.MapOrderItemsToPayload(items),
 		},
 	}
 }
@@ -68,7 +68,7 @@ func NewOrderLifecycleEvent(
 func NewOrderLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &OrderLifecycleProducer{
 		Producer: producer,
-		topic:    event.OrderLifecycleTopic,
+		topic:    kafka.OrderLifecycleTopic,
 	}
 }
 

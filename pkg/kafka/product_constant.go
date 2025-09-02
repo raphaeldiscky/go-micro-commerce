@@ -1,4 +1,4 @@
-package event
+package kafka
 
 const (
 	// ProductLifecycleTopic is the topic for product lifecycle events.

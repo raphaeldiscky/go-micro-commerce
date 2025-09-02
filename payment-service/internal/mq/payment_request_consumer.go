@@ -9,7 +9,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -22,8 +22,8 @@ import (
 
 // PaymentRequestEvent is the envelope for payment request events.
 type PaymentRequestEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.PaymentRequestPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.PaymentRequestPayload `json:"payload"`
 }
 
 // PaymentRequestConsumer handles payment request events from order service.
@@ -60,7 +60,7 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		"payment", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		event.PaymentRequestTopic,    // topic
+		kafka.PaymentRequestTopic,    // topic
 		pkgconstant.OrderServiceName, // source service
 		json.RawMessage(body),
 		nil, // correlation_id
@@ -95,7 +95,7 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		var processingErr error
 
 		switch meta.Metadata.EventType {
-		case event.PaymentRequestedEventType:
+		case kafka.PaymentRequestedEventType:
 			processingErr = c.processPaymentRequest(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown payment event type: %s", meta.Metadata.EventType)
@@ -195,8 +195,8 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		ID:            uuid.New(),
 		AggregateType: "payment",
 		AggregateID:   savedPayment.ID,
-		EventType:     event.PaymentCreatedEventType,
-		Topic:         event.PaymentLifecycleTopic,
+		EventType:     kafka.PaymentCreatedEventType,
+		Topic:         kafka.PaymentLifecycleTopic,
 		Payload:       paymentEvtPayload,
 		Status:        constant.OutboxStatusPending,
 		CreatedAt:     time.Now().UTC(),

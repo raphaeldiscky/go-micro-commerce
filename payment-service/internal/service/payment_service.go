@@ -9,7 +9,6 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
@@ -116,8 +115,8 @@ func (s *PaymentService) CreatePayment(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   savedPayment.ID,
-			EventType:     event.PaymentCreatedEventType,
-			Topic:         event.PaymentLifecycleTopic,
+			EventType:     kafka.PaymentCreatedEventType,
+			Topic:         kafka.PaymentLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -246,9 +245,9 @@ func (s *PaymentService) ProcessPayment(
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}
 
-		eventType := event.PaymentCompletedEventType
+		eventType := kafka.PaymentCompletedEventType
 		if finalStatus == constant.PaymentStatusFailed {
-			eventType = event.PaymentFailedEventType
+			eventType = kafka.PaymentFailedEventType
 		}
 
 		outboxEvent := &entity.OutboxEvent{
@@ -256,7 +255,7 @@ func (s *PaymentService) ProcessPayment(
 			AggregateType: "payment",
 			AggregateID:   updatedPayment.ID,
 			EventType:     eventType,
-			Topic:         event.PaymentLifecycleTopic,
+			Topic:         kafka.PaymentLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

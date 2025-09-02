@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -15,8 +14,8 @@ import (
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata event.Metadata                            `json:"metadata"`
-	Payload  payload.EmailVerificationRequestedPayload `json:"payload"`
+	Metadata event.Metadata                          `json:"metadata"`
+	Payload  event.EmailVerificationRequestedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the EmailVerificationRequestedEvent.
@@ -38,12 +37,12 @@ func NewEmailVerificationRequestedEvent(
 	return &EmailVerificationRequestedEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   event.EmailVerificationRequestedEventType,
+			EventType:   kafka.EmailVerificationRequestedEventType,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.AuthServiceName,
 		},
-		Payload: payload.EmailVerificationRequestedPayload{
+		Payload: event.EmailVerificationRequestedPayload{
 			UserID: userID,
 			Email:  email,
 			Token:  token,
@@ -63,7 +62,7 @@ func NewEmailVerificationRequestedProducer(
 ) kafka.ProducerInterface {
 	return &EmailVerificationRequestedProducer{
 		Producer: producer,
-		topic:    event.UserVerificationTopic,
+		topic:    kafka.UserVerificationTopic,
 	}
 }
 

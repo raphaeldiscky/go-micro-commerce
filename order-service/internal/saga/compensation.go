@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -92,8 +92,8 @@ func (a *OrderActivitiesImpl) RefundPayment(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   order.ID,
-			EventType:     event.PaymentRefundedEventType,
-			Topic:         event.PaymentRequestTopic, // Use same topic with different event type
+			EventType:     kafka.PaymentRefundedEventType,
+			Topic:         kafka.PaymentRequestTopic, // Use same topic with different event type
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

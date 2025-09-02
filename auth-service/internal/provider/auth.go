@@ -5,7 +5,6 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -20,7 +19,7 @@ import (
 // SetupAuth initializes the authentication-related components.
 func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		event.UserVerificationTopic,
+		kafka.UserVerificationTopic,
 		constant.UserVerificationTopicNumPartitions,
 		constant.UserVerificationTopicReplicationFactor,
 	)

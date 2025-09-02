@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
@@ -15,8 +14,8 @@ import (
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.ProductCreatedPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.ProductCreatedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the ProductCreatedEvent.
@@ -39,12 +38,12 @@ func NewProductCreatedEvent(
 	return &ProductCreatedEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   event.ProductCreatedEventType,
+			EventType:   kafka.ProductCreatedEventType,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.ProductServiceName,
 		},
-		Payload: payload.ProductCreatedPayload{
+		Payload: event.ProductCreatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
@@ -63,7 +62,7 @@ type ProductCreatedProducer struct {
 func NewProductCreatedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &ProductCreatedProducer{
 		Producer: producer,
-		topic:    event.ProductLifecycleTopic,
+		topic:    kafka.ProductLifecycleTopic,
 	}
 }
 

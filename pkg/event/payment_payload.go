@@ -1,4 +1,4 @@
-package payload
+package event
 
 import (
 	"github.com/google/uuid"

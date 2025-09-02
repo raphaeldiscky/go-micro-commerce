@@ -1,3 +1,4 @@
+// Package mq provides the event definitions and handlers for the order service.
 package mq
 
 import (
@@ -6,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -16,8 +16,8 @@ import (
 
 // OrderDLQEvent is the envelope for all Order events.
 type OrderDLQEvent struct {
-	Metadata event.Metadata     `json:"metadata"`
-	Payload  payload.DLQPayload `json:"payload"`
+	Metadata event.Metadata   `json:"metadata"`
+	Payload  event.DLQPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the OrderDLQEvent.
@@ -44,12 +44,12 @@ func NewOrderDLQEvent(
 	return &OrderDLQEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   event.OrderDLQEventType,
+			EventType:   kafka.OrderDLQEventType,
 			AggregateID: outboxEvent.AggregateID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: payload.DLQPayload{
+		Payload: event.DLQPayload{
 			OutboxEventID:   outboxEvent.ID,
 			AggregateType:   outboxEvent.AggregateType,
 			AggregateID:     outboxEvent.AggregateID,
@@ -69,7 +69,7 @@ func NewOrderDLQEvent(
 func NewOrderDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &OrderDLQProducer{
 		Producer: producer,
-		topic:    event.OrderDLQTopic,
+		topic:    kafka.OrderDLQTopic,
 	}
 }
 

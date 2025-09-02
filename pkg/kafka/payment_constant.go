@@ -1,4 +1,4 @@
-package event
+package kafka
 
 const (
 	// PaymentRequestTopic is the topic for payment events.

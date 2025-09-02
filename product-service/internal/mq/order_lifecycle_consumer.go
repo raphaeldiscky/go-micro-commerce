@@ -8,6 +8,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 
@@ -64,9 +65,9 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 	}
 
 	switch meta.Metadata.EventType {
-	case event.OrderCreatedEventType:
+	case kafka.OrderCreatedEventType:
 		return c.handleCreatedOrder(ctx, body)
-	case event.OrderCanceledEventType:
+	case kafka.OrderCanceledEventType:
 		return c.handleCanceledOrder(ctx, body)
 	default:
 		c.logger.Warnf("ignoring event type: %s", meta.Metadata.EventType)

@@ -1,4 +1,4 @@
-package event
+package kafka
 
 const (
 	// PaymentDLQEventType is the event type for payment DLQ events.

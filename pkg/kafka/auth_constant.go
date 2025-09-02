@@ -1,4 +1,4 @@
-package event
+package kafka
 
 const (
 	// UserVerificationTopic is the topic for user verification events.

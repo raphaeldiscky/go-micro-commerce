@@ -1,5 +1,5 @@
-// Package payload provides the commont event definitions for microservices.
-package payload
+// Package event provides the commont event definitions for microservices.
+package event
 
 import (
 	"encoding/json"

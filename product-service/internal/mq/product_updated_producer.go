@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
@@ -15,8 +14,8 @@ import (
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.ProductUpdatedPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.ProductUpdatedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the ProductUpdatedEvent.
@@ -39,12 +38,12 @@ func NewProductUpdatedEvent(
 	return &ProductUpdatedEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   event.ProductUpdatedEventType,
+			EventType:   kafka.ProductUpdatedEventType,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.ProductServiceName,
 		},
-		Payload: payload.ProductUpdatedPayload{
+		Payload: event.ProductUpdatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
@@ -63,7 +62,7 @@ type ProductUpdatedProducer struct {
 func NewProductUpdatedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &ProductUpdatedProducer{
 		Producer: producer,
-		topic:    event.ProductLifecycleTopic,
+		topic:    kafka.ProductLifecycleTopic,
 	}
 }
 

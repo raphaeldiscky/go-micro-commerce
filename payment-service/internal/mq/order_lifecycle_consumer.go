@@ -1,3 +1,4 @@
+// Package mq provides the event definitions and handlers for the payment service.
 package mq
 
 import (
@@ -8,6 +9,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 
@@ -121,7 +123,7 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		var processingErr error
 
 		switch meta.Metadata.EventType {
-		case event.OrderCreatedEventType:
+		case kafka.OrderCreatedEventType:
 			processingErr = c.processCreatedOrder(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown event type: %s", meta.Metadata.EventType)

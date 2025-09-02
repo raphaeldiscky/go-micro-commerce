@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -14,8 +13,8 @@ import (
 
 // ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.ProductDeletedPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.ProductDeletedPayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the ProductDeletedEvent.
@@ -33,12 +32,12 @@ func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 	return &ProductDeletedEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   event.ProductDeletedEventType,
+			EventType:   kafka.ProductDeletedEventType,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.ProductServiceName,
 		},
-		Payload: payload.ProductDeletedPayload{
+		Payload: event.ProductDeletedPayload{
 			ProductID: productID,
 		},
 	}
@@ -54,7 +53,7 @@ type ProductDeletedProducer struct {
 func NewProductDeletedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &ProductDeletedProducer{
 		Producer: producer,
-		topic:    event.ProductLifecycleTopic,
+		topic:    kafka.ProductLifecycleTopic,
 	}
 }
 

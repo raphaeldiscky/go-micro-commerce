@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event/payload"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
@@ -17,8 +16,8 @@ import (
 
 // PaymentRequestEvent is the envelope for payment request events.
 type PaymentRequestEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  payload.PaymentRequestPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.PaymentRequestPayload `json:"payload"`
 }
 
 // PaymentRequestProducer is responsible for producing Payment Lifecycle events.
@@ -48,12 +47,12 @@ func NewPaymentRequestEvent(
 	return &PaymentRequestEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   event.PaymentRequestedEventType,
+			EventType:   kafka.PaymentRequestedEventType,
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: payload.PaymentRequestPayload{
+		Payload: event.PaymentRequestPayload{
 			PaymentID:     uuid.New(),
 			OrderID:       orderID,
 			CustomerID:    customerID,
@@ -68,7 +67,7 @@ func NewPaymentRequestEvent(
 func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentRequestProducer{
 		Producer: producer,
-		topic:    event.PaymentRequestTopic,
+		topic:    kafka.PaymentRequestTopic,
 	}
 }
 
