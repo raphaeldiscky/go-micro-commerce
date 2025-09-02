@@ -47,6 +47,15 @@ http:
       middlewares:
         - rate-limit
 
+    # Direct access to Fulfillment Service (for testing/admin)
+    fulfillment-service:
+      rule: "Host(`fulfillments.localhost`)"
+      service: fulfillment-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
     # Direct access to Notification Service (for testing/admin)
     notification-service:
       rule: "Host(`notifications.localhost`)"
@@ -112,10 +121,21 @@ http:
           headers:
             Host: payment-service
 
+    fulfillment-service:
+      loadBalancer:
+        servers:
+          - url: "http://fulfillment-service:8085"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: fulfillment-service
+
     notification-service:
       loadBalancer:
         servers:
-          - url: "http://notification-service:8085"
+          - url: "http://notification-service:8086"
         healthCheck:
           path: /health
           interval: 30s
