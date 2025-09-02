@@ -7,7 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
 
@@ -42,12 +42,12 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(constant.KafkaEventTypePaymentCreated, &event.PaymentLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentFailed, &event.PaymentLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentCompleted, &event.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentCreated, &mq.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentFailed, &mq.PaymentLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentCompleted, &mq.PaymentLifecycleEvent{})
 
-	orderLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
-	orderDLQProducer := event.NewPaymentDLQProducer(asyncProducer)
+	orderLifecycleProducer := mq.NewPaymentLifecycleProducer(asyncProducer)
+	orderDLQProducer := mq.NewPaymentDLQProducer(asyncProducer)
 
 	// Create outbox publisher
 	outboxPublisher := service.NewOutboxPublisher(

@@ -6,8 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-
-	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
 
 // CreateProductRequest represents the request to create a new product.
@@ -42,19 +40,4 @@ type ProductResponse struct {
 type GetProductsRequest struct {
 	Limit int64 `json:"limit" validate:"min=1,max=100"`
 	Page  int64 `json:"page"  validate:"min=1"`
-}
-
-// MapToProductResponse converts domain entity to DTO response.
-func MapToProductResponse(product *entity.Product) *ProductResponse {
-	return &ProductResponse{
-		ID:                product.ID,
-		Name:              product.Name,
-		Price:             product.Price,
-		Quantity:          product.Quantity,
-		Version:           product.Version,
-		ReservedQuantity:  product.ReservedQuantity,
-		AvailableQuantity: product.GetAvailableStock(),
-		CreatedAt:         product.CreatedAt,
-		UpdatedAt:         product.UpdatedAt,
-	}
 }

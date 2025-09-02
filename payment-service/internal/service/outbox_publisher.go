@@ -9,10 +9,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
@@ -189,7 +190,7 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ
-	evt := event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+	evt := mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	if dlqErr := p.paymentDLQProducer.Send(ctx, evt); dlqErr != nil {
 		p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
 	}

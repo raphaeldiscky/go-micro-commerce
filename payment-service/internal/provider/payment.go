@@ -8,8 +8,8 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
@@ -34,7 +34,7 @@ func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	orderLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
+	orderLifecycleProducer := mq.NewPaymentLifecycleProducer(asyncProducer)
 
 	orderService := service.NewPaymentService(
 		providers.DataStore,

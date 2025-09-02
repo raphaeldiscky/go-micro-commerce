@@ -9,11 +9,13 @@ import (
 	"time"
 
 	"github.com/IBM/sarama"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 )
 
 // ProducerInterface is an interface for sending events to Kafka.
 type ProducerInterface interface {
-	Send(ctx context.Context, event BaseEvent) error
+	Send(ctx context.Context, evt event.BaseEvent) error
 	Topic() string
 }
 
@@ -105,7 +107,7 @@ func NewAsyncProducer(cfg *ProducerConfig) (*AsyncProducer, error) {
 }
 
 // ProduceSync an event to Kafka.
-func (p *SyncProducer) ProduceSync(topic string, evt BaseEvent) error {
+func (p *SyncProducer) ProduceSync(topic string, evt event.BaseEvent) error {
 	// Marshal event to JSON
 	eventData, err := json.Marshal(evt)
 	if err != nil {
@@ -155,7 +157,7 @@ func (p *SyncProducer) CloseSync() error {
 }
 
 // ProduceAsync sends an event to Kafka asynchronously.
-func (p *AsyncProducer) ProduceAsync(ctx context.Context, topic string, evt BaseEvent) error {
+func (p *AsyncProducer) ProduceAsync(ctx context.Context, topic string, evt event.BaseEvent) error {
 	// Marshal event to JSON
 	eventData, err := json.Marshal(evt)
 	if err != nil {

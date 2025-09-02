@@ -6,13 +6,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -209,15 +212,15 @@ func (p *OutboxPublisher) handleProcessingError(
 	// Move to DLQ - route to appropriate DLQ based on topic
 	var dlqProducer kafka.ProducerInterface
 
-	var evt kafka.BaseEvent
+	var evt event.BaseEvent
 
 	switch outboxEvent.Topic {
 	case constant.TopicOrderLifecycle:
 		dlqProducer = p.orderDLQProducer
-		evt = event.NewOrderDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+		evt = mq.NewOrderDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	case constant.TopicPaymentRequest:
 		dlqProducer = p.paymentDLQProducer
-		evt = event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+		evt = mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	default:
 		p.logger.Errorf("unknown topic for DLQ: %s, skipping DLQ send", outboxEvent.Topic)
 		// Don't send to any DLQ - just log and mark as failed

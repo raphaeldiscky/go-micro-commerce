@@ -14,7 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -221,7 +221,7 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Create payment request event
-		paymentEvent := event.NewPaymentRequestEvent(
+		paymentEvent := mq.NewPaymentRequestEvent(
 			order.ID,
 			order.CustomerID,
 			order.TotalPrice,

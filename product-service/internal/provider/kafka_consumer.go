@@ -6,7 +6,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mq"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the product service.
@@ -21,7 +21,7 @@ func SetupKafkaConsumers(
 		cfg.Brokers,
 		constant.TopicOrderLifecycle,
 		constant.ConsumerGroupProductOrderEvents,
-		event.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
+		mq.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {

@@ -16,8 +16,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/utils/redisutils"
 )
@@ -81,7 +82,7 @@ func (s *PaymentService) CreatePayment(
 
 		if existingPayment != nil {
 			// Payment already exists, return existing payment
-			res = dto.MapToPaymentResponse(existingPayment)
+			res = mapper.MapToPaymentResponse(existingPayment)
 
 			return nil
 		}
@@ -99,7 +100,7 @@ func (s *PaymentService) CreatePayment(
 		}
 
 		// Publish payment created event
-		evt := event.NewPaymentLifecycleEvent(
+		evt := mq.NewPaymentLifecycleEvent(
 			savedPayment.ID,
 			constant.PaymentStatusPending,
 			savedPayment.Amount,
@@ -127,7 +128,7 @@ func (s *PaymentService) CreatePayment(
 			return httperror.NewInternalServerError("failed to create outbox event")
 		}
 
-		res = dto.MapToPaymentResponse(savedPayment)
+		res = mapper.MapToPaymentResponse(savedPayment)
 
 		return nil
 	})
@@ -233,7 +234,7 @@ func (s *PaymentService) ProcessPayment(
 		}
 
 		// Publish payment completion event
-		evt := event.NewPaymentLifecycleEvent(
+		evt := mq.NewPaymentLifecycleEvent(
 			updatedPayment.ID,
 			finalStatus,
 			updatedPayment.Amount,
@@ -266,7 +267,7 @@ func (s *PaymentService) ProcessPayment(
 			return httperror.NewInternalServerError("failed to create payment completion event")
 		}
 
-		res = dto.MapToPaymentResponse(updatedPayment)
+		res = mapper.MapToPaymentResponse(updatedPayment)
 
 		return nil
 	})
@@ -293,7 +294,7 @@ func (s *PaymentService) GetPaymentByOrderID(
 		return nil, httperror.NewPaymentNotFoundError()
 	}
 
-	return dto.MapToPaymentResponse(payment), nil
+	return mapper.MapToPaymentResponse(payment), nil
 }
 
 // HandleOrderPaymentRequested handles payment requests from order service.

@@ -10,8 +10,8 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/service"
 )
@@ -36,8 +36,8 @@ func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provid
 		log.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	emailVerificationRequestedProducer := event.NewEmailVerificationRequestedProducer(asyncProducer)
-	userVerifiedProducer := event.NewUserVerifiedProducer(asyncProducer)
+	emailVerificationRequestedProducer := mq.NewEmailVerificationRequestedProducer(asyncProducer)
+	userVerifiedProducer := mq.NewUserVerifiedProducer(asyncProducer)
 
 	authService := service.NewAuthService(
 		providers.DataStore,

@@ -8,8 +8,8 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
@@ -47,9 +47,9 @@ func InitializeProductService(cfg *config.Config, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	productCreatedProducer := event.NewProductCreatedProducer(asyncProducer)
-	productUpdatedProducer := event.NewProductUpdatedProducer(asyncProducer)
-	productDeletedProducer := event.NewProductDeletedProducer(asyncProducer)
+	productCreatedProducer := mq.NewProductCreatedProducer(asyncProducer)
+	productUpdatedProducer := mq.NewProductUpdatedProducer(asyncProducer)
+	productDeletedProducer := mq.NewProductDeletedProducer(asyncProducer)
 
 	productService := service.NewProductService(
 		providers.DataStore,

@@ -7,7 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
@@ -52,17 +52,17 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(constant.KafkaEventTypeOrderCreated, &event.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypeOrderCanceled, &event.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentRequested, &event.PaymentRequestEvent{})
+	registry.Register(constant.KafkaEventTypeOrderCreated, &mq.OrderLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypeOrderCanceled, &mq.OrderLifecycleEvent{})
+	registry.Register(constant.KafkaEventTypePaymentRequested, &mq.PaymentRequestEvent{})
 
 	// Producers
-	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
-	paymentRequestProducer := event.NewPaymentRequestProducer(asyncProducer)
+	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)
+	paymentRequestProducer := mq.NewPaymentRequestProducer(asyncProducer)
 
 	// DLQ
-	orderDLQProducer := event.NewOrderDLQProducer(asyncProducer)
-	paymentDLQProducer := event.NewPaymentDLQProducer(asyncProducer)
+	orderDLQProducer := mq.NewOrderDLQProducer(asyncProducer)
+	paymentDLQProducer := mq.NewPaymentDLQProducer(asyncProducer)
 
 	// Create outbox publisher
 	outboxPublisher := service.NewOutboxPublisher(

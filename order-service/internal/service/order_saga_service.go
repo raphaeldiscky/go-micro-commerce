@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
@@ -88,7 +89,7 @@ func (s *OrderService) CreateOrderWithSaga(
 			return fmt.Errorf("failed to save order: %w", err)
 		}
 
-		res = dto.MapToOrderResponse(savedOrder)
+		res = mapper.MapToOrderResponse(savedOrder)
 
 		return nil
 	})
@@ -123,7 +124,7 @@ func (s *OrderService) handleExistingOrder(
 	if sagaState != nil {
 		switch sagaState.Status {
 		case constant.SagaStatusCompleted:
-			return dto.MapToOrderResponse(existingOrder), true, nil
+			return mapper.MapToOrderResponse(existingOrder), true, nil
 		case constant.SagaStatusExecuting,
 			constant.SagaStatusPending,
 			constant.SagaStatusCompensating:
@@ -133,7 +134,7 @@ func (s *OrderService) handleExistingOrder(
 		}
 	}
 
-	return dto.MapToOrderResponse(existingOrder), true, nil
+	return mapper.MapToOrderResponse(existingOrder), true, nil
 }
 
 // executeSagaWorkflow executes the saga based on configuration.

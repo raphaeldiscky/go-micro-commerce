@@ -7,7 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mq"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the notification service.
@@ -22,7 +22,7 @@ func SetupKafkaConsumers(
 		cfg.Brokers,
 		constant.TopicUserVerification,
 		constant.ConsumerGroupNotificationUserEvents,
-		event.NewUserVerificationConsumer(mailer, appLogger).Handler,
+		mq.NewUserVerificationConsumer(mailer, appLogger).Handler,
 		appLogger,
 	)
 	if err != nil {
