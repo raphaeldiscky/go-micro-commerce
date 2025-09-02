@@ -1,12 +1,11 @@
 package provider
 
 import (
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the payment service.
@@ -14,15 +13,15 @@ func SetupKafkaConsumers(
 	cfg *config.KafkaConfig,
 	appLogger logger.Logger,
 	providers *Providers,
-) []mq.KafkaConsumer {
-	var consumers []mq.KafkaConsumer
+) []kafka.Consumer {
+	var consumers []kafka.Consumer
 
 	// Consumer for order lifecycle events (order created, updated, deleted)
-	ordersConsumer, err := mq.NewConsumerKafka(
+	ordersConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
-		constant.TopicOrderLifecycle,
-		constant.ConsumerGroupPaymentOrderEvents,
-		event.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
+		kafka.OrderLifecycleTopic,
+		kafka.PaymentOrderEventsConsumerGroup,
+		mq.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {
@@ -32,11 +31,11 @@ func SetupKafkaConsumers(
 	}
 
 	// Consumer for payment request events from order service
-	paymentRequestConsumer, err := mq.NewConsumerKafka(
+	paymentRequestConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
-		constant.TopicPaymentRequest,
-		constant.ConsumerGroupPaymentEvents,
-		event.NewPaymentRequestConsumer(appLogger, providers.DataStore).Handler,
+		kafka.PaymentRequestTopic,
+		kafka.PaymentEventsConsumerGroup,
+		mq.NewPaymentRequestConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {

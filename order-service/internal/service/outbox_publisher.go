@@ -6,13 +6,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -20,24 +22,24 @@ import (
 type OutboxPublisher struct {
 	dataStore              repository.DataStore
 	logger                 logger.Logger
-	orderLifecycleProducer mq.KafkaProducerInterface
-	orderDLQProducer       mq.KafkaProducerInterface
-	paymentRequestProducer mq.KafkaProducerInterface
-	paymentDLQProducer     mq.KafkaProducerInterface
+	orderLifecycleProducer kafka.ProducerInterface
+	orderDLQProducer       kafka.ProducerInterface
+	paymentRequestProducer kafka.ProducerInterface
+	paymentDLQProducer     kafka.ProducerInterface
 	config                 config.OutboxPublisherConfig
-	eventRegistry          *mq.EventRegistry
+	eventRegistry          *kafka.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	orderLifecycleProducer mq.KafkaProducerInterface,
-	orderDLQProducer mq.KafkaProducerInterface,
-	paymentRequestProducer mq.KafkaProducerInterface,
-	paymentDLQProducer mq.KafkaProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
+	orderDLQProducer kafka.ProducerInterface,
+	paymentRequestProducer kafka.ProducerInterface,
+	paymentDLQProducer kafka.ProducerInterface,
 	cfg config.OutboxPublisherConfig,
-	eventRegistry *mq.EventRegistry,
+	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
 		dataStore:              dataStore,
@@ -139,12 +141,12 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	}
 
 	// Route to the appropriate producer based on topic
-	var producer mq.KafkaProducerInterface
+	var producer kafka.ProducerInterface
 
 	switch outboxEvent.Topic {
-	case constant.TopicOrderLifecycle:
+	case kafka.OrderLifecycleTopic:
 		producer = p.orderLifecycleProducer
-	case constant.TopicPaymentRequest:
+	case kafka.PaymentRequestTopic:
 		producer = p.paymentRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
@@ -207,17 +209,17 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ - route to appropriate DLQ based on topic
-	var dlqProducer mq.KafkaProducerInterface
+	var dlqProducer kafka.ProducerInterface
 
-	var evt mq.BaseEvent
+	var evt event.BaseEvent
 
 	switch outboxEvent.Topic {
-	case constant.TopicOrderLifecycle:
+	case kafka.OrderLifecycleTopic:
 		dlqProducer = p.orderDLQProducer
-		evt = event.NewOrderDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
-	case constant.TopicPaymentRequest:
+		evt = mq.NewOrderDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
+	case kafka.PaymentRequestTopic:
 		dlqProducer = p.paymentDLQProducer
-		evt = event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+		evt = mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	default:
 		p.logger.Errorf("unknown topic for DLQ: %s, skipping DLQ send", outboxEvent.Topic)
 		// Don't send to any DLQ - just log and mark as failed

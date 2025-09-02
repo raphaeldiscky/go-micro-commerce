@@ -9,8 +9,8 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -20,8 +20,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
@@ -69,7 +70,7 @@ type OrderService struct {
 	dataStore              repository.DataStore
 	productClient          client.ProductClientInterface
 	logger                 logger.Logger
-	orderLifecycleProducer mq.KafkaProducerInterface
+	orderLifecycleProducer kafka.ProducerInterface
 	sagaOrchestrator       saga.Orchestrator
 	config                 *config.Config
 }
@@ -80,7 +81,7 @@ func NewOrderService(
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
-	orderLifecycleProducer mq.KafkaProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
 	sagaOrchestrator saga.Orchestrator,
 ) OrderServiceInterface {
 	return &OrderService{
@@ -132,7 +133,7 @@ func (s *OrderService) CreateOrder(
 		}
 
 		if order != nil && order.CustomerID == req.CustomerID {
-			res = dto.MapToOrderResponse(order)
+			res = mapper.MapToOrderResponse(order)
 
 			return nil
 		}
@@ -185,7 +186,7 @@ func (s *OrderService) CreateOrder(
 		}
 
 		// Publish domain event
-		evt := event.NewOrderLifecycleEvent(
+		evt := mq.NewOrderLifecycleEvent(
 			savedOrder.ID,
 			constant.OrderStatusPending,
 			savedOrder.CustomerID,
@@ -202,8 +203,8 @@ func (s *OrderService) CreateOrder(
 			ID:            uuid.New(),
 			AggregateType: "order",
 			AggregateID:   savedOrder.ID,
-			EventType:     constant.KafkaEventTypeOrderCreated,
-			Topic:         constant.TopicOrderLifecycle,
+			EventType:     kafka.OrderCreatedEventType,
+			Topic:         kafka.OrderLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -215,7 +216,7 @@ func (s *OrderService) CreateOrder(
 			return err
 		}
 
-		res = dto.MapToOrderResponse(savedOrder)
+		res = mapper.MapToOrderResponse(savedOrder)
 
 		return nil
 	})
@@ -264,7 +265,7 @@ func (s *OrderService) CreateOrderWithProto(
 		}
 
 		if order != nil && order.CustomerID == req.CustomerID {
-			res = dto.MapToOrderResponse(order)
+			res = mapper.MapToOrderResponse(order)
 
 			return nil
 		}
@@ -316,7 +317,7 @@ func (s *OrderService) CreateOrderWithProto(
 		}
 
 		// Publish domain event
-		evt := event.NewOrderLifecycleEvent(
+		evt := mq.NewOrderLifecycleEvent(
 			savedOrder.ID,
 			constant.OrderStatusPending,
 			savedOrder.CustomerID,
@@ -333,8 +334,8 @@ func (s *OrderService) CreateOrderWithProto(
 			ID:            uuid.New(),
 			AggregateType: "order",
 			AggregateID:   savedOrder.ID,
-			EventType:     constant.KafkaEventTypeOrderCreated,
-			Topic:         constant.TopicOrderLifecycle,
+			EventType:     kafka.OrderCreatedEventType,
+			Topic:         kafka.OrderLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -346,7 +347,7 @@ func (s *OrderService) CreateOrderWithProto(
 			return err
 		}
 
-		res = dto.MapToOrderResponse(savedOrder)
+		res = mapper.MapToOrderResponse(savedOrder)
 
 		return nil
 	})
@@ -373,7 +374,7 @@ func (s *OrderService) GetOrder(
 		return nil, httperror.NewOrderNotFoundError()
 	}
 
-	return dto.MapToOrderResponse(order), nil
+	return mapper.MapToOrderResponse(order), nil
 }
 
 // GetOrdersByCustomer retrieves orders for a specific customer with pagination.
@@ -398,7 +399,7 @@ func (s *OrderService) GetOrdersByCustomer(
 
 	res := make([]dto.OrderResponse, len(orders))
 	for i, order := range orders {
-		res[i] = *dto.MapToOrderResponse(order)
+		res[i] = *mapper.MapToOrderResponse(order)
 	}
 
 	total, err = orderRepo.CountByCustomer(ctx, customerID)
@@ -432,7 +433,7 @@ func (s *OrderService) GetOrders(
 
 	res := make([]dto.OrderResponse, len(orders))
 	for i, order := range orders {
-		res[i] = *dto.MapToOrderResponse(order)
+		res[i] = *mapper.MapToOrderResponse(order)
 	}
 
 	total, err = orderRepo.Count(ctx)
@@ -478,7 +479,7 @@ func (s *OrderService) UpdateOrderStatus(
 		}
 
 		// Publish domain event
-		evt := event.NewOrderLifecycleEvent(
+		evt := mq.NewOrderLifecycleEvent(
 			updatedOrder.ID,
 			status,
 			updatedOrder.CustomerID,
@@ -489,7 +490,7 @@ func (s *OrderService) UpdateOrderStatus(
 			return httperror.NewInternalServerError("failed to send order status updated event")
 		}
 
-		res = dto.MapToOrderResponse(updatedOrder)
+		res = mapper.MapToOrderResponse(updatedOrder)
 
 		return nil
 	})
@@ -567,7 +568,7 @@ func (s *OrderService) CancelOrder(
 		}
 
 		// Publish domain event
-		evt := event.NewOrderLifecycleEvent(
+		evt := mq.NewOrderLifecycleEvent(
 			existingOrder.ID,
 			constant.OrderStatusCanceled,
 			updatedOrder.CustomerID,
@@ -587,7 +588,7 @@ func (s *OrderService) CancelOrder(
 	return nil
 }
 
-// RequestPaymentOrder initiates payment processing for an order by publishing a payment request event.
+// RequestPaymentOrder initiates payment processing for an order by publishing a payment request mq.
 func (s *OrderService) RequestPaymentOrder(
 	ctx context.Context,
 	req dto.PayOrderRequest,
@@ -657,7 +658,7 @@ func (s *OrderService) RequestPaymentOrder(
 		}
 
 		// Publish payment request event to payment service
-		evt := event.NewPaymentRequestEvent(
+		evt := mq.NewPaymentRequestEvent(
 			updatedOrder.ID,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
@@ -674,8 +675,8 @@ func (s *OrderService) RequestPaymentOrder(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   updatedOrder.ID,
-			EventType:     constant.KafkaEventTypePaymentRequested,
-			Topic:         constant.TopicPaymentRequest,
+			EventType:     kafka.PaymentRequestedEventType,
+			Topic:         kafka.PaymentRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -687,7 +688,7 @@ func (s *OrderService) RequestPaymentOrder(
 			return httperror.NewInternalServerError("failed to create payment request event")
 		}
 
-		res = dto.MapToOrderResponse(updatedOrder)
+		res = mapper.MapToOrderResponse(updatedOrder)
 
 		return nil
 	})

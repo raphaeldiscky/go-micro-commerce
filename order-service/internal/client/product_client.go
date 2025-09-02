@@ -15,8 +15,8 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
 // ProductReservationItem represents a product reservation request.
@@ -111,7 +111,7 @@ func (pc *ProductClient) GetProducts(
 	products := make([]entity.Product, len(resp.Products))
 
 	for i, p := range resp.Products {
-		product, err := dto.MapProtoToProduct(p)
+		product, err := mapper.MapProtoToProduct(p)
 		if err != nil {
 			return nil, err
 		}
@@ -157,7 +157,7 @@ func (pc *ProductClient) ReserveProducts(
 	products := make([]entity.Product, len(resp.ReservedProducts))
 
 	for i, p := range resp.ReservedProducts {
-		product, err := dto.MapProtoToProduct(p)
+		product, err := mapper.MapProtoToProduct(p)
 		if err != nil {
 			return nil, err
 		}
@@ -230,7 +230,7 @@ func (pc *ProductClient) ConfirmProductsDeduction(
 	products := make([]entity.Product, len(resp.UpdatedProducts))
 
 	for i, p := range resp.UpdatedProducts {
-		product, err := dto.MapProtoToProduct(p)
+		product, err := mapper.MapProtoToProduct(p)
 		if err != nil {
 			return nil, err
 		}
@@ -274,7 +274,7 @@ func (pc *ProductClient) RestoreProducts(
 	products := make([]entity.Product, len(resp.RestoredProducts))
 
 	for i, p := range resp.RestoredProducts {
-		product, err := dto.MapProtoToProduct(p)
+		product, err := mapper.MapProtoToProduct(p)
 		if err != nil {
 			return nil, err
 		}

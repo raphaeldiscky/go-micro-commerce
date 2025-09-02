@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -58,8 +58,8 @@ type OrderActivities interface {
 type OrderActivitiesImpl struct {
 	dataStore              repository.DataStore
 	productClient          client.ProductClientInterface
-	paymentRequestProducer mq.KafkaProducerInterface
-	orderLifecycleProducer mq.KafkaProducerInterface
+	paymentRequestProducer kafka.ProducerInterface
+	orderLifecycleProducer kafka.ProducerInterface
 	logger                 logger.Logger
 }
 
@@ -67,8 +67,8 @@ type OrderActivitiesImpl struct {
 func NewOrderActivities(
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
-	paymentRequestProducer mq.KafkaProducerInterface,
-	orderLifecycleProducer mq.KafkaProducerInterface,
+	paymentRequestProducer kafka.ProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
 	appLogger logger.Logger,
 ) OrderActivities {
 	return &OrderActivitiesImpl{
@@ -221,7 +221,7 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Create payment request event
-		paymentEvent := event.NewPaymentRequestEvent(
+		paymentEvent := mq.NewPaymentRequestEvent(
 			order.ID,
 			order.CustomerID,
 			order.TotalPrice,
@@ -239,8 +239,8 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   order.ID,
-			EventType:     constant.KafkaEventTypePaymentRequested,
-			Topic:         constant.TopicPaymentRequest,
+			EventType:     kafka.PaymentRequestedEventType,
+			Topic:         kafka.PaymentRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

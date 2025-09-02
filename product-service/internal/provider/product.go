@@ -3,13 +3,13 @@ package provider
 import (
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
@@ -30,12 +30,12 @@ func SetupProduct(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 // This is used to ensure ProductService is available for gRPC server without race conditions.
 func InitializeProductService(cfg *config.Config, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicProductLifecycle,
-		constant.TopicProductLifecycleNumPartitions,
-		constant.TopicProductLifecycleReplicationFactor,
+		kafka.ProductLifecycleTopic,
+		constant.ProductLifecycleTopicNumPartitions,
+		constant.ProductLifecycleTopicReplicationFactor,
 	)
 
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
@@ -47,9 +47,9 @@ func InitializeProductService(cfg *config.Config, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	productCreatedProducer := event.NewProductCreatedProducer(asyncProducer)
-	productUpdatedProducer := event.NewProductUpdatedProducer(asyncProducer)
-	productDeletedProducer := event.NewProductDeletedProducer(asyncProducer)
+	productCreatedProducer := mq.NewProductCreatedProducer(asyncProducer)
+	productUpdatedProducer := mq.NewProductUpdatedProducer(asyncProducer)
+	productDeletedProducer := mq.NewProductDeletedProducer(asyncProducer)
 
 	productService := service.NewProductService(
 		providers.DataStore,

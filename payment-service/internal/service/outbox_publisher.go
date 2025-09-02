@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
@@ -20,20 +21,20 @@ import (
 type OutboxPublisher struct {
 	dataStore                repository.DataStore
 	logger                   logger.Logger
-	paymentLifecycleProducer mq.KafkaProducerInterface
-	paymentDLQProducer       mq.KafkaProducerInterface
+	paymentLifecycleProducer kafka.ProducerInterface
+	paymentDLQProducer       kafka.ProducerInterface
 	config                   config.OutboxPublisherConfig
-	eventRegistry            *mq.EventRegistry
+	eventRegistry            *kafka.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentLifecycleProducer mq.KafkaProducerInterface,
-	paymentDLQProducer mq.KafkaProducerInterface,
+	paymentLifecycleProducer kafka.ProducerInterface,
+	paymentDLQProducer kafka.ProducerInterface,
 	cfg config.OutboxPublisherConfig,
-	eventRegistry *mq.EventRegistry,
+	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
 		dataStore:                dataStore,
@@ -189,7 +190,7 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ
-	evt := event.NewPaymentDLQEvent(outboxEvent, constant.DLQReasonMaxRetriesExceeded)
+	evt := mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	if dlqErr := p.paymentDLQProducer.Send(ctx, evt); dlqErr != nil {
 		p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
 	}

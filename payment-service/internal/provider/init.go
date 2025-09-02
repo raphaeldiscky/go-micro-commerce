@@ -5,7 +5,7 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
@@ -15,7 +15,7 @@ import (
 // Providers holds all initialized providers.
 type Providers struct {
 	DataStore  repository.DataStore
-	KafkaAdmin *mq.KafkaAdmin
+	KafkaAdmin *kafka.Admin
 }
 
 // SetupGlobal initializes all providers.
@@ -53,7 +53,7 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 	lockClient := redislock.New(redisClusterClient)
 	dataStore := repository.NewDataStore(pgPool, lockClient)
 	// Setup kafka admin
-	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{
+	kafkaAdmin := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
 	})
 

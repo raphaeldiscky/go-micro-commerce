@@ -10,15 +10,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/repository"
 )
 
@@ -56,8 +57,8 @@ type AuthService struct {
 	jwtUtils                           jwtutils.JWTInterface
 	hasher                             encryptutils.HasherInterface
 	logger                             logger.Logger
-	emailVerificationRequestedProducer mq.KafkaProducerInterface
-	userVerifiedProducer               mq.KafkaProducerInterface
+	emailVerificationRequestedProducer kafka.ProducerInterface
+	userVerifiedProducer               kafka.ProducerInterface
 }
 
 // NewAuthService creates a new AuthService.
@@ -66,8 +67,8 @@ func NewAuthService(
 	jwtUtils jwtutils.JWTInterface,
 	hasher encryptutils.HasherInterface,
 	appLogger logger.Logger,
-	emailVerificationRequestedProducer mq.KafkaProducerInterface,
-	userVerifiedProducer mq.KafkaProducerInterface,
+	emailVerificationRequestedProducer kafka.ProducerInterface,
+	userVerifiedProducer kafka.ProducerInterface,
 ) AuthServiceInterface {
 	return &AuthService{
 		dataStore:                          dataStore,
@@ -175,7 +176,7 @@ func (s *AuthService) Register(
 		// Publish email verification event
 		s.logger.Info("sending email verification event")
 
-		evt := event.NewEmailVerificationRequestedEvent(
+		evt := mq.NewEmailVerificationRequestedEvent(
 			user.ID,
 			user.Email,
 			verificationToken,
@@ -197,7 +198,7 @@ func (s *AuthService) Register(
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
 			ExpiresIn:    expTime,
-			User:         dto.MapToUserResponse(user),
+			User:         mapper.MapToUserResponse(user),
 		}
 
 		return nil
@@ -299,7 +300,7 @@ func (s *AuthService) Login(
 			RefreshToken: refreshToken,
 			TokenType:    "Bearer",
 			ExpiresIn:    expTime,
-			User:         dto.MapToUserResponse(user),
+			User:         mapper.MapToUserResponse(user),
 		}
 
 		return nil
@@ -379,7 +380,7 @@ func (s *AuthService) RefreshToken(
 		RefreshToken: newRefreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    expTime,
-		User:         dto.MapToUserResponse(user),
+		User:         mapper.MapToUserResponse(user),
 	}, nil
 }
 
@@ -398,7 +399,7 @@ func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserR
 		return nil, httperror.NewInternalServerError("failed to get user")
 	}
 
-	userResponse := dto.MapToUserResponse(user)
+	userResponse := mapper.MapToUserResponse(user)
 
 	return userResponse, nil
 }
@@ -461,7 +462,7 @@ func (s *AuthService) UpdateUser(
 
 		s.logger.Info("User profile updated", "user_id", userID)
 
-		res = dto.MapToUserResponse(updatedUser)
+		res = mapper.MapToUserResponse(updatedUser)
 
 		return nil
 	})
@@ -568,7 +569,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 	}
 
 	// Publish email verification requested event
-	evt := event.NewUserVerifiedEvent(user.ID, user.Email)
+	evt := mq.NewUserVerifiedEvent(user.ID, user.Email)
 
 	s.logger.Info(
 		"sending user verified event",
@@ -626,7 +627,7 @@ func (s *AuthService) ResendVerification(
 	// Publish email verification event
 	s.logger.Info("resending email verification event")
 
-	evt := event.NewEmailVerificationRequestedEvent(
+	evt := mq.NewEmailVerificationRequestedEvent(
 		user.ID,
 		user.Email,
 		verificationToken,

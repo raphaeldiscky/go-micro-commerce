@@ -3,13 +3,13 @@ package provider
 import (
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
@@ -17,12 +17,12 @@ import (
 // SetupPayment initializes the order-related routes and services.
 func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentLifecycle,
-		constant.TopicPaymentLifecycleNumPartitions,
-		constant.TopicPaymentLifecycleReplicationFactor,
+		kafka.PaymentLifecycleTopic,
+		constant.PaymentLifecycleTopicNumPartitions,
+		constant.PaymentLifecycleTopicReplicationFactor,
 	)
 
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
@@ -34,7 +34,7 @@ func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	orderLifecycleProducer := event.NewPaymentLifecycleProducer(asyncProducer)
+	orderLifecycleProducer := mq.NewPaymentLifecycleProducer(asyncProducer)
 
 	orderService := service.NewPaymentService(
 		providers.DataStore,

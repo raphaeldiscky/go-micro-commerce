@@ -8,7 +8,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 )
 
 // CreatePaymentRequest represents the request to create a payment from an order event.
@@ -41,22 +40,4 @@ type PaymentResponse struct {
 	UpdatedAt          time.Time              `json:"updated_at"`
 	CompletedAt        *time.Time             `json:"completed_at,omitempty"`
 	FailedAt           *time.Time             `json:"failed_at,omitempty"`
-}
-
-// MapToPaymentResponse converts domain entity to DTO response.
-func MapToPaymentResponse(payment *entity.Payment) *PaymentResponse {
-	return &PaymentResponse{
-		ID:                 payment.ID,
-		OrderID:            payment.OrderID,
-		Amount:             payment.Amount,
-		Currency:           payment.Currency,
-		Status:             payment.Status,
-		PaymentMethod:      payment.PaymentMethod,
-		PaymentGateway:     payment.PaymentGateway,
-		GatewayReferenceID: payment.GatewayReferenceID,
-		CreatedAt:          payment.CreatedAt,
-		UpdatedAt:          payment.UpdatedAt,
-		CompletedAt:        payment.CompletedAt,
-		FailedAt:           payment.FailedAt,
-	}
 }

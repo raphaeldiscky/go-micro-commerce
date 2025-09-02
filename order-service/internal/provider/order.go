@@ -3,14 +3,14 @@ package provider
 import (
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
@@ -19,12 +19,12 @@ import (
 // SetupOrder initializes the order-related routes and services.
 func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderLifecycle,
-		constant.TopicOrderLifecycleNumPartitions,
-		constant.TopicOrderLifecycleReplicationFactor,
+		kafka.OrderLifecycleTopic,
+		constant.OrderLifecycleTopicNumPartitions,
+		constant.OrderLifecycleTopicReplicationFactor,
 	)
 
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
@@ -36,10 +36,10 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
+	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)
 
 	// Create payment request producer for saga
-	paymentRequestAsyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	paymentRequestAsyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
@@ -51,7 +51,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer for payment requests: %v", err)
 	}
 
-	paymentRequestProducer := event.NewPaymentRequestProducer(paymentRequestAsyncProducer)
+	paymentRequestProducer := mq.NewPaymentRequestProducer(paymentRequestAsyncProducer)
 
 	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
 	if err != nil {

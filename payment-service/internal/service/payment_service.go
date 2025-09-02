@@ -9,15 +9,16 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/utils/redisutils"
 )
@@ -46,14 +47,14 @@ type PaymentServiceInterface interface {
 type PaymentService struct {
 	dataStore                repository.DataStore
 	logger                   logger.Logger
-	paymentLifecycleProducer mq.KafkaProducerInterface
+	paymentLifecycleProducer kafka.ProducerInterface
 }
 
 // NewPaymentService creates a new instance of PaymentService.
 func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentLifecycleProducer mq.KafkaProducerInterface,
+	paymentLifecycleProducer kafka.ProducerInterface,
 ) PaymentServiceInterface {
 	return &PaymentService{
 		dataStore:                dataStore,
@@ -81,7 +82,7 @@ func (s *PaymentService) CreatePayment(
 
 		if existingPayment != nil {
 			// Payment already exists, return existing payment
-			res = dto.MapToPaymentResponse(existingPayment)
+			res = mapper.MapToPaymentResponse(existingPayment)
 
 			return nil
 		}
@@ -99,7 +100,7 @@ func (s *PaymentService) CreatePayment(
 		}
 
 		// Publish payment created event
-		evt := event.NewPaymentLifecycleEvent(
+		evt := mq.NewPaymentLifecycleEvent(
 			savedPayment.ID,
 			constant.PaymentStatusPending,
 			savedPayment.Amount,
@@ -114,8 +115,8 @@ func (s *PaymentService) CreatePayment(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   savedPayment.ID,
-			EventType:     constant.KafkaEventTypePaymentCreated,
-			Topic:         constant.TopicPaymentLifecycle,
+			EventType:     kafka.PaymentCreatedEventType,
+			Topic:         kafka.PaymentLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -127,7 +128,7 @@ func (s *PaymentService) CreatePayment(
 			return httperror.NewInternalServerError("failed to create outbox event")
 		}
 
-		res = dto.MapToPaymentResponse(savedPayment)
+		res = mapper.MapToPaymentResponse(savedPayment)
 
 		return nil
 	})
@@ -233,7 +234,7 @@ func (s *PaymentService) ProcessPayment(
 		}
 
 		// Publish payment completion event
-		evt := event.NewPaymentLifecycleEvent(
+		evt := mq.NewPaymentLifecycleEvent(
 			updatedPayment.ID,
 			finalStatus,
 			updatedPayment.Amount,
@@ -244,9 +245,9 @@ func (s *PaymentService) ProcessPayment(
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}
 
-		eventType := constant.KafkaEventTypePaymentCompleted
+		eventType := kafka.PaymentCompletedEventType
 		if finalStatus == constant.PaymentStatusFailed {
-			eventType = constant.KafkaEventTypePaymentFailed
+			eventType = kafka.PaymentFailedEventType
 		}
 
 		outboxEvent := &entity.OutboxEvent{
@@ -254,7 +255,7 @@ func (s *PaymentService) ProcessPayment(
 			AggregateType: "payment",
 			AggregateID:   updatedPayment.ID,
 			EventType:     eventType,
-			Topic:         constant.TopicPaymentLifecycle,
+			Topic:         kafka.PaymentLifecycleTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
@@ -266,7 +267,7 @@ func (s *PaymentService) ProcessPayment(
 			return httperror.NewInternalServerError("failed to create payment completion event")
 		}
 
-		res = dto.MapToPaymentResponse(updatedPayment)
+		res = mapper.MapToPaymentResponse(updatedPayment)
 
 		return nil
 	})
@@ -293,7 +294,7 @@ func (s *PaymentService) GetPaymentByOrderID(
 		return nil, httperror.NewPaymentNotFoundError()
 	}
 
-	return dto.MapToPaymentResponse(payment), nil
+	return mapper.MapToPaymentResponse(payment), nil
 }
 
 // HandleOrderPaymentRequested handles payment requests from order service.

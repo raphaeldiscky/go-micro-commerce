@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/event"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/utils/redisutils"
 )
@@ -52,17 +53,17 @@ type ProductServiceInterface interface {
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
 	dataStore              repository.DataStore
-	productCreatedProducer mq.KafkaProducerInterface
-	productUpdatedProducer mq.KafkaProducerInterface
-	productDeletedProducer mq.KafkaProducerInterface
+	productCreatedProducer kafka.ProducerInterface
+	productUpdatedProducer kafka.ProducerInterface
+	productDeletedProducer kafka.ProducerInterface
 }
 
 // NewProductService creates a new instance of ProductService.
 func NewProductService(
 	dataStore repository.DataStore,
-	productCreatedProducer mq.KafkaProducerInterface,
-	productUpdatedProducer mq.KafkaProducerInterface,
-	productDeletedProducer mq.KafkaProducerInterface,
+	productCreatedProducer kafka.ProducerInterface,
+	productUpdatedProducer kafka.ProducerInterface,
+	productDeletedProducer kafka.ProducerInterface,
 ) ProductServiceInterface {
 	return &ProductService{
 		dataStore:              dataStore,
@@ -92,7 +93,7 @@ func (s *ProductService) CreateProduct(
 			return httperror.NewInternalServerError("failed to create product")
 		}
 
-		evt := event.NewProductCreatedEvent(
+		evt := mq.NewProductCreatedEvent(
 			savedProduct.ID,
 			savedProduct.Name,
 			savedProduct.Price,
@@ -111,7 +112,7 @@ func (s *ProductService) CreateProduct(
 			return err
 		}
 
-		res = dto.MapToProductResponse(savedProduct)
+		res = mapper.MapToProductResponse(savedProduct)
 
 		return nil
 	})
@@ -133,7 +134,7 @@ func (s *ProductService) GetProduct(
 	// Try cache first if available
 	cachedProduct, err := cacheRepo.GetProduct(ctx, id)
 	if err == nil && cachedProduct != nil {
-		return dto.MapToProductResponse(cachedProduct), nil
+		return mapper.MapToProductResponse(cachedProduct), nil
 	}
 
 	// Cache miss or unavailable, get from database
@@ -152,7 +153,7 @@ func (s *ProductService) GetProduct(
 		return nil, err
 	}
 
-	return dto.MapToProductResponse(product), nil
+	return mapper.MapToProductResponse(product), nil
 }
 
 // GetProducts retrieves products with pagination and caching.
@@ -168,7 +169,7 @@ func (s *ProductService) GetProducts(
 	if err == nil && cachedProducts != nil {
 		res := make([]dto.ProductResponse, len(cachedProducts))
 		for i, product := range cachedProducts {
-			res[i] = *dto.MapToProductResponse(product)
+			res[i] = *mapper.MapToProductResponse(product)
 		}
 
 		// Still need to get total count for metadata (could be cached separately)
@@ -192,7 +193,7 @@ func (s *ProductService) GetProducts(
 
 	res := make([]dto.ProductResponse, len(products))
 	for i, product := range products {
-		res[i] = *dto.MapToProductResponse(product)
+		res[i] = *mapper.MapToProductResponse(product)
 	}
 
 	total, err := productRepo.Count(ctx)
@@ -225,7 +226,7 @@ func (s *ProductService) GetProductsByIDs(
 
 	res := make([]dto.ProductResponse, len(products))
 	for i, product := range products {
-		res[i] = *dto.MapToProductResponse(product)
+		res[i] = *mapper.MapToProductResponse(product)
 	}
 
 	return res, nil
@@ -270,7 +271,7 @@ func (s *ProductService) UpdateProduct(
 		}
 
 		// Produce domain event
-		evt := event.NewProductUpdatedEvent(
+		evt := mq.NewProductUpdatedEvent(
 			updatedProduct.ID,
 			updatedProduct.Name,
 			updatedProduct.Price,
@@ -293,7 +294,7 @@ func (s *ProductService) UpdateProduct(
 			return err
 		}
 
-		res = dto.MapToProductResponse(updatedProduct)
+		res = mapper.MapToProductResponse(updatedProduct)
 
 		return nil
 	})
@@ -324,7 +325,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 		}
 
 		// Produce domain event
-		evt := event.NewProductDeletedEvent(id)
+		evt := mq.NewProductDeletedEvent(id)
 		if err := s.productDeletedProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send product deleted event")
 		}
@@ -402,7 +403,7 @@ func (s *ProductService) ReserveProducts(
 	}
 
 	for i, product := range reservedProducts {
-		res[i] = *dto.MapToProductResponse(product)
+		res[i] = *mapper.MapToProductResponse(product)
 	}
 
 	return res, nil
@@ -486,7 +487,7 @@ func (s *ProductService) ConfirmProductsDeduction(
 	// Convert to DTO responses
 	res := make([]dto.ProductResponse, len(updatedProducts))
 	for i, product := range updatedProducts {
-		res[i] = *dto.MapToProductResponse(product)
+		res[i] = *mapper.MapToProductResponse(product)
 	}
 
 	// Invalidate cache
@@ -553,7 +554,7 @@ func (s *ProductService) RestoreProducts(
 	// Convert to DTO responses
 	res := make([]dto.ProductResponse, len(restoredProducts))
 	for i, product := range restoredProducts {
-		res[i] = *dto.MapToProductResponse(product)
+		res[i] = *mapper.MapToProductResponse(product)
 	}
 
 	// Invalidate cache

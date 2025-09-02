@@ -8,7 +8,6 @@ import (
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
 // CreateOrderItemRequest represents an item in create order request.
@@ -81,34 +80,4 @@ type CancelOrderRequest struct {
 	CustomerEmail  string
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
 	Reason         string    `json:"reason"          validate:"required,min=5,max=255"`
-}
-
-// MapToOrderResponse converts domain entity to DTO response.
-func MapToOrderResponse(order *entity.Order) *OrderResponse {
-	return &OrderResponse{
-		ID:         order.ID,
-		CustomerID: order.CustomerID,
-		Status:     order.Status,
-		TotalPrice: order.TotalPrice,
-		Items:      MapToOrderItemResponses(order.Items),
-		CreatedAt:  order.CreatedAt,
-		UpdatedAt:  order.UpdatedAt,
-	}
-}
-
-// MapToOrderItemResponses converts domain entities to DTO responses.
-func MapToOrderItemResponses(items []entity.OrderItem) []OrderItemResponse {
-	var responses []OrderItemResponse
-
-	for i := range items {
-		item := &items[i]
-		responses = append(responses, OrderItemResponse{
-			ID:        item.ID,
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-			Price:     item.Price,
-		})
-	}
-
-	return responses
 }

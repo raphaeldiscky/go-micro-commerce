@@ -2,12 +2,12 @@ package provider
 
 import (
 	"github.com/IBM/sarama"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/event"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
@@ -18,29 +18,29 @@ func SetupOutboxPublisher(
 	providers *Providers,
 ) *service.OutboxPublisher {
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderLifecycle,
-		constant.TopicOrderLifecycleNumPartitions,
-		constant.TopicOrderLifecycleReplicationFactor,
+		kafka.OrderLifecycleTopic,
+		constant.OrderLifecycleTopicNumPartitions,
+		constant.OrderLifecycleTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicOrderDLQ,
-		constant.TopicOrderDLQNumPartitions,
-		constant.TopicOrderDLQReplicationFactor,
+		kafka.OrderDLQTopic,
+		constant.OrderDLQTopicNumPartitions,
+		constant.OrderDLQTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentRequest,
-		constant.TopicPaymentRequestNumPartitions,
-		constant.TopicPaymentRequestReplicationFactor,
+		kafka.PaymentRequestTopic,
+		constant.PaymentRequestTopicNumPartitions,
+		constant.PaymentRequestTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		constant.TopicPaymentDLQ,
-		constant.TopicPaymentDLQNumPartitions,
-		constant.TopicPaymentDLQReplicationFactor,
+		kafka.PaymentDLQTopic,
+		constant.PaymentDLQTopicNumPartitions,
+		constant.PaymentDLQTopicReplicationFactor,
 	)
 
-	registry := mq.NewEventRegistry()
+	registry := kafka.NewEventRegistry()
 	// Create Kafka producer for outbox events
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
@@ -52,17 +52,17 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(constant.KafkaEventTypeOrderCreated, &event.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypeOrderCanceled, &event.OrderLifecycleEvent{})
-	registry.Register(constant.KafkaEventTypePaymentRequested, &event.PaymentRequestEvent{})
+	registry.Register(kafka.OrderCreatedEventType, &mq.OrderLifecycleEvent{})
+	registry.Register(kafka.OrderCanceledEventType, &mq.OrderLifecycleEvent{})
+	registry.Register(kafka.PaymentRequestedEventType, &mq.PaymentRequestEvent{})
 
 	// Producers
-	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
-	paymentRequestProducer := event.NewPaymentRequestProducer(asyncProducer)
+	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)
+	paymentRequestProducer := mq.NewPaymentRequestProducer(asyncProducer)
 
 	// DLQ
-	orderDLQProducer := event.NewOrderDLQProducer(asyncProducer)
-	paymentDLQProducer := event.NewPaymentDLQProducer(asyncProducer)
+	orderDLQProducer := mq.NewOrderDLQProducer(asyncProducer)
+	paymentDLQProducer := mq.NewPaymentDLQProducer(asyncProducer)
 
 	// Create outbox publisher
 	outboxPublisher := service.NewOutboxPublisher(
