@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/provider"
@@ -19,7 +19,7 @@ type KafkaConsumerServer struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	logger    logger.Logger
-	consumers []mq.KafkaConsumer
+	consumers []kafka.Consumer
 	wg        sync.WaitGroup
 }
 
@@ -47,7 +47,7 @@ func (s *KafkaConsumerServer) Start() error {
 	for _, consumer := range s.consumers {
 		s.wg.Add(1)
 
-		go func(c mq.KafkaConsumer) {
+		go func(c kafka.Consumer) {
 			defer s.wg.Done()
 
 			if err := c.Consume(s.ctx); err != nil {

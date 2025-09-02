@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 )
@@ -18,7 +18,7 @@ type UserVerifiedPayload struct {
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata mq.KafkaMetadata    `json:"metadata"`
+	Metadata kafka.Metadata      `json:"metadata"`
 	Payload  UserVerifiedPayload `json:"payload"`
 }
 
@@ -54,12 +54,12 @@ func NewUserVerifiedEvent(
 
 // UserVerifiedProducer is responsible for producing product created events.
 type UserVerifiedProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
 // NewUserVerifiedProducer creates a new instance of UserVerifiedProducer.
-func NewUserVerifiedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+func NewUserVerifiedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &UserVerifiedProducer{
 		Producer: producer,
 		topic:    constant.TopicUserVerification,
@@ -67,7 +67,7 @@ func NewUserVerifiedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerIn
 }
 
 // Send implements the KafkaProducer interface.
-func (p *UserVerifiedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *UserVerifiedProducer) Send(ctx context.Context, event kafka.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 

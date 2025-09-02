@@ -7,8 +7,8 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -42,13 +42,13 @@ type OrderPaymentRequestPayload struct {
 
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  OrderLifecyclePayload `json:"payload"`
 }
 
 // OrderPaymentRequestEvent is the envelope for payment request events.
 type OrderPaymentRequestEvent struct {
-	Metadata mq.KafkaMetadata           `json:"metadata"`
+	Metadata kafka.Metadata             `json:"metadata"`
 	Payload  OrderPaymentRequestPayload `json:"payload"`
 }
 
@@ -73,7 +73,7 @@ func NewOrderLifecycleConsumer(
 func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
-		Metadata mq.KafkaMetadata `json:"metadata"`
+		Metadata kafka.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

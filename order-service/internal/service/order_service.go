@@ -9,8 +9,8 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -69,7 +69,7 @@ type OrderService struct {
 	dataStore              repository.DataStore
 	productClient          client.ProductClientInterface
 	logger                 logger.Logger
-	orderLifecycleProducer mq.KafkaProducerInterface
+	orderLifecycleProducer kafka.ProducerInterface
 	sagaOrchestrator       saga.Orchestrator
 	config                 *config.Config
 }
@@ -80,7 +80,7 @@ func NewOrderService(
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
-	orderLifecycleProducer mq.KafkaProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
 	sagaOrchestrator saga.Orchestrator,
 ) OrderServiceInterface {
 	return &OrderService{

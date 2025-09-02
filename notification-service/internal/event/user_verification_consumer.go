@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/bytedance/sonic"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
@@ -33,7 +33,7 @@ func NewUserVerificationConsumer(
 // Handler is the method that implements mq.KafkaHandler. It contains the business logic.
 func (c *UserVerificationConsumer) Handler(ctx context.Context, body []byte) error {
 	var meta struct {
-		Metadata mq.KafkaMetadata `json:"metadata"`
+		Metadata kafka.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

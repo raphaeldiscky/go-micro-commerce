@@ -9,8 +9,8 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -46,14 +46,14 @@ type PaymentServiceInterface interface {
 type PaymentService struct {
 	dataStore                repository.DataStore
 	logger                   logger.Logger
-	paymentLifecycleProducer mq.KafkaProducerInterface
+	paymentLifecycleProducer kafka.ProducerInterface
 }
 
 // NewPaymentService creates a new instance of PaymentService.
 func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentLifecycleProducer mq.KafkaProducerInterface,
+	paymentLifecycleProducer kafka.ProducerInterface,
 ) PaymentServiceInterface {
 	return &PaymentService{
 		dataStore:                dataStore,

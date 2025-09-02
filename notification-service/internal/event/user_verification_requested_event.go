@@ -2,7 +2,7 @@ package event
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 )
 
 // EmailVerificationRequestedPayload holds the data for the email verification requested event.
@@ -14,6 +14,6 @@ type EmailVerificationRequestedPayload struct {
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata mq.KafkaMetadata                  `json:"metadata"`
+	Metadata kafka.Metadata                    `json:"metadata"`
 	Payload  EmailVerificationRequestedPayload `json:"payload"`
 }

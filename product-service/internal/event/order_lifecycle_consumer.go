@@ -6,8 +6,8 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
@@ -31,7 +31,7 @@ type OrderLifecyclePayload struct {
 
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  OrderLifecyclePayload `json:"payload"`
 }
 
@@ -55,7 +55,7 @@ func NewOrderLifecycleConsumer(
 // Handler is the method that implements mq.KafkaHandler. It contains the business logic.
 func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error {
 	var meta struct {
-		Metadata mq.KafkaMetadata `json:"metadata"`
+		Metadata kafka.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

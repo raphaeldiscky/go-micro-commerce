@@ -3,8 +3,8 @@ package provider
 import (
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -24,7 +24,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		constant.TopicOrderLifecycleReplicationFactor,
 	)
 
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
@@ -39,7 +39,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 	orderLifecycleProducer := event.NewOrderLifecycleProducer(asyncProducer)
 
 	// Create payment request producer for saga
-	paymentRequestAsyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	paymentRequestAsyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,

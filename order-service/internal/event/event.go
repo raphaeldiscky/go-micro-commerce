@@ -2,7 +2,7 @@
 package event
 
 import (
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -10,9 +10,9 @@ import (
 
 type (
 	// BaseEvent defines the interface for all events in the product service.
-	BaseEvent = mq.BaseEvent
+	BaseEvent = kafka.BaseEvent
 	// KafkaMetadata provides common event properties.
-	KafkaMetadata = mq.KafkaMetadata
+	KafkaMetadata = kafka.Metadata
 )
 
 // AsyncProducer defines the interface for producing events.

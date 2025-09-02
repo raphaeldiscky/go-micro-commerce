@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -23,13 +23,13 @@ type PaymentRequestPayload struct {
 
 // PaymentRequestEvent is the envelope for payment request events.
 type PaymentRequestEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  PaymentRequestPayload `json:"payload"`
 }
 
 // PaymentRequestProducer is responsible for producing Payment Lifecycle events.
 type PaymentRequestProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
@@ -39,7 +39,7 @@ func (e *PaymentRequestEvent) GetPayload() interface{} {
 }
 
 // GetMetadata returns the metadata associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetMetadata() mq.KafkaMetadata {
+func (e *PaymentRequestEvent) GetMetadata() kafka.Metadata {
 	return e.Metadata
 }
 
@@ -52,7 +52,7 @@ func NewPaymentRequestEvent(
 	paymentMethod constant.PaymentMethod,
 ) *PaymentRequestEvent {
 	return &PaymentRequestEvent{
-		Metadata: mq.KafkaMetadata{
+		Metadata: kafka.Metadata{
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypePaymentRequested,
 			AggregateID: orderID,
@@ -71,7 +71,7 @@ func NewPaymentRequestEvent(
 }
 
 // NewPaymentRequestProducer creates a new instance of PaymentRequestProducer.
-func NewPaymentRequestProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentRequestProducer{
 		Producer: producer,
 		topic:    constant.TopicPaymentRequest,
@@ -79,7 +79,7 @@ func NewPaymentRequestProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentRequestProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *PaymentRequestProducer) Send(ctx context.Context, event kafka.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 

@@ -2,8 +2,8 @@ package provider
 
 import (
 	"github.com/IBM/sarama"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -28,9 +28,9 @@ func SetupOutboxPublisher(
 		constant.TopicPaymentDLQReplicationFactor,
 	)
 
-	registry := mq.NewEventRegistry()
+	registry := kafka.NewEventRegistry()
 	// Create Kafka producer for outbox events
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,

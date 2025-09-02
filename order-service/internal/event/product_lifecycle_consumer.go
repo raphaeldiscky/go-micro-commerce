@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -34,7 +34,7 @@ func NewProductLifecycleConsumer(
 // Handler is the method that implements mq.KafkaHandler. It contains the business logic.
 func (c *ProductLifecycleConsumer) Handler(ctx context.Context, body []byte) error {
 	var meta struct {
-		Metadata mq.KafkaMetadata `json:"metadata"`
+		Metadata kafka.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

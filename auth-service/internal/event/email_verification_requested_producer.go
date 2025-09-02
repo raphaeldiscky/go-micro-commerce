@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 )
@@ -19,7 +19,7 @@ type EmailVerificationRequestedPayload struct {
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata mq.KafkaMetadata                  `json:"metadata"`
+	Metadata kafka.Metadata                    `json:"metadata"`
 	Payload  EmailVerificationRequestedPayload `json:"payload"`
 }
 
@@ -57,14 +57,14 @@ func NewEmailVerificationRequestedEvent(
 
 // EmailVerificationRequestedProducer is responsible for producing product created events.
 type EmailVerificationRequestedProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
 // NewEmailVerificationRequestedProducer creates a new instance of EmailVerificationRequestedProducer.
 func NewEmailVerificationRequestedProducer(
-	producer *mq.KafkaAsyncProducer,
-) mq.KafkaProducerInterface {
+	producer *kafka.AsyncProducer,
+) kafka.ProducerInterface {
 	return &EmailVerificationRequestedProducer{
 		Producer: producer,
 		topic:    constant.TopicUserVerification,
@@ -72,7 +72,10 @@ func NewEmailVerificationRequestedProducer(
 }
 
 // Send implements the KafkaProducer interface.
-func (p *EmailVerificationRequestedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *EmailVerificationRequestedProducer) Send(
+	ctx context.Context,
+	event kafka.BaseEvent,
+) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 

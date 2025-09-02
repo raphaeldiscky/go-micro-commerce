@@ -1,4 +1,4 @@
-package mq
+package kafka
 
 import (
 	"context"
@@ -11,14 +11,14 @@ import (
 	"github.com/IBM/sarama"
 )
 
-// KafkaProducerInterface is an interface for sending events to Kafka.
-type KafkaProducerInterface interface {
+// ProducerInterface is an interface for sending events to Kafka.
+type ProducerInterface interface {
 	Send(ctx context.Context, event BaseEvent) error
 	Topic() string
 }
 
-// KafkaProducerConfig holds the configuration for the Kafka producer.
-type KafkaProducerConfig struct {
+// ProducerConfig holds the configuration for the Kafka producer.
+type ProducerConfig struct {
 	Brokers        []string
 	ReturnSuccess  bool
 	ReturnErrors   bool
@@ -27,13 +27,13 @@ type KafkaProducerConfig struct {
 	Acks           sarama.RequiredAcks
 }
 
-// KafkaSyncProducer implements the EventProducer interface using Kafka.
-type KafkaSyncProducer struct {
+// SyncProducer implements the EventProducer interface using Kafka.
+type SyncProducer struct {
 	producer sarama.SyncProducer
 }
 
-// KafkaAsyncProducer implements the EventProducer interface using Kafka.
-type KafkaAsyncProducer struct {
+// AsyncProducer implements the EventProducer interface using Kafka.
+type AsyncProducer struct {
 	producer  sarama.AsyncProducer
 	RetryChan chan *sarama.ProducerMessage
 	ctx       context.Context
@@ -41,8 +41,8 @@ type KafkaAsyncProducer struct {
 	wg        sync.WaitGroup
 }
 
-// NewKafkaSyncProducer creates a new instance of sync ProducerKafka.
-func NewKafkaSyncProducer(cfg *KafkaProducerConfig) (*KafkaSyncProducer, error) {
+// NewSyncProducer creates a new instance of sync ProducerKafka.
+func NewSyncProducer(cfg *ProducerConfig) (*SyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = cfg.Acks
 	config.Producer.Return.Successes = cfg.ReturnSuccess
@@ -60,13 +60,13 @@ func NewKafkaSyncProducer(cfg *KafkaProducerConfig) (*KafkaSyncProducer, error) 
 		return nil, fmt.Errorf("failed to create Kafka producer: %w", err)
 	}
 
-	return &KafkaSyncProducer{
+	return &SyncProducer{
 		producer: producer,
 	}, nil
 }
 
-// NewKafkaAsyncProducer creates a new instance of async KafkaAsyncProducer.
-func NewKafkaAsyncProducer(cfg *KafkaProducerConfig) (*KafkaAsyncProducer, error) {
+// NewAsyncProducer creates a new instance of async AsyncProducer.
+func NewAsyncProducer(cfg *ProducerConfig) (*AsyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = cfg.Acks
 	config.Producer.Return.Successes = cfg.ReturnSuccess
@@ -85,7 +85,7 @@ func NewKafkaAsyncProducer(cfg *KafkaProducerConfig) (*KafkaAsyncProducer, error
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
-	asyncProducer := &KafkaAsyncProducer{
+	asyncProducer := &AsyncProducer{
 		producer:  producer,
 		RetryChan: make(chan *sarama.ProducerMessage, 1000), // Buffered channel
 		ctx:       ctx,
@@ -105,7 +105,7 @@ func NewKafkaAsyncProducer(cfg *KafkaProducerConfig) (*KafkaAsyncProducer, error
 }
 
 // ProduceSync an event to Kafka.
-func (p *KafkaSyncProducer) ProduceSync(topic string, evt BaseEvent) error {
+func (p *SyncProducer) ProduceSync(topic string, evt BaseEvent) error {
 	// Marshal event to JSON
 	eventData, err := json.Marshal(evt)
 	if err != nil {
@@ -144,7 +144,7 @@ func (p *KafkaSyncProducer) ProduceSync(topic string, evt BaseEvent) error {
 }
 
 // CloseSync closes the Kafka producer.
-func (p *KafkaSyncProducer) CloseSync() error {
+func (p *SyncProducer) CloseSync() error {
 	if p.producer != nil {
 		log.Println("Closing Kafka sync producer")
 
@@ -155,7 +155,7 @@ func (p *KafkaSyncProducer) CloseSync() error {
 }
 
 // ProduceAsync sends an event to Kafka asynchronously.
-func (p *KafkaAsyncProducer) ProduceAsync(ctx context.Context, topic string, evt BaseEvent) error {
+func (p *AsyncProducer) ProduceAsync(ctx context.Context, topic string, evt BaseEvent) error {
 	// Marshal event to JSON
 	eventData, err := json.Marshal(evt)
 	if err != nil {
@@ -196,7 +196,7 @@ func (p *KafkaAsyncProducer) ProduceAsync(ctx context.Context, topic string, evt
 }
 
 // CloseAsync closes the Kafka async producer.
-func (p *KafkaAsyncProducer) CloseAsync() error {
+func (p *AsyncProducer) CloseAsync() error {
 	if p.producer != nil {
 		log.Println("Closing Kafka async producer")
 
@@ -216,7 +216,7 @@ func (p *KafkaAsyncProducer) CloseAsync() error {
 }
 
 // handleSuccesses handles successful message deliveries.
-func (p *KafkaAsyncProducer) handleSuccesses() {
+func (p *AsyncProducer) handleSuccesses() {
 	defer p.wg.Done()
 
 	for {
@@ -233,7 +233,7 @@ func (p *KafkaAsyncProducer) handleSuccesses() {
 }
 
 // handleErrors handles errors that occur during message production.
-func (p *KafkaAsyncProducer) handleErrors() {
+func (p *AsyncProducer) handleErrors() {
 	defer p.wg.Done()
 
 	for {
@@ -257,7 +257,7 @@ func (p *KafkaAsyncProducer) handleErrors() {
 }
 
 // handleRetries processes messages from the retry channel.
-func (p *KafkaAsyncProducer) handleRetries() {
+func (p *AsyncProducer) handleRetries() {
 	defer p.wg.Done()
 
 	retryTicker := time.NewTicker(2 * time.Second) // Retry every 2 seconds

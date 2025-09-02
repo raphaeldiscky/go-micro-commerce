@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
@@ -58,8 +58,8 @@ type OrderActivities interface {
 type OrderActivitiesImpl struct {
 	dataStore              repository.DataStore
 	productClient          client.ProductClientInterface
-	paymentRequestProducer mq.KafkaProducerInterface
-	orderLifecycleProducer mq.KafkaProducerInterface
+	paymentRequestProducer kafka.ProducerInterface
+	orderLifecycleProducer kafka.ProducerInterface
 	logger                 logger.Logger
 }
 
@@ -67,8 +67,8 @@ type OrderActivitiesImpl struct {
 func NewOrderActivities(
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
-	paymentRequestProducer mq.KafkaProducerInterface,
-	orderLifecycleProducer mq.KafkaProducerInterface,
+	paymentRequestProducer kafka.ProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
 	appLogger logger.Logger,
 ) OrderActivities {
 	return &OrderActivitiesImpl{

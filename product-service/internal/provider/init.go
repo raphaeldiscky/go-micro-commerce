@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
@@ -15,7 +15,7 @@ import (
 // Providers holds all initialized providers.
 type Providers struct {
 	DataStore      repository.DataStore
-	KafkaAdmin     *mq.KafkaAdmin
+	KafkaAdmin     *kafka.Admin
 	ProductService service.ProductServiceInterface
 }
 
@@ -53,7 +53,7 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 
 	dataStore := repository.NewDataStore(pgPool, redisClusterClient)
 	// Setup kafka admin
-	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{
+	kafkaAdmin := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
 	})
 

@@ -1,8 +1,8 @@
 package provider
 
 import (
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -14,11 +14,11 @@ func SetupKafkaConsumers(
 	cfg *config.KafkaConfig,
 	appLogger logger.Logger,
 	providers *Providers,
-) []mq.KafkaConsumer {
-	var consumers []mq.KafkaConsumer
+) []kafka.Consumer {
+	var consumers []kafka.Consumer
 
 	// Consumer for order lifecycle events (order created, updated, deleted)
-	ordersConsumer, err := mq.NewConsumerKafka(
+	ordersConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
 		constant.TopicOrderLifecycle,
 		constant.ConsumerGroupPaymentOrderEvents,
@@ -32,7 +32,7 @@ func SetupKafkaConsumers(
 	}
 
 	// Consumer for payment request events from order service
-	paymentRequestConsumer, err := mq.NewConsumerKafka(
+	paymentRequestConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
 		constant.TopicPaymentRequest,
 		constant.ConsumerGroupPaymentEvents,

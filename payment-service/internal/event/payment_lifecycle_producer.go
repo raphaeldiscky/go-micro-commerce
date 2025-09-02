@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -20,7 +20,7 @@ type PaymentLifecyclePayload struct {
 
 // PaymentLifecycleEvent is the envelope for all Payment events.
 type PaymentLifecycleEvent struct {
-	Metadata mq.KafkaMetadata        `json:"metadata"`
+	Metadata kafka.Metadata          `json:"metadata"`
 	Payload  PaymentLifecyclePayload `json:"payload"`
 }
 
@@ -30,13 +30,13 @@ func (e *PaymentLifecycleEvent) GetPayload() interface{} {
 }
 
 // GetMetadata returns the metadata associated with the PaymentLifecycleEvent.
-func (e *PaymentLifecycleEvent) GetMetadata() mq.KafkaMetadata { // Use the correct type from mq package
+func (e *PaymentLifecycleEvent) GetMetadata() kafka.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
 // PaymentLifecycleProducer is responsible for producing Payment Lifecycle events.
 type PaymentLifecycleProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
@@ -47,7 +47,7 @@ func NewPaymentLifecycleEvent(
 	totalPrice decimal.Decimal,
 ) *PaymentLifecycleEvent {
 	return &PaymentLifecycleEvent{
-		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
+		Metadata: kafka.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   mapStatusToEventType(newStatus),
 			AggregateID: orderID,
@@ -63,7 +63,7 @@ func NewPaymentLifecycleEvent(
 }
 
 // NewPaymentLifecycleProducer creates a new instance of PaymentLifecycleProducer.
-func NewPaymentLifecycleProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+func NewPaymentLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentLifecycleProducer{
 		Producer: producer,
 		topic:    constant.TopicPaymentLifecycle,
@@ -71,7 +71,7 @@ func NewPaymentLifecycleProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProduc
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentLifecycleProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *PaymentLifecycleProducer) Send(ctx context.Context, event kafka.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 

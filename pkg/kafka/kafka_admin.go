@@ -1,4 +1,4 @@
-package mq
+package kafka
 
 import (
 	"log"
@@ -6,18 +6,18 @@ import (
 	"github.com/IBM/sarama"
 )
 
-// KafkaAdminConfig holds the configuration for the Kafka admin.
-type KafkaAdminConfig struct {
+// AdminConfig holds the configuration for the Kafka admin.
+type AdminConfig struct {
 	Brokers []string
 }
 
-// KafkaAdmin represents a Kafka admin client.
-type KafkaAdmin struct {
+// Admin represents a Kafka admin client.
+type Admin struct {
 	Client sarama.Client
 }
 
-// NewKafkaAdmin creates a new instance of KafkaAdmin.
-func NewKafkaAdmin(opt *KafkaAdminConfig) *KafkaAdmin {
+// NewAdmin creates a new instance of Admin.
+func NewAdmin(opt *AdminConfig) *Admin {
 	client, err := sarama.NewClient(opt.Brokers, sarama.NewConfig())
 	if err != nil {
 		log.Fatalf("failed to create kafka admin: %v", err)
@@ -25,13 +25,13 @@ func NewKafkaAdmin(opt *KafkaAdminConfig) *KafkaAdmin {
 
 	log.Println("Kafka admin client created successfully")
 
-	return &KafkaAdmin{
+	return &Admin{
 		Client: client,
 	}
 }
 
 // CreateTopic creates a new Kafka topic.
-func (admin *KafkaAdmin) CreateTopic(topic string, numPartitions, replicationFactor int) {
+func (admin *Admin) CreateTopic(topic string, numPartitions, replicationFactor int) {
 	adminClient, err := sarama.NewClusterAdminFromClient(admin.Client)
 	if err != nil {
 		log.Fatalf("failed to create kafka admin: %v", err)

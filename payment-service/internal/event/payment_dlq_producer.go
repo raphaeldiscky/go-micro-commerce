@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
@@ -29,7 +29,7 @@ type PaymentDLQPayload struct {
 
 // PaymentDLQEvent is the envelope for all Payment events.
 type PaymentDLQEvent struct {
-	Metadata mq.KafkaMetadata  `json:"metadata"`
+	Metadata kafka.Metadata    `json:"metadata"`
 	Payload  PaymentDLQPayload `json:"payload"`
 }
 
@@ -39,13 +39,13 @@ func (e *PaymentDLQEvent) GetPayload() interface{} {
 }
 
 // GetMetadata returns the metadata associated with the PaymentDLQEvent.
-func (e *PaymentDLQEvent) GetMetadata() mq.KafkaMetadata { // Use the correct type from mq package
+func (e *PaymentDLQEvent) GetMetadata() kafka.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
 // PaymentDLQProducer is responsible for producing Payment DLQ events.
 type PaymentDLQProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
@@ -55,7 +55,7 @@ func NewPaymentDLQEvent(
 	reason constant.DLQReason,
 ) *PaymentDLQEvent {
 	return &PaymentDLQEvent{
-		Metadata: mq.KafkaMetadata{ // Use the correct type from mq package
+		Metadata: kafka.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   constant.KafkaEventTypePaymentDLQ,
 			AggregateID: outboxEvent.AggregateID,
@@ -79,7 +79,7 @@ func NewPaymentDLQEvent(
 }
 
 // NewPaymentDLQProducer creates a new instance of PaymentDLQProducer.
-func NewPaymentDLQProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+func NewPaymentDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &PaymentDLQProducer{
 		Producer: producer,
 		topic:    constant.TopicPaymentDLQ,
@@ -87,7 +87,7 @@ func NewPaymentDLQProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInte
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentDLQProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *PaymentDLQProducer) Send(ctx context.Context, event kafka.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 

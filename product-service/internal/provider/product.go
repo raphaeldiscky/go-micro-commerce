@@ -3,8 +3,8 @@ package provider
 import (
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
@@ -35,7 +35,7 @@ func InitializeProductService(cfg *config.Config, appLogger logger.Logger, provi
 		constant.TopicProductLifecycleReplicationFactor,
 	)
 
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,

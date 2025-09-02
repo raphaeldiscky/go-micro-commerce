@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 )
@@ -17,7 +17,7 @@ type ProductDeletedPayload struct {
 
 // ProductDeletedEvent is the envelope for product deletion events.
 type ProductDeletedEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  ProductDeletedPayload `json:"payload"`
 }
 
@@ -49,12 +49,12 @@ func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 
 // ProductDeletedProducer is responsible for producing product deleted events.
 type ProductDeletedProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
 // NewProductDeletedProducer creates a new instance of ProductDeletedProducer.
-func NewProductDeletedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+func NewProductDeletedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &ProductDeletedProducer{
 		Producer: producer,
 		topic:    constant.TopicProductLifecycle,
@@ -62,7 +62,7 @@ func NewProductDeletedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer
 }
 
 // Send implements the KafkaProducer interface.
-func (p *ProductDeletedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *ProductDeletedProducer) Send(ctx context.Context, event kafka.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 

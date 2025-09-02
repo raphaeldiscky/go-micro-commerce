@@ -1,5 +1,5 @@
-// Package mq provides a Kafka consumer implementation for consuming messages from Kafka topics.
-package mq
+// Package kafka provides a Kafka consumer implementation for consuming messages from Kafka topics.
+package kafka
 
 import (
 	"context"
@@ -10,12 +10,12 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
-// KafkaHandler is a function type for handling Kafka messages.
+// Handler is a function type for handling Kafka messages.
 // It receives the context and the message body as bytes.
-type KafkaHandler func(ctx context.Context, body []byte) error
+type Handler func(ctx context.Context, body []byte) error
 
-// KafkaConsumer is the interface that all consumers must implement.
-type KafkaConsumer interface {
+// Consumer is the interface that all consumers must implement.
+type Consumer interface {
 	Consume(ctx context.Context) error
 	Close() error
 	Topic() string
@@ -25,18 +25,18 @@ type KafkaConsumer interface {
 type consumerKafka struct {
 	consumerGroup sarama.ConsumerGroup
 	topic         string
-	handler       KafkaHandler // The business logic handler for a message.
+	handler       Handler // The business logic handler for a message.
 	appLogger     logger.Logger
 }
 
-// NewConsumerKafka creates and configures a new Kafka consumer.
-func NewConsumerKafka(
+// NewConsumer creates and configures a new Kafka consumer.
+func NewConsumer(
 	brokers []string,
 	topic, groupID string,
-	handler KafkaHandler,
+	handler Handler,
 	appLogger logger.Logger,
-) (KafkaConsumer, error) {
-	if err := TestKafkaConnection(brokers, appLogger); err != nil {
+) (Consumer, error) {
+	if err := TestConnection(brokers, appLogger); err != nil {
 		return nil, fmt.Errorf("kafka connection test failed: %w", err)
 	}
 
@@ -61,8 +61,8 @@ func NewConsumerKafka(
 	}, nil
 }
 
-// TestKafkaConnection tests the connection to the Kafka brokers.
-func TestKafkaConnection(brokers []string, appLogger logger.Logger) error {
+// TestConnection tests the connection to the Kafka brokers.
+func TestConnection(brokers []string, appLogger logger.Logger) error {
 	config := sarama.NewConfig()
 	config.Version = sarama.V2_8_0_0
 

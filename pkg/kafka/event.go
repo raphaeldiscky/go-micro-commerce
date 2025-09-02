@@ -1,4 +1,4 @@
-package mq
+package kafka
 
 import (
 	"encoding/json"
@@ -9,18 +9,18 @@ import (
 
 // GenericEvent wraps any event with metadata.
 type GenericEvent struct {
-	Metadata KafkaMetadata   `json:"metadata"`
+	Metadata Metadata        `json:"metadata"`
 	Payload  json.RawMessage `json:"payload"`
 }
 
 // BaseEvent represents a base event interface.
 type BaseEvent interface {
-	GetMetadata() KafkaMetadata
+	GetMetadata() Metadata
 	GetPayload() interface{}
 }
 
-// KafkaMetadata provides common event properties.
-type KafkaMetadata struct {
+// Metadata provides common event properties.
+type Metadata struct {
 	EventID     uuid.UUID `json:"event_id"`
 	EventType   string    `json:"event_type"`
 	AggregateID uuid.UUID `json:"aggregate_id"`

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
@@ -56,8 +56,8 @@ type AuthService struct {
 	jwtUtils                           jwtutils.JWTInterface
 	hasher                             encryptutils.HasherInterface
 	logger                             logger.Logger
-	emailVerificationRequestedProducer mq.KafkaProducerInterface
-	userVerifiedProducer               mq.KafkaProducerInterface
+	emailVerificationRequestedProducer kafka.ProducerInterface
+	userVerifiedProducer               kafka.ProducerInterface
 }
 
 // NewAuthService creates a new AuthService.
@@ -66,8 +66,8 @@ func NewAuthService(
 	jwtUtils jwtutils.JWTInterface,
 	hasher encryptutils.HasherInterface,
 	appLogger logger.Logger,
-	emailVerificationRequestedProducer mq.KafkaProducerInterface,
-	userVerifiedProducer mq.KafkaProducerInterface,
+	emailVerificationRequestedProducer kafka.ProducerInterface,
+	userVerifiedProducer kafka.ProducerInterface,
 ) AuthServiceInterface {
 	return &AuthService{
 		dataStore:                          dataStore,

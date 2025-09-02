@@ -2,7 +2,7 @@ package event
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 )
 
 // UserVerifiedPayload holds the data for the user verified event.
@@ -13,6 +13,6 @@ type UserVerifiedPayload struct {
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata mq.KafkaMetadata    `json:"metadata"`
+	Metadata kafka.Metadata      `json:"metadata"`
 	Payload  UserVerifiedPayload `json:"payload"`
 }

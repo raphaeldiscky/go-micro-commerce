@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -20,20 +20,20 @@ import (
 type OutboxPublisher struct {
 	dataStore                repository.DataStore
 	logger                   logger.Logger
-	paymentLifecycleProducer mq.KafkaProducerInterface
-	paymentDLQProducer       mq.KafkaProducerInterface
+	paymentLifecycleProducer kafka.ProducerInterface
+	paymentDLQProducer       kafka.ProducerInterface
 	config                   config.OutboxPublisherConfig
-	eventRegistry            *mq.EventRegistry
+	eventRegistry            *kafka.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentLifecycleProducer mq.KafkaProducerInterface,
-	paymentDLQProducer mq.KafkaProducerInterface,
+	paymentLifecycleProducer kafka.ProducerInterface,
+	paymentDLQProducer kafka.ProducerInterface,
 	cfg config.OutboxPublisherConfig,
-	eventRegistry *mq.EventRegistry,
+	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
 		dataStore:                dataStore,

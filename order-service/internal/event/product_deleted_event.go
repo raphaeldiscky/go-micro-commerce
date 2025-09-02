@@ -3,7 +3,7 @@ package event
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 )
 
 // ProductDeletedPayload holds the data for the product deleted event.
@@ -13,6 +13,6 @@ type ProductDeletedPayload struct {
 
 // ProductDeletedEvent is the envelope for all product events.
 type ProductDeletedEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  ProductDeletedPayload `json:"payload"`
 }

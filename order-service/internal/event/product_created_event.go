@@ -3,7 +3,7 @@ package event
 
 import (
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 )
 
@@ -17,6 +17,6 @@ type ProductCreatedPayload struct {
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  ProductCreatedPayload `json:"payload"`
 }

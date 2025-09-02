@@ -8,8 +8,8 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -28,7 +28,7 @@ type PaymentRequestPayload struct {
 
 // PaymentRequestEvent is the envelope for payment request events.
 type PaymentRequestEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  PaymentRequestPayload `json:"payload"`
 }
 
@@ -53,7 +53,7 @@ func NewPaymentRequestConsumer(
 func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
-		Metadata mq.KafkaMetadata `json:"metadata"`
+		Metadata kafka.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

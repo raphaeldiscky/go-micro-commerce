@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -29,8 +29,8 @@ type Orchestrator struct {
 func NewSagaOrchestrator(
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
-	paymentRequestProducer mq.KafkaProducerInterface,
-	orderLifecycleProducer mq.KafkaProducerInterface,
+	paymentRequestProducer kafka.ProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
 	appLogger logger.Logger,
 ) Orchestrator {
 	// Create executor

@@ -5,8 +5,8 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
@@ -24,7 +24,7 @@ func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provid
 		constant.TopicUserVerificationReplicationFactor,
 	)
 
-	asyncProducer, err := mq.NewKafkaAsyncProducer(&mq.KafkaProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
 		FlushFrequency: cfg.Kafka.FlushFrequency,

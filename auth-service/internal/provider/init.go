@@ -2,7 +2,7 @@ package provider
 
 import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
@@ -15,7 +15,7 @@ import (
 // Providers holds all initialized providers.
 type Providers struct {
 	DataStore    repository.DataStore
-	KafkaAdmin   *mq.KafkaAdmin
+	KafkaAdmin   *kafka.Admin
 	JWTUtils     jwtutils.JWTInterface
 	BcryptHasher encryptutils.HasherInterface
 }
@@ -55,7 +55,7 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 	dataStore := repository.NewDataStore(pgPool)
 
 	// Setup kafka admin
-	kafkaAdmin := mq.NewKafkaAdmin(&mq.KafkaAdminConfig{
+	kafkaAdmin := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
 	})
 

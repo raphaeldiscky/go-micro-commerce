@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
@@ -21,7 +21,7 @@ type ProductUpdatedPayload struct {
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	Metadata mq.KafkaMetadata      `json:"metadata"`
+	Metadata kafka.Metadata        `json:"metadata"`
 	Payload  ProductUpdatedPayload `json:"payload"`
 }
 
@@ -61,12 +61,12 @@ func NewProductUpdatedEvent(
 
 // ProductUpdatedProducer is responsible for producing product Updated events.
 type ProductUpdatedProducer struct {
-	Producer *mq.KafkaAsyncProducer
+	Producer *kafka.AsyncProducer
 	topic    string
 }
 
 // NewProductUpdatedProducer creates a new instance of ProductUpdatedProducer.
-func NewProductUpdatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducerInterface {
+func NewProductUpdatedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
 	return &ProductUpdatedProducer{
 		Producer: producer,
 		topic:    constant.TopicProductLifecycle,
@@ -74,7 +74,7 @@ func NewProductUpdatedProducer(producer *mq.KafkaAsyncProducer) mq.KafkaProducer
 }
 
 // Send implements the KafkaProducer interface.
-func (p *ProductUpdatedProducer) Send(ctx context.Context, event mq.BaseEvent) error {
+func (p *ProductUpdatedProducer) Send(ctx context.Context, event kafka.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, event)
 }
 
