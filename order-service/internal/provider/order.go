@@ -71,6 +71,11 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		orderLifecycleProducer,
 		appLogger,
 	)
+
+	// Setup Temporal client
+	temporalClient := SetupTemporal(cfg, appLogger, providers)
+	providers.TemporalClient = temporalClient
+
 	jobsScheduler := SetupJobScheduler(cfg, sagaOrchestrator, appLogger, providers)
 	providers.JobScheduler = jobsScheduler
 	orderService := service.NewOrderService(
@@ -80,6 +85,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger,
 		orderLifecycleProducer,
 		sagaOrchestrator,
+		temporalClient,
 	)
 
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)

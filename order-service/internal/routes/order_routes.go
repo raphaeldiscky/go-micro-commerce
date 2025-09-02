@@ -17,6 +17,7 @@ func SetupOrderRoutes(e *echo.Echo, h *handler.OrderHandler) {
 	protected.POST("", h.CreateOrder)
 	protected.POST("/proto", h.CreateOrderWithProto)
 	protected.POST("/saga", h.CreateOrderWithSaga)
+	protected.POST("/temporal", h.CreateOrderWithTemporal)
 	protected.GET("/user", h.GetLoggedInOrders)
 	protected.POST("/cancel/:orderID", h.CancelOrder)
 	protected.POST("/payment-request/:orderID", h.RequestPaymentOrder)

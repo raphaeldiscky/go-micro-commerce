@@ -68,7 +68,8 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 		NewHTTPWorker(wm.cfg, wm.logger, wm.providers),
 		NewKafkaConsumerWorker(wm.cfg, wm.logger, wm.providers),
 		NewOutboxPublisherWorker(wm.cfg, wm.logger, wm.providers),
-		NewJobSchedulerWorker(wm.providers.JobScheduler, wm.logger),
+		NewJobSchedulerWorker(wm.logger, wm.providers),
+		NewTemporalWorker(wm.logger, wm.providers),
 	}
 
 	return wm.runWorkers(ctx, workers)

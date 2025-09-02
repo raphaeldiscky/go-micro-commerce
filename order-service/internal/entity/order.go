@@ -26,6 +26,13 @@ type Order struct {
 	UpdatedAt      time.Time
 }
 
+// OrderPricing represents the pricing details for an order.
+type OrderPricing struct {
+	TotalPrice    decimal.Decimal
+	TotalDiscount decimal.Decimal
+	TotalTax      decimal.Decimal
+}
+
 // OrderItem represents an item in an order.
 type OrderItem struct {
 	ID        uuid.UUID

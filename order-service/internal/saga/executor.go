@@ -22,7 +22,7 @@ type StepResult struct {
 
 // Step represents an enhanced saga step with retry logic.
 type Step struct {
-	Name        WorkflowStep
+	Name        constant.WorkflowStep
 	Execute     func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error)
 	Compensate  func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) error
 	MaxRetries  int64
@@ -350,7 +350,7 @@ func (e *Executor) compensateFromState(
 
 	// Compensate in reverse order
 	for i := len(state.ExecutedSteps) - 1; i >= 0; i-- {
-		stepName := WorkflowStep(state.ExecutedSteps[i])
+		stepName := constant.WorkflowStep(state.ExecutedSteps[i])
 
 		// Skip if already compensated
 		if e.isStepCompensated(state, stepName) {
@@ -496,7 +496,7 @@ func (e *Executor) getOrCreateSagaState(
 }
 
 // Helper functions.
-func (e *Executor) isStepExecuted(state *entity.SagaState, stepName WorkflowStep) bool {
+func (e *Executor) isStepExecuted(state *entity.SagaState, stepName constant.WorkflowStep) bool {
 	for _, name := range state.ExecutedSteps {
 		if name == string(stepName) {
 			return true
@@ -506,7 +506,7 @@ func (e *Executor) isStepExecuted(state *entity.SagaState, stepName WorkflowStep
 	return false
 }
 
-func (e *Executor) isStepCompensated(state *entity.SagaState, stepName WorkflowStep) bool {
+func (e *Executor) isStepCompensated(state *entity.SagaState, stepName constant.WorkflowStep) bool {
 	for _, name := range state.CompensatedSteps {
 		if name == string(stepName) {
 			return true

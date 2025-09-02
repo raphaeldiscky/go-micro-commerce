@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
@@ -29,7 +30,7 @@ func NewOrderSaga(activities OrderActivities, appLogger logger.Logger) *OrderSag
 func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 1: Validate Products
 	executor.AddStep(&Step{
-		Name:        ValidateProductsStep,
+		Name:        constant.ValidateProductsStep,
 		Description: "Validate products",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
@@ -50,7 +51,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	})
 	// Step 2: Reserve Products
 	executor.AddStep(&Step{
-		Name:        ReserveProductsStep,
+		Name:        constant.ReserveProductsStep,
 		Description: "Reserve products",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
@@ -76,7 +77,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 	// Step 3: Calculate Pricing and Discounts
 	executor.AddStep(&Step{
-		Name:        CalculatePricingStep,
+		Name:        constant.CalculatePricingStep,
 		Description: "Calculate final pricing with discounts and taxes",
 		MaxRetries:  2,
 		RetryDelay:  1 * time.Second,
@@ -103,7 +104,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 	// Step 4: Process Payment
 	executor.AddStep(&Step{
-		Name:        ProcessPaymentStep,
+		Name:        constant.ProcessPaymentStep,
 		Description: "Process payment for the order",
 		MaxRetries:  3,
 		RetryDelay:  5 * time.Second,
@@ -137,7 +138,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 	// Step 5: Deduct Products
 	executor.AddStep(&Step{
-		Name:        ConfirmProductsDeductionStep,
+		Name:        constant.ConfirmProductsDeductionStep,
 		Description: "Confirms reserved products and release reserved quantity after payment completed",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
@@ -158,7 +159,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 	// Step 6: Create Shipping
 	executor.AddStep(&Step{
-		Name:        CreateShippingStep,
+		Name:        constant.CreateShippingStep,
 		Description: "Create shipping arrangement",
 		MaxRetries:  2,
 		RetryDelay:  3 * time.Second,
@@ -191,7 +192,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 	// Step 7: Send Order Confirmation Notifications
 	executor.AddStep(&Step{
-		Name:        SendOrderConfirmationStep,
+		Name:        constant.SendOrderConfirmationStep,
 		Description: "Send order confirmation",
 		MaxRetries:  3,
 		RetryDelay:  1 * time.Second,

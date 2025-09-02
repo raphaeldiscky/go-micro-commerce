@@ -12,6 +12,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
+	"github.com/shopspring/decimal"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
@@ -32,6 +33,11 @@ import (
 type OrderServiceInterface interface {
 	CreateOrder(ctx context.Context, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
 	CreateOrderWithProto(
+		ctx context.Context,
+		req dto.CreateOrderRequest,
+	) (*dto.OrderResponse, error)
+	CreateOrderWithSaga(ctx context.Context, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
+	CreateOrderWithTemporal(
 		ctx context.Context,
 		req dto.CreateOrderRequest,
 	) (*dto.OrderResponse, error)
@@ -62,7 +68,6 @@ type OrderServiceInterface interface {
 		req dto.PayOrderRequest,
 		id uuid.UUID,
 	) (*dto.OrderResponse, error)
-	CreateOrderWithSaga(ctx context.Context, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
 }
 
 // OrderService implements the OrderServiceInterface.
@@ -72,6 +77,7 @@ type OrderService struct {
 	logger                 logger.Logger
 	orderLifecycleProducer kafka.ProducerInterface
 	sagaOrchestrator       saga.Orchestrator
+	temporalClient         *client.TemporalClient
 	config                 *config.Config
 }
 
@@ -83,6 +89,7 @@ func NewOrderService(
 	appLogger logger.Logger,
 	orderLifecycleProducer kafka.ProducerInterface,
 	sagaOrchestrator saga.Orchestrator,
+	temporalClient *client.TemporalClient,
 ) OrderServiceInterface {
 	return &OrderService{
 		dataStore:              dataStore,
@@ -90,6 +97,7 @@ func NewOrderService(
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
 		sagaOrchestrator:       sagaOrchestrator,
+		temporalClient:         temporalClient,
 		config:                 cfg,
 	}
 }
@@ -346,6 +354,117 @@ func (s *OrderService) CreateOrderWithProto(
 		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return err
 		}
+
+		res = mapper.MapToOrderResponse(savedOrder)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// CreateOrderWithTemporal handles POST /orders/temporal with Temporal processing.
+func (s *OrderService) CreateOrderWithTemporal(
+	ctx context.Context,
+	req dto.CreateOrderRequest,
+) (*dto.OrderResponse, error) {
+	s.logger.Infof("Creating order with Temporal workflow for customer: %s", req.CustomerID)
+
+	if s.temporalClient == nil {
+		return nil, httperror.NewServiceUnavailableError("Temporal service is not available")
+	}
+
+	lockRepo := s.dataStore.LockRepository()
+	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
+	ttl := constant.CreateOrderTTL
+	opt := &redislock.Options{
+		RetryStrategy: redislock.LimitRetry(
+			redislock.LinearBackoff(constant.CreateOrderRetryInterval),
+			constant.CreateOrderRetryLimit,
+		),
+	}
+
+	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := lockRepo.Release(ctx, lock); err != nil {
+			s.logger.Warnf("failed to release lock: %v", err)
+		}
+	}()
+
+	var res *dto.OrderResponse
+
+	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		orderRepo := ds.OrderRepository()
+
+		// Check for existing order with same idempotency key
+		existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err != nil {
+			return err
+		}
+
+		if existingOrder != nil && existingOrder.CustomerID == req.CustomerID {
+			res = mapper.MapToOrderResponse(existingOrder)
+
+			return nil
+		}
+
+		// Create order items
+		var orderItems []entity.OrderItem
+
+		for _, item := range req.Items {
+			orderItem := entity.OrderItem{
+				ID:        uuid.New(),
+				ProductID: item.ProductID,
+				Quantity:  item.Quantity,
+				Price:     decimal.NewFromInt(0), // Will be set by pricing activity
+			}
+			orderItems = append(orderItems, orderItem)
+		}
+
+		// Create new order entity
+		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+		if err != nil {
+			return err
+		}
+
+		// Save order to database
+		savedOrder, err := orderRepo.Create(ctx, newOrder)
+		if err != nil {
+			return err
+		}
+
+		// Start Temporal workflow
+		req := dto.TemporalOrderSagaRequest{
+			Order: savedOrder,
+		}
+
+		workflowOptions := s.temporalClient.CreateWorkflowOptions(savedOrder.ID)
+
+		workflowRun, err := s.temporalClient.Client.ExecuteWorkflow(
+			ctx,
+			workflowOptions,
+			constant.OrderSagaWorkflowName,
+			req,
+		)
+		if err != nil {
+			s.logger.Errorf(
+				"Failed to start Temporal workflow for order %s: %v",
+				savedOrder.ID,
+				err,
+			)
+
+			return fmt.Errorf("failed to start order processing workflow: %w", err)
+		}
+
+		s.logger.Infof("Started Temporal workflow for order %s with workflow ID: %s",
+			savedOrder.ID, workflowRun.GetID())
 
 		res = mapper.MapToOrderResponse(savedOrder)
 
