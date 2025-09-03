@@ -27,3 +27,11 @@ type PaymentGatewayRequestPayload struct {
 	Currency      string          `json:"currency"`
 	PaymentMethod string          `json:"payment_method"`
 }
+
+// FulfillmentLifecyclePayload holds the data for the Fulfillment Lifecycle event.
+type FulfillmentLifecyclePayload struct {
+	FulfillmentID  uuid.UUID `json:"fulfillment_id"`
+	OrderID        uuid.UUID `json:"order_id"`
+	Status         string    `json:"status"`
+	TrackingNumber string    `json:"tracking_number"`
+}
