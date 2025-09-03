@@ -93,7 +93,7 @@ func (a *OrderActivitiesImpl) RefundPayment(
 			AggregateType: "payment",
 			AggregateID:   order.ID,
 			EventType:     kafka.PaymentRefundedEventType,
-			Topic:         kafka.PaymentRequestTopic, // Use same topic with different event type
+			Topic:         kafka.PaymentGatewayRequestTopic, // Use same topic with different event type
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

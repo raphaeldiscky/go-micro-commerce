@@ -431,7 +431,7 @@ func (s *FulfillmentService) GetShippingRates(
 	req *dto.GetShippingRatesRequest,
 ) ([]dto.ShippingRateResponse, error) {
 	// Create shipping request for carrier client
-	shipReq := client.ShippingRequest{
+	shipReq := dto.ShippingRequest{
 		OrderID:     req.OrderID,
 		FromAddress: req.FromAddress,
 		ToAddress:   req.ToAddress,
@@ -448,14 +448,7 @@ func (s *FulfillmentService) GetShippingRates(
 	// Convert carrier rates to response format
 	response := make([]dto.ShippingRateResponse, len(rates))
 	for i, rate := range rates {
-		response[i] = dto.ShippingRateResponse{
-			Carrier:           rate.Carrier,
-			Service:           rate.Service,
-			Cost:              rate.Cost,
-			Currency:          rate.Currency,
-			EstimatedDelivery: rate.EstimatedDelivery,
-			TransitDays:       rate.TransitDays,
-		}
+		response[i] = dto.ShippingRateResponse(rate)
 	}
 
 	return response, nil
@@ -483,7 +476,7 @@ func (s *FulfillmentService) CreateShipment(
 		insuranceAmount = *req.InsuranceAmount
 	}
 
-	shipReq := client.ShippingRequest{
+	shipReq := dto.ShippingRequest{
 		OrderID:         existingFulfillment.OrderID,
 		Carrier:         req.Carrier,
 		Service:         req.Service,

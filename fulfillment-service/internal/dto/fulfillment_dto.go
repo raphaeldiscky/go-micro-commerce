@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/entity"
 )
@@ -63,10 +62,10 @@ type FulfillmentResponse struct {
 
 // GetShippingRatesRequest represents the request to get shipping rates.
 type GetShippingRatesRequest struct {
-	FromAddress client.ShippingAddress `json:"from_address" validate:"required"`
-	ToAddress   client.ShippingAddress `json:"to_address"   validate:"required"`
-	Package     client.Package         `json:"package"      validate:"required"`
-	OrderID     uuid.UUID              `json:"order_id"     validate:"required"`
+	FromAddress ShippingAddress `json:"from_address" validate:"required"`
+	ToAddress   ShippingAddress `json:"to_address"   validate:"required"`
+	Package     Package         `json:"package"      validate:"required"`
+	OrderID     uuid.UUID       `json:"order_id"     validate:"required"`
 }
 
 // ShippingRateResponse represents a shipping rate option.
@@ -81,11 +80,11 @@ type ShippingRateResponse struct {
 
 // CreateShipmentRequest represents the request to create a shipment.
 type CreateShipmentRequest struct {
-	Carrier         string                 `json:"carrier"                    validate:"required"`
-	Service         string                 `json:"service"                    validate:"required"`
-	FromAddress     client.ShippingAddress `json:"from_address"               validate:"required"`
-	ToAddress       client.ShippingAddress `json:"to_address"                 validate:"required"`
-	Package         client.Package         `json:"package"                    validate:"required"`
-	InsuranceAmount *decimal.Decimal       `json:"insurance_amount,omitempty"`
-	Signature       bool                   `json:"signature,omitempty"`
+	Carrier         string           `json:"carrier"                    validate:"required"`
+	Service         string           `json:"service"                    validate:"required"`
+	FromAddress     ShippingAddress  `json:"from_address"               validate:"required"`
+	ToAddress       ShippingAddress  `json:"to_address"                 validate:"required"`
+	Package         Package          `json:"package"                    validate:"required"`
+	InsuranceAmount *decimal.Decimal `json:"insurance_amount,omitempty"`
+	Signature       bool             `json:"signature,omitempty"`
 }

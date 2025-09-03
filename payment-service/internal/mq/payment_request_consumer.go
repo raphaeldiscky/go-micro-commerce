@@ -20,31 +20,31 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
-// PaymentRequestEvent is the envelope for payment request events.
-type PaymentRequestEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.PaymentRequestPayload `json:"payload"`
+// PaymentGatewayRequestEvent is the envelope for payment request events.
+type PaymentGatewayRequestEvent struct {
+	Metadata event.Metadata                     `json:"metadata"`
+	Payload  event.PaymentGatewayRequestPayload `json:"payload"`
 }
 
-// PaymentRequestConsumer handles payment request events from order service.
-type PaymentRequestConsumer struct {
+// PaymentGatewayRequestConsumer handles payment request events from order service.
+type PaymentGatewayRequestConsumer struct {
 	logger    logger.Logger
 	datastore repository.DataStore
 }
 
-// NewPaymentRequestConsumer creates a new consumer for payment request events.
-func NewPaymentRequestConsumer(
+// NewPaymentGatewayRequestConsumer creates a new consumer for payment request events.
+func NewPaymentGatewayRequestConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-) *PaymentRequestConsumer {
-	return &PaymentRequestConsumer{
+) *PaymentGatewayRequestConsumer {
+	return &PaymentGatewayRequestConsumer{
 		logger:    appLogger,
 		datastore: ds,
 	}
 }
 
 // Handler processes payment request events.
-func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error {
+func (c *PaymentGatewayRequestConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
 		Metadata event.Metadata `json:"metadata"`
@@ -60,8 +60,8 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		"payment", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		kafka.PaymentRequestTopic,    // topic
-		pkgconstant.OrderServiceName, // source service
+		kafka.PaymentGatewayRequestTopic, // topic
+		pkgconstant.OrderServiceName,     // source service
 		json.RawMessage(body),
 		nil, // correlation_id
 		nil, // causation_id
@@ -95,8 +95,8 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		var processingErr error
 
 		switch meta.Metadata.EventType {
-		case kafka.PaymentRequestedEventType:
-			processingErr = c.processPaymentRequest(ctx, ds, body)
+		case kafka.PaymentGatewayRequestedEventType:
+			processingErr = c.processPaymentGatewayRequest(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown payment event type: %s", meta.Metadata.EventType)
 			// Mark as processed even for unknown events to avoid reprocessing
@@ -126,13 +126,13 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 	})
 }
 
-// processPaymentRequest handles payment request events to create payment records.
-func (c *PaymentRequestConsumer) processPaymentRequest(
+// processPaymentGatewayRequest handles payment request events to create payment records.
+func (c *PaymentGatewayRequestConsumer) processPaymentGatewayRequest(
 	ctx context.Context,
 	ds repository.DataStore,
 	body []byte,
 ) error {
-	var evt PaymentRequestEvent
+	var evt PaymentGatewayRequestEvent
 	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment request event: %w", err)
 	}

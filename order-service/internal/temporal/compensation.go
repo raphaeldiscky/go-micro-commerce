@@ -33,7 +33,7 @@ func (ta *OrderActivitiesImpl) ReleaseProducts(
 // RefundPayment refunds payment (compensation for ProcessPayment).
 func (ta *OrderActivitiesImpl) RefundPayment(
 	ctx context.Context,
-	req dto.RefundPaymentRequest,
+	req dto.RefundPaymentGatewayRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
 	logger.Info(
