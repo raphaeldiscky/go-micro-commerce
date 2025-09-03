@@ -9,9 +9,6 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
-
-	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/provider"
@@ -27,14 +24,13 @@ type KafkaConsumerServer struct {
 }
 
 // NewKafkaConsumerServer creates a new Kafka consumer server.
-func NewKafkaConsumerServer(cfg *config.Config, appLogger logger.Logger) *KafkaConsumerServer {
+func NewKafkaConsumerServer(
+	cfg *config.Config,
+	appLogger logger.Logger,
+	providers *provider.Providers,
+) *KafkaConsumerServer {
 	ctx, cancel := context.WithCancel(context.Background())
-	mailer := smtputils.NewMailer(&pkgConfig.SMTPConfig{
-		Host:  cfg.SMTP.Host,
-		Email: cfg.SMTP.Email,
-		Port:  cfg.SMTP.Port,
-	})
-	consumers := provider.SetupKafkaConsumers(cfg.Kafka, appLogger, mailer)
+	consumers := provider.SetupKafkaConsumers(cfg.Kafka, appLogger, providers)
 
 	return &KafkaConsumerServer{
 		ctx:       ctx,

@@ -95,6 +95,30 @@ services:
         limits:
           memory: 500m
 
+  postgres-fulfillment:
+    image: postgres:17.5-alpine
+    container_name: postgres-fulfillment
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_NAME=postgres
+      - POSTGRES_HOST=localhost
+    ports:
+      - "55432:5432"
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-fulfillment_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 500m
+
 volumes:
   postgres-auth_data:
   postgres-product_data:

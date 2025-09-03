@@ -1,0 +1,5 @@
+BEGIN;
+
+DROP TABLE IF EXISTS inbox_events CASCADE;
+
+COMMIT;

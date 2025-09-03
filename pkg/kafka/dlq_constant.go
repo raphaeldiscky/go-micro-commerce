@@ -5,6 +5,8 @@ const (
 	PaymentDLQEventType = "PaymentDLQ"
 	// OrderDLQEventType is the event type for order DLQ events.
 	OrderDLQEventType = "OrderDLQ"
+	// FulfillmentDLQEventType is the event type for fulfillment DLQ events.
+	FulfillmentDLQEventType = "FulfillmentDLQ"
 )
 
 const (
@@ -12,4 +14,6 @@ const (
 	PaymentDLQTopic = "payment.dlq"
 	// OrderDLQTopic is the dead-letter queue topic for failed order events.
 	OrderDLQTopic = "order.dlq"
+	// FulfillmentDLQTopic is the dead-letter queue topic for failed fulfillment events.
+	FulfillmentDLQTopic = "fulfillment.dlq"
 )

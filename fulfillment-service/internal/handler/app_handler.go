@@ -1,4 +1,4 @@
-// Package handler provides HTTP request handlers for the notification service.
+// Package handler provides HTTP handlers for the fulfillment service.
 package handler
 
 import (

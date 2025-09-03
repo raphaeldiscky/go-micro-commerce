@@ -3,41 +3,34 @@ package provider
 import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mq"
 )
 
-// SetupKafkaConsumers initializes the Kafka consumers for the notification service.
+// SetupKafkaConsumers initializes the Kafka consumers for the fulfillment service.
 func SetupKafkaConsumers(
 	cfg *config.KafkaConfig,
 	appLogger logger.Logger,
-	mailer smtputils.Mailer,
+	providers *Providers,
 ) []kafka.Consumer {
 	var consumers []kafka.Consumer
 
-	userVerificationConsumer, err := kafka.NewConsumer(
+	// Consumer for order lifecycle events (order created, updated, deleted)
+	ordersConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
-		constant.TopicUserVerification,
-		constant.ConsumerGroupNotificationUserEvents,
-		mq.NewUserVerificationConsumer(mailer, appLogger).Handler,
+		kafka.OrderLifecycleTopic,
+		kafka.FulfillmentOrderEventsConsumerGroup,
+		mq.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {
-		appLogger.Errorf("failed to create user verification lifecycle consumer: %v", err)
-		// In a real app, you might want to panic here as the service cannot run.
+		appLogger.Errorf("failed to create order lifecycle consumer: %v", err)
+
 		return nil
 	}
 
-	consumers = append(consumers, userVerificationConsumer)
-
-	// --- Add more consumers for different topics e.g. user.security here following the same pattern ---
-	// example:
-	// passwordResetHandler := event.NewPasswordResetConsumer(mailer)
-	// passwordResetConsumer, err := kafka.NewConsumer(...)
-	// consumers = append(consumers, passwordResetConsumer)
+	consumers = append(consumers, ordersConsumer)
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 

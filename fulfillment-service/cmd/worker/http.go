@@ -6,6 +6,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/provider"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/server"
 )
 
@@ -19,9 +20,10 @@ type HTTPWorker struct {
 func NewHTTPWorker(
 	cfg *config.Config,
 	appLogger logger.Logger,
+	providers *provider.Providers,
 ) *HTTPWorker {
 	return &HTTPWorker{
-		server: server.NewHTTPServer(cfg, appLogger),
+		server: server.NewHTTPServer(cfg, appLogger, providers),
 		logger: appLogger,
 	}
 }

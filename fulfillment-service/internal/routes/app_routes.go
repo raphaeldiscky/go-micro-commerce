@@ -1,4 +1,4 @@
-// Package routes provides the HTTP routes for the notification service.
+// Package routes provides the HTTP routes for the product service.
 package routes
 
 import (

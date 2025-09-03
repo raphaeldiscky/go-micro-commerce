@@ -10,8 +10,19 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/routes"
 )
 
-// SetupHTTP initializes the HTTP server routes and middleware.
-func SetupHTTP(_ *config.Config, e *echo.Echo, _ logger.Logger) {
+// SetupHTTP sets up the HTTP routes and middleware.
+func SetupHTTP(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
+	SetupFulfillment(cfg, e, appLogger, providers)
+}
+
+// SetupFulfillment sets up fulfillment-specific routes and handlers.
+func SetupFulfillment(
+	_ *config.Config,
+	_ *echo.Echo,
+	_ logger.Logger,
+	_ *Providers,
+) {
+	// TODO: Implement fulfillment routes and handlers
 }

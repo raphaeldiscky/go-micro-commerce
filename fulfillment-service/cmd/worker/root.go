@@ -32,7 +32,7 @@ type Worker interface {
 
 // Start initializes and starts the worker services.
 func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) error {
-	providers, err := provider.SetupGlobal(cfg)
+	providers, err := provider.SetupGlobal(ctx, cfg)
 	if err != nil {
 		appLogger.Fatal("failed to setup providers:", err)
 	}
@@ -42,7 +42,6 @@ func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) err
 		logger:    appLogger,
 		providers: providers,
 	}
-
 	rootCmd := &cobra.Command{
 		Use: "fulfillment-service",
 	}
@@ -66,8 +65,9 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 
 	// Initialize all workers
 	workers := []Worker{
-		NewHTTPWorker(wm.cfg, wm.logger),
-		NewKafkaConsumerWorker(wm.cfg, wm.logger),
+		NewHTTPWorker(wm.cfg, wm.logger, wm.providers),
+		NewKafkaConsumerWorker(wm.cfg, wm.logger, wm.providers),
+		NewOutboxPublisherWorker(wm.cfg, wm.logger, wm.providers),
 	}
 
 	return wm.runWorkers(ctx, workers)

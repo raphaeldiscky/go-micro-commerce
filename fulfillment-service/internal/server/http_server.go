@@ -1,4 +1,4 @@
-// Package server provides the HTTP server for the notificationentication service.
+// Package server provides the HTTP server for the product service.
 package server
 
 import (
@@ -19,28 +19,29 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/validation"
 )
 
-// HTTPServer represents the HTTP server.
+// HTTPServer wraps the Echo server.
 type HTTPServer struct {
 	echo   *echo.Echo
 	config *config.Config
 	logger logger.Logger
 }
 
-// NewHTTPServer creates a new HTTP server instance.
+// NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(
 	cfg *config.Config,
 	appLogger logger.Logger,
+	providers *provider.Providers,
 ) *HTTPServer {
 	e := echo.New()
 
-	// Set custom validator
+	// Register validator
 	e.Validator = validation.NewValidator()
 
 	// Middlewares
 	RegisterMiddlewares(e)
 
 	// Setup HTTP
-	provider.SetupHTTP(cfg, e, appLogger)
+	provider.SetupHTTP(cfg, e, appLogger, providers)
 
 	return &HTTPServer{
 		echo:   e,

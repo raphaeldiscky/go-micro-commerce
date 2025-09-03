@@ -6,6 +6,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/provider"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/server"
 )
 
@@ -19,9 +20,10 @@ type KafkaConsumerWorker struct {
 func NewKafkaConsumerWorker(
 	cfg *config.Config,
 	appLogger logger.Logger,
+	providers *provider.Providers,
 ) *KafkaConsumerWorker {
 	return &KafkaConsumerWorker{
-		server: server.NewKafkaConsumerServer(cfg, appLogger),
+		server: server.NewKafkaConsumerServer(cfg, appLogger, providers),
 		logger: appLogger,
 	}
 }
