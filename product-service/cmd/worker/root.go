@@ -71,7 +71,6 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	workers := []Worker{
 		NewHTTPWorker(wm.cfg, wm.logger, wm.providers),
 		NewGRPCWorker(wm.cfg, wm.logger, wm.providers),
-		NewKafkaConsumerWorker(wm.cfg, wm.logger, wm.providers),
 	}
 
 	return wm.runWorkers(ctx, workers)

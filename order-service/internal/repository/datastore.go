@@ -20,7 +20,7 @@ type DBTX interface {
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	OrderRepository() OrderRepositoryInterface
-	ProductRepository() ProductRepositoryInterface
+
 	LockRepository() LockRepositoryInterface
 	OutboxRepository() OutboxRepositoryInterface
 	SagaStateRepository() SagaStateRepositoryInterface
@@ -64,11 +64,6 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 // OrderRepository returns a new OrderRepository.
 func (s *dataStore) OrderRepository() OrderRepositoryInterface {
 	return NewOrderRepositoryPostgres(s.db)
-}
-
-// ProductRepository returns a new ProductRepository.
-func (s *dataStore) ProductRepository() ProductRepositoryInterface {
-	return NewProductRepositoryPostgres(s.db)
 }
 
 // LockRepository returns a new LockRepository.

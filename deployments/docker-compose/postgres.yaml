@@ -124,6 +124,7 @@ volumes:
   postgres-product_data:
   postgres-order_data:
   postgres-payment_data:
+  postgres-fulfillment_data:
 
 networks:
   go-micro-commerce:

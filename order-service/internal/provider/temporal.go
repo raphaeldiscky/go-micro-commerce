@@ -31,7 +31,9 @@ func SetupTemporal(
 		appLogger,
 	)
 	if err != nil {
-		appLogger.Fatalf("failed to create Temporal client: %v", err)
+		appLogger.Warnf("failed to create Temporal client: %v", err)
+
+		return nil
 	}
 
 	// Create temporal activities and register them

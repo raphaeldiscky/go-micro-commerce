@@ -1,3 +1,4 @@
+// Package mq provides the event definitions and handlers for the product service.
 package mq
 
 import (
