@@ -29,7 +29,7 @@ type OrderActivities interface {
 
 	// Compensation
 	ReleaseProducts(ctx context.Context, order *entity.Order) error
-	RefundPayment(ctx context.Context, req dto.RefundPaymentRequest) error
+	RefundPayment(ctx context.Context, req dto.RefundPaymentGatewayRequest) error
 	RestoreProducts(ctx context.Context, order *entity.Order) error
 	CancelShipping(ctx context.Context, shippingID uuid.UUID) error
 }

@@ -777,7 +777,7 @@ func (s *OrderService) RequestPaymentOrder(
 		}
 
 		// Publish payment request event to payment service
-		evt := mq.NewPaymentRequestEvent(
+		evt := mq.NewPaymentGatewayRequestEvent(
 			updatedOrder.ID,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
@@ -794,8 +794,8 @@ func (s *OrderService) RequestPaymentOrder(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   updatedOrder.ID,
-			EventType:     kafka.PaymentRequestedEventType,
-			Topic:         kafka.PaymentRequestTopic,
+			EventType:     kafka.PaymentGatewayRequestedEventType,
+			Topic:         kafka.PaymentGatewayRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

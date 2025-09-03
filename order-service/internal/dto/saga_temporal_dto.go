@@ -18,8 +18,8 @@ type SendOrderConfirmationRequest struct {
 	TrackingNumber string        `json:"tracking_number"`
 }
 
-// RefundPaymentRequest represents input for refunding payment.
-type RefundPaymentRequest struct {
+// RefundPaymentGatewayRequest represents input for refunding payment.
+type RefundPaymentGatewayRequest struct {
 	Order     *entity.Order `json:"order"`
 	PaymentID uuid.UUID     `json:"payment_id"`
 }

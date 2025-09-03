@@ -14,45 +14,45 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
-// PaymentRequestEvent is the envelope for payment request events.
-type PaymentRequestEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.PaymentRequestPayload `json:"payload"`
+// PaymentGatewayRequestEvent is the envelope for payment request events.
+type PaymentGatewayRequestEvent struct {
+	Metadata event.Metadata                     `json:"metadata"`
+	Payload  event.PaymentGatewayRequestPayload `json:"payload"`
 }
 
-// PaymentRequestProducer is responsible for producing Payment Lifecycle events.
-type PaymentRequestProducer struct {
+// PaymentGatewayRequestProducer is responsible for producing Payment Lifecycle events.
+type PaymentGatewayRequestProducer struct {
 	Producer *kafka.AsyncProducer
 	topic    string
 }
 
-// GetPayload returns the data associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetPayload() interface{} {
+// GetPayload returns the data associated with the PaymentGatewayRequestEvent.
+func (e *PaymentGatewayRequestEvent) GetPayload() interface{} {
 	return e.Payload
 }
 
-// GetMetadata returns the metadata associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetMetadata() event.Metadata {
+// GetMetadata returns the metadata associated with the PaymentGatewayRequestEvent.
+func (e *PaymentGatewayRequestEvent) GetMetadata() event.Metadata {
 	return e.Metadata
 }
 
-// NewPaymentRequestEvent creates a new PaymentRequestEvent.
-func NewPaymentRequestEvent(
+// NewPaymentGatewayRequestEvent creates a new PaymentGatewayRequestEvent.
+func NewPaymentGatewayRequestEvent(
 	orderID uuid.UUID,
 	customerID uuid.UUID,
 	totalPrice decimal.Decimal,
 	currency string,
 	paymentMethod constant.PaymentMethod,
-) *PaymentRequestEvent {
-	return &PaymentRequestEvent{
+) *PaymentGatewayRequestEvent {
+	return &PaymentGatewayRequestEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   kafka.PaymentRequestedEventType,
+			EventType:   kafka.PaymentGatewayRequestedEventType,
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: event.PaymentRequestPayload{
+		Payload: event.PaymentGatewayRequestPayload{
 			PaymentID:     uuid.New(),
 			OrderID:       orderID,
 			CustomerID:    customerID,
@@ -63,20 +63,20 @@ func NewPaymentRequestEvent(
 	}
 }
 
-// NewPaymentRequestProducer creates a new instance of PaymentRequestProducer.
-func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
-	return &PaymentRequestProducer{
+// NewPaymentGatewayRequestProducer creates a new instance of PaymentGatewayRequestProducer.
+func NewPaymentGatewayRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+	return &PaymentGatewayRequestProducer{
 		Producer: producer,
-		topic:    kafka.PaymentRequestTopic,
+		topic:    kafka.PaymentGatewayRequestTopic,
 	}
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentRequestProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *PaymentGatewayRequestProducer) Send(ctx context.Context, evt event.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 
 // Topic returns the topic name.
-func (p *PaymentRequestProducer) Topic() string {
+func (p *PaymentGatewayRequestProducer) Topic() string {
 	return p.topic
 }

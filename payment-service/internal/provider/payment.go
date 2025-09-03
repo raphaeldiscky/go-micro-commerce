@@ -40,6 +40,8 @@ func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, pro
 		providers.DataStore,
 		appLogger,
 		orderLifecycleProducer,
+		providers.BankingClient,
+		providers.PaymentGatewayClient,
 	)
 	orderHandler := handler.NewPaymentHandler(orderService, appLogger)
 

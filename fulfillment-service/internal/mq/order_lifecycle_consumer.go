@@ -33,8 +33,8 @@ type OrderLifecyclePayload struct {
 	Items      []OrderItemPayload   `json:"items"`
 }
 
-// OrderPaymentRequestPayload holds the data for payment request events.
-type OrderPaymentRequestPayload struct {
+// OrderPaymentGatewayRequestPayload holds the data for payment request events.
+type OrderPaymentGatewayRequestPayload struct {
 	OrderID       uuid.UUID       `json:"order_id"`
 	CustomerID    uuid.UUID       `json:"customer_id"`
 	TotalPrice    decimal.Decimal `json:"total_price"`
@@ -48,10 +48,10 @@ type OrderLifecycleEvent struct {
 	Payload  OrderLifecyclePayload `json:"payload"`
 }
 
-// OrderPaymentRequestEvent is the envelope for payment request events.
-type OrderPaymentRequestEvent struct {
-	Metadata event.Metadata             `json:"metadata"`
-	Payload  OrderPaymentRequestPayload `json:"payload"`
+// OrderPaymentGatewayRequestEvent is the envelope for payment request events.
+type OrderPaymentGatewayRequestEvent struct {
+	Metadata event.Metadata                    `json:"metadata"`
+	Payload  OrderPaymentGatewayRequestPayload `json:"payload"`
 }
 
 // OrderLifecycleConsumer handles the logic for processing product created events.

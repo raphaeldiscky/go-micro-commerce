@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
@@ -26,17 +27,20 @@ import (
 // PaymentServiceInterface defines the interface for payment business operations.
 type PaymentServiceInterface interface {
 	// CreatePayment creates a new payment record from order information
-	CreatePayment(ctx context.Context, req dto.CreatePaymentRequest) (*dto.PaymentResponse, error)
+	CreatePayment(
+		ctx context.Context,
+		req dto.CreatePaymentGatewayRequest,
+	) (*dto.PaymentResponse, error)
 	// ProcessPayment processes a payment transaction
 	ProcessPayment(
 		ctx context.Context,
 		paymentID uuid.UUID,
-		req dto.ProcessPaymentRequest,
+		req dto.ProcessPaymentGatewayRequest,
 	) (*dto.PaymentResponse, error)
 	// GetPaymentByOrderID retrieves payment by order ID
 	GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*dto.PaymentResponse, error)
-	// HandleOrderPaymentRequested handles payment requests from order service
-	HandleOrderPaymentRequested(
+	// HandleOrderPaymentGatewayRequested handles payment requests from order service
+	HandleOrderPaymentGatewayRequested(
 		ctx context.Context,
 		orderID uuid.UUID,
 		amount decimal.Decimal,
@@ -48,6 +52,8 @@ type PaymentService struct {
 	dataStore                repository.DataStore
 	logger                   logger.Logger
 	paymentLifecycleProducer kafka.ProducerInterface
+	bankingClient            client.BankingClientInterface
+	paymentGatewayClient     client.PaymentGatewayClientInterface
 }
 
 // NewPaymentService creates a new instance of PaymentService.
@@ -55,18 +61,22 @@ func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
 	paymentLifecycleProducer kafka.ProducerInterface,
+	bankingClient client.BankingClientInterface,
+	paymentGatewayClient client.PaymentGatewayClientInterface,
 ) PaymentServiceInterface {
 	return &PaymentService{
 		dataStore:                dataStore,
 		logger:                   appLogger,
 		paymentLifecycleProducer: paymentLifecycleProducer,
+		bankingClient:            bankingClient,
+		paymentGatewayClient:     paymentGatewayClient,
 	}
 }
 
 // CreatePayment creates a new payment record from order information.
 func (s *PaymentService) CreatePayment(
 	ctx context.Context,
-	req dto.CreatePaymentRequest,
+	req dto.CreatePaymentGatewayRequest,
 ) (*dto.PaymentResponse, error) {
 	res := new(dto.PaymentResponse)
 
@@ -143,7 +153,7 @@ func (s *PaymentService) CreatePayment(
 func (s *PaymentService) ProcessPayment(
 	ctx context.Context,
 	paymentID uuid.UUID,
-	req dto.ProcessPaymentRequest,
+	req dto.ProcessPaymentGatewayRequest,
 ) (*dto.PaymentResponse, error) {
 	lockRepo := s.dataStore.LockRepository()
 	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
@@ -192,34 +202,22 @@ func (s *PaymentService) ProcessPayment(
 			return httperror.NewBadRequestError("failed to update payment status")
 		}
 
-		// Simulate payment gateway processing
-		paymentSuccess := s.processWithPaymentGateway(ctx, payment, req.PaymentMethod)
+		// Process payment with payment gateway
+		paymentResult, err := s.processWithPaymentGateway(ctx, payment, req)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to process payment with gateway")
+		}
 
 		var finalStatus constant.PaymentStatus
-		if paymentSuccess {
+		if paymentResult.Status == constant.PaymentGatewayStatusSucceeded {
 			finalStatus = constant.PaymentStatusCompleted
-			// Set gateway reference (simulated)
-			gateway := "stripe"
-			referenceID := fmt.Sprintf("pi_%s", uuid.New().String()[:8])
-			gatewayResponse := map[string]interface{}{
-				"status":   "succeeded",
-				"amount":   payment.Amount.String(),
-				"currency": payment.Currency,
-			}
-
-			if err := payment.SetGatewayReference(gateway, referenceID, gatewayResponse); err != nil {
-				return httperror.NewInternalServerError("failed to set gateway reference")
-			}
 		} else {
 			finalStatus = constant.PaymentStatusFailed
+		}
 
-			gatewayResponse := map[string]interface{}{
-				"status": "failed",
-				"error":  "payment_declined",
-			}
-			if err := payment.SetGatewayReference("stripe", "", gatewayResponse); err != nil {
-				return httperror.NewInternalServerError("failed to set gateway response")
-			}
+		// Set gateway reference
+		if err := payment.SetGatewayReference("stripe", paymentResult.GatewayID, paymentResult.GatewayResponse); err != nil {
+			return httperror.NewInternalServerError("failed to set gateway reference")
 		}
 
 		// Update final status
@@ -297,14 +295,14 @@ func (s *PaymentService) GetPaymentByOrderID(
 	return mapper.MapToPaymentResponse(payment), nil
 }
 
-// HandleOrderPaymentRequested handles payment requests from order service.
-func (s *PaymentService) HandleOrderPaymentRequested(
+// HandleOrderPaymentGatewayRequested handles payment requests from order service.
+func (s *PaymentService) HandleOrderPaymentGatewayRequested(
 	ctx context.Context,
 	orderID uuid.UUID,
 	amount decimal.Decimal,
 ) error {
 	// Create payment record for the order
-	req := dto.CreatePaymentRequest{
+	req := dto.CreatePaymentGatewayRequest{
 		OrderID:       orderID,
 		Amount:        amount,
 		Currency:      "IDR",                            // Default currency
@@ -323,23 +321,28 @@ func (s *PaymentService) HandleOrderPaymentRequested(
 	return nil
 }
 
-// processWithPaymentGateway simulates payment gateway processing.
+// processWithPaymentGateway processes payment with payment gateway client.
 func (s *PaymentService) processWithPaymentGateway(
-	_ context.Context,
+	ctx context.Context,
 	payment *entity.Payment,
-	method constant.PaymentMethod,
-) bool {
-	// Simulate payment gateway call
-	// In real implementation, this would call external payment providers like Stripe, PayPal, etc.
+	req dto.ProcessPaymentGatewayRequest,
+) (*dto.PaymentGatewayResponse, error) {
 	s.logger.Infof(
 		"Processing payment %s with method %s and amount %s",
 		payment.ID,
-		method,
+		req.PaymentMethod,
 		payment.Amount,
 	)
 
-	// Simulate 90% success rate
-	return payment.Amount.LessThan(
-		decimal.NewFromFloat(1000000),
-	) // Fail payments over 1M IDR for demo
+	paymentRequest := &dto.PaymentGatewayRequest{
+		TransactionID:  payment.ID,
+		Amount:         payment.Amount,
+		Currency:       payment.Currency,
+		PaymentMethod:  req.PaymentMethod,
+		CustomerID:     req.CustomerID,
+		CustomerEmail:  req.CustomerEmail,
+		IdempotencyKey: req.IdempotencyKey.String(),
+	}
+
+	return s.paymentGatewayClient.ProcessPayment(ctx, paymentRequest)
 }

@@ -51,7 +51,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer for payment requests: %v", err)
 	}
 
-	paymentRequestProducer := mq.NewPaymentRequestProducer(paymentRequestAsyncProducer)
+	paymentRequestProducer := mq.NewPaymentGatewayRequestProducer(paymentRequestAsyncProducer)
 
 	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
 	if err != nil {

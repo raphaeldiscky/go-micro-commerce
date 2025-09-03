@@ -28,9 +28,9 @@ func SetupOutboxPublisher(
 		constant.OrderDLQTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		kafka.PaymentRequestTopic,
-		constant.PaymentRequestTopicNumPartitions,
-		constant.PaymentRequestTopicReplicationFactor,
+		kafka.PaymentGatewayRequestTopic,
+		constant.PaymentGatewayRequestTopicNumPartitions,
+		constant.PaymentGatewayRequestTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
 		kafka.PaymentDLQTopic,
@@ -54,11 +54,11 @@ func SetupOutboxPublisher(
 
 	registry.Register(kafka.OrderCreatedEventType, &mq.OrderLifecycleEvent{})
 	registry.Register(kafka.OrderCanceledEventType, &mq.OrderLifecycleEvent{})
-	registry.Register(kafka.PaymentRequestedEventType, &mq.PaymentRequestEvent{})
+	registry.Register(kafka.PaymentGatewayRequestedEventType, &mq.PaymentGatewayRequestEvent{})
 
 	// Producers
 	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)
-	paymentRequestProducer := mq.NewPaymentRequestProducer(asyncProducer)
+	paymentRequestProducer := mq.NewPaymentGatewayRequestProducer(asyncProducer)
 
 	// DLQ
 	orderDLQProducer := mq.NewOrderDLQProducer(asyncProducer)

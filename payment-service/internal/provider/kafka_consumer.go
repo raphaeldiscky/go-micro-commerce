@@ -33,9 +33,9 @@ func SetupKafkaConsumers(
 	// Consumer for payment request events from order service
 	paymentRequestConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
-		kafka.PaymentRequestTopic,
+		kafka.PaymentGatewayRequestTopic,
 		kafka.PaymentEventsConsumerGroup,
-		mq.NewPaymentRequestConsumer(appLogger, providers.DataStore).Handler,
+		mq.NewPaymentGatewayRequestConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {

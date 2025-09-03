@@ -8,14 +8,18 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mock"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore  repository.DataStore
-	KafkaAdmin *kafka.Admin
+	DataStore            repository.DataStore
+	KafkaAdmin           *kafka.Admin
+	BankingClient        client.BankingClientInterface
+	PaymentGatewayClient client.PaymentGatewayClientInterface
 }
 
 // SetupGlobal initializes all providers.
@@ -57,8 +61,14 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 		Brokers: cfg.Kafka.Brokers,
 	})
 
+	// Initialize mock clients
+	bankingClient := mock.NewFakeBankingClient()
+	paymentGatewayClient := mock.NewFakePaymentGatewayClient()
+
 	return &Providers{
-		DataStore:  dataStore,
-		KafkaAdmin: kafkaAdmin,
+		DataStore:            dataStore,
+		KafkaAdmin:           kafkaAdmin,
+		BankingClient:        bankingClient,
+		PaymentGatewayClient: paymentGatewayClient,
 	}, nil
 }

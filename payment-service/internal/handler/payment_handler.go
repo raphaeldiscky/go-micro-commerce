@@ -41,7 +41,7 @@ func (h *PaymentHandler) ProcessPayment(c echo.Context) error {
 		return err
 	}
 
-	req := dto.ProcessPaymentRequest{
+	req := dto.ProcessPaymentGatewayRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}

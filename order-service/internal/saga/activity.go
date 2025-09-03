@@ -221,7 +221,7 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Create payment request event
-		paymentEvent := mq.NewPaymentRequestEvent(
+		paymentEvent := mq.NewPaymentGatewayRequestEvent(
 			order.ID,
 			order.CustomerID,
 			order.TotalPrice,
@@ -239,8 +239,8 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   order.ID,
-			EventType:     kafka.PaymentRequestedEventType,
-			Topic:         kafka.PaymentRequestTopic,
+			EventType:     kafka.PaymentGatewayRequestedEventType,
+			Topic:         kafka.PaymentGatewayRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

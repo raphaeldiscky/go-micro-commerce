@@ -9,8 +9,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/random"
 	"github.com/shopspring/decimal"
 
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
 )
 
 // FakeCarrierClient provides a mock implementation of CarrierClientInterface for testing.
@@ -40,8 +40,8 @@ func (c *FakeCarrierClient) SetDelay(delay time.Duration) {
 // GetRates returns mock shipping rates for different carriers.
 func (c *FakeCarrierClient) GetRates(
 	_ context.Context,
-	_ *client.ShippingRequest,
-) ([]client.ShippingRate, error) {
+	_ *dto.ShippingRequest,
+) ([]dto.ShippingRate, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
@@ -50,7 +50,7 @@ func (c *FakeCarrierClient) GetRates(
 
 	baseDate := time.Now().Add(24 * time.Hour)
 
-	rates := []client.ShippingRate{
+	rates := []dto.ShippingRate{
 		{
 			Carrier:           constant.CarrierTypeJNE,
 			Service:           "JNE Regular",
@@ -83,8 +83,8 @@ func (c *FakeCarrierClient) GetRates(
 // CreateShipment creates a mock shipping label.
 func (c *FakeCarrierClient) CreateShipment(
 	_ context.Context,
-	req *client.ShippingRequest,
-) (*client.ShippingLabel, error) {
+	req *dto.ShippingRequest,
+) (*dto.ShippingLabel, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
@@ -93,7 +93,7 @@ func (c *FakeCarrierClient) CreateShipment(
 
 	trackingNumber := c.generateTrackingNumber(req.Carrier)
 
-	return &client.ShippingLabel{
+	return &dto.ShippingLabel{
 		TrackingNumber: trackingNumber,
 		LabelURL:       fmt.Sprintf("https://fake-carrier.com/labels/%s.pdf", trackingNumber),
 		Carrier:        req.Carrier,
@@ -106,7 +106,7 @@ func (c *FakeCarrierClient) GetTracking(
 	_ context.Context,
 	trackingNumber string,
 	carrier string,
-) (*client.TrackingInfo, error) {
+) (*dto.TrackingInfo, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
@@ -128,7 +128,7 @@ func (c *FakeCarrierClient) GetTracking(
 	location := c.generateLocation()
 	description := c.generateDescription(status)
 
-	info := &client.TrackingInfo{
+	info := &dto.TrackingInfo{
 		TrackingNumber: trackingNumber,
 		Status:         status,
 		Carrier:        carrier,
@@ -168,8 +168,8 @@ func (c *FakeCarrierClient) CancelShipment(
 // ValidateAddress validates and normalizes an address.
 func (c *FakeCarrierClient) ValidateAddress(
 	_ context.Context,
-	address *client.ShippingAddress,
-) (*client.ShippingAddress, error) {
+	address *dto.ShippingAddress,
+) (*dto.ShippingAddress, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
@@ -177,7 +177,7 @@ func (c *FakeCarrierClient) ValidateAddress(
 	}
 
 	// Return the address with some mock normalization
-	normalized := &client.ShippingAddress{
+	normalized := &dto.ShippingAddress{
 		Name:       address.Name,
 		Company:    address.Company,
 		Address1:   fmt.Sprintf("NORMALIZED: %s", address.Address1),

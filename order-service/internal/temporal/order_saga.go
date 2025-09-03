@@ -165,7 +165,7 @@ func executeCompensation(
 			*state.PaymentID,
 		)
 
-		refundInput := dto.RefundPaymentRequest{
+		refundInput := dto.RefundPaymentGatewayRequest{
 			Order:     order,
 			PaymentID: *state.PaymentID,
 		}

@@ -91,7 +91,7 @@ func ReleaseProducts(ctx context.Context, order *entity.Order) error {
 }
 
 // RefundPayment is the global activity function.
-func RefundPayment(ctx context.Context, req dto.RefundPaymentRequest) error {
+func RefundPayment(ctx context.Context, req dto.RefundPaymentGatewayRequest) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
