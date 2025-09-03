@@ -7,6 +7,8 @@ const (
 	ProductServiceName = "product-service"
 	// PaymentServiceName is the name of the payment service.
 	PaymentServiceName = "payment-service"
+	// FulfillmentServiceName is the name of the fulfillment service.
+	FulfillmentServiceName = "fulfillment-service"
 	// NotificationServiceName is the name of the notification service.
 	NotificationServiceName = "notification-service"
 	// AuthServiceName is the name of the auth service.
@@ -20,6 +22,8 @@ const (
 	GRPCServiceNameOrder = "order-service-grpc"
 	// GRPCServiceNamePayment represents the payment service name.
 	GRPCServiceNamePayment = "payment-service-grpc"
+	// GRPCServiceNameFulfillment represents the fulfillment service name.
+	GRPCServiceNameFulfillment = "fulfillment-service-grpc"
 	// GRPCServiceNameNotification represents the notification service name.
 	GRPCServiceNameNotification = "notification-service-grpc"
 	// GRPCServiceNameAuth represents the auth service name.

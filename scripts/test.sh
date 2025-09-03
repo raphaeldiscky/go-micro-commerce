@@ -11,6 +11,7 @@ SERVICES=(
   "order-service"
   "notification-service"
   "payment-service"
+  "fulfillment-service"
   "api-gateway"
   "pkg"
 )

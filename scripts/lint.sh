@@ -10,6 +10,7 @@ SERVICES=(
   "pkg"
   "api-gateway"
   "payment-service"
+  "fulfillment-service"
 )
 
 lint_service() {

@@ -11,6 +11,7 @@ SERVICES=(
   "pkg"
   "api-gateway"
   "payment-service"
+  "fulfillment-service"
 )
 
 install_deps() {

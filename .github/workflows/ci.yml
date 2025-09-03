@@ -56,6 +56,12 @@ jobs:
               - 'proto/**'
               - 'go.mod'
               - 'go.sum'
+            fulfillment-service:
+              - 'fulfillment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
             notification-service:
               - 'notification-service/**'
               - 'pkg/**'

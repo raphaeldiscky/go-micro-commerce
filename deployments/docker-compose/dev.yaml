@@ -133,13 +133,13 @@ services:
       retries: 3
       start_period: 40s
 
-  notification-service:
+  fulfillment-service:
     build:
       context: ../..
-      dockerfile: notification-service/Dockerfile
-    container_name: notification-service
+      dockerfile: fulfillment-service/Dockerfile
+    container_name: fulfillment-service
     volumes:
-      - ../../notification-service/.env:/app/.env:ro
+      - ../../fulfillment-service/.env:/app/.env:ro
     restart: unless-stopped
     ports:
       - "8085:8085"
@@ -159,6 +159,38 @@ services:
           "--tries=1",
           "--spider",
           "http://localhost:8085/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  notification-service:
+    build:
+      context: ../..
+      dockerfile: notification-service/Dockerfile
+    container_name: notification-service
+    volumes:
+      - ../../notification-service/.env:/app/.env:ro
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    depends_on:
+      mailhog:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8086/health",
         ]
       interval: 30s
       timeout: 10s

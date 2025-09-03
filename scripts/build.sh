@@ -9,6 +9,7 @@ SERVICES=(
   "product-service"
   "api-gateway"
   "payment-service"
+  "fulfillment-service"
 )
 
 # Configuration

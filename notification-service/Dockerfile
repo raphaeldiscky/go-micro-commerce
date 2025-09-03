@@ -34,7 +34,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/notification-service/main .
 
-EXPOSE 8085
+EXPOSE 8086
 
 # Switch to the non-root user
 USER appuser
