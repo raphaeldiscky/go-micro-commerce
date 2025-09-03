@@ -33,4 +33,6 @@ const (
 	FulfillmentOrderEventsConsumerGroup = "fulfillment-service.order-events" // For order lifecycle
 	// FulfillmentEventsConsumerGroup is the consumer group for fulfillment request events.
 	FulfillmentEventsConsumerGroup = "fulfillment-service.fulfillment-events" // For fulfillment requests
+	// OrderFulfillmentEventsConsumerGroup is the consumer group for order service consuming fulfillment events.
+	OrderFulfillmentEventsConsumerGroup = "order-service.fulfillment-events" // For order service consuming fulfillment lifecycle
 )
