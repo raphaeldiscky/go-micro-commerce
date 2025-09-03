@@ -16,13 +16,3 @@ func SetupHTTP(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provid
 	routes.SetupAppRoutes(e, appHandler)
 	SetupFulfillment(cfg, e, appLogger, providers)
 }
-
-// SetupFulfillment sets up fulfillment-specific routes and handlers.
-func SetupFulfillment(
-	_ *config.Config,
-	_ *echo.Echo,
-	_ logger.Logger,
-	_ *Providers,
-) {
-	// TODO: Implement fulfillment routes and handlers
-}

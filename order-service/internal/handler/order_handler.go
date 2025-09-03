@@ -31,31 +31,8 @@ func NewOrderHandler(
 	}
 }
 
-// CreateOrder handles POST /orders with product snapshots.
+// CreateOrder handles POST /orders with gRPC call to product-service.
 func (h *OrderHandler) CreateOrder(c echo.Context) error {
-	req := dto.CreateOrderRequest{
-		CustomerID:    echoutils.GetUserIDFromContext(c),
-		CustomerEmail: echoutils.GetEmailFromContext(c),
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err := c.Validate(&req); err != nil {
-		return err
-	}
-
-	order, err := h.orderService.CreateOrder(c.Request().Context(), req)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseCreated(c, order)
-}
-
-// CreateOrderWithProto handles POST /orders/proto with gRPC call to product-service.
-func (h *OrderHandler) CreateOrderWithProto(c echo.Context) error {
 	req := dto.CreateOrderRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
@@ -72,7 +49,7 @@ func (h *OrderHandler) CreateOrderWithProto(c echo.Context) error {
 	// Create context with user information for gRPC calls
 	ctx := echoutils.ContextWithUserInfo(c)
 
-	order, err := h.orderService.CreateOrderWithProto(ctx, req)
+	order, err := h.orderService.CreateOrder(ctx, req)
 	if err != nil {
 		return err
 	}
