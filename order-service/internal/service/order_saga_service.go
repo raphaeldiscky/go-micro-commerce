@@ -75,7 +75,7 @@ func (s *OrderService) CreateOrderWithSaga(
 			}
 		}
 
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return fmt.Errorf("failed to create order entity: %w", err)
 		}

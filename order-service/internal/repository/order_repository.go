@@ -110,7 +110,7 @@ func (r *OrderRepositoryPostgres) Create(
 
 	if len(order.Items) > 0 {
 		const insertItemQuery = `
-            INSERT INTO order_items (id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
+            INSERT INTO order_items (id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `
 
@@ -124,7 +124,7 @@ func (r *OrderRepositoryPostgres) Create(
 				createdOrder.ID,
 				item.ProductID,
 				item.Quantity,
-				item.Currency,
+				item.TaxRate,
 				item.UnitPrice,
 				item.TotalTax,
 				item.TotalDiscount,
@@ -181,7 +181,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 
 	// Get order items
 	const itemsQuery = `
-		SELECT id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -202,7 +202,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 			&item.OrderID,
 			&item.ProductID,
 			&item.Quantity,
-			&item.Currency,
+			&item.TaxRate,
 			&item.UnitPrice,
 			&item.TotalTax,
 			&item.TotalDiscount,
@@ -260,7 +260,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 
 	// Get order items
 	const itemsQuery = `
-		SELECT id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -281,7 +281,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 			&item.OrderID,
 			&item.ProductID,
 			&item.Quantity,
-			&item.Currency,
+			&item.TaxRate,
 			&item.UnitPrice,
 			&item.TotalTax,
 			&item.TotalDiscount,
@@ -478,7 +478,7 @@ func (r *OrderRepositoryPostgres) Update(
 	// Insert new items if provided
 	if len(order.Items) > 0 {
 		insertItemQuery := `
-			INSERT INTO order_items (id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
+			INSERT INTO order_items (id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		`
 
@@ -492,7 +492,7 @@ func (r *OrderRepositoryPostgres) Update(
 				order.ID,
 				item.ProductID,
 				item.Quantity,
-				item.Currency,
+				item.TaxRate,
 				item.UnitPrice,
 				item.TotalTax,
 				item.TotalDiscount,
@@ -608,7 +608,7 @@ func (r *OrderRepositoryPostgres) loadOrderItems(
 	orderID uuid.UUID,
 ) ([]entity.OrderItem, error) {
 	query := `
-		SELECT id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -629,7 +629,7 @@ func (r *OrderRepositoryPostgres) loadOrderItems(
 			&item.OrderID,
 			&item.ProductID,
 			&item.Quantity,
-			&item.Currency,
+			&item.TaxRate,
 			&item.UnitPrice,
 			&item.TotalTax,
 			&item.TotalDiscount,

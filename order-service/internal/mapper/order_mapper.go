@@ -13,13 +13,16 @@ import (
 // MapToOrderResponse converts domain entity to DTO response.
 func MapToOrderResponse(order *entity.Order) *dto.OrderResponse {
 	return &dto.OrderResponse{
-		ID:         order.ID,
-		CustomerID: order.CustomerID,
-		Status:     order.Status,
-		TotalPrice: order.TotalPrice,
-		Items:      MapToOrderItemResponses(order.Items),
-		CreatedAt:  order.CreatedAt,
-		UpdatedAt:  order.UpdatedAt,
+		ID:            order.ID,
+		CustomerID:    order.CustomerID,
+		Status:        order.Status,
+		Currency:      order.Currency,
+		TotalPrice:    order.TotalPrice,
+		TotalTax:      order.TotalTax,
+		TotalDiscount: order.TotalDiscount,
+		Items:         MapToOrderItemResponses(order.Items),
+		CreatedAt:     order.CreatedAt,
+		UpdatedAt:     order.UpdatedAt,
 	}
 }
 
@@ -34,6 +37,7 @@ func MapToOrderItemResponses(items []entity.OrderItem) []dto.OrderItemResponse {
 			ProductID:     item.ProductID,
 			Quantity:      item.Quantity,
 			UnitPrice:     item.UnitPrice,
+			TaxRate:       item.TaxRate,
 			TotalPrice:    item.TotalPrice,
 			TotalTax:      item.TotalTax,
 			TotalDiscount: item.TotalDiscount,

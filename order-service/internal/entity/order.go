@@ -40,53 +40,13 @@ type OrderItem struct {
 	OrderID       uuid.UUID
 	ProductID     uuid.UUID
 	Quantity      int64
-	Currency      string
 	UnitPrice     decimal.Decimal
+	TaxRate       decimal.Decimal
 	TotalTax      decimal.Decimal
 	TotalDiscount decimal.Decimal
 	TotalPrice    decimal.Decimal
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
-}
-
-// NewOrderItem creates a new order item with validation and proper defaults.
-func NewOrderItem(
-	productID uuid.UUID,
-	quantity int64,
-	unitPrice decimal.Decimal,
-	currency string,
-) (*OrderItem, error) {
-	if productID == uuid.Nil {
-		return nil, errors.New("product_id must not be empty")
-	}
-
-	if quantity <= 0 {
-		return nil, errors.New("quantity must be greater than 0")
-	}
-
-	if unitPrice.LessThanOrEqual(decimal.Zero) {
-		return nil, errors.New("unit_price must be greater than 0")
-	}
-
-	if currency == "" {
-		currency = "IDR" // Default currency
-	}
-
-	now := time.Now()
-	totalPrice := unitPrice.Mul(decimal.NewFromInt(quantity))
-
-	return &OrderItem{
-		ID:            uuid.New(),
-		ProductID:     productID,
-		Quantity:      quantity,
-		Currency:      currency,
-		UnitPrice:     unitPrice,
-		TotalTax:      decimal.Zero, // Default to zero, can be updated later
-		TotalDiscount: decimal.Zero, // Default to zero, can be updated later
-		TotalPrice:    totalPrice,
-		CreatedAt:     now,
-		UpdatedAt:     now,
-	}, nil
 }
 
 // validate performs business rule validation.
@@ -134,7 +94,7 @@ func (o *Order) validateItems() error {
 	for i := range o.Items {
 		item := &o.Items[i]
 
-		if err := o.validateItem(item, i, o.Currency); err != nil {
+		if err := o.validateItem(item, i); err != nil {
 			return err
 		}
 
@@ -150,13 +110,13 @@ func (o *Order) validateItems() error {
 }
 
 // validateItem validates a single order item.
-func (o *Order) validateItem(item *OrderItem, index int, currency string) error {
+func (o *Order) validateItem(item *OrderItem, index int) error {
 	if item.ProductID == uuid.Nil {
 		return fmt.Errorf("item[%d]: product_id must not be empty", index)
 	}
 
-	if item.Currency != currency {
-		return fmt.Errorf("item[%d]: currency must be %s", index, currency)
+	if item.TaxRate.LessThan(decimal.Zero) {
+		return fmt.Errorf("item[%d]: tax_rate must not be negative", index)
 	}
 
 	if item.Quantity <= 0 {
@@ -217,7 +177,11 @@ func (o *Order) validateTotals() error {
 }
 
 // NewOrder creates a new order with validation.
-func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, error) {
+func NewOrder(
+	customerID, idempotencyKey uuid.UUID,
+	currency string,
+	items []OrderItem,
+) (*Order, error) {
 	totalPrice := decimal.Zero
 	totalDiscount := decimal.Zero
 	totalTax := decimal.Zero
@@ -243,7 +207,7 @@ func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, 
 		UpdatedAt:      time.Now(),
 		CustomerID:     customerID,
 		Status:         constant.OrderStatusPending,
-		Currency:       "IDR", // Default currency
+		Currency:       currency,
 		TotalPrice:     totalPrice.Round(2),
 		TotalTax:       totalTax.Round(2),
 		TotalDiscount:  totalDiscount.Round(2),
@@ -255,6 +219,41 @@ func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, 
 	}
 
 	return order, nil
+}
+
+// NewOrderItem creates a new order item with validation and proper defaults.
+func NewOrderItem(
+	productID uuid.UUID,
+	quantity int64,
+	unitPrice decimal.Decimal,
+) (*OrderItem, error) {
+	if productID == uuid.Nil {
+		return nil, errors.New("product_id must not be empty")
+	}
+
+	if quantity <= 0 {
+		return nil, errors.New("quantity must be greater than 0")
+	}
+
+	if unitPrice.LessThanOrEqual(decimal.Zero) {
+		return nil, errors.New("unit_price must be greater than 0")
+	}
+
+	now := time.Now()
+	totalPrice := unitPrice.Mul(decimal.NewFromInt(quantity))
+
+	return &OrderItem{
+		ID:            uuid.New(),
+		ProductID:     productID,
+		Quantity:      quantity,
+		UnitPrice:     unitPrice,
+		TotalTax:      decimal.Zero, // Default to zero, can be updated later
+		TotalDiscount: decimal.Zero, // Default to zero, can be updated later
+		TaxRate:       decimal.Zero, // Default to zero, can be updated latera
+		TotalPrice:    totalPrice,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}, nil
 }
 
 // UpdateStatus updates the order status with validation.

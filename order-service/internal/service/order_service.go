@@ -159,6 +159,19 @@ func (s *OrderService) CreateOrder(
 			return err
 		}
 
+		s.logger.Infof("====1==== products: %v", products)
+
+		for i, product := range products {
+			s.logger.Infof(
+				"====1.%d==== product: ID=%s, Quantity=%d, Version=%d, ReservedQuantity=%d",
+				i+1,
+				product.ID,
+				product.Quantity,
+				product.Version,
+				product.ReservedQuantity,
+			)
+		}
+
 		if len(products) != len(productIDs) {
 			return httperror.NewInternalServerError("failed to get all products")
 		}
@@ -185,12 +198,16 @@ func (s *OrderService) CreateOrder(
 			}
 		}
 
+		s.logger.Infof("====2==== reservations: %v", reservations)
+
 		reservedProducts, err := s.productClient.ReserveProducts(
 			ctx,
 			req.IdempotencyKey,
 			reservations,
 		)
 		if err != nil {
+			s.logger.Errorf("====ERROR==== ReserveProducts failed: %v", err)
+
 			return err
 		}
 
@@ -201,7 +218,6 @@ func (s *OrderService) CreateOrder(
 				product.ID,
 				req.Items[i].Quantity,
 				product.UnitPrice,
-				"IDR", // Default currency
 			)
 			if err != nil {
 				return err
@@ -211,10 +227,12 @@ func (s *OrderService) CreateOrder(
 		}
 
 		// Create domain entity
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return err
 		}
+
+		s.logger.Infof("====3==== newOrder: %v", newOrder)
 
 		// Save to repository
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
@@ -232,11 +250,15 @@ func (s *OrderService) CreateOrder(
 			}
 		}
 
+		s.logger.Infof("====4==== updatedReservations: %v", updatedReservations)
+
 		// Confirm product reservations
 		_, err = s.productClient.ConfirmProductsDeduction(ctx, updatedReservations)
 		if err != nil {
 			return err
 		}
+
+		s.logger.Infof("====5==== savedOrder: %v", savedOrder)
 
 		// Publish domain event
 		evt := mq.NewOrderLifecycleEvent(
@@ -340,7 +362,6 @@ func (s *OrderService) CreateOrderWithTemporal(
 				decimal.NewFromFloat(
 					0.01,
 				), // Minimal price to pass validation, will be updated by pricing activity
-				"IDR", // Default currency
 			)
 			if err != nil {
 				return err
@@ -352,7 +373,7 @@ func (s *OrderService) CreateOrderWithTemporal(
 		}
 
 		// Create new order entity
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, orderItems)
+		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return err
 		}
