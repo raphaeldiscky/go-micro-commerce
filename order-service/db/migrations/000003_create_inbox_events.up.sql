@@ -20,7 +20,7 @@ CREATE TABLE inbox_events (
     causation_id UUID -- For linking cause-and-effect events
 );
 
--- Create indexes for optimal query performance
+
 CREATE UNIQUE INDEX idx_inbox_message_id ON inbox_events(message_id);
 CREATE INDEX idx_inbox_status_scheduled ON inbox_events(status, scheduled_for);
 CREATE INDEX idx_inbox_aggregate_type_id ON inbox_events(aggregate_type, aggregate_id);
@@ -29,7 +29,7 @@ CREATE INDEX idx_inbox_source_service ON inbox_events(source_service);
 CREATE INDEX idx_inbox_created_at ON inbox_events(created_at);
 CREATE INDEX idx_inbox_correlation_id ON inbox_events(correlation_id) WHERE correlation_id IS NOT NULL;
 
--- Add check constraints for data integrity
+
 ALTER TABLE inbox_events 
 ADD CONSTRAINT chk_inbox_status 
 CHECK (status IN ('pending', 'processing', 'processed', 'failed', 'retry', 'duplicate'));
@@ -42,7 +42,7 @@ ALTER TABLE inbox_events
 ADD CONSTRAINT chk_inbox_scheduled_for 
 CHECK (scheduled_for >= created_at);
 
--- Add comments for documentation
+
 COMMENT ON TABLE inbox_events IS 'Stores events consumed from message brokers using the inbox pattern for idempotent processing';
 COMMENT ON COLUMN inbox_events.id IS 'Unique identifier for the inbox event record';
 COMMENT ON COLUMN inbox_events.message_id IS 'Unique identifier from Kafka message metadata for deduplication';

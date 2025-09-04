@@ -69,7 +69,7 @@ func (s *OrderService) CreateOrderWithSaga(
 				ID:        uuid.New(),
 				ProductID: req.Items[i].ProductID,
 				Quantity:  req.Items[i].Quantity,
-				Price:     decimal.Zero, // Will be set by saga
+				UnitPrice: decimal.Zero, // Will be set by saga
 				CreatedAt: time.Now().UTC(),
 				UpdatedAt: time.Now().UTC(),
 			}

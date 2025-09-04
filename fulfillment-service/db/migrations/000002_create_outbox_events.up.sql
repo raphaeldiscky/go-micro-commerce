@@ -1,7 +1,6 @@
 BEGIN;
 
--- Create outbox_events table
-CREATE TABLE outbox_events (
+CREATE TABLE IF NOT EXISTS outbox_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     aggregate_type TEXT NOT NULL, -- 'order', 'product', 'payment', etc. base on table name
     aggregate_id UUID NOT NULL,
@@ -16,12 +15,12 @@ CREATE TABLE outbox_events (
     last_error TEXT
 );
 
--- Create indexes for optimal query performance
+
 CREATE INDEX idx_outbox_status_scheduled ON outbox_events(status, scheduled_for);
 CREATE INDEX idx_outbox_aggregate_type_id ON outbox_events(aggregate_type, aggregate_id);
 CREATE INDEX idx_outbox_created_at ON outbox_events(created_at);
 
--- Add check constraints for data integrity
+
 ALTER TABLE outbox_events 
 ADD CONSTRAINT chk_outbox_status 
 CHECK (status IN ('pending', 'processing', 'processed', 'failed', 'retry'));
@@ -34,7 +33,7 @@ ALTER TABLE outbox_events
 ADD CONSTRAINT chk_outbox_scheduled_for 
 CHECK (scheduled_for >= created_at);
 
--- Add comments for documentation
+
 COMMENT ON TABLE outbox_events IS 'Stores events to be published to message brokers using the outbox pattern';
 COMMENT ON COLUMN outbox_events.id IS 'Unique identifier for the outbox event';
 COMMENT ON COLUMN outbox_events.aggregate_type IS 'Type of aggregate that generated the event (order, product, payment, etc.)';

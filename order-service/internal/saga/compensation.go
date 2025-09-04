@@ -9,8 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -35,11 +35,11 @@ func (a *OrderActivitiesImpl) ReleaseProducts(
 	}
 
 	// Prepare release items
-	releaseItems := make([]client.ProductReservationItem, len(order.Items))
+	releaseItems := make([]dto.ProductReservationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		releaseItems[i] = client.ProductReservationItem{
+		releaseItems[i] = dto.ProductReservationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}
@@ -138,11 +138,11 @@ func (a *OrderActivitiesImpl) RestoreProducts(ctx context.Context, order *entity
 	}
 
 	// Prepare restoration items
-	restorationItems := make([]client.ProductRestorationItem, len(order.Items))
+	restorationItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		restorationItems[i] = client.ProductRestorationItem{
+		restorationItems[i] = dto.ProductRestorationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}

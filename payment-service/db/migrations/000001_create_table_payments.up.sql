@@ -1,33 +1,29 @@
 BEGIN;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
--- Create payments table
+
 CREATE TABLE payments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL, -- Reference to order ID (from order-service)
     amount DECIMAL(12, 2) NOT NULL,
-    currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
+    currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed, refunded
     payment_method VARCHAR(50) NOT NULL, -- credit_card, bank_transfer, paypal, etc.
     payment_gateway VARCHAR(50), -- stripe, midtrans, xendit, etc.
     gateway_reference_id VARCHAR(255), -- Reference ID from payment gateway
     gateway_response JSONB, -- Raw response from payment gateway
-    
-    -- Timestamps
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
     failed_at TIMESTAMPTZ
 );
 
--- Create indexes (outside of table creation)
 CREATE INDEX idx_payments_order_id ON payments(order_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_payments_created_at ON payments(created_at);
 CREATE INDEX idx_payments_gateway_reference ON payments(gateway_reference_id);
 CREATE INDEX idx_payments_payment_method ON payments(payment_method);
 
--- Add check constraints
 ALTER TABLE payments 
 ADD CONSTRAINT chk_payments_status 
 CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'refunded'));
@@ -40,7 +36,7 @@ ALTER TABLE payments
 ADD CONSTRAINT chk_payments_currency 
 CHECK (currency ~ '^[A-Z]{3}$');
 
--- Add comments for documentation
+
 COMMENT ON TABLE payments IS 'Stores payment transactions';
 COMMENT ON COLUMN payments.order_id IS 'Reference to the order in order-service';
 COMMENT ON COLUMN payments.gateway_reference_id IS 'External payment gateway transaction ID';

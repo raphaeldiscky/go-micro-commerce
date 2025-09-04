@@ -47,7 +47,7 @@ CREATE INDEX idx_saga_states_cleanup
     ON saga_states(status, completed_at) 
     WHERE status IN ('completed', 'compensated');
 
--- Add comments for documentation
+
 COMMENT ON TABLE saga_states IS 'Stores the execution state of order processing sagas';
 COMMENT ON COLUMN saga_states.id IS 'Unique identifier for the saga instance';
 COMMENT ON COLUMN saga_states.order_id IS 'Reference to the order being processed';

@@ -72,9 +72,9 @@ func (r *OrderRepositoryPostgres) Create(
 ) (*entity.Order, error) {
 	// Insert order
 	insertOrderQuery := `
-        INSERT INTO orders (id, idempotency_key, customer_id, status, total_price, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
+        INSERT INTO orders (id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        RETURNING id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
     `
 
 	var createdOrder entity.Order
@@ -86,6 +86,9 @@ func (r *OrderRepositoryPostgres) Create(
 		order.IdempotencyKey,
 		order.CustomerID,
 		order.Status,
+		order.Currency,
+		order.TotalTax,
+		order.TotalDiscount,
 		order.TotalPrice,
 		order.CreatedAt,
 		order.UpdatedAt,
@@ -94,6 +97,9 @@ func (r *OrderRepositoryPostgres) Create(
 		&createdOrder.IdempotencyKey,
 		&createdOrder.CustomerID,
 		&createdOrder.Status,
+		&createdOrder.Currency,
+		&createdOrder.TotalTax,
+		&createdOrder.TotalDiscount,
 		&createdOrder.TotalPrice,
 		&createdOrder.CreatedAt,
 		&createdOrder.UpdatedAt,
@@ -104,8 +110,8 @@ func (r *OrderRepositoryPostgres) Create(
 
 	if len(order.Items) > 0 {
 		const insertItemQuery = `
-            INSERT INTO order_items (id, order_id, product_id, quantity, price, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            INSERT INTO order_items (id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `
 
 		for i := 0; i < len(order.Items); i++ {
@@ -118,7 +124,11 @@ func (r *OrderRepositoryPostgres) Create(
 				createdOrder.ID,
 				item.ProductID,
 				item.Quantity,
-				item.Price,
+				item.Currency,
+				item.UnitPrice,
+				item.TotalTax,
+				item.TotalDiscount,
+				item.TotalPrice,
 				item.CreatedAt,
 				item.UpdatedAt,
 			)
@@ -140,7 +150,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, created_at, updated_at, customer_id, status, total_price
+		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE id = $1
 	`
@@ -152,11 +162,14 @@ func (r *OrderRepositoryPostgres) FindByID(
 	err := row.Scan(
 		&order.ID,
 		&order.IdempotencyKey,
-		&order.CreatedAt,
-		&order.UpdatedAt,
 		&order.CustomerID,
 		&order.Status,
+		&order.Currency,
+		&order.TotalTax,
+		&order.TotalDiscount,
 		&order.TotalPrice,
+		&order.CreatedAt,
+		&order.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -168,7 +181,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 
 	// Get order items
 	const itemsQuery = `
-		SELECT id, order_id, product_id, quantity, price
+		SELECT id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -189,7 +202,13 @@ func (r *OrderRepositoryPostgres) FindByID(
 			&item.OrderID,
 			&item.ProductID,
 			&item.Quantity,
-			&item.Price,
+			&item.Currency,
+			&item.UnitPrice,
+			&item.TotalTax,
+			&item.TotalDiscount,
+			&item.TotalPrice,
+			&item.CreatedAt,
+			&item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order item: %w", err)
@@ -210,7 +229,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, created_at, updated_at, customer_id, status, total_price
+		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE idempotency_key = $1
 	`
@@ -222,11 +241,14 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 	err := row.Scan(
 		&order.ID,
 		&order.IdempotencyKey,
-		&order.CreatedAt,
-		&order.UpdatedAt,
 		&order.CustomerID,
 		&order.Status,
+		&order.Currency,
+		&order.TotalTax,
+		&order.TotalDiscount,
 		&order.TotalPrice,
+		&order.CreatedAt,
+		&order.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -238,7 +260,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 
 	// Get order items
 	const itemsQuery = `
-		SELECT id, order_id, product_id, quantity, price
+		SELECT id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -259,7 +281,13 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 			&item.OrderID,
 			&item.ProductID,
 			&item.Quantity,
-			&item.Price,
+			&item.Currency,
+			&item.UnitPrice,
+			&item.TotalTax,
+			&item.TotalDiscount,
+			&item.TotalPrice,
+			&item.CreatedAt,
+			&item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order item: %w", err)
@@ -280,7 +308,7 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, created_at, updated_at, customer_id, status, total_price
+		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE customer_id = $1
 		ORDER BY created_at DESC
@@ -300,11 +328,15 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 
 		err := rows.Scan(
 			&order.ID,
-			&order.CreatedAt,
-			&order.UpdatedAt,
+			&order.IdempotencyKey,
 			&order.CustomerID,
 			&order.Status,
+			&order.Currency,
+			&order.TotalTax,
+			&order.TotalDiscount,
 			&order.TotalPrice,
+			&order.CreatedAt,
+			&order.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
@@ -332,7 +364,7 @@ func (r *OrderRepositoryPostgres) FindAll(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, created_at, updated_at, customer_id, status, total_price
+		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -351,11 +383,15 @@ func (r *OrderRepositoryPostgres) FindAll(
 
 		err := rows.Scan(
 			&order.ID,
-			&order.CreatedAt,
-			&order.UpdatedAt,
+			&order.IdempotencyKey,
 			&order.CustomerID,
 			&order.Status,
+			&order.Currency,
+			&order.TotalTax,
+			&order.TotalDiscount,
 			&order.TotalPrice,
+			&order.CreatedAt,
+			&order.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
@@ -388,10 +424,13 @@ func (r *OrderRepositoryPostgres) Update(
 		SET customer_id = $1,
 			idempotency_key = $2,
 			status = $3,
-			total_price = $4,
-			updated_at = $5
-		WHERE id = $6
-		RETURNING id, idempotency_key, customer_id, status, total_price, created_at, updated_at
+			currency = $4,
+			total_tax = $5,
+			total_discount = $6,
+			total_price = $7,
+			updated_at = $8
+		WHERE id = $9
+		RETURNING id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(
@@ -400,9 +439,12 @@ func (r *OrderRepositoryPostgres) Update(
 		order.CustomerID,     // $1
 		order.IdempotencyKey, // $2
 		order.Status,         // $3
-		order.TotalPrice,     // $4
-		order.UpdatedAt,      // $5
-		order.ID,             // $6
+		order.Currency,       // $4
+		order.TotalTax,       // $5
+		order.TotalDiscount,  // $6
+		order.TotalPrice,     // $7
+		order.UpdatedAt,      // $8
+		order.ID,             // $9
 	)
 
 	var updatedOrder entity.Order
@@ -412,6 +454,9 @@ func (r *OrderRepositoryPostgres) Update(
 		&updatedOrder.IdempotencyKey,
 		&updatedOrder.CustomerID,
 		&updatedOrder.Status,
+		&updatedOrder.Currency,
+		&updatedOrder.TotalTax,
+		&updatedOrder.TotalDiscount,
 		&updatedOrder.TotalPrice,
 		&updatedOrder.CreatedAt,
 		&updatedOrder.UpdatedAt,
@@ -433,8 +478,8 @@ func (r *OrderRepositoryPostgres) Update(
 	// Insert new items if provided
 	if len(order.Items) > 0 {
 		insertItemQuery := `
-			INSERT INTO order_items (id, order_id, product_id, quantity, price)
-			VALUES ($1, $2, $3, $4, $5)
+			INSERT INTO order_items (id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		`
 
 		for i := 0; i < len(order.Items); i++ {
@@ -447,7 +492,13 @@ func (r *OrderRepositoryPostgres) Update(
 				order.ID,
 				item.ProductID,
 				item.Quantity,
-				item.Price,
+				item.Currency,
+				item.UnitPrice,
+				item.TotalTax,
+				item.TotalDiscount,
+				item.TotalPrice,
+				item.CreatedAt,
+				item.UpdatedAt,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to insert order item: %w", err)
@@ -557,7 +608,7 @@ func (r *OrderRepositoryPostgres) loadOrderItems(
 	orderID uuid.UUID,
 ) ([]entity.OrderItem, error) {
 	query := `
-		SELECT id, order_id, product_id, quantity, price
+		SELECT id, order_id, product_id, quantity, currency, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -578,7 +629,13 @@ func (r *OrderRepositoryPostgres) loadOrderItems(
 			&item.OrderID,
 			&item.ProductID,
 			&item.Quantity,
-			&item.Price,
+			&item.Currency,
+			&item.UnitPrice,
+			&item.TotalTax,
+			&item.TotalDiscount,
+			&item.TotalPrice,
+			&item.CreatedAt,
+			&item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order item: %w", err)

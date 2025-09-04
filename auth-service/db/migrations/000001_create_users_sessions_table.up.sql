@@ -1,10 +1,7 @@
--- Migration: 001_create_users_and_sessions
--- Up Migration - Creates users and sessions tables with all related objects
 
--- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create updated_at trigger function
+
 CREATE OR REPLACE FUNCTION update_updated_at_column() 
 RETURNS TRIGGER AS $$
 BEGIN
@@ -13,7 +10,6 @@ BEGIN
 END;
 $$ LANGUAGE 'plpgsql';
 
--- Create users table
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -32,7 +28,7 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create sessions table
+
 CREATE TABLE IF NOT EXISTS sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -46,7 +42,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     last_used_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for users table
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_email_verification_token ON users(email_verification_token) 
@@ -55,7 +51,6 @@ CREATE INDEX IF NOT EXISTS idx_users_is_active ON users(is_active);
 CREATE INDEX IF NOT EXISTS idx_users_is_email_verified ON users(is_email_verified);
 CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at);
 
--- Create indexes for sessions table
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_refresh_token ON sessions(refresh_token);
 CREATE INDEX IF NOT EXISTS idx_sessions_is_active ON sessions(is_active);

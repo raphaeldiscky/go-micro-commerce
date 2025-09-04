@@ -101,7 +101,7 @@ func NewOrderService(
 	}
 }
 
-//nolint:gocyclo,revive,cyclop // ignore complexity, CreateOrder is large but intentional
+//nolint:gocyclo,revive,cyclop,funlen,gocognit // ignore complexity, CreateOrder is large but intentional
 func (s *OrderService) CreateOrder(
 	ctx context.Context,
 	req dto.CreateOrderRequest,
@@ -163,19 +163,51 @@ func (s *OrderService) CreateOrder(
 			return httperror.NewInternalServerError("failed to get all products")
 		}
 
+		// Create product map for quick lookup
+		productMap := make(map[uuid.UUID]*entity.Product)
+		for i, product := range products {
+			productMap[product.ID] = &products[i]
+		}
+
+		// Create reservations with expected versions from fetched products
+		reservations := make([]dto.ProductReservationItem, len(req.Items))
+
+		for i, item := range req.Items {
+			product, exists := productMap[item.ProductID]
+			if !exists {
+				return httperror.NewBadRequestError("product not found")
+			}
+
+			reservations[i] = dto.ProductReservationItem{
+				ProductID:       item.ProductID,
+				Quantity:        item.Quantity,
+				ExpectedVersion: product.Version,
+			}
+		}
+
+		reservedProducts, err := s.productClient.ReserveProducts(
+			ctx,
+			req.IdempotencyKey,
+			reservations,
+		)
+		if err != nil {
+			return err
+		}
+
 		var orderItems []entity.OrderItem
 
-		for i, product := range products {
-			now := time.Now()
-			orderItem := entity.OrderItem{
-				ID:        uuid.New(),
-				ProductID: product.ID,
-				Quantity:  req.Items[i].Quantity,
-				Price:     product.Price,
-				CreatedAt: now,
-				UpdatedAt: now,
+		for i, product := range reservedProducts {
+			orderItem, err := entity.NewOrderItem(
+				product.ID,
+				req.Items[i].Quantity,
+				product.UnitPrice,
+				"IDR", // Default currency
+			)
+			if err != nil {
+				return err
 			}
-			orderItems = append(orderItems, orderItem)
+
+			orderItems = append(orderItems, *orderItem)
 		}
 
 		// Create domain entity
@@ -186,6 +218,22 @@ func (s *OrderService) CreateOrder(
 
 		// Save to repository
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
+		if err != nil {
+			return err
+		}
+
+		// Update reservations with current versions from reserved products
+		updatedReservations := make([]dto.ProductReservationItem, len(reservedProducts))
+		for i, product := range reservedProducts {
+			updatedReservations[i] = dto.ProductReservationItem{
+				ProductID:       product.ID,
+				Quantity:        reservations[i].Quantity,
+				ExpectedVersion: product.Version, // Use the updated version from reservation
+			}
+		}
+
+		// Confirm product reservations
+		_, err = s.productClient.ConfirmProductsDeduction(ctx, updatedReservations)
 		if err != nil {
 			return err
 		}
@@ -285,13 +333,22 @@ func (s *OrderService) CreateOrderWithTemporal(
 		var orderItems []entity.OrderItem
 
 		for _, item := range req.Items {
-			orderItem := entity.OrderItem{
-				ID:        uuid.New(),
-				ProductID: item.ProductID,
-				Quantity:  item.Quantity,
-				Price:     decimal.NewFromInt(0), // Will be set by pricing activity
+			// For temporal workflow, we use minimal price as it will be set by pricing activity
+			orderItem, err := entity.NewOrderItem(
+				item.ProductID,
+				item.Quantity,
+				decimal.NewFromFloat(
+					0.01,
+				), // Minimal price to pass validation, will be updated by pricing activity
+				"IDR", // Default currency
+			)
+			if err != nil {
+				return err
 			}
-			orderItems = append(orderItems, orderItem)
+			// Reset total price to zero for temporal workflow
+			orderItem.UnitPrice = decimal.Zero
+			orderItem.TotalPrice = decimal.Zero
+			orderItems = append(orderItems, *orderItem)
 		}
 
 		// Create new order entity

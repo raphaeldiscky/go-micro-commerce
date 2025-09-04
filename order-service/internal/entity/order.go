@@ -18,6 +18,7 @@ type Order struct {
 	IdempotencyKey uuid.UUID // generated from client
 	CustomerID     uuid.UUID
 	Status         constant.OrderStatus
+	Currency       string
 	TotalPrice     decimal.Decimal
 	TotalTax       decimal.Decimal
 	TotalDiscount  decimal.Decimal
@@ -35,19 +36,74 @@ type OrderPricing struct {
 
 // OrderItem represents an item in an order.
 type OrderItem struct {
-	ID        uuid.UUID
-	OrderID   uuid.UUID
-	ProductID uuid.UUID
-	Quantity  int64
-	Price     decimal.Decimal
-	Tax       decimal.Decimal
-	Discount  decimal.Decimal
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID            uuid.UUID
+	OrderID       uuid.UUID
+	ProductID     uuid.UUID
+	Quantity      int64
+	Currency      string
+	UnitPrice     decimal.Decimal
+	TotalTax      decimal.Decimal
+	TotalDiscount decimal.Decimal
+	TotalPrice    decimal.Decimal
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
+}
+
+// NewOrderItem creates a new order item with validation and proper defaults.
+func NewOrderItem(
+	productID uuid.UUID,
+	quantity int64,
+	unitPrice decimal.Decimal,
+	currency string,
+) (*OrderItem, error) {
+	if productID == uuid.Nil {
+		return nil, errors.New("product_id must not be empty")
+	}
+
+	if quantity <= 0 {
+		return nil, errors.New("quantity must be greater than 0")
+	}
+
+	if unitPrice.LessThanOrEqual(decimal.Zero) {
+		return nil, errors.New("unit_price must be greater than 0")
+	}
+
+	if currency == "" {
+		currency = "IDR" // Default currency
+	}
+
+	now := time.Now()
+	totalPrice := unitPrice.Mul(decimal.NewFromInt(quantity))
+
+	return &OrderItem{
+		ID:            uuid.New(),
+		ProductID:     productID,
+		Quantity:      quantity,
+		Currency:      currency,
+		UnitPrice:     unitPrice,
+		TotalTax:      decimal.Zero, // Default to zero, can be updated later
+		TotalDiscount: decimal.Zero, // Default to zero, can be updated later
+		TotalPrice:    totalPrice,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}, nil
 }
 
 // validate performs business rule validation.
 func (o *Order) validate() error {
+	if err := o.validateOrderFields(); err != nil {
+		return err
+	}
+
+	if err := o.validateItems(); err != nil {
+		return err
+	}
+
+	return o.validateTotals()
+}
+
+// validateOrderFields validates basic order fields.
+func (o *Order) validateOrderFields() error {
 	if o.CustomerID == uuid.Nil {
 		return errors.New("customer_id must not be empty")
 	}
@@ -68,22 +124,18 @@ func (o *Order) validate() error {
 		return errors.New("created_at must be before updated_at")
 	}
 
-	// Validate each order item
+	return nil
+}
+
+// validateItems validates each order item and checks for duplicates.
+func (o *Order) validateItems() error {
 	productSeen := make(map[uuid.UUID]bool)
-	totalCalculated := decimal.Zero
 
 	for i := range o.Items {
 		item := &o.Items[i]
-		if item.ProductID == uuid.Nil {
-			return fmt.Errorf("item[%d]: product_id must not be empty", i)
-		}
 
-		if item.Quantity <= 0 {
-			return fmt.Errorf("item[%d]: quantity must be greater than 0", i)
-		}
-
-		if item.Price.LessThanOrEqual(decimal.Zero) {
-			return fmt.Errorf("item[%d]: price must be greater than 0", i)
+		if err := o.validateItem(item, i, o.Currency); err != nil {
+			return err
 		}
 
 		// prevent duplicate products
@@ -92,23 +144,72 @@ func (o *Order) validate() error {
 		}
 
 		productSeen[item.ProductID] = true
-
-		// accumulate total for cross-check
-		totalCalculated = totalCalculated.Add(
-			item.Price.Mul(decimal.NewFromInt(item.Quantity)),
-		)
-
-		if item.CreatedAt.After(item.UpdatedAt) {
-			return fmt.Errorf("item[%d]: created_at must be before updated_at", i)
-		}
 	}
 
-	// cross-check with order total
+	return nil
+}
+
+// validateItem validates a single order item.
+func (o *Order) validateItem(item *OrderItem, index int, currency string) error {
+	if item.ProductID == uuid.Nil {
+		return fmt.Errorf("item[%d]: product_id must not be empty", index)
+	}
+
+	if item.Currency != currency {
+		return fmt.Errorf("item[%d]: currency must be %s", index, currency)
+	}
+
+	if item.Quantity <= 0 {
+		return fmt.Errorf("item[%d]: quantity must be greater than 0", index)
+	}
+
+	if item.UnitPrice.LessThanOrEqual(decimal.Zero) {
+		return fmt.Errorf("item[%d]: price must be greater than 0", index)
+	}
+
+	if item.CreatedAt.After(item.UpdatedAt) {
+		return fmt.Errorf("item[%d]: created_at must be before updated_at", index)
+	}
+
+	return nil
+}
+
+// validateTotals validates order totals against item calculations.
+func (o *Order) validateTotals() error {
+	totalCalculated := decimal.Zero
+	discountCalculated := decimal.Zero
+	taxCalculated := decimal.Zero
+
+	for i := range o.Items {
+		item := &o.Items[i]
+		totalCalculated = totalCalculated.Add(
+			item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)),
+		)
+		discountCalculated = discountCalculated.Add(item.TotalDiscount)
+		taxCalculated = taxCalculated.Add(item.TotalTax)
+	}
+
 	if !o.TotalPrice.Equal(totalCalculated) {
 		return fmt.Errorf(
 			"total_price mismatch: expected %s, got %s",
 			totalCalculated,
 			o.TotalPrice,
+		)
+	}
+
+	if !o.TotalDiscount.Equal(discountCalculated) {
+		return fmt.Errorf(
+			"total_discount mismatch: expected %s, got %s",
+			discountCalculated,
+			o.TotalDiscount,
+		)
+	}
+
+	if !o.TotalTax.Equal(taxCalculated) {
+		return fmt.Errorf(
+			"total_tax mismatch: expected %s, got %s",
+			taxCalculated,
+			o.TotalTax,
 		)
 	}
 
@@ -118,8 +219,13 @@ func (o *Order) validate() error {
 // NewOrder creates a new order with validation.
 func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, error) {
 	totalPrice := decimal.Zero
+	totalDiscount := decimal.Zero
+	totalTax := decimal.Zero
+
 	for i := range items {
-		totalPrice = totalPrice.Add(items[i].Price.Mul(decimal.NewFromInt(items[i].Quantity)))
+		totalPrice = totalPrice.Add(items[i].UnitPrice.Mul(decimal.NewFromInt(items[i].Quantity)))
+		totalDiscount = totalDiscount.Add(items[i].TotalDiscount)
+		totalTax = totalTax.Add(items[i].TotalTax)
 	}
 
 	orderID := uuid.New()
@@ -137,7 +243,10 @@ func NewOrder(customerID, idempotencyKey uuid.UUID, items []OrderItem) (*Order, 
 		UpdatedAt:      time.Now(),
 		CustomerID:     customerID,
 		Status:         constant.OrderStatusPending,
+		Currency:       "IDR", // Default currency
 		TotalPrice:     totalPrice.Round(2),
+		TotalTax:       totalTax.Round(2),
+		TotalDiscount:  totalDiscount.Round(2),
 		Items:          items,
 	}
 
@@ -168,7 +277,7 @@ func (o *Order) AddItem(item *OrderItem) error {
 	totalPrice := decimal.Zero
 	for i := range o.Items {
 		totalPrice = totalPrice.Add(
-			o.Items[i].Price.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
+			o.Items[i].UnitPrice.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
 		)
 	}
 
@@ -192,7 +301,7 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 	totalPrice := decimal.Zero
 	for i := range o.Items {
 		totalPrice = totalPrice.Add(
-			o.Items[i].Price.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
+			o.Items[i].UnitPrice.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
 		)
 	}
 

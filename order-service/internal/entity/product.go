@@ -11,7 +11,7 @@ import (
 type Product struct {
 	ID               uuid.UUID
 	Name             string
-	Price            decimal.Decimal
+	UnitPrice        decimal.Decimal
 	Quantity         int64
 	Version          int64 // for optimistic locking
 	ReservedQuantity int64 // quantity reserved for orders

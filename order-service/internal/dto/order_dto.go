@@ -29,37 +29,30 @@ type ClientCreateOrderRequest struct {
 	Items []CreateOrderItemRequest `json:"items" validate:"required,min=1,dive"`
 }
 
-// UpdateOrderItemRequest represents an item in update order request.
-type UpdateOrderItemRequest struct {
-	ProductID uuid.UUID       `json:"product_id" validate:"required"`
-	Quantity  int64           `json:"quantity"   validate:"required,min=1"`
-	Price     decimal.Decimal `json:"price"      validate:"required,decimal_gt"`
-}
-
-// UpdateOrderRequest represents the request to update an order.
-type UpdateOrderRequest struct {
-	ID     uuid.UUID                `json:"id"               validate:"required"`
-	Status *constant.OrderStatus    `json:"status,omitempty"`
-	Items  []UpdateOrderItemRequest `json:"items,omitempty"  validate:"omitempty,dive"`
-}
-
 // OrderItemResponse represents an order item in API responses.
 type OrderItemResponse struct {
-	ID        uuid.UUID       `json:"id"`
-	ProductID uuid.UUID       `json:"product_id"`
-	Quantity  int64           `json:"quantity"`
-	Price     decimal.Decimal `json:"price"`
+	ID            uuid.UUID       `json:"id"`
+	ProductID     uuid.UUID       `json:"product_id"`
+	Quantity      int64           `json:"quantity"`
+	Currency      string          `json:"currency"`
+	UnitPrice     decimal.Decimal `json:"unit_price"`
+	TotalPrice    decimal.Decimal `json:"total_price"`
+	TotalTax      decimal.Decimal `json:"total_tax"`
+	TotalDiscount decimal.Decimal `json:"total_discount"`
 }
 
 // OrderResponse represents an order in API responses.
 type OrderResponse struct {
-	ID         uuid.UUID            `json:"id"`
-	CustomerID uuid.UUID            `json:"customer_id"`
-	Status     constant.OrderStatus `json:"status"`
-	TotalPrice decimal.Decimal      `json:"total_price"`
-	Items      []OrderItemResponse  `json:"items"`
-	CreatedAt  time.Time            `json:"created_at"`
-	UpdatedAt  time.Time            `json:"updated_at"`
+	ID            uuid.UUID            `json:"id"`
+	CustomerID    uuid.UUID            `json:"customer_id"`
+	Status        constant.OrderStatus `json:"status"`
+	Currency      string               `json:"currency"`
+	TotalPrice    decimal.Decimal      `json:"total_price"`
+	TotalTax      decimal.Decimal      `json:"total_tax"`
+	TotalDiscount decimal.Decimal      `json:"total_discount"`
+	Items         []OrderItemResponse  `json:"items"`
+	CreatedAt     time.Time            `json:"created_at"`
+	UpdatedAt     time.Time            `json:"updated_at"`
 }
 
 // GetOrdersRequest represents pagination and filtering parameters.
