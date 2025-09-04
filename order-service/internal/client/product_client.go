@@ -15,22 +15,10 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
-
-// ProductReservationItem represents a product reservation request.
-type ProductReservationItem struct {
-	ProductID       uuid.UUID
-	Quantity        int64
-	ExpectedVersion int64
-}
-
-// ProductRestorationItem represents a product restoration request.
-type ProductRestorationItem struct {
-	ProductID uuid.UUID
-	Quantity  int64
-}
 
 // ProductClientInterface defines methods available for fetching products.
 type ProductClientInterface interface {
@@ -38,19 +26,19 @@ type ProductClientInterface interface {
 	ReserveProducts(
 		ctx context.Context,
 		idempotencyKey uuid.UUID,
-		items []ProductReservationItem,
+		items []dto.ProductReservationItem,
 	) (reservedProducts []entity.Product, err error)
 	ReleaseProducts(
 		ctx context.Context,
-		items []ProductReservationItem,
+		items []dto.ProductReservationItem,
 	) error
 	ConfirmProductsDeduction(
 		ctx context.Context,
-		items []ProductReservationItem,
+		items []dto.ProductReservationItem,
 	) (products []entity.Product, err error)
 	RestoreProducts(
 		ctx context.Context,
-		items []ProductRestorationItem,
+		items []dto.ProductRestorationItem,
 	) ([]entity.Product, error)
 	HealthCheck(ctx context.Context) error
 	Close() error
@@ -126,7 +114,7 @@ func (pc *ProductClient) GetProducts(
 func (pc *ProductClient) ReserveProducts(
 	ctx context.Context,
 	idempotencyKey uuid.UUID,
-	items []ProductReservationItem,
+	items []dto.ProductReservationItem,
 ) ([]entity.Product, error) {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))
@@ -171,7 +159,7 @@ func (pc *ProductClient) ReserveProducts(
 // ReleaseProducts releases reserved stock for products.
 func (pc *ProductClient) ReleaseProducts(
 	ctx context.Context,
-	items []ProductReservationItem,
+	items []dto.ProductReservationItem,
 ) error {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))
@@ -202,7 +190,7 @@ func (pc *ProductClient) ReleaseProducts(
 // ConfirmProductsDeduction confirms the reserved stock and removes reserved quantity.
 func (pc *ProductClient) ConfirmProductsDeduction(
 	ctx context.Context,
-	items []ProductReservationItem,
+	items []dto.ProductReservationItem,
 ) ([]entity.Product, error) {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))
@@ -210,6 +198,7 @@ func (pc *ProductClient) ConfirmProductsDeduction(
 		pbItems[i] = &pb.ProductQuantity{
 			ProductId: item.ProductID.String(),
 			Quantity:  item.Quantity,
+			Version:   item.ExpectedVersion,
 		}
 	}
 
@@ -244,7 +233,7 @@ func (pc *ProductClient) ConfirmProductsDeduction(
 // RestoreProducts restores stock in case of compensation.
 func (pc *ProductClient) RestoreProducts(
 	ctx context.Context,
-	items []ProductRestorationItem,
+	items []dto.ProductRestorationItem,
 ) ([]entity.Product, error) {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))

@@ -32,7 +32,7 @@ func MapProtoToProduct(p *pb.Product) (entity.Product, error) {
 	return entity.Product{
 		ID:               uid,
 		Name:             p.Name,
-		Price:            decimal.NewFromFloat(p.Price), // safely convert double → decimal
+		UnitPrice:        decimal.NewFromFloat(p.Price), // safely convert double → decimal
 		Quantity:         p.Quantity,
 		Version:          p.Version,
 		ReservedQuantity: p.ReservedQuantity,

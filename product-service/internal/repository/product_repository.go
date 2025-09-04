@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
@@ -74,8 +73,7 @@ type ProductRepositoryInterface interface {
 
 // ProductRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
 type ProductRepositoryPostgres struct {
-	db     DBTX
-	logger logger.Logger
+	db DBTX
 }
 
 // NewProductRepositoryPostgres creates a new instance of ProductRepositoryPostgres.
@@ -518,9 +516,8 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 	// Execute all reservations in single batch
 	results := r.db.SendBatch(ctx, batch)
 	defer func() {
-		err := results.Close()
-		if err != nil {
-			r.logger.Errorf("failed to close batch: %v", err)
+		if err := results.Close(); err != nil {
+			return // ignore
 		}
 	}()
 
@@ -583,9 +580,8 @@ func (r *ProductRepositoryPostgres) ReleaseProducts(
 
 	results := r.db.SendBatch(ctx, batch)
 	defer func() {
-		err := results.Close()
-		if err != nil {
-			r.logger.Errorf("failed to close batch: %v", err)
+		if err := results.Close(); err != nil {
+			return // ignore
 		}
 	}()
 
@@ -652,9 +648,8 @@ func (r *ProductRepositoryPostgres) ConfirmProductsDeduction(
 
 	results := r.db.SendBatch(ctx, batch)
 	defer func() {
-		err := results.Close()
-		if err != nil {
-			r.logger.Errorf("failed to close batch: %v", err)
+		if err := results.Close(); err != nil {
+			return // ignore
 		}
 	}()
 

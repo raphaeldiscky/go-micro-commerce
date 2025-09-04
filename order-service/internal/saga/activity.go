@@ -13,6 +13,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
@@ -117,11 +118,11 @@ func (a *OrderActivitiesImpl) ReserveProducts(
 	}
 
 	// Prepare reservation items (avoid copying large structs)
-	reservationItems := make([]client.ProductReservationItem, len(order.Items))
+	reservationItems := make([]dto.ProductReservationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		reservationItems[i] = client.ProductReservationItem{
+		reservationItems[i] = dto.ProductReservationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}
@@ -194,7 +195,7 @@ func (a *OrderActivitiesImpl) CalculatePricing(
 
 	// Update order items with prices (in real implementation, this would come from product service)
 	for i := range order.Items {
-		order.Items[i].Price = decimal.NewFromFloat(10.0) // Mock price
+		order.Items[i].UnitPrice = decimal.NewFromFloat(10.0) // Mock price
 	}
 
 	a.logger.Infof("Pricing calculated for order %s: TaxTotal=%s, DiscountTotal=%s, TotalPrice=%s",
@@ -305,11 +306,11 @@ func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 		)
 	}
 
-	deductionItems := make([]client.ProductReservationItem, len(order.Items))
+	deductionItems := make([]dto.ProductReservationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		deductionItems[i] = client.ProductReservationItem{
+		deductionItems[i] = dto.ProductReservationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}

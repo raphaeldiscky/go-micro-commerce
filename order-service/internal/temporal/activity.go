@@ -81,11 +81,11 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 	}
 
 	// Prepare reservation items
-	reservationItems := make([]client.ProductReservationItem, len(order.Items))
+	reservationItems := make([]dto.ProductReservationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		reservationItems[i] = client.ProductReservationItem{
+		reservationItems[i] = dto.ProductReservationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}
@@ -144,7 +144,7 @@ func (ta *OrderActivitiesImpl) CalculatePricing(
 
 	// Update order items with prices
 	for i := range order.Items {
-		order.Items[i].Price = decimal.NewFromFloat(10.0) // Mock price
+		order.Items[i].UnitPrice = decimal.NewFromFloat(10.0) // Mock price
 	}
 
 	logger.Info("Pricing calculated", "orderID", order.ID, "totalPrice", totalPrice.String())
@@ -207,11 +207,11 @@ func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
 		return fmt.Errorf("product service is unavailable")
 	}
 
-	deductionItems := make([]client.ProductReservationItem, len(order.Items))
+	deductionItems := make([]dto.ProductReservationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		deductionItems[i] = client.ProductReservationItem{
+		deductionItems[i] = dto.ProductReservationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}

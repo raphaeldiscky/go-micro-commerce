@@ -17,5 +17,6 @@ type OrderLifecyclePayload struct {
 	UserID     uuid.UUID          `json:"user_id"`
 	Status     string             `json:"status"`
 	TotalPrice decimal.Decimal    `json:"total_price"`
+	Currency   string             `json:"currency"`
 	Items      []OrderItemPayload `json:"items"`
 }

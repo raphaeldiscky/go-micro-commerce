@@ -30,10 +30,13 @@ func MapToOrderItemResponses(items []entity.OrderItem) []dto.OrderItemResponse {
 	for i := range items {
 		item := &items[i]
 		responses = append(responses, dto.OrderItemResponse{
-			ID:        item.ID,
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-			Price:     item.Price,
+			ID:            item.ID,
+			ProductID:     item.ProductID,
+			Quantity:      item.Quantity,
+			UnitPrice:     item.UnitPrice,
+			TotalPrice:    item.TotalPrice,
+			TotalTax:      item.TotalTax,
+			TotalDiscount: item.TotalDiscount,
 		})
 	}
 

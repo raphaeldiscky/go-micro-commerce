@@ -27,6 +27,7 @@ type Fulfillment struct {
 	TrackingNumber      string
 	Carrier             *string
 	ShippingLabelURL    *string
+	Currency            string
 	ShippingCost        decimal.Decimal
 	WeightKG            decimal.Decimal
 	Dimensions          *Dimensions // JSONB data
