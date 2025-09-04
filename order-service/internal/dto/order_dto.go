@@ -34,9 +34,9 @@ type OrderItemResponse struct {
 	ID            uuid.UUID       `json:"id"`
 	ProductID     uuid.UUID       `json:"product_id"`
 	Quantity      int64           `json:"quantity"`
-	Currency      string          `json:"currency"`
 	UnitPrice     decimal.Decimal `json:"unit_price"`
 	TotalPrice    decimal.Decimal `json:"total_price"`
+	TaxRate       decimal.Decimal `json:"tax_rate"`
 	TotalTax      decimal.Decimal `json:"total_tax"`
 	TotalDiscount decimal.Decimal `json:"total_discount"`
 }

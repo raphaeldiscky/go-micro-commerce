@@ -6,6 +6,8 @@ import (
 	"os"
 
 	"github.com/hashicorp/consul/api"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // ServiceType represents the type of service (HTTP or gRPC).
@@ -21,11 +23,15 @@ const (
 // ServiceRegistration handles Consul service registration.
 type ServiceRegistration struct {
 	client     *api.Client
+	logger     logger.Logger
 	serviceIDs []string
 }
 
 // NewServiceRegistration creates a new Consul service registration client.
-func NewServiceRegistration(consulAddr string) (*ServiceRegistration, error) {
+func NewServiceRegistration(
+	consulAddr string,
+	appLogger logger.Logger,
+) (*ServiceRegistration, error) {
 	config := api.DefaultConfig()
 	config.Address = consulAddr
 
@@ -36,6 +42,7 @@ func NewServiceRegistration(consulAddr string) (*ServiceRegistration, error) {
 
 	return &ServiceRegistration{
 		client: client,
+		logger: appLogger,
 	}, nil
 }
 
@@ -111,7 +118,7 @@ func (s *ServiceRegistration) register(
 }
 
 // Deregister removes all registered services from Consul.
-func (s *ServiceRegistration) Deregister() error {
+func (s *ServiceRegistration) Deregister(serviceName string) error {
 	if len(s.serviceIDs) == 0 {
 		return nil
 	}
@@ -122,6 +129,8 @@ func (s *ServiceRegistration) Deregister() error {
 			return fmt.Errorf("failed to deregister service %s: %w", serviceID, err)
 		}
 	}
+
+	s.logger.Infof("%s deregistered from Consul", serviceName)
 
 	return nil
 }

@@ -134,11 +134,11 @@ func (pc *ProductClient) ReserveProducts(
 		Items:          pbItems,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to call ReserveProducts: %w", err)
+		return nil, fmt.Errorf("failed to call ReserveProducts gRPC: %w", err)
 	}
 
 	if !resp.Success {
-		return nil, fmt.Errorf("reservation failed: %s", resp.ErrorMessage)
+		return nil, fmt.Errorf("reservation failed from product-service: %s", resp.ErrorMessage)
 	}
 
 	// Convert response to entities

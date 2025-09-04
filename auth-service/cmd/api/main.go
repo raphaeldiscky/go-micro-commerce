@@ -45,7 +45,7 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
-	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address)
+	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address, appLogger)
 	if err != nil {
 		return func() {}
 	}
@@ -58,10 +58,8 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
 
 	return func() {
-		if err := consulClient.Deregister(); err != nil {
+		if err := consulClient.Deregister(cfg.Consul.ServiceName); err != nil {
 			appLogger.Errorf("Failed to deregister from Consul: %v", err)
-		} else {
-			appLogger.Infof("Service deregistered from Consul")
 		}
 	}
 }

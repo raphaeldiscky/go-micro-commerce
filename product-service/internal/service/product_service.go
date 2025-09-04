@@ -473,7 +473,9 @@ func (s *ProductService) ConfirmProductsDeduction(
 			}
 		}
 
-		_, err := productRepo.ConfirmProductsDeduction(ctx, reservations)
+		var err error
+
+		updatedProducts, err = productRepo.ConfirmProductsDeduction(ctx, reservations)
 		if err != nil {
 			return err
 		}
