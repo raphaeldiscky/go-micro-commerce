@@ -11,20 +11,13 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/entity"
 )
-
-// FulfillmentLifecyclePayload holds the data for the Fulfillment Lifecycle event.
-type FulfillmentLifecyclePayload struct {
-	FulfillmentID  uuid.UUID                  `json:"fulfillment_id"`
-	OrderID        uuid.UUID                  `json:"order_id"`
-	Status         constant.FulfillmentStatus `json:"status"`
-	TrackingNumber string                     `json:"tracking_number"`
-}
 
 // FulfillmentLifecycleEvent is the envelope for all Fulfillment events.
 type FulfillmentLifecycleEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  FulfillmentLifecyclePayload `json:"payload"`
+	Metadata event.Metadata                    `json:"metadata"`
+	Payload  event.FulfillmentLifecyclePayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the FulfillmentLifecycleEvent.
@@ -45,24 +38,23 @@ type FulfillmentLifecycleProducer struct {
 
 // NewFulfillmentLifecycleEvent creates a new FulfillmentLifecycleEvent.
 func NewFulfillmentLifecycleEvent(
-	fulfillmentID uuid.UUID,
-	orderID uuid.UUID,
-	status constant.FulfillmentStatus,
-	trackingNumber string,
+	fulfillment *entity.Fulfillment,
 ) *FulfillmentLifecycleEvent {
 	return &FulfillmentLifecycleEvent{
 		Metadata: event.Metadata{
 			EventID:     uuid.New(),
-			EventType:   getEventTypeFromStatus(status),
-			AggregateID: fulfillmentID,
+			EventType:   getEventTypeFromStatus(fulfillment.Status),
+			AggregateID: fulfillment.ID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.FulfillmentServiceName,
 		},
-		Payload: FulfillmentLifecyclePayload{
-			FulfillmentID:  fulfillmentID,
-			OrderID:        orderID,
-			Status:         status,
-			TrackingNumber: trackingNumber,
+		Payload: event.FulfillmentLifecyclePayload{
+			FulfillmentID:       fulfillment.ID,
+			OrderID:             fulfillment.OrderID,
+			Status:              string(fulfillment.Status),
+			ShippingCost:        fulfillment.ShippingCost,
+			TrackingNumber:      fulfillment.TrackingNumber,
+			EstimatedDeliveryAt: fulfillment.EstimatedDeliveryAt,
 		},
 	}
 }

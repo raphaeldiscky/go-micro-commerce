@@ -338,12 +338,7 @@ func (c *FulfillmentRequestConsumer) publishFulfillmentCreatedEvent(
 	outboxRepo := ds.OutboxRepository()
 
 	// Create fulfillment created event
-	fulfillmentCreatedEvent := NewFulfillmentLifecycleEvent(
-		fulfillment.ID,
-		fulfillment.OrderID,
-		fulfillment.Status,
-		fulfillment.TrackingNumber,
-	)
+	fulfillmentCreatedEvent := NewFulfillmentLifecycleEvent(fulfillment)
 
 	payload, err := json.Marshal(fulfillmentCreatedEvent)
 	if err != nil {

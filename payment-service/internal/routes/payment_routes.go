@@ -12,12 +12,13 @@ import (
 func SetupPaymentRoutes(e *echo.Echo, h *handler.PaymentHandler) {
 	v1 := e.Group("/v1")
 
-	protected := v1.Group("/payments")
+	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
 	// Process a payment
 	protected.POST("/:paymentID/process", h.ProcessPayment)
 
-	// Get payment by order ID
-	protected.GET("/order/:orderID", h.GetPaymentByOrderID)
+	admin := protected.Group("")
+	admin.Use(middleware.RequireAdminRole)
+	admin.GET("/order/:orderID", h.GetPaymentByOrderID)
 }

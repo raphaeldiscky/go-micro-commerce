@@ -6,9 +6,11 @@ CREATE TABLE IF NOT EXISTS orders(
     customer_id UUID NOT NULL,
     status VARCHAR(50) NOT NULL,
     currency VARCHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
-    total_tax DECIMAL(10, 2) NOT NULL CHECK (total_tax >= 0), -- Total tax applied
-    total_discount DECIMAL(10, 2) NOT NULL CHECK (total_discount >= 0), -- Total discount applied
-    total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0), -- Final payable amount SUM(order_items.total_price) - total_discount + total_tax
+    shipping_cost DECIMAL(10, 2) NOT NULL CHECK (shipping_cost >= 0), -- generated from fulfillment-service
+    subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0), -- SUM(unit_price * quantity) for all items
+    total_tax DECIMAL(10, 2) NOT NULL CHECK (total_tax >= 0), -- SUM(total_tax) for all items
+    total_discount DECIMAL(10, 2) NOT NULL CHECK (total_discount >= 0), -- SUM(total_discount) for all items
+    total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0), -- final payable amount SUM(unit_price * quantity) + SUM(total_tax) - SUM(total_discount) + shipping_cost
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

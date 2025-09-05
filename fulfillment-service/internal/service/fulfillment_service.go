@@ -158,10 +158,7 @@ func (s *FulfillmentService) CreateFulfillment(
 
 		// Publish fulfillment created event
 		evt := mq.NewFulfillmentLifecycleEvent(
-			savedFulfillment.ID,
-			savedFulfillment.OrderID,
-			savedFulfillment.Status,
-			savedFulfillment.TrackingNumber,
+			savedFulfillment,
 		)
 
 		payload, err := json.Marshal(evt)
@@ -232,10 +229,7 @@ func (s *FulfillmentService) UpdateFulfillmentStatus(
 
 		// Publish fulfillment status update event
 		evt := mq.NewFulfillmentLifecycleEvent(
-			updatedFulfillment.ID,
-			updatedFulfillment.OrderID,
-			updatedFulfillment.Status,
-			updatedFulfillment.TrackingNumber,
+			updatedFulfillment,
 		)
 
 		payload, err := json.Marshal(evt)
@@ -519,10 +513,7 @@ func (s *FulfillmentService) CreateShipment(
 
 	// Publish fulfillment shipped event
 	event := mq.NewFulfillmentLifecycleEvent(
-		existingFulfillment.ID,
-		existingFulfillment.OrderID,
-		constant.FulfillmentStatusShipped,
-		existingFulfillment.TrackingNumber,
+		existingFulfillment,
 	)
 
 	if err := s.fulfillmentLifecycleProducer.Send(ctx, event); err != nil {
@@ -586,12 +577,7 @@ func (s *FulfillmentService) UpdateTrackingStatus(
 		}
 
 		// Publish status update event
-		event := mq.NewFulfillmentLifecycleEvent(
-			existingFulfillment.ID,
-			existingFulfillment.OrderID,
-			trackingInfo.Status,
-			trackingNumber,
-		)
+		event := mq.NewFulfillmentLifecycleEvent(existingFulfillment)
 
 		if err := s.fulfillmentLifecycleProducer.Send(ctx, event); err != nil {
 			s.logger.Errorf("Failed to publish fulfillment status update event: %v", err)

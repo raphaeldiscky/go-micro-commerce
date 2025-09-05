@@ -94,8 +94,12 @@ func (s *OrderService) CreateOrderWithSaga(
 
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
+			s.logger.Errorf("failed to save order: %v", err)
+
 			return fmt.Errorf("failed to save order: %w", err)
 		}
+
+		s.logger.Debugf("====SERVICE 2.1====, savedOrder: %v", savedOrder)
 
 		res = mapper.MapToOrderResponse(savedOrder)
 

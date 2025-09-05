@@ -72,9 +72,9 @@ func (r *OrderRepositoryPostgres) Create(
 ) (*entity.Order, error) {
 	// Insert order
 	insertOrderQuery := `
-        INSERT INTO orders (id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
+        INSERT INTO orders (id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        RETURNING id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
     `
 
 	var createdOrder entity.Order
@@ -87,6 +87,8 @@ func (r *OrderRepositoryPostgres) Create(
 		order.CustomerID,
 		order.Status,
 		order.Currency,
+		order.ShippingCost,
+		order.Subtotal,
 		order.TotalTax,
 		order.TotalDiscount,
 		order.TotalPrice,
@@ -98,6 +100,8 @@ func (r *OrderRepositoryPostgres) Create(
 		&createdOrder.CustomerID,
 		&createdOrder.Status,
 		&createdOrder.Currency,
+		&createdOrder.ShippingCost,
+		&createdOrder.Subtotal,
 		&createdOrder.TotalTax,
 		&createdOrder.TotalDiscount,
 		&createdOrder.TotalPrice,
@@ -150,7 +154,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE id = $1
 	`
@@ -165,6 +169,8 @@ func (r *OrderRepositoryPostgres) FindByID(
 		&order.CustomerID,
 		&order.Status,
 		&order.Currency,
+		&order.ShippingCost,
+		&order.Subtotal,
 		&order.TotalTax,
 		&order.TotalDiscount,
 		&order.TotalPrice,
@@ -229,7 +235,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE idempotency_key = $1
 	`
@@ -244,6 +250,8 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 		&order.CustomerID,
 		&order.Status,
 		&order.Currency,
+		&order.ShippingCost,
+		&order.Subtotal,
 		&order.TotalTax,
 		&order.TotalDiscount,
 		&order.TotalPrice,
@@ -308,7 +316,7 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE customer_id = $1
 		ORDER BY created_at DESC
@@ -332,6 +340,8 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 			&order.CustomerID,
 			&order.Status,
 			&order.Currency,
+			&order.ShippingCost,
+			&order.Subtotal,
 			&order.TotalTax,
 			&order.TotalDiscount,
 			&order.TotalPrice,
@@ -364,7 +374,7 @@ func (r *OrderRepositoryPostgres) FindAll(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -387,6 +397,8 @@ func (r *OrderRepositoryPostgres) FindAll(
 			&order.CustomerID,
 			&order.Status,
 			&order.Currency,
+			&order.ShippingCost,
+			&order.Subtotal,
 			&order.TotalTax,
 			&order.TotalDiscount,
 			&order.TotalPrice,
@@ -425,12 +437,14 @@ func (r *OrderRepositoryPostgres) Update(
 			idempotency_key = $2,
 			status = $3,
 			currency = $4,
-			total_tax = $5,
-			total_discount = $6,
-			total_price = $7,
-			updated_at = $8
-		WHERE id = $9
-		RETURNING id, idempotency_key, customer_id, status, currency, total_tax, total_discount, total_price, created_at, updated_at
+			shipping_cost = $5,
+			subtotal = $6,
+			total_tax = $7,
+			total_discount = $8,
+			total_price = $9,
+			updated_at = $10
+		WHERE id = $11
+		RETURNING id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(
@@ -440,11 +454,13 @@ func (r *OrderRepositoryPostgres) Update(
 		order.IdempotencyKey, // $2
 		order.Status,         // $3
 		order.Currency,       // $4
-		order.TotalTax,       // $5
-		order.TotalDiscount,  // $6
-		order.TotalPrice,     // $7
-		order.UpdatedAt,      // $8
-		order.ID,             // $9
+		order.ShippingCost,   // $5
+		order.Subtotal,       // $6
+		order.TotalTax,       // $7
+		order.TotalDiscount,  // $8
+		order.TotalPrice,     // $9
+		order.UpdatedAt,      // $10
+		order.ID,             // $11
 	)
 
 	var updatedOrder entity.Order
@@ -455,6 +471,8 @@ func (r *OrderRepositoryPostgres) Update(
 		&updatedOrder.CustomerID,
 		&updatedOrder.Status,
 		&updatedOrder.Currency,
+		&updatedOrder.ShippingCost,
+		&updatedOrder.Subtotal,
 		&updatedOrder.TotalTax,
 		&updatedOrder.TotalDiscount,
 		&updatedOrder.TotalPrice,

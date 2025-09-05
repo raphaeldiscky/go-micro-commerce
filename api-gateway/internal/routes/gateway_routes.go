@@ -34,4 +34,6 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	protected.Any("/auth/v1/users/*", gw.ProxyToService("auth-service", "/v1/users"))
 	protected.Any("/orders/*", gw.ProxyToService("order-service", ""))
 	protected.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
+	protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
+	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
 }

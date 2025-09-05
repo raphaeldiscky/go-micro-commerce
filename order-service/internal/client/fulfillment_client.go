@@ -80,8 +80,8 @@ func (c *FulfillmentClient) WaitForFulfillmentResponse(
 			return nil, response.Error
 		}
 
-		c.logger.Infof("Received fulfillment response for order %s: ID=%s, Tracking=%s",
-			orderID, response.FulfillmentID, response.TrackingNumber)
+		c.logger.Infof("Received fulfillment response for order %s: ID=%s, Cost=%s, Tracking=%s",
+			orderID, response.FulfillmentID, response.ShippingCost, response.TrackingNumber)
 
 		return response, nil
 
