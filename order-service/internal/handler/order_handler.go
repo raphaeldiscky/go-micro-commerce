@@ -72,7 +72,9 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 		return err
 	}
 
-	order, err := h.orderService.CreateOrderWithSaga(c.Request().Context(), req)
+	ctx := echoutils.ContextWithUserInfo(c)
+
+	order, err := h.orderService.CreateOrderWithSaga(ctx, req)
 	if err != nil {
 		return err
 	}

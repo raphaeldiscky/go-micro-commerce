@@ -28,31 +28,10 @@ func NewOrderSaga(activities OrderActivities, appLogger logger.Logger) *OrderSag
 
 //nolint:funlen,revive // ConfigureSteps configures all steps for the order saga.
 func (s *OrderSaga) ConfigureSteps(executor *Executor) {
-	// Step 1: Validate Products
+	// Step 1: Reserve products and calculate total
 	executor.AddStep(&Step{
-		Name:        constant.ValidateProductsStep,
-		Description: "Validate products",
-		MaxRetries:  3,
-		RetryDelay:  2 * time.Second,
-		Timeout:     30 * time.Second,
-		Idempotent:  true,
-		Critical:    true,
-		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
-			// Validate products exist and have sufficient stock
-			if err := s.activities.ValidateProducts(ctx.Context(), order); err != nil {
-				return nil, err
-			}
-
-			return &StepResult{
-				Success: true,
-			}, nil
-		},
-		Compensate: nil,
-	})
-	// Step 2: Reserve Products
-	executor.AddStep(&Step{
-		Name:        constant.ReserveProductsStep,
-		Description: "Reserve products",
+		Name:        constant.ReserveProductsAndCalculateStep,
+		Description: "Reserve products and calculate total",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
 		Timeout:     30 * time.Second,
@@ -60,14 +39,29 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
 			// Reserve products
-			reservedProducts, err := s.activities.ReserveProducts(ctx.Context(), order)
+			s.logger.Infof("===STEP 1===, order: %v", order)
+
+			calculatedOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
+				ctx.Context(),
+				order,
+			)
 			if err != nil {
 				return nil, err
 			}
 
+			// Update the original order with calculated values from the reservation
+			order.TotalPrice = calculatedOrder.TotalPrice
+			order.TotalTax = calculatedOrder.TotalTax
+			order.TotalDiscount = calculatedOrder.TotalDiscount
+			order.Items = calculatedOrder.Items
+
+			s.logger.Infof("===STEP 1 COMPLETED===, updated order: %v", order)
+
 			return &StepResult{
 				Success: true,
-				Data:    map[string]interface{}{"reserved_products": reservedProducts},
+				Data: map[string]interface{}{
+					"reserved_products": reservedProducts,
+				},
 			}, nil
 		},
 		Compensate: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) error {
@@ -75,34 +69,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		},
 	})
 
-	// Step 3: Calculate Pricing and Discounts
-	executor.AddStep(&Step{
-		Name:        constant.CalculatePricingStep,
-		Description: "Calculate final pricing with discounts and taxes",
-		MaxRetries:  2,
-		RetryDelay:  1 * time.Second,
-		Timeout:     15 * time.Second,
-		Idempotent:  true,
-		Critical:    true,
-		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
-			pricing, err := s.activities.CalculatePricing(ctx.Context(), order)
-			if err != nil {
-				return nil, err
-			}
-
-			return &StepResult{
-				Success: true,
-				Data: map[string]interface{}{
-					"total_price":    pricing.TotalPrice,
-					"total_discount": pricing.TotalDiscount,
-					"total_tax":      pricing.TotalTax,
-				},
-			}, nil
-		},
-		Compensate: nil, // No compensation needed for calculation
-	})
-
-	// Step 4: Process Payment
+	// Step 2: Process Payment
 	executor.AddStep(&Step{
 		Name:        constant.ProcessPaymentStep,
 		Description: "Process payment for the order",
@@ -112,10 +79,13 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
+			s.logger.Infof("===STEP 2===, order: %v", order)
 			paymentID, err := s.activities.ProcessPayment(ctx.Context(), order)
 			if err != nil {
 				return nil, err
 			}
+
+			s.logger.Infof("===STEP 2 COMPLETED===, order: %v, paymentID: %s", order, paymentID)
 
 			return &StepResult{
 				Success: true,
@@ -125,18 +95,21 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			}, nil
 		},
 		Compensate: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) error {
-			paymentID, ok := data["payment_id"].(uuid.UUID)
+			paymentIDStr, ok := data["payment_id"].(string)
 			if !ok {
-				ctx.logger.Warn("No payment ID found for refund")
+				return fmt.Errorf("no payment ID found for refund")
+			}
 
-				return nil
+			paymentID, err := uuid.Parse(paymentIDStr)
+			if err != nil {
+				return fmt.Errorf("failed to parse payment ID: %w", err)
 			}
 
 			return s.activities.RefundPayment(ctx.Context(), order, paymentID)
 		},
 	})
 
-	// Step 5: Deduct Products
+	// Step 3: Deduct Products Stock
 	executor.AddStep(&Step{
 		Name:        constant.ConfirmProductsDeductionStep,
 		Description: "Confirms reserved products and release reserved quantity after payment completed",
@@ -146,9 +119,16 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error) {
-			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), order); err != nil {
+			reservedProducts, ok := data["reserved_products"].([]entity.Product)
+			if !ok {
+				return nil, fmt.Errorf("no reserved products found")
+			}
+			s.logger.Infof("===STEP 3===, order: %v", order)
+			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), order, reservedProducts); err != nil {
 				return nil, err
 			}
+
+			s.logger.Infof("===STEP 3 COMPLETED===")
 
 			return &StepResult{Success: true}, nil
 		},
@@ -157,20 +137,28 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		},
 	})
 
-	// Step 6: Create Shipping
+	// Step 4: Create Shipping or Fulfillment
 	executor.AddStep(&Step{
-		Name:        constant.CreateShippingStep,
-		Description: "Create shipping arrangement",
+		Name:        constant.ProcessFulfillmentStep,
+		Description: "Process fulfillment for the order",
 		MaxRetries:  2,
 		RetryDelay:  3 * time.Second,
 		Timeout:     30 * time.Second,
 		Idempotent:  true,
 		Critical:    false,
-		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
-			shippingID, trackingNumber, err := s.activities.CreateShipping(ctx.Context(), order)
+		Execute: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error) {
+			s.logger.Infof("===STEP 4===, order: %v", order)
+			s.logger.Infof("===DATA===, data: %v", data)
+			shippingID, trackingNumber, err := s.activities.ProcessFulfillment(ctx.Context(), order)
 			if err != nil {
 				return nil, err
 			}
+
+			s.logger.Infof(
+				"===STEP 4 COMPLETED===, shippingID: %v, trackingNumber: %v",
+				shippingID,
+				trackingNumber,
+			)
 
 			return &StepResult{
 				Success: true,
@@ -190,7 +178,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		},
 	})
 
-	// Step 7: Send Order Confirmation Notifications
+	// Step 5: Send Order Confirmation Notifications
 	executor.AddStep(&Step{
 		Name:        constant.SendOrderConfirmationStep,
 		Description: "Send order confirmation",
@@ -200,6 +188,8 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error) {
+			s.logger.Infof("===STEP 5===, order: %v", order)
+			s.logger.Infof("===DATA===, data: %v", data)
 			trackingNumber, ok := data["tracking_number"].(string)
 			if !ok {
 				ctx.logger.Warn("No tracking number found for notification")
@@ -211,6 +201,8 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				// Non-critical step, log but don't fail the saga
 				ctx.logger.Warnf("Failed to send notification: %v", err)
 			}
+
+			s.logger.Infof("===STEP 5 COMPLETED===")
 
 			return &StepResult{Success: true}, nil
 		},

@@ -8,6 +8,7 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -50,11 +51,14 @@ func (s *OrderService) CreateOrderWithSaga(
 		orderRepo := ds.OrderRepository()
 		stateRepo := ds.SagaStateRepository()
 
+		s.logger.Debugf("====SERVICE 0====, req: %v", req)
 		// Check for existing order and handle accordingly
 		existingRes, shouldReturn, err := s.handleExistingOrder(ctx, req, orderRepo, stateRepo)
 		if err != nil {
 			return err
 		}
+
+		s.logger.Debugf("====SERVICE 0.1====, existingRes: %v", existingRes)
 
 		if shouldReturn {
 			res = existingRes
@@ -75,6 +79,8 @@ func (s *OrderService) CreateOrderWithSaga(
 			}
 		}
 
+		s.logger.Debugf("====SERVICE 1====, orderItems: %v", orderItems)
+
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return fmt.Errorf("failed to create order entity: %w", err)
@@ -83,6 +89,8 @@ func (s *OrderService) CreateOrderWithSaga(
 		if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
 			return fmt.Errorf("failed to update order status: %w", err)
 		}
+
+		s.logger.Debugf("====SERVICE 2====, newOrder: %v", newOrder)
 
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
@@ -96,6 +104,8 @@ func (s *OrderService) CreateOrderWithSaga(
 	if err != nil {
 		return nil, err
 	}
+
+	s.logger.Debugf("====SERVICE 3====, res: %v", res)
 
 	return s.executeSagaWorkflow(ctx, res)
 }
@@ -195,8 +205,8 @@ func (s *OrderService) executeSagaSynchronously(
 // executeSagaAsynchronously executes saga in background.
 func (s *OrderService) executeSagaAsynchronously(ctx context.Context, orderID uuid.UUID) {
 	go func() {
-		// Create background context with values from original context
-		bgCtx := context.Background()
+		// Create background context with user authentication for async saga execution
+		bgCtx := echoutils.PropagateUserContextToBackground(ctx)
 
 		// Copy trace ID if present
 		if traceID := ctx.Value(constant.CtxTraceIDKey); traceID != nil {

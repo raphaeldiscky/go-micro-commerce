@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -31,6 +32,9 @@ func NewSagaOrchestrator(
 	productClient client.ProductClientInterface,
 	paymentRequestProducer kafka.ProducerInterface,
 	orderLifecycleProducer kafka.ProducerInterface,
+	fulfillmentRequestProducer kafka.ProducerInterface,
+	fulfillmentClient client.FulfillmentClientInterface,
+	paymentClient client.PaymentClientInterface,
 	appLogger logger.Logger,
 ) Orchestrator {
 	// Create executor
@@ -42,6 +46,9 @@ func NewSagaOrchestrator(
 		productClient,
 		paymentRequestProducer,
 		orderLifecycleProducer,
+		fulfillmentRequestProducer,
+		fulfillmentClient,
+		paymentClient,
 		appLogger,
 	)
 
@@ -85,8 +92,9 @@ func (o *Orchestrator) ExecuteOrderSagaAsync(
 	ctx context.Context,
 	order *entity.Order,
 ) {
-	// Create a derived context that inherits values but not cancellation
-	sagaCtx := context.WithValue(context.Background(), constant.CtxOrderIDKey, order.ID)
+	// Create a derived context with user authentication for async saga execution
+	sagaCtx := echoutils.PropagateUserContextToBackground(ctx)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, order.ID)
 	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
 
 	// Add timeout

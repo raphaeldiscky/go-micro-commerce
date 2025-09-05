@@ -10,7 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
@@ -36,7 +36,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)
+	orderLifecycleProducer := producer.NewOrderLifecycleProducer(asyncProducer)
 
 	// Create payment request producer for saga
 	paymentRequestAsyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
@@ -51,7 +51,24 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		appLogger.Fatalf("failed to create Kafka async producer for payment requests: %v", err)
 	}
 
-	paymentRequestProducer := mq.NewPaymentGatewayRequestProducer(paymentRequestAsyncProducer)
+	paymentRequestProducer := producer.NewPaymentRequestProducer(paymentRequestAsyncProducer)
+
+	// Create fulfillment request producer for saga
+	fulfillmentRequestAsyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
+		Brokers:        cfg.Kafka.Brokers,
+		RetryMax:       cfg.Kafka.RetryMax,
+		FlushFrequency: cfg.Kafka.FlushFrequency,
+		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
+		Acks:           sarama.WaitForAll,
+	})
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka async producer for fulfillment requests: %v", err)
+	}
+
+	fulfillmentRequestProducer := producer.NewFulfillmentRequestProducer(
+		fulfillmentRequestAsyncProducer,
+	)
 
 	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
 	if err != nil {
@@ -69,6 +86,9 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		productClient,
 		paymentRequestProducer,
 		orderLifecycleProducer,
+		fulfillmentRequestProducer,
+		providers.FulfillmentClient,
+		providers.PaymentClient,
 		appLogger,
 	)
 

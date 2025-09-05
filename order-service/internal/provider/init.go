@@ -6,6 +6,7 @@ import (
 	"github.com/bsm/redislock"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
@@ -16,14 +17,20 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore      repository.DataStore
-	KafkaAdmin     *kafka.Admin
-	JobScheduler   *job.Scheduler
-	TemporalClient *client.TemporalClient
+	DataStore         repository.DataStore
+	KafkaAdmin        *kafka.Admin
+	JobScheduler      *job.Scheduler
+	TemporalClient    *client.TemporalClient
+	FulfillmentClient client.FulfillmentClientInterface
+	PaymentClient     client.PaymentClientInterface
 }
 
 // SetupGlobal initializes all providers.
-func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
+func SetupGlobal(
+	ctx context.Context,
+	cfg *config.Config,
+	appLogger logger.Logger,
+) (*Providers, error) {
 	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
@@ -61,9 +68,17 @@ func SetupGlobal(ctx context.Context, cfg *config.Config) (*Providers, error) {
 		Brokers: cfg.Kafka.Brokers,
 	})
 
+	// Setup fulfillment client for event correlation
+	fulfillmentClient := client.NewFulfillmentClient(appLogger) // logger will be injected later
+
+	// Setup payment client for event correlation
+	paymentClient := client.NewPaymentClient(appLogger)
+
 	return &Providers{
-		DataStore:      dataStore,
-		KafkaAdmin:     kafkaAdmin,
-		TemporalClient: nil, // will be set up later in worker
+		DataStore:         dataStore,
+		KafkaAdmin:        kafkaAdmin,
+		TemporalClient:    nil, // will be set up later in worker
+		FulfillmentClient: fulfillmentClient,
+		PaymentClient:     paymentClient,
 	}, nil
 }

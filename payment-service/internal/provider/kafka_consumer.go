@@ -5,7 +5,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/consumer"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the payment service.
@@ -21,7 +21,7 @@ func SetupKafkaConsumers(
 		cfg.Brokers,
 		kafka.OrderLifecycleTopic,
 		kafka.PaymentOrderEventsConsumerGroup,
-		mq.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
+		consumer.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {
@@ -33,9 +33,9 @@ func SetupKafkaConsumers(
 	// Consumer for payment request events from order service
 	paymentRequestConsumer, err := kafka.NewConsumer(
 		cfg.Brokers,
-		kafka.PaymentGatewayRequestTopic,
+		kafka.PaymentRequestTopic,
 		kafka.PaymentEventsConsumerGroup,
-		mq.NewPaymentGatewayRequestConsumer(appLogger, providers.DataStore).Handler,
+		consumer.NewPaymentRequestConsumer(appLogger, providers.DataStore).Handler,
 		appLogger,
 	)
 	if err != nil {

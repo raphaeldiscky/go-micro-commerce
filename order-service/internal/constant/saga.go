@@ -25,18 +25,14 @@ const (
 type WorkflowStep string
 
 const (
-	// ValidateProductsStep validates the products in the order.
-	ValidateProductsStep WorkflowStep = "ValidateProducts"
-	// ReserveProductsStep reserves the products in the order.
-	ReserveProductsStep WorkflowStep = "ReserveProducts"
-	// CalculatePricingStep calculates the pricing for the order.
-	CalculatePricingStep WorkflowStep = "CalculatePricing"
+	// ReserveProductsAndCalculateStep reserves the products in the order.
+	ReserveProductsAndCalculateStep WorkflowStep = "ReserveProductsAndCalculate"
 	// ProcessPaymentStep processes the payment for the order.
 	ProcessPaymentStep WorkflowStep = "ProcessPayment"
 	// ConfirmProductsDeductionStep deducts the products from inventory.
 	ConfirmProductsDeductionStep WorkflowStep = "ConfirmProductsDeduction"
-	// CreateShippingStep creates a shipping order.
-	CreateShippingStep WorkflowStep = "CreateShipping"
+	// ProcessFulfillmentStep creates a shipping order.
+	ProcessFulfillmentStep WorkflowStep = "ProcessFulfillment"
 	// SendOrderConfirmationStep sends an order confirmation.
 	SendOrderConfirmationStep WorkflowStep = "SendOrderConfirmation"
 )

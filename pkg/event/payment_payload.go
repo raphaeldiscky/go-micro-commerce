@@ -18,8 +18,8 @@ type UserVerifiedPayload struct {
 	Email  string    `json:"email"`
 }
 
-// PaymentGatewayRequestPayload holds the data for payment request events.
-type PaymentGatewayRequestPayload struct {
+// PaymentRequestPayload holds the data for payment request events.
+type PaymentRequestPayload struct {
 	PaymentID     uuid.UUID       `json:"payment_id"`
 	OrderID       uuid.UUID       `json:"order_id"`
 	CustomerID    uuid.UUID       `json:"customer_id"`
@@ -28,10 +28,10 @@ type PaymentGatewayRequestPayload struct {
 	PaymentMethod string          `json:"payment_method"`
 }
 
-// FulfillmentLifecyclePayload holds the data for the Fulfillment Lifecycle event.
-type FulfillmentLifecyclePayload struct {
-	FulfillmentID  uuid.UUID `json:"fulfillment_id"`
-	OrderID        uuid.UUID `json:"order_id"`
-	Status         string    `json:"status"`
-	TrackingNumber string    `json:"tracking_number"`
+// PaymentLifecyclePayload holds the data for the Payment Lifecycle event.
+type PaymentLifecyclePayload struct {
+	PaymentID  uuid.UUID       `json:"payment_id"`
+	OrderID    uuid.UUID       `json:"order_id"`
+	Status     string          `json:"status"`
+	TotalPrice decimal.Decimal `json:"total_price"`
 }

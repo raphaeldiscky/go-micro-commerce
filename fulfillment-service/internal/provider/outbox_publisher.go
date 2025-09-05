@@ -42,6 +42,7 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
+	registry.Register(kafka.FulfillmentRequestedEventType, &mq.FulfillmentRequestEvent{})
 	registry.Register(kafka.FulfillmentCreatedEventType, &mq.FulfillmentLifecycleEvent{})
 	registry.Register(kafka.FulfillmentShippedEventType, &mq.FulfillmentLifecycleEvent{})
 	registry.Register(kafka.FulfillmentDeliveredEventType, &mq.FulfillmentLifecycleEvent{})

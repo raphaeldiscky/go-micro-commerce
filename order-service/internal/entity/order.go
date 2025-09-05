@@ -123,8 +123,10 @@ func (o *Order) validateItem(item *OrderItem, index int) error {
 		return fmt.Errorf("item[%d]: quantity must be greater than 0", index)
 	}
 
-	if item.UnitPrice.LessThanOrEqual(decimal.Zero) {
-		return fmt.Errorf("item[%d]: price must be greater than 0", index)
+	// Allow zero unit price for saga workflows (prices will be set during saga execution)
+	// For non-saga workflows, unit price must be greater than zero
+	if item.UnitPrice.LessThan(decimal.Zero) {
+		return fmt.Errorf("item[%d]: unit_price must not be negative", index)
 	}
 
 	if item.CreatedAt.After(item.UpdatedAt) {
@@ -235,8 +237,8 @@ func NewOrderItem(
 		return nil, errors.New("quantity must be greater than 0")
 	}
 
-	if unitPrice.LessThanOrEqual(decimal.Zero) {
-		return nil, errors.New("unit_price must be greater than 0")
+	if unitPrice.LessThan(decimal.Zero) {
+		return nil, errors.New("unit_price must not be negative")
 	}
 
 	now := time.Now()
