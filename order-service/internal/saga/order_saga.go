@@ -55,6 +55,11 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			order.TotalDiscount = calculatedOrder.TotalDiscount
 			order.Items = calculatedOrder.Items
 
+			// Persist the updated order prices to the database
+			if err := s.activities.UpdateOrderPrices(ctx.Context(), order); err != nil {
+				return nil, fmt.Errorf("failed to persist order prices: %w", err)
+			}
+
 			s.logger.Infof("===STEP 1 COMPLETED===, updated order: %v", order)
 
 			return &StepResult{

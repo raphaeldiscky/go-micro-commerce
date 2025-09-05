@@ -23,7 +23,7 @@ import (
 func (s *OrderService) CreateOrderWithSaga(
 	ctx context.Context,
 	req dto.CreateOrderRequest,
-) (*dto.OrderResponse, error) {
+) (*dto.OrderSagaResponse, error) {
 	lockRepo := s.dataStore.LockRepository()
 	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
 	ttl := constant.CreateOrderTTL
@@ -107,7 +107,7 @@ func (s *OrderService) CreateOrderWithSaga(
 
 	s.logger.Debugf("====SERVICE 3====, res: %v", res)
 
-	return s.executeSagaWorkflow(ctx, res)
+	return s.executeSagaWorkflow(ctx, mapper.MapToOrderSagaResponse(res))
 }
 
 // handleExistingOrder checks for duplicate orders and handles saga state.
@@ -150,8 +150,8 @@ func (s *OrderService) handleExistingOrder(
 // executeSagaWorkflow executes the saga based on configuration.
 func (s *OrderService) executeSagaWorkflow(
 	ctx context.Context,
-	res *dto.OrderResponse,
-) (*dto.OrderResponse, error) {
+	res *dto.OrderSagaResponse,
+) (*dto.OrderSagaResponse, error) {
 	if s.config.Saga.ExecutionMode == "sync" {
 		return s.executeSagaSynchronously(ctx, res)
 	}
@@ -169,8 +169,8 @@ func (s *OrderService) executeSagaWorkflow(
 // executeSagaSynchronously handles synchronous saga execution and error management.
 func (s *OrderService) executeSagaSynchronously(
 	ctx context.Context,
-	res *dto.OrderResponse,
-) (*dto.OrderResponse, error) {
+	res *dto.OrderSagaResponse,
+) (*dto.OrderSagaResponse, error) {
 	orderRepo := s.dataStore.OrderRepository()
 
 	order, err := orderRepo.FindByID(ctx, res.ID)
@@ -199,7 +199,7 @@ func (s *OrderService) executeSagaSynchronously(
 		return nil, err
 	}
 
-	return updatedOrder, nil
+	return mapper.MapToOrderSagaResponse(updatedOrder), nil
 }
 
 // executeSagaAsynchronously executes saga in background.
