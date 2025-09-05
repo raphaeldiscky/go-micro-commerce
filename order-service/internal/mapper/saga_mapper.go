@@ -4,7 +4,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 )
 
-// MapToOrderSagaResponse converts domain entity to DTO response.
+// MapToOrderSagaResponse converts order response to saga response for async execution.
 func MapToOrderSagaResponse(order *dto.OrderResponse) *dto.OrderSagaResponse {
 	return &dto.OrderSagaResponse{
 		ID:         order.ID,
@@ -17,7 +17,7 @@ func MapToOrderSagaResponse(order *dto.OrderResponse) *dto.OrderSagaResponse {
 	}
 }
 
-// MapToOrderSagaItemResponses converts domain entities to DTO responses.
+// MapToOrderSagaItemResponses converts order item responses to saga item responses.
 func MapToOrderSagaItemResponses(items []dto.OrderItemResponse) []dto.OrderSagaItemResponse {
 	var responses []dto.OrderSagaItemResponse
 
