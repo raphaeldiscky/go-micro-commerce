@@ -201,7 +201,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	return calculatedOrder, reservedProducts, nil
 }
 
-// SetFinalOrderPrices updates the order with calculated prices in the database.
+// SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
 func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Updating order prices in database for order: %s", order.ID)
 
