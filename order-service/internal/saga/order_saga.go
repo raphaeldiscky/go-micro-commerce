@@ -176,7 +176,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 5: Deduct Products Stock
 	executor.AddStep(&Step{
 		Name:        constant.ConfirmProductsDeductionStep,
-		Description: "Confirms reserved products and release reserved quantity after payment completed",
+		Description: "Permanently deduct products from inventory after successful payment",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
 		Timeout:     20 * time.Second,
@@ -204,7 +204,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 6: Send Order Confirmation Notifications
 	executor.AddStep(&Step{
 		Name:        constant.SendOrderConfirmationStep,
-		Description: "Send order confirmation to customer; with invoice need to be paid and tracking number info",
+		Description: "Send order confirmation and receipt to customer; includes invoice and tracking info",
 		MaxRetries:  3,
 		RetryDelay:  1 * time.Second,
 		Timeout:     10 * time.Second,
