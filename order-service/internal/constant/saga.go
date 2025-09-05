@@ -25,8 +25,8 @@ const (
 type WorkflowStep string
 
 const (
-	// ReserveProductsAndCalculateStep reserves the products in the order.
-	ReserveProductsAndCalculateStep WorkflowStep = "ReserveProductsAndCalculate"
+	// ReserveProductsStep reserves the products in the order.
+	ReserveProductsStep WorkflowStep = "ReserveProducts"
 	// ProcessFulfillmentStep creates a shipping order.
 	ProcessFulfillmentStep WorkflowStep = "ProcessFulfillment"
 	// SetFinalPricesStep set the final prices for the order (+shipping cost).

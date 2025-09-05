@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -28,17 +29,17 @@ func NewOrderSaga(activities OrderActivities, appLogger logger.Logger) *OrderSag
 
 //nolint:funlen,revive // ConfigureSteps configures all steps for the order saga.
 func (s *OrderSaga) ConfigureSteps(executor *Executor) {
-	// Step 1: Reserve products and calculate total
+	// Step 1: Reserve products
 	executor.AddStep(&Step{
-		Name:        constant.ReserveProductsAndCalculateStep,
-		Description: "Reserve products and calculate total",
+		Name:        constant.ReserveProductsStep,
+		Description: "Reserve products",
 		MaxRetries:  3,
 		RetryDelay:  2 * time.Second,
 		Timeout:     30 * time.Second,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, _ map[string]interface{}) (*StepResult, error) {
-			calculatedOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
+			newOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
 				ctx.Context(),
 				order,
 			)
@@ -46,11 +47,8 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
-			// Update the original order with calculated values from the reservation, save in memory
-			order.TotalPrice = calculatedOrder.TotalPrice
-			order.TotalTax = calculatedOrder.TotalTax
-			order.TotalDiscount = calculatedOrder.TotalDiscount
-			order.Items = calculatedOrder.Items
+			// Update the original order with new order items from the reservation, save in memory
+			order.Items = newOrder.Items
 
 			return &StepResult{
 				Success: true,
@@ -67,7 +65,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 2: Create Shipping or Fulfillment
 	executor.AddStep(&Step{
 		Name:        constant.ProcessFulfillmentStep,
-		Description: "Process fulfillment for the order",
+		Description: "Process fulfillment for the order; get shippingID, shippingCost and trackingNumber",
 		MaxRetries:  2,
 		RetryDelay:  3 * time.Second,
 		Timeout:     30 * time.Second,
@@ -78,11 +76,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				ctx.Context(),
 				order,
 			)
-			if err != nil {
-				return nil, err
-			}
-			// Update the original order with shipping cost
-			err = order.UpdateShippingCost(shippingCost)
 			if err != nil {
 				return nil, err
 			}
@@ -109,13 +102,24 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 3: Set final order prices
 	executor.AddStep(&Step{
 		Name:        constant.SetFinalPricesStep,
-		Description: "Update order prices to include shipping cost and save to DB",
+		Description: "Update final order prices to include shipping cost and save to database",
 		MaxRetries:  3,
 		RetryDelay:  1 * time.Second,
 		Timeout:     10 * time.Second,
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error) {
+			shippingCost, ok := data["shipping_cost"].(decimal.Decimal)
+			if !ok {
+				return nil, fmt.Errorf("shipping cost not found in data")
+			}
+			// Update the original order with shipping cost
+
+			err := order.UpdateShippingCost(shippingCost)
+			if err != nil {
+				return nil, err
+			}
+
 			if err := s.activities.SetFinalOrderPrices(ctx.Context(), order); err != nil {
 				return nil, err
 			}
@@ -132,7 +136,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 4: Process Payment
 	executor.AddStep(&Step{
 		Name:        constant.ProcessPaymentStep,
-		Description: "Process payment for the order",
+		Description: "Process payment for the order; get payment ID and how much need to be paid",
 		MaxRetries:  3,
 		RetryDelay:  5 * time.Second,
 		Timeout:     60 * time.Second,
@@ -200,7 +204,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 6: Send Order Confirmation Notifications
 	executor.AddStep(&Step{
 		Name:        constant.SendOrderConfirmationStep,
-		Description: "Send order confirmation",
+		Description: "Send order confirmation to customer; with invoice need to be paid and tracking number info",
 		MaxRetries:  3,
 		RetryDelay:  1 * time.Second,
 		Timeout:     10 * time.Second,

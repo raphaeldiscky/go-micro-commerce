@@ -93,7 +93,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 
 	if a.productClient == nil {
 		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsAndCalculateStep,
+			constant.ReserveProductsStep,
 			"product service is unavailable",
 			nil,
 		)
@@ -111,7 +111,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 
 	if len(products) != len(productIDs) {
 		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsAndCalculateStep,
+			constant.ReserveProductsStep,
 			"not all products found",
 			nil,
 		)
@@ -132,7 +132,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 
 		if !exists {
 			return nil, nil, NewNonRetriableError(
-				constant.ReserveProductsAndCalculateStep,
+				constant.ReserveProductsStep,
 				fmt.Sprintf("product %s not found", item.ProductID),
 				nil,
 			)
@@ -157,14 +157,14 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		// Categorize error based on type
 		if isTemporaryError(err) {
 			return nil, nil, NewRetriableError(
-				constant.ReserveProductsAndCalculateStep,
+				constant.ReserveProductsStep,
 				"temporary service error",
 				err,
 			)
 		}
 
 		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsAndCalculateStep,
+			constant.ReserveProductsStep,
 			"stock reservation failed",
 			err,
 		)
@@ -186,7 +186,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	}
 
 	// Create domain entity
-	calculatedOrder, err := entity.NewOrder(
+	newOrder, err := entity.NewOrder(
 		order.CustomerID,
 		order.IdempotencyKey,
 		"IDR",
@@ -196,9 +196,9 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		return nil, nil, err
 	}
 
-	a.logger.Infof("Successfully reserved stock for order entity: %s", calculatedOrder)
+	a.logger.Infof("Successfully reserved stock for order entity: %s", newOrder)
 
-	return calculatedOrder, reservedProducts, nil
+	return newOrder, reservedProducts, nil
 }
 
 // SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
