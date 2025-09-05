@@ -159,6 +159,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentCreated(
 	response := &dto.FulfillmentResponse{
 		FulfillmentID:  evt.Payload.FulfillmentID,
 		TrackingNumber: evt.Payload.TrackingNumber,
+		ShippingCost:   evt.Payload.ShippingCost,
 		Status:         evt.Payload.Status,
 		OrderID:        evt.Payload.OrderID,
 	}

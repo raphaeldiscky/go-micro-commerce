@@ -19,9 +19,11 @@ type Order struct {
 	CustomerID     uuid.UUID
 	Status         constant.OrderStatus
 	Currency       string
-	TotalPrice     decimal.Decimal
-	TotalTax       decimal.Decimal
-	TotalDiscount  decimal.Decimal
+	ShippingCost   decimal.Decimal // generated from fulfillment-service
+	Subtotal       decimal.Decimal // SUM(unit_price * quantity) for all items
+	TotalPrice     decimal.Decimal // SUM(unit_price * quantity) + SUM(total_tax) - SUM(total_discount) + shipping_cost
+	TotalTax       decimal.Decimal // SUM(total_tax) for all items
+	TotalDiscount  decimal.Decimal // SUM(total_discount) for all items
 	Items          []OrderItem
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -138,41 +140,71 @@ func (o *Order) validateItem(item *OrderItem, index int) error {
 
 // validateTotals validates order totals against item calculations.
 func (o *Order) validateTotals() error {
-	totalCalculated := decimal.Zero
+	// 1. Calculate the subtotal from items
+	subtotalCalculated := decimal.Zero
 	discountCalculated := decimal.Zero
 	taxCalculated := decimal.Zero
 
 	for i := range o.Items {
 		item := &o.Items[i]
-		totalCalculated = totalCalculated.Add(
+		subtotalCalculated = subtotalCalculated.Add(
 			item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)),
 		)
 		discountCalculated = discountCalculated.Add(item.TotalDiscount)
 		taxCalculated = taxCalculated.Add(item.TotalTax)
 	}
 
-	if !o.TotalPrice.Equal(totalCalculated) {
+	// 2. Validate the stored Subtotal matches the calculated items subtotal
+	if !o.Subtotal.Equal(subtotalCalculated) {
 		return fmt.Errorf(
-			"total_price mismatch: expected %s, got %s",
-			totalCalculated,
-			o.TotalPrice,
+			"subtotal mismatch: expected %s, got %s",
+			subtotalCalculated, o.Subtotal,
 		)
 	}
 
+	// 3. Validate the stored discounts and taxes match the sum of items
 	if !o.TotalDiscount.Equal(discountCalculated) {
 		return fmt.Errorf(
 			"total_discount mismatch: expected %s, got %s",
-			discountCalculated,
-			o.TotalDiscount,
+			discountCalculated, o.TotalDiscount,
 		)
 	}
 
 	if !o.TotalTax.Equal(taxCalculated) {
 		return fmt.Errorf(
 			"total_tax mismatch: expected %s, got %s",
-			taxCalculated,
-			o.TotalTax,
+			taxCalculated, o.TotalTax,
 		)
+	}
+
+	// 4. Validate the FINAL TotalPrice including shipping
+	totalPriceCalculated := o.Subtotal.
+		Sub(o.TotalDiscount).
+		Add(o.TotalTax).
+		Add(o.ShippingCost)
+
+	if !o.TotalPrice.Equal(totalPriceCalculated) {
+		return fmt.Errorf(
+			"total_price mismatch: expected %s, got %s, check if shipping cost is included",
+			totalPriceCalculated, o.TotalPrice,
+		)
+	}
+
+	// 5. Ensure all totals are non-negative
+	if o.Subtotal.LessThan(decimal.Zero) {
+		return errors.New("subtotal must not be negative")
+	}
+
+	if o.TotalTax.LessThan(decimal.Zero) {
+		return errors.New("total_tax must not be negative")
+	}
+
+	if o.TotalDiscount.LessThan(decimal.Zero) {
+		return errors.New("total_discount must not be negative")
+	}
+
+	if o.ShippingCost.LessThan(decimal.Zero) {
+		return errors.New("shipping_cost must not be negative")
 	}
 
 	return nil
@@ -184,24 +216,38 @@ func NewOrder(
 	currency string,
 	items []OrderItem,
 ) (*Order, error) {
-	totalPrice := decimal.Zero
+	// 1. Calculate core values from items
+	subtotal := decimal.Zero
 	totalDiscount := decimal.Zero
 	totalTax := decimal.Zero
 
 	for i := range items {
-		totalPrice = totalPrice.Add(items[i].UnitPrice.Mul(decimal.NewFromInt(items[i].Quantity)))
-		totalDiscount = totalDiscount.Add(items[i].TotalDiscount)
-		totalTax = totalTax.Add(items[i].TotalTax)
+		item := &items[i]
+		subtotal = subtotal.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
+		totalDiscount = totalDiscount.Add(item.TotalDiscount)
+		totalTax = totalTax.Add(item.TotalTax)
 	}
+
+	// 2. Set defaults for other costs
+	shippingCost := decimal.Zero // Will be updated later in the fulfillment saga
+
+	// 3. Calculate the FINAL total price
+	totalPrice := subtotal.
+		Sub(totalDiscount).
+		Add(totalTax).
+		Add(shippingCost).
+		Round(2)
 
 	orderID := uuid.New()
 
+	// 4. Initialize items with OrderID
 	for i := range items {
 		items[i].OrderID = orderID
 		items[i].CreatedAt = time.Now()
 		items[i].UpdatedAt = time.Now()
 	}
 
+	// 5. Create the order
 	order := &Order{
 		ID:             orderID,
 		IdempotencyKey: idempotencyKey,
@@ -210,7 +256,9 @@ func NewOrder(
 		CustomerID:     customerID,
 		Status:         constant.OrderStatusPending,
 		Currency:       currency,
-		TotalPrice:     totalPrice.Round(2),
+		ShippingCost:   shippingCost,
+		Subtotal:       subtotal.Round(2),
+		TotalPrice:     totalPrice,
 		TotalTax:       totalTax.Round(2),
 		TotalDiscount:  totalDiscount.Round(2),
 		Items:          items,
@@ -266,7 +314,7 @@ func (o *Order) UpdateStatus(status constant.OrderStatus) error {
 	return o.validate()
 }
 
-// AddItem adds an item to the order and recalculates total price.
+// AddItem adds an item to the order and recalculates totals.
 func (o *Order) AddItem(item *OrderItem) error {
 	if item == nil {
 		return errors.New("item must not be nil")
@@ -274,21 +322,14 @@ func (o *Order) AddItem(item *OrderItem) error {
 
 	o.Items = append(o.Items, *item)
 
-	// Recalculate total price
-	totalPrice := decimal.Zero
-	for i := range o.Items {
-		totalPrice = totalPrice.Add(
-			o.Items[i].UnitPrice.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
-		)
-	}
-
-	o.TotalPrice = totalPrice.Round(2)
+	// Recalculate ALL totals, not just the item price
+	o.recalculateTotals()
 	o.UpdatedAt = time.Now()
 
 	return o.validate()
 }
 
-// RemoveItem removes an item from the order and recalculates total price.
+// RemoveItem removes an item from the order and recalculates totals.
 func (o *Order) RemoveItem(itemID uuid.UUID) error {
 	for i := range o.Items {
 		if o.Items[i].ID == itemID {
@@ -298,15 +339,7 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 		}
 	}
 
-	// Recalculate total price
-	totalPrice := decimal.Zero
-	for i := range o.Items {
-		totalPrice = totalPrice.Add(
-			o.Items[i].UnitPrice.Mul(decimal.NewFromInt(o.Items[i].Quantity)),
-		)
-	}
-
-	o.TotalPrice = totalPrice.Round(2)
+	o.recalculateTotals()
 	o.UpdatedAt = time.Now()
 
 	return o.validate()
@@ -326,5 +359,45 @@ func (o *Order) CanBePaid() bool {
 func (o *Order) UpdateItems(items []OrderItem) error {
 	o.Items = items
 	// Recalculate total price logic here
+	return o.validate()
+}
+
+// recalculateTotals recalculates subtotal, discounts, taxes, and the final total price.
+// This is a new helper method to keep the logic DRY.
+func (o *Order) recalculateTotals() {
+	subtotal := decimal.Zero
+	totalDiscount := decimal.Zero
+	totalTax := decimal.Zero
+
+	for i := range o.Items {
+		item := &o.Items[i]
+		subtotal = subtotal.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
+		totalDiscount = totalDiscount.Add(item.TotalDiscount)
+		totalTax = totalTax.Add(item.TotalTax)
+	}
+
+	o.Subtotal = subtotal.Round(2)
+	o.TotalDiscount = totalDiscount.Round(2)
+	o.TotalTax = totalTax.Round(2)
+
+	// Recalculate the final total including shipping
+	o.TotalPrice = o.Subtotal.
+		Sub(o.TotalDiscount).
+		Add(o.TotalTax).
+		Add(o.ShippingCost).
+		Round(2)
+}
+
+// UpdateShippingCost updates the shipping cost and recalculates the total price.
+// This is crucial for your saga workflow.
+func (o *Order) UpdateShippingCost(newShippingCost decimal.Decimal) error {
+	if newShippingCost.LessThan(decimal.Zero) {
+		return errors.New("shipping cost must not be negative")
+	}
+
+	o.ShippingCost = newShippingCost
+	o.recalculateTotals() // Recalculate the total with the new shipping cost
+	o.UpdatedAt = time.Now()
+
 	return o.validate()
 }

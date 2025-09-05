@@ -47,6 +47,8 @@ type OrderResponse struct {
 	CustomerID    uuid.UUID            `json:"customer_id"`
 	Status        constant.OrderStatus `json:"status"`
 	Currency      string               `json:"currency"`
+	ShippingCost  decimal.Decimal      `json:"shipping_cost"`
+	Subtotal      decimal.Decimal      `json:"subtotal"`
 	TotalPrice    decimal.Decimal      `json:"total_price"`
 	TotalTax      decimal.Decimal      `json:"total_tax"`
 	TotalDiscount decimal.Decimal      `json:"total_discount"`

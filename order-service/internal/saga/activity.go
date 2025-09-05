@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -26,17 +27,17 @@ type OrderActivities interface {
 		ctx context.Context,
 		order *entity.Order,
 	) (calculatedOrder *entity.Order, reservedProducts []entity.Product, err error)
-	UpdateOrderPrices(ctx context.Context, order *entity.Order) error
+	ProcessFulfillment(
+		ctx context.Context,
+		order *entity.Order,
+	) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error)
+	SetFinalOrderPrices(ctx context.Context, order *entity.Order) error
 	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
 	ConfirmProductsDeduction(
 		ctx context.Context,
 		order *entity.Order,
 		reservedProducts []entity.Product,
 	) error
-	ProcessFulfillment(
-		ctx context.Context,
-		order *entity.Order,
-	) (shippingID uuid.UUID, trackingNumber string, err error)
 	SendOrderConfirmation(ctx context.Context, order *entity.Order, trackingNumber string) error
 	// Compensation
 	ReleaseProducts(
@@ -92,7 +93,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 
 	if a.productClient == nil {
 		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsAndCalculateStep,
+			constant.ReserveProductsStep,
 			"product service is unavailable",
 			nil,
 		)
@@ -110,7 +111,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 
 	if len(products) != len(productIDs) {
 		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsAndCalculateStep,
+			constant.ReserveProductsStep,
 			"not all products found",
 			nil,
 		)
@@ -131,7 +132,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 
 		if !exists {
 			return nil, nil, NewNonRetriableError(
-				constant.ReserveProductsAndCalculateStep,
+				constant.ReserveProductsStep,
 				fmt.Sprintf("product %s not found", item.ProductID),
 				nil,
 			)
@@ -156,14 +157,14 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		// Categorize error based on type
 		if isTemporaryError(err) {
 			return nil, nil, NewRetriableError(
-				constant.ReserveProductsAndCalculateStep,
+				constant.ReserveProductsStep,
 				"temporary service error",
 				err,
 			)
 		}
 
 		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsAndCalculateStep,
+			constant.ReserveProductsStep,
 			"stock reservation failed",
 			err,
 		)
@@ -185,7 +186,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	}
 
 	// Create domain entity
-	calculatedOrder, err := entity.NewOrder(
+	newOrder, err := entity.NewOrder(
 		order.CustomerID,
 		order.IdempotencyKey,
 		"IDR",
@@ -195,13 +196,13 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		return nil, nil, err
 	}
 
-	a.logger.Infof("Successfully reserved stock for order entity: %s", calculatedOrder)
+	a.logger.Infof("Successfully reserved stock for order entity: %s", newOrder)
 
-	return calculatedOrder, reservedProducts, nil
+	return newOrder, reservedProducts, nil
 }
 
-// UpdateOrderPrices updates the order with calculated prices in the database.
-func (a *OrderActivitiesImpl) UpdateOrderPrices(ctx context.Context, order *entity.Order) error {
+// SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
+func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Updating order prices in database for order: %s", order.ID)
 
 	return a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
@@ -360,10 +361,10 @@ func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 func (a *OrderActivitiesImpl) ProcessFulfillment(
 	ctx context.Context,
 	order *entity.Order,
-) (uuid.UUID, string, error) {
+) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error) {
 	a.logger.Infof("Creating shipping for order: %s", order.ID)
 
-	err := a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
 		// Create mock shipping address (in real implementation, this would come from order data)
@@ -408,7 +409,7 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 	if err != nil {
 		a.logger.Errorf("Failed to publish fulfillment request for order %s: %v", order.ID, err)
 
-		return uuid.Nil, "", fmt.Errorf("failed to create shipping: %w", err)
+		return uuid.Nil, decimal.Zero, "", fmt.Errorf("failed to create shipping: %w", err)
 	}
 
 	// Step 2: Wait for fulfillment service response
@@ -422,13 +423,21 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 	if err != nil {
 		a.logger.Errorf("Failed to receive fulfillment response for order %s: %v", order.ID, err)
 
-		return uuid.Nil, "", fmt.Errorf("failed to receive fulfillment response: %w", err)
+		return uuid.Nil, decimal.Zero, "", fmt.Errorf(
+			"failed to receive fulfillment response: %w",
+			err,
+		)
 	}
 
-	a.logger.Infof("Successfully received fulfillment response for order %s: ID=%s, Tracking=%s",
-		order.ID, response.FulfillmentID, response.TrackingNumber)
+	a.logger.Infof(
+		"Successfully received fulfillment response for order %s: ID=%s, ShippingCost=%s, Tracking=%s",
+		order.ID,
+		response.FulfillmentID,
+		response.ShippingCost,
+		response.TrackingNumber,
+	)
 
-	return response.FulfillmentID, response.TrackingNumber, nil
+	return response.FulfillmentID, response.ShippingCost, response.TrackingNumber, nil
 }
 
 // SendOrderConfirmation sends order confirmation to customer.
