@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bytedance/sonic"
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -58,6 +59,7 @@ func NewFulfillmentRequestConsumer(
 
 // Handler is the method that implements mq.KafkaHandler. It contains the business logic.
 func (c *FulfillmentRequestConsumer) Handler(ctx context.Context, body []byte) error {
+	c.logger.Infof("Received fulfillment request event: %s", string(body))
 	// First, extract metadata to understand the event
 	var meta struct {
 		Metadata event.Metadata `json:"metadata"`
@@ -148,33 +150,94 @@ func (c *FulfillmentRequestConsumer) processFulfillmentRequested(
 
 	c.logger.Infof("Processing fulfillment request for order ID: %s", evt.Payload.OrderID)
 
-	fulfillmentRepo := ds.FulfillmentRepository()
-
-	// Check if fulfillment already exists for this order
-	existingFulfillment, err := fulfillmentRepo.FindByOrderID(ctx, evt.Payload.OrderID)
-	if err != nil {
-		return fmt.Errorf("failed to check existing fulfillment: %w", err)
-	}
-
-	if existingFulfillment != nil {
-		c.logger.Infof(
-			"Fulfillment already exists for order %s, skipping creation",
-			evt.Payload.OrderID,
-		)
-
+	// Check if fulfillment already exists
+	if exists, err := c.checkExistingFulfillment(ctx, ds, evt.Payload.OrderID); err != nil {
+		return err
+	} else if exists {
 		return nil
 	}
 
-	// Step 1: Convert shipping address from payload to DTO
-	toAddress := c.convertShippingAddress(&evt.Payload.ShippingAddress)
+	// Calculate shipping and create fulfillment
+	fulfillment, err := c.createFulfillmentFromEvent(ctx, &evt)
+	if err != nil {
+		return fmt.Errorf("failed to create fulfillment from event: %w", err)
+	}
 
-	// Step 2: Create shipping request for rate calculation
-	// Estimate package weight based on items (simplified logic)
+	// Save fulfillment and publish event
+	return c.saveFulfillmentAndPublishEvent(ctx, ds, fulfillment, evt.Payload.OrderID)
+}
+
+// checkExistingFulfillment checks if a fulfillment already exists for the given order ID.
+func (c *FulfillmentRequestConsumer) checkExistingFulfillment(
+	ctx context.Context,
+	ds repository.DataStore,
+	orderID uuid.UUID,
+) (bool, error) {
+	fulfillmentRepo := ds.FulfillmentRepository()
+
+	existingFulfillment, err := fulfillmentRepo.FindByOrderID(ctx, orderID)
+	if err != nil {
+		return false, fmt.Errorf("failed to check existing fulfillment: %w", err)
+	}
+
+	if existingFulfillment != nil {
+		c.logger.Infof("Fulfillment already exists for order %s, skipping creation", orderID)
+
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// createFulfillmentFromEvent creates a fulfillment entity from the event payload.
+func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
+	ctx context.Context,
+	evt *FulfillmentRequestEvent,
+) (*entity.Fulfillment, error) {
+	// Convert shipping address and calculate weight
+	toAddress := c.convertShippingAddress(&evt.Payload.ShippingAddress)
 	totalWeight := c.estimatePackageWeight(evt.Payload.Items)
 
-	shippingRequest := &dto.ShippingRequest{
-		OrderID: evt.Payload.OrderID,
-		Carrier: string(constant.CarrierTypeJNE), // Default carrier for rate checking
+	// Create shipping request
+	shippingRequest := c.createShippingRequest(
+		evt.Payload.OrderID,
+		&toAddress,
+		totalWeight,
+		evt.Payload.TotalPrice,
+	)
+
+	// Get shipping costs and create fulfillment
+	shippingCost, trackingNumber, estimatedDelivery, err := c.processShipping(ctx, shippingRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process shipping: %w", err)
+	}
+
+	// Create fulfillment entity
+	fulfillment, err := entity.NewFulfillment(
+		evt.Payload.OrderID,
+		trackingNumber,
+		evt.Payload.Currency,
+		shippingCost,
+		totalWeight,
+		estimatedDelivery,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create fulfillment entity: %w", err)
+	}
+
+	return fulfillment, nil
+}
+
+// createShippingRequest creates a shipping request from the event data.
+func (c *FulfillmentRequestConsumer) createShippingRequest(
+	orderID uuid.UUID,
+	toAddress *dto.ShippingAddress,
+	totalWeight decimal.Decimal,
+	totalPrice decimal.Decimal,
+) *dto.ShippingRequest {
+	return &dto.ShippingRequest{
+		OrderID: orderID,
+		Carrier: string(constant.CarrierTypeJNE),
 		Service: "JNE Regular",
 		FromAddress: dto.ShippingAddress{
 			Name:       "Fulfillment Center",
@@ -186,87 +249,70 @@ func (c *FulfillmentRequestConsumer) processFulfillmentRequested(
 			Country:    "Indonesia",
 			Phone:      "+62-21-12345678",
 		},
-		ToAddress: toAddress,
+		ToAddress: *toAddress,
 		Package: dto.Package{
 			Weight: totalWeight,
 			Dimensions: map[string]decimal.Decimal{
-				"width":  decimal.NewFromInt(20), // Default dimensions in cm
+				"width":  decimal.NewFromInt(20),
 				"height": decimal.NewFromInt(15),
 				"length": decimal.NewFromInt(30),
 			},
 		},
-		InsuranceAmount: evt.Payload.TotalPrice,
-		Signature: evt.Payload.TotalPrice.GreaterThan(
-			decimal.NewFromInt(1000000),
-		), // Require signature for high-value items
+		InsuranceAmount: totalPrice,
+		Signature:       totalPrice.GreaterThan(decimal.NewFromInt(1000000)),
+	}
+}
+
+// processShipping handles shipping rate calculation and label creation.
+func (c *FulfillmentRequestConsumer) processShipping(
+	ctx context.Context,
+	shippingRequest *dto.ShippingRequest,
+) (shippingCost decimal.Decimal, trackingNumber string, estimatedDelivery time.Time, err error) {
+	// Get shipping rates
+	rates, rateErr := c.carrierClient.GetRates(ctx, shippingRequest)
+	if rateErr != nil {
+		c.logger.Warnf("Failed to get shipping rates: %v, using default values", rateErr)
 	}
 
-	// Step 3: Get shipping rates from carrier
-	rates, err := c.carrierClient.GetRates(ctx, shippingRequest)
-	if err != nil {
-		c.logger.Warnf("Failed to get shipping rates: %v, using default values", err)
-		// Continue with default values if carrier service is unavailable
-	}
-
-	// Step 4: Select best rate (for simplicity, use the first available rate or default)
-	var selectedRate *dto.ShippingRate
+	// Select rate and create shipment
 	if len(rates) > 0 {
-		selectedRate = &rates[0] // Use first rate for simplicity
-	}
-
-	// Step 5: Create shipping label
-	var shippingLabel *dto.ShippingLabel
-
-	var shippingCost decimal.Decimal
-
-	var estimatedDelivery time.Time
-
-	if selectedRate != nil {
+		selectedRate := &rates[0]
 		shippingRequest.Carrier = string(selectedRate.Carrier)
 		shippingRequest.Service = selectedRate.Service
 		shippingCost = selectedRate.Cost
 		estimatedDelivery = selectedRate.EstimatedDelivery
 
-		label, err := c.carrierClient.CreateShipment(ctx, shippingRequest)
-		if err != nil {
-			c.logger.Errorf("Failed to create shipping label: %v", err)
+		label, labelErr := c.carrierClient.CreateShipment(ctx, shippingRequest)
+		if labelErr != nil {
+			c.logger.Errorf("Failed to create shipping label: %v", labelErr)
 
-			return fmt.Errorf("failed to create shipping label: %w", err)
+			return decimal.Zero, "", time.Time{}, fmt.Errorf(
+				"failed to create shipping label: %w",
+				labelErr,
+			)
 		}
 
-		shippingLabel = label
+		trackingNumber = label.TrackingNumber
 	} else {
 		// Use default values if carrier integration fails
-		shippingCost = decimal.NewFromInt(25000)           // Default shipping cost
-		estimatedDelivery = time.Now().Add(72 * time.Hour) // Default 3 days
+		shippingCost = decimal.NewFromInt(25000)
+		estimatedDelivery = time.Now().Add(72 * time.Hour)
+		trackingNumber = ""
 	}
 
-	// Step 6: Create fulfillment record
-	trackingNumber := ""
-	if shippingLabel != nil {
-		trackingNumber = shippingLabel.TrackingNumber
-	}
+	return shippingCost, trackingNumber, estimatedDelivery, nil
+}
 
-	// Create fulfillment using the constructor with proper parameters
-	fulfillment, err := entity.NewFulfillment(
-		evt.Payload.OrderID,
-		trackingNumber,
-		shippingCost,
-		totalWeight,
-		estimatedDelivery,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create fulfillment entity: %w", err)
-	}
+// saveFulfillmentAndPublishEvent saves the fulfillment to database and publishes the created event.
+func (c *FulfillmentRequestConsumer) saveFulfillmentAndPublishEvent(
+	ctx context.Context,
+	ds repository.DataStore,
+	fulfillment *entity.Fulfillment,
+	orderID uuid.UUID,
+) error {
+	fulfillmentRepo := ds.FulfillmentRepository()
 
-	// Set additional fields not handled by constructor
-	fulfillment.Currency = evt.Payload.Currency
-	if shippingLabel != nil {
-		fulfillment.Carrier = &shippingLabel.Carrier
-		fulfillment.ShippingLabelURL = &shippingLabel.LabelURL
-	}
-
-	// Step 7: Save to database
+	// Save to database
 	createdFulfillment, err := fulfillmentRepo.Create(ctx, fulfillment)
 	if err != nil {
 		return fmt.Errorf("failed to create fulfillment record: %w", err)
@@ -275,12 +321,53 @@ func (c *FulfillmentRequestConsumer) processFulfillmentRequested(
 	c.logger.Infof(
 		"Successfully created fulfillment %s for order %s with tracking number %s",
 		createdFulfillment.ID,
-		evt.Payload.OrderID,
-		trackingNumber,
+		orderID,
+		createdFulfillment.TrackingNumber,
 	)
 
-	// Step 8: Publish fulfillment created event (if needed)
-	// TODO: Publish FulfillmentCreated event to notify order service
+	// Publish fulfillment created event
+	return c.publishFulfillmentCreatedEvent(ctx, ds, createdFulfillment)
+}
+
+// publishFulfillmentCreatedEvent publishes the fulfillment created event to notify order service.
+func (c *FulfillmentRequestConsumer) publishFulfillmentCreatedEvent(
+	ctx context.Context,
+	ds repository.DataStore,
+	fulfillment *entity.Fulfillment,
+) error {
+	outboxRepo := ds.OutboxRepository()
+
+	// Create fulfillment created event
+	fulfillmentCreatedEvent := NewFulfillmentLifecycleEvent(
+		fulfillment.ID,
+		fulfillment.OrderID,
+		fulfillment.Status,
+		fulfillment.TrackingNumber,
+	)
+
+	payload, err := json.Marshal(fulfillmentCreatedEvent)
+	if err != nil {
+		return fmt.Errorf("failed to marshal fulfillment created event: %w", err)
+	}
+
+	outboxEvent := &entity.OutboxEvent{
+		ID:            uuid.New(),
+		AggregateType: "fulfillment",
+		AggregateID:   fulfillment.ID,
+		EventType:     kafka.FulfillmentCreatedEventType,
+		Topic:         kafka.FulfillmentLifecycleTopic,
+		Payload:       payload,
+		Status:        constant.OutboxStatusPending,
+		CreatedAt:     time.Now().UTC(),
+		ScheduledFor:  time.Now().UTC(),
+		Attempts:      0,
+	}
+
+	if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		return fmt.Errorf("failed to create fulfillment created outbox event: %w", err)
+	}
+
+	c.logger.Infof("Fulfillment created event published for order %s", fulfillment.OrderID)
 
 	return nil
 }
