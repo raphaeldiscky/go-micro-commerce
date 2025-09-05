@@ -35,7 +35,10 @@ type OrderServiceInterface interface {
 		ctx context.Context,
 		req dto.CreateOrderRequest,
 	) (*dto.OrderResponse, error)
-	CreateOrderWithSaga(ctx context.Context, req dto.CreateOrderRequest) (*dto.OrderResponse, error)
+	CreateOrderWithSaga(
+		ctx context.Context,
+		req dto.CreateOrderRequest,
+	) (*dto.OrderResponse, error)
 	CreateOrderWithTemporal(
 		ctx context.Context,
 		req dto.CreateOrderRequest,

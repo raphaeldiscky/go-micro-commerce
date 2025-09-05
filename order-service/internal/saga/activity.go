@@ -26,6 +26,7 @@ type OrderActivities interface {
 		ctx context.Context,
 		order *entity.Order,
 	) (calculatedOrder *entity.Order, reservedProducts []entity.Product, err error)
+	UpdateOrderPrices(ctx context.Context, order *entity.Order) error
 	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
 	ConfirmProductsDeduction(
 		ctx context.Context,
@@ -197,6 +198,31 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	a.logger.Infof("Successfully reserved stock for order entity: %s", calculatedOrder)
 
 	return calculatedOrder, reservedProducts, nil
+}
+
+// UpdateOrderPrices updates the order with calculated prices in the database.
+func (a *OrderActivitiesImpl) UpdateOrderPrices(ctx context.Context, order *entity.Order) error {
+	a.logger.Infof("Updating order prices in database for order: %s", order.ID)
+
+	return a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		orderRepo := ds.OrderRepository()
+
+		// Update the order with calculated prices
+		updatedOrder, err := orderRepo.Update(ctx, order)
+		if err != nil {
+			return fmt.Errorf("failed to update order prices: %w", err)
+		}
+
+		a.logger.Infof(
+			"Successfully updated order %s with prices: total=%s, tax=%s, discount=%s",
+			updatedOrder.ID,
+			updatedOrder.TotalPrice.String(),
+			updatedOrder.TotalTax.String(),
+			updatedOrder.TotalDiscount.String(),
+		)
+
+		return nil
+	})
 }
 
 // ProcessPayment processes payment for the order.

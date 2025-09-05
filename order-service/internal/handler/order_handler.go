@@ -8,9 +8,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgConstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
@@ -79,6 +81,12 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 		return err
 	}
 
+	if order.Status == constant.OrderStatusProcessing {
+		mapped := mapper.MapToOrderSagaResponse(order)
+
+		return echoutils.ResponseCreated(c, mapped)
+	}
+
 	return echoutils.ResponseCreated(c, order)
 }
 
@@ -144,14 +152,14 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgConstant.DefaultLimit,
+		pkgconstant.DefaultLimit,
 		1,
 		100,
 	) // min=1, max=100
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgConstant.DefaultPage,
+		pkgconstant.DefaultPage,
 		1,
 		0,
 	) // min=1, max=0 (no max)
@@ -189,14 +197,14 @@ func (h *OrderHandler) GetOrders(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgConstant.DefaultLimit,
+		pkgconstant.DefaultLimit,
 		1,
 		100,
 	) // min=1, max=100
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgConstant.DefaultPage,
+		pkgconstant.DefaultPage,
 		1,
 		0,
 	) // min=1, max=0 (no max)
@@ -230,14 +238,14 @@ func (h *OrderHandler) GetLoggedInOrders(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgConstant.DefaultLimit,
+		pkgconstant.DefaultLimit,
 		1,
 		100,
 	) // min=1, max=100
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgConstant.DefaultPage,
+		pkgconstant.DefaultPage,
 		1,
 		0,
 	) // min=1, max=0 (no max)

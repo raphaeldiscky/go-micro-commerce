@@ -21,3 +21,21 @@ type WorkflowState struct {
 	UpdatedAt        time.Time           `json:"updated_at"`
 	CompletedAt      *time.Time          `json:"completed_at,omitempty"`
 }
+
+// OrderSagaResponse represents an order in API responses.
+type OrderSagaResponse struct {
+	ID         uuid.UUID               `json:"id"`
+	CustomerID uuid.UUID               `json:"customer_id"`
+	Status     constant.OrderStatus    `json:"status"`
+	Currency   string                  `json:"currency"`
+	Items      []OrderSagaItemResponse `json:"items"`
+	CreatedAt  time.Time               `json:"created_at"`
+	UpdatedAt  time.Time               `json:"updated_at"`
+}
+
+// OrderSagaItemResponse represents an order item in API responses.
+type OrderSagaItemResponse struct {
+	ID        uuid.UUID `json:"id"`
+	ProductID uuid.UUID `json:"product_id"`
+	Quantity  int64     `json:"quantity"`
+}
