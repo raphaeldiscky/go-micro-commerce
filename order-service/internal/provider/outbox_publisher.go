@@ -7,7 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
@@ -28,9 +28,9 @@ func SetupOutboxPublisher(
 		constant.OrderDLQTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
-		kafka.PaymentGatewayRequestTopic,
-		constant.PaymentGatewayRequestTopicNumPartitions,
-		constant.PaymentGatewayRequestTopicReplicationFactor,
+		kafka.PaymentRequestTopic,
+		constant.PaymentRequestTopicNumPartitions,
+		constant.PaymentRequestTopicReplicationFactor,
 	)
 	providers.KafkaAdmin.CreateTopic(
 		kafka.PaymentDLQTopic,
@@ -52,17 +52,17 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
-	registry.Register(kafka.OrderCreatedEventType, &mq.OrderLifecycleEvent{})
-	registry.Register(kafka.OrderCanceledEventType, &mq.OrderLifecycleEvent{})
-	registry.Register(kafka.PaymentGatewayRequestedEventType, &mq.PaymentGatewayRequestEvent{})
+	registry.Register(kafka.OrderCreatedEventType, &producer.OrderLifecycleEvent{})
+	registry.Register(kafka.OrderCanceledEventType, &producer.OrderLifecycleEvent{})
+	registry.Register(kafka.PaymentRequestedEventType, &producer.PaymentRequestEvent{})
 
 	// Producers
-	orderLifecycleProducer := mq.NewOrderLifecycleProducer(asyncProducer)
-	paymentRequestProducer := mq.NewPaymentGatewayRequestProducer(asyncProducer)
+	orderLifecycleProducer := producer.NewOrderLifecycleProducer(asyncProducer)
+	paymentRequestProducer := producer.NewPaymentRequestProducer(asyncProducer)
 
 	// DLQ
-	orderDLQProducer := mq.NewOrderDLQProducer(asyncProducer)
-	paymentDLQProducer := mq.NewPaymentDLQProducer(asyncProducer)
+	orderDLQProducer := producer.NewOrderDLQProducer(asyncProducer)
+	paymentDLQProducer := producer.NewPaymentDLQProducer(asyncProducer)
 
 	// Create outbox publisher
 	outboxPublisher := service.NewOutboxPublisher(

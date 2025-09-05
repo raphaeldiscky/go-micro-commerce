@@ -14,7 +14,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -141,19 +141,19 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	}
 
 	// Route to the appropriate producer based on topic
-	var producer kafka.ProducerInterface
+	var selectedProducer kafka.ProducerInterface
 
 	switch outboxEvent.Topic {
 	case kafka.OrderLifecycleTopic:
-		producer = p.orderLifecycleProducer
-	case kafka.PaymentGatewayRequestTopic:
-		producer = p.paymentRequestProducer
+		selectedProducer = p.orderLifecycleProducer
+	case kafka.PaymentRequestTopic:
+		selectedProducer = p.paymentRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
 	}
 
 	// Publish to Kafka
-	if err := producer.Send(ctx, kafkaEvent); err != nil {
+	if err := selectedProducer.Send(ctx, kafkaEvent); err != nil {
 		p.handleProcessingError(ctx, outboxEvent.ID, "failed to publish event to Kafka", err)
 
 		return err
@@ -216,10 +216,10 @@ func (p *OutboxPublisher) handleProcessingError(
 	switch outboxEvent.Topic {
 	case kafka.OrderLifecycleTopic:
 		dlqProducer = p.orderDLQProducer
-		evt = mq.NewOrderDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
-	case kafka.PaymentGatewayRequestTopic:
+		evt = producer.NewOrderDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
+	case kafka.PaymentRequestTopic:
 		dlqProducer = p.paymentDLQProducer
-		evt = mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
+		evt = producer.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	default:
 		p.logger.Errorf("unknown topic for DLQ: %s, skipping DLQ send", outboxEvent.Topic)
 		// Don't send to any DLQ - just log and mark as failed

@@ -1,5 +1,5 @@
-// Package mq provides the event definitions and handlers for the payment service.
-package mq
+// Package consumer provides the event definitions and handlers for the payment service.
+package consumer
 
 import (
 	"context"
@@ -7,51 +7,19 @@ import (
 	"fmt"
 
 	"github.com/bytedance/sonic"
-	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
-// OrderItemPayload holds the data for each item in the order.
-type OrderItemPayload struct {
-	ProductID uuid.UUID `json:"product_id"`
-	Quantity  int64     `json:"quantity"`
-}
-
-// OrderLifecyclePayload holds the data for the Order Lifecycle event.
-type OrderLifecyclePayload struct {
-	OrderID    uuid.UUID            `json:"order_id"`
-	UserID     uuid.UUID            `json:"user_id"`
-	Status     constant.OrderStatus `json:"status"`
-	TotalPrice decimal.Decimal      `json:"total_price"`
-	Items      []OrderItemPayload   `json:"items"`
-}
-
-// OrderPaymentGatewayRequestPayload holds the data for payment request events.
-type OrderPaymentGatewayRequestPayload struct {
-	OrderID       uuid.UUID       `json:"order_id"`
-	CustomerID    uuid.UUID       `json:"customer_id"`
-	TotalPrice    decimal.Decimal `json:"total_price"`
-	Currency      string          `json:"currency"`
-	PaymentMethod string          `json:"payment_method"`
-}
-
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
-	Metadata event.Metadata        `json:"metadata"`
-	Payload  OrderLifecyclePayload `json:"payload"`
-}
-
-// OrderPaymentGatewayRequestEvent is the envelope for payment request events.
-type OrderPaymentGatewayRequestEvent struct {
-	Metadata event.Metadata                    `json:"metadata"`
-	Payload  OrderPaymentGatewayRequestPayload `json:"payload"`
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.OrderLifecyclePayload `json:"payload"`
 }
 
 // OrderLifecycleConsumer handles the logic for processing product created events.

@@ -1,4 +1,5 @@
-package mq
+// Package producer contains the Kafka producer for Payment events.
+package producer
 
 import (
 	"context"
@@ -15,17 +16,10 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
 )
 
-// PaymentLifecyclePayload holds the data for the Payment Lifecycle event.
-type PaymentLifecyclePayload struct {
-	PaymentID  uuid.UUID              `json:"order_id"`
-	Status     constant.PaymentStatus `json:"status"`
-	TotalPrice decimal.Decimal        `json:"total_price"`
-}
-
 // PaymentLifecycleEvent is the envelope for all Payment events.
 type PaymentLifecycleEvent struct {
-	Metadata event.Metadata          `json:"metadata"`
-	Payload  PaymentLifecyclePayload `json:"payload"`
+	Metadata event.Metadata                `json:"metadata"`
+	Payload  event.PaymentLifecyclePayload `json:"payload"`
 }
 
 // GetPayload returns the data associated with the PaymentLifecycleEvent.
@@ -46,6 +40,7 @@ type PaymentLifecycleProducer struct {
 
 // NewPaymentLifecycleEvent creates a new PaymentLifecycleEvent.
 func NewPaymentLifecycleEvent(
+	paymentID uuid.UUID,
 	orderID uuid.UUID,
 	newStatus constant.PaymentStatus,
 	totalPrice decimal.Decimal,
@@ -54,13 +49,14 @@ func NewPaymentLifecycleEvent(
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   mapper.MapStatusToEventType(newStatus),
-			AggregateID: orderID,
+			AggregateID: paymentID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.PaymentServiceName,
 		},
-		Payload: PaymentLifecyclePayload{
-			PaymentID:  orderID,
-			Status:     newStatus,
+		Payload: event.PaymentLifecyclePayload{
+			PaymentID:  paymentID,
+			OrderID:    orderID,
+			Status:     string(newStatus),
 			TotalPrice: totalPrice,
 		},
 	}

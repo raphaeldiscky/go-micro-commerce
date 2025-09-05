@@ -13,7 +13,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
@@ -190,7 +190,7 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ
-	evt := mq.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
+	evt := producer.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	if dlqErr := p.paymentDLQProducer.Send(ctx, evt); dlqErr != nil {
 		p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
 	}

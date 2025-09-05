@@ -73,3 +73,29 @@ func ContextWithUserInfo(c echo.Context) context.Context {
 
 	return ctx
 }
+
+// PropagateUserContextToBackground creates a new background context with user information
+// from the original context. This is useful for async operations that need to preserve
+// authentication context for gRPC calls.
+func PropagateUserContextToBackground(originalCtx context.Context) context.Context {
+	bgCtx := context.Background()
+
+	// Copy user authentication information
+	if userID := originalCtx.Value(constant.CtxUserID); userID != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxUserID, userID)
+	}
+
+	if email := originalCtx.Value(constant.CtxEmail); email != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxEmail, email)
+	}
+
+	if roles := originalCtx.Value(constant.CtxRoles); roles != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxRoles, roles)
+	}
+
+	if isActive := originalCtx.Value(constant.CtxIsActive); isActive != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxIsActive, isActive)
+	}
+
+	return bgCtx
+}

@@ -1,4 +1,4 @@
-package mq
+package consumer
 
 import (
 	"context"
@@ -17,34 +17,35 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
-// PaymentGatewayRequestEvent is the envelope for payment request events.
-type PaymentGatewayRequestEvent struct {
-	Metadata event.Metadata                     `json:"metadata"`
-	Payload  event.PaymentGatewayRequestPayload `json:"payload"`
+// PaymentRequestEvent is the envelope for payment request events.
+type PaymentRequestEvent struct {
+	Metadata event.Metadata              `json:"metadata"`
+	Payload  event.PaymentRequestPayload `json:"payload"`
 }
 
-// PaymentGatewayRequestConsumer handles payment request events from order service.
-type PaymentGatewayRequestConsumer struct {
+// PaymentRequestConsumer handles payment request events from order service.
+type PaymentRequestConsumer struct {
 	logger    logger.Logger
 	datastore repository.DataStore
 }
 
-// NewPaymentGatewayRequestConsumer creates a new consumer for payment request events.
-func NewPaymentGatewayRequestConsumer(
+// NewPaymentRequestConsumer creates a new consumer for payment request events.
+func NewPaymentRequestConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-) *PaymentGatewayRequestConsumer {
-	return &PaymentGatewayRequestConsumer{
+) *PaymentRequestConsumer {
+	return &PaymentRequestConsumer{
 		logger:    appLogger,
 		datastore: ds,
 	}
 }
 
 // Handler processes payment request events.
-func (c *PaymentGatewayRequestConsumer) Handler(ctx context.Context, body []byte) error {
+func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
 		Metadata event.Metadata `json:"metadata"`
@@ -60,8 +61,8 @@ func (c *PaymentGatewayRequestConsumer) Handler(ctx context.Context, body []byte
 		"payment", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		kafka.PaymentGatewayRequestTopic, // topic
-		pkgconstant.OrderServiceName,     // source service
+		kafka.PaymentRequestTopic,    // topic
+		pkgconstant.OrderServiceName, // source service
 		json.RawMessage(body),
 		nil, // correlation_id
 		nil, // causation_id
@@ -95,8 +96,8 @@ func (c *PaymentGatewayRequestConsumer) Handler(ctx context.Context, body []byte
 		var processingErr error
 
 		switch meta.Metadata.EventType {
-		case kafka.PaymentGatewayRequestedEventType:
-			processingErr = c.processPaymentGatewayRequest(ctx, ds, body)
+		case kafka.PaymentRequestedEventType:
+			processingErr = c.processPaymentRequest(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown payment event type: %s", meta.Metadata.EventType)
 			// Mark as processed even for unknown events to avoid reprocessing
@@ -126,13 +127,13 @@ func (c *PaymentGatewayRequestConsumer) Handler(ctx context.Context, body []byte
 	})
 }
 
-// processPaymentGatewayRequest handles payment request events to create payment records.
-func (c *PaymentGatewayRequestConsumer) processPaymentGatewayRequest(
+// processPaymentRequest handles payment request events to create payment records.
+func (c *PaymentRequestConsumer) processPaymentRequest(
 	ctx context.Context,
 	ds repository.DataStore,
 	body []byte,
 ) error {
-	var evt PaymentGatewayRequestEvent
+	var evt PaymentRequestEvent
 	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment request event: %w", err)
 	}
@@ -180,35 +181,77 @@ func (c *PaymentGatewayRequestConsumer) processPaymentGatewayRequest(
 	}
 
 	// Create payment created event for the outbox
-	paymentEvt := NewPaymentLifecycleEvent(
+	paymentCreatedEvt := producer.NewPaymentLifecycleEvent(
+		savedPayment.ID,
 		savedPayment.OrderID,
 		constant.PaymentStatusPending,
 		savedPayment.Amount,
 	)
 
-	paymentEvtPayload, err := sonic.Marshal(paymentEvt)
+	paymentCreatedPayload, err := sonic.Marshal(paymentCreatedEvt)
 	if err != nil {
-		return fmt.Errorf("failed to marshal payment event: %w", err)
+		return fmt.Errorf("failed to marshal payment created event: %w", err)
 	}
 
-	outboxEvent := &entity.OutboxEvent{
+	createdOutboxEvent := &entity.OutboxEvent{
 		ID:            uuid.New(),
 		AggregateType: "payment",
 		AggregateID:   savedPayment.ID,
 		EventType:     kafka.PaymentCreatedEventType,
 		Topic:         kafka.PaymentLifecycleTopic,
-		Payload:       paymentEvtPayload,
+		Payload:       paymentCreatedPayload,
 		Status:        constant.OutboxStatusPending,
 		CreatedAt:     time.Now().UTC(),
 		ScheduledFor:  time.Now().UTC(),
 		Attempts:      0,
 	}
 
-	if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+	if err := outboxRepo.Create(ctx, createdOutboxEvent); err != nil {
 		return fmt.Errorf("failed to create payment created event: %w", err)
 	}
 
 	c.logger.Infof("Successfully created payment %s for order %s",
+		savedPayment.ID, evt.Payload.OrderID)
+
+	// This should be send payment request to payment gateway asynchronously handle by banking or payment gateway
+	// For now it set to completed
+
+	// Update payment status to completed
+	payment.Status = constant.PaymentStatusCompleted
+	if _, err := paymentRepo.Update(ctx, payment); err != nil {
+		return fmt.Errorf("failed to update payment status: %w", err)
+	}
+
+	paymentCompletedOutboxEvent := producer.NewPaymentLifecycleEvent(
+		savedPayment.ID,
+		savedPayment.OrderID,
+		constant.PaymentStatusCompleted,
+		savedPayment.Amount,
+	)
+
+	paymentCompletedPayload, err := sonic.Marshal(paymentCompletedOutboxEvent)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payment completed event: %w", err)
+	}
+
+	completedOutboxEvent := &entity.OutboxEvent{
+		ID:            uuid.New(),
+		AggregateType: "payment",
+		AggregateID:   savedPayment.ID,
+		EventType:     kafka.PaymentCompletedEventType,
+		Topic:         kafka.PaymentLifecycleTopic,
+		Payload:       paymentCompletedPayload,
+		Status:        constant.OutboxStatusPending,
+		CreatedAt:     time.Now().UTC(),
+		ScheduledFor:  time.Now().UTC(),
+		Attempts:      0,
+	}
+
+	if err := outboxRepo.Create(ctx, completedOutboxEvent); err != nil {
+		return fmt.Errorf("failed to create payment completed event: %w", err)
+	}
+
+	c.logger.Infof("Successfully completed payment %s for order %s",
 		savedPayment.ID, evt.Payload.OrderID)
 
 	return nil

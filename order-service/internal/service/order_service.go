@@ -23,7 +23,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
@@ -261,7 +261,7 @@ func (s *OrderService) CreateOrder(
 		s.logger.Infof("====5==== savedOrder: %v", savedOrder)
 
 		// Publish domain event
-		evt := mq.NewOrderLifecycleEvent(
+		evt := producer.NewOrderLifecycleEvent(
 			savedOrder.ID,
 			constant.OrderStatusPending,
 			savedOrder.CustomerID,
@@ -542,7 +542,7 @@ func (s *OrderService) UpdateOrderStatus(
 		}
 
 		// Publish domain event
-		evt := mq.NewOrderLifecycleEvent(
+		evt := producer.NewOrderLifecycleEvent(
 			updatedOrder.ID,
 			status,
 			updatedOrder.CustomerID,
@@ -631,7 +631,7 @@ func (s *OrderService) CancelOrder(
 		}
 
 		// Publish domain event
-		evt := mq.NewOrderLifecycleEvent(
+		evt := producer.NewOrderLifecycleEvent(
 			existingOrder.ID,
 			constant.OrderStatusCanceled,
 			updatedOrder.CustomerID,
@@ -651,7 +651,7 @@ func (s *OrderService) CancelOrder(
 	return nil
 }
 
-// RequestPaymentOrder initiates payment processing for an order by publishing a payment request mq.
+// RequestPaymentOrder initiates payment processing for an order by publishing a payment request producer.
 func (s *OrderService) RequestPaymentOrder(
 	ctx context.Context,
 	req dto.PayOrderRequest,
@@ -721,7 +721,7 @@ func (s *OrderService) RequestPaymentOrder(
 		}
 
 		// Publish payment request event to payment service
-		evt := mq.NewPaymentGatewayRequestEvent(
+		evt := producer.NewPaymentRequestEvent(
 			updatedOrder.ID,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
@@ -738,8 +738,8 @@ func (s *OrderService) RequestPaymentOrder(
 			ID:            uuid.New(),
 			AggregateType: "payment",
 			AggregateID:   updatedOrder.ID,
-			EventType:     kafka.PaymentGatewayRequestedEventType,
-			Topic:         kafka.PaymentGatewayRequestTopic,
+			EventType:     kafka.PaymentRequestedEventType,
+			Topic:         kafka.PaymentRequestTopic,
 			Payload:       payload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),

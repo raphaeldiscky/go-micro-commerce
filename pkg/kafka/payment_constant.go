@@ -1,15 +1,15 @@
 package kafka
 
 const (
-	// PaymentGatewayRequestTopic is the topic for payment events.
-	PaymentGatewayRequestTopic = "payment.request"
-	// PaymentLifecycleTopic is the topic for payment lifecycle events.
-	PaymentLifecycleTopic = "payment.lifecycle" // PaymentCreated, PaymentUpdated, PaymentCancelled, PaymentCompleted, PaymentShipped, PaymentDelivered
+	// PaymentRequestTopic is the topic for payment events.
+	PaymentRequestTopic = "payment.request"
+	// PaymentRequestedEventType is when payment is requested for an order (pending).
+	PaymentRequestedEventType = "PaymentRequested"
 )
 
 const (
-	// PaymentGatewayRequestedEventType is when payment is requested for an order (pending).
-	PaymentGatewayRequestedEventType = "PaymentGatewayRequested"
+	// PaymentLifecycleTopic is the topic for payment lifecycle events.
+	PaymentLifecycleTopic = "payment.lifecycle" // PaymentCreated, PaymentUpdated, PaymentCancelled, PaymentCompleted, PaymentShipped, PaymentDelivered
 	// PaymentCreatedEventType is the event type for payment created events.
 	PaymentCreatedEventType = "PaymentCreated"
 	// PaymentProcessingEventType is the event type for payment processing events.

@@ -32,6 +32,26 @@ func SetupKafkaConsumers(
 
 	consumers = append(consumers, ordersConsumer)
 
+	// Consumer for fulfillment request events
+	fulfillmentRequestConsumer, err := kafka.NewConsumer(
+		cfg.Brokers,
+		kafka.FulfillmentRequestTopic,
+		kafka.FulfillmentEventsConsumerGroup,
+		mq.NewFulfillmentRequestConsumer(
+			appLogger,
+			providers.DataStore,
+			providers.CarrierClient,
+		).Handler,
+		appLogger,
+	)
+	if err != nil {
+		appLogger.Errorf("failed to create fulfillment request consumer: %v", err)
+
+		return nil
+	}
+
+	consumers = append(consumers, fulfillmentRequestConsumer)
+
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
 	return consumers

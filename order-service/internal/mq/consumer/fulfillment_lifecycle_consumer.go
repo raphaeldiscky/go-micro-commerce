@@ -1,5 +1,5 @@
-// Package mq provides the event definitions and handlers for the order service.
-package mq
+// Package consumer provides the event definitions and handlers for the order service.
+package consumer
 
 import (
 	"context"
@@ -10,7 +10,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -23,18 +25,21 @@ type FulfillmentLifecycleEvent struct {
 
 // FulfillmentLifecycleConsumer handles the logic for processing fulfillment lifecycle events.
 type FulfillmentLifecycleConsumer struct {
-	logger    logger.Logger
-	datastore repository.DataStore
+	logger            logger.Logger
+	datastore         repository.DataStore
+	fulfillmentClient client.FulfillmentClientInterface
 }
 
 // NewFulfillmentLifecycleConsumer creates a new consumer for fulfillment lifecycle events.
 func NewFulfillmentLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
+	fulfillmentClient client.FulfillmentClientInterface,
 ) *FulfillmentLifecycleConsumer {
 	return &FulfillmentLifecycleConsumer{
-		logger:    appLogger,
-		datastore: ds,
+		logger:            appLogger,
+		datastore:         ds,
+		fulfillmentClient: fulfillmentClient,
 	}
 }
 
@@ -150,7 +155,16 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentCreated(
 
 	c.logger.Infof("Handling fulfillment created event for order ID: %s", evt.Payload.OrderID)
 
-	// No order status change needed for fulfillment creation
+	// Notify waiting saga with fulfillment response via client
+	response := &dto.FulfillmentResponse{
+		FulfillmentID:  evt.Payload.FulfillmentID,
+		TrackingNumber: evt.Payload.TrackingNumber,
+		Status:         evt.Payload.Status,
+		OrderID:        evt.Payload.OrderID,
+	}
+
+	c.fulfillmentClient.NotifyWaitingSaga(response)
+
 	return nil
 }
 

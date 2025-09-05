@@ -1,5 +1,4 @@
-// Package mq provides the event definitions and handlers for the order service.
-package mq
+package producer
 
 import (
 	"context"
@@ -11,43 +10,43 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 )
 
-// OrderDLQEvent is the envelope for all Order events.
-type OrderDLQEvent struct {
+// PaymentDLQEvent is the envelope for all Payment events.
+type PaymentDLQEvent struct {
 	Metadata event.Metadata   `json:"metadata"`
 	Payload  event.DLQPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the OrderDLQEvent.
-func (e *OrderDLQEvent) GetPayload() interface{} {
+// GetPayload returns the data associated with the PaymentDLQEvent.
+func (e *PaymentDLQEvent) GetPayload() interface{} {
 	return e.Payload
 }
 
-// GetMetadata returns the metadata associated with the OrderDLQEvent.
-func (e *OrderDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+// GetMetadata returns the metadata associated with the PaymentDLQEvent.
+func (e *PaymentDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
-// OrderDLQProducer is responsible for producing Order DLQ events.
-type OrderDLQProducer struct {
+// PaymentDLQProducer is responsible for producing Payment DLQ events.
+type PaymentDLQProducer struct {
 	Producer *kafka.AsyncProducer
 	topic    string
 }
 
-// NewOrderDLQEvent creates a new OrderDLQEvent.
-func NewOrderDLQEvent(
+// NewPaymentDLQEvent creates a new PaymentDLQEvent.
+func NewPaymentDLQEvent(
 	outboxEvent *entity.OutboxEvent,
 	reason pkgconstant.DLQReason,
-) *OrderDLQEvent {
-	return &OrderDLQEvent{
+) *PaymentDLQEvent {
+	return &PaymentDLQEvent{
 		Metadata: event.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
-			EventType:   kafka.OrderDLQEventType,
+			EventType:   kafka.PaymentDLQEventType,
 			AggregateID: outboxEvent.AggregateID,
 			OccurredAt:  time.Now().UTC(),
-			Source:      pkgconstant.OrderServiceName,
+			Source:      pkgconstant.PaymentServiceName,
 		},
 		Payload: event.DLQPayload{
 			OutboxEventID:   outboxEvent.ID,
@@ -65,20 +64,20 @@ func NewOrderDLQEvent(
 	}
 }
 
-// NewOrderDLQProducer creates a new instance of OrderDLQProducer.
-func NewOrderDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
-	return &OrderDLQProducer{
+// NewPaymentDLQProducer creates a new instance of PaymentDLQProducer.
+func NewPaymentDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+	return &PaymentDLQProducer{
 		Producer: producer,
-		topic:    kafka.OrderDLQTopic,
+		topic:    kafka.PaymentDLQTopic,
 	}
 }
 
 // Send implements the KafkaProducer interface.
-func (p *OrderDLQProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *PaymentDLQProducer) Send(ctx context.Context, evt event.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 
 // Topic returns the topic name.
-func (p *OrderDLQProducer) Topic() string {
+func (p *PaymentDLQProducer) Topic() string {
 	return p.topic
 }

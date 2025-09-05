@@ -19,7 +19,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/utils/redisutils"
 )
@@ -39,8 +39,8 @@ type PaymentServiceInterface interface {
 	) (*dto.PaymentResponse, error)
 	// GetPaymentByOrderID retrieves payment by order ID
 	GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*dto.PaymentResponse, error)
-	// HandleOrderPaymentGatewayRequested handles payment requests from order service
-	HandleOrderPaymentGatewayRequested(
+	// HandleOrderPaymentRequested handles payment requests from order service
+	HandleOrderPaymentRequested(
 		ctx context.Context,
 		orderID uuid.UUID,
 		amount decimal.Decimal,
@@ -110,8 +110,9 @@ func (s *PaymentService) CreatePayment(
 		}
 
 		// Publish payment created event
-		evt := mq.NewPaymentLifecycleEvent(
+		evt := producer.NewPaymentLifecycleEvent(
 			savedPayment.ID,
+			savedPayment.OrderID,
 			constant.PaymentStatusPending,
 			savedPayment.Amount,
 		)
@@ -232,8 +233,9 @@ func (s *PaymentService) ProcessPayment(
 		}
 
 		// Publish payment completion event
-		evt := mq.NewPaymentLifecycleEvent(
+		evt := producer.NewPaymentLifecycleEvent(
 			updatedPayment.ID,
+			updatedPayment.OrderID,
 			finalStatus,
 			updatedPayment.Amount,
 		)
@@ -295,8 +297,8 @@ func (s *PaymentService) GetPaymentByOrderID(
 	return mapper.MapToPaymentResponse(payment), nil
 }
 
-// HandleOrderPaymentGatewayRequested handles payment requests from order service.
-func (s *PaymentService) HandleOrderPaymentGatewayRequested(
+// HandleOrderPaymentRequested handles payment requests from order service.
+func (s *PaymentService) HandleOrderPaymentRequested(
 	ctx context.Context,
 	orderID uuid.UUID,
 	amount decimal.Decimal,

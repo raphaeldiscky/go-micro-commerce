@@ -1,5 +1,4 @@
-// Package mq provides the event definitions and handlers for the order service.
-package mq
+package consumer
 
 import (
 	"context"
@@ -10,31 +9,36 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
 // PaymentLifecycleEvent is the envelope for payment lifecycle events.
 type PaymentLifecycleEvent struct {
-	Metadata event.Metadata                     `json:"metadata"`
-	Payload  event.PaymentGatewayRequestPayload `json:"payload"`
+	Metadata event.Metadata                `json:"metadata"`
+	Payload  event.PaymentLifecyclePayload `json:"payload"`
 }
 
 // PaymentLifecycleConsumer handles the logic for processing payment lifecycle events.
 type PaymentLifecycleConsumer struct {
-	logger    logger.Logger
-	datastore repository.DataStore
+	logger        logger.Logger
+	datastore     repository.DataStore
+	paymentClient client.PaymentClientInterface
 }
 
 // NewPaymentLifecycleConsumer creates a new consumer for payment lifecycle events.
 func NewPaymentLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
+	paymentClient client.PaymentClientInterface,
 ) *PaymentLifecycleConsumer {
 	return &PaymentLifecycleConsumer{
-		logger:    appLogger,
-		datastore: ds,
+		logger:        appLogger,
+		datastore:     ds,
+		paymentClient: paymentClient,
 	}
 }
 
@@ -217,6 +221,17 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 
 	c.logger.Infof("Order %s status updated to paid", evt.Payload.OrderID)
 
+	// Notify waiting saga about payment completion
+	if c.paymentClient != nil {
+		response := &dto.PaymentResponse{
+			PaymentID: evt.Payload.PaymentID,
+			Status:    "completed",
+			OrderID:   evt.Payload.OrderID,
+			Error:     nil,
+		}
+		c.paymentClient.NotifyWaitingSaga(response)
+	}
+
 	return nil
 }
 
@@ -254,6 +269,17 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 	}
 
 	c.logger.Infof("Order %s status updated to failed", evt.Payload.OrderID)
+
+	// Notify waiting saga about payment failure
+	if c.paymentClient != nil {
+		response := &dto.PaymentResponse{
+			PaymentID: evt.Payload.PaymentID,
+			Status:    "failed",
+			OrderID:   evt.Payload.OrderID,
+			Error:     fmt.Errorf("payment failed"),
+		}
+		c.paymentClient.NotifyWaitingSaga(response)
+	}
 
 	return nil
 }
