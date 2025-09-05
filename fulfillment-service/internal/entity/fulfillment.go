@@ -72,6 +72,7 @@ func (f *Fulfillment) validate() error {
 func NewFulfillment(
 	orderID uuid.UUID,
 	trackingNumber string,
+	currency string,
 	shippingCost, weightKG decimal.Decimal,
 	estimatedDeliveryAt time.Time,
 ) (*Fulfillment, error) {
@@ -81,6 +82,7 @@ func NewFulfillment(
 		OrderID:             orderID,
 		Status:              constant.FulfillmentStatusPending,
 		TrackingNumber:      trackingNumber,
+		Currency:            currency,
 		ShippingCost:        shippingCost.Round(2),
 		WeightKG:            weightKG.Round(2),
 		EstimatedDeliveryAt: estimatedDeliveryAt,

@@ -20,14 +20,16 @@ import (
 
 // OutboxPublisher is responsible for publishing outbox events.
 type OutboxPublisher struct {
-	dataStore              repository.DataStore
-	logger                 logger.Logger
-	orderLifecycleProducer kafka.ProducerInterface
-	orderDLQProducer       kafka.ProducerInterface
-	paymentRequestProducer kafka.ProducerInterface
-	paymentDLQProducer     kafka.ProducerInterface
-	config                 config.OutboxPublisherConfig
-	eventRegistry          *kafka.EventRegistry
+	dataStore                  repository.DataStore
+	logger                     logger.Logger
+	orderLifecycleProducer     kafka.ProducerInterface
+	orderDLQProducer           kafka.ProducerInterface
+	paymentRequestProducer     kafka.ProducerInterface
+	paymentDLQProducer         kafka.ProducerInterface
+	fulfillmentRequestProducer kafka.ProducerInterface
+	fulfillmentDLQProducer     kafka.ProducerInterface
+	config                     config.OutboxPublisherConfig
+	eventRegistry              *kafka.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
@@ -38,18 +40,22 @@ func NewOutboxPublisher(
 	orderDLQProducer kafka.ProducerInterface,
 	paymentRequestProducer kafka.ProducerInterface,
 	paymentDLQProducer kafka.ProducerInterface,
+	fulfillmentRequestProducer kafka.ProducerInterface,
+	fulfillmentDLQProducer kafka.ProducerInterface,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
-		dataStore:              dataStore,
-		logger:                 appLogger,
-		orderLifecycleProducer: orderLifecycleProducer,
-		orderDLQProducer:       orderDLQProducer,
-		paymentRequestProducer: paymentRequestProducer,
-		paymentDLQProducer:     paymentDLQProducer,
-		config:                 cfg,
-		eventRegistry:          eventRegistry,
+		dataStore:                  dataStore,
+		logger:                     appLogger,
+		orderLifecycleProducer:     orderLifecycleProducer,
+		orderDLQProducer:           orderDLQProducer,
+		paymentRequestProducer:     paymentRequestProducer,
+		paymentDLQProducer:         paymentDLQProducer,
+		fulfillmentRequestProducer: fulfillmentRequestProducer,
+		fulfillmentDLQProducer:     fulfillmentDLQProducer,
+		config:                     cfg,
+		eventRegistry:              eventRegistry,
 	}
 }
 
@@ -148,6 +154,8 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 		selectedProducer = p.orderLifecycleProducer
 	case kafka.PaymentRequestTopic:
 		selectedProducer = p.paymentRequestProducer
+	case kafka.FulfillmentRequestTopic:
+		selectedProducer = p.fulfillmentRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
 	}
@@ -220,6 +228,9 @@ func (p *OutboxPublisher) handleProcessingError(
 	case kafka.PaymentRequestTopic:
 		dlqProducer = p.paymentDLQProducer
 		evt = producer.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
+	case kafka.FulfillmentRequestTopic:
+		dlqProducer = p.fulfillmentDLQProducer
+		evt = producer.NewFulfillmentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
 	default:
 		p.logger.Errorf("unknown topic for DLQ: %s, skipping DLQ send", outboxEvent.Topic)
 		// Don't send to any DLQ - just log and mark as failed

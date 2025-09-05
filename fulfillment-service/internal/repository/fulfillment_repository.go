@@ -65,11 +65,11 @@ func (r *FulfillmentRepositoryPostgres) Create(
 	query := `
 		INSERT INTO fulfillments (
 			id, order_id, status, tracking_number, carrier, 
-			shipping_label_url, shipping_cost, weight_kg, dimensions,
+			shipping_label_url, currency, shipping_cost, weight_kg, dimensions,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id, order_id, status, tracking_number, carrier,
-			shipping_label_url, shipping_cost, weight_kg, dimensions,
+			shipping_label_url, currency, shipping_cost, weight_kg, dimensions,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 	`
 
@@ -82,6 +82,7 @@ func (r *FulfillmentRepositoryPostgres) Create(
 		fulfillment.TrackingNumber,
 		fulfillment.Carrier,
 		fulfillment.ShippingLabelURL,
+		fulfillment.Currency,
 		fulfillment.ShippingCost,
 		fulfillment.WeightKG,
 		dimensionsJSON,
@@ -101,7 +102,7 @@ func (r *FulfillmentRepositoryPostgres) FindByID(
 ) (*entity.Fulfillment, error) {
 	query := `
 		SELECT id, order_id, status, tracking_number, carrier,
-			shipping_label_url, shipping_cost, weight_kg, dimensions,
+			shipping_label_url, currency, shipping_cost, weight_kg, dimensions,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 		FROM fulfillments
 		WHERE id = $1
@@ -119,7 +120,7 @@ func (r *FulfillmentRepositoryPostgres) FindByOrderID(
 ) (*entity.Fulfillment, error) {
 	query := `
 		SELECT id, order_id, status, tracking_number, carrier,
-			shipping_label_url, shipping_cost, weight_kg, dimensions,
+			shipping_label_url, currency, shipping_cost, weight_kg, dimensions,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 		FROM fulfillments
 		WHERE order_id = $1
@@ -137,7 +138,7 @@ func (r *FulfillmentRepositoryPostgres) FindByTrackingNumber(
 ) (*entity.Fulfillment, error) {
 	query := `
 		SELECT id, order_id, status, tracking_number, carrier,
-			shipping_label_url, shipping_cost, weight_kg, dimensions,
+			shipping_label_url, currency, shipping_cost, weight_kg, dimensions,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 		FROM fulfillments
 		WHERE tracking_number = $1
@@ -170,15 +171,16 @@ func (r *FulfillmentRepositoryPostgres) Update(
 			tracking_number = $4,
 			carrier = $5,
 			shipping_label_url = $6,
-			shipping_cost = $7,
-			weight_kg = $8,
-			dimensions = $9,
-			estimated_delivery_at = $10,
-			actual_delivery_at = $11,
-			updated_at = $12
+			currency = $7,
+			shipping_cost = $8,
+			weight_kg = $9,
+			dimensions = $10,
+			estimated_delivery_at = $11,
+			actual_delivery_at = $12,
+			updated_at = $13
 		WHERE id = $1
 		RETURNING id, order_id, status, tracking_number, carrier,
-			shipping_label_url, shipping_cost, weight_kg, dimensions,
+			shipping_label_url, currency, shipping_cost, weight_kg, dimensions,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 	`
 
@@ -191,6 +193,7 @@ func (r *FulfillmentRepositoryPostgres) Update(
 		fulfillment.TrackingNumber,
 		fulfillment.Carrier,
 		fulfillment.ShippingLabelURL,
+		fulfillment.Currency,
 		fulfillment.ShippingCost,
 		fulfillment.WeightKG,
 		dimensionsJSON,
@@ -241,6 +244,7 @@ func (r *FulfillmentRepositoryPostgres) scanFulfillment(row pgx.Row) (*entity.Fu
 		&fulfillment.TrackingNumber,
 		&fulfillment.Carrier,
 		&fulfillment.ShippingLabelURL,
+		&fulfillment.Currency,
 		&fulfillment.ShippingCost,
 		&fulfillment.WeightKG,
 		&dimensionsJSON,

@@ -17,4 +17,12 @@ const (
 	PaymentDLQTopicNumPartitions = 1
 	// PaymentDLQTopicReplicationFactor is the replication factor for the payment DLQ .
 	PaymentDLQTopicReplicationFactor = 1
+	// FulfillmentRequestTopicNumPartitions is the number of partitions for the fulfillment request .
+	FulfillmentRequestTopicNumPartitions = 3
+	// FulfillmentRequestTopicReplicationFactor is the replication factor for the fulfillment request .
+	FulfillmentRequestTopicReplicationFactor = 1
+	// FulfillmentDLQTopicNumPartitions is the number of partitions for the fulfillment DLQ .
+	FulfillmentDLQTopicNumPartitions = 1
+	// FulfillmentDLQTopicReplicationFactor is the replication factor for the fulfillment DLQ .
+	FulfillmentDLQTopicReplicationFactor = 1
 )

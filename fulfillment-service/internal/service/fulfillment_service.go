@@ -139,6 +139,7 @@ func (s *FulfillmentService) CreateFulfillment(
 		fulfillment, err := entity.NewFulfillment(
 			req.OrderID,
 			req.TrackingNumber,
+			req.Currency,
 			req.ShippingCost,
 			req.WeightKG,
 			req.EstimatedDeliveryAt,
