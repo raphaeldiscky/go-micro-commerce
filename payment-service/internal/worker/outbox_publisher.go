@@ -1,4 +1,4 @@
-package service
+package worker
 
 import (
 	"context"
@@ -11,38 +11,38 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mq"
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 )
 
 // OutboxPublisher is responsible for publishing outbox events.
 type OutboxPublisher struct {
-	dataStore                    repository.DataStore
-	logger                       logger.Logger
-	fulfillmentLifecycleProducer kafka.ProducerInterface
-	fulfillmentDLQProducer       kafka.ProducerInterface
-	config                       config.OutboxPublisherConfig
-	eventRegistry                *kafka.EventRegistry
+	dataStore                repository.DataStore
+	logger                   logger.Logger
+	paymentLifecycleProducer kafka.ProducerInterface
+	paymentDLQProducer       kafka.ProducerInterface
+	config                   config.OutboxPublisherConfig
+	eventRegistry            *kafka.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	fulfillmentLifecycleProducer kafka.ProducerInterface,
-	fulfillmentDLQProducer kafka.ProducerInterface,
+	paymentLifecycleProducer kafka.ProducerInterface,
+	paymentDLQProducer kafka.ProducerInterface,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
-		dataStore:                    dataStore,
-		logger:                       appLogger,
-		fulfillmentLifecycleProducer: fulfillmentLifecycleProducer,
-		fulfillmentDLQProducer:       fulfillmentDLQProducer,
-		config:                       cfg,
-		eventRegistry:                eventRegistry,
+		dataStore:                dataStore,
+		logger:                   appLogger,
+		paymentLifecycleProducer: paymentLifecycleProducer,
+		paymentDLQProducer:       paymentDLQProducer,
+		config:                   cfg,
+		eventRegistry:            eventRegistry,
 	}
 }
 
@@ -134,7 +134,7 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	}
 
 	// Publish to Kafka
-	if err := p.fulfillmentLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
+	if err := p.paymentLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
 		p.handleProcessingError(ctx, outboxEvent.ID, "failed to publish event to Kafka", err)
 
 		return err
@@ -190,8 +190,8 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ
-	evt := mq.NewFulfillmentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
-	if dlqErr := p.fulfillmentDLQProducer.Send(ctx, evt); dlqErr != nil {
+	evt := producer.NewPaymentDLQEvent(outboxEvent, pkgconstant.DLQReasonMaxRetriesExceeded)
+	if dlqErr := p.paymentDLQProducer.Send(ctx, evt); dlqErr != nil {
 		p.logger.Errorf("failed to move event to DLQ: %v", dlqErr)
 	}
 	// Mark as permanently failed in the database

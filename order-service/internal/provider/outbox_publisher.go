@@ -8,7 +8,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/worker"
 )
 
 // SetupOutboxPublisher initializes the outbox publisher service.
@@ -16,7 +16,7 @@ func SetupOutboxPublisher(
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *Providers,
-) *service.OutboxPublisher {
+) *worker.OutboxPublisher {
 	providers.KafkaAdmin.CreateTopic(
 		kafka.OrderLifecycleTopic,
 		constant.OrderLifecycleTopicNumPartitions,
@@ -92,7 +92,7 @@ func SetupOutboxPublisher(
 	notificationDLQProducer := producer.NewNotificationDLQProducer(asyncProducer)
 
 	// Create outbox publisher
-	outboxPublisher := service.NewOutboxPublisher(
+	outboxPublisher := worker.NewOutboxPublisher(
 		providers.DataStore,
 		appLogger,
 		orderLifecycleProducer,

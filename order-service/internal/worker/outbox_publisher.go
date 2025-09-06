@@ -1,4 +1,5 @@
-package service
+// Package worker provides the entry point for starting the background workers.
+package worker
 
 import (
 	"context"

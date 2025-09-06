@@ -6,19 +6,20 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mq"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/worker"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the fulfillment service.
 func SetupKafkaConsumers(
-	cfg *config.KafkaConfig,
+	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *Providers,
-) []kafka.Consumer {
+) *worker.KafkaConsumer {
 	var consumers []kafka.Consumer
 
 	// Consumer for order lifecycle events (order created, updated, deleted)
 	ordersConsumer, err := kafka.NewConsumer(
-		cfg.Brokers,
+		cfg.Kafka.Brokers,
 		kafka.OrderLifecycleTopic,
 		kafka.FulfillmentOrderEventsConsumerGroup,
 		mq.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
@@ -34,7 +35,7 @@ func SetupKafkaConsumers(
 
 	// Consumer for fulfillment request events
 	fulfillmentRequestConsumer, err := kafka.NewConsumer(
-		cfg.Brokers,
+		cfg.Kafka.Brokers,
 		kafka.FulfillmentRequestTopic,
 		kafka.FulfillmentEventsConsumerGroup,
 		mq.NewFulfillmentRequestConsumer(
@@ -54,5 +55,5 @@ func SetupKafkaConsumers(
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
-	return consumers
+	return worker.NewKafkaConsumer(cfg, appLogger, consumers)
 }
