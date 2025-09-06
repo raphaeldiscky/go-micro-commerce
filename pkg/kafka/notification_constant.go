@@ -10,7 +10,10 @@ const (
 	NotificationRequestedEventType = "NotificationRequested"
 )
 
-// Notification service consumer groups.
+// Consumer groups for Notification Service (consuming from other services).
 const (
-	NotificationServiceConsumerGroup = "notification-service.notification-events"
+	// ConsumerGroupNotificationUserEvents is the consumer group for user events.
+	ConsumerGroupNotificationUserEvents = "notification-service.user-events" // For user lifecycle
+	// ConsumerGroupNotificationOrderEvents is the consumer group for order events.
+	ConsumerGroupNotificationOrderEvents = "notification-service.order-events" // For order lifecycle
 )

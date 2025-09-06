@@ -10,36 +10,36 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/worker"
 )
 
-// KafkaConsumerWorker wraps the Kafka consumer server as a Worker.
-type KafkaConsumerWorker struct {
-	consumer *worker.KafkaConsumer
+// InboxProcessorWorker wraps the Kafka consumer server as a Worker.
+type InboxProcessorWorker struct {
+	consumer *worker.InboxProcessor
 	logger   logger.Logger
 }
 
-// NewKafkaConsumerWorker creates a new Kafka consumer worker.
-func NewKafkaConsumerWorker(
+// NewInboxProcessorWorker creates a new Kafka consumer worker.
+func NewInboxProcessorWorker(
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,
-) *KafkaConsumerWorker {
-	return &KafkaConsumerWorker{
-		consumer: provider.SetupKafkaConsumers(cfg, appLogger, providers),
+) *InboxProcessorWorker {
+	return &InboxProcessorWorker{
+		consumer: provider.SetupInboxProcessor(cfg, appLogger, providers),
 		logger:   appLogger,
 	}
 }
 
 // Name returns the name of the worker.
-func (w *KafkaConsumerWorker) Name() string {
-	return "Kafka Consumer"
+func (w *InboxProcessorWorker) Name() string {
+	return "Inbox Processor"
 }
 
 // Start starts the Kafka consumer server.
-func (w *KafkaConsumerWorker) Start(ctx context.Context) error {
+func (w *InboxProcessorWorker) Start(ctx context.Context) error {
 	// Start server in goroutine
 	errChan := make(chan error, 1)
 
 	go func() {
-		if err := w.consumer.Start(); err != nil {
+		if err := w.consumer.Start(ctx); err != nil {
 			errChan <- err
 		}
 	}()
@@ -54,6 +54,6 @@ func (w *KafkaConsumerWorker) Start(ctx context.Context) error {
 }
 
 // Shutdown gracefully shuts down the Kafka consumer worker.
-func (w *KafkaConsumerWorker) Shutdown(ctx context.Context) error {
+func (w *InboxProcessorWorker) Shutdown(ctx context.Context) error {
 	return w.consumer.Shutdown(ctx)
 }
