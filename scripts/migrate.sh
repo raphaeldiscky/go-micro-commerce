@@ -59,13 +59,14 @@ get_service_port() {
     "order-service") echo "35432" ;;
     "payment-service") echo "45432" ;;
     "fulfillment-service") echo "55432" ;;
+    "notification-service") echo "65432" ;;
     *) echo "" ;;
   esac
 }
 
 # Function to get all services
 get_all_services() {
-  echo "auth-service product-service order-service payment-service fulfillment-service" 
+  echo "auth-service product-service order-service payment-service fulfillment-service notification-service" 
 }
 
 # Function to run migration for a single service

@@ -27,7 +27,7 @@ func NewOrderSaga(activities OrderActivities, appLogger logger.Logger) *OrderSag
 	}
 }
 
-//nolint:funlen,revive // ConfigureSteps configures all steps for the order saga.
+//nolint:funlen,revive,gocyclo,cyclop // ConfigureSteps configures all steps for the order saga.
 func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 1: Reserve products
 	executor.AddStep(&Step{
@@ -50,10 +50,16 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			// Update the original order with new order items from the reservation, save in memory
 			order.Items = newOrder.Items
 
+			email, err := ctx.GetXEmail()
+			if err != nil {
+				return nil, err
+			}
+
 			return &StepResult{
 				Success: true,
 				Data: map[string]interface{}{
 					"reserved_products": reservedProducts,
+					"customer_email":    email,
 				},
 			}, nil
 		},
@@ -220,7 +226,21 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, fmt.Errorf("no tracking number found")
 			}
 
-			if err := s.activities.SendOrderConfirmation(ctx.Context(), order, trackingNumber); err != nil {
+			resevedProducts, ok := data["reserved_products"].([]entity.Product)
+			if !ok {
+				ctx.logger.Error("No reserved products found for notification")
+
+				return nil, fmt.Errorf("no reserved products found")
+			}
+
+			customerEmail, ok := data["customer_email"].(string)
+			if !ok {
+				ctx.logger.Error("No customer email found for notification")
+
+				return nil, fmt.Errorf("no customer email found")
+			}
+
+			if err := s.activities.SendOrderConfirmation(ctx.Context(), order, resevedProducts, trackingNumber, customerEmail); err != nil {
 				// Non-critical step, log but don't fail the saga
 				ctx.logger.Warnf("Failed to send notification: %v", err)
 			}

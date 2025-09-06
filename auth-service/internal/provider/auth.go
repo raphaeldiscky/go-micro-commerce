@@ -43,6 +43,7 @@ func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provid
 		providers.DataStore,
 		providers.JWTUtils,
 		providers.BcryptHasher,
+		cfg.Auth,
 		appLogger,
 		emailVerificationRequestedProducer,
 		userVerifiedProducer,

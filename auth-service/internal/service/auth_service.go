@@ -15,6 +15,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
@@ -56,6 +57,7 @@ type AuthService struct {
 	dataStore                          repository.DataStore
 	jwtUtils                           jwtutils.JWTInterface
 	hasher                             encryptutils.HasherInterface
+	authConfig                         *config.AuthConfig
 	logger                             logger.Logger
 	emailVerificationRequestedProducer kafka.ProducerInterface
 	userVerifiedProducer               kafka.ProducerInterface
@@ -66,6 +68,7 @@ func NewAuthService(
 	dataStore repository.DataStore,
 	jwtUtils jwtutils.JWTInterface,
 	hasher encryptutils.HasherInterface,
+	authConfig *config.AuthConfig,
 	appLogger logger.Logger,
 	emailVerificationRequestedProducer kafka.ProducerInterface,
 	userVerifiedProducer kafka.ProducerInterface,
@@ -74,6 +77,7 @@ func NewAuthService(
 		dataStore:                          dataStore,
 		jwtUtils:                           jwtUtils,
 		hasher:                             hasher,
+		authConfig:                         authConfig,
 		logger:                             appLogger,
 		emailVerificationRequestedProducer: emailVerificationRequestedProducer,
 		userVerifiedProducer:               userVerifiedProducer,
@@ -176,10 +180,12 @@ func (s *AuthService) Register(
 		// Publish email verification event
 		s.logger.Info("sending email verification event")
 
+		tokenExpiresAt := time.Now().Add(s.authConfig.VerificationTokenExpiration)
 		evt := mq.NewEmailVerificationRequestedEvent(
 			user.ID,
 			user.Email,
 			verificationToken,
+			tokenExpiresAt,
 		)
 
 		if err = s.emailVerificationRequestedProducer.Send(ctx, evt); err != nil {
@@ -561,6 +567,16 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 		return httperror.NewBadRequestError("email already verified")
 	}
 
+	// Check if token has expired
+	if user.EmailVerificationSentAt != nil {
+		tokenAge := time.Since(*user.EmailVerificationSentAt)
+		if tokenAge > s.authConfig.VerificationTokenExpiration {
+			s.logger.Warnf("verification token expired for user %s, age: %v", user.Email, tokenAge)
+
+			return httperror.NewBadRequestError("token expired")
+		}
+	}
+
 	// Verify email
 	if err := userRepo.VerifyEmail(ctx, user.ID); err != nil {
 		s.logger.Error("Failed to verify email", "error", err)
@@ -627,10 +643,12 @@ func (s *AuthService) ResendVerification(
 	// Publish email verification event
 	s.logger.Info("resending email verification event")
 
+	tokenExpiresAt := time.Now().Add(s.authConfig.VerificationTokenExpiration)
 	evt := mq.NewEmailVerificationRequestedEvent(
 		user.ID,
 		user.Email,
 		verificationToken,
+		tokenExpiresAt,
 	)
 
 	if err = s.emailVerificationRequestedProducer.Send(ctx, evt); err != nil {

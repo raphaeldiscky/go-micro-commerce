@@ -14,6 +14,7 @@ type Config struct {
 	HTTPServer *HTTPServerConfig
 	SMTP       *SMTPConfig
 	Kafka      *KafkaConfig
+	Postgres   *PostgresConfig
 	Consul     *ConsulConfig
 }
 
@@ -34,6 +35,7 @@ func LoadConfig() (*Config, error) {
 		Logger:     initLoggerConfig(),
 		SMTP:       initSMTPConfig(),
 		HTTPServer: initHTTPServerConfig(),
+		Postgres:   initPostgresConfig(),
 		Kafka:      initKafkaConfig(),
 		Consul:     initConsulConfig(),
 	}

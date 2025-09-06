@@ -33,6 +33,7 @@ func NewEmailVerificationRequestedEvent(
 	userID uuid.UUID,
 	email string,
 	token string,
+	tokenExpiresAt time.Time,
 ) *EmailVerificationRequestedEvent {
 	return &EmailVerificationRequestedEvent{
 		Metadata: event.Metadata{
@@ -43,9 +44,10 @@ func NewEmailVerificationRequestedEvent(
 			Source:      pkgconstant.AuthServiceName,
 		},
 		Payload: event.EmailVerificationRequestedPayload{
-			UserID: userID,
-			Email:  email,
-			Token:  token,
+			UserID:         userID,
+			Email:          email,
+			Token:          token,
+			TokenExpiresAt: tokenExpiresAt,
 		},
 	}
 }
