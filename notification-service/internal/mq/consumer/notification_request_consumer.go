@@ -52,7 +52,7 @@ func (c *NotificationRequestConsumer) Handler(ctx context.Context, body []byte) 
 
 	inboxEvent := entity.NewInboxEvent(
 		meta.Metadata.EventID,
-		"notification", // aggregate type
+		"notification", // from service
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
 		kafka.NotificationRequestTopic,

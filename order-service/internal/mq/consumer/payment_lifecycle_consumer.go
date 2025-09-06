@@ -60,7 +60,7 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
 		kafka.PaymentLifecycleTopic, // topic
-		"payment-service",           // source service
+		meta.Metadata.Source,
 		json.RawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available

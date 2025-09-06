@@ -12,8 +12,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
@@ -61,8 +59,8 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		"payment", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		kafka.PaymentRequestTopic,    // topic
-		pkgconstant.OrderServiceName, // source service
+		kafka.PaymentRequestTopic, // topic
+		meta.Metadata.Source,
 		json.RawMessage(body),
 		nil, // correlation_id
 		nil, // causation_id

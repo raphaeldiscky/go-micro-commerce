@@ -76,7 +76,7 @@ func (c *FulfillmentRequestConsumer) Handler(ctx context.Context, body []byte) e
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
 		kafka.FulfillmentRequestTopic, // topic
-		"order-service",               // source service
+		meta.Metadata.Source,
 		json.RawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available
