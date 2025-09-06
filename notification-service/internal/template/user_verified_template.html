@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Account Verified</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+      }
+      .order-details {
+        margin: 20px 0;
+      }
+      .total-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>✅ Account Verified</h1>
+    </div>
+
+    <div class="order-details">
+      <h2>Verification Complete</h2>
+      <p>Dear {{.RecipientName}},</p>
+      <p>
+        We are pleased to inform you that your account has been successfully
+        verified.
+      </p>
+      
+      <div class="total-section">
+        <h3>What's Next?</h3>
+        <p>You can now access all the features of our service.</p>
+        <p>Start exploring and enjoy your experience with us!</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Welcome to our platform!</p>
+      <p>
+        If you have any questions or need further assistance, please do not
+        hesitate to contact us.
+      </p>
+    </div>
+  </body>
+</html>

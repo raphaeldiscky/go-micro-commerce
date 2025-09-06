@@ -25,4 +25,12 @@ const (
 	FulfillmentDLQTopicNumPartitions = 1
 	// FulfillmentDLQTopicReplicationFactor is the replication factor for the fulfillment DLQ .
 	FulfillmentDLQTopicReplicationFactor = 1
+	//	NotificationRequestTopicNumPartitions is the number of partitions for the notification request .
+	NotificationRequestTopicNumPartitions
+	// NotificationRequestTopicReplicationFactor is the replication factor for the notification request .
+	NotificationRequestTopicReplicationFactor
+	// NotificationDLQTopicNumPartitions is the number of partitions for the notification DLQ .
+	NotificationDLQTopicNumPartitions
+	// NotificationDLQTopicReplicationFactor is the replication factor for the notification DLQ .
+	NotificationDLQTopicReplicationFactor
 )

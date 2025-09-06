@@ -5,19 +5,6 @@ import (
 	"github.com/shopspring/decimal"
 )
 
-// EmailVerificationRequestedPayload holds the data for the email verification requested event.
-type EmailVerificationRequestedPayload struct {
-	UserID uuid.UUID `json:"user_id"`
-	Email  string    `json:"email"`
-	Token  string    `json:"token"`
-}
-
-// UserVerifiedPayload holds the data for the user verified event.
-type UserVerifiedPayload struct {
-	UserID uuid.UUID `json:"user_id"`
-	Email  string    `json:"email"`
-}
-
 // PaymentRequestPayload holds the data for payment request events.
 type PaymentRequestPayload struct {
 	PaymentID     uuid.UUID       `json:"payment_id"`

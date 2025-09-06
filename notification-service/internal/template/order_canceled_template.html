@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Order Canceled</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+      }
+      .order-details {
+        margin: 20px 0;
+      }
+      .total-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>❌ Order Canceled</h1>
+      <p>Your order has been canceled, {{.RecipientName}}</p>
+    </div>
+
+    <div class="order-details">
+      <h2>Cancellation Details</h2>
+      {{if .OrderNumber}}
+      <p><strong>Canceled Order Number:</strong> {{.OrderNumber}}</p>
+      {{end}}
+      
+      <div class="total-section">
+        <h3>Refund Information</h3>
+        <p>
+          If you were charged for this order, the refund will be processed
+          within 3-5 business days to your original payment method.
+        </p>
+      </div>
+
+      <p>We apologize for any inconvenience this may have caused.</p>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for your understanding.</p>
+      <p>
+        If you have any questions about your cancellation, please contact our customer
+        service.
+      </p>
+    </div>
+  </body>
+</html>

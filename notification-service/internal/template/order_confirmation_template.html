@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Order Confirmation</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+      }
+      .order-details {
+        margin: 20px 0;
+      }
+      .items-table {
+        width: 100%%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      .items-table th,
+      .items-table td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+      .items-table th {
+        background-color: #f2f2f2;
+      }
+      .total-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>Order Confirmation</h1>
+      <p>Thank you for your order, {{.CustomerName}}!</p>
+    </div>
+
+    <div class="order-details">
+      <h2>Order Details</h2>
+      <p><strong>Order Number:</strong> {{.OrderNumber}}</p>
+      <p><strong>Order ID:</strong> {{.OrderID}}</p>
+      <p><strong>Order Date:</strong> {{.OrderDate}}</p>
+      <p><strong>Customer Email:</strong> {{.CustomerEmail}}</p>
+    </div>
+
+    <h3>Items Ordered</h3>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Items}}
+        <tr>
+          <td>{{.ProductName}}</td>
+          <td>{{.Quantity}}</td>
+          <td>{{.Currency}} {{.UnitPrice}}</td>
+          <td>{{.Currency}} {{.TotalPrice}}</td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+
+    <div class="total-section">
+      <p><strong>Subtotal:</strong> {{.Subtotal}}</p>
+      <p><strong>Shipping:</strong> {{.ShippingCost}}</p>
+      <p><strong>Tax:</strong> {{.TotalTax}}</p>
+      <p><strong>Discount:</strong> -{{.TotalDiscount}}</p>
+      <hr />
+      <h3><strong>Total:</strong> {{.TotalPrice}}</h3>
+    </div>
+    
+    {{if .Shipping}}
+    <div class="order-details">
+      <h3>Shipping Information</h3>
+      <p><strong>Tracking Number:</strong> {{.Shipping.TrackingNumber}}</p>
+      {{if .Shipping.EstimatedDelivery}}
+      <p><strong>Estimated Delivery:</strong> {{.Shipping.EstimatedDelivery}}</p>
+      {{end}}
+    </div>
+    {{end}}
+
+    <div class="footer">
+      <p>Thank you for shopping with us!</p>
+      <p>
+        If you have any questions about your order, please contact our customer
+        service.
+      </p>
+    </div>
+  </body>
+</html>

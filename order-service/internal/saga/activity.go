@@ -38,7 +38,12 @@ type OrderActivities interface {
 		order *entity.Order,
 		reservedProducts []entity.Product,
 	) error
-	SendOrderConfirmation(ctx context.Context, order *entity.Order, trackingNumber string) error
+	SendOrderConfirmation(
+		ctx context.Context,
+		order *entity.Order,
+		products []entity.Product,
+		trackingNumber, customerEmail string,
+	) error
 	// Compensation
 	ReleaseProducts(
 		ctx context.Context,
@@ -442,25 +447,69 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 
 // SendOrderConfirmation sends order confirmation to customer.
 func (a *OrderActivitiesImpl) SendOrderConfirmation(
-	_ context.Context,
+	ctx context.Context,
 	order *entity.Order,
-	trackingNumber string,
+	products []entity.Product,
+	trackingNumber, customerEmail string,
 ) error {
 	a.logger.Infof(
-		"Sending order confirmation for order: %s with tracking: %s",
+		"Sending order confirmation for order: %s with tracking: %s to email: %s",
 		order.ID,
 		trackingNumber,
+		customerEmail,
 	)
 
-	// In a real implementation, you would:
-	// 1. Send email to customer
-	// 2. Send SMS notification
-	// 3. Push notification to mobile app
-	// 4. Update customer notification preferences
+	// Create notification request event
+	err := a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
 
-	// For now, just log the confirmation
+		// Create order confirmation notification event
+		notificationEvent := producer.NewNotificationRequestEvent(
+			order,
+			products,
+			customerEmail,
+			"Customer Name", // TODO: Get actual customer name from user service if needed
+			trackingNumber,
+		)
+
+		payload, err := json.Marshal(notificationEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal notification event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create notification event: %w", err)
+		}
+
+		a.logger.Infof(
+			"Successfully created order confirmation notification for order: %s",
+			order.ID,
+		)
+
+		return nil
+	})
+	if err != nil {
+		a.logger.Errorf("Failed to create notification request for order %s: %v", order.ID, err)
+
+		return fmt.Errorf("failed to send order confirmation: %w", err)
+	}
+
 	a.logger.Infof(
-		"Order confirmation sent for order: %s with tracking: %s",
+		"Order confirmation notification queued for order: %s with tracking: %s",
 		order.ID,
 		trackingNumber,
 	)

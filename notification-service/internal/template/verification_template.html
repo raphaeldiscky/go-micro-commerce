@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Email Verification</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #f8f9fa;
+        padding: 20px;
+        text-align: center;
+      }
+      .order-details {
+        margin: 20px 0;
+      }
+      .total-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .verification-link {
+        background-color: #007bff;
+        color: white;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        margin: 20px 0;
+        font-weight: bold;
+      }
+      .verification-link:hover {
+        background-color: #0056b3;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #666;
+      }
+      .url-box {
+        word-break: break-all;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #007bff;
+        margin: 15px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🔐 Email Verification</h1>
+    </div>
+
+    <div class="order-details">
+      <h2>Verification Details</h2>
+      <p>Dear {{.RecipientName}},</p>
+      <p>
+        Thank you for registering with us! To complete your registration, please
+        verify your email address by clicking the button below:
+      </p>
+
+      <div style="text-align: center; margin: 30px 0">
+        <a href="{{.VerificationURL}}" class="verification-link"
+          >Verify Email Address</a
+        >
+      </div>
+
+      <p>Or copy and paste this link into your browser:</p>
+      <div class="url-box">{{.VerificationURL}}</div>
+
+      <div class="total-section">
+        <p>
+          <strong>⏰ Important:</strong> This verification link will expire in
+          {{.TokenExpiresAt}} minutes for security reasons.
+        </p>
+        <p>
+          If you did not create an account with us, please ignore this email.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Welcome to our service!</p>
+      <p>If you have any questions, please contact our customer service.</p>
+    </div>
+  </body>
+</html>

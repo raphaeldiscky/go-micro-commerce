@@ -119,12 +119,31 @@ services:
         limits:
           memory: 500m
 
+  postgres-notification:
+    image: postgres:17.5-alpine
+    container_name: postgres-notification
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_NAME=postgres
+      - POSTGRES_HOST=localhost
+    ports:
+      - "65432:5432"
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres-auth_data:
   postgres-product_data:
   postgres-order_data:
   postgres-payment_data:
   postgres-fulfillment_data:
+  postgres-notification_data:
 
 networks:
   go-micro-commerce:

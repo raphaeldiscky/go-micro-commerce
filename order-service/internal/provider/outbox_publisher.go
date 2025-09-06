@@ -47,6 +47,17 @@ func SetupOutboxPublisher(
 		constant.FulfillmentDLQTopicNumPartitions,
 		constant.FulfillmentDLQTopicReplicationFactor,
 	)
+	providers.KafkaAdmin.CreateTopic(
+		kafka.NotificationRequestTopic,
+		constant.NotificationRequestTopicNumPartitions,
+		constant.NotificationRequestTopicReplicationFactor,
+	)
+
+	providers.KafkaAdmin.CreateTopic(
+		kafka.NotificationDLQTopic,
+		constant.NotificationDLQTopicNumPartitions,
+		constant.NotificationDLQTopicReplicationFactor,
+	)
 
 	registry := kafka.NewEventRegistry()
 	// Create Kafka producer for outbox events
@@ -66,16 +77,19 @@ func SetupOutboxPublisher(
 	registry.Register(kafka.OrderCanceledEventType, &producer.OrderLifecycleEvent{})
 	registry.Register(kafka.PaymentRequestedEventType, &producer.PaymentRequestEvent{})
 	registry.Register(kafka.FulfillmentRequestedEventType, &producer.FulfillmentRequestEvent{})
+	registry.Register(kafka.NotificationRequestedEventType, &producer.NotificationRequestEvent{})
 
 	// Producers
 	orderLifecycleProducer := producer.NewOrderLifecycleProducer(asyncProducer)
 	paymentRequestProducer := producer.NewPaymentRequestProducer(asyncProducer)
 	fulfillmentRequestProducer := producer.NewFulfillmentRequestProducer(asyncProducer)
+	notificationRequestProducer := producer.NewNotificationRequestProducer(asyncProducer)
 
 	// DLQ
 	orderDLQProducer := producer.NewOrderDLQProducer(asyncProducer)
 	paymentDLQProducer := producer.NewPaymentDLQProducer(asyncProducer)
 	fulfillmentDLQProducer := producer.NewFulfillmentDLQProducer(asyncProducer)
+	notificationDLQProducer := producer.NewNotificationDLQProducer(asyncProducer)
 
 	// Create outbox publisher
 	outboxPublisher := service.NewOutboxPublisher(
@@ -87,6 +101,8 @@ func SetupOutboxPublisher(
 		paymentDLQProducer,
 		fulfillmentRequestProducer,
 		fulfillmentDLQProducer,
+		notificationRequestProducer,
+		notificationDLQProducer,
 		*cfg.OutboxPublisher,
 		registry,
 	)
