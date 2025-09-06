@@ -22,7 +22,7 @@ func SetupKafkaConsumers(
 	var consumers []kafka.Consumer
 
 	// Create template service with path to templates directory
-	templatesPath := filepath.Join("internal", "templates")
+	templatesPath := filepath.Join("internal", "template")
 	emailService := service.NewEmailService(templatesPath, mailer)
 
 	userVerificationConsumer, err := kafka.NewConsumer(
