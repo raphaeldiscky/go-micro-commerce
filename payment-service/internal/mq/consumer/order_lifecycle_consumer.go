@@ -56,8 +56,8 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		"order", // aggregate type
 		meta.Metadata.AggregateID,
 		meta.Metadata.EventType,
-		"order.lifecycle", // topic
-		"order-service",   // source service
+		kafka.OrderLifecycleTopic,
+		meta.Metadata.Source,
 		json.RawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available
