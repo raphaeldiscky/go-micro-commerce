@@ -9,13 +9,14 @@ import (
 
 // Config holds the application configuration.
 type Config struct {
-	App        *AppConfig
-	Logger     *LoggerConfig
-	HTTPServer *HTTPServerConfig
-	SMTP       *SMTPConfig
-	Kafka      *KafkaConfig
-	Postgres   *PostgresConfig
-	Consul     *ConsulConfig
+	App            *AppConfig
+	Logger         *LoggerConfig
+	HTTPServer     *HTTPServerConfig
+	SMTP           *SMTPConfig
+	Kafka          *KafkaConfig
+	Postgres       *PostgresConfig
+	Consul         *ConsulConfig
+	InboxProcessor *InboxProcessorConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -31,13 +32,14 @@ func LoadConfig() (*Config, error) {
 	}
 
 	cfg := &Config{
-		App:        initAppConfig(),
-		Logger:     initLoggerConfig(),
-		SMTP:       initSMTPConfig(),
-		HTTPServer: initHTTPServerConfig(),
-		Postgres:   initPostgresConfig(),
-		Kafka:      initKafkaConfig(),
-		Consul:     initConsulConfig(),
+		App:            initAppConfig(),
+		Logger:         initLoggerConfig(),
+		SMTP:           initSMTPConfig(),
+		HTTPServer:     initHTTPServerConfig(),
+		Postgres:       initPostgresConfig(),
+		Kafka:          initKafkaConfig(),
+		Consul:         initConsulConfig(),
+		InboxProcessor: initInboxProcessorConfig(),
 	}
 
 	return cfg, nil

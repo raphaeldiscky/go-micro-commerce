@@ -1,3 +1,4 @@
+// Package constant contains constants related to inbox events.
 package constant
 
 // InboxStatus represents the status of an inbox event.
