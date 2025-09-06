@@ -7,26 +7,33 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
 
+	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
+
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mq/consumer"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/worker"
 )
 
 // SetupKafkaConsumers initializes the Kafka consumers for the notification service.
 func SetupKafkaConsumers(
-	cfg *config.KafkaConfig,
+	cfg *config.Config,
 	appLogger logger.Logger,
-	mailer smtputils.Mailer,
-) []kafka.Consumer {
+) *worker.KafkaConsumer {
 	var consumers []kafka.Consumer
 
+	mailer := smtputils.NewMailer(&pkgconfig.SMTPConfig{
+		Host:  cfg.SMTP.Host,
+		Email: cfg.SMTP.Email,
+		Port:  cfg.SMTP.Port,
+	})
 	// Create template service with path to templates directory
 	templatesPath := filepath.Join("internal", "template")
 	emailService := service.NewEmailService(templatesPath, mailer)
 
 	userVerificationConsumer, err := kafka.NewConsumer(
-		cfg.Brokers,
+		cfg.Kafka.Brokers,
 		constant.TopicUserVerification,
 		constant.ConsumerGroupNotificationUserEvents,
 		consumer.NewUserVerificationConsumer(emailService, appLogger).Handler,
@@ -39,7 +46,7 @@ func SetupKafkaConsumers(
 	}
 
 	notificationRequestConsumer, err := kafka.NewConsumer(
-		cfg.Brokers,
+		cfg.Kafka.Brokers,
 		kafka.NotificationRequestTopic,
 		kafka.NotificationServiceConsumerGroup,
 		consumer.NewNotificationRequestConsumer(emailService, appLogger).Handler,
@@ -55,5 +62,5 @@ func SetupKafkaConsumers(
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
-	return consumers
+	return worker.NewKafkaConsumer(cfg, appLogger, consumers)
 }

@@ -1,3 +1,4 @@
+// Package worker provides the entry point for starting the worker services.
 package worker
 
 import (
@@ -7,13 +8,13 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/worker"
 )
 
 // KafkaConsumerWorker wraps the Kafka consumer server as a Worker.
 type KafkaConsumerWorker struct {
-	server *server.KafkaConsumerServer
-	logger logger.Logger
+	consumer *worker.KafkaConsumer
+	logger   logger.Logger
 }
 
 // NewKafkaConsumerWorker creates a new Kafka consumer worker.
@@ -23,8 +24,8 @@ func NewKafkaConsumerWorker(
 	providers *provider.Providers,
 ) *KafkaConsumerWorker {
 	return &KafkaConsumerWorker{
-		server: server.NewKafkaConsumerServer(cfg, appLogger, providers),
-		logger: appLogger,
+		consumer: provider.SetupKafkaConsumers(cfg, appLogger, providers),
+		logger:   appLogger,
 	}
 }
 
@@ -39,7 +40,7 @@ func (w *KafkaConsumerWorker) Start(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		if err := w.server.Start(); err != nil {
+		if err := w.consumer.Start(); err != nil {
 			errChan <- err
 		}
 	}()
@@ -55,5 +56,5 @@ func (w *KafkaConsumerWorker) Start(ctx context.Context) error {
 
 // Shutdown gracefully shuts down the Kafka consumer worker.
 func (w *KafkaConsumerWorker) Shutdown(ctx context.Context) error {
-	return w.server.Shutdown(ctx)
+	return w.consumer.Shutdown(ctx)
 }

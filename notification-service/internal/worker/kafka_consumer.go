@@ -1,5 +1,5 @@
-// Package server provides a Kafka server implementation for consuming messages from Kafka topics.
-package server
+// Package worker provides a Kafka worker implementation for consuming messages from Kafka topics.
+package worker
 
 import (
 	"context"
@@ -10,39 +10,39 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 )
 
-// KafkaConsumerServer represents a server for consuming messages from Kafka topics.
-type KafkaConsumerServer struct {
+// KafkaConsumer represents a worker for consuming messages from Kafka topics.
+type KafkaConsumer struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	logger    logger.Logger
+	config    *config.Config
 	consumers []kafka.Consumer
 	wg        sync.WaitGroup
 }
 
-// NewKafkaConsumerServer creates a new Kafka consumer server.
-func NewKafkaConsumerServer(
+// NewKafkaConsumer creates a new Kafka consumer worker.
+func NewKafkaConsumer(
 	cfg *config.Config,
 	appLogger logger.Logger,
-	providers *provider.Providers,
-) *KafkaConsumerServer {
+	consumers []kafka.Consumer,
+) *KafkaConsumer {
 	ctx, cancel := context.WithCancel(context.Background())
-	consumers := provider.SetupKafkaConsumers(cfg.Kafka, appLogger, providers)
 
-	return &KafkaConsumerServer{
+	return &KafkaConsumer{
 		ctx:       ctx,
+		config:    cfg,
 		cancel:    cancel,
 		logger:    appLogger,
 		consumers: consumers,
 	}
 }
 
-// Start begins the Kafka consumer server.
-func (s *KafkaConsumerServer) Start() error {
-	s.logger.Info("Running Kafka consumer server...")
+// Start begins the Kafka consumer worker.
+func (s *KafkaConsumer) Start() error {
+	s.logger.Info("Running Kafka consumer worker...")
 
 	for _, consumer := range s.consumers {
 		s.wg.Add(1)
@@ -62,14 +62,14 @@ func (s *KafkaConsumerServer) Start() error {
 		}(consumer)
 	}
 
-	s.logger.Info("Kafka server is running...")
+	s.logger.Info("Kafka worker is running...")
 
 	return nil
 }
 
-// Shutdown gracefully stops the Kafka consumer server.
-func (s *KafkaConsumerServer) Shutdown(ctx context.Context) error {
-	s.logger.Info("Attempting to shut down the Kafka server...")
+// Shutdown gracefully stops the Kafka consumer worker.
+func (s *KafkaConsumer) Shutdown(ctx context.Context) error {
+	s.logger.Info("Attempting to shut down the Kafka worker...")
 
 	// Cancel the internal context to signal all consumers to stop
 	s.cancel()
@@ -99,12 +99,12 @@ func (s *KafkaConsumerServer) Shutdown(ctx context.Context) error {
 	}
 
 	if len(closeErrors) > 0 {
-		s.logger.Errorf("Kafka server shutdown completed with %d errors", len(closeErrors))
+		s.logger.Errorf("Kafka worker shutdown completed with %d errors", len(closeErrors))
 
-		return fmt.Errorf("kafka server shutdown errors: %v", closeErrors)
+		return fmt.Errorf("kafka worker shutdown errors: %v", closeErrors)
 	}
 
-	s.logger.Info("Kafka server shut down completed successfully")
+	s.logger.Info("Kafka worker shut down completed successfully")
 
 	return nil
 }

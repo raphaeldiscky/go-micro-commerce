@@ -7,12 +7,12 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/worker"
 )
 
 // OutboxPublisherWorker wraps the outbox publisher as a Worker.
 type OutboxPublisherWorker struct {
-	publisher *service.OutboxPublisher
+	publisher *worker.OutboxPublisher
 	logger    logger.Logger
 	cancel    context.CancelFunc
 }
