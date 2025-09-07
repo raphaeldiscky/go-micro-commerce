@@ -168,7 +168,6 @@ func (s *ProductService) GetProducts(
 	cacheRepo := s.dataStore.CacheRepository()
 	productRepo := s.dataStore.ProductRepository()
 
-	s.logger.Debugf("====1====", req)
 	// Try cache first if available
 	cachedProducts, err := cacheRepo.GetProducts(ctx, req.Page, req.Limit)
 	if err == nil && cachedProducts != nil {
@@ -188,8 +187,6 @@ func (s *ProductService) GetProducts(
 		return res, metadata, nil
 	}
 
-	s.logger.Debugf("====2====", cachedProducts)
-
 	// Cache miss or unavailable, get from database
 	offset := pageutils.GetOffset(req.Page, req.Limit)
 
@@ -197,8 +194,6 @@ func (s *ProductService) GetProducts(
 	if err != nil {
 		return nil, nil, httperror.NewInternalServerError("failed to get products")
 	}
-
-	s.logger.Debugf("====3====", products)
 
 	res := make([]dto.ProductResponse, len(products))
 	for i, product := range products {
