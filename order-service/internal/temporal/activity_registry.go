@@ -10,34 +10,40 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
-// ValidateProducts is the global activity function.
-func ValidateProducts(ctx context.Context, order *entity.Order) error {
+// ReserveProductsAndCalculate is the global activity function.
+func ReserveProductsAndCalculate(
+	ctx context.Context,
+	order *entity.Order,
+) (dto.ReserveProductsAndCalculateResponse, error) {
+	activities, err := getActivitiesFromContext(ctx)
+	if err != nil {
+		return dto.ReserveProductsAndCalculateResponse{}, err
+	}
+
+	return activities.ReserveProductsAndCalculate(ctx, order)
+}
+
+// ProcessFulfillment is the global activity function.
+func ProcessFulfillment(
+	ctx context.Context,
+	order *entity.Order,
+) (dto.ProcessFulfillmentResponse, error) {
+	activities, err := getActivitiesFromContext(ctx)
+	if err != nil {
+		return dto.ProcessFulfillmentResponse{}, err
+	}
+
+	return activities.ProcessFulfillment(ctx, order)
+}
+
+// SetFinalOrderPrices is the global activity function.
+func SetFinalOrderPrices(ctx context.Context, req dto.SetFinalOrderPricesRequest) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return activities.ValidateProducts(ctx, order)
-}
-
-// ReserveProducts is the global activity function.
-func ReserveProducts(ctx context.Context, order *entity.Order) ([]entity.Product, error) {
-	activities, err := getActivitiesFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return activities.ReserveProducts(ctx, order)
-}
-
-// CalculatePricing is the global activity function.
-func CalculatePricing(ctx context.Context, order *entity.Order) (entity.OrderPricing, error) {
-	activities, err := getActivitiesFromContext(ctx)
-	if err != nil {
-		return entity.OrderPricing{}, err
-	}
-
-	return activities.CalculatePricing(ctx, order)
+	return activities.SetFinalOrderPrices(ctx, req)
 }
 
 // ProcessPayment is the global activity function.
@@ -51,23 +57,13 @@ func ProcessPayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
 }
 
 // ConfirmProductsDeduction is the global activity function.
-func ConfirmProductsDeduction(ctx context.Context, order *entity.Order) error {
+func ConfirmProductsDeduction(ctx context.Context, req dto.ConfirmProductsDeductionRequest) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return activities.ConfirmProductsDeduction(ctx, order)
-}
-
-// CreateShipping is the global activity function.
-func CreateShipping(ctx context.Context, order *entity.Order) (dto.CreateShippingResponse, error) {
-	activities, err := getActivitiesFromContext(ctx)
-	if err != nil {
-		return dto.CreateShippingResponse{}, err
-	}
-
-	return activities.CreateShipping(ctx, order)
+	return activities.ConfirmProductsDeduction(ctx, req)
 }
 
 // SendOrderConfirmation is the global activity function.

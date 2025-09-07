@@ -339,8 +339,8 @@ services:
       - HTTP_SERVER_PORT=8082
       - CONSUL_ADDRESS=consul:8500
       - SERVICE_ADDRESS=product-service # Container name for internal communication
-      - DB_HOST=postgres-product
-      - DB_PORT=5432
+      - POSTGRES_HOST=postgres-product
+      - POSTGRES_PORT=5432
       # ... other environment variables
     networks:
       - go-micro-commerce

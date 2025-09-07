@@ -3,6 +3,7 @@ include:
   - postgres.yaml
   - redis.yaml
   - kafka.yaml
+  - temporal.yaml
   - monitoring.yaml
   - security.yaml
   - dev-tools.yaml

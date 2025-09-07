@@ -8,7 +8,8 @@ import (
 
 // TemporalConfig holds the Temporal configuration.
 type TemporalConfig struct {
-	HostPort        string        `mapstructure:"TEMPORAL_HOST_PORT"`
+	APIKey          string        `mapstructure:"TEMPORAL_API_KEY"`
+	Address         string        `mapstructure:"TEMPORAL_ADDRESS"`
 	Namespace       string        `mapstructure:"TEMPORAL_NAMESPACE"`
 	TaskQueue       string        `mapstructure:"TEMPORAL_TASK_QUEUE"`
 	WorkerTimeout   time.Duration `mapstructure:"TEMPORAL_WORKER_TIMEOUT"`
@@ -21,7 +22,8 @@ func initTemporalConfig() *TemporalConfig {
 	setTemporalDefaults()
 
 	return &TemporalConfig{
-		HostPort:        viper.GetString("TEMPORAL_HOST_PORT"),
+		APIKey:          viper.GetString("TEMPORAL_API_KEY"),
+		Address:         viper.GetString("TEMPORAL_ADDRESS"), // host port
 		Namespace:       viper.GetString("TEMPORAL_NAMESPACE"),
 		TaskQueue:       viper.GetString("TEMPORAL_TASK_QUEUE"),
 		WorkerTimeout:   viper.GetDuration("TEMPORAL_WORKER_TIMEOUT"),
@@ -32,7 +34,7 @@ func initTemporalConfig() *TemporalConfig {
 
 // setTemporalDefaults sets default values for Temporal configuration.
 func setTemporalDefaults() {
-	viper.SetDefault("TEMPORAL_HOST_PORT", "localhost:7233")
+	viper.SetDefault("TEMPORAL_ADDRESS", "localhost:7233")
 	viper.SetDefault("TEMPORAL_NAMESPACE", "default")
 	viper.SetDefault("TEMPORAL_TASK_QUEUE", "order-saga-task-queue")
 	viper.SetDefault("TEMPORAL_WORKER_TIMEOUT", 30*time.Second)

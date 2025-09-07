@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -53,6 +54,7 @@ type ProductServiceInterface interface {
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
 	dataStore              repository.DataStore
+	logger                 logger.Logger
 	productCreatedProducer kafka.ProducerInterface
 	productUpdatedProducer kafka.ProducerInterface
 	productDeletedProducer kafka.ProducerInterface
@@ -61,12 +63,14 @@ type ProductService struct {
 // NewProductService creates a new instance of ProductService.
 func NewProductService(
 	dataStore repository.DataStore,
+	appLogger logger.Logger,
 	productCreatedProducer kafka.ProducerInterface,
 	productUpdatedProducer kafka.ProducerInterface,
 	productDeletedProducer kafka.ProducerInterface,
 ) ProductServiceInterface {
 	return &ProductService{
 		dataStore:              dataStore,
+		logger:                 appLogger,
 		productCreatedProducer: productCreatedProducer,
 		productUpdatedProducer: productUpdatedProducer,
 		productDeletedProducer: productDeletedProducer,

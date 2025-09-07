@@ -53,6 +53,7 @@ func InitializeProductService(cfg *config.Config, appLogger logger.Logger, provi
 
 	productService := service.NewProductService(
 		providers.DataStore,
+		appLogger,
 		productCreatedProducer,
 		productUpdatedProducer,
 		productDeletedProducer,

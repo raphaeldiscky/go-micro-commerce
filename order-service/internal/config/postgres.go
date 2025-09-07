@@ -8,29 +8,29 @@ import (
 
 // PostgresConfig holds the configuration for the PostgreSQL database.
 type PostgresConfig struct {
-	Host            string `mapstructure:"DB_HOST"`
-	Name            string `mapstructure:"DB_NAME"`
-	User            string `mapstructure:"DB_USER"`
-	Password        string `mapstructure:"DB_PASSWORD"`
-	SSLMode         string `mapstructure:"DB_SSL_MODE"`
-	Port            int    `mapstructure:"DB_PORT"`
-	MaxIdleConns    int    `mapstructure:"DB_MAX_IDLE_CONNS"`
-	MaxOpenConns    int    `mapstructure:"DB_MAX_OPEN_CONNS"`
-	MaxConnLifetime int    `mapstructure:"DB_CONN_MAX_LIFETIME"`
+	Host            string `mapstructure:"POSTGRES_HOST"`
+	Name            string `mapstructure:"POSTGRES_DB"`
+	User            string `mapstructure:"POSTGRES_USER"`
+	Password        string `mapstructure:"POSTGRES_PASSWORD"`
+	SSLMode         string `mapstructure:"POSTGRES_SSL_MODE"`
+	Port            int    `mapstructure:"POSTGRES_PORT"`
+	MaxIdleConns    int    `mapstructure:"POSTGRES_MAX_IDLE_CONNS"`
+	MaxOpenConns    int    `mapstructure:"POSTGRES_MAX_OPEN_CONNS"`
+	MaxConnLifetime int    `mapstructure:"POSTGRES_CONN_MAX_LIFETIME"`
 }
 
 // Config holds the application configuration.
 func initPostgresConfig() *PostgresConfig {
 	// Set defaults
-	viper.SetDefault("DB_HOST", "localhost")
-	viper.SetDefault("DB_PORT", 25432)
-	viper.SetDefault("DB_NAME", "postgres")
-	viper.SetDefault("DB_USER", "postgres")
-	viper.SetDefault("DB_PASSWORD", "postgres")
-	viper.SetDefault("DB_SSL_MODE", "disable")
-	viper.SetDefault("DB_MAX_IDLE_CONNS", 10)
-	viper.SetDefault("DB_MAX_OPEN_CONNS", 32)
-	viper.SetDefault("DB_CONN_MAX_LIFETIME", 60)
+	viper.SetDefault("POSTGRES_HOST", "localhost")
+	viper.SetDefault("POSTGRES_PORT", 25432)
+	viper.SetDefault("POSTGRES_DB", "order_db")
+	viper.SetDefault("POSTGRES_USER", "postgres")
+	viper.SetDefault("POSTGRES_PASSWORD", "postgres")
+	viper.SetDefault("POSTGRES_SSL_MODE", "disable")
+	viper.SetDefault("POSTGRES_MAX_IDLE_CONNS", 10)
+	viper.SetDefault("POSTGRES_MAX_OPEN_CONNS", 32)
+	viper.SetDefault("POSTGRES_CONN_MAX_LIFETIME", 60)
 
 	pgConfig := &PostgresConfig{}
 

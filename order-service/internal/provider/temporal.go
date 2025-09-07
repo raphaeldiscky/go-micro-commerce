@@ -37,19 +37,24 @@ func SetupTemporal(
 	}
 
 	// Create temporal activities and register them
+	// Note: Temporal activities use simplified approach for event handling
 	activities := temporal.NewTemporalActivities(
 		providers.DataStore,
 		productClient,
+		nil, // paymentRequestProducer - not needed for Temporal direct approach
+		nil, // orderLifecycleProducer - not needed for Temporal direct approach
+		nil, // fulfillmentRequestProducer - not needed for Temporal direct approach
+		providers.FulfillmentClient,
+		providers.PaymentClient,
 	)
 
 	// Register workflow and activities
 	temporalClient.Worker.RegisterWorkflow(temporal.OrderSagaWorkflow)
-	temporalClient.Worker.RegisterActivity(activities.ValidateProducts)
-	temporalClient.Worker.RegisterActivity(activities.ReserveProducts)
-	temporalClient.Worker.RegisterActivity(activities.CalculatePricing)
+	temporalClient.Worker.RegisterActivity(activities.ReserveProductsAndCalculate)
+	temporalClient.Worker.RegisterActivity(activities.ProcessFulfillment)
+	temporalClient.Worker.RegisterActivity(activities.SetFinalOrderPrices)
 	temporalClient.Worker.RegisterActivity(activities.ProcessPayment)
 	temporalClient.Worker.RegisterActivity(activities.ConfirmProductsDeduction)
-	temporalClient.Worker.RegisterActivity(activities.CreateShipping)
 	temporalClient.Worker.RegisterActivity(activities.SendOrderConfirmation)
 	temporalClient.Worker.RegisterActivity(activities.ReleaseProducts)
 	temporalClient.Worker.RegisterActivity(activities.RefundPayment)

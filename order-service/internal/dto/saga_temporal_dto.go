@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
@@ -14,8 +15,10 @@ type CreateShippingResponse struct {
 
 // SendOrderConfirmationRequest represents input for sending order confirmation.
 type SendOrderConfirmationRequest struct {
-	Order          *entity.Order `json:"order"`
-	TrackingNumber string        `json:"tracking_number"`
+	Order          *entity.Order    `json:"order"`
+	Products       []entity.Product `json:"products"`
+	TrackingNumber string           `json:"tracking_number"`
+	CustomerEmail  string           `json:"customer_email"`
 }
 
 // RefundPaymentGatewayRequest represents input for refunding payment.
@@ -48,5 +51,33 @@ type TemporalWorkflowState struct {
 	PaymentID        *uuid.UUID           `json:"payment_id"`
 	ShippingID       *uuid.UUID           `json:"shipping_id"`
 	TrackingNumber   *string              `json:"tracking_number"`
+	ShippingCost     *decimal.Decimal     `json:"shipping_cost"`
+	CustomerEmail    string               `json:"customer_email"`
 	CompletedSteps   map[string]bool      `json:"completed_steps"`
+}
+
+// ReserveProductsAndCalculateResponse represents the result of reserving products and calculating order.
+type ReserveProductsAndCalculateResponse struct {
+	CalculatedOrder  *entity.Order    `json:"calculated_order"`
+	ReservedProducts []entity.Product `json:"reserved_products"`
+	CustomerEmail    string           `json:"customer_email"`
+}
+
+// ProcessFulfillmentResponse represents the result of processing fulfillment.
+type ProcessFulfillmentResponse struct {
+	ShippingID     uuid.UUID       `json:"shipping_id"`
+	ShippingCost   decimal.Decimal `json:"shipping_cost"`
+	TrackingNumber string          `json:"tracking_number"`
+}
+
+// SetFinalOrderPricesRequest represents input for setting final order prices.
+type SetFinalOrderPricesRequest struct {
+	Order        *entity.Order   `json:"order"`
+	ShippingCost decimal.Decimal `json:"shipping_cost"`
+}
+
+// ConfirmProductsDeductionRequest represents input for confirming product deduction.
+type ConfirmProductsDeductionRequest struct {
+	Order            *entity.Order    `json:"order"`
+	ReservedProducts []entity.Product `json:"reserved_products"`
 }
