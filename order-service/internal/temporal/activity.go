@@ -3,28 +3,39 @@ package temporal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"go.temporal.io/sdk/activity"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
-// OrderActivities defines the interface for order saga activities.
+// OrderActivities defines the interface for order saga activities to match saga implementation.
 type OrderActivities interface {
 	// Execution
-	ValidateProducts(ctx context.Context, order *entity.Order) error
-	ReserveProducts(ctx context.Context, order *entity.Order) ([]entity.Product, error)
-	CalculatePricing(ctx context.Context, order *entity.Order) (entity.OrderPricing, error)
+	ReserveProductsAndCalculate(
+		ctx context.Context,
+		order *entity.Order,
+	) (dto.ReserveProductsAndCalculateResponse, error)
+	ProcessFulfillment(
+		ctx context.Context,
+		order *entity.Order,
+	) (dto.ProcessFulfillmentResponse, error)
+	SetFinalOrderPrices(ctx context.Context, req dto.SetFinalOrderPricesRequest) error
 	ProcessPayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
-	ConfirmProductsDeduction(ctx context.Context, order *entity.Order) error
-	CreateShipping(ctx context.Context, order *entity.Order) (dto.CreateShippingResponse, error)
+	ConfirmProductsDeduction(ctx context.Context, req dto.ConfirmProductsDeductionRequest) error
 	SendOrderConfirmation(ctx context.Context, req dto.SendOrderConfirmationRequest) error
 
 	// Compensation
@@ -36,58 +47,88 @@ type OrderActivities interface {
 
 // OrderActivitiesImpl implements order saga activities for Temporal workflows.
 type OrderActivitiesImpl struct {
-	dataStore     repository.DataStore
-	productClient client.ProductClientInterface
+	dataStore                  repository.DataStore
+	productClient              client.ProductClientInterface
+	paymentRequestProducer     kafka.ProducerInterface
+	orderLifecycleProducer     kafka.ProducerInterface
+	fulfillmentRequestProducer kafka.ProducerInterface
+	fulfillmentClient          client.FulfillmentClientInterface
+	paymentClient              client.PaymentClientInterface
 }
 
 // NewTemporalActivities creates a new OrderActivities instance.
 func NewTemporalActivities(
 	dataStore repository.DataStore,
 	productClient client.ProductClientInterface,
+	paymentRequestProducer kafka.ProducerInterface,
+	orderLifecycleProducer kafka.ProducerInterface,
+	fulfillmentRequestProducer kafka.ProducerInterface,
+	fulfillmentClient client.FulfillmentClientInterface,
+	paymentClient client.PaymentClientInterface,
 ) OrderActivities {
 	return &OrderActivitiesImpl{
-		dataStore:     dataStore,
-		productClient: productClient,
+		dataStore:                  dataStore,
+		productClient:              productClient,
+		paymentRequestProducer:     paymentRequestProducer,
+		orderLifecycleProducer:     orderLifecycleProducer,
+		fulfillmentRequestProducer: fulfillmentRequestProducer,
+		fulfillmentClient:          fulfillmentClient,
+		paymentClient:              paymentClient,
 	}
 }
 
-// ValidateProducts validates products for the order.
-func (ta *OrderActivitiesImpl) ValidateProducts(ctx context.Context, order *entity.Order) error {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Executing ValidateProducts", "orderID", order.ID)
-
-	for i := range order.Items {
-		item := &order.Items[i]
-		if item.Quantity <= 0 {
-			return fmt.Errorf("invalid quantity %d for product %s", item.Quantity, item.ProductID)
-		}
-	}
-
-	logger.Info("Product validation completed", "orderID", order.ID)
-
-	return nil
-}
-
-// ReserveProducts reserves products for the order.
-func (ta *OrderActivitiesImpl) ReserveProducts(
+// ReserveProductsAndCalculate reserves products for the order items and calculates order details.
+func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	ctx context.Context,
 	order *entity.Order,
-) ([]entity.Product, error) {
+) (dto.ReserveProductsAndCalculateResponse, error) {
 	logger := activity.GetLogger(ctx)
-	logger.Info("Executing ReserveProducts", "orderID", order.ID)
+	logger.Info("Executing ReserveProductsAndCalculate", "orderID", order.ID)
 
 	if ta.productClient == nil {
-		return nil, fmt.Errorf("product service is unavailable")
+		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+			"product service is unavailable",
+		)
+	}
+
+	productIDs := make([]uuid.UUID, len(order.Items))
+	for i := range order.Items {
+		productIDs[i] = order.Items[i].ProductID
+	}
+
+	products, err := ta.productClient.GetProducts(ctx, productIDs)
+	if err != nil {
+		return dto.ReserveProductsAndCalculateResponse{}, err
+	}
+
+	if len(products) != len(productIDs) {
+		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf("not all products found")
+	}
+
+	// Create product map for quick lookup
+	productMap := make(map[uuid.UUID]*entity.Product)
+	for i, product := range products {
+		productMap[product.ID] = &products[i]
 	}
 
 	// Prepare reservation items
-	reservationItems := make([]dto.ProductReservationItem, len(order.Items))
+	reservations := make([]dto.ProductReservationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		reservationItems[i] = dto.ProductReservationItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+		product, exists := productMap[item.ProductID]
+
+		if !exists {
+			return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+				"product %s not found",
+				item.ProductID,
+			)
+		}
+
+		reservations[i] = dto.ProductReservationItem{
+			ProductID:       item.ProductID,
+			Quantity:        item.Quantity,
+			ExpectedVersion: product.Version,
 		}
 	}
 
@@ -95,68 +136,61 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 	reservedProducts, err := ta.productClient.ReserveProducts(
 		ctx,
 		order.IdempotencyKey,
-		reservationItems,
+		reservations,
 	)
 	if err != nil {
-		logger.Error("Failed to reserve stock", "orderID", order.ID, "error", err)
+		logger.Error("Failed to reserve stock for order", "orderID", order.ID, "error", err)
 
-		return nil, fmt.Errorf("stock reservation failed: %w", err)
+		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+			"stock reservation failed: %w",
+			err,
+		)
 	}
 
-	logger.Info("Successfully reserved stock", "orderID", order.ID)
+	var orderItems []entity.OrderItem
 
-	return reservedProducts, nil
-}
+	for i, product := range reservedProducts {
+		orderItem, err := entity.NewOrderItem(
+			product.ID,
+			order.Items[i].Quantity,
+			product.UnitPrice,
+		)
+		if err != nil {
+			return dto.ReserveProductsAndCalculateResponse{}, err
+		}
 
-// CalculatePricing calculates pricing for the order.
-func (ta *OrderActivitiesImpl) CalculatePricing(
-	ctx context.Context,
-	order *entity.Order,
-) (entity.OrderPricing, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Executing CalculatePricing", "orderID", order.ID)
-
-	// Calculate subtotal
-	subtotal := decimal.NewFromInt(0)
-
-	for i := range order.Items {
-		// In a real implementation, this would come from product service
-		itemPrice := decimal.NewFromFloat(10.0) // Mock price
-		itemTotal := itemPrice.Mul(decimal.NewFromInt(order.Items[i].Quantity))
-		subtotal = subtotal.Add(itemTotal)
+		orderItems = append(orderItems, *orderItem)
 	}
 
-	// Calculate tax and discount
-	taxRate := decimal.NewFromFloat(0.1) // 10% tax
-	taxTotal := subtotal.Mul(taxRate)
-
-	discountTotal := decimal.NewFromInt(0)
-	if subtotal.GreaterThan(decimal.NewFromFloat(100.0)) {
-		discountTotal = subtotal.Mul(decimal.NewFromFloat(0.1)) // 10% discount
+	// Create calculated order entity
+	calculatedOrder, err := entity.NewOrder(
+		order.CustomerID,
+		order.IdempotencyKey,
+		"IDR",
+		orderItems,
+	)
+	if err != nil {
+		return dto.ReserveProductsAndCalculateResponse{}, err
 	}
 
-	totalPrice := subtotal.Add(taxTotal).Sub(discountTotal)
-
-	// Update order with calculated prices
-	order.TotalTax = taxTotal
-	order.TotalDiscount = discountTotal
-	order.TotalPrice = totalPrice
-
-	// Update order items with prices
-	for i := range order.Items {
-		order.Items[i].UnitPrice = decimal.NewFromFloat(10.0) // Mock price
+	// Get customer email from context
+	email, ok := ctx.Value(pkgconstant.CtxEmail).(string)
+	if !ok {
+		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+			"X-Email header not found in context",
+		)
 	}
 
-	logger.Info("Pricing calculated", "orderID", order.ID, "totalPrice", totalPrice.String())
+	logger.Info("Successfully reserved stock for order", "orderID", order.ID)
 
-	return entity.OrderPricing{
-		TotalPrice:    totalPrice,
-		TotalDiscount: discountTotal,
-		TotalTax:      taxTotal,
+	return dto.ReserveProductsAndCalculateResponse{
+		CalculatedOrder:  calculatedOrder,
+		ReservedProducts: reservedProducts,
+		CustomerEmail:    email,
 	}, nil
 }
 
-// ProcessPayment processes payment for the order using direct database operations.
+// ProcessPayment processes payment for the order.
 func (ta *OrderActivitiesImpl) ProcessPayment(
 	ctx context.Context,
 	order *entity.Order,
@@ -164,97 +198,257 @@ func (ta *OrderActivitiesImpl) ProcessPayment(
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing ProcessPayment", "orderID", order.ID)
 
-	// Generate a payment ID
-	paymentID := uuid.New()
-
-	// In Temporal, we can directly update the order status instead of using Kafka
+	// Step 1: Create and publish payment request event
 	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		orderRepo := ds.OrderRepository()
+		outboxRepo := ds.OutboxRepository()
 
-		// Update order status to processing payment
-		order.Status = "processing_payment"
+		logger.Info(
+			"Creating payment request",
+			"orderID",
+			order.ID,
+			"totalPrice",
+			order.TotalPrice.String(),
+		)
 
-		_, err := orderRepo.Update(ctx, order)
+		// Create payment request event
+		paymentEvent := producer.NewPaymentRequestEvent(
+			order.ID,
+			order.CustomerID,
+			order.TotalPrice,
+			"IDR",
+			constant.PaymentMethodCreditCard,
+		)
+
+		payload, err := json.Marshal(paymentEvent)
 		if err != nil {
-			return fmt.Errorf("failed to update order status: %w", err)
+			return fmt.Errorf("failed to marshal payment request event: %w", err)
 		}
 
-		// In a real implementation, you would:
-		// 1. Call external payment service
-		// 2. Store payment record in database
-		// 3. Handle payment response
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "payment",
+			AggregateID:   order.ID,
+			EventType:     kafka.PaymentRequestedEventType,
+			Topic:         kafka.PaymentRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
 
-		logger.Info("Payment processing initiated", "orderID", order.ID, "paymentID", paymentID)
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create payment request event: %w", err)
+		}
+
+		logger.Info("Successfully created payment request for order", "orderID", order.ID)
 
 		return nil
 	})
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("payment processing failed: %w", err)
+		logger.Error("Failed to publish payment request", "orderID", order.ID, "error", err)
+
+		return uuid.Nil, fmt.Errorf("failed to create payment request: %w", err)
 	}
 
-	return paymentID, nil
+	// Step 2: Wait for payment service response
+	logger.Info("Waiting for payment response", "orderID", order.ID)
+
+	response, err := ta.paymentClient.WaitForPaymentResponse(
+		ctx,
+		order.ID,
+		30*time.Second,
+	)
+	if err != nil {
+		logger.Error("Failed to receive payment response", "orderID", order.ID, "error", err)
+
+		return uuid.Nil, fmt.Errorf("failed to receive payment response: %w", err)
+	}
+
+	logger.Info(
+		"Successfully received payment response",
+		"orderID",
+		order.ID,
+		"paymentID",
+		response.PaymentID,
+		"status",
+		response.Status,
+	)
+
+	return response.PaymentID, nil
+}
+
+// ProcessFulfillment creates shipping/fulfillment arrangement for the order.
+func (ta *OrderActivitiesImpl) ProcessFulfillment(
+	ctx context.Context,
+	order *entity.Order,
+) (dto.ProcessFulfillmentResponse, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
+
+	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
+
+		// Create mock shipping address (in real implementation, this would come from order data)
+		shippingAddress := event.ShippingAddressPayload{
+			Street:     "123 Main Street",
+			City:       "Jakarta",
+			State:      "DKI Jakarta",
+			PostalCode: "12345",
+			Country:    "Indonesia",
+		}
+
+		// Create fulfillment request event
+		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order, &shippingAddress)
+
+		payload, err := json.Marshal(fulfillmentEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal fulfillment request event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "fulfillment",
+			AggregateID:   order.ID,
+			EventType:     kafka.FulfillmentRequestedEventType,
+			Topic:         kafka.FulfillmentRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create fulfillment request event: %w", err)
+		}
+
+		logger.Info("Successfully created fulfillment request", "orderID", order.ID)
+
+		return nil
+	})
+	if err != nil {
+		logger.Error("Failed to publish fulfillment request", "orderID", order.ID, "error", err)
+
+		return dto.ProcessFulfillmentResponse{}, fmt.Errorf(
+			"failed to create fulfillment request: %w",
+			err,
+		)
+	}
+
+	// Step 2: Wait for fulfillment service response
+	logger.Info("Waiting for fulfillment response", "orderID", order.ID)
+
+	response, err := ta.fulfillmentClient.WaitForFulfillmentResponse(
+		ctx,
+		order.ID,
+		30*time.Second,
+	)
+	if err != nil {
+		logger.Error("Failed to receive fulfillment response", "orderID", order.ID, "error", err)
+
+		return dto.ProcessFulfillmentResponse{}, fmt.Errorf(
+			"failed to receive fulfillment response: %w",
+			err,
+		)
+	}
+
+	logger.Info(
+		"Successfully received fulfillment response",
+		"orderID", order.ID,
+		"fulfillmentID", response.FulfillmentID,
+		"shippingCost", response.ShippingCost,
+		"trackingNumber", response.TrackingNumber,
+	)
+
+	return dto.ProcessFulfillmentResponse{
+		ShippingID:     response.FulfillmentID,
+		ShippingCost:   response.ShippingCost,
+		TrackingNumber: response.TrackingNumber,
+	}, nil
+}
+
+// SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
+func (ta *OrderActivitiesImpl) SetFinalOrderPrices(
+	ctx context.Context,
+	req dto.SetFinalOrderPricesRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing SetFinalOrderPrices", "orderID", req.Order.ID)
+
+	return ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		orderRepo := ds.OrderRepository()
+
+		// Update the original order with shipping cost
+		err := req.Order.UpdateShippingCost(req.ShippingCost)
+		if err != nil {
+			return err
+		}
+
+		// Update the order with calculated prices
+		updatedOrder, err := orderRepo.Update(ctx, req.Order)
+		if err != nil {
+			return fmt.Errorf("failed to update order prices: %w", err)
+		}
+
+		logger.Info(
+			"Successfully updated order with prices",
+			"orderID", updatedOrder.ID,
+			"totalPrice", updatedOrder.TotalPrice.String(),
+			"totalTax", updatedOrder.TotalTax.String(),
+			"totalDiscount", updatedOrder.TotalDiscount.String(),
+		)
+
+		return nil
+	})
 }
 
 // ConfirmProductsDeduction confirms stock deduction after successful payment.
 func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
 	ctx context.Context,
-	order *entity.Order,
+	req dto.ConfirmProductsDeductionRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
-	logger.Info("Executing ConfirmProductsDeduction", "orderID", order.ID)
+	logger.Info("Executing ConfirmProductsDeduction", "orderID", req.Order.ID)
 
 	if ta.productClient == nil {
 		return fmt.Errorf("product service is unavailable")
 	}
 
-	deductionItems := make([]dto.ProductReservationItem, len(order.Items))
+	for i := range req.Order.Items {
+		item := &req.Order.Items[i]
+		logger.Info(
+			"Confirming deduction of product",
+			"quantity", item.Quantity,
+			"productID", item.ProductID,
+			"orderID", req.Order.ID,
+		)
+	}
 
-	for i := range order.Items {
-		item := &order.Items[i]
+	deductionItems := make([]dto.ProductReservationItem, len(req.Order.Items))
+
+	for i := range req.Order.Items {
+		orderItem := &req.Order.Items[i]
+		product := &req.ReservedProducts[i]
 		deductionItems[i] = dto.ProductReservationItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+			ProductID:       orderItem.ProductID,
+			Quantity:        orderItem.Quantity,
+			ExpectedVersion: product.Version,
 		}
 	}
 
 	_, err := ta.productClient.ConfirmProductsDeduction(ctx, deductionItems)
 	if err != nil {
-		logger.Error("Failed to confirm stock deduction", "orderID", order.ID, "error", err)
+		logger.Error("Failed to confirm stock deduction", "orderID", req.Order.ID, "error", err)
 
 		return fmt.Errorf("stock confirmation failed: %w", err)
 	}
 
-	logger.Info("Successfully confirmed stock deduction", "orderID", order.ID)
+	logger.Info("Successfully confirmed stock deduction", "orderID", req.Order.ID)
 
 	return nil
-}
-
-// CreateShipping creates shipping for the order.
-func (ta *OrderActivitiesImpl) CreateShipping(
-	ctx context.Context,
-	order *entity.Order,
-) (dto.CreateShippingResponse, error) {
-	logger := activity.GetLogger(ctx)
-	logger.Info("Executing CreateShipping", "orderID", order.ID)
-
-	// In a real implementation, you would call a shipping service API
-	shippingID := uuid.New()
-	trackingNumber := fmt.Sprintf("TRK-%s-%d", order.ID.String()[:8], time.Now().Unix())
-
-	logger.Info(
-		"Successfully created shipping",
-		"orderID",
-		order.ID,
-		"shippingID",
-		shippingID,
-		"trackingNumber",
-		trackingNumber,
-	)
-
-	return dto.CreateShippingResponse{
-		ShippingID:     shippingID,
-		TrackingNumber: trackingNumber,
-	}, nil
 }
 
 // SendOrderConfirmation sends order confirmation to customer.
@@ -265,45 +459,196 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmation(
 	logger := activity.GetLogger(ctx)
 	logger.Info(
 		"Executing SendOrderConfirmation",
-		"orderID",
-		req.Order.ID,
-		"trackingNumber",
-		req.TrackingNumber,
+		"orderID", req.Order.ID,
+		"trackingNumber", req.TrackingNumber,
+		"customerEmail", req.CustomerEmail,
 	)
 
-	// In a real implementation, you would:
-	// 1. Send email to customer
-	// 2. Send SMS notification
-	// 3. Push notification to mobile app
-	// 4. Update notification preferences
+	// Create notification request event
+	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
 
-	// Update order status to completed
+		// Create order confirmation notification event
+		notificationEvent := producer.NewNotificationRequestEvent(
+			req.Order,
+			req.Products,
+			req.CustomerEmail,
+			"Customer Name", // TODO: Get actual customer name from user service if needed
+			req.TrackingNumber,
+		)
+
+		payload, err := json.Marshal(notificationEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal notification event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   req.Order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create notification event: %w", err)
+		}
+
+		logger.Info("Successfully created order confirmation notification", "orderID", req.Order.ID)
+
+		return nil
+	})
+	if err != nil {
+		logger.Error("Failed to create notification request", "orderID", req.Order.ID, "error", err)
+
+		return fmt.Errorf("failed to send order confirmation: %w", err)
+	}
+
+	logger.Info(
+		"Order confirmation notification queued",
+		"orderID", req.Order.ID,
+		"trackingNumber", req.TrackingNumber,
+	)
+
+	return nil
+}
+
+// Compensation Activities
+
+// ReleaseProducts releases reserved products.
+func (ta *OrderActivitiesImpl) ReleaseProducts(
+	ctx context.Context,
+	order *entity.Order,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing ReleaseProducts compensation", "orderID", order.ID)
+
+	if ta.productClient == nil {
+		return fmt.Errorf("product service is unavailable")
+	}
+
+	// Create reservation items for release
+	releaseItems := make([]dto.ProductReservationItem, len(order.Items))
+
+	for i := range order.Items {
+		item := &order.Items[i]
+		releaseItems[i] = dto.ProductReservationItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Release products using product service
+	if err := ta.productClient.ReleaseProducts(ctx, releaseItems); err != nil {
+		logger.Error("Failed to release products", "orderID", order.ID, "error", err)
+
+		return fmt.Errorf("product release failed: %w", err)
+	}
+
+	logger.Info("Successfully released products", "orderID", order.ID)
+
+	return nil
+}
+
+// RefundPayment refunds payment for the order.
+func (ta *OrderActivitiesImpl) RefundPayment(
+	ctx context.Context,
+	req dto.RefundPaymentGatewayRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info(
+		"Executing RefundPayment compensation",
+		"orderID",
+		req.Order.ID,
+		"paymentID",
+		req.PaymentID,
+	)
+
+	// For Temporal, handle refund by updating order status directly
+	// In real implementation, you would call payment service to process refund
 	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
-		req.Order.Status = "completed"
+		req.Order.Status = "refunded"
 		_, err := orderRepo.Update(ctx, req.Order)
 
 		return err
 	})
 	if err != nil {
 		logger.Error(
-			"Failed to update order status to completed",
+			"Failed to update order status to refunded",
 			"orderID",
 			req.Order.ID,
 			"error",
 			err,
 		)
 
-		return fmt.Errorf("failed to complete order: %w", err)
+		return fmt.Errorf("failed to process refund: %w", err)
 	}
 
 	logger.Info(
-		"Order confirmation sent",
+		"Successfully refunded payment",
 		"orderID",
 		req.Order.ID,
-		"trackingNumber",
-		req.TrackingNumber,
+		"paymentID",
+		req.PaymentID,
 	)
+
+	return nil
+}
+
+// RestoreProducts restores deducted products.
+func (ta *OrderActivitiesImpl) RestoreProducts(
+	ctx context.Context,
+	order *entity.Order,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing RestoreProducts compensation", "orderID", order.ID)
+
+	if ta.productClient == nil {
+		return fmt.Errorf("product service is unavailable")
+	}
+
+	// Create restoration items
+	restorationItems := make([]dto.ProductRestorationItem, len(order.Items))
+
+	for i := range order.Items {
+		item := &order.Items[i]
+		restorationItems[i] = dto.ProductRestorationItem{
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+		}
+	}
+
+	// Restore products using product service
+	_, err := ta.productClient.RestoreProducts(ctx, restorationItems)
+	if err != nil {
+		logger.Error("Failed to restore products", "orderID", order.ID, "error", err)
+
+		return fmt.Errorf("product restore failed: %w", err)
+	}
+
+	logger.Info("Successfully restored products", "orderID", order.ID)
+
+	return nil
+}
+
+// CancelShipping cancels shipping for the order.
+func (ta *OrderActivitiesImpl) CancelShipping(
+	ctx context.Context,
+	shippingID uuid.UUID,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing CancelShipping compensation", "shippingID", shippingID)
+
+	// For Temporal, we simulate shipping cancellation
+	// In real implementation, you would call fulfillment service to cancel shipping
+	logger.Info("Shipping canceled successfully", "shippingID", shippingID)
 
 	return nil
 }

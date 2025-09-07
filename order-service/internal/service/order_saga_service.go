@@ -51,14 +51,10 @@ func (s *OrderService) CreateOrderWithSaga(
 		orderRepo := ds.OrderRepository()
 		stateRepo := ds.SagaStateRepository()
 
-		s.logger.Debugf("====SERVICE 0====, req: %v", req)
-		// Check for existing order and handle accordingly
 		existingRes, shouldReturn, err := s.handleExistingOrder(ctx, req, orderRepo, stateRepo)
 		if err != nil {
 			return err
 		}
-
-		s.logger.Debugf("====SERVICE 0.1====, existingRes: %v", existingRes)
 
 		if shouldReturn {
 			res = existingRes
@@ -79,8 +75,6 @@ func (s *OrderService) CreateOrderWithSaga(
 			}
 		}
 
-		s.logger.Debugf("====SERVICE 1====, orderItems: %v", orderItems)
-
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return fmt.Errorf("failed to create order entity: %w", err)
@@ -90,16 +84,12 @@ func (s *OrderService) CreateOrderWithSaga(
 			return fmt.Errorf("failed to update order status: %w", err)
 		}
 
-		s.logger.Debugf("====SERVICE 2====, newOrder: %v", newOrder)
-
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
 			s.logger.Errorf("failed to save order: %v", err)
 
 			return fmt.Errorf("failed to save order: %w", err)
 		}
-
-		s.logger.Debugf("====SERVICE 2.1====, savedOrder: %v", savedOrder)
 
 		res = mapper.MapToOrderResponse(savedOrder)
 
@@ -108,8 +98,6 @@ func (s *OrderService) CreateOrderWithSaga(
 	if err != nil {
 		return nil, err
 	}
-
-	s.logger.Debugf("====SERVICE 3====, res: %v", res)
 
 	return s.executeSagaWorkflow(ctx, res)
 }

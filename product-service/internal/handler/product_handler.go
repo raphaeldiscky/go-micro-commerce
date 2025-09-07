@@ -69,6 +69,8 @@ func (h *ProductHandler) GetProduct(c echo.Context) error {
 
 // GetProducts handles GET /products.
 func (h *ProductHandler) GetProducts(c echo.Context) error {
+	h.logger.Debugf("====HANDLER 1====")
+
 	var req dto.GetProductsRequest
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
@@ -93,6 +95,8 @@ func (h *ProductHandler) GetProducts(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	h.logger.Debugf("====HANDLER 2====")
 
 	paging.Links = pageutils.NewLinks(
 		c.Request(),

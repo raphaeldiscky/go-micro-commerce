@@ -1,12 +1,11 @@
 services:
   postgres-auth:
     image: postgres:17.5-alpine
-    container_name: postgres-auth
+    container_name: postgres_auth
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_HOST=localhost
+      - POSTGRES_DB=auth_db
     ports:
       - "15432:5432"
     networks:
@@ -17,7 +16,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres-auth_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -25,12 +24,11 @@ services:
 
   postgres-product:
     image: postgres:17.5-alpine
-    container_name: postgres-product
+    container_name: postgres_product
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_HOST=localhost
+      - POSTGRES_DB=product_db
     ports:
       - "25432:5432"
     networks:
@@ -41,7 +39,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres-product_data:/var/lib/postgresql/data
+      - postgres_product_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -49,12 +47,11 @@ services:
 
   postgres-order:
     image: postgres:17.5-alpine
-    container_name: postgres-order
+    container_name: postgres_order
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_HOST=localhost
+      - POSTGRES_DB=order_db
     ports:
       - "35432:5432"
     networks:
@@ -65,7 +62,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres-order_data:/var/lib/postgresql/data
+      - postgres_order_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -73,12 +70,11 @@ services:
 
   postgres-payment:
     image: postgres:17.5-alpine
-    container_name: postgres-payment
+    container_name: postgres_payment
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_HOST=localhost
+      - POSTGRES_DB=payment_db
     ports:
       - "45432:5432"
     networks:
@@ -89,7 +85,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres-payment_data:/var/lib/postgresql/data
+      - postgres_payment_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -97,12 +93,11 @@ services:
 
   postgres-fulfillment:
     image: postgres:17.5-alpine
-    container_name: postgres-fulfillment
+    container_name: postgres_fulfillment
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_HOST=localhost
+      - POSTGRES_DB=fulfillment_db
     ports:
       - "55432:5432"
     networks:
@@ -113,7 +108,7 @@ services:
       timeout: 5s
       retries: 5
     volumes:
-      - postgres-fulfillment_data:/var/lib/postgresql/data
+      - postgres_fulfillment_data:/var/lib/postgresql/data
     deploy:
       resources:
         limits:
@@ -121,12 +116,11 @@ services:
 
   postgres-notification:
     image: postgres:17.5-alpine
-    container_name: postgres-notification
+    container_name: postgres_notification
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
-      - POSTGRES_NAME=postgres
-      - POSTGRES_HOST=localhost
+      - POSTGRES_DB=notification_db
     ports:
       - "65432:5432"
     networks:
@@ -138,12 +132,12 @@ services:
       retries: 5
 
 volumes:
-  postgres-auth_data:
-  postgres-product_data:
-  postgres-order_data:
-  postgres-payment_data:
-  postgres-fulfillment_data:
-  postgres-notification_data:
+  postgres_auth_data:
+  postgres_product_data:
+  postgres_order_data:
+  postgres_payment_data:
+  postgres_fulfillment_data:
+  postgres_notification_data:
 
 networks:
   go-micro-commerce:

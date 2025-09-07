@@ -1,0 +1,70 @@
+services:
+  temporal:
+    container_name: temporal
+    image: temporalio/auto-setup:1.26.3
+    ports:
+      - "7233:7233"
+    environment:
+      - DB=postgres12_pgx
+      - DB_PORT=5432
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PWD=postgres
+      - POSTGRES_DB=temporal_db
+      - POSTGRES_SEEDS=postgres-temporal
+      - DYNAMIC_CONFIG_FILE_PATH=/etc/temporal/config/dynamicconfig/development-sql.yaml
+    volumes:
+      - ./temporal:/etc/temporal/config/dynamicconfig
+    depends_on:
+      postgres-temporal:
+        condition: service_healthy
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        ["CMD", "temporal", "workflow", "list", "--address", "localhost:7233"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  temporal-ui:
+    container_name: temporal-ui
+    image: temporalio/ui:latest
+    ports:
+      - "8088:8080"
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    depends_on:
+      - temporal
+    networks:
+      - go-micro-commerce
+
+  postgres-temporal:
+    container_name: postgres-temporal
+    image: postgres:17.5-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: temporal_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_temporal_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - go-micro-commerce
+
+volumes:
+  postgres_temporal_data:
+
+networks:
+  go-micro-commerce:
+    name: go-micro-commerce
+    external: true

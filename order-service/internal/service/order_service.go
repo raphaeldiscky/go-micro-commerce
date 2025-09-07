@@ -342,7 +342,6 @@ func (s *OrderService) CreateOrderWithTemporal(
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 
-		// Check for existing order with same idempotency key
 		existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
 		if err != nil {
 			return err
@@ -354,34 +353,27 @@ func (s *OrderService) CreateOrderWithTemporal(
 			return nil
 		}
 
-		// Create order items
-		var orderItems []entity.OrderItem
-
-		for _, item := range req.Items {
-			// For temporal workflow, we use minimal price as it will be set by pricing activity
-			orderItem, err := entity.NewOrderItem(
-				item.ProductID,
-				item.Quantity,
-				decimal.NewFromFloat(
-					0.01,
-				), // Minimal price to pass validation, will be updated by pricing activity
-			)
-			if err != nil {
-				return err
+		orderItems := make([]entity.OrderItem, len(req.Items))
+		for i := range req.Items {
+			orderItems[i] = entity.OrderItem{
+				ID:        uuid.New(),
+				ProductID: req.Items[i].ProductID,
+				Quantity:  req.Items[i].Quantity,
+				UnitPrice: decimal.Zero, // Will be set by Temporal workflows
+				CreatedAt: time.Now().UTC(),
+				UpdatedAt: time.Now().UTC(),
 			}
-			// Reset total price to zero for temporal workflow
-			orderItem.UnitPrice = decimal.Zero
-			orderItem.TotalPrice = decimal.Zero
-			orderItems = append(orderItems, *orderItem)
 		}
 
-		// Create new order entity
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to create order entity: %w", err)
 		}
 
-		// Save order to database
+		if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
+			return fmt.Errorf("failed to update order status: %w", err)
+		}
+
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
 			return err

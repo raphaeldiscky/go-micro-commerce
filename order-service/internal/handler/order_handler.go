@@ -110,6 +110,12 @@ func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
 		return err
 	}
 
+	if order.Status == constant.OrderStatusProcessing {
+		mapped := mapper.MapToOrderSagaResponse(order)
+
+		return echoutils.ResponseCreated(c, mapped)
+	}
+
 	return echoutils.ResponseCreated(c, order)
 }
 

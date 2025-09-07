@@ -20,6 +20,7 @@ vars:
         -f {{.DC_DIR}}/security.yaml \
         -f {{.DC_DIR}}/dev-tools.yaml \
         -f {{.DC_DIR}}/api-gateway.yaml \
+        -f {{.DC_DIR}}/temporal.yaml \
         -f {{.DC_DIR}}/apps.yaml \
         -f {{.DC_DIR}}/dev.yaml"
 

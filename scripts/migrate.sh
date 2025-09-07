@@ -41,17 +41,7 @@ if [ "$COMMAND" = "force" ] && [ -z "$VERSION" ]; then
   exit 1
 fi
 
-# Default environment variables
-DB_HOST="${DB_HOST:-localhost}"
-DB_USER="${DB_USER:-postgres}"
-DB_PASS="${DB_PASS:-postgres}"
-DB_NAME="${DB_NAME:-postgres}"
-SSL_MODE="${SSL_MODE:-disable}"
 
-# Postgres path
-POSTGRES_MIGRATION_PATH="db/migrations"
-
-# Function to get port for service
 get_service_port() {
   case "$1" in
     "auth-service") echo "15432" ;;
@@ -64,6 +54,30 @@ get_service_port() {
   esac
 }
 
+get_service_db_name() {
+  case "$1" in
+    "auth-service") echo "auth_db" ;;
+    "product-service") echo "product_db" ;;
+    "order-service") echo "order_db" ;;
+    "payment-service") echo "payment_db" ;;
+    "fulfillment-service") echo "fulfillment_db" ;;
+    "notification-service") echo "notification_db" ;;
+    *) echo "" ;;
+  esac
+}
+
+# Default environment variables
+POSTGRES_HOST="${POSTGRES_HOST:-localhost}"
+POSTGRES_USER="${POSTGRES_USER:-postgres}"
+POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
+POSTGRES_SSL_MODE="${POSTGRES_SSL_MODE:-disable}"
+
+# Postgres path
+POSTGRES_MIGRATION_PATH="db/migrations"
+
+# Function to get port for service
+
+
 # Function to get all services
 get_all_services() {
   echo "auth-service product-service order-service payment-service fulfillment-service notification-service" 
@@ -73,6 +87,7 @@ get_all_services() {
 run_migration_for_service() {
   svc=$1
   port=$(get_service_port "$svc")
+  db_name=$(get_service_db_name "$svc")
   
   if [ -z "$port" ]; then
     echo "Unknown service: '$svc'"
@@ -87,12 +102,12 @@ run_migration_for_service() {
     return 0
   fi
 
-  database_url="postgres://${DB_USER}:${DB_PASS}@${DB_HOST}:${port}/${DB_NAME}?sslmode=${SSL_MODE}"
+  database_url="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${port}/${db_name}?sslmode=${POSTGRES_SSL_MODE}"
 
   echo "----------------------------------------"
   echo "Running '$COMMAND' migrations for $svc"
   echo "Migrations directory: $migrations_dir"
-  echo "Database URL: postgres://${DB_USER}:***@${DB_HOST}:${port}/${DB_NAME}?sslmode=${SSL_MODE}"
+  echo "Database URL: postgres://${POSTGRES_USER}:***@${POSTGRES_HOST}:${port}/${db_name}?sslmode=${POSTGRES_SSL_MODE}"
   
   case "$COMMAND" in
     "up")

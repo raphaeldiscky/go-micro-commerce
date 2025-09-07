@@ -22,18 +22,21 @@ type TemporalClient struct {
 // NewTemporalClient creates and configures a Temporal client.
 func NewTemporalClient(
 	cfg *config.TemporalConfig,
-	_ logger.Logger,
+	appLogger logger.Logger,
 ) (*TemporalClient, error) {
-	// Create Temporal client
-	temporalClient, err := client.Dial(client.Options{
-		HostPort:  cfg.HostPort,
-		Namespace: cfg.Namespace,
-	})
+	clientOptions := client.Options{
+		HostPort:    cfg.Address,
+		Namespace:   cfg.Namespace,
+		Credentials: client.NewAPIKeyStaticCredentials(cfg.APIKey),
+	}
+
+	temporalClient, err := client.Dial(clientOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Temporal client: %w", err)
 	}
 
-	// Create worker (activities will be registered separately)
+	appLogger.Info("Successfully created Temporal client")
+
 	w := worker.New(temporalClient, cfg.TaskQueue, worker.Options{})
 
 	return &TemporalClient{
