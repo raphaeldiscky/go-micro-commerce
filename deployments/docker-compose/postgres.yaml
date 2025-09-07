@@ -1,7 +1,7 @@
 services:
   postgres-auth:
     image: postgres:17.5-alpine
-    container_name: postgres_auth
+    container_name: postgres-auth
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -24,7 +24,7 @@ services:
 
   postgres-product:
     image: postgres:17.5-alpine
-    container_name: postgres_product
+    container_name: postgres-product
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -47,7 +47,7 @@ services:
 
   postgres-order:
     image: postgres:17.5-alpine
-    container_name: postgres_order
+    container_name: postgres-order
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -70,7 +70,7 @@ services:
 
   postgres-payment:
     image: postgres:17.5-alpine
-    container_name: postgres_payment
+    container_name: postgres-payment
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -93,7 +93,7 @@ services:
 
   postgres-fulfillment:
     image: postgres:17.5-alpine
-    container_name: postgres_fulfillment
+    container_name: postgres-fulfillment
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -116,7 +116,7 @@ services:
 
   postgres-notification:
     image: postgres:17.5-alpine
-    container_name: postgres_notification
+    container_name: postgres-notification
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
