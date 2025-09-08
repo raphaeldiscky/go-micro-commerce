@@ -13,14 +13,14 @@ import (
 // ReserveProductsAndCalculate is the global activity function.
 func ReserveProductsAndCalculate(
 	ctx context.Context,
-	order *entity.Order,
+	req dto.ReserveProductsAndCalculateRequest,
 ) (dto.ReserveProductsAndCalculateResponse, error) {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return dto.ReserveProductsAndCalculateResponse{}, err
 	}
 
-	return activities.ReserveProductsAndCalculate(ctx, order)
+	return activities.ReserveProductsAndCalculate(ctx, req)
 }
 
 // ProcessFulfillment is the global activity function.
@@ -37,10 +37,13 @@ func ProcessFulfillment(
 }
 
 // SetFinalOrderPrices is the global activity function.
-func SetFinalOrderPrices(ctx context.Context, req dto.SetFinalOrderPricesRequest) error {
+func SetFinalOrderPrices(
+	ctx context.Context,
+	req dto.SetFinalOrderPricesRequest,
+) (dto.SetFinalOrderPricesResponse, error) {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
-		return err
+		return dto.SetFinalOrderPricesResponse{}, err
 	}
 
 	return activities.SetFinalOrderPrices(ctx, req)
@@ -57,7 +60,7 @@ func ProcessPayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
 }
 
 // ConfirmProductsDeduction is the global activity function.
-func ConfirmProductsDeduction(ctx context.Context, req dto.ConfirmProductsDeductionRequest) error {
+func ConfirmProductsDeduction(ctx context.Context, req *dto.ConfirmProductsDeductionRequest) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
@@ -77,13 +80,13 @@ func SendOrderConfirmation(ctx context.Context, req dto.SendOrderConfirmationReq
 }
 
 // ReleaseProducts is the global activity function.
-func ReleaseProducts(ctx context.Context, order *entity.Order) error {
+func ReleaseProducts(ctx context.Context, req dto.ReleaseProductsRequest) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return activities.ReleaseProducts(ctx, order)
+	return activities.ReleaseProducts(ctx, req)
 }
 
 // RefundPayment is the global activity function.
@@ -97,13 +100,13 @@ func RefundPayment(ctx context.Context, req dto.RefundPaymentGatewayRequest) err
 }
 
 // RestoreProducts is the global activity function.
-func RestoreProducts(ctx context.Context, order *entity.Order) error {
+func RestoreProducts(ctx context.Context, req dto.RestoreProductsRequest) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return activities.RestoreProducts(ctx, order)
+	return activities.RestoreProducts(ctx, req)
 }
 
 // CancelShipping is the global activity function.

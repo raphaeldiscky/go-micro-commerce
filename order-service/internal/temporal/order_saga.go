@@ -7,6 +7,8 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
@@ -16,14 +18,21 @@ func executeSagaSteps(
 	ctx workflow.Context,
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
+	userAuth pkgdto.UserAuthInfo,
 ) error {
 	logger := workflow.GetLogger(ctx)
 
 	// Step 1: Reserve Products and Calculate
 	logger.Info("Executing ReserveProductsAndCalculate", "orderID", order.ID)
 
+	// Create activity request with user auth info
+	reserveRequest := dto.ReserveProductsAndCalculateRequest{
+		Order:    order,
+		UserAuth: userAuth,
+	}
+
 	var reserveResult dto.ReserveProductsAndCalculateResponse
-	if err := workflow.ExecuteActivity(ctx, ReserveProductsAndCalculate, order).Get(ctx, &reserveResult); err != nil {
+	if err := workflow.ExecuteActivity(ctx, ReserveProductsAndCalculate, reserveRequest).Get(ctx, &reserveResult); err != nil {
 		return temporal.NewNonRetryableApplicationError(
 			"ReserveProductsAndCalculate failed",
 			"ReserveProductsAndCalculateError",
@@ -65,7 +74,10 @@ func executeSagaSteps(
 			Order:        order,
 			ShippingCost: *state.ShippingCost,
 		}
-		if err := workflow.ExecuteActivity(ctx, SetFinalOrderPrices, setPricesInput).Get(ctx, nil); err != nil {
+
+		var setPricesResult dto.SetFinalOrderPricesResponse
+
+		if err := workflow.ExecuteActivity(ctx, SetFinalOrderPrices, setPricesInput).Get(ctx, &setPricesResult); err != nil {
 			// Non-critical step, log but continue
 			logger.Warn(
 				"SetFinalOrderPrices failed, but saga will continue",
@@ -75,6 +87,8 @@ func executeSagaSteps(
 				order.ID,
 			)
 		} else {
+			// Update the order with the latest data from database
+			order = setPricesResult.UpdatedOrder
 			state.CompletedSteps["SetFinalOrderPrices"] = true
 		}
 	}
@@ -96,6 +110,7 @@ func executeSagaSteps(
 	confirmDeductionInput := dto.ConfirmProductsDeductionRequest{
 		Order:            order,
 		ReservedProducts: state.ReservedProducts,
+		UserAuth:         userAuth,
 	}
 	if err := workflow.ExecuteActivity(ctx, ConfirmProductsDeduction, confirmDeductionInput).Get(ctx, nil); err != nil {
 		return err
@@ -135,6 +150,7 @@ func executeCompensation(
 	ctx workflow.Context,
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
+	userAuth pkgdto.UserAuthInfo,
 ) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting compensation", "orderID", order.ID)
@@ -171,7 +187,11 @@ func executeCompensation(
 	if state.CompletedSteps["ConfirmProductsDeduction"] {
 		logger.Info("Compensating ConfirmProductsDeduction", "orderID", order.ID)
 
-		if err := workflow.ExecuteActivity(compensationCtx, RestoreProducts, order).Get(compensationCtx, nil); err != nil {
+		restoreReq := dto.RestoreProductsRequest{
+			Order:    order,
+			UserAuth: userAuth,
+		}
+		if err := workflow.ExecuteActivity(compensationCtx, RestoreProducts, restoreReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("RestoreProducts compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
@@ -199,7 +219,11 @@ func executeCompensation(
 	if state.CompletedSteps["ReserveProductsAndCalculate"] {
 		logger.Info("Compensating ReserveProductsAndCalculate", "orderID", order.ID)
 
-		if err := workflow.ExecuteActivity(compensationCtx, ReleaseProducts, order).Get(compensationCtx, nil); err != nil {
+		releaseReq := dto.ReleaseProductsRequest{
+			Order:    order,
+			UserAuth: userAuth,
+		}
+		if err := workflow.ExecuteActivity(compensationCtx, ReleaseProducts, releaseReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("ReleaseProducts compensation failed", "error", err, "orderID", order.ID)
 		}
 	}

@@ -11,10 +11,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 	"github.com/shopspring/decimal"
 
-	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -48,11 +49,11 @@ type OrderServiceInterface interface {
 		ctx context.Context,
 		customerID uuid.UUID,
 		req dto.GetOrdersRequest,
-	) ([]dto.OrderResponse, *pkgDto.PageMetaData, error)
+	) ([]dto.OrderResponse, *pkgdto.PageMetaData, error)
 	GetOrders(
 		ctx context.Context,
 		req dto.GetOrdersRequest,
-	) ([]dto.OrderResponse, *pkgDto.PageMetaData, error)
+	) ([]dto.OrderResponse, *pkgdto.PageMetaData, error)
 	UpdateOrderStatus(
 		ctx context.Context,
 		id uuid.UUID,
@@ -379,9 +380,16 @@ func (s *OrderService) CreateOrderWithTemporal(
 			return err
 		}
 
+		// Extract user authentication info from context
+		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		if err != nil {
+			return err
+		}
+
 		// Start Temporal workflow
 		req := dto.TemporalOrderSagaRequest{
-			Order: savedOrder,
+			Order:    savedOrder,
+			UserAuth: userAuth,
 		}
 
 		workflowOptions := s.temporalClient.CreateWorkflowOptions(savedOrder.ID)
@@ -440,7 +448,7 @@ func (s *OrderService) GetOrdersByCustomer(
 	ctx context.Context,
 	customerID uuid.UUID,
 	req dto.GetOrdersRequest,
-) ([]dto.OrderResponse, *pkgDto.PageMetaData, error) {
+) ([]dto.OrderResponse, *pkgdto.PageMetaData, error) {
 	var orders []*entity.Order
 
 	var total int64
@@ -474,7 +482,7 @@ func (s *OrderService) GetOrdersByCustomer(
 func (s *OrderService) GetOrders(
 	ctx context.Context,
 	req dto.GetOrdersRequest,
-) ([]dto.OrderResponse, *pkgDto.PageMetaData, error) {
+) ([]dto.OrderResponse, *pkgdto.PageMetaData, error) {
 	var orders []*entity.Order
 
 	var total int64

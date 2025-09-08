@@ -37,7 +37,7 @@ func OrderSagaWorkflow(
 	ctx = workflow.WithActivityOptions(ctx, activityOptions)
 
 	// Execute saga steps with compensation on failure
-	if err := executeSagaSteps(ctx, req.Order, state); err != nil {
+	if err := executeSagaSteps(ctx, req.Order, state, req.UserAuth); err != nil {
 		logger.Error(
 			"Saga execution failed, starting compensation",
 			"error",
@@ -47,7 +47,7 @@ func OrderSagaWorkflow(
 		)
 
 		// Execute compensation in reverse order
-		executeCompensation(ctx, req.Order, state)
+		executeCompensation(ctx, req.Order, state, req.UserAuth)
 
 		return &dto.TemporalOrderSagaResponse{
 			Success: false,

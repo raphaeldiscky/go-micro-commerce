@@ -3,11 +3,13 @@ package echoutils
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 // GetUserIDFromContext retrieves the user ID (UUID) from the context safely.
@@ -77,25 +79,70 @@ func ContextWithUserInfo(c echo.Context) context.Context {
 // PropagateUserContextToBackground creates a new background context with user information
 // from the original context. This is useful for async operations that need to preserve
 // authentication context for gRPC calls.
-func PropagateUserContextToBackground(originalCtx context.Context) context.Context {
+func PropagateUserContextToBackground(ctx context.Context) context.Context {
 	bgCtx := context.Background()
 
 	// Copy user authentication information
-	if userID := originalCtx.Value(constant.CtxUserID); userID != nil {
+	if userID := ctx.Value(constant.CtxUserID); userID != nil {
 		bgCtx = context.WithValue(bgCtx, constant.CtxUserID, userID)
 	}
 
-	if email := originalCtx.Value(constant.CtxEmail); email != nil {
+	if email := ctx.Value(constant.CtxEmail); email != nil {
 		bgCtx = context.WithValue(bgCtx, constant.CtxEmail, email)
 	}
 
-	if roles := originalCtx.Value(constant.CtxRoles); roles != nil {
+	if roles := ctx.Value(constant.CtxRoles); roles != nil {
 		bgCtx = context.WithValue(bgCtx, constant.CtxRoles, roles)
 	}
 
-	if isActive := originalCtx.Value(constant.CtxIsActive); isActive != nil {
+	if isActive := ctx.Value(constant.CtxIsActive); isActive != nil {
 		bgCtx = context.WithValue(bgCtx, constant.CtxIsActive, isActive)
 	}
 
 	return bgCtx
+}
+
+// GetUserAuthContexts retrieves user information from Go context.
+func GetUserAuthContexts(ctx context.Context) (dto.UserAuthInfo, error) {
+	var uc dto.UserAuthInfo
+
+	userID, ok := ctx.Value(constant.CtxUserID).(uuid.UUID)
+	if !ok {
+		return uc, fmt.Errorf("failed to get user ID from context")
+	}
+
+	uc.UserID = userID
+
+	email, ok := ctx.Value(constant.CtxEmail).(string)
+	if !ok {
+		return uc, fmt.Errorf("failed to get email from context")
+	}
+
+	uc.Email = email
+
+	roles, ok := ctx.Value(constant.CtxRoles).([]string)
+	if !ok {
+		return uc, fmt.Errorf("failed to get roles from context")
+	}
+
+	uc.Roles = roles
+
+	isActive, ok := ctx.Value(constant.CtxIsActive).(bool)
+	if !ok {
+		return uc, fmt.Errorf("failed to get is active from context")
+	}
+
+	uc.IsActive = isActive
+
+	return uc, nil
+}
+
+// AddUserAuthToContexts adds user authentication information to the contexts.
+func AddUserAuthToContexts(ctx context.Context, uc dto.UserAuthInfo) context.Context {
+	ctx = context.WithValue(ctx, constant.CtxUserID, uc.UserID)
+	ctx = context.WithValue(ctx, constant.CtxEmail, uc.Email)
+	ctx = context.WithValue(ctx, constant.CtxRoles, uc.Roles)
+	ctx = context.WithValue(ctx, constant.CtxIsActive, uc.IsActive)
+
+	return ctx
 }

@@ -4,6 +4,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
@@ -29,7 +31,8 @@ type RefundPaymentGatewayRequest struct {
 
 // TemporalOrderSagaRequest represents the input for the order saga workflow.
 type TemporalOrderSagaRequest struct {
-	Order *entity.Order `json:"order"`
+	Order    *entity.Order       `json:"order"`
+	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
 }
 
 // TemporalOrderSagaResponse represents the result of the order saga workflow.
@@ -56,6 +59,12 @@ type TemporalWorkflowState struct {
 	CompletedSteps   map[string]bool      `json:"completed_steps"`
 }
 
+// ReserveProductsAndCalculateRequest represents the input for reserving products and calculating order.
+type ReserveProductsAndCalculateRequest struct {
+	Order    *entity.Order       `json:"order"`
+	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
+}
+
 // ReserveProductsAndCalculateResponse represents the result of reserving products and calculating order.
 type ReserveProductsAndCalculateResponse struct {
 	CalculatedOrder  *entity.Order    `json:"calculated_order"`
@@ -76,8 +85,26 @@ type SetFinalOrderPricesRequest struct {
 	ShippingCost decimal.Decimal `json:"shipping_cost"`
 }
 
+// SetFinalOrderPricesResponse represents the result of setting final order prices.
+type SetFinalOrderPricesResponse struct {
+	UpdatedOrder *entity.Order `json:"updated_order"`
+}
+
 // ConfirmProductsDeductionRequest represents input for confirming product deduction.
 type ConfirmProductsDeductionRequest struct {
-	Order            *entity.Order    `json:"order"`
-	ReservedProducts []entity.Product `json:"reserved_products"`
+	Order            *entity.Order       `json:"order"`
+	ReservedProducts []entity.Product    `json:"reserved_products"`
+	UserAuth         pkgdto.UserAuthInfo `json:"user_auth"`
+}
+
+// ReleaseProductsRequest represents input for releasing reserved products.
+type ReleaseProductsRequest struct {
+	Order    *entity.Order       `json:"order"`
+	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
+}
+
+// RestoreProductsRequest represents input for restoring products during compensation.
+type RestoreProductsRequest struct {
+	Order    *entity.Order       `json:"order"`
+	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
 }
