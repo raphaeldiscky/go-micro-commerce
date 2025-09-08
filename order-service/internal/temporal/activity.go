@@ -10,9 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"go.temporal.io/sdk/activity"
-
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -27,21 +26,24 @@ type OrderActivities interface {
 	// Execution
 	ReserveProductsAndCalculate(
 		ctx context.Context,
-		order *entity.Order,
+		req dto.ReserveProductsAndCalculateRequest,
 	) (dto.ReserveProductsAndCalculateResponse, error)
 	ProcessFulfillment(
 		ctx context.Context,
 		order *entity.Order,
 	) (dto.ProcessFulfillmentResponse, error)
-	SetFinalOrderPrices(ctx context.Context, req dto.SetFinalOrderPricesRequest) error
+	SetFinalOrderPrices(
+		ctx context.Context,
+		req dto.SetFinalOrderPricesRequest,
+	) (dto.SetFinalOrderPricesResponse, error)
 	ProcessPayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
-	ConfirmProductsDeduction(ctx context.Context, req dto.ConfirmProductsDeductionRequest) error
+	ConfirmProductsDeduction(ctx context.Context, req *dto.ConfirmProductsDeductionRequest) error
 	SendOrderConfirmation(ctx context.Context, req dto.SendOrderConfirmationRequest) error
 
 	// Compensation
-	ReleaseProducts(ctx context.Context, order *entity.Order) error
+	ReleaseProducts(ctx context.Context, req dto.ReleaseProductsRequest) error
 	RefundPayment(ctx context.Context, req dto.RefundPaymentGatewayRequest) error
-	RestoreProducts(ctx context.Context, order *entity.Order) error
+	RestoreProducts(ctx context.Context, req dto.RestoreProductsRequest) error
 	CancelShipping(ctx context.Context, shippingID uuid.UUID) error
 }
 
@@ -80,10 +82,16 @@ func NewTemporalActivities(
 // ReserveProductsAndCalculate reserves products for the order items and calculates order details.
 func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	ctx context.Context,
-	order *entity.Order,
+	req dto.ReserveProductsAndCalculateRequest,
 ) (dto.ReserveProductsAndCalculateResponse, error) {
 	logger := activity.GetLogger(ctx)
+	order := req.Order
+	userAuth := req.UserAuth
+
 	logger.Info("Executing ReserveProductsAndCalculate", "orderID", order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
 
 	if ta.productClient == nil {
 		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
@@ -173,11 +181,11 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		return dto.ReserveProductsAndCalculateResponse{}, err
 	}
 
-	// Get customer email from context
-	email, ok := ctx.Value(pkgconstant.CtxEmail).(string)
-	if !ok {
+	// Get customer email from user auth
+	email := userAuth.Email
+	if email == "" {
 		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
-			"X-Email header not found in context",
+			"customer email not found in user auth",
 		)
 	}
 
@@ -374,11 +382,13 @@ func (ta *OrderActivitiesImpl) ProcessFulfillment(
 func (ta *OrderActivitiesImpl) SetFinalOrderPrices(
 	ctx context.Context,
 	req dto.SetFinalOrderPricesRequest,
-) error {
+) (dto.SetFinalOrderPricesResponse, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing SetFinalOrderPrices", "orderID", req.Order.ID)
 
-	return ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	var response dto.SetFinalOrderPricesResponse
+
+	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 
 		// Update the original order with shipping cost
@@ -401,17 +411,28 @@ func (ta *OrderActivitiesImpl) SetFinalOrderPrices(
 			"totalDiscount", updatedOrder.TotalDiscount.String(),
 		)
 
+		// Set the response with the updated order
+		response.UpdatedOrder = updatedOrder
+
 		return nil
 	})
+	if err != nil {
+		return dto.SetFinalOrderPricesResponse{}, err
+	}
+
+	return response, nil
 }
 
 // ConfirmProductsDeduction confirms stock deduction after successful payment.
 func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
 	ctx context.Context,
-	req dto.ConfirmProductsDeductionRequest,
+	req *dto.ConfirmProductsDeductionRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing ConfirmProductsDeduction", "orderID", req.Order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
 
 	if ta.productClient == nil {
 		return fmt.Errorf("product service is unavailable")
@@ -524,10 +545,14 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmation(
 // ReleaseProducts releases reserved products.
 func (ta *OrderActivitiesImpl) ReleaseProducts(
 	ctx context.Context,
-	order *entity.Order,
+	req dto.ReleaseProductsRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
+	order := req.Order
 	logger.Info("Executing ReleaseProducts compensation", "orderID", order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
 
 	if ta.productClient == nil {
 		return fmt.Errorf("product service is unavailable")
@@ -605,10 +630,14 @@ func (ta *OrderActivitiesImpl) RefundPayment(
 // RestoreProducts restores deducted products.
 func (ta *OrderActivitiesImpl) RestoreProducts(
 	ctx context.Context,
-	order *entity.Order,
+	req dto.RestoreProductsRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
+	order := req.Order
 	logger.Info("Executing RestoreProducts compensation", "orderID", order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
 
 	if ta.productClient == nil {
 		return fmt.Errorf("product service is unavailable")

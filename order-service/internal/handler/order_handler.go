@@ -105,12 +105,14 @@ func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
 		return err
 	}
 
-	order, err := h.orderService.CreateOrderWithTemporal(c.Request().Context(), req)
+	ctx := echoutils.ContextWithUserInfo(c)
+
+	order, err := h.orderService.CreateOrderWithTemporal(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	if order.Status == constant.OrderStatusProcessing {
+	if order.Status == constant.OrderStatusPending {
 		mapped := mapper.MapToOrderSagaResponse(order)
 
 		return echoutils.ResponseCreated(c, mapped)
