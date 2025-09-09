@@ -166,6 +166,17 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 		c.logger.Infof("Order %s status updated to processing", evt.Payload.OrderID)
 	}
 
+	// Notify waiting saga about payment creation
+	if c.paymentClient != nil {
+		response := &dto.PaymentResponse{
+			PaymentID: evt.Payload.PaymentID,
+			Status:    evt.Payload.Status,
+			OrderID:   evt.Payload.OrderID,
+			Error:     nil,
+		}
+		c.paymentClient.NotifyWaitingSaga(response)
+	}
+
 	return nil
 }
 

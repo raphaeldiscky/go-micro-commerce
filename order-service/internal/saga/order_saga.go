@@ -2,17 +2,12 @@
 package saga
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
 // OrderSaga implements the order processing saga workflow.
@@ -40,7 +35,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     30 * time.Second,
 		Idempotent:  true,
 		Critical:    true,
-		Execute: func(ctx *WorkflowContext, payload *Payload, _ map[string]interface{}) (*StepResult, error) {
+		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
 			s.logger.Infof("===STEP 1=====, Reserve products: %+v", payload)
 			newOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
 				ctx.Context(),
@@ -64,14 +59,14 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 			return &StepResult{
 				Success: true,
-				Data: map[string]interface{}{
-					"reserved_products": reservedProducts,
-					"customer_email":    email,
-					"shipping":          payload.Shipping, // Store shipping data for recovery and later steps
+				Data: &Metadata{
+					ReservedProducts: reservedProducts,
+					CustomerEmail:    email,
+					Shipping:         &payload.Shipping, // Store shipping data for recovery and later steps
 				},
 			}, nil
 		},
-		Compensate: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) error {
+		Compensate: func(ctx *WorkflowContext, payload *Payload, data *Metadata) error {
 			return s.activities.ReleaseProducts(ctx.Context(), payload.Order)
 		},
 	})
@@ -85,29 +80,18 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     30 * time.Second,
 		Idempotent:  true,
 		Critical:    false,
-		Execute: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error) {
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			s.logger.Infof("===STEP 2=====, payload: %+v", payload)
 			s.logger.Infof("===STEP 2=====, data: %+v", data)
 
-			shippingData, exists := data["shipping"]
-			if !exists {
+			if data.Shipping == nil {
 				return nil, fmt.Errorf("shipping data not found in saga state")
 			}
 
-			// Convert map to dto.Shipping using JSON marshal/unmarshal
-			shippingBytes, err := json.Marshal(shippingData)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal shipping data: %w", err)
-			}
-
-			var shipping *dto.Shipping
-			if err := json.Unmarshal(shippingBytes, &shipping); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
-			}
 			shippingCost, err := s.activities.GetShippingCost(
 				ctx.Context(),
 				payload.Order,
-				shipping,
+				data.Shipping,
 			)
 			if err != nil {
 				return nil, err
@@ -117,8 +101,8 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 			return &StepResult{
 				Success: true,
-				Data: map[string]interface{}{
-					"shipping_cost": shippingCost,
+				Data: &Metadata{
+					ShippingCost: &shippingCost,
 				},
 			}, nil
 		},
@@ -134,13 +118,12 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     10 * time.Second,
 		Idempotent:  true,
 		Critical:    false,
-		Execute: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error) {
-			shippingCost, ok := data["shipping_cost"].(decimal.Decimal)
-			if !ok {
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
+			if data.ShippingCost == nil {
 				return nil, fmt.Errorf("shipping cost not found in data")
 			}
 
-			err := payload.Order.UpdateShippingCost(shippingCost)
+			err := payload.Order.UpdateShippingCost(*data.ShippingCost)
 			if err != nil {
 				return nil, err
 			}
@@ -153,7 +136,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 			return &StepResult{Success: true}, nil
 		},
-		Compensate: func(ctx *WorkflowContext, _ *Payload, _ map[string]interface{}) error {
+		Compensate: func(ctx *WorkflowContext, _ *Payload, _ *Metadata) error {
 			return nil
 		},
 	})
@@ -167,7 +150,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     60 * time.Second,
 		Idempotent:  true,
 		Critical:    true,
-		Execute: func(ctx *WorkflowContext, payload *Payload, _ map[string]interface{}) (*StepResult, error) {
+		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
 			s.logger.Infof("===STEP 4===, order: %v", payload.Order)
 			paymentID, err := s.activities.CreatePayment(ctx.Context(), payload.Order)
 			if err != nil {
@@ -182,27 +165,65 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 			return &StepResult{
 				Success: true,
-				Data: map[string]interface{}{
-					"payment_id": paymentID,
+				Data: &Metadata{
+					PaymentID: &paymentID,
 				},
 			}, nil
 		},
-		Compensate: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) error {
-			paymentIDStr, ok := data["payment_id"].(string)
-			if !ok {
+		Compensate: func(ctx *WorkflowContext, payload *Payload, data *Metadata) error {
+			if data.PaymentID == nil {
 				return fmt.Errorf("no payment ID found for refund")
 			}
 
-			paymentID, err := uuid.Parse(paymentIDStr)
-			if err != nil {
-				return fmt.Errorf("failed to parse payment ID: %w", err)
-			}
-
-			return s.activities.RefundPayment(ctx.Context(), payload.Order, paymentID)
+			return s.activities.RefundPayment(ctx.Context(), payload.Order, *data.PaymentID)
 		},
 	})
 
-	// Step 5: Wait for payment confirmation
+	// Step 5: Send Payment Required Notification
+	executor.AddStep(&Step{
+		Name:        constant.SendPaymentRequiredNotificationStep,
+		Description: "Send payment required notificatio",
+		MaxRetries:  3,
+		RetryDelay:  5 * time.Second,
+		Timeout:     60 * time.Second,
+		Idempotent:  true,
+		Critical:    true,
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
+			if len(data.ReservedProducts) == 0 {
+				return nil, fmt.Errorf("reserved products not found in data")
+			}
+			if data.CustomerEmail == "" {
+				ctx.logger.Error("No customer email found for notification")
+
+				return nil, fmt.Errorf("no customer email found")
+			}
+
+			err := s.activities.SendPaymentRequiredNotification(
+				ctx.Context(),
+				payload.Order,
+				data.ReservedProducts,
+				data.CustomerEmail,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			s.logger.Infof(
+				"===STEP 5 COMPLETED===, order: %v, paymentID: %s",
+				payload.Order,
+			)
+
+			return &StepResult{
+				Success: true,
+				Data:    data,
+			}, nil
+		},
+		Compensate: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) error {
+			return nil
+		},
+	})
+
+	// Step 6: Wait for payment confirmation
 	executor.AddStep(&Step{
 		Name:        constant.WaitForPaymentConfirmationStep,
 		Description: "Wait for payment confirmation",
@@ -211,42 +232,41 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     1 * time.Hour, // 1-hour timeout for user payment confirmation
 		Idempotent:  true,
 		Critical:    true,
-		Execute: func(ctx *WorkflowContext, payload *Payload, _ map[string]interface{}) (*StepResult, error) {
-			s.logger.Infof("===STEP 5===, order: %v", payload.Order)
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			paymentID, err := s.activities.WaitForPaymentConfirmation(ctx.Context(), payload.Order)
 			if err != nil {
 				return nil, err
 			}
 
 			s.logger.Infof(
-				"===STEP 5 COMPLETED===, order: %v, paymentID: %s",
+				"===STEP 6 COMPLETED===, order: %v, paymentID: %s",
 				payload.Order,
 				paymentID,
 			)
 
 			return &StepResult{
 				Success: true,
-				Data: map[string]interface{}{
-					"payment_confirmed_id": paymentID,
+				Data: &Metadata{
+					PaymentID: &paymentID,
 				},
 			}, nil
 		},
-		Compensate: func(ctx *WorkflowContext, payload *Payload, _ map[string]interface{}) error {
+		Compensate: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) error {
 			return nil
 		},
 	})
 
-	// Step 6: Create Shipping or Fulfillment
+	// Step 7: Create Shipping or Fulfillment
 	executor.AddStep(&Step{
 		Name:        constant.ProcessFulfillmentStep,
-		Description: "Process fulfillment for the paid order; get shippingID, shippingCost and trackingNumber",
+		Description: "Process fulfillment for the paid order; get fulfillmentID, shippingCost and trackingNumber",
 		MaxRetries:  2,
 		RetryDelay:  3 * time.Second,
 		Timeout:     30 * time.Second,
 		Idempotent:  true,
 		Critical:    false,
-		Execute: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error) {
-			shippingID, shippingCost, trackingNumber, err := s.activities.ProcessFulfillment(
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
+			fulfillmentID, shippingCost, trackingNumber, err := s.activities.ProcessFulfillment(
 				ctx.Context(),
 				payload,
 			)
@@ -256,24 +276,23 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 
 			return &StepResult{
 				Success: true,
-				Data: map[string]interface{}{
-					"shipping_id":     shippingID,
-					"tracking_number": trackingNumber,
-					"shipping_cost":   shippingCost,
+				Data: &Metadata{
+					FulfillmentID:  &fulfillmentID,
+					TrackingNumber: &trackingNumber,
+					ShippingCost:   &shippingCost,
 				},
 			}, nil
 		},
-		Compensate: func(ctx *WorkflowContext, _ *Payload, data map[string]interface{}) error {
-			shippingID, ok := data["shipping_id"].(uuid.UUID)
-			if !ok {
+		Compensate: func(ctx *WorkflowContext, _ *Payload, data *Metadata) error {
+			if data.FulfillmentID == nil {
 				return nil
 			}
 
-			return s.activities.CancelShipping(ctx.Context(), shippingID)
+			return s.activities.CancelShipping(ctx.Context(), *data.FulfillmentID)
 		},
 	})
 
-	// Step 7: Deduct Products Stock
+	// Step 8: Deduct Products Stock
 	executor.AddStep(&Step{
 		Name:        constant.ConfirmProductsDeductionStep,
 		Description: "Permanently deduct products from inventory after successful payment",
@@ -282,64 +301,61 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     20 * time.Second,
 		Idempotent:  true,
 		Critical:    true,
-		Execute: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error) {
-			reservedProducts, ok := data["reserved_products"].([]entity.Product)
-			if !ok {
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
+			if len(data.ReservedProducts) == 0 {
 				return nil, fmt.Errorf("no reserved products found")
 			}
-			s.logger.Infof("===STEP 5===, order: %v", payload.Order)
-			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), payload.Order, reservedProducts); err != nil {
+			s.logger.Infof("===STEP 8===, order: %v", payload.Order)
+			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), payload.Order, data.ReservedProducts); err != nil {
 				return nil, err
 			}
 
-			s.logger.Infof("===STEP 5 COMPLETED===")
+			s.logger.Infof("===STEP 8 COMPLETED===")
 
 			return &StepResult{Success: true}, nil
 		},
-		Compensate: func(ctx *WorkflowContext, payload *Payload, _ map[string]interface{}) error {
+		Compensate: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) error {
 			return s.activities.RestoreProducts(ctx.Context(), payload.Order)
 		},
 	})
 
-	// Step 8: Send Order Confirmation Notifications
+	// Step 9: Send Order Confirmation Notifications
 	executor.AddStep(&Step{
-		Name:        constant.SendOrderConfirmationStep,
-		Description: "Send order confirmation and receipt to customer; includes invoice and tracking info",
+		Name:        constant.SendOrderConfirmedNotificationStep,
+		Description: "Send order confirmation and receipt to customer after fulfillment created and order paid; includes invoice and tracking info",
 		MaxRetries:  3,
 		RetryDelay:  1 * time.Second,
 		Timeout:     10 * time.Second,
 		Idempotent:  true,
 		Critical:    false,
-		Execute: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error) {
-			s.logger.Infof("===STEP 6===, order: %v", payload.Order)
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
+			s.logger.Infof("===STEP 9===, order: %v", payload.Order)
 			s.logger.Infof("===DATA===, data: %v", data)
-			trackingNumber, ok := data["tracking_number"].(string)
-			if !ok {
+
+			if data.TrackingNumber == nil {
 				ctx.logger.Warn("No tracking number found for notification")
 
 				return nil, fmt.Errorf("no tracking number found")
 			}
 
-			resevedProducts, ok := data["reserved_products"].([]entity.Product)
-			if !ok {
+			if len(data.ReservedProducts) == 0 {
 				ctx.logger.Error("No reserved products found for notification")
 
 				return nil, fmt.Errorf("no reserved products found")
 			}
 
-			customerEmail, ok := data["customer_email"].(string)
-			if !ok {
+			if data.CustomerEmail == "" {
 				ctx.logger.Error("No customer email found for notification")
 
 				return nil, fmt.Errorf("no customer email found")
 			}
 
-			if err := s.activities.SendOrderConfirmation(ctx.Context(), payload.Order, resevedProducts, trackingNumber, customerEmail); err != nil {
+			if err := s.activities.SendOrderConfirmedNotification(ctx.Context(), payload.Order, data.ReservedProducts, data.TrackingNumber, data.CustomerEmail); err != nil {
 				// Non-critical step, log but don't fail the saga
 				ctx.logger.Warnf("Failed to send notification: %v", err)
 			}
 
-			s.logger.Infof("===STEP 6 COMPLETED===")
+			s.logger.Infof("===STEP 9 COMPLETED===")
 
 			return &StepResult{Success: true}, nil
 		},

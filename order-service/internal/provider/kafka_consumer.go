@@ -44,6 +44,7 @@ func SetupKafkaConsumers(
 			appLogger,
 			providers.DataStore,
 			providers.FulfillmentClient,
+			providers.NotificationRequestProducer,
 		).Handler,
 		appLogger,
 	)

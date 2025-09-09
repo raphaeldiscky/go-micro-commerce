@@ -55,7 +55,7 @@ func SetupTemporal(
 	temporalClient.Worker.RegisterActivity(activities.SetFinalOrderPrices)
 	temporalClient.Worker.RegisterActivity(activities.ProcessPayment)
 	temporalClient.Worker.RegisterActivity(activities.ConfirmProductsDeduction)
-	temporalClient.Worker.RegisterActivity(activities.SendOrderConfirmation)
+	temporalClient.Worker.RegisterActivity(activities.SendOrderConfirmedNotification)
 	temporalClient.Worker.RegisterActivity(activities.ReleaseProducts)
 	temporalClient.Worker.RegisterActivity(activities.RefundPayment)
 	temporalClient.Worker.RegisterActivity(activities.RestoreProducts)

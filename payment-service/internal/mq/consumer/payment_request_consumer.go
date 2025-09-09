@@ -211,46 +211,5 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 	c.logger.Infof("Successfully created payment %s for order %s",
 		savedPayment.ID, evt.Payload.OrderID)
 
-	// This should be send payment request to payment gateway asynchronously handle by banking or payment gateway
-	// For now it set to completed
-
-	// Update payment status to completed
-	payment.Status = constant.PaymentStatusCompleted
-	if _, err := paymentRepo.Update(ctx, payment); err != nil {
-		return fmt.Errorf("failed to update payment status: %w", err)
-	}
-
-	paymentCompletedOutboxEvent := producer.NewPaymentLifecycleEvent(
-		savedPayment.ID,
-		savedPayment.OrderID,
-		constant.PaymentStatusCompleted,
-		savedPayment.Amount,
-	)
-
-	paymentCompletedPayload, err := sonic.Marshal(paymentCompletedOutboxEvent)
-	if err != nil {
-		return fmt.Errorf("failed to marshal payment completed event: %w", err)
-	}
-
-	completedOutboxEvent := &entity.OutboxEvent{
-		ID:            uuid.New(),
-		AggregateType: "payment",
-		AggregateID:   savedPayment.ID,
-		EventType:     kafka.PaymentCompletedEventType,
-		Topic:         kafka.PaymentLifecycleTopic,
-		Payload:       paymentCompletedPayload,
-		Status:        constant.OutboxStatusPending,
-		CreatedAt:     time.Now().UTC(),
-		ScheduledFor:  time.Now().UTC(),
-		Attempts:      0,
-	}
-
-	if err := outboxRepo.Create(ctx, completedOutboxEvent); err != nil {
-		return fmt.Errorf("failed to create payment completed event: %w", err)
-	}
-
-	c.logger.Infof("Successfully completed payment %s for order %s",
-		savedPayment.ID, evt.Payload.OrderID)
-
 	return nil
 }

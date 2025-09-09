@@ -15,8 +15,8 @@ type CreateShippingResponse struct {
 	TrackingNumber string    `json:"tracking_number"`
 }
 
-// SendOrderConfirmationRequest represents input for sending order confirmation.
-type SendOrderConfirmationRequest struct {
+// SendOrderConfirmedNotificationRequest represents input for sending order confirmation after paid.
+type SendOrderConfirmedNotificationRequest struct {
 	Order          *entity.Order    `json:"order"`
 	Products       []entity.Product `json:"products"`
 	TrackingNumber string           `json:"tracking_number"`

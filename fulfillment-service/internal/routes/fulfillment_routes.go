@@ -14,11 +14,10 @@ func SetupFulfillmentRoutes(e *echo.Echo, h *handler.FulfillmentHandler) {
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
-	// Update fulfillment status
-	protected.PUT("/:fulfillmentID/status", h.UpdateFulfillmentStatus)
 	protected.POST("/shipping-rates", h.CalculateShippingRates)
 	// Get fulfillment by order ID
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)
 	admin.GET("/order/:orderID", h.GetFulfillmentByOrderID)
+	admin.PATCH("/order/:orderID/status", h.UpdateFulfillmentStatusByOrderID)
 }

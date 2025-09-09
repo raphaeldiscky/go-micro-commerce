@@ -10,17 +10,39 @@
         padding: 20px;
       }
       .header {
-        background-color: #f8f9fa;
+        background-color: #f8d7da;
         padding: 20px;
         text-align: center;
+        border-radius: 8px;
+        border: 1px solid #f1aeb5;
+      }
+      .canceled-status {
+        background-color: #dc3545;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 10px 0;
       }
       .order-details {
         margin: 20px 0;
+      }
+      .cancellation-section {
+        background-color: #f8d7da;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #dc3545;
       }
       .total-section {
         background-color: #f8f9fa;
         padding: 15px;
         margin: 20px 0;
+      }
+      .warning {
+        color: #721c24;
+        font-weight: bold;
       }
       .footer {
         margin-top: 30px;
@@ -33,7 +55,8 @@
   <body>
     <div class="header">
       <h1>❌ Order Canceled</h1>
-      <p>Your order has been canceled, {{.RecipientName}}</p>
+      <div class="canceled-status">CANCELED</div>
+      <p>We're sorry to inform you that your order has been canceled, <strong class="warning">{{.RecipientName}}</strong></p>
     </div>
 
     <div class="order-details">
@@ -41,23 +64,32 @@
       {{if .OrderNumber}}
       <p><strong>Canceled Order Number:</strong> {{.OrderNumber}}</p>
       {{end}}
-      
-      <div class="total-section">
-        <h3>Refund Information</h3>
-        <p>
-          If you were charged for this order, the refund will be processed
-          within 3-5 business days to your original payment method.
-        </p>
-      </div>
+    </div>
 
-      <p>We apologize for any inconvenience this may have caused.</p>
+    <div class="cancellation-section">
+      <h3>💳 Refund Information</h3>
+      <p><strong class="warning">If you were charged for this order, your refund is being processed.</strong></p>
+      <p><em>Refunds typically take 3-5 business days to appear on your original payment method.</em></p>
+      <p>You will receive a separate email confirmation once the refund has been processed.</p>
+    </div>
+
+    <div class="total-section">
+      <h3>What Happened?</h3>
+      <p>Your order was canceled due to one of the following reasons:</p>
+      <ul>
+        <li>Payment could not be processed</li>
+        <li>Item(s) became unavailable</li>
+        <li>Order was canceled at your request</li>
+        <li>Technical issues during processing</li>
+      </ul>
+      <p><strong>We apologize for any inconvenience this may have caused.</strong></p>
     </div>
 
     <div class="footer">
       <p>Thank you for your understanding.</p>
       <p>
-        If you have any questions about your cancellation, please contact our customer
-        service.
+        If you have any questions about your cancellation, please contact our
+        customer service.
       </p>
     </div>
   </body>

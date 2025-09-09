@@ -33,6 +33,12 @@ type OrderActivities interface {
 	) (shippingCost decimal.Decimal, err error)
 	SetFinalOrderPrices(ctx context.Context, order *entity.Order) error
 	CreatePayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
+	SendPaymentRequiredNotification(
+		ctx context.Context,
+		order *entity.Order,
+		reservedProducts []entity.Product,
+		customerEmail string,
+	) error
 	WaitForPaymentConfirmation(
 		ctx context.Context,
 		order *entity.Order,
@@ -40,17 +46,18 @@ type OrderActivities interface {
 	ProcessFulfillment(
 		ctx context.Context,
 		payload *Payload,
-	) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error)
+	) (fulfillmentID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error)
 	ConfirmProductsDeduction(
 		ctx context.Context,
 		order *entity.Order,
 		reservedProducts []entity.Product,
 	) error
-	SendOrderConfirmation(
+	SendOrderConfirmedNotification(
 		ctx context.Context,
 		order *entity.Order,
 		products []entity.Product,
-		trackingNumber, customerEmail string,
+		trackingNumber *string,
+		customerEmail string,
 	) error
 	// Compensation
 	ReleaseProducts(
@@ -337,6 +344,77 @@ func (a *OrderActivitiesImpl) CreatePayment(
 	return response.PaymentID, nil
 }
 
+// SendPaymentRequiredNotification sends a payment required notification to the customer.
+func (a *OrderActivitiesImpl) SendPaymentRequiredNotification(
+	ctx context.Context,
+	order *entity.Order,
+	reservedProducts []entity.Product,
+	customerEmail string,
+) error {
+	a.logger.Infof("Sending payment required notification for order: %s", order.ID)
+
+	err := a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
+		// Create waiting payment notification event
+		paymentDeadline := time.Now().UTC().Add(1 * time.Hour) // 1 hour deadline
+		notificationEvent := producer.NewWaitingPaymentNotificationEvent(
+			order,
+			reservedProducts,
+			customerEmail,
+			"Customer Name",
+			paymentDeadline,
+			nil, // No payment URL provided
+		)
+
+		payload, err := json.Marshal(notificationEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal notification event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			a.logger.Errorf(
+				"Failed to create payment required notification for order %s: %v",
+				order.ID,
+				err,
+			)
+
+			return fmt.Errorf("failed to create payment required notification event: %w", err)
+		}
+
+		a.logger.Infof(
+			"Successfully created payment required notification for order: %s",
+			order.ID,
+		)
+
+		return nil
+	})
+	if err != nil {
+		a.logger.Errorf(
+			"Failed to create payment required notification for order %s: %v",
+			order.ID,
+			err,
+		)
+
+		return fmt.Errorf("failed to create payment required notification: %w", err)
+	}
+
+	return nil
+}
+
 // WaitForPaymentConfirmation waits for payment confirmation with 1-hour timeout.
 func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 	ctx context.Context,
@@ -344,7 +422,6 @@ func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 ) (uuid.UUID, error) {
 	a.logger.Infof("Waiting for payment confirmation for order: %s", order.ID)
 
-	// Use 1-hour timeout as specified in the interface comment
 	response, err := a.paymentClient.WaitForPaymentResponse(
 		ctx,
 		order.ID,
@@ -360,17 +437,6 @@ func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 		order.ID, response.PaymentID, response.Status)
 
 	return response.PaymentID, nil
-}
-
-// WaitForPaymentResponse waits for payment response.
-func (a *OrderActivitiesImpl) WaitForPaymentResponse(
-	_ context.Context,
-	orderID uuid.UUID,
-	timeout time.Duration,
-) (paymentID uuid.UUID, err error) {
-	a.logger.Infof("Waiting for payment response for order: %s with timeout: %v", orderID, timeout)
-
-	return paymentID, nil
 }
 
 // ConfirmProductsDeduction confirms stock deduction after successful payment.
@@ -434,7 +500,7 @@ func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 func (a *OrderActivitiesImpl) ProcessFulfillment(
 	ctx context.Context,
 	payload *Payload,
-) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error) {
+) (fulfillmentID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error) {
 	a.logger.Infof("Creating shipping for order: %s", payload.Order.ID)
 
 	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
@@ -512,12 +578,13 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 	return response.FulfillmentID, response.ShippingCost, response.TrackingNumber, nil
 }
 
-// SendOrderConfirmation sends order confirmation to customer.
-func (a *OrderActivitiesImpl) SendOrderConfirmation(
+// SendOrderConfirmedNotification sends order confirmation to customer.
+func (a *OrderActivitiesImpl) SendOrderConfirmedNotification(
 	ctx context.Context,
 	order *entity.Order,
 	products []entity.Product,
-	trackingNumber, customerEmail string,
+	trackingNumber *string,
+	customerEmail string,
 ) error {
 	a.logger.Infof(
 		"Sending order confirmation for order: %s with tracking: %s to email: %s",
@@ -535,7 +602,7 @@ func (a *OrderActivitiesImpl) SendOrderConfirmation(
 			order,
 			products,
 			customerEmail,
-			"Customer Name", // TODO: Get actual customer name from user service if needed
+			"Customer Name",
 			trackingNumber,
 		)
 

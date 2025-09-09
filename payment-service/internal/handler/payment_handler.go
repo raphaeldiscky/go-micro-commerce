@@ -28,20 +28,17 @@ func NewPaymentHandler(
 	}
 }
 
-// ProcessPayment handles POST /payments/:paymentID/process.
-//
-// Route: POST /payments/:paymentID/process
-//
+// ProcessPayment handles POST /payments/order/:orderID/process.
 // Authentication: Requires user authentication.
 func (h *PaymentHandler) ProcessPayment(c echo.Context) error {
-	param := c.Param("paymentID")
+	param := c.Param("orderID")
 
-	paymentID, err := uuid.Parse(param)
+	orderID, err := uuid.Parse(param)
 	if err != nil {
 		return err
 	}
 
-	req := dto.ProcessPaymentGatewayRequest{
+	req := dto.ProcessPaymentRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
@@ -54,7 +51,7 @@ func (h *PaymentHandler) ProcessPayment(c echo.Context) error {
 		return err
 	}
 
-	payment, err := h.paymentService.ProcessPayment(c.Request().Context(), paymentID, req)
+	payment, err := h.paymentService.ProcessPayment(c.Request().Context(), orderID, req)
 	if err != nil {
 		return err
 	}

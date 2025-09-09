@@ -70,14 +70,17 @@ func ConfirmProductsDeduction(ctx context.Context, req *dto.ConfirmProductsDeduc
 	return activities.ConfirmProductsDeduction(ctx, req)
 }
 
-// SendOrderConfirmation is the global activity function.
-func SendOrderConfirmation(ctx context.Context, req dto.SendOrderConfirmationRequest) error {
+// SendOrderConfirmedNotification is the global activity function.
+func SendOrderConfirmedNotification(
+	ctx context.Context,
+	req dto.SendOrderConfirmedNotificationRequest,
+) error {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return err
 	}
 
-	return activities.SendOrderConfirmation(ctx, req)
+	return activities.SendOrderConfirmedNotification(ctx, req)
 }
 
 // ReleaseProducts is the global activity function.

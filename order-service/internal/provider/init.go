@@ -17,12 +17,13 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore         repository.DataStore
-	KafkaAdmin        *kafka.Admin
-	JobScheduler      *job.Scheduler
-	TemporalClient    *client.TemporalClient
-	FulfillmentClient client.FulfillmentClientInterface
-	PaymentClient     client.PaymentClientInterface
+	DataStore                   repository.DataStore
+	KafkaAdmin                  *kafka.Admin
+	JobScheduler                *job.Scheduler
+	TemporalClient              *client.TemporalClient
+	FulfillmentClient           client.FulfillmentClientInterface
+	PaymentClient               client.PaymentClientInterface
+	NotificationRequestProducer kafka.ProducerInterface
 }
 
 // SetupGlobal initializes all providers.
@@ -86,10 +87,11 @@ func SetupGlobal(
 	paymentClient := client.NewPaymentClient(appLogger)
 
 	return &Providers{
-		DataStore:         dataStore,
-		KafkaAdmin:        kafkaAdmin,
-		TemporalClient:    nil, // will be set up later in worker
-		FulfillmentClient: fulfillmentClient,
-		PaymentClient:     paymentClient,
+		DataStore:                   dataStore,
+		KafkaAdmin:                  kafkaAdmin,
+		TemporalClient:              nil, // will be set up later in worker
+		FulfillmentClient:           fulfillmentClient,
+		PaymentClient:               paymentClient,
+		NotificationRequestProducer: nil,
 	}, nil
 }

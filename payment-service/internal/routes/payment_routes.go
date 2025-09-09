@@ -16,7 +16,7 @@ func SetupPaymentRoutes(e *echo.Echo, h *handler.PaymentHandler) {
 	protected.Use(middleware.AuthMiddleware)
 
 	// Process a payment
-	protected.POST("/:paymentID/process", h.ProcessPayment)
+	protected.POST("/order/:orderID/process", h.ProcessPayment)
 
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)

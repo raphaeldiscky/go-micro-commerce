@@ -119,26 +119,26 @@ func executeSagaSteps(
 	state.CompletedSteps["ConfirmProductsDeduction"] = true
 
 	// Step 6: Send Order Confirmation
-	logger.Info("Executing SendOrderConfirmation", "orderID", order.ID)
+	logger.Info("Executing SendOrderConfirmedNotification", "orderID", order.ID)
 
 	if state.TrackingNumber != nil && state.CustomerEmail != "" {
-		confirmationInput := dto.SendOrderConfirmationRequest{
+		confirmationInput := dto.SendOrderConfirmedNotificationRequest{
 			Order:          order,
 			Products:       state.ReservedProducts,
 			TrackingNumber: *state.TrackingNumber,
 			CustomerEmail:  state.CustomerEmail,
 		}
-		if err := workflow.ExecuteActivity(ctx, SendOrderConfirmation, confirmationInput).Get(ctx, nil); err != nil {
+		if err := workflow.ExecuteActivity(ctx, SendOrderConfirmedNotification, confirmationInput).Get(ctx, nil); err != nil {
 			// This is not critical, log but don't fail the saga
 			logger.Warn(
-				"SendOrderConfirmation failed, but saga will continue",
+				"SendOrderConfirmedNotification failed, but saga will continue",
 				"error",
 				err,
 				"orderID",
 				order.ID,
 			)
 		} else {
-			state.CompletedSteps["SendOrderConfirmation"] = true
+			state.CompletedSteps["SendOrderConfirmedNotification"] = true
 		}
 	}
 

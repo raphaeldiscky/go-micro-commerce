@@ -11,17 +11,40 @@
         padding: 20px;
       }
       .header {
-        background-color: #f8f9fa;
+        background-color: #d4edda;
         padding: 20px;
         text-align: center;
+        border-radius: 8px;
+        border: 1px solid #c3e6cb;
       }
-      .order-details {
+      .verified-status {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+      .content-details {
         margin: 20px 0;
       }
-      .total-section {
+      .welcome-section {
+        background-color: #d4edda;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #28a745;
+      }
+      .next-steps-section {
         background-color: #f8f9fa;
         padding: 15px;
         margin: 20px 0;
+        border-radius: 8px;
+      }
+      .success {
+        color: #155724;
+        font-weight: bold;
       }
       .footer {
         margin-top: 30px;
@@ -33,22 +56,35 @@
   </head>
   <body>
     <div class="header">
-      <h1>✅ Account Verified</h1>
+      <h1>✅ Account Verified!</h1>
+      <div class="verified-status">VERIFIED</div>
+      <p><strong class="success">Congratulations! Your account verification is complete.</strong></p>
     </div>
 
-    <div class="order-details">
+    <div class="content-details">
       <h2>Verification Complete</h2>
-      <p>Dear {{.RecipientName}},</p>
+      <p>Dear <strong class="success">{{.RecipientName}}</strong>,</p>
       <p>
         We are pleased to inform you that your account has been successfully
-        verified.
+        verified and you now have full access to our platform.
       </p>
+    </div>
       
-      <div class="total-section">
-        <h3>What's Next?</h3>
-        <p>You can now access all the features of our service.</p>
-        <p>Start exploring and enjoy your experience with us!</p>
-      </div>
+    <div class="welcome-section">
+      <h3>🎉 Welcome to Our Platform!</h3>
+      <p><strong class="success">Your account is now fully active and ready to use.</strong></p>
+      <p><em>You can now enjoy all the features and benefits we offer.</em></p>
+    </div>
+    
+    <div class="next-steps-section">
+      <h3>What's Next?</h3>
+      <ul>
+        <li><strong>Explore Features:</strong> Browse all available services and tools</li>
+        <li><strong>Complete Profile:</strong> Add additional information to personalize your experience</li>
+        <li><strong>Start Shopping:</strong> Begin exploring our products and services</li>
+        <li><strong>Get Support:</strong> Contact us anytime if you need assistance</li>
+      </ul>
+      <p><strong>Start exploring and enjoy your experience with us!</strong></p>
     </div>
 
     <div class="footer">

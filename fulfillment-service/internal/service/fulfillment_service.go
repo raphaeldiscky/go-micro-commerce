@@ -29,10 +29,10 @@ type FulfillmentServiceInterface interface {
 		ctx context.Context,
 		req *dto.CreateFulfillmentRequest,
 	) (*dto.FulfillmentResponse, error)
-	// UpdateFulfillmentStatus updates the status of a fulfillment
-	UpdateFulfillmentStatus(
+	// UpdateFulfillmentStatusByOrderID updates the status of a fulfillment
+	UpdateFulfillmentStatusByOrderID(
 		ctx context.Context,
-		fulfillmentID uuid.UUID,
+		orderID uuid.UUID,
 		req dto.UpdateFulfillmentStatusRequest,
 	) (*dto.FulfillmentResponse, error)
 	// SetCarrierInfo sets carrier and shipping label information
@@ -201,10 +201,10 @@ func (s *FulfillmentService) CreateFulfillment(
 	return res, nil
 }
 
-// UpdateFulfillmentStatus updates the status of a fulfillment.
-func (s *FulfillmentService) UpdateFulfillmentStatus(
+// UpdateFulfillmentStatusByOrderID updates the status of a fulfillment.
+func (s *FulfillmentService) UpdateFulfillmentStatusByOrderID(
 	ctx context.Context,
-	fulfillmentID uuid.UUID,
+	orderID uuid.UUID,
 	req dto.UpdateFulfillmentStatusRequest,
 ) (*dto.FulfillmentResponse, error) {
 	res := new(dto.FulfillmentResponse)
@@ -214,7 +214,7 @@ func (s *FulfillmentService) UpdateFulfillmentStatus(
 		outboxRepo := ds.OutboxRepository()
 
 		// Get fulfillment
-		fulfillment, err := fulfillmentRepo.FindByID(ctx, fulfillmentID)
+		fulfillment, err := fulfillmentRepo.FindByOrderID(ctx, orderID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get fulfillment")
 		}

@@ -10,16 +10,16 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 )
 
-// CreatePaymentGatewayRequest represents the request to create a payment from an order event.
-type CreatePaymentGatewayRequest struct {
+// CreatePaymentRequest represents the request to create a payment from an order event.
+type CreatePaymentRequest struct {
 	OrderID       uuid.UUID              `json:"order_id"       validate:"required"`
 	Amount        decimal.Decimal        `json:"amount"         validate:"required,gt=0"`
 	Currency      string                 `json:"currency"       validate:"required,len=3"`
 	PaymentMethod constant.PaymentMethod `json:"payment_method" validate:"required"`
 }
 
-// ProcessPaymentGatewayRequest represents the request to process a payment.
-type ProcessPaymentGatewayRequest struct {
+// ProcessPaymentRequest represents the request to process a payment.
+type ProcessPaymentRequest struct {
 	CustomerID     uuid.UUID              `json:"customer_id"`
 	CustomerEmail  string                 `json:"customer_email"`
 	IdempotencyKey uuid.UUID              `json:"idempotency_key" validate:"required"`

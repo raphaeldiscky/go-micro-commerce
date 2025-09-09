@@ -139,9 +139,20 @@ func (s *OrderService) handleExistingOrder(
 		case constant.SagaStatusExecuting,
 			constant.SagaStatusPending,
 			constant.SagaStatusCompensating:
-			return nil, false, fmt.Errorf("order is still being processed")
+			// Return existing order with processing status for idempotency
+			response := mapper.MapToOrderResponse(existingOrder)
+			response.Status = constant.OrderStatusProcessing
+
+			s.logger.Infof(
+				"Order %s is still being processed, returning existing order",
+				existingOrder.ID,
+			)
+
+			return response, true, nil
 		case constant.SagaStatusFailed, constant.SagaStatusCompensated:
 			s.logger.Infof("Retrying failed order %s", existingOrder.ID)
+			// Allow retry by not returning here, continue to create new saga
+			return nil, false, nil
 		}
 	}
 
@@ -159,7 +170,7 @@ func (s *OrderService) executeSagaWorkflow(
 	}
 
 	s.executeSagaAsynchronously(ctx, res, req)
-	res.Status = "processing"
+	res.Status = constant.OrderStatusProcessing
 
 	s.logger.Infof(
 		"Your order is being processed. You will receive a confirmation once it's complete.",
