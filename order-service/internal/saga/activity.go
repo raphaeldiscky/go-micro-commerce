@@ -11,6 +11,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
@@ -355,15 +357,15 @@ func (a *OrderActivitiesImpl) SendPaymentRequiredNotification(
 
 	err := a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
-		// Create waiting payment notification event
-		paymentDeadline := time.Now().UTC().Add(1 * time.Hour) // 1 hour deadline
-		notificationEvent := producer.NewWaitingPaymentNotificationEvent(
+
+		notificationEvent := producer.NewNotificationRequestEvent(
 			order,
 			reservedProducts,
 			customerEmail,
 			"Customer Name",
-			paymentDeadline,
-			nil, // No payment URL provided
+			nil,
+			pkgconstant.TemplateOrderPaymentRequired,
+			"Payment Required - Complete Your Order",
 		)
 
 		payload, err := json.Marshal(notificationEvent)
@@ -604,6 +606,8 @@ func (a *OrderActivitiesImpl) SendOrderConfirmedNotification(
 			customerEmail,
 			"Customer Name",
 			trackingNumber,
+			pkgconstant.TemplateOrderConfirmed,
+			"Order Confirmed - Payment Received",
 		)
 
 		payload, err := json.Marshal(notificationEvent)

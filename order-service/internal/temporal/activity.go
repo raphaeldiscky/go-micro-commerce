@@ -12,6 +12,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"go.temporal.io/sdk/activity"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
@@ -491,6 +493,8 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmedNotification(
 			req.CustomerEmail,
 			"Customer Name", // TODO: Get actual customer name from user service if needed
 			&req.TrackingNumber,
+			pkgconstant.TemplateOrderConfirmed,
+			"Order Confirmed - Payment Received",
 		)
 
 		payload, err := json.Marshal(notificationEvent)
