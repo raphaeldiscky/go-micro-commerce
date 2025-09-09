@@ -6,6 +6,7 @@ import (
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
@@ -31,8 +32,9 @@ type RefundPaymentGatewayRequest struct {
 
 // TemporalOrderSagaRequest represents the input for the order saga workflow.
 type TemporalOrderSagaRequest struct {
-	Order    *entity.Order       `json:"order"`
-	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
+	Order    *entity.Order        `json:"order"`
+	Shipping *Shipping            `json:"shipping"`
+	UserAuth *pkgdto.UserAuthInfo `json:"user_auth"`
 }
 
 // TemporalOrderSagaResponse represents the result of the order saga workflow.
@@ -48,25 +50,25 @@ type TemporalOrderSagaResponse struct {
 
 // TemporalWorkflowState holds the state of the workflow execution.
 type TemporalWorkflowState struct {
-	OrderID          uuid.UUID            `json:"order_id"`
-	ReservedProducts []entity.Product     `json:"reserved_products"`
-	Pricing          *entity.OrderPricing `json:"pricing"`
-	PaymentID        *uuid.UUID           `json:"payment_id"`
-	ShippingID       *uuid.UUID           `json:"shipping_id"`
-	TrackingNumber   *string              `json:"tracking_number"`
-	ShippingCost     *decimal.Decimal     `json:"shipping_cost"`
-	CustomerEmail    string               `json:"customer_email"`
-	CompletedSteps   map[string]bool      `json:"completed_steps"`
+	OrderID          uuid.UUID                      `json:"order_id"`
+	ReservedProducts []entity.Product               `json:"reserved_products"`
+	Pricing          *entity.OrderPricing           `json:"pricing"`
+	PaymentID        *uuid.UUID                     `json:"payment_id"`
+	ShippingID       *uuid.UUID                     `json:"shipping_id"`
+	TrackingNumber   *string                        `json:"tracking_number"`
+	ShippingCost     *decimal.Decimal               `json:"shipping_cost"`
+	CustomerEmail    string                         `json:"customer_email"`
+	CompletedSteps   map[constant.WorkflowStep]bool `json:"completed_steps"`
 }
 
-// ReserveProductsAndCalculateRequest represents the input for reserving products and calculating order.
-type ReserveProductsAndCalculateRequest struct {
+// ReserveProductsRequest represents the input for reserving products and calculating order.
+type ReserveProductsRequest struct {
 	Order    *entity.Order       `json:"order"`
 	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
 }
 
-// ReserveProductsAndCalculateResponse represents the result of reserving products and calculating order.
-type ReserveProductsAndCalculateResponse struct {
+// ReserveProductsResponse represents the result of reserving products and calculating order.
+type ReserveProductsResponse struct {
 	CalculatedOrder  *entity.Order    `json:"calculated_order"`
 	ReservedProducts []entity.Product `json:"reserved_products"`
 	CustomerEmail    string           `json:"customer_email"`
@@ -107,4 +109,33 @@ type ReleaseProductsRequest struct {
 type RestoreProductsRequest struct {
 	Order    *entity.Order       `json:"order"`
 	UserAuth pkgdto.UserAuthInfo `json:"user_auth"`
+}
+
+// GetShippingCostRequest represents input for getting shipping cost.
+type GetShippingCostRequest struct {
+	Order    *entity.Order        `json:"order"`
+	Shipping *Shipping            `json:"shipping"`
+	UserAuth *pkgdto.UserAuthInfo `json:"user_auth"`
+}
+
+// GetShippingCostResponse represents the result of getting shipping cost.
+type GetShippingCostResponse struct {
+	ShippingCost decimal.Decimal `json:"shipping_cost"`
+}
+
+// SendPaymentRequiredNotificationRequest represents input for sending payment required notification.
+type SendPaymentRequiredNotificationRequest struct {
+	Order            *entity.Order    `json:"order"`
+	ReservedProducts []entity.Product `json:"reserved_products"`
+	CustomerEmail    string           `json:"customer_email"`
+}
+
+// WaitForPaymentConfirmationRequest represents input for waiting payment confirmation.
+type WaitForPaymentConfirmationRequest struct {
+	Order *entity.Order `json:"order"`
+}
+
+// WaitForPaymentConfirmationResponse represents the result of waiting for payment confirmation.
+type WaitForPaymentConfirmationResponse struct {
+	PaymentID uuid.UUID `json:"payment_id"`
 }

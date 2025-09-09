@@ -182,9 +182,10 @@ func (s *OrderService) CreateOrderWithTemporal(
 		}
 
 		// Start Temporal workflow
-		req := dto.TemporalOrderSagaRequest{
+		temporalReq := dto.TemporalOrderSagaRequest{
 			Order:    savedOrder,
-			UserAuth: userAuth,
+			Shipping: &req.Shipping,
+			UserAuth: &userAuth,
 		}
 
 		workflowOptions := s.temporalClient.CreateWorkflowOptions(savedOrder.ID)
@@ -193,7 +194,7 @@ func (s *OrderService) CreateOrderWithTemporal(
 			ctx,
 			workflowOptions,
 			constant.OrderSagaWorkflowName,
-			req,
+			temporalReq,
 		)
 		if err != nil {
 			s.logger.Errorf(

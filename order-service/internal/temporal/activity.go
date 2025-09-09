@@ -25,20 +25,32 @@ import (
 // OrderActivities defines the interface for order saga activities to match saga implementation.
 type OrderActivities interface {
 	// Execution
-	ReserveProductsAndCalculate(
+	ReserveProducts(
 		ctx context.Context,
-		req dto.ReserveProductsAndCalculateRequest,
-	) (dto.ReserveProductsAndCalculateResponse, error)
+		req dto.ReserveProductsRequest,
+	) (dto.ReserveProductsResponse, error)
+	GetShippingCost(
+		ctx context.Context,
+		req dto.GetShippingCostRequest,
+	) (dto.GetShippingCostResponse, error)
+	SetFinalOrderPrices(
+		ctx context.Context,
+		req dto.SetFinalOrderPricesRequest,
+	) (dto.SetFinalOrderPricesResponse, error)
+	CreatePayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
+	SendPaymentRequiredNotification(
+		ctx context.Context,
+		req dto.SendPaymentRequiredNotificationRequest,
+	) error
+	WaitForPaymentConfirmation(
+		ctx context.Context,
+		req dto.WaitForPaymentConfirmationRequest,
+	) (dto.WaitForPaymentConfirmationResponse, error)
 	ProcessFulfillment(
 		ctx context.Context,
 		order *entity.Order,
 		shipping *dto.Shipping,
 	) (dto.ProcessFulfillmentResponse, error)
-	SetFinalOrderPrices(
-		ctx context.Context,
-		req dto.SetFinalOrderPricesRequest,
-	) (dto.SetFinalOrderPricesResponse, error)
-	ProcessPayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
 	ConfirmProductsDeduction(ctx context.Context, req *dto.ConfirmProductsDeductionRequest) error
 	SendOrderConfirmedNotification(
 		ctx context.Context,
@@ -84,11 +96,11 @@ func NewTemporalActivities(
 	}
 }
 
-// ReserveProductsAndCalculate reserves products for the order items and calculates order details.
-func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
+// ReserveProducts reserves products for the order items and calculates order details.
+func (ta *OrderActivitiesImpl) ReserveProducts(
 	ctx context.Context,
-	req dto.ReserveProductsAndCalculateRequest,
-) (dto.ReserveProductsAndCalculateResponse, error) {
+	req dto.ReserveProductsRequest,
+) (dto.ReserveProductsResponse, error) {
 	logger := activity.GetLogger(ctx)
 	order := req.Order
 	userAuth := req.UserAuth
@@ -99,7 +111,7 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
 
 	if ta.productClient == nil {
-		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+		return dto.ReserveProductsResponse{}, fmt.Errorf(
 			"product service is unavailable",
 		)
 	}
@@ -109,13 +121,45 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		productIDs[i] = order.Items[i].ProductID
 	}
 
+	logger.Info("Requesting products", "productIDs", productIDs, "count", len(productIDs))
+
 	products, err := ta.productClient.GetProducts(ctx, productIDs)
 	if err != nil {
-		return dto.ReserveProductsAndCalculateResponse{}, err
+		logger.Error(
+			"Failed to get products from product service",
+			"productIDs",
+			productIDs,
+			"error",
+			err,
+		)
+
+		return dto.ReserveProductsResponse{}, err
 	}
 
+	logger.Info(
+		"Retrieved products",
+		"foundCount",
+		len(products),
+		"requestedCount",
+		len(productIDs),
+	)
+
 	if len(products) != len(productIDs) {
-		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf("not all products found")
+		logger.Error(
+			"Product count mismatch",
+			"foundCount",
+			len(products),
+			"requestedCount",
+			len(productIDs),
+			"requestedIDs",
+			productIDs,
+		)
+
+		return dto.ReserveProductsResponse{}, fmt.Errorf(
+			"not all products found: requested %d, found %d",
+			len(productIDs),
+			len(products),
+		)
 	}
 
 	// Create product map for quick lookup
@@ -132,7 +176,7 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		product, exists := productMap[item.ProductID]
 
 		if !exists {
-			return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+			return dto.ReserveProductsResponse{}, fmt.Errorf(
 				"product %s not found",
 				item.ProductID,
 			)
@@ -154,7 +198,7 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	if err != nil {
 		logger.Error("Failed to reserve stock for order", "orderID", order.ID, "error", err)
 
-		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+		return dto.ReserveProductsResponse{}, fmt.Errorf(
 			"stock reservation failed: %w",
 			err,
 		)
@@ -169,7 +213,7 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 			product.UnitPrice,
 		)
 		if err != nil {
-			return dto.ReserveProductsAndCalculateResponse{}, err
+			return dto.ReserveProductsResponse{}, err
 		}
 
 		orderItems = append(orderItems, *orderItem)
@@ -183,28 +227,58 @@ func (ta *OrderActivitiesImpl) ReserveProductsAndCalculate(
 		orderItems,
 	)
 	if err != nil {
-		return dto.ReserveProductsAndCalculateResponse{}, err
+		return dto.ReserveProductsResponse{}, err
 	}
 
 	// Get customer email from user auth
 	email := userAuth.Email
 	if email == "" {
-		return dto.ReserveProductsAndCalculateResponse{}, fmt.Errorf(
+		return dto.ReserveProductsResponse{}, fmt.Errorf(
 			"customer email not found in user auth",
 		)
 	}
 
 	logger.Info("Successfully reserved stock for order", "orderID", order.ID)
 
-	return dto.ReserveProductsAndCalculateResponse{
+	return dto.ReserveProductsResponse{
 		CalculatedOrder:  calculatedOrder,
 		ReservedProducts: reservedProducts,
 		CustomerEmail:    email,
 	}, nil
 }
 
-// ProcessPayment processes payment for the order.
-func (ta *OrderActivitiesImpl) ProcessPayment(
+// GetShippingCost calculates shipping cost by calling fulfillment service without creating actual shipment.
+func (ta *OrderActivitiesImpl) GetShippingCost(
+	ctx context.Context,
+	req dto.GetShippingCostRequest,
+) (dto.GetShippingCostResponse, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing GetShippingCost", "orderID", req.Order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, *req.UserAuth)
+
+	shippingCost, err := ta.fulfillmentClient.GetShippingCost(ctx, req.Order, req.Shipping)
+	if err != nil {
+		logger.Error("Failed to get shipping cost", "orderID", req.Order.ID, "error", err)
+
+		return dto.GetShippingCostResponse{}, fmt.Errorf("failed to get shipping cost: %w", err)
+	}
+
+	logger.Info(
+		"Successfully received shipping cost",
+		"orderID", req.Order.ID,
+		"shippingCost", shippingCost,
+		"currency", req.Order.Currency,
+	)
+
+	return dto.GetShippingCostResponse{
+		ShippingCost: shippingCost,
+	}, nil
+}
+
+// CreatePayment create payment for the order.
+func (ta *OrderActivitiesImpl) CreatePayment(
 	ctx context.Context,
 	order *entity.Order,
 ) (uuid.UUID, error) {
@@ -290,6 +364,113 @@ func (ta *OrderActivitiesImpl) ProcessPayment(
 	)
 
 	return response.PaymentID, nil
+}
+
+// SendPaymentRequiredNotification sends a payment required notification to the customer.
+func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
+	ctx context.Context,
+	req dto.SendPaymentRequiredNotificationRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing SendPaymentRequiredNotification", "orderID", req.Order.ID)
+
+	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
+
+		notificationEvent := producer.NewNotificationRequestEvent(
+			req.Order,
+			req.ReservedProducts,
+			req.CustomerEmail,
+			"Customer Name",
+			nil,
+			pkgconstant.TemplateOrderPaymentRequired,
+			"Payment Required - Complete Your Order",
+		)
+
+		payload, err := json.Marshal(notificationEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal notification event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   req.Order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			logger.Error(
+				"Failed to create payment required notification",
+				"orderID", req.Order.ID,
+				"error", err,
+			)
+
+			return fmt.Errorf("failed to create payment required notification event: %w", err)
+		}
+
+		logger.Info("Successfully created payment required notification", "orderID", req.Order.ID)
+
+		return nil
+	})
+	if err != nil {
+		logger.Error(
+			"Failed to create payment required notification",
+			"orderID", req.Order.ID,
+			"error", err,
+		)
+
+		return fmt.Errorf("failed to create payment required notification: %w", err)
+	}
+
+	return nil
+}
+
+// WaitForPaymentConfirmation waits for payment confirmation with 1-hour timeout.
+func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
+	ctx context.Context,
+	req dto.WaitForPaymentConfirmationRequest,
+) (dto.WaitForPaymentConfirmationResponse, error) {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing WaitForPaymentConfirmation", "orderID", req.Order.ID)
+
+	response, err := ta.paymentClient.WaitForPaymentResponse(
+		ctx,
+		req.Order.ID,
+		1*time.Hour, // 1-hour timeout for user payment confirmation
+	)
+	if err != nil {
+		logger.Error(
+			"Failed to receive payment confirmation",
+			"orderID",
+			req.Order.ID,
+			"error",
+			err,
+		)
+
+		return dto.WaitForPaymentConfirmationResponse{}, fmt.Errorf(
+			"failed to receive payment confirmation: %w",
+			err,
+		)
+	}
+
+	logger.Info(
+		"Successfully received payment confirmation",
+		"orderID", req.Order.ID,
+		"paymentID", response.PaymentID,
+		"status", response.Status,
+	)
+
+	return dto.WaitForPaymentConfirmationResponse{
+		PaymentID: response.PaymentID,
+	}, nil
 }
 
 // ProcessFulfillment creates shipping/fulfillment arrangement for the order.
@@ -534,6 +715,141 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmedNotification(
 		"Order confirmation notification queued",
 		"orderID", req.Order.ID,
 		"trackingNumber", req.TrackingNumber,
+	)
+
+	return nil
+}
+
+// ReleaseProducts releases reserved products during compensation.
+func (ta *OrderActivitiesImpl) ReleaseProducts(
+	ctx context.Context,
+	req dto.ReleaseProductsRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing ReleaseProducts compensation", "orderID", req.Order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
+
+	if ta.productClient == nil {
+		return fmt.Errorf("product service is unavailable")
+	}
+
+	for i := range req.Order.Items {
+		item := &req.Order.Items[i]
+		logger.Info(
+			"Releasing reserved product",
+			"quantity", item.Quantity,
+			"productID", item.ProductID,
+			"orderID", req.Order.ID,
+		)
+	}
+
+	releaseItems := make([]dto.ProductReservationItem, len(req.Order.Items))
+
+	for i := range req.Order.Items {
+		orderItem := &req.Order.Items[i]
+		releaseItems[i] = dto.ProductReservationItem{
+			ProductID: orderItem.ProductID,
+			Quantity:  orderItem.Quantity,
+		}
+	}
+
+	err := ta.productClient.ReleaseProducts(ctx, releaseItems)
+	if err != nil {
+		logger.Error("Failed to release reserved products", "orderID", req.Order.ID, "error", err)
+
+		return fmt.Errorf("failed to release reserved products: %w", err)
+	}
+
+	logger.Info("Successfully released reserved products", "orderID", req.Order.ID)
+
+	return nil
+}
+
+// RefundPayment refunds payment during compensation.
+func (ta *OrderActivitiesImpl) RefundPayment(
+	ctx context.Context,
+	req dto.RefundPaymentGatewayRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info(
+		"Executing RefundPayment compensation",
+		"orderID",
+		req.Order.ID,
+		"paymentID",
+		req.PaymentID,
+	)
+
+	// For now, just log the compensation - payment client doesn't have RefundPayment method
+	// TODO: Implement actual payment refund when PaymentClient supports it
+	logger.Info("Payment refund compensation logged",
+		"orderID", req.Order.ID,
+		"paymentID", req.PaymentID,
+	)
+
+	return nil
+}
+
+// RestoreProducts restores deducted products during compensation.
+func (ta *OrderActivitiesImpl) RestoreProducts(
+	ctx context.Context,
+	req dto.RestoreProductsRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing RestoreProducts compensation", "orderID", req.Order.ID)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
+
+	if ta.productClient == nil {
+		return fmt.Errorf("product service is unavailable")
+	}
+
+	for i := range req.Order.Items {
+		item := &req.Order.Items[i]
+		logger.Info(
+			"Restoring deducted product",
+			"quantity", item.Quantity,
+			"productID", item.ProductID,
+			"orderID", req.Order.ID,
+		)
+	}
+
+	restoreItems := make([]dto.ProductRestorationItem, len(req.Order.Items))
+
+	for i := range req.Order.Items {
+		orderItem := &req.Order.Items[i]
+		restoreItems[i] = dto.ProductRestorationItem{
+			ProductID: orderItem.ProductID,
+			Quantity:  orderItem.Quantity,
+		}
+	}
+
+	_, err := ta.productClient.RestoreProducts(ctx, restoreItems)
+	if err != nil {
+		logger.Error("Failed to restore deducted products", "orderID", req.Order.ID, "error", err)
+
+		return fmt.Errorf("failed to restore deducted products: %w", err)
+	}
+
+	logger.Info("Successfully restored deducted products", "orderID", req.Order.ID)
+
+	return nil
+}
+
+// CancelShipping cancels shipping during compensation.
+func (ta *OrderActivitiesImpl) CancelShipping(
+	ctx context.Context,
+	shippingID uuid.UUID,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing CancelShipping compensation", "shippingID", shippingID)
+
+	// For now, just log the compensation - fulfillment client doesn't have CancelShipping method
+	// TODO: Implement actual shipping cancellation when FulfillmentClient supports it
+	logger.Info("Shipping cancellation compensation logged",
+		"shippingID", shippingID,
 	)
 
 	return nil

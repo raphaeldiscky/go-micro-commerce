@@ -40,8 +40,6 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
 
-	h.logger.Debugf("====1 Handler====", req)
-
 	if err := c.Bind(req); err != nil {
 		return err
 	}
@@ -50,16 +48,12 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 		return err
 	}
 
-	h.logger.Debugf("====2 Handler====: %+v", req)
-
 	ctx := echoutils.ContextWithUserInfo(c)
 
 	order, err := h.orderService.CreateOrderWithSaga(ctx, req)
 	if err != nil {
 		return err
 	}
-
-	h.logger.Debugf("====3 Handler====", order)
 
 	if order.Status == constant.OrderStatusProcessing {
 		mapped := mapper.MapToOrderSagaResponse(order)
@@ -77,11 +71,11 @@ func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err := c.Validate(req); err != nil {
 		return err
 	}
 
