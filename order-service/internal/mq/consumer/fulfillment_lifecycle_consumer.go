@@ -12,6 +12,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
@@ -318,6 +320,8 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 		customerEmail,
 		"Customer Name",
 		&evt.Payload.TrackingNumber,
+		pkgconstant.TemplateOrderDelivered,
+		"Your Order Has Been Delivered!",
 	)
 
 	payload, err := json.Marshal(notificationEvent)
