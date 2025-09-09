@@ -70,7 +70,7 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 		fulfillmentRequestAsyncProducer,
 	)
 
-	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
+	productClient, err := client.NewProductClient(cfg)
 	if err != nil {
 		appLogger.Warnf(
 			"failed to create product client: %v. Order service will start without product client functionality.",

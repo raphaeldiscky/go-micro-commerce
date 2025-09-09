@@ -70,11 +70,16 @@ type FulfillmentServiceInterface interface {
 		trackingNumber string,
 		shippingCost decimal.Decimal,
 	) error
-	// GetShippingRates retrieves shipping rates for a fulfillment request
-	GetShippingRates(
+	// CalculateShippingRates retrieves many shipping rates for a fulfillment request
+	CalculateShippingRates(
 		ctx context.Context,
-		req *dto.GetShippingRatesRequest,
+		req *dto.CalculateShippingRatesRequest,
 	) ([]dto.ShippingRateResponse, error)
+	// CalculateShippingRate retrieve single shipping rate for a fulfillment request
+	CalculateShippingRate(
+		ctx context.Context,
+		req *dto.CalculateShippingRateRequest,
+	) (*dto.ShippingRateResponse, error)
 	// CreateShipment creates a shipment with carrier and generates tracking number
 	CreateShipment(
 		ctx context.Context,
@@ -142,6 +147,8 @@ func (s *FulfillmentService) CreateFulfillment(
 			req.Currency,
 			req.ShippingCost,
 			req.WeightKG,
+			req.FromAddress,
+			req.ToAddress,
 			req.EstimatedDeliveryAt,
 		)
 		if err != nil {
@@ -284,7 +291,7 @@ func (s *FulfillmentService) SetCarrierInfo(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err := fulfillment.SetCarrierInfo(req.Carrier, req.ShippingLabelURL); err != nil {
+	if err := fulfillment.SetCarrierInfo(req.CarrierID, req.ShippingLabelURL); err != nil {
 		return nil, httperror.NewBadRequestError("failed to set carrier info")
 	}
 
@@ -313,7 +320,7 @@ func (s *FulfillmentService) SetDimensions(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err := fulfillment.SetDimensions(&req.Dimensions); err != nil {
+	if err := fulfillment.SetDimensions(req.Dimensions); err != nil {
 		return nil, httperror.NewBadRequestError("failed to set dimensions")
 	}
 
@@ -420,30 +427,82 @@ func (s *FulfillmentService) HandleOrderFulfillmentRequested(
 	return nil
 }
 
-// GetShippingRates retrieves shipping rates for a fulfillment request.
-func (s *FulfillmentService) GetShippingRates(
+// CalculateShippingRates retrieves many shipping rates for a fulfillment request.
+func (s *FulfillmentService) CalculateShippingRates(
 	ctx context.Context,
-	req *dto.GetShippingRatesRequest,
+	req *dto.CalculateShippingRatesRequest,
 ) ([]dto.ShippingRateResponse, error) {
+	s.logger.Infof(
+		"Calculating shipping rates for weight: %s kg, currency: %s",
+		req.WeightKG,
+		req.Currency,
+	)
+
 	// Create shipping request for carrier client
 	shipReq := dto.ShippingRequest{
-		OrderID:     req.OrderID,
 		FromAddress: req.FromAddress,
 		ToAddress:   req.ToAddress,
-		Package:     req.Package,
+		WeightKG:    req.WeightKG,
+		Dimensions:  req.Dimensions,
 	}
 
 	rates, err := s.carrierClient.GetRates(ctx, &shipReq)
 	if err != nil {
-		s.logger.Errorf("Failed to get shipping rates: %v", err)
+		s.logger.Errorf("Failed to calculate shipping rates: %v", err)
 
-		return nil, fmt.Errorf("failed to get shipping rates: %w", err)
+		return nil, fmt.Errorf("failed to calculate shipping rates: %w", err)
+	}
+
+	if len(rates) == 0 {
+		s.logger.Warn("No shipping rates available")
+
+		return []dto.ShippingRateResponse{}, nil
 	}
 
 	// Convert carrier rates to response format
 	response := make([]dto.ShippingRateResponse, len(rates))
 	for i, rate := range rates {
 		response[i] = dto.ShippingRateResponse(rate)
+	}
+
+	s.logger.Infof("Found %d shipping rates", len(response))
+
+	return response, nil
+}
+
+// CalculateShippingRate retrieves single shipping rate for a fulfillment request.
+func (s *FulfillmentService) CalculateShippingRate(
+	ctx context.Context,
+	req *dto.CalculateShippingRateRequest,
+) (*dto.ShippingRateResponse, error) {
+	s.logger.Infof(
+		"Calculating shipping rates for weight: %s kg, currency: %s",
+		req.WeightKG,
+		req.Currency,
+	)
+
+	// Create shipping request for carrier client
+	shipReq := dto.ShippingRequest{
+		FromAddress: req.FromAddress,
+		ToAddress:   req.ToAddress,
+		WeightKG:    req.WeightKG,
+		Dimensions:  req.Dimensions,
+	}
+
+	rate, err := s.carrierClient.GetRate(ctx, &shipReq)
+	if err != nil {
+		s.logger.Errorf("Failed to calculate shipping rates: %v", err)
+
+		return nil, fmt.Errorf("failed to calculate shipping rates: %w", err)
+	}
+
+	response := &dto.ShippingRateResponse{
+		CarrierID:         rate.CarrierID,
+		Service:           rate.Service,
+		ShippingCost:      rate.ShippingCost,
+		Currency:          rate.Currency,
+		EstimatedDelivery: rate.EstimatedDelivery,
+		TransitDays:       rate.TransitDays,
 	}
 
 	return response, nil
@@ -465,21 +524,12 @@ func (s *FulfillmentService) CreateShipment(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	// Create shipping request
-	insuranceAmount := decimal.Zero
-	if req.InsuranceAmount != nil {
-		insuranceAmount = *req.InsuranceAmount
-	}
-
 	shipReq := dto.ShippingRequest{
-		OrderID:         existingFulfillment.OrderID,
-		Carrier:         req.Carrier,
-		Service:         req.Service,
-		FromAddress:     req.FromAddress,
-		ToAddress:       req.ToAddress,
-		Package:         req.Package,
-		InsuranceAmount: insuranceAmount,
-		Signature:       req.Signature,
+		CarrierID:   req.CarrierID,
+		FromAddress: req.FromAddress,
+		ToAddress:   req.ToAddress,
+		WeightKG:    req.WeightKG,
+		Dimensions:  req.Dimensions,
 	}
 
 	// Create shipment with carrier
@@ -495,8 +545,7 @@ func (s *FulfillmentService) CreateShipment(
 		fulfillmentRepo := ds.FulfillmentRepository()
 
 		// Update with carrier information
-		existingFulfillment.Carrier = &label.Carrier
-		existingFulfillment.ShippingLabelURL = &label.LabelURL
+		existingFulfillment.ShippingLabelURL = label.LabelURL
 		existingFulfillment.TrackingNumber = label.TrackingNumber
 		existingFulfillment.Status = constant.FulfillmentStatusShipped
 		existingFulfillment.UpdatedAt = time.Now().UTC()
@@ -540,10 +589,7 @@ func (s *FulfillmentService) UpdateTrackingStatus(
 	}
 
 	// Get carrier tracking information
-	carrier := ""
-	if existingFulfillment.Carrier != nil {
-		carrier = *existingFulfillment.Carrier
-	}
+	carrier := existingFulfillment.CarrierID
 
 	trackingInfo, err := s.carrierClient.GetTracking(ctx, trackingNumber, carrier)
 	if err != nil {

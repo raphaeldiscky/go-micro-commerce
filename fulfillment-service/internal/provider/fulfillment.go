@@ -47,6 +47,7 @@ func SetupFulfillment(
 		fulfillmentLifecycleProducer,
 		providers.CarrierClient,
 	)
+	providers.FulfillmentService = fulfillmentService
 	fulfillmentHandler := handler.NewFulfillmentHandler(fulfillmentService, appLogger)
 
 	routes.SetupFulfillmentRoutes(e, fulfillmentHandler)

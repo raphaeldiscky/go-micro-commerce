@@ -194,31 +194,63 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 	ctx context.Context,
 	evt *FulfillmentRequestEvent,
 ) (*entity.Fulfillment, error) {
-	// Convert shipping address and calculate weight
-	toAddress := c.convertShippingAddress(&evt.Payload.ShippingAddress)
-	totalWeight := c.estimatePackageWeight(evt.Payload.Items)
-
-	// Create shipping request
-	shippingRequest := c.createShippingRequest(
-		evt.Payload.OrderID,
-		&toAddress,
-		totalWeight,
-		evt.Payload.TotalPrice,
-	)
-
-	// Get shipping costs and create fulfillment
-	shippingCost, trackingNumber, estimatedDelivery, err := c.processShipping(ctx, shippingRequest)
-	if err != nil {
-		return nil, fmt.Errorf("failed to process shipping: %w", err)
+	// Mock for now
+	toAddress := entity.ToAddress{
+		City:       "Magelang",
+		State:      "Central Java",
+		PostalCode: "42151",
+		Country:    "Indonesia",
+	}
+	fromAddress := entity.FromAddress{
+		City:       "Jakart",
+		State:      "DKI Jakarta",
+		PostalCode: "12445",
+		Country:    "Indonesia",
 	}
 
+	dimensions := entity.Dimensions{
+		Length: decimal.NewFromFloat(12.5),
+		Height: decimal.NewFromFloat(8.5),
+		Width:  decimal.NewFromFloat(10.5),
+		Unit:   "cm",
+	}
+
+	weightKG := decimal.NewFromFloat(0.5)
+
+	// Create shipping request
+	shippingRequest := &dto.ShippingRequest{
+		OrderID:     evt.Payload.OrderID,
+		CarrierID:   "jne",
+		FromAddress: fromAddress,
+		ToAddress:   toAddress,
+		WeightKG:    weightKG,
+		Dimensions:  dimensions,
+	}
+
+	rate, err := c.carrierClient.GetRate(ctx, shippingRequest)
+	if err != nil {
+		c.logger.Warnf("Failed to get shipping rates: %v, using default values", err)
+	}
+
+	shippingRequest.CarrierID = rate.CarrierID
+	shippingCost := rate.ShippingCost
+	estimatedDelivery := rate.EstimatedDelivery
+
+	label, err := c.carrierClient.CreateShipment(ctx, shippingRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create shipping label: %w", err)
+	}
+
+	trackingNumber := label.TrackingNumber
+
 	// Create fulfillment entity
-	fulfillment, err := entity.NewFulfillment(
-		evt.Payload.OrderID,
+	fulfillment, err := entity.NewFulfillment(evt.Payload.OrderID,
 		trackingNumber,
 		evt.Payload.Currency,
 		shippingCost,
-		totalWeight,
+		weightKG,
+		fromAddress,
+		toAddress,
 		estimatedDelivery,
 	)
 	if err != nil {
@@ -226,81 +258,6 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 	}
 
 	return fulfillment, nil
-}
-
-// createShippingRequest creates a shipping request from the event data.
-func (c *FulfillmentRequestConsumer) createShippingRequest(
-	orderID uuid.UUID,
-	toAddress *dto.ShippingAddress,
-	totalWeight decimal.Decimal,
-	totalPrice decimal.Decimal,
-) *dto.ShippingRequest {
-	return &dto.ShippingRequest{
-		OrderID: orderID,
-		Carrier: string(constant.CarrierTypeJNE),
-		Service: "JNE Regular",
-		FromAddress: dto.ShippingAddress{
-			Name:       "Fulfillment Center",
-			Company:    "E-Commerce Platform",
-			Address1:   "Jl. Fulfillment Center No. 1",
-			City:       "Jakarta",
-			State:      "DKI Jakarta",
-			PostalCode: "12345",
-			Country:    "Indonesia",
-			Phone:      "+62-21-12345678",
-		},
-		ToAddress: *toAddress,
-		Package: dto.Package{
-			Weight: totalWeight,
-			Dimensions: map[string]decimal.Decimal{
-				"width":  decimal.NewFromInt(20),
-				"height": decimal.NewFromInt(15),
-				"length": decimal.NewFromInt(30),
-			},
-		},
-		InsuranceAmount: totalPrice,
-		Signature:       totalPrice.GreaterThan(decimal.NewFromInt(1000000)),
-	}
-}
-
-// processShipping handles shipping rate calculation and label creation.
-func (c *FulfillmentRequestConsumer) processShipping(
-	ctx context.Context,
-	shippingRequest *dto.ShippingRequest,
-) (shippingCost decimal.Decimal, trackingNumber string, estimatedDelivery time.Time, err error) {
-	// Get shipping rates
-	rates, rateErr := c.carrierClient.GetRates(ctx, shippingRequest)
-	if rateErr != nil {
-		c.logger.Warnf("Failed to get shipping rates: %v, using default values", rateErr)
-	}
-
-	// Select rate and create shipment
-	if len(rates) > 0 {
-		selectedRate := &rates[0]
-		shippingRequest.Carrier = string(selectedRate.Carrier)
-		shippingRequest.Service = selectedRate.Service
-		shippingCost = selectedRate.Cost
-		estimatedDelivery = selectedRate.EstimatedDelivery
-
-		label, labelErr := c.carrierClient.CreateShipment(ctx, shippingRequest)
-		if labelErr != nil {
-			c.logger.Errorf("Failed to create shipping label: %v", labelErr)
-
-			return decimal.Zero, "", time.Time{}, fmt.Errorf(
-				"failed to create shipping label: %w",
-				labelErr,
-			)
-		}
-
-		trackingNumber = label.TrackingNumber
-	} else {
-		// Use default values if carrier integration fails
-		shippingCost = decimal.NewFromInt(25000)
-		estimatedDelivery = time.Now().Add(72 * time.Hour)
-		trackingNumber = ""
-	}
-
-	return shippingCost, trackingNumber, estimatedDelivery, nil
 }
 
 // saveFulfillmentAndPublishEvent saves the fulfillment to database and publishes the created event.
@@ -365,35 +322,4 @@ func (c *FulfillmentRequestConsumer) publishFulfillmentCreatedEvent(
 	c.logger.Infof("Fulfillment created event published for order %s", fulfillment.OrderID)
 
 	return nil
-}
-
-// convertShippingAddress converts event payload address to DTO address.
-func (c *FulfillmentRequestConsumer) convertShippingAddress(
-	addr *event.ShippingAddressPayload,
-) dto.ShippingAddress {
-	return dto.ShippingAddress{
-		Name:       "Customer", // Default name, could be enhanced with customer data
-		Address1:   addr.Street,
-		City:       addr.City,
-		State:      addr.State,
-		PostalCode: addr.PostalCode,
-		Country:    addr.Country,
-	}
-}
-
-// estimatePackageWeight estimates the total weight based on items.
-func (c *FulfillmentRequestConsumer) estimatePackageWeight(
-	items []event.FulfillmentItemPayload,
-) decimal.Decimal {
-	// Simple estimation: assume each item weighs 0.5kg on average
-	totalItems := int64(0)
-	for _, item := range items {
-		totalItems += item.Quantity
-	}
-
-	// Minimum weight of 0.1kg, plus 0.5kg per item
-	baseWeight := decimal.NewFromFloat(0.1)
-	itemWeight := decimal.NewFromInt(totalItems).Mul(decimal.NewFromFloat(0.5))
-
-	return baseWeight.Add(itemWeight)
 }

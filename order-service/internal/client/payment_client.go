@@ -30,16 +30,16 @@ type PaymentClientInterface interface {
 
 // PaymentClient implements PaymentClientInterface using event-based correlation.
 type PaymentClient struct {
-	logger           logger.Logger
-	correlationMap   map[uuid.UUID]chan *dto.PaymentResponse
-	correlationMutex sync.RWMutex
+	logger     logger.Logger
+	paymentMap map[uuid.UUID]chan *dto.PaymentResponse
+	mutex      sync.RWMutex
 }
 
 // NewPaymentClient creates a new PaymentClient instance.
 func NewPaymentClient(appLogger logger.Logger) PaymentClientInterface {
 	return &PaymentClient{
-		logger:         appLogger,
-		correlationMap: make(map[uuid.UUID]chan *dto.PaymentResponse),
+		logger:     appLogger,
+		paymentMap: make(map[uuid.UUID]chan *dto.PaymentResponse),
 	}
 }
 
@@ -59,16 +59,16 @@ func (c *PaymentClient) WaitForPaymentResponse(
 	responseChan := make(chan *dto.PaymentResponse, 1)
 
 	// Register correlation
-	c.correlationMutex.Lock()
-	c.correlationMap[orderID] = responseChan
-	c.correlationMutex.Unlock()
+	c.mutex.Lock()
+	c.paymentMap[orderID] = responseChan
+	c.mutex.Unlock()
 
 	// Ensure cleanup
 	defer func() {
-		c.correlationMutex.Lock()
-		delete(c.correlationMap, orderID)
+		c.mutex.Lock()
+		delete(c.paymentMap, orderID)
 		close(responseChan)
-		c.correlationMutex.Unlock()
+		c.mutex.Unlock()
 	}()
 
 	// Wait for response or timeout
@@ -112,9 +112,9 @@ func (c *PaymentClient) NotifyWaitingSaga(response *dto.PaymentResponse) {
 		return
 	}
 
-	c.correlationMutex.RLock()
-	responseChan, exists := c.correlationMap[response.OrderID]
-	c.correlationMutex.RUnlock()
+	c.mutex.RLock()
+	responseChan, exists := c.paymentMap[response.OrderID]
+	c.mutex.RUnlock()
 
 	if !exists {
 		c.logger.Debugf(
@@ -142,17 +142,17 @@ func (c *PaymentClient) NotifyWaitingSaga(response *dto.PaymentResponse) {
 
 // Close cleans up resources.
 func (c *PaymentClient) Close() error {
-	c.correlationMutex.Lock()
-	defer c.correlationMutex.Unlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	// Close all pending channels
-	for orderID, ch := range c.correlationMap {
+	for orderID, ch := range c.paymentMap {
 		c.logger.Infof("Closing pending payment correlation for order: %s", orderID)
 		close(ch)
 	}
 
 	// Clear the map
-	c.correlationMap = make(map[uuid.UUID]chan *dto.PaymentResponse)
+	c.paymentMap = make(map[uuid.UUID]chan *dto.PaymentResponse)
 
 	return nil
 }

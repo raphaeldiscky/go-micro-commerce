@@ -40,7 +40,7 @@ func main() {
 // setupConsulRegistration handles Consul service registration and returns a cleanup function.
 func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func() {
 	if !cfg.Consul.Enabled {
-		appLogger.Infof("Consul service discovery is disabled")
+		appLogger.Info("Consul service discovery is disabled")
 
 		return func() {}
 	}
@@ -51,15 +51,35 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 	}
 
 	if err := consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+		appLogger.Errorf("Failed to register HTTP service with Consul: %v", err)
+
 		return func() {}
 	}
 
-	appLogger.Infof("Service registered with Consul: %s at %s:%d",
+	// Register gRPC service with Consul
+	grpcRegistered := false
+
+	if err := consulClient.RegisterGRPC(cfg.GRPCServer.ServiceName, cfg.Consul.ServiceHost, cfg.GRPCServer.Port); err != nil {
+		appLogger.Errorf("Failed to register gRPC service with Consul: %v", err)
+	} else {
+		grpcRegistered = true
+
+		appLogger.Infof("gRPC service registered with Consul: %s at %s:%d",
+			cfg.GRPCServer.ServiceName, cfg.Consul.ServiceHost, cfg.GRPCServer.Port)
+	}
+
+	appLogger.Infof("HTTP service registered with Consul: %s at %s:%d",
 		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
 
 	return func() {
 		if err := consulClient.Deregister(cfg.Consul.ServiceName); err != nil {
-			appLogger.Errorf("Failed to deregister from Consul: %v", err)
+			appLogger.Errorf("Failed to deregister HTTP service from Consul: %v", err)
+		}
+
+		if grpcRegistered {
+			if err := consulClient.Deregister(cfg.GRPCServer.ServiceName); err != nil {
+				appLogger.Errorf("Failed to deregister gRPC service from Consul: %v", err)
+			}
 		}
 	}
 }

@@ -6,23 +6,22 @@ import (
 	"strings"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/shopspring/decimal"
+
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/entity"
 )
 
-// MapStringToCarrierType converts a string to a CarrierType.
-func MapStringToCarrierType(s string) (constant.CarrierType, error) {
-	carriers := []constant.CarrierType{
-		constant.CarrierTypeJNE,
-		constant.CarrierTypeJT,
-		constant.CarrierTypePOS,
-		constant.CarrierTypeTiki,
-		constant.CarrierTypeSiCepat,
-		constant.CarrierTypeAnterAja,
-		constant.CarrierTypeDHL,
-		constant.CarrierTypeFedEx,
+// MapStringToCarrierID converts a string to a CarrierID.
+func MapStringToCarrierID(s string) (constant.CarrierID, error) {
+	carriers := []constant.CarrierID{
+		constant.CarrierJNE,
+		constant.CarrierJT,
+		constant.CarrierPOS,
+		constant.CarrierSiCepat,
 	}
 
 	for _, c := range carriers {
@@ -62,7 +61,7 @@ func MapToFulfillmentResponse(fulfillment *entity.Fulfillment) *dto.FulfillmentR
 		OrderID:             fulfillment.OrderID,
 		Status:              fulfillment.Status,
 		TrackingNumber:      fulfillment.TrackingNumber,
-		Carrier:             fulfillment.Carrier,
+		CarrierID:           fulfillment.CarrierID,
 		ShippingLabelURL:    fulfillment.ShippingLabelURL,
 		ShippingCost:        fulfillment.ShippingCost,
 		WeightKG:            fulfillment.WeightKG,
@@ -93,5 +92,34 @@ func MapStatusToEventType(status constant.FulfillmentStatus) string {
 		return kafka.FulfillmentReturnedEventType
 	default:
 		return kafka.FulfillmentUpdatedEventType
+	}
+}
+
+// MapToCalculateShippingRateRequest maps a protobuf shipping request to a domain request.
+func MapToCalculateShippingRateRequest(
+	req *pb.GetShippingCostRequest,
+) *dto.CalculateShippingRateRequest {
+	return &dto.CalculateShippingRateRequest{
+		CarrierID: constant.CarrierID(req.CarrierId),
+		Dimensions: entity.Dimensions{
+			Width:  decimal.NewFromFloat(req.Shipping.Dimensions.Width),
+			Height: decimal.NewFromFloat(req.Shipping.Dimensions.Height),
+			Length: decimal.NewFromFloat(req.Shipping.Dimensions.Length),
+			Unit:   req.Shipping.Dimensions.Unit,
+		},
+		WeightKG: decimal.NewFromFloat(req.Shipping.WeightKg),
+		Currency: req.Currency,
+		FromAddress: entity.FromAddress{
+			City:       req.Shipping.FromAddress.City,
+			State:      req.Shipping.FromAddress.State,
+			PostalCode: req.Shipping.FromAddress.PostalCode,
+			Country:    req.Shipping.FromAddress.Country,
+		},
+		ToAddress: entity.ToAddress{
+			City:       req.Shipping.ToAddress.City,
+			State:      req.Shipping.ToAddress.State,
+			PostalCode: req.Shipping.ToAddress.PostalCode,
+			Country:    req.Shipping.ToAddress.Country,
+		},
 	}
 }

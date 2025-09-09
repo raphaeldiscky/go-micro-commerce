@@ -15,13 +15,18 @@ require (
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/labstack/gommon v0.4.2
 	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20250822082838-0a883c017315
+	github.com/raphaeldiscky/go-micro-commerce/proto v0.0.0-00010101000000-000000000000
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
+	google.golang.org/grpc v1.75.0
+	google.golang.org/protobuf v1.36.8
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
 
 require (
 	github.com/armon/go-metrics v0.4.1 // indirect
@@ -94,5 +99,6 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.26.0 // indirect
 	golang.org/x/time v0.11.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

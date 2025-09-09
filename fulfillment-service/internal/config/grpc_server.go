@@ -19,9 +19,9 @@ type GRPCServerConfig struct {
 // initGRPCServerConfig initializes the gRPC server configuration from environment variables.
 func initGRPCServerConfig() *GRPCServerConfig {
 	// Set defaults
-	viper.SetDefault("GRPC_SERVER_SERVICE_NAME", pkgconstant.GRPCServiceNameProduct)
+	viper.SetDefault("GRPC_SERVER_SERVICE_NAME", pkgconstant.GRPCServiceNameFulfillment)
 	viper.SetDefault("GRPC_SERVER_HOST", "0.0.0.0")
-	viper.SetDefault("GRPC_SERVER_PORT", 50052)
+	viper.SetDefault("GRPC_SERVER_PORT", 50055)
 	viper.SetDefault("GRPC_SERVER_GRACE_PERIOD", 10)
 
 	grpcServerConfig := &GRPCServerConfig{}

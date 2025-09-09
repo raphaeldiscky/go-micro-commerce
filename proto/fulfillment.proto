@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package fulfillment;  
+
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment";
+
+import "google/protobuf/empty.proto";
+
+service FulfillmentService {
+  rpc GetShippingCost(GetShippingCostRequest) returns (GetShippingCostResponse);
+  rpc Health(google.protobuf.Empty) returns (HealthResponse);
+}
+
+message GetShippingCostRequest {
+  string currency = 1;
+  string carrier_id = 2;
+  Shipping shipping = 3;
+}
+
+message GetShippingCostResponse {
+  bool success = 1;
+  double shipping_cost = 2;
+  string currency = 3;
+  string error_message = 4;
+}
+
+message Shipping {
+  string carrier_id = 1;
+  FromAddress from_address = 2;
+  ToAddress to_address = 3;
+  double weight_kg = 4;
+  Dimensions dimensions = 5;
+}
+
+message Dimensions {
+  double width = 1;
+  double height = 2;
+  double length = 3;
+  string unit = 4;
+}
+
+//  Customer address
+message ToAddress {
+  string city = 1;
+  string state = 2;
+  string postal_code = 3;
+  string country = 4;
+}
+
+// Warehouse address
+message FromAddress {
+  string city = 1;
+  string state = 2;
+  string postal_code = 3;
+  string country = 4;
+}
+
+message HealthResponse {
+  string status = 1; // e.g., "SERVING"
+}
+
+enum HealthStatus {
+  UNKNOWN = 0;
+  SERVING = 1;
+  NOT_SERVING = 2;
+}

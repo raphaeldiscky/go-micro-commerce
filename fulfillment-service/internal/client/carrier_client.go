@@ -4,6 +4,7 @@ package client
 import (
 	"context"
 
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
 )
 
@@ -12,6 +13,9 @@ type CarrierClientInterface interface {
 	// GetRates retrieves shipping rates for a package.
 	GetRates(ctx context.Context, req *dto.ShippingRequest) ([]dto.ShippingRate, error)
 
+	// GetRate retrieves a single shipping rate for a package.
+	GetRate(ctx context.Context, req *dto.ShippingRequest) (*dto.ShippingRate, error)
+
 	// CreateShipment creates a shipment and returns a shipping label.
 	CreateShipment(ctx context.Context, req *dto.ShippingRequest) (*dto.ShippingLabel, error)
 
@@ -19,12 +23,9 @@ type CarrierClientInterface interface {
 	GetTracking(
 		ctx context.Context,
 		trackingNumber string,
-		carrier string,
+		carrierID constant.CarrierID,
 	) (*dto.TrackingInfo, error)
 
 	// CancelShipment cancels a shipment and voids the label.
-	CancelShipment(ctx context.Context, trackingNumber string, carrier string) error
-
-	// ValidateAddress validates a shipping address.
-	ValidateAddress(ctx context.Context, address *dto.ShippingAddress) (*dto.ShippingAddress, error)
+	CancelShipment(ctx context.Context, trackingNumber string, carrier constant.CarrierID) error
 }

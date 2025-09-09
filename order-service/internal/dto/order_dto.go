@@ -18,10 +18,44 @@ type CreateOrderItemRequest struct {
 
 // CreateOrderRequest represents the request to create a new order.
 type CreateOrderRequest struct {
-	CustomerID     uuid.UUID
-	CustomerEmail  string
+	CustomerID     uuid.UUID                // from context or header
+	CustomerEmail  string                   // from context or header
 	IdempotencyKey uuid.UUID                `json:"idempotency_key" validate:"required"` // generated from client
 	Items          []CreateOrderItemRequest `json:"items"           validate:"required,min=1,dive"`
+	Shipping       Shipping                 `json:"shipping"        validate:"required"`
+}
+
+// Shipping represents the shipping data for an order.
+type Shipping struct {
+	CarrierID   string          `json:"carrier_id"   validate:"required"`
+	FromAddress FromAddress     `json:"from_address" validate:"required"`
+	ToAddress   ToAddress       `json:"to_address"   validate:"required"`
+	WeightKG    decimal.Decimal `json:"weight_kg"    validate:"required"`
+	Dimensions  Dimensions      `json:"dimensions"   validate:"required"`
+}
+
+// ToAddress represents an address in create order request.
+type ToAddress struct {
+	City       string `json:"city"        validate:"required"`
+	State      string `json:"state"       validate:"required"`
+	PostalCode string `json:"postal_code" validate:"required"`
+	Country    string `json:"country"     validate:"required"`
+}
+
+// FromAddress represents an address in create order request.
+type FromAddress struct {
+	City       string `json:"city"        validate:"required"`
+	State      string `json:"state"       validate:"required"`
+	PostalCode string `json:"postal_code" validate:"required"`
+	Country    string `json:"country"     validate:"required"`
+}
+
+// Dimensions represents dimensions in create order request.
+type Dimensions struct {
+	Length decimal.Decimal `json:"length" validate:"required"`
+	Height decimal.Decimal `json:"height" validate:"required"`
+	Width  decimal.Decimal `json:"width"  validate:"required"`
+	Unit   string          `json:"unit"   validate:"required"`
 }
 
 // ClientCreateOrderRequest represents the request to create a new order from the client.
@@ -48,6 +82,7 @@ type OrderResponse struct {
 	Status        constant.OrderStatus `json:"status"`
 	Currency      string               `json:"currency"`
 	ShippingCost  decimal.Decimal      `json:"shipping_cost"`
+	Shipping      Shipping             `json:"shipping"`
 	Subtotal      decimal.Decimal      `json:"subtotal"`
 	TotalPrice    decimal.Decimal      `json:"total_price"`
 	TotalTax      decimal.Decimal      `json:"total_tax"`

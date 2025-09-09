@@ -15,7 +15,7 @@ func SetupTemporal(
 	providers *Providers,
 ) *client.TemporalClient {
 	// Setup product client
-	productClient, err := client.NewProductClient(cfg.Client, cfg.Consul)
+	productClient, err := client.NewProductClient(cfg)
 	if err != nil {
 		appLogger.Warnf(
 			"failed to create product client: %v. Temporal workflows will start without product client functionality.",

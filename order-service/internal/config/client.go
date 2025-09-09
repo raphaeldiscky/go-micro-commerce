@@ -10,13 +10,17 @@ import (
 type ClientConfig struct {
 	ProductGRPCHost     string `mapstructure:"PRODUCT_GRPC_HOST"`
 	ProductGRPCPort     int    `mapstructure:"PRODUCT_GRPC_PORT"`
+	FulfillmentGRPCPort int    `mapstructure:"FULFILLMENT_GRPC_PORT"`
+	FulfillmentGRPCHost string `mapstructure:"FULFILLMENT_GRPC_HOST"`
 	UseServiceDiscovery bool   `mapstructure:"USE_SERVICE_DISCOVERY"`
 }
 
 // initClientConfig initializes the client configuration.
 func initClientConfig() *ClientConfig {
-	viper.SetDefault("PRODUCT_GRPC_HOST", "localhost")
+	viper.SetDefault("PRODUCT_GRPC_HOST", "0.0.0.0")
 	viper.SetDefault("PRODUCT_GRPC_PORT", 50052)
+	viper.SetDefault("FULFILLMENT_GRPC_HOST", "0.0.0.0")
+	viper.SetDefault("FULFILLMENT_GRPC_PORT", 50055)
 	viper.SetDefault("USE_SERVICE_DISCOVERY", true)
 
 	clientCfg := &ClientConfig{}

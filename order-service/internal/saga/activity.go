@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
@@ -27,12 +26,21 @@ type OrderActivities interface {
 		ctx context.Context,
 		order *entity.Order,
 	) (calculatedOrder *entity.Order, reservedProducts []entity.Product, err error)
-	ProcessFulfillment(
+	GetShippingCost(
 		ctx context.Context,
 		order *entity.Order,
-	) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error)
+		shipping *dto.Shipping,
+	) (shippingCost decimal.Decimal, err error)
 	SetFinalOrderPrices(ctx context.Context, order *entity.Order) error
-	ProcessPayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
+	CreatePayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
+	WaitForPaymentConfirmation(
+		ctx context.Context,
+		order *entity.Order,
+	) (paymentID uuid.UUID, err error) // 1-hour timeout
+	ProcessFulfillment(
+		ctx context.Context,
+		payload *Payload,
+	) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error)
 	ConfirmProductsDeduction(
 		ctx context.Context,
 		order *entity.Order,
@@ -206,6 +214,30 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	return newOrder, reservedProducts, nil
 }
 
+// GetShippingCost calculates shipping cost by calling fulfillment service without creating actual shipment.
+func (a *OrderActivitiesImpl) GetShippingCost(
+	ctx context.Context,
+	order *entity.Order,
+	shipping *dto.Shipping,
+) (decimal.Decimal, error) {
+	a.logger.Infof(
+		"Getting shipping cost from fulfillment service for order: %s with shipping details",
+		order.ID,
+	)
+
+	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order, shipping)
+	if err != nil {
+		a.logger.Errorf("Failed to get shipping cost for order %s: %v", order.ID, err)
+
+		return decimal.Zero, fmt.Errorf("failed to get shipping cost: %w", err)
+	}
+
+	a.logger.Infof("Successfully received shipping cost for order %s: %s %s",
+		order.ID, shippingCost, order.Currency)
+
+	return shippingCost, nil
+}
+
 // SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
 func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Updating order prices in database for order: %s", order.ID)
@@ -231,12 +263,12 @@ func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *en
 	})
 }
 
-// ProcessPayment processes payment for the order.
-func (a *OrderActivitiesImpl) ProcessPayment(
+// CreatePayment create payment for the order.
+func (a *OrderActivitiesImpl) CreatePayment(
 	ctx context.Context,
 	order *entity.Order,
 ) (paymentID uuid.UUID, err error) {
-	a.logger.Infof("Processing payment for order: %s", order.ID)
+	a.logger.Infof("Create payment for order: %s", order.ID)
 
 	// Step 1: Create and publish payment request event
 	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
@@ -305,6 +337,42 @@ func (a *OrderActivitiesImpl) ProcessPayment(
 	return response.PaymentID, nil
 }
 
+// WaitForPaymentConfirmation waits for payment confirmation with 1-hour timeout.
+func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
+	ctx context.Context,
+	order *entity.Order,
+) (uuid.UUID, error) {
+	a.logger.Infof("Waiting for payment confirmation for order: %s", order.ID)
+
+	// Use 1-hour timeout as specified in the interface comment
+	response, err := a.paymentClient.WaitForPaymentResponse(
+		ctx,
+		order.ID,
+		1*time.Hour, // 1-hour timeout for user payment confirmation
+	)
+	if err != nil {
+		a.logger.Errorf("Failed to receive payment confirmation for order %s: %v", order.ID, err)
+
+		return uuid.Nil, fmt.Errorf("failed to receive payment confirmation: %w", err)
+	}
+
+	a.logger.Infof("Successfully received payment confirmation for order %s: ID=%s, Status=%s",
+		order.ID, response.PaymentID, response.Status)
+
+	return response.PaymentID, nil
+}
+
+// WaitForPaymentResponse waits for payment response.
+func (a *OrderActivitiesImpl) WaitForPaymentResponse(
+	_ context.Context,
+	orderID uuid.UUID,
+	timeout time.Duration,
+) (paymentID uuid.UUID, err error) {
+	a.logger.Infof("Waiting for payment response for order: %s with timeout: %v", orderID, timeout)
+
+	return paymentID, nil
+}
+
 // ConfirmProductsDeduction confirms stock deduction after successful payment.
 func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 	ctx context.Context,
@@ -365,26 +433,17 @@ func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 // ProcessFulfillment creates shipping/fulfillment arrangement for the order.
 func (a *OrderActivitiesImpl) ProcessFulfillment(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 ) (shippingID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error) {
-	a.logger.Infof("Creating shipping for order: %s", order.ID)
+	a.logger.Infof("Creating shipping for order: %s", payload.Order.ID)
 
 	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
-		// Create mock shipping address (in real implementation, this would come from order data)
-		shippingAddress := event.ShippingAddressPayload{
-			Street:     "123 Main Street",
-			City:       "Jakarta",
-			State:      "DKI Jakarta",
-			PostalCode: "12345",
-			Country:    "Indonesia",
-		}
-
 		// Create fulfillment request event
-		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order, &shippingAddress)
+		fulfillmentEvent := producer.NewFulfillmentRequestEvent(payload.Order, &payload.Shipping)
 
-		payload, err := json.Marshal(fulfillmentEvent)
+		evtPayload, err := json.Marshal(fulfillmentEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal fulfillment request event: %w", err)
 		}
@@ -393,10 +452,10 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 		outboxEvent := &entity.OutboxEvent{
 			ID:            uuid.New(),
 			AggregateType: "fulfillment",
-			AggregateID:   order.ID,
+			AggregateID:   payload.Order.ID,
 			EventType:     kafka.FulfillmentRequestedEventType,
 			Topic:         kafka.FulfillmentRequestTopic,
-			Payload:       payload,
+			Payload:       evtPayload,
 			Status:        constant.OutboxStatusPending,
 			CreatedAt:     time.Now().UTC(),
 			ScheduledFor:  time.Now().UTC(),
@@ -407,26 +466,34 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 			return fmt.Errorf("failed to create fulfillment request event: %w", err)
 		}
 
-		a.logger.Infof("Successfully created fulfillment request for order: %s", order.ID)
+		a.logger.Infof("Successfully created fulfillment request for order: %s", payload.Order.ID)
 
 		return nil
 	})
 	if err != nil {
-		a.logger.Errorf("Failed to publish fulfillment request for order %s: %v", order.ID, err)
+		a.logger.Errorf(
+			"Failed to publish fulfillment request for order %s: %v",
+			payload.Order.ID,
+			err,
+		)
 
 		return uuid.Nil, decimal.Zero, "", fmt.Errorf("failed to create shipping: %w", err)
 	}
 
 	// Step 2: Wait for fulfillment service response
-	a.logger.Infof("Waiting for fulfillment response for order: %s", order.ID)
+	a.logger.Infof("Waiting for fulfillment response for order: %s", payload.Order.ID)
 
 	response, err := a.fulfillmentClient.WaitForFulfillmentResponse(
 		ctx,
-		order.ID,
+		payload.Order.ID,
 		30*time.Second,
 	)
 	if err != nil {
-		a.logger.Errorf("Failed to receive fulfillment response for order %s: %v", order.ID, err)
+		a.logger.Errorf(
+			"Failed to receive fulfillment response for order %s: %v",
+			payload.Order.ID,
+			err,
+		)
 
 		return uuid.Nil, decimal.Zero, "", fmt.Errorf(
 			"failed to receive fulfillment response: %w",
@@ -436,7 +503,7 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 
 	a.logger.Infof(
 		"Successfully received fulfillment response for order %s: ID=%s, ShippingCost=%s, Tracking=%s",
-		order.ID,
+		payload.Order.ID,
 		response.FulfillmentID,
 		response.ShippingCost,
 		response.TrackingNumber,

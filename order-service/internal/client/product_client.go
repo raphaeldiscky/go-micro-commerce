@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
+	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -52,17 +52,16 @@ type ProductClient struct {
 
 // NewProductClient creates a new ProductClient instance with gRPC connection.
 func NewProductClient(
-	clientCfg *config.ClientConfig,
-	consulCfg *config.ConsulConfig,
+	cfg *config.Config,
 ) (ProductClientInterface, error) {
 	// Create gRPC client configuration
-	grpcConfig := pkgConfig.DefaultGRPCClientConfig("product-service-grpc")
+	grpcConfig := pkgconfig.DefaultGRPCClientConfig(pkgconstant.GRPCServiceNameProduct)
 
 	// Configure based on existing client config
-	grpcConfig.UseServiceDiscovery = clientCfg.UseServiceDiscovery
-	grpcConfig.ConsulEnabled = consulCfg.Enabled
-	grpcConfig.ConsulAddress = consulCfg.Address
-	grpcConfig.SetStaticAddress(clientCfg.ProductGRPCHost, clientCfg.ProductGRPCPort)
+	grpcConfig.UseServiceDiscovery = cfg.Client.UseServiceDiscovery
+	grpcConfig.ConsulEnabled = cfg.Consul.Enabled
+	grpcConfig.ConsulAddress = cfg.Consul.Address
+	grpcConfig.SetStaticAddress(cfg.Client.ProductGRPCHost, cfg.Client.ProductGRPCPort)
 
 	gClient, err := grpc.NewGRPCClient(grpcConfig)
 	if err != nil {
@@ -284,7 +283,7 @@ func (pc *ProductClient) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if resp.Status != constant.GRPCHealthServing {
+	if resp.Status != pkgconstant.GRPCHealthServing {
 		return fmt.Errorf("service unhealthy: %s", resp.Status)
 	}
 

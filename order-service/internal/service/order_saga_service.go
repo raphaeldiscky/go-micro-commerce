@@ -16,13 +16,14 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
 
 // CreateOrderWithSaga creates an order with improved saga handling.
 func (s *OrderService) CreateOrderWithSaga(
 	ctx context.Context,
-	req dto.CreateOrderRequest,
+	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
 	lockRepo := s.dataStore.LockRepository()
 	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
@@ -51,6 +52,8 @@ func (s *OrderService) CreateOrderWithSaga(
 		orderRepo := ds.OrderRepository()
 		stateRepo := ds.SagaStateRepository()
 
+		s.logger.Debugf("====1 Saga====", req)
+
 		existingRes, shouldReturn, err := s.handleExistingOrder(ctx, req, orderRepo, stateRepo)
 		if err != nil {
 			return err
@@ -75,10 +78,14 @@ func (s *OrderService) CreateOrderWithSaga(
 			}
 		}
 
+		s.logger.Debugf("====2 Saga====", req)
+
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return fmt.Errorf("failed to create order entity: %w", err)
 		}
+
+		s.logger.Debugf("====3 Saga====", newOrder)
 
 		if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
 			return fmt.Errorf("failed to update order status: %w", err)
@@ -90,6 +97,8 @@ func (s *OrderService) CreateOrderWithSaga(
 
 			return fmt.Errorf("failed to save order: %w", err)
 		}
+
+		s.logger.Debugf("====4 Saga====", savedOrder)
 
 		res = mapper.MapToOrderResponse(savedOrder)
 
@@ -105,7 +114,7 @@ func (s *OrderService) CreateOrderWithSaga(
 // handleExistingOrder checks for duplicate orders and handles saga state.
 func (s *OrderService) handleExistingOrder(
 	ctx context.Context,
-	req dto.CreateOrderRequest,
+	req *dto.CreateOrderRequest,
 	orderRepo repository.OrderRepositoryInterface,
 	stateRepo repository.SagaStateRepositoryInterface,
 ) (*dto.OrderResponse, bool, error) {
@@ -148,7 +157,7 @@ func (s *OrderService) executeSagaWorkflow(
 		return s.executeSagaSynchronously(ctx, res)
 	}
 
-	s.executeSagaAsynchronously(ctx, res.ID)
+	s.executeSagaAsynchronously(ctx, res)
 	res.Status = "processing"
 
 	s.logger.Infof(
@@ -174,7 +183,13 @@ func (s *OrderService) executeSagaSynchronously(
 	sagaCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, order); err != nil {
+	// Create payload with order and shipping data
+	payload := &saga.Payload{
+		Order:    order,
+		Shipping: res.Shipping,
+	}
+
+	if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, payload); err != nil {
 		s.logger.Errorf("Synchronous saga execution failed: %v", err)
 		// Update order status to failed
 		order, updateErr := s.UpdateOrderStatus(ctx, res.ID, constant.OrderStatusFailed)
@@ -195,7 +210,10 @@ func (s *OrderService) executeSagaSynchronously(
 }
 
 // executeSagaAsynchronously executes saga in background.
-func (s *OrderService) executeSagaAsynchronously(ctx context.Context, orderID uuid.UUID) {
+func (s *OrderService) executeSagaAsynchronously(
+	ctx context.Context,
+	res *dto.OrderResponse,
+) {
 	go func() {
 		// Create background context with user authentication for async saga execution
 		bgCtx := echoutils.PropagateUserContextToBackground(ctx)
@@ -211,21 +229,27 @@ func (s *OrderService) executeSagaAsynchronously(ctx context.Context, orderID uu
 
 		orderRepo := s.dataStore.OrderRepository()
 
-		order, err := orderRepo.FindByID(sagaCtx, orderID)
+		order, err := orderRepo.FindByID(sagaCtx, res.ID)
 		if err != nil {
 			s.logger.Errorf("Failed to retrieve order for saga: %v", err)
-			s.handleSagaError(orderID, err)
+			s.handleSagaError(res.ID, err)
 
 			return
 		}
 
-		s.logger.Infof("Starting async saga for order %s", orderID)
+		s.logger.Infof("Starting async saga for order %s", res.ID)
 
-		if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, order); err != nil {
-			s.logger.Errorf("Async saga failed for order %s: %v", orderID, err)
-			s.handleSagaError(orderID, err)
+		// Create payload with order and shipping data
+		payload := &saga.Payload{
+			Order:    order,
+			Shipping: res.Shipping,
+		}
+
+		if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, payload); err != nil {
+			s.logger.Errorf("Async saga failed for order %s: %v", res.ID, err)
+			s.handleSagaError(res.ID, err)
 		} else {
-			s.logger.Infof("Async saga completed for order %s", orderID)
+			s.logger.Infof("Async saga completed for order %s", res.ID)
 		}
 	}()
 }

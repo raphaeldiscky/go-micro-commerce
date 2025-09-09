@@ -6,13 +6,13 @@ import (
 	"net"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	grpcAuth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	grpcauth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
@@ -285,7 +285,7 @@ func (s *GRPCServer) RestoreProducts(
 
 // Health returns the health status of the product service.
 func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
-	return &pb.HealthResponse{Status: constant.GRPCHealthServing}, nil
+	return &pb.HealthResponse{Status: pkgconstant.GRPCHealthServing}, nil
 }
 
 // Start runs the gRPC server.
@@ -297,7 +297,7 @@ func (s *GRPCServer) Start() error {
 	}
 
 	// Create authentication interceptor
-	authInterceptor := grpcAuth.NewAuthInterceptor()
+	authInterceptor := grpcauth.NewAuthInterceptor()
 
 	// Create gRPC server with authentication interceptor
 	s.grpcServer = grpc.NewServer(

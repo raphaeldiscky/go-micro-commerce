@@ -32,17 +32,13 @@ import (
 
 // OrderServiceInterface defines the interface for order business operations.
 type OrderServiceInterface interface {
-	CreateOrder(
-		ctx context.Context,
-		req dto.CreateOrderRequest,
-	) (*dto.OrderResponse, error)
 	CreateOrderWithSaga(
 		ctx context.Context,
-		req dto.CreateOrderRequest,
+		req *dto.CreateOrderRequest,
 	) (*dto.OrderResponse, error)
 	CreateOrderWithTemporal(
 		ctx context.Context,
-		req dto.CreateOrderRequest,
+		req *dto.CreateOrderRequest,
 	) (*dto.OrderResponse, error)
 	GetOrder(ctx context.Context, id uuid.UUID) (*dto.OrderResponse, error)
 	GetOrdersByCustomer(
@@ -105,211 +101,10 @@ func NewOrderService(
 	}
 }
 
-//nolint:gocyclo,revive,cyclop,funlen,gocognit // ignore complexity, CreateOrder is large but intentional
-func (s *OrderService) CreateOrder(
-	ctx context.Context,
-	req dto.CreateOrderRequest,
-) (*dto.OrderResponse, error) {
-	lockRepo := s.dataStore.LockRepository()
-	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
-	ttl := constant.CreateOrderTTL
-	opt := &redislock.Options{
-		RetryStrategy: redislock.LimitRetry(
-			redislock.LinearBackoff(constant.CreateOrderRetryInterval),
-			constant.CreateOrderRetryLimit,
-		),
-	}
-
-	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
-			s.logger.Warnf("failed to release lock: %v", err)
-		}
-	}()
-
-	res := new(dto.OrderResponse)
-
-	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		orderRepo := ds.OrderRepository()
-		outboxRepo := ds.OutboxRepository()
-
-		order, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
-		if err != nil {
-			return err
-		}
-
-		if order != nil && order.CustomerID == req.CustomerID {
-			res = mapper.MapToOrderResponse(order)
-
-			return nil
-		}
-
-		productIDs := make([]uuid.UUID, len(req.Items))
-		for i, item := range req.Items {
-			productIDs[i] = item.ProductID
-		}
-
-		if s.productClient == nil {
-			return httperror.NewServiceUnavailableError("product service is currently unavailable")
-		}
-
-		// First, get products to check availability and get current versions
-		products, err := s.productClient.GetProducts(ctx, productIDs)
-		if err != nil {
-			return err
-		}
-
-		s.logger.Infof("====1==== products: %v", products)
-
-		for i, product := range products {
-			s.logger.Infof(
-				"====1.%d==== product: ID=%s, Quantity=%d, Version=%d, ReservedQuantity=%d",
-				i+1,
-				product.ID,
-				product.Quantity,
-				product.Version,
-				product.ReservedQuantity,
-			)
-		}
-
-		if len(products) != len(productIDs) {
-			return httperror.NewInternalServerError("failed to get all products")
-		}
-
-		// Create product map for quick lookup
-		productMap := make(map[uuid.UUID]*entity.Product)
-		for i, product := range products {
-			productMap[product.ID] = &products[i]
-		}
-
-		// Create reservations with expected versions from fetched products
-		reservations := make([]dto.ProductReservationItem, len(req.Items))
-
-		for i, item := range req.Items {
-			product, exists := productMap[item.ProductID]
-			if !exists {
-				return httperror.NewBadRequestError("product not found")
-			}
-
-			reservations[i] = dto.ProductReservationItem{
-				ProductID:       item.ProductID,
-				Quantity:        item.Quantity,
-				ExpectedVersion: product.Version,
-			}
-		}
-
-		s.logger.Infof("====2==== reservations: %v", reservations)
-
-		reservedProducts, err := s.productClient.ReserveProducts(
-			ctx,
-			req.IdempotencyKey,
-			reservations,
-		)
-		if err != nil {
-			s.logger.Errorf("====ERROR==== ReserveProducts failed: %v", err)
-
-			return err
-		}
-
-		var orderItems []entity.OrderItem
-
-		for i, product := range reservedProducts {
-			orderItem, err := entity.NewOrderItem(
-				product.ID,
-				req.Items[i].Quantity,
-				product.UnitPrice,
-			)
-			if err != nil {
-				return err
-			}
-
-			orderItems = append(orderItems, *orderItem)
-		}
-
-		// Create domain entity
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
-		if err != nil {
-			return err
-		}
-
-		s.logger.Infof("====3==== newOrder: %v", newOrder)
-
-		// Save to repository
-		savedOrder, err := orderRepo.Create(ctx, newOrder)
-		if err != nil {
-			return err
-		}
-
-		// Update reservations with current versions from reserved products
-		updatedReservations := make([]dto.ProductReservationItem, len(reservedProducts))
-		for i, product := range reservedProducts {
-			updatedReservations[i] = dto.ProductReservationItem{
-				ProductID:       product.ID,
-				Quantity:        reservations[i].Quantity,
-				ExpectedVersion: product.Version, // Use the updated version from reservation
-			}
-		}
-
-		s.logger.Infof("====4==== updatedReservations: %v", updatedReservations)
-
-		// Confirm product reservations
-		_, err = s.productClient.ConfirmProductsDeduction(ctx, updatedReservations)
-		if err != nil {
-			return err
-		}
-
-		s.logger.Infof("====5==== savedOrder: %v", savedOrder)
-
-		// Publish domain event
-		evt := producer.NewOrderLifecycleEvent(
-			savedOrder.ID,
-			constant.OrderStatusPending,
-			savedOrder.CustomerID,
-			savedOrder.TotalPrice,
-			savedOrder.Items,
-		)
-
-		payload, err := json.Marshal(evt)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to marshal order event")
-		}
-
-		outboxEvent := &entity.OutboxEvent{
-			ID:            uuid.New(),
-			AggregateType: "order",
-			AggregateID:   savedOrder.ID,
-			EventType:     kafka.OrderCreatedEventType,
-			Topic:         kafka.OrderLifecycleTopic,
-			Payload:       payload,
-			Status:        constant.OutboxStatusPending,
-			CreatedAt:     time.Now().UTC(),
-			ScheduledFor:  time.Now().UTC(),
-			Attempts:      0,
-		}
-
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
-			return err
-		}
-
-		res = mapper.MapToOrderResponse(savedOrder)
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
-}
-
 // CreateOrderWithTemporal handles POST /orders/temporal with Temporal processing.
 func (s *OrderService) CreateOrderWithTemporal(
 	ctx context.Context,
-	req dto.CreateOrderRequest,
+	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
 	s.logger.Infof("Creating order with Temporal workflow for customer: %s", req.CustomerID)
 

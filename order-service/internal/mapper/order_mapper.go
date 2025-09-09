@@ -5,6 +5,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -86,4 +88,56 @@ func MapOrderItemsToPayload(items []entity.OrderItem) []event.OrderItemPayload {
 	}
 
 	return payloadItems
+}
+
+// MapShippingDtoToEventPayload maps shipping details to their payload representation.
+func MapShippingDtoToEventPayload(shipping *dto.Shipping) event.Shipping {
+	return event.Shipping{
+		CarrierID: shipping.CarrierID,
+		FromAddress: event.FromAddressPayload{
+			City:       shipping.FromAddress.City,
+			State:      shipping.FromAddress.State,
+			PostalCode: shipping.FromAddress.PostalCode,
+			Country:    shipping.FromAddress.Country,
+		},
+		ToAddress: event.ToAddressPayload{
+			City:       shipping.ToAddress.City,
+			State:      shipping.ToAddress.State,
+			PostalCode: shipping.ToAddress.PostalCode,
+			Country:    shipping.ToAddress.Country,
+		},
+		WeightKG: shipping.WeightKG,
+		Dimensions: event.Dimensions{
+			Width:  shipping.Dimensions.Width,
+			Height: shipping.Dimensions.Height,
+			Length: shipping.Dimensions.Length,
+			Unit:   shipping.Dimensions.Unit,
+		},
+	}
+}
+
+// MapShippingDtoToProto maps shipping details to their protobuf representation.
+func MapShippingDtoToProto(shipping *dto.Shipping) *pb.Shipping {
+	return &pb.Shipping{
+		CarrierId: shipping.CarrierID,
+		FromAddress: &pb.FromAddress{
+			City:       shipping.FromAddress.City,
+			State:      shipping.FromAddress.State,
+			PostalCode: shipping.FromAddress.PostalCode,
+			Country:    shipping.FromAddress.Country,
+		},
+		ToAddress: &pb.ToAddress{
+			City:       shipping.ToAddress.City,
+			State:      shipping.ToAddress.State,
+			PostalCode: shipping.ToAddress.PostalCode,
+			Country:    shipping.ToAddress.Country,
+		},
+		WeightKg: shipping.WeightKG.InexactFloat64(),
+		Dimensions: &pb.Dimensions{
+			Width:  shipping.Dimensions.Width.InexactFloat64(),
+			Height: shipping.Dimensions.Height.InexactFloat64(),
+			Length: shipping.Dimensions.Length.InexactFloat64(),
+			Unit:   shipping.Dimensions.Unit,
+		},
+	}
 }
