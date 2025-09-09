@@ -36,7 +36,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
-			s.logger.Infof("===STEP 1=====, Reserve products: %+v", payload)
 			newOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
 				ctx.Context(),
 				payload.Order,
@@ -52,10 +51,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if err != nil {
 				return nil, err
 			}
-
-			s.logger.Infof("===STEP 1 COMPLETED=====, email: %+v", email)
-
-			s.logger.Infof("===STEP 1 storing shipping data===: %+v", payload.Shipping)
 
 			return &StepResult{
 				Success: true,
@@ -81,9 +76,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
-			s.logger.Infof("===STEP 2=====, payload: %+v", payload)
-			s.logger.Infof("===STEP 2=====, data: %+v", data)
-
 			if data.Shipping == nil {
 				return nil, fmt.Errorf("shipping data not found in saga state")
 			}
@@ -96,8 +88,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if err != nil {
 				return nil, err
 			}
-
-			s.logger.Infof("===STEP 2 COMPLETED=== shipping cost: %+v", shippingCost)
 
 			return &StepResult{
 				Success: true,
@@ -132,8 +122,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
-			s.logger.Infof("===STEP 3 COMPLETED===")
-
 			return &StepResult{Success: true}, nil
 		},
 		Compensate: func(ctx *WorkflowContext, _ *Payload, _ *Metadata) error {
@@ -151,17 +139,10 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
-			s.logger.Infof("===STEP 4===, order: %v", payload.Order)
 			paymentID, err := s.activities.CreatePayment(ctx.Context(), payload.Order)
 			if err != nil {
 				return nil, err
 			}
-
-			s.logger.Infof(
-				"===STEP 4 COMPLETED===, order: %v, paymentID: %s",
-				payload.Order,
-				paymentID,
-			)
 
 			return &StepResult{
 				Success: true,
@@ -208,11 +189,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
-			s.logger.Infof(
-				"===STEP 5 COMPLETED===, order: %v, paymentID: %s",
-				payload.Order,
-			)
-
 			return &StepResult{
 				Success: true,
 				Data:    data,
@@ -237,12 +213,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if err != nil {
 				return nil, err
 			}
-
-			s.logger.Infof(
-				"===STEP 6 COMPLETED===, order: %v, paymentID: %s",
-				payload.Order,
-				paymentID,
-			)
 
 			return &StepResult{
 				Success: true,
@@ -305,12 +275,10 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if len(data.ReservedProducts) == 0 {
 				return nil, fmt.Errorf("no reserved products found")
 			}
-			s.logger.Infof("===STEP 8===, order: %v", payload.Order)
+
 			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), payload.Order, data.ReservedProducts); err != nil {
 				return nil, err
 			}
-
-			s.logger.Infof("===STEP 8 COMPLETED===")
 
 			return &StepResult{Success: true}, nil
 		},
@@ -329,9 +297,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
-			s.logger.Infof("===STEP 9===, order: %v", payload.Order)
-			s.logger.Infof("===DATA===, data: %v", data)
-
 			if data.TrackingNumber == nil {
 				ctx.logger.Warn("No tracking number found for notification")
 
@@ -354,8 +319,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				// Non-critical step, log but don't fail the saga
 				ctx.logger.Warnf("Failed to send notification: %v", err)
 			}
-
-			s.logger.Infof("===STEP 9 COMPLETED===")
 
 			return &StepResult{Success: true}, nil
 		},

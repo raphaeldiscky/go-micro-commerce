@@ -283,7 +283,6 @@ func (a *OrderActivitiesImpl) CreatePayment(
 	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
-		a.logger.Infof("====> ORDER ID: %s, TOTAL PRICE: %s", order.ID, order.TotalPrice.String())
 		// Create payment request event
 		paymentEvent := producer.NewPaymentRequestEvent(
 			order.ID,
