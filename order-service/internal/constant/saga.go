@@ -44,3 +44,14 @@ const (
 	// SendOrderConfirmedNotificationStep sends an order confirmation.
 	SendOrderConfirmedNotificationStep WorkflowStep = "SendOrderConfirmedNotification"
 )
+
+const (
+	// ReleaseProductsStep releases the reserved products.
+	ReleaseProductsStep WorkflowStep = "ReleaseProducts"
+	// RefundPaymentStep refunds the payment.
+	RefundPaymentStep WorkflowStep = "RefundPayment"
+	// RestoreProductsStep restores the reserved products.
+	RestoreProductsStep WorkflowStep = "RestoreProducts"
+	// CancelShippingStep cancels the shipping order.
+	CancelShippingStep WorkflowStep = "CancelShipping"
+)

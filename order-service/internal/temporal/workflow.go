@@ -6,6 +6,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 )
 
@@ -20,7 +21,7 @@ func OrderSagaWorkflow(
 	// Initialize workflow state
 	state := &dto.TemporalWorkflowState{
 		OrderID:        req.Order.ID,
-		CompletedSteps: make(map[string]bool),
+		CompletedSteps: make(map[constant.WorkflowStep]bool),
 	}
 
 	// Configure activity options

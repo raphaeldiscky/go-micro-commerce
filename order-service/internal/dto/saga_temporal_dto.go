@@ -6,6 +6,7 @@ import (
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
@@ -49,15 +50,15 @@ type TemporalOrderSagaResponse struct {
 
 // TemporalWorkflowState holds the state of the workflow execution.
 type TemporalWorkflowState struct {
-	OrderID          uuid.UUID            `json:"order_id"`
-	ReservedProducts []entity.Product     `json:"reserved_products"`
-	Pricing          *entity.OrderPricing `json:"pricing"`
-	PaymentID        *uuid.UUID           `json:"payment_id"`
-	ShippingID       *uuid.UUID           `json:"shipping_id"`
-	TrackingNumber   *string              `json:"tracking_number"`
-	ShippingCost     *decimal.Decimal     `json:"shipping_cost"`
-	CustomerEmail    string               `json:"customer_email"`
-	CompletedSteps   map[string]bool      `json:"completed_steps"`
+	OrderID          uuid.UUID                      `json:"order_id"`
+	ReservedProducts []entity.Product               `json:"reserved_products"`
+	Pricing          *entity.OrderPricing           `json:"pricing"`
+	PaymentID        *uuid.UUID                     `json:"payment_id"`
+	ShippingID       *uuid.UUID                     `json:"shipping_id"`
+	TrackingNumber   *string                        `json:"tracking_number"`
+	ShippingCost     *decimal.Decimal               `json:"shipping_cost"`
+	CustomerEmail    string                         `json:"customer_email"`
+	CompletedSteps   map[constant.WorkflowStep]bool `json:"completed_steps"`
 }
 
 // ReserveProductsRequest represents the input for reserving products and calculating order.
