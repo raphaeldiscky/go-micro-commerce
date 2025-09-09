@@ -52,32 +52,57 @@ func (c *FakeCarrierClient) GetRates(
 
 	rates := []dto.ShippingRate{
 		{
-			Carrier:           constant.CarrierTypeJNE,
+			CarrierID:         constant.CarrierJNE,
 			Service:           "JNE Regular",
-			Cost:              decimal.NewFromFloat(25000),
+			ShippingCost:      decimal.NewFromFloat(25000),
 			Currency:          "IDR",
 			EstimatedDelivery: baseDate.Add(2 * 24 * time.Hour),
 			TransitDays:       2,
 		},
 		{
-			Carrier:           constant.CarrierTypeJT,
+			CarrierID:         constant.CarrierJT,
 			Service:           "J&T Express",
-			Cost:              decimal.NewFromFloat(22000),
+			ShippingCost:      decimal.NewFromFloat(22000),
 			Currency:          "IDR",
 			EstimatedDelivery: baseDate.Add(3 * 24 * time.Hour),
 			TransitDays:       3,
 		},
 		{
-			Carrier:           constant.CarrierTypeSiCepat,
+			CarrierID:         constant.CarrierSiCepat,
 			Service:           "SiCepat REG",
-			Cost:              decimal.NewFromFloat(20000),
+			ShippingCost:      decimal.NewFromFloat(20000),
 			Currency:          "IDR",
 			EstimatedDelivery: baseDate.Add(4 * 24 * time.Hour),
-			TransitDays:       4,
+			TransitDays:       3,
 		},
 	}
 
 	return rates, nil
+}
+
+// GetRate returns a mock shipping rate for a specific carrier.
+func (c *FakeCarrierClient) GetRate(
+	ctx context.Context,
+	req *dto.ShippingRequest,
+) (*dto.ShippingRate, error) {
+	time.Sleep(c.delay)
+
+	if c.shouldFail {
+		return nil, fmt.Errorf("simulated carrier API error")
+	}
+
+	rates, err := c.GetRates(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rate := range rates {
+		if rate.CarrierID == req.CarrierID {
+			return &rate, nil
+		}
+	}
+
+	return nil, fmt.Errorf("shipping rate not found")
 }
 
 // CreateShipment creates a mock shipping label.
@@ -91,21 +116,38 @@ func (c *FakeCarrierClient) CreateShipment(
 		return nil, fmt.Errorf("failed to create shipment: carrier API error")
 	}
 
-	trackingNumber := c.generateTrackingNumber(req.Carrier)
+	carrierService := c.getCarrierInfo(req.CarrierID)
+	trackingNumber := c.generateTrackingNumber(req.CarrierID)
 
 	return &dto.ShippingLabel{
 		TrackingNumber: trackingNumber,
 		LabelURL:       fmt.Sprintf("https://fake-carrier.com/labels/%s.pdf", trackingNumber),
-		Carrier:        req.Carrier,
-		Service:        req.Service,
+		CarrierID:      req.CarrierID,
+		Service:        carrierService,
 	}, nil
+}
+
+// getCarrierInfo get carrier name and service.
+func (c *FakeCarrierClient) getCarrierInfo(carrierID constant.CarrierID) string {
+	switch carrierID {
+	case constant.CarrierJNE:
+		return "JNE Regular"
+	case constant.CarrierJT:
+		return "J&T Express"
+	case constant.CarrierSiCepat:
+		return "SiCepat REG"
+	case constant.CarrierPOS:
+		return "POS Indonesia"
+	default:
+		return ""
+	}
 }
 
 // GetTracking returns mock tracking information.
 func (c *FakeCarrierClient) GetTracking(
 	_ context.Context,
 	trackingNumber string,
-	carrier string,
+	carrierID constant.CarrierID,
 ) (*dto.TrackingInfo, error) {
 	time.Sleep(c.delay)
 
@@ -113,7 +155,6 @@ func (c *FakeCarrierClient) GetTracking(
 		return nil, fmt.Errorf("failed to get tracking: carrier API error")
 	}
 
-	// Simulate different tracking statuses based on tracking number
 	statuses := []constant.FulfillmentStatus{
 		constant.FulfillmentStatusProcessing,
 		constant.FulfillmentStatusShipped,
@@ -121,7 +162,6 @@ func (c *FakeCarrierClient) GetTracking(
 		constant.FulfillmentStatusDelivered,
 	}
 
-	// Use tracking number hash to determine status consistently
 	statusIndex := len(trackingNumber) % len(statuses)
 	status := statuses[statusIndex]
 
@@ -131,7 +171,7 @@ func (c *FakeCarrierClient) GetTracking(
 	info := &dto.TrackingInfo{
 		TrackingNumber: trackingNumber,
 		Status:         status,
-		Carrier:        carrier,
+		CarrierID:      carrierID,
 		LastUpdate:     time.Now().Add(-time.Duration(random.Int(24)) * time.Hour),
 		Location:       location,
 		Description:    description,
@@ -149,68 +189,27 @@ func (c *FakeCarrierClient) GetTracking(
 func (c *FakeCarrierClient) CancelShipment(
 	_ context.Context,
 	trackingNumber string,
-	carrier string,
+	carrierID constant.CarrierID,
 ) error {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
 		return fmt.Errorf(
-			"failed to cancel shipment: TrackingNumber: %s, Carrier: %s",
+			"failed to cancel shipment: TrackingNumber: %s, CarrierID: %s",
 			trackingNumber,
-			carrier,
+			carrierID,
 		)
 	}
 
-	// Simulate successful cancellation
 	return nil
 }
 
-// ValidateAddress validates and normalizes an address.
-func (c *FakeCarrierClient) ValidateAddress(
-	_ context.Context,
-	address *dto.ShippingAddress,
-) (*dto.ShippingAddress, error) {
-	time.Sleep(c.delay)
-
-	if c.shouldFail {
-		return nil, fmt.Errorf("failed to validate address: carrier API error")
-	}
-
-	// Return the address with some mock normalization
-	normalized := &dto.ShippingAddress{
-		Name:       address.Name,
-		Company:    address.Company,
-		Address1:   fmt.Sprintf("NORMALIZED: %s", address.Address1),
-		Address2:   address.Address2,
-		City:       address.City,
-		State:      address.State,
-		PostalCode: address.PostalCode,
-		Country:    address.Country,
-		Phone:      address.Phone,
-		Email:      address.Email,
-	}
-
-	return normalized, nil
-}
-
 // generateTrackingNumber creates a mock tracking number.
-func (c *FakeCarrierClient) generateTrackingNumber(carrier string) string {
-	prefix := map[string]string{
-		string(constant.CarrierTypeJNE):     "JNE",
-		string(constant.CarrierTypeJT):      "JT",
-		string(constant.CarrierTypeSiCepat): "SC",
-		string(constant.CarrierTypePOS):     "POS",
-		string(constant.CarrierTypeTiki):    "TK",
-	}
-
-	carrierPrefix := prefix[carrier]
-	if carrierPrefix == "" {
-		carrierPrefix = "GEN"
-	}
-
+func (c *FakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID) string {
+	prefix := carrierID
 	randomSuffix := random.Int(999999999)
 
-	return fmt.Sprintf("%s%09d", carrierPrefix, randomSuffix)
+	return fmt.Sprintf("%s%09d", prefix, randomSuffix)
 }
 
 // generateLocation creates a mock location.

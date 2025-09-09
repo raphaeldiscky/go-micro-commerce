@@ -7,13 +7,28 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/shopspring/decimal"
 
+	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
+
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
 // FulfillmentClientInterface defines the interface for fulfillment service integration.
 type FulfillmentClientInterface interface {
+	// GetShippingCost gets the shipping cost for the order.
+	GetShippingCost(
+		ctx context.Context,
+		order *entity.Order,
+		shipping *dto.Shipping,
+	) (decimal.Decimal, error)
 	// WaitForFulfillmentResponse waits for fulfillment service response with timeout
 	WaitForFulfillmentResponse(
 		ctx context.Context,
@@ -30,17 +45,72 @@ type FulfillmentClientInterface interface {
 
 // FulfillmentClient implements FulfillmentClientInterface using event-based correlation.
 type FulfillmentClient struct {
-	logger           logger.Logger
-	correlationMap   map[uuid.UUID]chan *dto.FulfillmentResponse
-	correlationMutex sync.RWMutex
+	config         *config.Config
+	logger         logger.Logger
+	grpcClient     *grpc.Client
+	client         pb.FulfillmentServiceClient
+	fulfillmentMap map[uuid.UUID]chan *dto.FulfillmentResponse
+	mutex          sync.RWMutex
 }
 
 // NewFulfillmentClient creates a new FulfillmentClient instance.
-func NewFulfillmentClient(appLogger logger.Logger) FulfillmentClientInterface {
-	return &FulfillmentClient{
-		logger:         appLogger,
-		correlationMap: make(map[uuid.UUID]chan *dto.FulfillmentResponse),
+func NewFulfillmentClient(
+	cfg *config.Config,
+	appLogger logger.Logger,
+) (FulfillmentClientInterface, error) {
+	// Create gRPC client configuration
+	grpcConfig := pkgconfig.DefaultGRPCClientConfig(pkgconstant.GRPCServiceNameFulfillment)
+	// Configure based on existing client config
+	grpcConfig.UseServiceDiscovery = cfg.Client.UseServiceDiscovery
+	grpcConfig.ConsulEnabled = cfg.Consul.Enabled
+	grpcConfig.ConsulAddress = cfg.Consul.Address
+	grpcConfig.SetStaticAddress(cfg.Client.FulfillmentGRPCHost, cfg.Client.FulfillmentGRPCPort)
+
+	gClient, err := grpc.NewGRPCClient(grpcConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gRPC client: %w", err)
 	}
+
+	// Create the fulfillment service client
+	client := pb.NewFulfillmentServiceClient(gClient.GetConnection())
+
+	return &FulfillmentClient{
+		config:         cfg,
+		logger:         appLogger,
+		grpcClient:     gClient,
+		client:         client,
+		fulfillmentMap: make(map[uuid.UUID]chan *dto.FulfillmentResponse),
+	}, nil
+}
+
+// GetShippingCost gets the shipping cost for the order.
+func (c *FulfillmentClient) GetShippingCost(
+	ctx context.Context,
+	order *entity.Order,
+	shipping *dto.Shipping,
+) (decimal.Decimal, error) {
+	c.logger.Infof("Getting shipping cost for order: %s", order.ID)
+
+	// Create the request
+	req := &pb.GetShippingCostRequest{
+		Currency: order.Currency,
+		Shipping: mapper.MapShippingDtoToProto(shipping),
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	resp, err := c.client.GetShippingCost(ctx, req)
+	if err != nil {
+		c.logger.Errorf("Failed to get shipping cost for order %s: %v", order.ID, err)
+
+		return decimal.Zero, fmt.Errorf("failed to get shipping cost: %w", err)
+	}
+
+	shippingCost := decimal.NewFromFloat(resp.ShippingCost)
+	c.logger.Infof("Got shipping cost for order %s: %s %s", order.ID, shippingCost, order.Currency)
+
+	return shippingCost, nil
 }
 
 // WaitForFulfillmentResponse waits for fulfillment service response with timeout.
@@ -59,16 +129,16 @@ func (c *FulfillmentClient) WaitForFulfillmentResponse(
 	responseChan := make(chan *dto.FulfillmentResponse, 1)
 
 	// Register correlation
-	c.correlationMutex.Lock()
-	c.correlationMap[orderID] = responseChan
-	c.correlationMutex.Unlock()
+	c.mutex.Lock()
+	c.fulfillmentMap[orderID] = responseChan
+	c.mutex.Unlock()
 
 	// Ensure cleanup
 	defer func() {
-		c.correlationMutex.Lock()
-		delete(c.correlationMap, orderID)
+		c.mutex.Lock()
+		delete(c.fulfillmentMap, orderID)
 		close(responseChan)
-		c.correlationMutex.Unlock()
+		c.mutex.Unlock()
 	}()
 
 	// Wait for response or timeout
@@ -112,9 +182,9 @@ func (c *FulfillmentClient) NotifyWaitingSaga(response *dto.FulfillmentResponse)
 		return
 	}
 
-	c.correlationMutex.RLock()
-	responseChan, exists := c.correlationMap[response.OrderID]
-	c.correlationMutex.RUnlock()
+	c.mutex.RLock()
+	responseChan, exists := c.fulfillmentMap[response.OrderID]
+	c.mutex.RUnlock()
 
 	if !exists {
 		c.logger.Debugf(
@@ -142,17 +212,22 @@ func (c *FulfillmentClient) NotifyWaitingSaga(response *dto.FulfillmentResponse)
 
 // Close cleans up resources.
 func (c *FulfillmentClient) Close() error {
-	c.correlationMutex.Lock()
-	defer c.correlationMutex.Unlock()
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	// Close all pending channels
-	for orderID, ch := range c.correlationMap {
+	for orderID, ch := range c.fulfillmentMap {
 		c.logger.Infof("Closing pending fulfillment correlation for order: %s", orderID)
 		close(ch)
 	}
 
 	// Clear the map
-	c.correlationMap = make(map[uuid.UUID]chan *dto.FulfillmentResponse)
+	c.fulfillmentMap = make(map[uuid.UUID]chan *dto.FulfillmentResponse)
+
+	// Close gRPC client
+	if c.grpcClient != nil {
+		return c.grpcClient.Close()
+	}
 
 	return nil
 }

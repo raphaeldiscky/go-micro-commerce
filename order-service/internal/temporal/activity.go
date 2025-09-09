@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"go.temporal.io/sdk/activity"
@@ -31,6 +30,7 @@ type OrderActivities interface {
 	ProcessFulfillment(
 		ctx context.Context,
 		order *entity.Order,
+		shipping *dto.Shipping,
 	) (dto.ProcessFulfillmentResponse, error)
 	SetFinalOrderPrices(
 		ctx context.Context,
@@ -291,6 +291,7 @@ func (ta *OrderActivitiesImpl) ProcessPayment(
 func (ta *OrderActivitiesImpl) ProcessFulfillment(
 	ctx context.Context,
 	order *entity.Order,
+	shipping *dto.Shipping,
 ) (dto.ProcessFulfillmentResponse, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
@@ -298,17 +299,8 @@ func (ta *OrderActivitiesImpl) ProcessFulfillment(
 	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
-		// Create mock shipping address (in real implementation, this would come from order data)
-		shippingAddress := event.ShippingAddressPayload{
-			Street:     "123 Main Street",
-			City:       "Jakarta",
-			State:      "DKI Jakarta",
-			PostalCode: "12345",
-			Country:    "Indonesia",
-		}
-
 		// Create fulfillment request event
-		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order, &shippingAddress)
+		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order, shipping)
 
 		payload, err := json.Marshal(fulfillmentEvent)
 		if err != nil {

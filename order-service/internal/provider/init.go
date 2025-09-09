@@ -69,7 +69,18 @@ func SetupGlobal(
 	})
 
 	// Setup fulfillment client for event correlation
-	fulfillmentClient := client.NewFulfillmentClient(appLogger) // logger will be injected later
+	fulfillmentClient, err := client.NewFulfillmentClient(
+		cfg,
+		appLogger,
+	) // logger will be injected later
+	if err != nil {
+		appLogger.Warnf(
+			"failed to create fulfillment client: %v. Order service will start without fulfillment client functionality.",
+			err,
+		)
+
+		fulfillmentClient = nil
+	}
 
 	// Setup payment client for event correlation
 	paymentClient := client.NewPaymentClient(appLogger)

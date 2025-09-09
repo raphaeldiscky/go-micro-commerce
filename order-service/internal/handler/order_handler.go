@@ -33,46 +33,24 @@ func NewOrderHandler(
 	}
 }
 
-// CreateOrder handles POST /orders with gRPC call to product-service.
-func (h *OrderHandler) CreateOrder(c echo.Context) error {
-	req := dto.CreateOrderRequest{
-		CustomerID:    echoutils.GetUserIDFromContext(c),
-		CustomerEmail: echoutils.GetEmailFromContext(c),
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err := c.Validate(&req); err != nil {
-		return err
-	}
-
-	// Create context with user information for gRPC calls
-	ctx := echoutils.ContextWithUserInfo(c)
-
-	order, err := h.orderService.CreateOrder(ctx, req)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseCreated(c, order)
-}
-
 // CreateOrderWithSaga handles POST /orders/saga with saga pattern processing.
 func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
-	req := dto.CreateOrderRequest{
+	req := &dto.CreateOrderRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
 
-	if err := c.Bind(&req); err != nil {
+	h.logger.Debugf("====1 Handler====", req)
+
+	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err := c.Validate(req); err != nil {
 		return err
 	}
+
+	h.logger.Debugf("====2 Handler====: %+v", req)
 
 	ctx := echoutils.ContextWithUserInfo(c)
 
@@ -80,6 +58,8 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	h.logger.Debugf("====3 Handler====", order)
 
 	if order.Status == constant.OrderStatusProcessing {
 		mapped := mapper.MapToOrderSagaResponse(order)
@@ -92,7 +72,7 @@ func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 
 // CreateOrderWithTemporal handles POST /orders/temporal with Temporal processing.
 func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
-	req := dto.CreateOrderRequest{
+	req := &dto.CreateOrderRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}

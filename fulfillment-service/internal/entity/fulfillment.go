@@ -13,10 +13,26 @@ import (
 
 // Dimensions represents the package dimensions.
 type Dimensions struct {
-	Width  float64 `json:"width"`
-	Height float64 `json:"height"`
-	Length float64 `json:"length"`
-	Unit   string  `json:"unit"` // cm or inch
+	Width  decimal.Decimal `json:"width"`
+	Height decimal.Decimal `json:"height"`
+	Length decimal.Decimal `json:"length"`
+	Unit   string          `json:"unit"` // cm or inch
+}
+
+// ToAddress represents a customer shipping address.
+type ToAddress struct {
+	City       string `json:"city"`
+	State      string `json:"state"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
+}
+
+// FromAddress represents a warehouse address.
+type FromAddress struct {
+	City       string `json:"city"`
+	State      string `json:"state"`
+	PostalCode string `json:"postal_code"`
+	Country    string `json:"country"`
 }
 
 // Fulfillment represents a fulfillment record in the marketplace.
@@ -25,12 +41,14 @@ type Fulfillment struct {
 	OrderID             uuid.UUID // Reference to order from order-service
 	Status              constant.FulfillmentStatus
 	TrackingNumber      string
-	Carrier             *string
-	ShippingLabelURL    *string
+	CarrierID           constant.CarrierID
+	ShippingLabelURL    string
 	Currency            string
 	ShippingCost        decimal.Decimal
+	ToAddress           ToAddress
+	FromAddress         FromAddress
 	WeightKG            decimal.Decimal
-	Dimensions          *Dimensions // JSONB data
+	Dimensions          Dimensions // JSONB data
 	EstimatedDeliveryAt time.Time
 	ActualDeliveryAt    *time.Time
 	CreatedAt           time.Time
@@ -71,9 +89,10 @@ func (f *Fulfillment) validate() error {
 // NewFulfillment creates a new fulfillment with validation.
 func NewFulfillment(
 	orderID uuid.UUID,
-	trackingNumber string,
-	currency string,
+	trackingNumber, currency string,
 	shippingCost, weightKG decimal.Decimal,
+	fromAddress FromAddress,
+	toAddress ToAddress,
 	estimatedDeliveryAt time.Time,
 ) (*Fulfillment, error) {
 	now := time.Now()
@@ -86,6 +105,8 @@ func NewFulfillment(
 		ShippingCost:        shippingCost.Round(2),
 		WeightKG:            weightKG.Round(2),
 		EstimatedDeliveryAt: estimatedDeliveryAt,
+		ToAddress:           toAddress,
+		FromAddress:         fromAddress,
 		CreatedAt:           now,
 		UpdatedAt:           now,
 	}
@@ -112,8 +133,8 @@ func (f *Fulfillment) UpdateStatus(status constant.FulfillmentStatus) error {
 }
 
 // SetCarrierInfo sets the carrier and shipping label information.
-func (f *Fulfillment) SetCarrierInfo(carrier string, shippingLabelURL *string) error {
-	f.Carrier = &carrier
+func (f *Fulfillment) SetCarrierInfo(carrierID constant.CarrierID, shippingLabelURL string) error {
+	f.CarrierID = carrierID
 	f.ShippingLabelURL = shippingLabelURL
 	f.UpdatedAt = time.Now()
 
@@ -121,7 +142,7 @@ func (f *Fulfillment) SetCarrierInfo(carrier string, shippingLabelURL *string) e
 }
 
 // SetDimensions sets the package dimensions.
-func (f *Fulfillment) SetDimensions(dimensions *Dimensions) error {
+func (f *Fulfillment) SetDimensions(dimensions Dimensions) error {
 	f.Dimensions = dimensions
 	f.UpdatedAt = time.Now()
 

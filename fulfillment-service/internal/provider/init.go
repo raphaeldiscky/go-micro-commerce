@@ -12,13 +12,15 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mock"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/service"
 )
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore     repository.DataStore
-	KafkaAdmin    *kafka.Admin
-	CarrierClient client.CarrierClientInterface
+	DataStore          repository.DataStore
+	KafkaAdmin         *kafka.Admin
+	CarrierClient      client.CarrierClientInterface
+	FulfillmentService service.FulfillmentServiceInterface
 }
 
 // SetupGlobal initializes all providers.

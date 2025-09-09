@@ -10,7 +10,9 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
 // FulfillmentRequestEvent is the envelope for fulfillment request events.
@@ -38,7 +40,7 @@ func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
 // NewFulfillmentRequestEvent creates a new FulfillmentRequestEvent.
 func NewFulfillmentRequestEvent(
 	order *entity.Order,
-	shippingAddress *event.ShippingAddressPayload,
+	shipping *dto.Shipping,
 ) *FulfillmentRequestEvent {
 	// Convert order items to fulfillment items
 	fulfillmentItems := make([]event.FulfillmentItemPayload, len(order.Items))
@@ -58,12 +60,11 @@ func NewFulfillmentRequestEvent(
 			Source:      pkgconstant.OrderServiceName,
 		},
 		Payload: event.FulfillmentRequestPayload{
-			OrderID:         order.ID,
-			CustomerID:      order.CustomerID,
-			TotalPrice:      order.TotalPrice,
-			Currency:        order.Currency,
-			Items:           fulfillmentItems,
-			ShippingAddress: *shippingAddress,
+			OrderID:    order.ID,
+			CustomerID: order.CustomerID,
+			Currency:   order.Currency,
+			Items:      fulfillmentItems,
+			Shipping:   mapper.MapShippingDtoToEventPayload(shipping),
 		},
 	}
 }

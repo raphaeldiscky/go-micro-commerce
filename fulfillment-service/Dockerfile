@@ -7,6 +7,7 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
+COPY proto/ ./proto/
 COPY fulfillment-service/go.mod fulfillment-service/go.sum ./fulfillment-service/
 
 # Change to the service directory for building
@@ -34,7 +35,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/fulfillment-service/main .
 
-EXPOSE 8085
+EXPOSE 8085 50055
 
 # Switch to the non-root user
 USER appuser

@@ -9,6 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -20,11 +21,17 @@ type StepResult struct {
 	Error   error
 }
 
+// Payload represents the payload for a saga execution.
+type Payload struct {
+	Order    *entity.Order
+	Shipping dto.Shipping
+}
+
 // Step represents an enhanced saga step with retry logic.
 type Step struct {
 	Name        constant.WorkflowStep
-	Execute     func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) (*StepResult, error)
-	Compensate  func(ctx *WorkflowContext, order *entity.Order, data map[string]interface{}) error
+	Execute     func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error)
+	Compensate  func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) error
 	MaxRetries  int64
 	RetryDelay  time.Duration
 	Timeout     time.Duration // Individual step timeout
@@ -71,25 +78,25 @@ func (e *Executor) AddStep(step *Step) {
 }
 
 // Execute runs the saga workflow with state persistence and compensation.
-func (e *Executor) Execute(ctx context.Context, order *entity.Order) error {
-	sagaState, err := e.initializeSagaState(ctx, order.ID)
+func (e *Executor) Execute(ctx context.Context, payload *Payload) error {
+	sagaState, err := e.initializeSagaState(ctx, payload.Order.ID)
 	if err != nil {
 		return fmt.Errorf("failed to initialize saga state: %w", err)
 	}
 
 	if sagaState.Status == constant.SagaStatusCompensating {
-		return e.compensateFromState(ctx, order, sagaState)
+		return e.compensateFromState(ctx, payload, sagaState)
 	}
 
 	if err := e.markSagaAsExecuting(ctx, sagaState); err != nil {
 		return fmt.Errorf("failed to update saga state: %w", err)
 	}
 
-	if err := e.executeAllSteps(ctx, order, sagaState); err != nil {
+	if err := e.executeAllSteps(ctx, payload, sagaState); err != nil {
 		return err
 	}
 
-	return e.markSagaAsCompleted(ctx, order, sagaState)
+	return e.markSagaAsCompleted(ctx, payload, sagaState)
 }
 
 // initializeSagaState creates or retrieves saga state and sets timeout.
@@ -122,7 +129,7 @@ func (e *Executor) markSagaAsExecuting(ctx context.Context, sagaState *entity.Sa
 // executeAllSteps executes all saga steps with error handling.
 func (e *Executor) executeAllSteps(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	sagaState *entity.SagaState,
 ) error {
 	startStep := sagaState.CurrentStep
@@ -136,7 +143,7 @@ func (e *Executor) executeAllSteps(
 
 		e.logger.Infof("Executing saga step: %s - %s", step.Name, step.Description)
 
-		if err := e.executeSingleStep(ctx, order, &step, sagaState, i); err != nil {
+		if err := e.executeSingleStep(ctx, payload, &step, sagaState, i); err != nil {
 			return err
 		}
 
@@ -160,14 +167,14 @@ func (e *Executor) shouldSkipStep(sagaState *entity.SagaState, step *Step) bool 
 // executeSingleStep executes a single step and handles errors.
 func (e *Executor) executeSingleStep(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	step *Step,
 	sagaState *entity.SagaState,
 	stepIndex int64,
 ) error {
-	result, err := e.executeStepWithRetry(ctx, order, step, sagaState)
+	result, err := e.executeStepWithRetry(ctx, payload, step, sagaState)
 	if err != nil {
-		return e.handleStepError(ctx, order, step, sagaState, err)
+		return e.handleStepError(ctx, payload, step, sagaState, err)
 	}
 
 	return e.updateSagaStateAfterSuccess(ctx, step, sagaState, result, stepIndex)
@@ -176,7 +183,7 @@ func (e *Executor) executeSingleStep(
 // handleStepError handles step execution errors and compensation.
 func (e *Executor) handleStepError(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	step *Step,
 	sagaState *entity.SagaState,
 	err error,
@@ -192,13 +199,13 @@ func (e *Executor) handleStepError(
 		return nil
 	}
 
-	return e.startCompensation(ctx, order, sagaState, err)
+	return e.startCompensation(ctx, payload, sagaState, err)
 }
 
 // startCompensation initiates saga compensation.
 func (e *Executor) startCompensation(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	sagaState *entity.SagaState,
 	originalErr error,
 ) error {
@@ -214,7 +221,7 @@ func (e *Executor) startCompensation(
 	}
 
 	// Start compensation
-	if compensateErr := e.compensateFromState(ctx, order, sagaState); compensateErr != nil {
+	if compensateErr := e.compensateFromState(ctx, payload, sagaState); compensateErr != nil {
 		return fmt.Errorf(
 			"execution failed: %w, compensation failed: %w",
 			originalErr,
@@ -257,7 +264,7 @@ func (e *Executor) updateSagaStateAfterSuccess(
 // markSagaAsCompleted marks the saga as successfully completed.
 func (e *Executor) markSagaAsCompleted(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	sagaState *entity.SagaState,
 ) error {
 	stateRepo := e.dataStore.SagaStateRepository()
@@ -271,7 +278,7 @@ func (e *Executor) markSagaAsCompleted(
 		return fmt.Errorf("failed to mark saga as completed: %w", err)
 	}
 
-	e.logger.Infof("Saga completed successfully for order: %s", order.ID)
+	e.logger.Infof("Saga completed successfully for order: %s", payload.Order.ID)
 
 	return nil
 }
@@ -279,7 +286,7 @@ func (e *Executor) markSagaAsCompleted(
 // executeStepWithRetry executes a step with retry logic and timeout.
 func (e *Executor) executeStepWithRetry(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	step *Step,
 	state *entity.SagaState,
 ) (*StepResult, error) {
@@ -303,9 +310,9 @@ func (e *Executor) executeStepWithRetry(
 				defer cancel()
 			}
 
-			workflowCtx := NewWorkflowContext(stepCtx, order.ID, e.logger)
+			workflowCtx := NewWorkflowContext(stepCtx, payload.Order.ID, e.logger)
 
-			return step.Execute(workflowCtx, order, state.Data)
+			return step.Execute(workflowCtx, payload, state.Data)
 		}()
 		if err == nil {
 			return result, nil
@@ -342,7 +349,7 @@ func (e *Executor) executeStepWithRetry(
 // compensateFromState executes compensation based on saga state.
 func (e *Executor) compensateFromState(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	state *entity.SagaState,
 ) error {
 	e.logger.Infof("Starting compensation for saga %s", state.ID)
@@ -385,7 +392,7 @@ func (e *Executor) compensateFromState(
 		e.logger.Infof("Compensating saga step: %s", stepName)
 
 		// Execute compensation with retry
-		if err := e.compensateStepWithRetry(ctx, order, step, state); err != nil {
+		if err := e.compensateStepWithRetry(ctx, payload, step, state); err != nil {
 			e.logger.Errorf("Compensation failed for step %s: %v", stepName, err)
 
 			state.Status = constant.SagaStatusFailed
@@ -428,11 +435,11 @@ func (e *Executor) compensateFromState(
 // compensateStepWithRetry executes compensation with retry logic.
 func (e *Executor) compensateStepWithRetry(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 	step *Step,
 	state *entity.SagaState,
 ) error {
-	workflowCtx := NewWorkflowContext(ctx, order.ID, e.logger)
+	workflowCtx := NewWorkflowContext(ctx, payload.Order.ID, e.logger)
 
 	var lastErr error
 
@@ -444,7 +451,7 @@ func (e *Executor) compensateStepWithRetry(
 			time.Sleep(step.RetryDelay * time.Duration(attempt))
 		}
 
-		err := step.Compensate(workflowCtx, order, state.Data)
+		err := step.Compensate(workflowCtx, payload, state.Data)
 		if err == nil {
 			return nil
 		}

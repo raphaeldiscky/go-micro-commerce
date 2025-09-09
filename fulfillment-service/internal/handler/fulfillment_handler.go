@@ -81,3 +81,26 @@ func (h *FulfillmentHandler) GetFulfillmentByOrderID(c echo.Context) error {
 
 	return echoutils.ResponseOK(c, fulfillment)
 }
+
+// CalculateShippingRates handles POST /fulfillments/shipping-rates.
+//
+// Route: POST /fulfillments
+//
+// Authentication: Requires user authentication.
+func (h *FulfillmentHandler) CalculateShippingRates(c echo.Context) error {
+	var req *dto.CalculateShippingRatesRequest
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	rates, err := h.fulfillmentService.CalculateShippingRates(c.Request().Context(), req)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, rates)
+}

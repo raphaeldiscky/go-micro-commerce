@@ -27,13 +27,14 @@ func ReserveProductsAndCalculate(
 func ProcessFulfillment(
 	ctx context.Context,
 	order *entity.Order,
+	shipping *dto.Shipping,
 ) (dto.ProcessFulfillmentResponse, error) {
 	activities, err := getActivitiesFromContext(ctx)
 	if err != nil {
 		return dto.ProcessFulfillmentResponse{}, err
 	}
 
-	return activities.ProcessFulfillment(ctx, order)
+	return activities.ProcessFulfillment(ctx, order, shipping)
 }
 
 // SetFinalOrderPrices is the global activity function.

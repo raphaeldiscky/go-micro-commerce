@@ -13,6 +13,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -68,21 +69,21 @@ func NewSagaOrchestrator(
 }
 
 // ExecuteOrderSaga executes the order processing saga with proper async handling.
-func (o *Orchestrator) ExecuteOrderSaga(ctx context.Context, order *entity.Order) error {
-	o.logger.Infof("Starting order saga execution for order: %s", order.ID)
+func (o *Orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) error {
+	o.logger.Infof("Starting order saga execution for order: %s", payload.Order.ID)
 
 	// Create a context with timeout for async execution
 	sagaCtx, cancel := context.WithTimeout(ctx, o.asyncExecutionTimeout)
 	defer cancel()
 
 	// Execute the saga
-	if err := o.executor.Execute(sagaCtx, order); err != nil {
-		o.logger.Errorf("Order saga failed for order %s: %v", order.ID, err)
+	if err := o.executor.Execute(sagaCtx, payload); err != nil {
+		o.logger.Errorf("Order saga failed for order %s: %v", payload.Order.ID, err)
 
 		return fmt.Errorf("saga execution failed: %w", err)
 	}
 
-	o.logger.Infof("Order saga completed successfully for order: %s", order.ID)
+	o.logger.Infof("Order saga completed successfully for order: %s", payload.Order.ID)
 
 	return nil
 }
@@ -90,11 +91,11 @@ func (o *Orchestrator) ExecuteOrderSaga(ctx context.Context, order *entity.Order
 // ExecuteOrderSagaAsync executes the saga asynchronously with proper tracking.
 func (o *Orchestrator) ExecuteOrderSagaAsync(
 	ctx context.Context,
-	order *entity.Order,
+	payload *Payload,
 ) {
 	// Create a derived context with user authentication for async saga execution
 	sagaCtx := echoutils.PropagateUserContextToBackground(ctx)
-	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, order.ID)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, payload.Order.ID)
 	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
 
 	// Add timeout
@@ -103,16 +104,16 @@ func (o *Orchestrator) ExecuteOrderSagaAsync(
 	go func() {
 		defer cancel()
 
-		o.logger.Infof("Starting async saga execution for order: %s", order.ID)
+		o.logger.Infof("Starting async saga execution for order: %s", payload.Order.ID)
 
-		if err := o.executor.Execute(sagaCtx, order); err != nil {
-			o.logger.Errorf("Async saga execution failed for order %s: %v", order.ID, err)
+		if err := o.executor.Execute(sagaCtx, payload); err != nil {
+			o.logger.Errorf("Async saga execution failed for order %s: %v", payload.Order.ID, err)
 
 			// Update order status to failed
 			// Note: In production, this should be done through proper event handling
-			o.handleSagaFailure(order.ID, err)
+			o.handleSagaFailure(payload.Order.ID, err)
 		} else {
-			o.logger.Infof("Async saga execution completed for order: %s", order.ID)
+			o.logger.Infof("Async saga execution completed for order: %s", payload.Order.ID)
 		}
 	}()
 }
@@ -134,7 +135,9 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 
 		// Retrieve the order
 		// Note: You'll need to inject order repository or service
-		order, err := o.getOrder(ctx, sagaState.OrderID)
+		orderRepo := o.dataStore.OrderRepository()
+
+		order, err := orderRepo.FindByID(ctx, sagaState.OrderID)
 		if err != nil {
 			o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, err)
 
@@ -142,19 +145,41 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 		}
 
 		// Retry the saga execution
-		go func(order *entity.Order) {
+		go func(order *entity.Order, sagaState *entity.SagaState) {
 			recoveryCtx, cancel := context.WithTimeout(
 				context.Background(),
 				o.asyncExecutionTimeout,
 			)
 			defer cancel()
 
-			if err := o.executor.Execute(recoveryCtx, order); err != nil {
-				o.logger.Errorf("Failed to recover saga for order %s: %v", order.ID, err)
+			// Extract shipping data from saga state if available
+			var shipping dto.Shipping
+
+			if shippingData, exists := sagaState.Data["shipping"]; exists {
+				if shippingMap, ok := shippingData.(map[string]interface{}); ok {
+					// Convert map to ShippingRequest - this is a simplified approach
+					// In production, you might want to use JSON marshal/unmarshal for type safety
+					o.logger.Infof("Recovered shipping data from saga state for order %s", order.ID)
+
+					shipping = convertMapToShippingRequest(shippingMap)
+				}
 			} else {
-				o.logger.Infof("Successfully recovered saga for order %s", order.ID)
+				// If no shipping data in saga state, we'll proceed with empty shipping
+				// This handles cases where saga failed before Step 1 completed
+				o.logger.Warnf("No shipping data found in saga state for order %s during recovery", order.ID)
 			}
-		}(order)
+
+			payload := &Payload{
+				Order:    order,
+				Shipping: shipping,
+			}
+
+			if err := o.executor.Execute(recoveryCtx, payload); err != nil {
+				o.logger.Errorf("Failed to recover saga for order %s: %v", payload.Order.ID, err)
+			} else {
+				o.logger.Infof("Successfully recovered saga for order %s", payload.Order.ID)
+			}
+		}(order, sagaState)
 	}
 
 	return nil
@@ -167,18 +192,17 @@ func (o *Orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
 	// Update order status to failed/canceled
 }
 
-// getOrder retrieves an order from the repository.
-func (o *Orchestrator) getOrder(ctx context.Context, orderID uuid.UUID) (*entity.Order, error) {
-	orderRepo := o.dataStore.OrderRepository()
+// convertMapToShippingRequest converts a map from saga state back to ShippingRequest.
+// This is a simplified implementation - in production consider using JSON marshal/unmarshal.
+func convertMapToShippingRequest(data map[string]interface{}) dto.Shipping {
+	var shipping dto.Shipping
 
-	order, err := orderRepo.FindByID(ctx, orderID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve order %s: %w", orderID, err)
+	if carrierID, ok := data["carrier_id"].(string); ok {
+		shipping.CarrierID = carrierID
 	}
 
-	if order == nil {
-		return nil, fmt.Errorf("order not found: %s", orderID)
-	}
+	// Add more field conversions as needed based on your ShippingRequest structure
+	// This is a basic implementation - you might want to use JSON marshal/unmarshal for robustness
 
-	return order, nil
+	return shipping
 }
