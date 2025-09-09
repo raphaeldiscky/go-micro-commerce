@@ -71,19 +71,13 @@ func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
 
-	h.logger.Debugf("====0 Handler====: %+v", req)
-
 	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	h.logger.Debugf("====0.1 Handler====: %+v", req)
-
 	if err := c.Validate(req); err != nil {
 		return err
 	}
-
-	h.logger.Debugf("====1 Handler====: %+v", req)
 
 	ctx := echoutils.ContextWithUserInfo(c)
 
@@ -91,8 +85,6 @@ func (h *OrderHandler) CreateOrderWithTemporal(c echo.Context) error {
 	if err != nil {
 		return err
 	}
-
-	h.logger.Debugf("====2 Handler====: %+v", order)
 
 	if order.Status == constant.OrderStatusPending {
 		mapped := mapper.MapToOrderSagaResponse(order)
