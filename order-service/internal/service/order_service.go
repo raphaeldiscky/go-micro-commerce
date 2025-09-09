@@ -161,6 +161,8 @@ func (s *OrderService) CreateOrderWithTemporal(
 			}
 		}
 
+		s.logger.Infof("=====1========: %s", req.IdempotencyKey)
+
 		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
 		if err != nil {
 			return fmt.Errorf("failed to create order entity: %w", err)
@@ -170,10 +172,14 @@ func (s *OrderService) CreateOrderWithTemporal(
 			return fmt.Errorf("failed to update order status: %w", err)
 		}
 
+		s.logger.Infof("=======2=========: %s", newOrder)
+
 		savedOrder, err := orderRepo.Create(ctx, newOrder)
 		if err != nil {
 			return err
 		}
+
+		s.logger.Info("=======3=========: ", savedOrder)
 
 		// Extract user authentication info from context
 		userAuth, err := echoutils.GetUserAuthContexts(ctx)
@@ -181,10 +187,13 @@ func (s *OrderService) CreateOrderWithTemporal(
 			return err
 		}
 
+		s.logger.Info("=======4=========: ", userAuth)
+
 		// Start Temporal workflow
-		req := dto.TemporalOrderSagaRequest{
+		temporalReq := dto.TemporalOrderSagaRequest{
 			Order:    savedOrder,
-			UserAuth: userAuth,
+			Shipping: &req.Shipping,
+			UserAuth: &userAuth,
 		}
 
 		workflowOptions := s.temporalClient.CreateWorkflowOptions(savedOrder.ID)
@@ -193,8 +202,11 @@ func (s *OrderService) CreateOrderWithTemporal(
 			ctx,
 			workflowOptions,
 			constant.OrderSagaWorkflowName,
-			req,
+			temporalReq,
 		)
+
+		s.logger.Info("=======5=========: ", workflowRun)
+
 		if err != nil {
 			s.logger.Errorf(
 				"Failed to start Temporal workflow for order %s: %v",

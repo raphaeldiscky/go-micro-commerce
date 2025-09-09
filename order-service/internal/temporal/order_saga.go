@@ -9,33 +9,34 @@ import (
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
-// executeSagaSteps executes all saga steps in order to match saga implementation.
+//nolint:funlen // executeSagaSteps executes all saga steps in order to match saga implementation.
 func executeSagaSteps(
 	ctx workflow.Context,
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
+	shipping *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 
 	// Step 1: Reserve Products and Calculate
-	logger.Info("Executing ReserveProductsAndCalculate", "orderID", order.ID)
+	logger.Info("Executing ReserveProducts", "orderID", order.ID)
 
-	// Create activity request with user auth info
-	reserveRequest := dto.ReserveProductsAndCalculateRequest{
+	reserveRequest := dto.ReserveProductsRequest{
 		Order:    order,
 		UserAuth: userAuth,
 	}
 
-	var reserveResult dto.ReserveProductsAndCalculateResponse
-	if err := workflow.ExecuteActivity(ctx, ReserveProductsAndCalculate, reserveRequest).Get(ctx, &reserveResult); err != nil {
+	var reserveResult dto.ReserveProductsResponse
+	if err := workflow.ExecuteActivity(ctx, string(constant.ReserveProductsStep), reserveRequest).Get(ctx, &reserveResult); err != nil {
 		return temporal.NewNonRetryableApplicationError(
-			"ReserveProductsAndCalculate failed",
-			"ReserveProductsAndCalculateError",
+			"ReserveProducts failed",
+			"ReserveProductsError",
 			err,
 		)
 	}
@@ -44,26 +45,30 @@ func executeSagaSteps(
 	order.Items = reserveResult.CalculatedOrder.Items
 	state.ReservedProducts = reserveResult.ReservedProducts
 	state.CustomerEmail = reserveResult.CustomerEmail
-	state.CompletedSteps["ReserveProductsAndCalculate"] = true
+	state.CompletedSteps[string(constant.ReserveProductsStep)] = true
 
-	// Step 2: Process Fulfillment
-	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
+	// Step 2: Get Shipping Cost
+	logger.Info("Executing GetShippingCost", "orderID", order.ID)
 
-	var fulfillmentResult dto.ProcessFulfillmentResponse
-	if err := workflow.ExecuteActivity(ctx, ProcessFulfillment, order).Get(ctx, &fulfillmentResult); err != nil {
+	shippingRequest := dto.GetShippingCostRequest{
+		Order:    order,
+		Shipping: shipping,
+		UserAuth: &userAuth,
+	}
+
+	var shippingResult dto.GetShippingCostResponse
+	if err := workflow.ExecuteActivity(ctx, string(constant.GetShippingCostStep), shippingRequest).Get(ctx, &shippingResult); err != nil {
 		// Non-critical step, log but continue
 		logger.Warn(
-			"ProcessFulfillment failed, but saga will continue",
+			"GetShippingCost failed, but saga will continue",
 			"error",
 			err,
 			"orderID",
 			order.ID,
 		)
 	} else {
-		state.ShippingID = &fulfillmentResult.ShippingID
-		state.TrackingNumber = &fulfillmentResult.TrackingNumber
-		state.ShippingCost = &fulfillmentResult.ShippingCost
-		state.CompletedSteps["ProcessFulfillment"] = true
+		state.ShippingCost = &shippingResult.ShippingCost
+		state.CompletedSteps[string(constant.GetShippingCostStep)] = true
 	}
 
 	// Step 3: Set Final Order Prices
@@ -77,7 +82,7 @@ func executeSagaSteps(
 
 		var setPricesResult dto.SetFinalOrderPricesResponse
 
-		if err := workflow.ExecuteActivity(ctx, SetFinalOrderPrices, setPricesInput).Get(ctx, &setPricesResult); err != nil {
+		if err := workflow.ExecuteActivity(ctx, string(constant.SetFinalPricesStep), setPricesInput).Get(ctx, &setPricesResult); err != nil {
 			// Non-critical step, log but continue
 			logger.Warn(
 				"SetFinalOrderPrices failed, but saga will continue",
@@ -89,22 +94,73 @@ func executeSagaSteps(
 		} else {
 			// Update the order with the latest data from database
 			order = setPricesResult.UpdatedOrder
-			state.CompletedSteps["SetFinalOrderPrices"] = true
+			state.CompletedSteps[string(constant.SetFinalPricesStep)] = true
 		}
 	}
 
-	// Step 4: Process Payment
-	logger.Info("Executing ProcessPayment", "orderID", order.ID)
+	// Step 4: Create Payment
+	logger.Info("Executing CreatePayment", "orderID", order.ID)
 
 	var paymentID uuid.UUID
-	if err := workflow.ExecuteActivity(ctx, ProcessPayment, order).Get(ctx, &paymentID); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.CreatePaymentStep), order).Get(ctx, &paymentID); err != nil {
 		return err
 	}
 
 	state.PaymentID = &paymentID
-	state.CompletedSteps["ProcessPayment"] = true
+	state.CompletedSteps[string(constant.CreatePaymentStep)] = true
 
-	// Step 5: Confirm Products Deduction
+	// Step 5: Send Payment Required Notification
+	logger.Info("Executing SendPaymentRequiredNotification", "orderID", order.ID)
+
+	if len(state.ReservedProducts) > 0 && state.CustomerEmail != "" {
+		paymentNotificationInput := dto.SendPaymentRequiredNotificationRequest{
+			Order:            order,
+			ReservedProducts: state.ReservedProducts,
+			CustomerEmail:    state.CustomerEmail,
+		}
+		if err := workflow.ExecuteActivity(ctx, string(constant.SendPaymentRequiredNotificationStep), paymentNotificationInput).Get(ctx, nil); err != nil {
+			return err
+		}
+
+		state.CompletedSteps[string(constant.SendPaymentRequiredNotificationStep)] = true
+	}
+
+	// Step 6: Wait for Payment Confirmation
+	logger.Info("Executing WaitForPaymentConfirmation", "orderID", order.ID)
+
+	waitPaymentRequest := dto.WaitForPaymentConfirmationRequest{
+		Order: order,
+	}
+
+	var paymentConfirmationResult dto.WaitForPaymentConfirmationResponse
+	if err := workflow.ExecuteActivity(ctx, string(constant.WaitForPaymentConfirmationStep), waitPaymentRequest).Get(ctx, &paymentConfirmationResult); err != nil {
+		return err
+	}
+
+	// Update payment ID from confirmation
+	state.PaymentID = &paymentConfirmationResult.PaymentID
+	state.CompletedSteps[string(constant.WaitForPaymentConfirmationStep)] = true
+
+	// Step 7: Process Fulfillment
+	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
+
+	var fulfillmentResult dto.ProcessFulfillmentResponse
+	if err := workflow.ExecuteActivity(ctx, string(constant.ProcessFulfillmentStep), order, shipping).Get(ctx, &fulfillmentResult); err != nil {
+		// Non-critical step, log but continue
+		logger.Warn(
+			"ProcessFulfillment failed, but saga will continue",
+			"error",
+			err,
+			"orderID",
+			order.ID,
+		)
+	} else {
+		state.ShippingID = &fulfillmentResult.ShippingID
+		state.TrackingNumber = &fulfillmentResult.TrackingNumber
+		state.CompletedSteps[string(constant.ProcessFulfillmentStep)] = true
+	}
+
+	// Step 8: Confirm Products Deduction
 	logger.Info("Executing ConfirmProductsDeduction", "orderID", order.ID)
 
 	confirmDeductionInput := dto.ConfirmProductsDeductionRequest{
@@ -112,13 +168,13 @@ func executeSagaSteps(
 		ReservedProducts: state.ReservedProducts,
 		UserAuth:         userAuth,
 	}
-	if err := workflow.ExecuteActivity(ctx, ConfirmProductsDeduction, confirmDeductionInput).Get(ctx, nil); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.ConfirmProductsDeductionStep), confirmDeductionInput).Get(ctx, nil); err != nil {
 		return err
 	}
 
-	state.CompletedSteps["ConfirmProductsDeduction"] = true
+	state.CompletedSteps[string(constant.ConfirmProductsDeductionStep)] = true
 
-	// Step 6: Send Order Confirmation
+	// Step 9: Send Order Confirmation
 	logger.Info("Executing SendOrderConfirmedNotification", "orderID", order.ID)
 
 	if state.TrackingNumber != nil && state.CustomerEmail != "" {
@@ -128,7 +184,7 @@ func executeSagaSteps(
 			TrackingNumber: *state.TrackingNumber,
 			CustomerEmail:  state.CustomerEmail,
 		}
-		if err := workflow.ExecuteActivity(ctx, SendOrderConfirmedNotification, confirmationInput).Get(ctx, nil); err != nil {
+		if err := workflow.ExecuteActivity(ctx, string(constant.SendOrderConfirmedNotificationStep), confirmationInput).Get(ctx, nil); err != nil {
 			// This is not critical, log but don't fail the saga
 			logger.Warn(
 				"SendOrderConfirmedNotification failed, but saga will continue",
@@ -138,7 +194,7 @@ func executeSagaSteps(
 				order.ID,
 			)
 		} else {
-			state.CompletedSteps["SendOrderConfirmedNotification"] = true
+			state.CompletedSteps[string(constant.SendOrderConfirmedNotificationStep)] = true
 		}
 	}
 
@@ -168,38 +224,41 @@ func executeCompensation(
 
 	compensationCtx := workflow.WithActivityOptions(ctx, compensationOptions)
 
-	// Cancel Shipping (if shipping was created)
-	if state.CompletedSteps["ProcessFulfillment"] && state.ShippingID != nil {
+	// Compensation in reverse order of saga execution
+
+	// Cancel Shipping (if shipping was created) - Step 7 compensation
+	if state.CompletedSteps[string(constant.ProcessFulfillmentStep)] && state.ShippingID != nil {
 		logger.Info(
-			"Compensating ProcessFulfillment",
+			"Compensating ProcessFulfillment (Step 7)",
 			"orderID",
 			order.ID,
 			"shippingID",
 			*state.ShippingID,
 		)
 
-		if err := workflow.ExecuteActivity(compensationCtx, CancelShipping, *state.ShippingID).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, "CancelShipping", *state.ShippingID).Get(compensationCtx, nil); err != nil {
 			logger.Error("CancelShipping compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
 
-	// Restore Products (if products were deducted)
-	if state.CompletedSteps["ConfirmProductsDeduction"] {
-		logger.Info("Compensating ConfirmProductsDeduction", "orderID", order.ID)
+	// Restore Products (if products were deducted) - Step 8 compensation
+	if state.CompletedSteps[string(constant.ConfirmProductsDeductionStep)] {
+		logger.Info("Compensating ConfirmProductsDeduction (Step 8)", "orderID", order.ID)
 
 		restoreReq := dto.RestoreProductsRequest{
 			Order:    order,
 			UserAuth: userAuth,
 		}
-		if err := workflow.ExecuteActivity(compensationCtx, RestoreProducts, restoreReq).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, "RestoreProducts", restoreReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("RestoreProducts compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
 
-	// Refund Payment (if payment was processed)
-	if state.CompletedSteps["ProcessPayment"] && state.PaymentID != nil {
+	// Refund Payment (if payment was processed) - Step 4 & 6 compensation
+	if (state.CompletedSteps[string(constant.CreatePaymentStep)] || state.CompletedSteps[string(constant.WaitForPaymentConfirmationStep)]) &&
+		state.PaymentID != nil {
 		logger.Info(
-			"Compensating ProcessPayment",
+			"Compensating CreatePayment/WaitForPaymentConfirmation (Step 4/6)",
 			"orderID",
 			order.ID,
 			"paymentID",
@@ -210,20 +269,20 @@ func executeCompensation(
 			Order:     order,
 			PaymentID: *state.PaymentID,
 		}
-		if err := workflow.ExecuteActivity(compensationCtx, RefundPayment, refundInput).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, "RefundPayment", refundInput).Get(compensationCtx, nil); err != nil {
 			logger.Error("RefundPayment compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
 
-	// Release Products (if products were reserved)
-	if state.CompletedSteps["ReserveProductsAndCalculate"] {
-		logger.Info("Compensating ReserveProductsAndCalculate", "orderID", order.ID)
+	// Release Products (if products were reserved) - Step 1 compensation
+	if state.CompletedSteps[string(constant.ReserveProductsStep)] {
+		logger.Info("Compensating ReserveProducts (Step 1)", "orderID", order.ID)
 
 		releaseReq := dto.ReleaseProductsRequest{
 			Order:    order,
 			UserAuth: userAuth,
 		}
-		if err := workflow.ExecuteActivity(compensationCtx, ReleaseProducts, releaseReq).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, "ReleaseProducts", releaseReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("ReleaseProducts compensation failed", "error", err, "orderID", order.ID)
 		}
 	}

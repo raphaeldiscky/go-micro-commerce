@@ -77,7 +77,7 @@ func (a *OrderActivitiesImpl) RefundPayment(
 			"order_id":    order.ID,
 			"customer_id": order.CustomerID,
 			"amount":      order.TotalPrice,
-			"currency":    "IDR",
+			"currency":    order.Currency,
 			"reason":      "order_canceled",
 			"timestamp":   time.Now().UTC(),
 		}

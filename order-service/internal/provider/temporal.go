@@ -50,12 +50,16 @@ func SetupTemporal(
 
 	// Register workflow and activities
 	temporalClient.Worker.RegisterWorkflow(temporal.OrderSagaWorkflow)
-	temporalClient.Worker.RegisterActivity(activities.ReserveProductsAndCalculate)
-	temporalClient.Worker.RegisterActivity(activities.ProcessFulfillment)
+	temporalClient.Worker.RegisterActivity(activities.ReserveProducts)
+	temporalClient.Worker.RegisterActivity(activities.GetShippingCost)
 	temporalClient.Worker.RegisterActivity(activities.SetFinalOrderPrices)
-	temporalClient.Worker.RegisterActivity(activities.ProcessPayment)
+	temporalClient.Worker.RegisterActivity(activities.CreatePayment)
+	temporalClient.Worker.RegisterActivity(activities.SendPaymentRequiredNotification)
+	temporalClient.Worker.RegisterActivity(activities.WaitForPaymentConfirmation)
+	temporalClient.Worker.RegisterActivity(activities.ProcessFulfillment)
 	temporalClient.Worker.RegisterActivity(activities.ConfirmProductsDeduction)
 	temporalClient.Worker.RegisterActivity(activities.SendOrderConfirmedNotification)
+	// Compensations
 	temporalClient.Worker.RegisterActivity(activities.ReleaseProducts)
 	temporalClient.Worker.RegisterActivity(activities.RefundPayment)
 	temporalClient.Worker.RegisterActivity(activities.RestoreProducts)
