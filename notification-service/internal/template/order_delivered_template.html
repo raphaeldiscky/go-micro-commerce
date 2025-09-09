@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Order Confirmation</title>
+    <title>Order Delivered</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -10,9 +10,20 @@
         padding: 20px;
       }
       .header {
-        background-color: #f8f9fa;
+        background-color: #d4edda;
         padding: 20px;
         text-align: center;
+        border-radius: 8px;
+        border: 1px solid #c3e6cb;
+      }
+      .delivery-status {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 10px 0;
       }
       .order-details {
         margin: 20px 0;
@@ -31,6 +42,13 @@
       .items-table th {
         background-color: #f2f2f2;
       }
+      .delivery-section {
+        background-color: #d4edda;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #28a745;
+      }
       .total-section {
         background-color: #f8f9fa;
         padding: 15px;
@@ -46,19 +64,33 @@
   </head>
   <body>
     <div class="header">
-      <h1>Order Confirmation</h1>
-      <p>Thank you for your order, {{.CustomerName}}!</p>
+      <h1>🎉 Your Order Has Been Delivered!</h1>
+      <div class="delivery-status">DELIVERED</div>
+      <p>
+        Hello {{.CustomerName}}, your order has been successfully delivered!
+      </p>
+    </div>
+
+    <div class="delivery-section">
+      <h2>Delivery Confirmation</h2>
+      <p><strong>Delivered On:</strong> {{.ActualDeliveryAt}}</p>
+      {{if .TrackingNumber}}
+      <p><strong>Tracking Number:</strong> {{.TrackingNumber}}</p>
+      {{end}} {{if .EstimatedDelivery}}
+      <p>
+        <strong>Original Estimated Delivery:</strong> {{.EstimatedDelivery}}
+      </p>
+      {{end}}
     </div>
 
     <div class="order-details">
-      <h2>Order Details</h2>
-      <p><strong>Order Number:</strong> {{.OrderNumber}}</p>
+      <h2>Order Summary</h2>
       <p><strong>Order ID:</strong> {{.OrderID}}</p>
       <p><strong>Order Date:</strong> {{.OrderDate}}</p>
       <p><strong>Customer Email:</strong> {{.CustomerEmail}}</p>
     </div>
 
-    <h3>Items Ordered</h3>
+    <h3>Items Delivered</h3>
     <table class="items-table">
       <thead>
         <tr>
@@ -82,28 +114,29 @@
 
     <div class="total-section">
       <p><strong>Subtotal:</strong> {{.Subtotal}}</p>
-      <p><strong>Shipping:</strong> {{.ShippingCost}}</p>
+      <p><strong>Shipping Cost:</strong> {{.ShippingCost}}</p>
       <p><strong>Tax:</strong> {{.TotalTax}}</p>
       <p><strong>Discount:</strong> -{{.TotalDiscount}}</p>
       <hr />
       <h3><strong>Total:</strong> {{.TotalPrice}}</h3>
     </div>
-    
-    {{if .Shipping}}
-    <div class="order-details">
-      <h3>Shipping Information</h3>
-      <p><strong>Tracking Number:</strong> {{.Shipping.TrackingNumber}}</p>
-      {{if .Shipping.EstimatedDelivery}}
-      <p><strong>Estimated Delivery:</strong> {{.Shipping.EstimatedDelivery}}</p>
-      {{end}}
-    </div>
-    {{end}}
 
     <div class="footer">
-      <p>Thank you for shopping with us!</p>
+      <p>🙏 Thank you for choosing us!</p>
       <p>
-        If you have any questions about your order, please contact our customer
-        service.
+        We hope you're satisfied with your purchase. If you have any questions
+        or concerns about your delivered order, please don't hesitate to contact
+        our customer service team.
+      </p>
+      <p>
+        <strong>Need help?</strong> Contact us at support@company.com or call
+        1-800-SUPPORT
+      </p>
+      <p>
+        <em
+          >Please consider leaving a review of your purchase to help other
+          customers!</em
+        >
       </p>
     </div>
   </body>

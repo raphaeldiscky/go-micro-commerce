@@ -39,7 +39,8 @@ func (e *NotificationRequestEvent) GetMetadata() event.Metadata {
 func NewNotificationRequestEvent(
 	order *entity.Order,
 	products []entity.Product,
-	customerEmail, customerName, trackingNumber string,
+	customerEmail, customerName string,
+	trackingNumber *string,
 ) *NotificationRequestEvent {
 	// Prepare order items data for email template
 	items := make([]event.OrderItemData, len(order.Items))
@@ -56,9 +57,8 @@ func NewNotificationRequestEvent(
 	}
 
 	// Create order confirmation data
-	orderData := event.OrderConfirmationData{
+	orderData := event.OrderConfirmedData{
 		OrderID:        order.ID,
-		OrderNumber:    order.ID.String(), // Using order ID as order number for now
 		CustomerName:   customerName,
 		CustomerEmail:  customerEmail,
 		Items:          items,
@@ -87,9 +87,81 @@ func NewNotificationRequestEvent(
 		RecipientEmail:   customerEmail,
 		RecipientName:    customerName,
 		NotificationType: event.NotificationTypeEmail,
-		TemplateID:       pkgconstant.TemplateOrderConfirmation,
-		Subject:          "Order Confirmation - Your order has been confirmed",
+		TemplateID:       pkgconstant.TemplateOrderConfirmed,
+		Subject:          "Order Confirmed - Payment Received, Preparing for Delivery",
 		Priority:         event.NotificationPriorityNormal,
+		Data:             templateData,
+		CreatedAt:        time.Now().UTC(),
+	}
+
+	return &NotificationRequestEvent{
+		Metadata: event.Metadata{
+			EventID:     uuid.New(),
+			EventType:   kafka.NotificationRequestedEventType,
+			AggregateID: order.ID,
+			OccurredAt:  time.Now().UTC(),
+			Source:      pkgconstant.OrderServiceName,
+		},
+		Payload: payload,
+	}
+}
+
+// NewWaitingPaymentNotificationEvent creates a new waiting payment notification event.
+func NewWaitingPaymentNotificationEvent(
+	order *entity.Order,
+	products []entity.Product,
+	customerEmail, customerName string,
+	paymentDeadline time.Time,
+	paymentURL *string,
+) *NotificationRequestEvent {
+	// Prepare order items data for email template
+	items := make([]event.OrderItemData, len(order.Items))
+
+	for i := range order.Items {
+		item := &order.Items[i]
+		product := &products[i]
+		items[i] = event.OrderItemData{
+			ProductName: product.Name,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice,
+			TotalPrice:  item.TotalPrice,
+		}
+	}
+
+	// Create waiting payment data
+	orderData := event.OrderConfirmedData{
+		OrderID:       order.ID,
+		CustomerName:  customerName,
+		CustomerEmail: customerEmail,
+		Items:         items,
+		Subtotal:      order.Subtotal,
+		ShippingCost:  order.ShippingCost,
+		TotalTax:      order.TotalTax,
+		TotalDiscount: order.TotalDiscount,
+		TotalPrice:    order.TotalPrice,
+		Currency:      order.Currency,
+		OrderDate:     order.CreatedAt,
+	}
+
+	// Convert to map for template data
+	templateData := map[string]any{
+		"order":            orderData,
+		"customer_name":    customerName,
+		"order_id":         order.ID.String(),
+		"total_price":      order.TotalPrice.String(),
+		"currency":         order.Currency,
+		"payment_deadline": paymentDeadline,
+		"payment_url":      paymentURL,
+	}
+
+	payload := event.NotificationRequestPayload{
+		ID:               uuid.New(),
+		RecipientEmail:   customerEmail,
+		RecipientName:    customerName,
+		NotificationType: event.NotificationTypeEmail,
+		TemplateID:       pkgconstant.TemplateOrderPaymentRequired,
+		Subject:          "Payment Required - Complete Your Order",
+		Priority:         event.NotificationPriorityHigh,
 		Data:             templateData,
 		CreatedAt:        time.Now().UTC(),
 	}

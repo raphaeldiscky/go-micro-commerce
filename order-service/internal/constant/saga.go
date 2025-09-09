@@ -33,12 +33,14 @@ const (
 	SetFinalPricesStep WorkflowStep = "SetFinalOrderPrices"
 	// CreatePaymentStep processes the payment for the order.
 	CreatePaymentStep WorkflowStep = "CreatePayment"
+	// SendPaymentRequiredNotificationStep sends a payment required notification.
+	SendPaymentRequiredNotificationStep WorkflowStep = "SendPaymentRequiredNotification"
 	// WaitForPaymentConfirmationStep waits for the payment confirmation.
 	WaitForPaymentConfirmationStep WorkflowStep = "WaitForPaymentConfirmation"
 	// ProcessFulfillmentStep creates a shipping order.
 	ProcessFulfillmentStep WorkflowStep = "ProcessFulfillment"
 	// ConfirmProductsDeductionStep deducts the products from inventory.
 	ConfirmProductsDeductionStep WorkflowStep = "ConfirmProductsDeduction"
-	// SendOrderConfirmationStep sends an order confirmation.
-	SendOrderConfirmationStep WorkflowStep = "SendOrderConfirmation"
+	// SendOrderConfirmedNotificationStep sends an order confirmation.
+	SendOrderConfirmedNotificationStep WorkflowStep = "SendOrderConfirmedNotification"
 )

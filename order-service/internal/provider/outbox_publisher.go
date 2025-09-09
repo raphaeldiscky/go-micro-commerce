@@ -85,6 +85,8 @@ func SetupOutboxPublisher(
 	fulfillmentRequestProducer := producer.NewFulfillmentRequestProducer(asyncProducer)
 	notificationRequestProducer := producer.NewNotificationRequestProducer(asyncProducer)
 
+	providers.NotificationRequestProducer = notificationRequestProducer
+
 	// DLQ
 	orderDLQProducer := producer.NewOrderDLQProducer(asyncProducer)
 	paymentDLQProducer := producer.NewPaymentDLQProducer(asyncProducer)

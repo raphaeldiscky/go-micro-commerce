@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
@@ -17,7 +18,7 @@ import (
 // StepResult represents the result of a step execution.
 type StepResult struct {
 	Success bool
-	Data    map[string]interface{}
+	Data    *Metadata
 	Error   error
 }
 
@@ -27,11 +28,119 @@ type Payload struct {
 	Shipping dto.Shipping
 }
 
+// Metadata represents the metadata for a saga execution.
+type Metadata struct {
+	ReservedProducts []entity.Product `json:"reserved_products"`
+	CustomerEmail    string           `json:"customer_email"`
+	Shipping         *dto.Shipping    `json:"shipping"`
+	ShippingCost     *decimal.Decimal `json:"shipping_cost"`
+	FulfillmentID    *uuid.UUID       `json:"fulfillment_id"`
+	TrackingNumber   *string          `json:"tracking_number"`
+	PaymentID        *uuid.UUID       `json:"payment_id"`
+}
+
+// ToMap converts Metadata struct to map for persistence.
+func (m *Metadata) ToMap() map[string]interface{} {
+	result := make(map[string]interface{})
+
+	if len(m.ReservedProducts) > 0 {
+		result["reserved_products"] = m.ReservedProducts
+	}
+
+	if m.CustomerEmail != "" {
+		result["customer_email"] = m.CustomerEmail
+	}
+
+	if m.Shipping != nil {
+		result["shipping"] = m.Shipping
+	}
+
+	if m.ShippingCost != nil {
+		result["shipping_cost"] = *m.ShippingCost
+	}
+
+	if m.FulfillmentID != nil {
+		result["fulfillment_id"] = *m.FulfillmentID
+	}
+
+	if m.TrackingNumber != nil {
+		result["tracking_number"] = *m.TrackingNumber
+	}
+
+	if m.PaymentID != nil {
+		result["payment_id"] = *m.PaymentID
+	}
+
+	return result
+}
+
+// FromMap converts map from persistence to Metadata struct.
+func (m *Metadata) FromMap(data map[string]interface{}) {
+	if val, ok := data["reserved_products"].([]entity.Product); ok {
+		m.ReservedProducts = val
+	}
+
+	if val, ok := data["customer_email"].(string); ok {
+		m.CustomerEmail = val
+	}
+
+	if val, ok := data["shipping"].(*dto.Shipping); ok {
+		m.Shipping = val
+	}
+
+	if val, ok := data["shipping_cost"].(decimal.Decimal); ok {
+		m.ShippingCost = &val
+	}
+
+	if val, ok := data["fulfillment_id"].(uuid.UUID); ok {
+		m.FulfillmentID = &val
+	}
+
+	if val, ok := data["tracking_number"].(string); ok {
+		m.TrackingNumber = &val
+	}
+
+	if val, ok := data["payment_id"].(uuid.UUID); ok {
+		m.PaymentID = &val
+	}
+}
+
+// Merge adds data from another Metadata struct.
+func (m *Metadata) Merge(other *Metadata) {
+	if len(other.ReservedProducts) > 0 {
+		m.ReservedProducts = other.ReservedProducts
+	}
+
+	if other.CustomerEmail != "" {
+		m.CustomerEmail = other.CustomerEmail
+	}
+
+	if other.Shipping != nil {
+		m.Shipping = other.Shipping
+	}
+
+	if other.ShippingCost != nil {
+		m.ShippingCost = other.ShippingCost
+	}
+
+	if other.FulfillmentID != nil {
+		m.FulfillmentID = other.FulfillmentID
+	}
+
+	if other.TrackingNumber != nil {
+		m.TrackingNumber = other.TrackingNumber
+	}
+
+	if other.PaymentID != nil {
+		m.PaymentID = other.PaymentID
+	}
+}
+
 // Step represents an enhanced saga step with retry logic.
 type Step struct {
 	Name        constant.WorkflowStep
-	Execute     func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error)
-	Compensate  func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) error
+	Execute     func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error)
+	Compensate  func(ctx *WorkflowContext, payload *Payload, data *Metadata) error
 	MaxRetries  int64
 	RetryDelay  time.Duration
 	Timeout     time.Duration // Individual step timeout
@@ -247,7 +356,9 @@ func (e *Executor) updateSagaStateAfterSuccess(
 	sagaState.CurrentStep = stepIndex + 1
 
 	if result.Data != nil {
-		for k, v := range result.Data {
+		// Convert Metadata struct back to map for persistence
+		dataMap := result.Data.ToMap()
+		for k, v := range dataMap {
 			sagaState.Data[k] = v
 		}
 	}
@@ -312,7 +423,11 @@ func (e *Executor) executeStepWithRetry(
 
 			workflowCtx := NewWorkflowContext(stepCtx, payload.Order.ID, e.logger)
 
-			return step.Execute(workflowCtx, payload, state.Data)
+			// Convert map data to Metadata struct
+			metadata := &Metadata{}
+			metadata.FromMap(state.Data)
+
+			return step.Execute(workflowCtx, payload, metadata)
 		}()
 		if err == nil {
 			return result, nil
@@ -446,23 +561,27 @@ func (e *Executor) compensateStepWithRetry(
 	var attempt int64
 	for attempt = 0; attempt <= step.MaxRetries; attempt++ {
 		if attempt > 0 {
-			e.logger.Infof("Retrying compensation for step %s (attempt %d/%d)",
-				step.Name, attempt, step.MaxRetries)
+			e.logger.Infof("Retrying compensation orderID (%s) for step %s (attempt %d/%d)",
+				payload.Order.ID, step.Name, attempt, step.MaxRetries)
 			time.Sleep(step.RetryDelay * time.Duration(attempt))
 		}
 
-		err := step.Compensate(workflowCtx, payload, state.Data)
+		// Convert map data to Metadata struct for compensation
+		metadata := &Metadata{}
+		metadata.FromMap(state.Data)
+
+		err := step.Compensate(workflowCtx, payload, metadata)
 		if err == nil {
 			return nil
 		}
 
 		lastErr = err
-		e.logger.Warnf("Compensation for step %s failed (attempt %d): %v",
-			step.Name, attempt+1, err)
+		e.logger.Warnf("Compensation orderID (%s) for step %s failed (attempt %d): %v",
+			payload.Order.ID, step.Name, attempt+1, err)
 	}
 
-	return fmt.Errorf("compensation for step %s failed after %d attempts: %w",
-		step.Name, step.MaxRetries+1, lastErr)
+	return fmt.Errorf("compensation orderID (%s) for step %s failed after %d attempts: %w",
+		payload.Order.ID, step.Name, step.MaxRetries+1, lastErr)
 }
 
 // getOrCreateSagaState retrieves existing saga state or creates new one.

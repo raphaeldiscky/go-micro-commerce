@@ -11,30 +11,69 @@
         padding: 20px;
       }
       .header {
-        background-color: #f8f9fa;
+        background-color: #cce5ff;
         padding: 20px;
         text-align: center;
+        border-radius: 8px;
+        border: 1px solid #99ccff;
       }
-      .order-details {
-        margin: 20px 0;
-      }
-      .total-section {
-        background-color: #f8f9fa;
-        padding: 15px;
-        margin: 20px 0;
-      }
-      .verification-link {
+      .verification-status {
         background-color: #007bff;
         color: white;
-        padding: 12px 24px;
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+      .content-details {
+        margin: 20px 0;
+      }
+      .action-section {
+        background-color: #cce5ff;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+      }
+      .warning-section {
+        background-color: #fff3cd;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #ffc107;
+      }
+      .verification-link {
+        background-color: #28a745;
+        color: white;
+        padding: 15px 30px;
         text-decoration: none;
         border-radius: 5px;
         display: inline-block;
         margin: 20px 0;
         font-weight: bold;
+        text-align: center;
       }
       .verification-link:hover {
-        background-color: #0056b3;
+        background-color: #218838;
+      }
+      .url-box {
+        word-break: break-all;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        margin: 15px 0;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      .info {
+        color: #004085;
+        font-weight: bold;
+      }
+      .urgent {
+        color: #856404;
+        font-weight: bold;
       }
       .footer {
         margin-top: 30px;
@@ -42,47 +81,52 @@
         border-top: 1px solid #ddd;
         color: #666;
       }
-      .url-box {
-        word-break: break-all;
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 5px;
-        border-left: 4px solid #007bff;
-        margin: 15px 0;
-      }
     </style>
   </head>
   <body>
     <div class="header">
-      <h1>🔐 Email Verification</h1>
+      <h1>🔐 Email Verification Required</h1>
+      <div class="verification-status">VERIFICATION PENDING</div>
+      <p><strong class="info">Please verify your email address to activate your account.</strong></p>
     </div>
 
-    <div class="order-details">
+    <div class="content-details">
       <h2>Verification Details</h2>
-      <p>Dear {{.RecipientName}},</p>
+      <p>Dear <strong class="info">{{.RecipientName}}</strong>,</p>
       <p>
-        Thank you for registering with us! To complete your registration, please
-        verify your email address by clicking the button below:
+        Thank you for registering with us! To complete your registration and activate your account, 
+        please verify your email address by clicking the button below:
       </p>
+    </div>
 
-      <div style="text-align: center; margin: 30px 0">
+    <div class="action-section">
+      <h3>🚀 Complete Your Registration</h3>
+      <p><strong class="info">Click the button below to verify your email address:</strong></p>
+      
+      <div style="text-align: center; margin: 25px 0">
         <a href="{{.VerificationURL}}" class="verification-link"
-          >Verify Email Address</a
+          >✅ Verify Email Address</a
         >
       </div>
+      
+      <p><em>This will activate your account and grant you full access to our services.</em></p>
+    </div>
 
-      <p>Or copy and paste this link into your browser:</p>
+    <div class="action-section">
+      <h3>🔗 Alternative Method</h3>
+      <p>If the button above doesn't work, copy and paste this link into your browser:</p>
       <div class="url-box">{{.VerificationURL}}</div>
+    </div>
 
-      <div class="total-section">
-        <p>
-          <strong>⏰ Important:</strong> This verification link will expire at
-          {{.TokenExpiresAt}} for security reasons.
-        </p>
-        <p>
-          If you did not create an account with us, please ignore this email.
-        </p>
-      </div>
+    <div class="warning-section">
+      <h3>⏰ Important Security Notice</h3>
+      <p>
+        <strong class="urgent">This verification link will expire at {{.TokenExpiresAt}}</strong> for security reasons.
+      </p>
+      <p>
+        If you did not create an account with us, please ignore this email and no action is required.
+      </p>
+      <p><em>For your security, expired links cannot be used and you may need to request a new verification email.</em></p>
     </div>
 
     <div class="footer">

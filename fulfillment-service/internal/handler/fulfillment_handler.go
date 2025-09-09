@@ -27,15 +27,15 @@ func NewFulfillmentHandler(
 	}
 }
 
-// UpdateFulfillmentStatus handles PUT /fulfillments/:fulfillmentID/status.
+// UpdateFulfillmentStatusByOrderID handles PUT /fulfillments/order/:orderID/status.
 //
 // Route: PUT /fulfillments/:fulfillmentID/status
 //
 // Authentication: Requires user authentication.
-func (h *FulfillmentHandler) UpdateFulfillmentStatus(c echo.Context) error {
-	param := c.Param("fulfillmentID")
+func (h *FulfillmentHandler) UpdateFulfillmentStatusByOrderID(c echo.Context) error {
+	param := c.Param("orderID")
 
-	fulfillmentID, err := uuid.Parse(param)
+	orderID, err := uuid.Parse(param)
 	if err != nil {
 		return err
 	}
@@ -49,9 +49,9 @@ func (h *FulfillmentHandler) UpdateFulfillmentStatus(c echo.Context) error {
 		return err
 	}
 
-	fulfillment, err := h.fulfillmentService.UpdateFulfillmentStatus(
+	fulfillment, err := h.fulfillmentService.UpdateFulfillmentStatusByOrderID(
 		c.Request().Context(),
-		fulfillmentID,
+		orderID,
 		req,
 	)
 	if err != nil {

@@ -29,13 +29,13 @@ type PaymentServiceInterface interface {
 	// CreatePayment creates a new payment record from order information
 	CreatePayment(
 		ctx context.Context,
-		req dto.CreatePaymentGatewayRequest,
+		req dto.CreatePaymentRequest,
 	) (*dto.PaymentResponse, error)
 	// ProcessPayment processes a payment transaction
 	ProcessPayment(
 		ctx context.Context,
-		paymentID uuid.UUID,
-		req dto.ProcessPaymentGatewayRequest,
+		orderID uuid.UUID,
+		req dto.ProcessPaymentRequest,
 	) (*dto.PaymentResponse, error)
 	// GetPaymentByOrderID retrieves payment by order ID
 	GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*dto.PaymentResponse, error)
@@ -76,7 +76,7 @@ func NewPaymentService(
 // CreatePayment creates a new payment record from order information.
 func (s *PaymentService) CreatePayment(
 	ctx context.Context,
-	req dto.CreatePaymentGatewayRequest,
+	req dto.CreatePaymentRequest,
 ) (*dto.PaymentResponse, error) {
 	res := new(dto.PaymentResponse)
 
@@ -153,8 +153,8 @@ func (s *PaymentService) CreatePayment(
 //nolint:gocyclo,revive,cyclop // ignore complexity, ProcessPayment processes a payment transaction is large but intentional.
 func (s *PaymentService) ProcessPayment(
 	ctx context.Context,
-	paymentID uuid.UUID,
-	req dto.ProcessPaymentGatewayRequest,
+	orderID uuid.UUID,
+	req dto.ProcessPaymentRequest,
 ) (*dto.PaymentResponse, error) {
 	lockRepo := s.dataStore.LockRepository()
 	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
@@ -184,7 +184,7 @@ func (s *PaymentService) ProcessPayment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Get payment
-		payment, err := paymentRepo.FindByID(ctx, paymentID)
+		payment, err := paymentRepo.FindByOrderID(ctx, orderID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get payment")
 		}
@@ -304,7 +304,7 @@ func (s *PaymentService) HandleOrderPaymentRequested(
 	amount decimal.Decimal,
 ) error {
 	// Create payment record for the order
-	req := dto.CreatePaymentGatewayRequest{
+	req := dto.CreatePaymentRequest{
 		OrderID:       orderID,
 		Amount:        amount,
 		Currency:      "IDR",                            // Default currency
@@ -327,7 +327,7 @@ func (s *PaymentService) HandleOrderPaymentRequested(
 func (s *PaymentService) processWithPaymentGateway(
 	ctx context.Context,
 	payment *entity.Payment,
-	req dto.ProcessPaymentGatewayRequest,
+	req dto.ProcessPaymentRequest,
 ) (*dto.PaymentGatewayResponse, error) {
 	s.logger.Infof(
 		"Processing payment %s with method %s and amount %s",

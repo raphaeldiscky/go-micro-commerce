@@ -209,7 +209,7 @@ func (c *FakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID)
 	prefix := carrierID
 	randomSuffix := random.Int(999999999)
 
-	return fmt.Sprintf("%s%09d", prefix, randomSuffix)
+	return fmt.Sprintf("%s-%09d", prefix, randomSuffix)
 }
 
 // generateLocation creates a mock location.

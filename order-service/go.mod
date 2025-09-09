@@ -12,7 +12,6 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
-	github.com/labstack/gommon v0.4.2
 	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20250822082838-0a883c017315
 	github.com/raphaeldiscky/go-micro-commerce/proto v0.0.0-00010101000000-000000000000
 	github.com/shopspring/decimal v1.4.0
@@ -69,6 +68,7 @@ require (
 	github.com/jcmturner/gokrb5/v8 v8.4.4 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

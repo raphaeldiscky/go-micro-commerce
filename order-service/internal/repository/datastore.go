@@ -20,7 +20,6 @@ type DBTX interface {
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	OrderRepository() OrderRepositoryInterface
-
 	LockRepository() LockRepositoryInterface
 	OutboxRepository() OutboxRepositoryInterface
 	SagaStateRepository() SagaStateRepositoryInterface

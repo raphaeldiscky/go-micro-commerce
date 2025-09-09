@@ -5,7 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -14,6 +16,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -25,9 +28,10 @@ type FulfillmentLifecycleEvent struct {
 
 // FulfillmentLifecycleConsumer handles the logic for processing fulfillment lifecycle events.
 type FulfillmentLifecycleConsumer struct {
-	logger            logger.Logger
-	datastore         repository.DataStore
-	fulfillmentClient client.FulfillmentClientInterface
+	logger                      logger.Logger
+	datastore                   repository.DataStore
+	fulfillmentClient           client.FulfillmentClientInterface
+	notificationRequestProducer kafka.ProducerInterface
 }
 
 // NewFulfillmentLifecycleConsumer creates a new consumer for fulfillment lifecycle events.
@@ -35,11 +39,13 @@ func NewFulfillmentLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
 	fulfillmentClient client.FulfillmentClientInterface,
+	notificationRequestProducer kafka.ProducerInterface,
 ) *FulfillmentLifecycleConsumer {
 	return &FulfillmentLifecycleConsumer{
-		logger:            appLogger,
-		datastore:         ds,
-		fulfillmentClient: fulfillmentClient,
+		logger:                      appLogger,
+		datastore:                   ds,
+		fulfillmentClient:           fulfillmentClient,
+		notificationRequestProducer: notificationRequestProducer,
 	}
 }
 
@@ -256,6 +262,8 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 
 	// Update order status to delivered
 	orderRepo := ds.OrderRepository()
+	outboxRepo := ds.OutboxRepository()
+	sagaStateRepo := ds.SagaStateRepository()
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
@@ -273,6 +281,71 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 	if _, err := orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
+
+	sagaState, err := sagaStateRepo.FindByOrderID(ctx, order.ID)
+	if err != nil {
+		return fmt.Errorf("failed to get order saga: %w", err)
+	}
+
+	// Extract customer email from saga state
+	customerEmail, ok := sagaState.Data["customer_email"].(string)
+	if !ok {
+		return fmt.Errorf("customer email not found in saga state")
+	}
+
+	// Extract reserved products from saga state
+	reservedProductsData, ok := sagaState.Data["reserved_products"]
+	if !ok {
+		return fmt.Errorf("reserved products not found in saga state")
+	}
+
+	// Convert reserved products interface{} to []entity.Product
+	var reservedProducts []entity.Product
+
+	productsBytes, err := json.Marshal(reservedProductsData)
+	if err != nil {
+		return fmt.Errorf("failed to marshal reserved products: %w", err)
+	}
+
+	if err := json.Unmarshal(productsBytes, &reservedProducts); err != nil {
+		return fmt.Errorf("failed to unmarshal reserved products: %w", err)
+	}
+
+	// Send notification
+	notificationEvent := producer.NewNotificationRequestEvent(
+		order,
+		reservedProducts,
+		customerEmail,
+		"Customer Name",
+		&evt.Payload.TrackingNumber,
+	)
+
+	payload, err := json.Marshal(notificationEvent)
+	if err != nil {
+		return fmt.Errorf("failed to marshal notification event: %w", err)
+	}
+
+	outboxEvent := &entity.OutboxEvent{
+		ID:            uuid.New(),
+		AggregateType: "notification",
+		AggregateID:   order.ID,
+		EventType:     kafka.NotificationRequestedEventType,
+		Topic:         kafka.NotificationRequestTopic,
+		Payload:       payload,
+		Status:        constant.OutboxStatusPending,
+		CreatedAt:     time.Now().UTC(),
+		ScheduledFor:  time.Now().UTC(),
+		Attempts:      0,
+	}
+
+	if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		return fmt.Errorf("failed to create order delivered notification event: %w", err)
+	}
+
+	c.logger.Infof(
+		"Successfully created order delivered notification for order: %s",
+		order.ID,
+	)
 
 	c.logger.Infof("Order %s status updated to delivered", evt.Payload.OrderID)
 

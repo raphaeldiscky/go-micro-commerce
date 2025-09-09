@@ -82,7 +82,6 @@ type OrderResponse struct {
 	Status        constant.OrderStatus `json:"status"`
 	Currency      string               `json:"currency"`
 	ShippingCost  decimal.Decimal      `json:"shipping_cost"`
-	Shipping      Shipping             `json:"shipping"`
 	Subtotal      decimal.Decimal      `json:"subtotal"`
 	TotalPrice    decimal.Decimal      `json:"total_price"`
 	TotalTax      decimal.Decimal      `json:"total_tax"`

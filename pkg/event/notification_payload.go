@@ -50,10 +50,9 @@ const (
 
 //
 
-// OrderConfirmationData represents data for order confirmation email.
-type OrderConfirmationData struct {
+// OrderConfirmedData represents data for order already paid and confirmed, and will be preparing to be shipped.
+type OrderConfirmedData struct {
 	OrderID           uuid.UUID       `json:"order_id"`
-	OrderNumber       string          `json:"order_number"`
 	CustomerName      string          `json:"customer_name"`
 	CustomerEmail     string          `json:"customer_email"`
 	Items             []OrderItemData `json:"items"`
@@ -63,9 +62,9 @@ type OrderConfirmationData struct {
 	TotalDiscount     decimal.Decimal `json:"total_discount"`
 	TotalPrice        decimal.Decimal `json:"total_price"`
 	Currency          string          `json:"currency"`
-	TrackingNumber    string          `json:"tracking_number,omitempty"`
-	EstimatedDelivery *time.Time      `json:"estimated_delivery,omitempty"`
 	OrderDate         time.Time       `json:"order_date"`
+	TrackingNumber    *string         `json:"tracking_number,omitempty"`
+	EstimatedDelivery *time.Time      `json:"estimated_delivery,omitempty"`
 }
 
 // OrderItemData represents an order item for email template.

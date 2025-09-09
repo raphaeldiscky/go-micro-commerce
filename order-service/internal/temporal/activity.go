@@ -38,7 +38,10 @@ type OrderActivities interface {
 	) (dto.SetFinalOrderPricesResponse, error)
 	ProcessPayment(ctx context.Context, order *entity.Order) (uuid.UUID, error)
 	ConfirmProductsDeduction(ctx context.Context, req *dto.ConfirmProductsDeductionRequest) error
-	SendOrderConfirmation(ctx context.Context, req dto.SendOrderConfirmationRequest) error
+	SendOrderConfirmedNotification(
+		ctx context.Context,
+		req dto.SendOrderConfirmedNotificationRequest,
+	) error
 
 	// Compensation
 	ReleaseProducts(ctx context.Context, req dto.ReleaseProductsRequest) error
@@ -464,14 +467,14 @@ func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
 	return nil
 }
 
-// SendOrderConfirmation sends order confirmation to customer.
-func (ta *OrderActivitiesImpl) SendOrderConfirmation(
+// SendOrderConfirmedNotification sends order confirmation to customer.
+func (ta *OrderActivitiesImpl) SendOrderConfirmedNotification(
 	ctx context.Context,
-	req dto.SendOrderConfirmationRequest,
+	req dto.SendOrderConfirmedNotificationRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
 	logger.Info(
-		"Executing SendOrderConfirmation",
+		"Executing SendOrderConfirmedNotification",
 		"orderID", req.Order.ID,
 		"trackingNumber", req.TrackingNumber,
 		"customerEmail", req.CustomerEmail,
@@ -487,7 +490,7 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmation(
 			req.Products,
 			req.CustomerEmail,
 			"Customer Name", // TODO: Get actual customer name from user service if needed
-			req.TrackingNumber,
+			&req.TrackingNumber,
 		)
 
 		payload, err := json.Marshal(notificationEvent)

@@ -198,7 +198,7 @@ func (s *NotificationEventServiceImpl) sendEmailNotification(
 	}
 
 	s.logger.Infof("Successfully sent email to %s", payload.RecipientEmail)
-	log.Printf("📧 EMAIL SENT: To=%s, Subject=%s, Template=%s",
+	log.Printf("EMAIL SENT: To=%s, Subject=%s, Template=%s",
 		payload.RecipientEmail, payload.Subject, payload.TemplateID)
 
 	return nil
@@ -215,21 +215,25 @@ func (s *NotificationEventServiceImpl) generateEmailBody(
 	)
 
 	switch payload.TemplateID {
-	case pkgconstant.TemplateOrderConfirmation:
-		return s.generateOrderConfirmationEmail(payload)
+	case pkgconstant.TemplateOrderConfirmed:
+		return s.generateOrderConfirmedEmail(payload)
 	case pkgconstant.TemplateOrderShipped:
 		return s.generateOrderShippedEmail(payload)
 	case pkgconstant.TemplateOrderCanceled:
 		return s.generateOrderCancelledEmail(payload)
-	case pkgconstant.TemplatePaymentConfirmation:
-		return s.generatePaymentConfirmationEmail(payload)
+	case pkgconstant.TemplateOrderDelivered:
+		return s.generateOrderDeliveredEmail(payload)
+	case pkgconstant.TemplateOrderPaymentRequired:
+		return s.generateOrderPaymentRequiredEmail(payload)
 	default:
-		return s.generateGenericEmail(payload)
+		s.logger.Infof("Unknown template ID: %s", payload.TemplateID)
+
+		return "", fmt.Errorf("unknown template ID: %s", payload.TemplateID)
 	}
 }
 
-// generateOrderConfirmationEmail generates HTML email for order confirmation.
-func (s *NotificationEventServiceImpl) generateOrderConfirmationEmail(
+// generateOrderConfirmedEmail generates HTML email for order confirmation.
+func (s *NotificationEventServiceImpl) generateOrderConfirmedEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
@@ -242,7 +246,7 @@ func (s *NotificationEventServiceImpl) generateOrderConfirmationEmail(
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
-	var order event.OrderConfirmationData
+	var order event.OrderConfirmedData
 	if err := json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
@@ -259,9 +263,8 @@ func (s *NotificationEventServiceImpl) generateOrderConfirmationEmail(
 		})
 	}
 
-	templateData := mapper.MapToOrderConfirmationTemplateData(
+	templateData := mapper.MapToOrderConfirmedTemplateData(
 		order.CustomerName,
-		order.OrderNumber,
 		order.OrderID.String(),
 		order.OrderDate.Format("January 2, 2006"),
 		order.CustomerEmail,
@@ -276,7 +279,58 @@ func (s *NotificationEventServiceImpl) generateOrderConfirmationEmail(
 		order.EstimatedDelivery,
 	)
 
-	return s.emailService.RenderTemplate(constant.TemplateFileOrderConfirmation, templateData)
+	return s.emailService.RenderTemplate(constant.TemplateFileOrderConfirmed, templateData)
+}
+
+// generateOrderDeliveredEmail generates HTML email for order delivered notification.
+func (s *NotificationEventServiceImpl) generateOrderDeliveredEmail(
+	payload *event.NotificationRequestPayload,
+) (string, error) {
+	orderData, exists := payload.Data["order"]
+	if !exists {
+		return "", fmt.Errorf("order data not found in payload")
+	}
+
+	orderJSON, err := json.Marshal(orderData)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal order data: %w", err)
+	}
+
+	var order event.OrderConfirmedData
+	if err := json.Unmarshal(orderJSON, &order); err != nil {
+		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
+	}
+
+	// Convert order items to template data
+	var items []dto.OrderItemTemplateData
+	for _, item := range order.Items {
+		items = append(items, dto.OrderItemTemplateData{
+			ProductName: item.ProductName,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice.String(),
+			TotalPrice:  item.TotalPrice.String(),
+			Currency:    order.Currency,
+		})
+	}
+
+	templateData := mapper.MapToOrderDeliveredTemplateData(
+		order.CustomerName,
+		order.OrderID.String(),
+		order.OrderDate.Format("January 2, 2006"),
+		order.CustomerEmail,
+		items,
+		order.Currency,
+		order.Subtotal,
+		order.ShippingCost,
+		order.TotalTax,
+		order.TotalDiscount,
+		order.TotalPrice,
+		order.TrackingNumber,
+		order.EstimatedDelivery,
+		time.Now(),
+	)
+
+	return s.emailService.RenderTemplate(constant.TemplateFileOrderDelivered, templateData)
 }
 
 // generateOrderShippedEmail generates HTML email for order shipped notification.
@@ -329,45 +383,72 @@ func (s *NotificationEventServiceImpl) generateOrderCancelledEmail(
 	return s.emailService.RenderTemplate(constant.TemplateFileOrderCanceled, templateData)
 }
 
-// generatePaymentConfirmationEmail generates HTML email for payment confirmation.
-func (s *NotificationEventServiceImpl) generatePaymentConfirmationEmail(
+// generateOrderPaymentRequiredEmail generates HTML email for payment required notification.
+func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
-	recipientName := payload.RecipientName
-	amount := ""
-	paymentMethod := ""
+	orderData, exists := payload.Data["order"]
+	if !exists {
+		return "", fmt.Errorf("order data not found in payload")
+	}
 
-	if amountData, exists := payload.Data["amount"]; exists {
-		if str, ok := amountData.(string); ok {
-			amount = str
+	orderJSON, err := json.Marshal(orderData)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal order data: %w", err)
+	}
+
+	var order event.OrderConfirmedData
+	if err := json.Unmarshal(orderJSON, &order); err != nil {
+		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
+	}
+
+	// Convert order items to template data
+	var items []dto.OrderItemTemplateData
+	for _, item := range order.Items {
+		items = append(items, dto.OrderItemTemplateData{
+			ProductName: item.ProductName,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice.String(),
+			TotalPrice:  item.TotalPrice.String(),
+			Currency:    order.Currency,
+		})
+	}
+
+	// Get payment deadline from payload data
+	paymentDeadline := time.Now().Add(1 * time.Hour) // Default 1 hour
+
+	if deadlineData, exists := payload.Data["payment_deadline"]; exists {
+		if deadlineStr, ok := deadlineData.(string); ok {
+			if parsedTime, err := time.Parse(time.RFC3339, deadlineStr); err == nil {
+				paymentDeadline = parsedTime
+			}
 		}
 	}
 
-	if methodData, exists := payload.Data["payment_method"]; exists {
-		if str, ok := methodData.(string); ok {
-			paymentMethod = str
+	// Get payment URL from payload data
+	var paymentURL *string
+
+	if urlData, exists := payload.Data["payment_url"]; exists {
+		if urlStr, ok := urlData.(string); ok && urlStr != "" {
+			paymentURL = &urlStr
 		}
 	}
 
-	templateData := &dto.PaymentConfirmationTemplateData{
-		RecipientName: recipientName,
-		Amount:        amount,
-		PaymentMethod: paymentMethod,
-	}
+	templateData := mapper.MapToOrderPaymentRequiredTemplateData(
+		order.CustomerName,
+		order.OrderID.String(),
+		order.OrderDate.Format("January 2, 2006"),
+		order.CustomerEmail,
+		items,
+		order.Currency,
+		order.Subtotal,
+		order.ShippingCost,
+		order.TotalTax,
+		order.TotalDiscount,
+		order.TotalPrice,
+		paymentDeadline,
+		paymentURL,
+	)
 
-	return s.emailService.RenderTemplate(constant.TemplateFilePaymentConfirmation, templateData)
-}
-
-// generateGenericEmail generates a generic HTML email template.
-func (s *NotificationEventServiceImpl) generateGenericEmail(
-	payload *event.NotificationRequestPayload,
-) (string, error) {
-	recipientName := payload.RecipientName
-	templateData := &dto.GenericTemplateData{
-		Subject:       payload.Subject,
-		RecipientName: recipientName,
-		Data:          payload.Data,
-	}
-
-	return s.emailService.RenderTemplate(constant.TemplateFileGeneric, templateData)
+	return s.emailService.RenderTemplate(constant.TemplateFileOrderPaymentRequired, templateData)
 }

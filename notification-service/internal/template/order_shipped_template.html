@@ -10,17 +10,39 @@
         padding: 20px;
       }
       .header {
-        background-color: #f8f9fa;
+        background-color: #cce5ff;
         padding: 20px;
         text-align: center;
+        border-radius: 8px;
+        border: 1px solid #99ccff;
+      }
+      .shipping-status {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 10px 0;
       }
       .order-details {
         margin: 20px 0;
+      }
+      .shipping-section {
+        background-color: #cce5ff;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
       }
       .total-section {
         background-color: #f8f9fa;
         padding: 15px;
         margin: 20px 0;
+      }
+      .info {
+        color: #004085;
+        font-weight: bold;
       }
       .footer {
         margin-top: 30px;
@@ -33,7 +55,8 @@
   <body>
     <div class="header">
       <h1>📦 Your Order Has Shipped!</h1>
-      <p>Great news! Your order is on its way to you, {{.RecipientName}}!</p>
+      <div class="shipping-status">SHIPPED</div>
+      <p>Great news! Your order is on its way to you, <strong class="info">{{.RecipientName}}</strong>!</p>
     </div>
 
     <div class="order-details">
@@ -41,15 +64,22 @@
       {{if .OrderNumber}}
       <p><strong>Order Number:</strong> {{.OrderNumber}}</p>
       {{end}}
-      
-      {{if .TrackingNumber}}
-      <div class="total-section">
-        <h3>Tracking Information</h3>
-        <p><strong>Tracking Number:</strong> {{.TrackingNumber}}</p>
-        <p>You can track your package using this tracking number.</p>
-      </div>
-      {{end}}
     </div>
+      
+    {{if .TrackingNumber}}
+    <div class="shipping-section">
+      <h3>📍 Tracking Information</h3>
+      <p><strong>Tracking Number:</strong> {{.TrackingNumber}}</p>
+      <p><em>You can track your package using this tracking number at your carrier's website.</em></p>
+      <p><strong class="info">Your package is now in transit and on its way to you!</strong></p>
+    </div>
+    {{else}}
+    <div class="shipping-section">
+      <h3>📍 Shipping Status</h3>
+      <p><strong class="info">Your order has been shipped!</strong></p>
+      <p><em>Tracking information will be provided once the package is in transit.</em></p>
+    </div>
+    {{end}}
 
     <div class="footer">
       <p>Thank you for your business!</p>
