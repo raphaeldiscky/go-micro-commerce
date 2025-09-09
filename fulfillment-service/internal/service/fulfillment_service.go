@@ -476,18 +476,22 @@ func (s *FulfillmentService) CalculateShippingRate(
 	req *dto.CalculateShippingRateRequest,
 ) (*dto.ShippingRateResponse, error) {
 	s.logger.Infof(
-		"Calculating shipping rates for weight: %s kg, currency: %s",
+		"Calculating shipping rates for weight: %s kg, currency: %s, carrierID: %s",
 		req.WeightKG,
 		req.Currency,
+		req.CarrierID,
 	)
 
 	// Create shipping request for carrier client
 	shipReq := dto.ShippingRequest{
+		CarrierID:   req.CarrierID,
 		FromAddress: req.FromAddress,
 		ToAddress:   req.ToAddress,
 		WeightKG:    req.WeightKG,
 		Dimensions:  req.Dimensions,
 	}
+
+	s.logger.Infof("Created shipReq with CarrierID: %s", shipReq.CarrierID)
 
 	rate, err := s.carrierClient.GetRate(ctx, &shipReq)
 	if err != nil {

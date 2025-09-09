@@ -74,7 +74,6 @@ func (HealthStatus) EnumDescriptor() ([]byte, []int) {
 type GetShippingCostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Currency      string                 `protobuf:"bytes,1,opt,name=currency,proto3" json:"currency,omitempty"`
-	CarrierId     string                 `protobuf:"bytes,2,opt,name=carrier_id,json=carrierId,proto3" json:"carrier_id,omitempty"`
 	Shipping      *Shipping              `protobuf:"bytes,3,opt,name=shipping,proto3" json:"shipping,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -113,13 +112,6 @@ func (*GetShippingCostRequest) Descriptor() ([]byte, []int) {
 func (x *GetShippingCostRequest) GetCurrency() string {
 	if x != nil {
 		return x.Currency
-	}
-	return ""
-}
-
-func (x *GetShippingCostRequest) GetCarrierId() string {
-	if x != nil {
-		return x.CarrierId
 	}
 	return ""
 }
@@ -529,11 +521,9 @@ var File_fulfillment_proto protoreflect.FileDescriptor
 
 const file_fulfillment_proto_rawDesc = "" +
 	"\n" +
-	"\x11fulfillment.proto\x12\vfulfillment\x1a\x1bgoogle/protobuf/empty.proto\"\x86\x01\n" +
+	"\x11fulfillment.proto\x12\vfulfillment\x1a\x1bgoogle/protobuf/empty.proto\"g\n" +
 	"\x16GetShippingCostRequest\x12\x1a\n" +
-	"\bcurrency\x18\x01 \x01(\tR\bcurrency\x12\x1d\n" +
-	"\n" +
-	"carrier_id\x18\x02 \x01(\tR\tcarrierId\x121\n" +
+	"\bcurrency\x18\x01 \x01(\tR\bcurrency\x121\n" +
 	"\bshipping\x18\x03 \x01(\v2\x15.fulfillment.ShippingR\bshipping\"\x99\x01\n" +
 	"\x17GetShippingCostResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +

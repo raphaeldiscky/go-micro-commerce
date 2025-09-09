@@ -7,6 +7,7 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
+COPY proto/ ./proto/
 COPY fulfillment-service/go.mod fulfillment-service/go.sum ./fulfillment-service/
 
 # Change to the service directory for building

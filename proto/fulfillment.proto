@@ -13,7 +13,6 @@ service FulfillmentService {
 
 message GetShippingCostRequest {
   string currency = 1;
-  string carrier_id = 2;
   Shipping shipping = 3;
 }
 

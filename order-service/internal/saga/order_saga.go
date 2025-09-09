@@ -2,6 +2,7 @@
 package saga
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -28,7 +29,7 @@ func NewOrderSaga(activities OrderActivities, appLogger logger.Logger) *OrderSag
 	}
 }
 
-//nolint:funlen,revive,gocyclo,cyclop // ConfigureSteps configures all steps for the order saga.
+//nolint:funlen,revive,gocyclo,cyclop,gocognit // ConfigureSteps configures all steps for the order saga.
 func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 1: Reserve products
 	executor.AddStep(&Step{
@@ -40,6 +41,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ map[string]interface{}) (*StepResult, error) {
+			s.logger.Infof("===STEP 1=====, Reserve products: %+v", payload)
 			newOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
 				ctx.Context(),
 				payload.Order,
@@ -56,12 +58,16 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
+			s.logger.Infof("===STEP 1 COMPLETED=====, email: %+v", email)
+
+			s.logger.Infof("===STEP 1 storing shipping data===: %+v", payload.Shipping)
+
 			return &StepResult{
 				Success: true,
 				Data: map[string]interface{}{
 					"reserved_products": reservedProducts,
 					"customer_email":    email,
-					"shipping_request":  payload.Shipping, // Store shipping data for recovery and later steps
+					"shipping":          payload.Shipping, // Store shipping data for recovery and later steps
 				},
 			}, nil
 		},
@@ -80,18 +86,34 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data map[string]interface{}) (*StepResult, error) {
-			shippingRequest, ok := data["shipping_request"].(*dto.Shipping)
-			if !ok {
-				return nil, fmt.Errorf("invalid shipping request data")
+			s.logger.Infof("===STEP 2=====, payload: %+v", payload)
+			s.logger.Infof("===STEP 2=====, data: %+v", data)
+
+			shippingData, exists := data["shipping"]
+			if !exists {
+				return nil, fmt.Errorf("shipping data not found in saga state")
+			}
+
+			// Convert map to dto.Shipping using JSON marshal/unmarshal
+			shippingBytes, err := json.Marshal(shippingData)
+			if err != nil {
+				return nil, fmt.Errorf("failed to marshal shipping data: %w", err)
+			}
+
+			var shipping *dto.Shipping
+			if err := json.Unmarshal(shippingBytes, &shipping); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal shipping data: %w", err)
 			}
 			shippingCost, err := s.activities.GetShippingCost(
 				ctx.Context(),
 				payload.Order,
-				shippingRequest,
+				shipping,
 			)
 			if err != nil {
 				return nil, err
 			}
+
+			s.logger.Infof("===STEP 2 COMPLETED=== shipping cost: %+v", shippingCost)
 
 			return &StepResult{
 				Success: true,
@@ -117,7 +139,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if !ok {
 				return nil, fmt.Errorf("shipping cost not found in data")
 			}
-			// Update the original order with shipping cost
 
 			err := payload.Order.UpdateShippingCost(shippingCost)
 			if err != nil {

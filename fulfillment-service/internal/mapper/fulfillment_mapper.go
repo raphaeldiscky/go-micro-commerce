@@ -100,7 +100,7 @@ func MapToCalculateShippingRateRequest(
 	req *pb.GetShippingCostRequest,
 ) *dto.CalculateShippingRateRequest {
 	return &dto.CalculateShippingRateRequest{
-		CarrierID: constant.CarrierID(req.CarrierId),
+		CarrierID: constant.CarrierID(req.Shipping.CarrierId),
 		Dimensions: entity.Dimensions{
 			Width:  decimal.NewFromFloat(req.Shipping.Dimensions.Width),
 			Height: decimal.NewFromFloat(req.Shipping.Dimensions.Height),

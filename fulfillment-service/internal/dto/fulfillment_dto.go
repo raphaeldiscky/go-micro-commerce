@@ -74,8 +74,8 @@ type CalculateShippingRatesRequest struct {
 
 // CalculateShippingRateRequest represents the request to get single shipping rates.
 type CalculateShippingRateRequest struct {
-	CarrierID   constant.CarrierID `json:"carrier_id"   validate:"required"`
 	Currency    string             `json:"currency"     validate:"required,len=3"`
+	CarrierID   constant.CarrierID `json:"carrier_id"   validate:"required"`
 	FromAddress entity.FromAddress `json:"from_address" validate:"required"`
 	ToAddress   entity.ToAddress   `json:"to_address"   validate:"required"`
 	WeightKG    decimal.Decimal    `json:"weight_kg"    validate:"required"` // in kg

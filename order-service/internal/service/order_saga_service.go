@@ -108,7 +108,7 @@ func (s *OrderService) CreateOrderWithSaga(
 		return nil, err
 	}
 
-	return s.executeSagaWorkflow(ctx, res)
+	return s.executeSagaWorkflow(ctx, res, req)
 }
 
 // handleExistingOrder checks for duplicate orders and handles saga state.
@@ -152,12 +152,13 @@ func (s *OrderService) handleExistingOrder(
 func (s *OrderService) executeSagaWorkflow(
 	ctx context.Context,
 	res *dto.OrderResponse,
+	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
 	if s.config.Saga.ExecutionMode == "sync" {
-		return s.executeSagaSynchronously(ctx, res)
+		return s.executeSagaSynchronously(ctx, res, req)
 	}
 
-	s.executeSagaAsynchronously(ctx, res)
+	s.executeSagaAsynchronously(ctx, res, req)
 	res.Status = "processing"
 
 	s.logger.Infof(
@@ -171,6 +172,7 @@ func (s *OrderService) executeSagaWorkflow(
 func (s *OrderService) executeSagaSynchronously(
 	ctx context.Context,
 	res *dto.OrderResponse,
+	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
 	orderRepo := s.dataStore.OrderRepository()
 
@@ -183,10 +185,10 @@ func (s *OrderService) executeSagaSynchronously(
 	sagaCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
-	// Create payload with order and shipping data
+	// Create payload with order and shipping data from original request
 	payload := &saga.Payload{
 		Order:    order,
-		Shipping: res.Shipping,
+		Shipping: req.Shipping,
 	}
 
 	if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, payload); err != nil {
@@ -213,6 +215,7 @@ func (s *OrderService) executeSagaSynchronously(
 func (s *OrderService) executeSagaAsynchronously(
 	ctx context.Context,
 	res *dto.OrderResponse,
+	req *dto.CreateOrderRequest,
 ) {
 	go func() {
 		// Create background context with user authentication for async saga execution
@@ -239,10 +242,10 @@ func (s *OrderService) executeSagaAsynchronously(
 
 		s.logger.Infof("Starting async saga for order %s", res.ID)
 
-		// Create payload with order and shipping data
+		// Create payload with order and shipping data from original request
 		payload := &saga.Payload{
 			Order:    order,
-			Shipping: res.Shipping,
+			Shipping: req.Shipping,
 		}
 
 		if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, payload); err != nil {

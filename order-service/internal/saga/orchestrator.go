@@ -155,7 +155,7 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 			// Extract shipping data from saga state if available
 			var shipping dto.Shipping
 
-			if shippingData, exists := sagaState.Data["shipping_request"]; exists {
+			if shippingData, exists := sagaState.Data["shipping"]; exists {
 				if shippingMap, ok := shippingData.(map[string]interface{}); ok {
 					// Convert map to ShippingRequest - this is a simplified approach
 					// In production, you might want to use JSON marshal/unmarshal for type safety
