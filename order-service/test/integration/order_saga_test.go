@@ -109,6 +109,8 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaAuthentication() {
 
 // Entrypoint to run the test suite.
 func TestOrderSagaSuite(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("Skipping integration tests in short mode")
 	}

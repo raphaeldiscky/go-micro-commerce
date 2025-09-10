@@ -96,35 +96,63 @@ func (s *NotificationEventServiceImpl) ProcessNotificationRequest(
 	}
 }
 
+// processEmailEvent is a generic helper for processing email events.
+func (s *NotificationEventServiceImpl) processEmailEvent(
+	ctx context.Context,
+	inboxEvent *entity.InboxEvent,
+	eventType string,
+	unmarshalFn func([]byte) (string, string, error),
+) error {
+	s.logger.Infof("Processing %s event: %s", eventType, inboxEvent.MessageID)
+
+	email, body, err := unmarshalFn(inboxEvent.Payload)
+	if err != nil {
+		return err
+	}
+
+	subject := getSubjectForEventType(eventType)
+
+	if err := s.emailService.SendEmail(ctx, email, subject, body); err != nil {
+		return fmt.Errorf("failed to send %s email: %w", eventType, err)
+	}
+
+	s.logger.Infof("Successfully sent %s email to: %s", eventType, email)
+
+	return nil
+}
+
+// getSubjectForEventType returns the appropriate subject for the event type.
+func getSubjectForEventType(eventType string) string {
+	switch eventType {
+	case "email verification request":
+		return constant.SendVerificationSubject
+	case "user verified":
+		return constant.UserVerifiedSubject
+	default:
+		return ""
+	}
+}
+
 // ProcessEmailVerificationRequest handles email verification request events.
 func (s *NotificationEventServiceImpl) ProcessEmailVerificationRequest(
 	ctx context.Context,
 	inboxEvent *entity.InboxEvent,
 ) error {
-	s.logger.Infof("Processing email verification request event: %s", inboxEvent.MessageID)
+	unmarshalFn := func(payload []byte) (string, string, error) {
+		var emailVerificationEvent EmailVerificationRequestedEvent
+		if err := json.Unmarshal(payload, &emailVerificationEvent); err != nil {
+			return "", "", fmt.Errorf("failed to unmarshal email verification event: %w", err)
+		}
 
-	var emailVerificationEvent EmailVerificationRequestedEvent
-	if err := json.Unmarshal(inboxEvent.Payload, &emailVerificationEvent); err != nil {
-		return fmt.Errorf("failed to unmarshal email verification event: %w", err)
+		body, err := s.generateVerificationEmail(&emailVerificationEvent.Payload)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to generate verification email: %w", err)
+		}
+
+		return emailVerificationEvent.Payload.Email, body, nil
 	}
 
-	subject := constant.SendVerificationSubject
-
-	body, err := s.generateVerificationEmail(&emailVerificationEvent.Payload)
-	if err != nil {
-		return fmt.Errorf("failed to generate verification email: %w", err)
-	}
-
-	if err := s.emailService.SendEmail(ctx, emailVerificationEvent.Payload.Email, subject, body); err != nil {
-		return fmt.Errorf("failed to send verification email: %w", err)
-	}
-
-	s.logger.Infof(
-		"Successfully sent verification email to: %s",
-		emailVerificationEvent.Payload.Email,
-	)
-
-	return nil
+	return s.processEmailEvent(ctx, inboxEvent, "email verification request", unmarshalFn)
 }
 
 // ProcessEmailUserVerified handles user verified events.
@@ -132,27 +160,21 @@ func (s *NotificationEventServiceImpl) ProcessEmailUserVerified(
 	ctx context.Context,
 	inboxEvent *entity.InboxEvent,
 ) error {
-	s.logger.Infof("Processing user verified event: %s", inboxEvent.MessageID)
+	unmarshalFn := func(payload []byte) (string, string, error) {
+		var userVerifiedEvent UserVerifiedEvent
+		if err := json.Unmarshal(payload, &userVerifiedEvent); err != nil {
+			return "", "", fmt.Errorf("failed to unmarshal user verified event: %w", err)
+		}
 
-	var userVerifiedEvent UserVerifiedEvent
-	if err := json.Unmarshal(inboxEvent.Payload, &userVerifiedEvent); err != nil {
-		return fmt.Errorf("failed to unmarshal user verified event: %w", err)
+		body, err := s.generateWelcomeEmail(&userVerifiedEvent.Payload)
+		if err != nil {
+			return "", "", fmt.Errorf("failed to generate welcome email: %w", err)
+		}
+
+		return userVerifiedEvent.Payload.Email, body, nil
 	}
 
-	subject := constant.UserVerifiedSubject
-
-	body, err := s.generateWelcomeEmail(&userVerifiedEvent.Payload)
-	if err != nil {
-		return fmt.Errorf("failed to generate welcome email: %w", err)
-	}
-
-	if err := s.emailService.SendEmail(ctx, userVerifiedEvent.Payload.Email, subject, body); err != nil {
-		return fmt.Errorf("failed to send welcome email: %w", err)
-	}
-
-	s.logger.Infof("Successfully sent welcome email to: %s", userVerifiedEvent.Payload.Email)
-
-	return nil
+	return s.processEmailEvent(ctx, inboxEvent, "user verified", unmarshalFn)
 }
 
 // generateVerificationEmail creates an email verification email body.

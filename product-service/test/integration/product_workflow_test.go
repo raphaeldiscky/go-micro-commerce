@@ -102,6 +102,8 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 
 // Entrypoint to run the test suite.
 func TestProductWorkflowSuite(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("Skipping integration tests in short mode")
 	}
