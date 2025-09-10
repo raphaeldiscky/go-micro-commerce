@@ -14,6 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/service"
 )
 
@@ -122,7 +123,7 @@ func (h *SearchHandler) IndexProduct(c echo.Context) error {
 		return err
 	}
 
-	productDoc := req.ToEntity()
+	productDoc := mapper.ToEntity(&req)
 	if err := h.searchService.IndexProduct(c.Request().Context(), productDoc); err != nil {
 		h.logger.Errorf("Failed to index product: %v", err)
 
@@ -152,7 +153,7 @@ func (h *SearchHandler) UpdateProduct(c echo.Context) error {
 		return err
 	}
 
-	productDoc := req.ToEntity()
+	productDoc := mapper.ToEntity(&req)
 	if err := h.searchService.UpdateProduct(c.Request().Context(), productDoc); err != nil {
 		h.logger.Errorf("Failed to update product: %v", err)
 

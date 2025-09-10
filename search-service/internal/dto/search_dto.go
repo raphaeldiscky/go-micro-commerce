@@ -3,12 +3,9 @@ package dto
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
-
-	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
 )
 
 // ProductIndexRequest represents a request to index/update a product.
@@ -41,41 +38,10 @@ func (r *ProductIndexRequest) Validate() error {
 	return nil
 }
 
-// ToEntity converts the DTO to a ProductDocument entity.
-func (r *ProductIndexRequest) ToEntity() *entity.ProductDocument {
-	return &entity.ProductDocument{
-		ID:               r.ProductID,
-		Name:             r.Name,
-		Price:            r.Price,
-		Quantity:         r.Quantity,
-		ReservedQuantity: 0, // Not provided in event payload
-		Version:          0, // Not provided in event payload
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-	}
-}
-
-// OrderIndexRequest and OrderItemIndexRequest - removed for now, only handling products
-
 // BulkIndexRequest represents a bulk indexing request.
 type BulkIndexRequest struct {
 	Products []ProductIndexRequest `json:"products,omitempty"`
 	// Orders - removed for now, only handling products
-}
-
-// Validate validates the bulk index request.
-func (r *BulkIndexRequest) Validate() error {
-	if len(r.Products) == 0 {
-		return fmt.Errorf("at least one product must be provided")
-	}
-
-	for i, product := range r.Products {
-		if err := product.Validate(); err != nil {
-			return fmt.Errorf("products[%d]: %w", i, err)
-		}
-	}
-
-	return nil
 }
 
 // SearchQueryRequest represents a search request with advanced options.
@@ -100,63 +66,4 @@ type HighlightRequest struct {
 	Fields   []string `json:"fields"              validate:"required"`
 	PreTags  []string `json:"pre_tags,omitempty"`
 	PostTags []string `json:"post_tags,omitempty"`
-}
-
-// Validate validates the search query request.
-func (r *SearchQueryRequest) Validate() error {
-	if r.Size < 0 || r.Size > 100 {
-		return fmt.Errorf("size must be between 0 and 100")
-	}
-
-	if r.From < 0 {
-		return fmt.Errorf("from must be non-negative")
-	}
-
-	for i, sort := range r.Sort {
-		if sort.Field == "" {
-			return fmt.Errorf("sort[%d]: field is required", i)
-		}
-
-		if sort.Order != "asc" && sort.Order != "desc" {
-			return fmt.Errorf("sort[%d]: order must be 'asc' or 'desc'", i)
-		}
-	}
-
-	if r.Highlight != nil {
-		if len(r.Highlight.Fields) == 0 {
-			return fmt.Errorf("highlight: fields are required")
-		}
-	}
-
-	return nil
-}
-
-// ToEntity converts the DTO to a SearchQuery entity.
-func (r *SearchQueryRequest) ToEntity() *entity.SearchQuery {
-	sortFields := make([]entity.SortField, len(r.Sort))
-	for i, sort := range r.Sort {
-		sortFields[i] = entity.SortField{
-			Field: sort.Field,
-			Order: sort.Order,
-		}
-	}
-
-	var highlightConfig *entity.HighlightConfig
-	if r.Highlight != nil {
-		highlightConfig = &entity.HighlightConfig{
-			Fields:   r.Highlight.Fields,
-			PreTags:  r.Highlight.PreTags,
-			PostTags: r.Highlight.PostTags,
-		}
-	}
-
-	return &entity.SearchQuery{
-		Query:        r.Query,
-		Filters:      r.Filters,
-		Sort:         sortFields,
-		From:         r.From,
-		Size:         r.Size,
-		Aggregations: r.Aggregations,
-		Highlight:    highlightConfig,
-	}
 }
