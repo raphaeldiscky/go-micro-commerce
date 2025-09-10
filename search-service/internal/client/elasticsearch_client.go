@@ -51,9 +51,19 @@ func NewElasticsearchClient(
 	transport.MaxIdleConnsPerHost = cfg.MaxIdleConns
 	transport.IdleConnTimeout = time.Duration(cfg.MaxIdleTime) * time.Second
 
-	// Configure TLS if SSL is disabled (for development)
+	// Configure TLS settings
 	if !cfg.EnableSSL {
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		// Only disable TLS verification in development environments
+		// Consider using proper certificates in production
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: true, // #nosec G402 - Only for development environments
+		}
+	} else {
+		// Enable TLS with proper verification for production
+		transport.TLSClientConfig = &tls.Config{
+			InsecureSkipVerify: false,
+			MinVersion:         tls.VersionTLS12,
+		}
 	}
 
 	// ES v9 client configuration
@@ -132,6 +142,7 @@ func (c *ElasticsearchClient) HealthCheck(ctx context.Context) (bool, error) {
 	}
 
 	c.logger.Errorf("Elasticsearch cluster status is: %v", resp.Status)
+
 	return false, nil
 }
 
@@ -156,7 +167,7 @@ func (c *ElasticsearchClient) CreateIndex(
 	createReq := &create.Request{
 		Mappings: convertToTypedMappings(mapping),
 	}
-	
+
 	_, err = c.client.Indices.Create(indexName).
 		Request(createReq).
 		Do(ctx)
@@ -176,12 +187,15 @@ func (c *ElasticsearchClient) DeleteIndex(ctx context.Context, indexName string)
 		// Ignore "index not found" errors
 		if strings.Contains(err.Error(), "index_not_found") {
 			c.logger.Infof("Index %s does not exist, skipping deletion", indexName)
+
 			return nil
 		}
+
 		return fmt.Errorf("failed to delete index %s: %w", indexName, err)
 	}
 
 	c.logger.Infof("Successfully deleted index: %s", indexName)
+
 	return nil
 }
 
@@ -190,9 +204,11 @@ func (c *ElasticsearchClient) IndexExists(ctx context.Context, indexName string)
 	_, err := c.client.Indices.Exists(indexName).Do(ctx)
 	if err != nil {
 		// If the error is "index not found", return false, not an error
-		if strings.Contains(err.Error(), "index_not_found") || strings.Contains(err.Error(), "404") {
+		if strings.Contains(err.Error(), "index_not_found") ||
+			strings.Contains(err.Error(), "404") {
 			return false, nil
 		}
+
 		return false, fmt.Errorf("failed to check if index %s exists: %w", indexName, err)
 	}
 
@@ -200,7 +216,7 @@ func (c *ElasticsearchClient) IndexExists(ctx context.Context, indexName string)
 }
 
 // convertToTypedMappings is a helper to convert from map to TypedAPI mapping
-// For now, we'll use a simple approach - in production you'd want proper conversion
+// For now, we'll use a simple approach - in production you'd want proper conversion.
 func convertToTypedMappings(mapping map[string]interface{}) *types.TypeMapping {
 	// This is a simplified conversion - you might want to implement proper mapping conversion
 	// based on your specific mapping structure
@@ -209,18 +225,20 @@ func convertToTypedMappings(mapping map[string]interface{}) *types.TypeMapping {
 			Properties: convertToProperties(mappings),
 		}
 	}
+
 	return &types.TypeMapping{
 		Properties: convertToProperties(mapping),
 	}
 }
 
-// convertToProperties converts map properties to TypedAPI properties
+// convertToProperties converts map properties to TypedAPI properties.
 func convertToProperties(props map[string]interface{}) map[string]types.Property {
 	if props == nil {
 		return nil
 	}
-	
+
 	result := make(map[string]types.Property)
+
 	if properties, ok := props["properties"].(map[string]interface{}); ok {
 		for fieldName, fieldDef := range properties {
 			if fieldMap, ok := fieldDef.(map[string]interface{}); ok {
@@ -228,22 +246,24 @@ func convertToProperties(props map[string]interface{}) map[string]types.Property
 			}
 		}
 	}
+
 	return result
 }
 
-// convertToProperty converts individual field definitions
+// convertToProperty converts individual field definitions.
 func convertToProperty(fieldDef map[string]interface{}) types.Property {
 	fieldType, ok := fieldDef["type"].(string)
 	if !ok {
 		return types.TextProperty{} // default fallback
 	}
-	
+
 	switch fieldType {
 	case "text":
 		prop := types.TextProperty{}
 		if analyzer, ok := fieldDef["analyzer"].(string); ok {
 			prop.Analyzer = &analyzer
 		}
+
 		return prop
 	case "keyword":
 		return types.KeywordProperty{}
@@ -264,10 +284,12 @@ func convertToProperty(fieldDef map[string]interface{}) types.Property {
 		if analyzer, ok := fieldDef["analyzer"].(string); ok {
 			prop.Analyzer = &analyzer
 		}
+
 		if maxInputLength, ok := fieldDef["max_input_length"].(float64); ok {
 			maxLen := int(maxInputLength)
 			prop.MaxInputLength = &maxLen
 		}
+
 		return prop
 	default:
 		return types.TextProperty{} // fallback

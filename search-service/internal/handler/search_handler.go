@@ -11,6 +11,7 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/service"
@@ -269,11 +270,11 @@ func (h *SearchHandler) parseSearchQuery(c echo.Context) *entity.SearchQuery {
 	if sortField := c.QueryParam("sort"); sortField != "" {
 		order := c.QueryParam("order")
 		if order == "" {
-			order = "asc"
+			order = constant.SortOrderAsc
 		}
 
-		if order != "asc" && order != "desc" {
-			order = "asc"
+		if order != constant.SortOrderAsc && order != constant.SortOrderDesc {
+			order = constant.SortOrderAsc
 		}
 
 		query.Sort = append(query.Sort, entity.SortField{
