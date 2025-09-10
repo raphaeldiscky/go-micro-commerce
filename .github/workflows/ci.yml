@@ -88,7 +88,7 @@ jobs:
     needs: detect-changes
     # Only run this job if there are actually changed services.
     if: |
-      ${{ needs.detect-changes.outputs.services != '[]' }} &&
+      (needs.detect-changes.outputs.services != '[]') &&
       (github.event_name == 'push' || 
        github.event.pull_request.head.sha == github.sha)
     runs-on: tenki-standard-autoscale
