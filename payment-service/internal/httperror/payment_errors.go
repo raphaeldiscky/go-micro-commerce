@@ -17,11 +17,3 @@ func NewPaymentNotFoundError() *httperror.ResponseError {
 
 	return httperror.NewResponseError(err, http.StatusNotFound, msg)
 }
-
-// NewInsufficientProductStockError creates a new Insufficient Product Stock error.
-func NewInsufficientProductStockError() *httperror.ResponseError {
-	msg := constant.InsufficientProductStockErrorMessage
-	err := errors.New(msg)
-
-	return httperror.NewResponseError(err, http.StatusConflict, msg)
-}

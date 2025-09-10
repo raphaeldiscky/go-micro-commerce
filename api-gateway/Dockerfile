@@ -1,6 +1,6 @@
 # ---- Build Stage ----
 # Use the official Golang image to build the application.
-FROM golang:1.23-alpine AS builder
+FROM golang:1.24.7-alpine AS builder
 
 # Set the working directory to match the repo structure
 WORKDIR /workspace

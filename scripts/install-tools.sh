@@ -22,6 +22,13 @@ else
     echo "golangci-lint already installed"
 fi
 
+if ! command -v deadcode &> /dev/null; then
+    echo "Installing deadcode..."
+    go install golang.org/x/tools/cmd/deadcode@latest
+else 
+    echo "deadcode already installed"
+fi
+
 # install node.js tools
 npm install
 

@@ -1,8 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/product-service
 
-go 1.23.8
-
-toolchain go1.23.12
+go 1.24.7
 
 require (
 	github.com/IBM/sarama v1.45.2

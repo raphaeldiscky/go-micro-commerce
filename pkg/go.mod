@@ -1,8 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/pkg
 
-go 1.23.8
-
-toolchain go1.23.12
+go 1.24.7
 
 require (
 	github.com/hashicorp/consul/api v1.32.1

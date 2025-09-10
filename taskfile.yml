@@ -53,11 +53,15 @@ tasks:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Building all services..."
+          bash ./scripts/deadcode.sh
           bash ./scripts/lint.sh
+          bash ./scripts/format.sh
           bash ./scripts/build.sh
         else
           echo "Building {{.SERVICE}}..."
+          bash ./scripts/deadcode.sh {{.SERVICE}}
           bash ./scripts/lint.sh {{.SERVICE}}
+          bash ./scripts/format.sh {{.SERVICE}}
           bash ./scripts/build.sh {{.SERVICE}}
         fi
 
@@ -251,7 +255,7 @@ tasks:
     deps: ["format"]
 
   deadcode:
-    desc: Run deadcode
+    desc: Check deadcode
     vars:
       SERVICE: '{{.SERVICE | default ""}}'
     cmds:
@@ -264,6 +268,13 @@ tasks:
           bash ./scripts/deadcode.sh {{.SERVICE}}
         fi
     deps: ["format"]
+
+  full_check:
+    desc: Run deadcode, linter, and formatter checks
+    cmds:
+      - task: deadcode
+      - task: lint
+      - task: format
 
   mock:
     desc: Generate mock

@@ -257,37 +257,6 @@ func (h *OrderHandler) GetLoggedInOrders(c echo.Context) error {
 	return echoutils.ResponseOKPagination(c, orders, paging)
 }
 
-// UpdateOrderStatus updates the status of an existing order.
-//
-// Route: PATCH /orders/:orderID/status
-//
-// Authentication: Requires user authentication.
-func (h *OrderHandler) UpdateOrderStatus(c echo.Context) error {
-	var req dto.UpdateOrderStatusRequest
-
-	param := c.Param("orderID")
-
-	orderID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err := c.Validate(&req); err != nil {
-		return err
-	}
-
-	order, err := h.orderService.UpdateOrderStatus(c.Request().Context(), orderID, req.Status)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseOK(c, order)
-}
-
 // CancelOrder handles DELETE /orders/:orderID.
 func (h *OrderHandler) CancelOrder(c echo.Context) error {
 	param := c.Param("orderID")

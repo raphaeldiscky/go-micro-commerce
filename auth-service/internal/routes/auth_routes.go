@@ -27,4 +27,7 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	protected.Use(middleware.AuthMiddleware)
 	protected.GET("", h.GetLoggedInUser)
 	protected.PUT("", h.UpdateLoggedInUser)
+
+	admin := protected.Group("")
+	admin.Use(middleware.RequireAdminRole)
 }

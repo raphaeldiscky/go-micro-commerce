@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/http/httputil"
 	"net/url"
 	"strconv"
 	"strings"
@@ -257,47 +256,6 @@ func (gw *Gateway) copyHeaders(src, dst http.Header) {
 				dst.Add(key, value)
 			}
 		}
-	}
-}
-
-// CreateReverseProxy creates a reverse proxy for a service (alternative approach).
-func (gw *Gateway) CreateReverseProxy(serviceName string) echo.HandlerFunc {
-	return func(c echo.Context) error {
-		// Get service endpoint
-		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
-		}
-
-		targetURL, err := url.Parse(endpoint)
-		if err != nil {
-			return echo.NewHTTPError(http.StatusBadGateway, "invalid service endpoint")
-		}
-
-		// Create reverse proxy
-		proxy := httputil.NewSingleHostReverseProxy(targetURL)
-
-		// Customize the director
-		originalDirector := proxy.Director
-		proxy.Director = func(req *http.Request) {
-			originalDirector(req)
-			gw.copyHeaders(c.Request().Header, req.Header)
-			req.Header.Set("X-Gateway", "api-gateway")
-			req.Header.Set("X-Forwarded-For", c.RealIP())
-			gw.addUserHeaders(c, req)
-		}
-
-		// Handle errors
-		proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, err error) {
-			gw.logger.Error("Proxy error",
-				"service", serviceName,
-				"error", err)
-			http.Error(w, "Bad Gateway", http.StatusBadGateway)
-		}
-
-		proxy.ServeHTTP(c.Response(), c.Request())
-
-		return nil
 	}
 }
 

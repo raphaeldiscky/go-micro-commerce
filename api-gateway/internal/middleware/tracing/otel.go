@@ -140,11 +140,6 @@ func InjectHeaders(ctx context.Context, headers map[string]string) {
 	otel.GetTextMapPropagator().Inject(ctx, &headerCarrier{headers: headers})
 }
 
-// ExtractContext extracts tracing context from HTTP headers.
-func ExtractContext(ctx context.Context, headers map[string][]string) context.Context {
-	return otel.GetTextMapPropagator().Extract(ctx, &headerExtractor{headers: headers})
-}
-
 // headerCarrier implements TextMapCarrier for injecting headers.
 type headerCarrier struct {
 	headers map[string]string
@@ -159,33 +154,6 @@ func (h *headerCarrier) Set(key, value string) {
 }
 
 func (h *headerCarrier) Keys() []string {
-	keys := make([]string, 0, len(h.headers))
-	for k := range h.headers {
-		keys = append(keys, k)
-	}
-
-	return keys
-}
-
-// headerExtractor implements TextMapCarrier for extracting headers.
-type headerExtractor struct {
-	headers map[string][]string
-}
-
-func (h *headerExtractor) Get(key string) string {
-	values := h.headers[key]
-	if len(values) == 0 {
-		return ""
-	}
-
-	return values[0]
-}
-
-func (h *headerExtractor) Set(key, value string) {
-	h.headers[key] = []string{value}
-}
-
-func (h *headerExtractor) Keys() []string {
 	keys := make([]string, 0, len(h.headers))
 	for k := range h.headers {
 		keys = append(keys, k)
