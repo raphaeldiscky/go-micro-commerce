@@ -172,14 +172,6 @@ func (s *searchService) GetProduct(
 	return product, nil
 }
 
-// Order operations - removed for now, only handling products
-
-// SearchOrders and GetOrder - removed for now, only handling products
-
-// Customer operations - removed for now, only handling products and orders
-
-// Bulk operations
-
 // BulkIndexProducts performs bulk indexing of products.
 func (s *searchService) BulkIndexProducts(
 	ctx context.Context,
@@ -309,8 +301,6 @@ func (s *searchService) calculateProductWeight(product *entity.ProductDocument) 
 
 	return weight
 }
-
-// Inbox event processing methods
 
 // ProcessProductCreated processes a product created event from the inbox.
 func (s *searchService) ProcessProductCreated(

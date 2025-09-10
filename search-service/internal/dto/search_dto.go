@@ -55,8 +55,6 @@ func (r *ProductIndexRequest) ToEntity() *entity.ProductDocument {
 	}
 }
 
-// OrderIndexRequest and OrderItemIndexRequest - removed for now, only handling products
-
 // BulkIndexRequest represents a bulk indexing request.
 type BulkIndexRequest struct {
 	Products []ProductIndexRequest `json:"products,omitempty"`
