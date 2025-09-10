@@ -1,18 +1,18 @@
-name: Release Drafter
+name: release drafter
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    types: [opened, reopened, synchronize]
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
 
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
-  update_release_draft:
+  update-release-draft:
     permissions:
       contents: write
       pull-requests: write
