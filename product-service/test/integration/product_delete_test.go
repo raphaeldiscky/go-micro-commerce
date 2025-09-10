@@ -89,6 +89,8 @@ func (s *ProductDeleteTestSuite) TestDeleteProductInvalidID() {
 
 // TestProductDeleteSuite runs the product deletion test suite.
 func TestProductDeleteSuite(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("Skipping integration tests in short mode")
 	}

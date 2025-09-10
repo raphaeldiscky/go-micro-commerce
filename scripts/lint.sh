@@ -17,7 +17,7 @@ SERVICES=(
 lint_service() {
   local dir="$1"
   echo "Linting $dir..."
-  (cd "$dir" && golangci-lint run ./... --fix --timeout 5m --config ../.golangci.yml)
+  (cd "$dir" && golangci-lint run ./... --fix --timeout 5m)
   echo "Lint completed for $dir"
 }
 

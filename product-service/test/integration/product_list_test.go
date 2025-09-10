@@ -100,6 +100,8 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 
 // TestProductListSuite runs the product listing test suite.
 func TestProductListSuite(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("Skipping integration tests in short mode")
 	}

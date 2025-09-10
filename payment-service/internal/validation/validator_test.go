@@ -10,6 +10,7 @@ import (
 )
 
 func TestDecimalValidators(t *testing.T) {
+	t.Parallel()
 	// Create validator instance
 	validate := validator.New()
 
@@ -44,6 +45,7 @@ func TestDecimalValidators(t *testing.T) {
 	}
 
 	t.Run("decimal_gt validator", func(t *testing.T) {
+		t.Parallel()
 		// Should pass with positive value
 		test1 := TestGT{Price: decimal.NewFromFloat(10.50)}
 		err := validate.Struct(test1)
@@ -61,6 +63,7 @@ func TestDecimalValidators(t *testing.T) {
 	})
 
 	t.Run("decimal_gte validator", func(t *testing.T) {
+		t.Parallel()
 		// Should pass with positive value
 		test1 := TestGTE{Price: decimal.NewFromFloat(10.50)}
 		err := validate.Struct(test1)

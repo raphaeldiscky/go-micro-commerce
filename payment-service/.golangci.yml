@@ -42,10 +42,9 @@ linters:
     - errcheck
     - gosec
     - cyclop
-  disable:
     - paralleltest
-    - godox
-    - dupl
+    # - godox
+    # - dupl
 
   settings:
     dupl:
@@ -64,12 +63,11 @@ linters:
       min-complexity: 40
     gocyclo:
       min-complexity: 15
+    cyclop:
+      max-complexity: 15
     goconst:
       min-len: 2
       min-occurrences: 2
-    gosec:
-      excludes:
-        - G115
     gocritic:
       enabled-tags:
         - diagnostic
@@ -80,6 +78,9 @@ linters:
       disabled-checks:
         - dupImport
         - unnecessaryBlock
+    gosec:
+      excludes:
+        - G115
     misspell:
       locale: US
     nestif:

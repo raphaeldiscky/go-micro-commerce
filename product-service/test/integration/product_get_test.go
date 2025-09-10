@@ -87,6 +87,8 @@ func (s *ProductGetTestSuite) TestGetProductInvalidID() {
 
 // TestProductGetSuite runs the product retrieval test suite.
 func TestProductGetSuite(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("Skipping integration tests in short mode")
 	}

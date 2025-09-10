@@ -107,10 +107,11 @@ func (r *UserRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*en
 	return user, nil
 }
 
-// GetByEmail retrieves a user by email.
-func (r *UserRepositoryPostgres) GetByEmail(
+// getUserByField is a helper method to get a user by a specific field.
+func (r *UserRepositoryPostgres) getUserByField(
 	ctx context.Context,
-	email string,
+	fieldName string,
+	value interface{},
 ) (*entity.User, error) {
 	user := &entity.User{}
 	query := `
@@ -118,9 +119,9 @@ func (r *UserRepositoryPostgres) GetByEmail(
 		       roles, is_active, is_email_verified, email_verification_token,
 		       email_verification_sent_at, email_verified_at, last_login_at,
 		       created_at, updated_at
-		FROM users WHERE email = $1`
+		FROM users WHERE ` + fieldName + ` = $1`
 
-	err := r.db.QueryRow(ctx, query, email).Scan(
+	err := r.db.QueryRow(ctx, query, value).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 		&user.IsEmailVerified, &user.EmailVerificationToken,
@@ -136,6 +137,14 @@ func (r *UserRepositoryPostgres) GetByEmail(
 	}
 
 	return user, nil
+}
+
+// GetByEmail retrieves a user by email.
+func (r *UserRepositoryPostgres) GetByEmail(
+	ctx context.Context,
+	email string,
+) (*entity.User, error) {
+	return r.getUserByField(ctx, "email", email)
 }
 
 // GetByUsername retrieves a user by username.
@@ -143,30 +152,7 @@ func (r *UserRepositoryPostgres) GetByUsername(
 	ctx context.Context,
 	username string,
 ) (*entity.User, error) {
-	user := &entity.User{}
-	query := `
-		SELECT id, email, username, password_hash, first_name, last_name,
-		       roles, is_active, is_email_verified, email_verification_token,
-		       email_verification_sent_at, email_verified_at, last_login_at,
-		       created_at, updated_at
-		FROM users WHERE username = $1`
-
-	err := r.db.QueryRow(ctx, query, username).Scan(
-		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
-		&user.IsEmailVerified, &user.EmailVerificationToken,
-		&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
-		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, sql.ErrNoRows
-		}
-
-		return nil, err
-	}
-
-	return user, nil
+	return r.getUserByField(ctx, "username", username)
 }
 
 // GetByEmailVerificationToken retrieves a user by email verification token.
@@ -174,30 +160,7 @@ func (r *UserRepositoryPostgres) GetByEmailVerificationToken(
 	ctx context.Context,
 	token string,
 ) (*entity.User, error) {
-	user := &entity.User{}
-	query := `
-		SELECT id, email, username, password_hash, first_name, last_name,
-		       roles, is_active, is_email_verified, email_verification_token,
-		       email_verification_sent_at, email_verified_at, last_login_at,
-		       created_at, updated_at
-		FROM users WHERE email_verification_token = $1`
-
-	err := r.db.QueryRow(ctx, query, token).Scan(
-		&user.ID, &user.Email, &user.Username, &user.PasswordHash,
-		&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
-		&user.IsEmailVerified, &user.EmailVerificationToken,
-		&user.EmailVerificationSentAt, &user.EmailVerifiedAt,
-		&user.LastLoginAt, &user.CreatedAt, &user.UpdatedAt,
-	)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, sql.ErrNoRows
-		}
-
-		return nil, err
-	}
-
-	return user, nil
+	return r.getUserByField(ctx, "email_verification_token", token)
 }
 
 // Update updates a user.
