@@ -29,6 +29,28 @@ else
     echo "deadcode already installed"
 fi
 
+if ! command -v task &> /dev/null; then
+    echo "Installing task..."
+    curl -sSfL https://taskfile.dev/install.sh | sh
+else
+    echo "task already installed"
+fi
+
+if ! command -v protoc &> /dev/null; then
+    echo "Installing protoc..."
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+else
+    echo "protoc already installed"
+fi
+
+if ! command -v air &> /dev/null; then
+    echo "Installing air..."
+    go install github.com/air-verse/air@latest
+else
+    echo "air already installed"
+fi
+
 # install node.js tools
 npm install
 
