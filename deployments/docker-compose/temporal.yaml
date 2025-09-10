@@ -22,7 +22,7 @@ services:
       - go-micro-commerce
     healthcheck:
       test:
-        ["CMD", "temporal", "workflow", "list", "--address", "localhost:7233"]
+        ["CMD", "temporal", "workflow", "list", "--address", "temporal:7233"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -50,7 +50,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: temporal_db
     ports:
-      - "5433:5432"
+      - "15438:5432"
     volumes:
       - postgres_temporal_data:/var/lib/postgresql/data
     healthcheck:

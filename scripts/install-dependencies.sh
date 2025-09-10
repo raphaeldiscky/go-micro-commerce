@@ -12,6 +12,7 @@ SERVICES=(
   "api-gateway"
   "payment-service"
   "fulfillment-service"
+  "search-service"
 )
 
 install_deps() {

@@ -7,7 +7,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=auth_db
     ports:
-      - "15432:5432"
+      - "15431:5432"
     networks:
       - go-micro-commerce
     healthcheck:
@@ -30,7 +30,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=product_db
     ports:
-      - "25432:5432"
+      - "15432:5432"
     networks:
       - go-micro-commerce
     healthcheck:
@@ -53,7 +53,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=order_db
     ports:
-      - "35432:5432"
+      - "15433:5432"
     networks:
       - go-micro-commerce
     healthcheck:
@@ -76,7 +76,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=payment_db
     ports:
-      - "45432:5432"
+      - "15434:5432"
     networks:
       - go-micro-commerce
     healthcheck:
@@ -99,7 +99,7 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=fulfillment_db
     ports:
-      - "55432:5432"
+      - "15435:5432"
     networks:
       - go-micro-commerce
     healthcheck:
@@ -122,7 +122,24 @@ services:
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=notification_db
     ports:
-      - "65432:5432"
+      - "15436:5432"
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-search:
+    image: postgres:17.5-alpine
+    container_name: postgres-search
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=search_db
+    ports:
+      - "15437:5432"
     networks:
       - go-micro-commerce
     healthcheck:

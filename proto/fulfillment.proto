@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package fulfillment;  
+package fulfillment;
 
 option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment";
 
