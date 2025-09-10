@@ -14,6 +14,7 @@ SERVICES=(
   "fulfillment-service"
   "api-gateway"
   "pkg"
+  "search-service"
 )
 
 run_tests() {

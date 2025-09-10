@@ -44,12 +44,13 @@ fi
 
 get_service_port() {
   case "$1" in
-    "auth-service") echo "15432" ;;
-    "product-service") echo "25432" ;;
-    "order-service") echo "35432" ;;
-    "payment-service") echo "45432" ;;
-    "fulfillment-service") echo "55432" ;;
-    "notification-service") echo "65432" ;;
+    "auth-service") echo "15431" ;;
+    "product-service") echo "15432" ;;
+    "order-service") echo "15433" ;;
+    "payment-service") echo "15434" ;;
+    "fulfillment-service") echo "15435" ;;
+    "notification-service") echo "15436" ;;
+    "search-service") echo "15437" ;;
     *) echo "" ;;
   esac
 }
@@ -62,6 +63,7 @@ get_service_db_name() {
     "payment-service") echo "payment_db" ;;
     "fulfillment-service") echo "fulfillment_db" ;;
     "notification-service") echo "notification_db" ;;
+    "search-service") echo "search_db" ;;
     *) echo "" ;;
   esac
 }
@@ -80,7 +82,7 @@ POSTGRES_MIGRATION_PATH="db/migrations"
 
 # Function to get all services
 get_all_services() {
-  echo "auth-service product-service order-service payment-service fulfillment-service notification-service" 
+  echo "auth-service product-service order-service payment-service fulfillment-service notification-service search-service" 
 }
 
 # Function to run migration for a single service

@@ -11,6 +11,7 @@ SERVICES=(
   "api-gateway"
   "payment-service"
   "fulfillment-service"
+  "search-service"
 )
 
 lint_service() {

@@ -23,7 +23,7 @@ type PostgresConfig struct {
 func initPostgresConfig() *PostgresConfig {
 	// Set defaults
 	viper.SetDefault("POSTGRES_HOST", "localhost")
-	viper.SetDefault("POSTGRES_PORT", 65432)
+	viper.SetDefault("POSTGRES_PORT", 15436)
 	viper.SetDefault("POSTGRES_DB", "notification_db")
 	viper.SetDefault("POSTGRES_USER", "postgres")
 	viper.SetDefault("POSTGRES_PASSWORD", "postgres")

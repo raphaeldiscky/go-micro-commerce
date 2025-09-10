@@ -4,6 +4,7 @@ include:
   - redis.yaml
   - kafka.yaml
   - temporal.yaml
+  - elasticsearch.yaml
   - monitoring.yaml
   - security.yaml
   - dev-tools.yaml

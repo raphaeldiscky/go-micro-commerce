@@ -65,6 +65,15 @@ http:
       middlewares:
         - rate-limit
 
+    # Direct access to Search Service (for testing/admin)
+    search-service:
+      rule: "Host(`searchs.localhost`)"
+      service: search-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
   services:
     api-gateway:
       loadBalancer:
@@ -143,6 +152,16 @@ http:
           headers:
             Host: notification-service
 
+    search-service:
+      loadBalancer:
+        servers:
+          - url: "http://search-service:8087"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: search-service
   middlewares:
     rate-limit:
       rateLimit:
