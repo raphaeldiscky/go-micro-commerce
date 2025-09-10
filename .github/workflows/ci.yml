@@ -8,9 +8,16 @@ on:
     branches:
       - "main"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # This job's purpose is to figure out which services need to be built.
   detect-changes:
+    if: |
+      github.event_name == 'push' ||
+      github.event.pull_request.head.sha == github.sha
     runs-on: tenki-standard-autoscale
     outputs:
       # It will output a JSON array of service names that have changed.
@@ -80,7 +87,10 @@ jobs:
     # It requires 'detect-changes' to finish successfully.
     needs: detect-changes
     # Only run this job if there are actually changed services.
-    if: ${{ needs.detect-changes.outputs.services != '[]' }}
+    if: |
+      ${{ needs.detect-changes.outputs.services != '[]' }} &&
+      (github.event_name == 'push' || 
+       github.event.pull_request.head.sha == github.sha)
     runs-on: tenki-standard-autoscale
     # The 'matrix' strategy creates a parallel job for each service name
     # in the JSON array from the 'detect-changes' job output.
