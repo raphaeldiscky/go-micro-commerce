@@ -284,39 +284,31 @@ func (r *SearchRepository) BulkIndex(ctx context.Context, documents []entity.Sea
 
 // CreateIndices creates indices with proper typed mappings.
 func (r *SearchRepository) CreateIndices(ctx context.Context) error {
-	// Product mapping with typed fields
+	// Product mapping based on actual ProductDocument and event payloads
 	standard := "standard"
-	english := "english"
 	simple := "simple"
-	preserveSeparators := true
-	preservePositionIncrements := true
 	maxInputLength := 50
 
 	productMapping := &types.TypeMapping{
 		Properties: map[string]types.Property{
-			"id":               types.KeywordProperty{},
-			"name":             types.TextProperty{Analyzer: &standard},
-			"description":      types.TextProperty{Analyzer: &english},
-			"price":            types.FloatNumberProperty{},
-			"category":         types.KeywordProperty{},
-			"brand":            types.KeywordProperty{},
-			"in_stock":         types.BooleanProperty{},
-			"tags":             types.KeywordProperty{},
-			"attributes.color": types.KeywordProperty{},
-			"attributes.size":  types.KeywordProperty{},
-			"rating":           types.HalfFloatNumberProperty{},
-			"review_count":     types.IntegerNumberProperty{},
-			"created_at":       types.DateProperty{},
-			"updated_at":       types.DateProperty{},
+			// Core fields from ProductDocument entity and product events
+			"id":                types.KeywordProperty{}, // UUID as keyword
+			"name":              types.TextProperty{Analyzer: &standard},
+			"price":             types.FloatNumberProperty{}, // decimal.Decimal maps to float
+			"quantity":          types.LongNumberProperty{},  // int64
+			"reserved_quantity": types.LongNumberProperty{},  // int64
+			"version":           types.LongNumberProperty{},  // int64
+			"created_at":        types.DateProperty{},
+			"updated_at":        types.DateProperty{},
+			// Suggestion field for autocomplete - based on SuggestField struct
 			"suggest": types.CompletionProperty{
-				Analyzer:                   &simple,
-				PreserveSeparators:         &preserveSeparators,
-				PreservePositionIncrements: &preservePositionIncrements,
-				MaxInputLength:             &maxInputLength,
+				Analyzer:       &simple,
+				MaxInputLength: &maxInputLength,
 			},
 		},
 	}
 
+	// Use direct typed API approach since interface method isn't working
 	_, err := r.client.GetClient().Indices.Create("products").
 		Mappings(productMapping).
 		Do(ctx)
@@ -383,16 +375,14 @@ func (r *SearchRepository) BulkDelete(
 	return nil
 }
 
-// DeleteIndices deletes indices using TypedAPI.
+// DeleteIndices deletes indices using client interface.
 func (r *SearchRepository) DeleteIndices(ctx context.Context) error {
 	indices := []string{"products"}
 
 	for _, indexName := range indices {
-		_, err := r.client.GetClient().Indices.Delete(indexName).Do(ctx)
+		err := r.client.DeleteIndex(ctx, indexName)
 		if err != nil {
 			r.logger.Warnf("Failed to delete index %s: %v", indexName, err)
-		} else {
-			r.logger.Infof("Successfully deleted index: %s", indexName)
 		}
 	}
 
