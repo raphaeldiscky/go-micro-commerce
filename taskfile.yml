@@ -269,6 +269,20 @@ tasks:
         fi
     deps: ["format"]
 
+  security:
+    desc: Check security
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running security for all services..."
+          bash ./scripts/security.sh
+        else
+          echo "Running security for {{.SERVICE}}..."
+          bash ./scripts/security.sh {{.SERVICE}}
+        fi
+
   full_check:
     desc: Run deadcode, linter, and formatter checks
     cmds:

@@ -82,9 +82,11 @@ jobs:
     # Only run this job if there are actually changed services.
     if: ${{ needs.detect-changes.outputs.services != '[]' }}
     runs-on: tenki-standard-autoscale
+    timeout-minutes: 30
     # The 'matrix' strategy creates a parallel job for each service name
     # in the JSON array from the 'detect-changes' job output.
     strategy:
+      fail-fast: false
       matrix:
         service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
@@ -103,9 +105,10 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles(format('{0}/go.sum', matrix.service), 'pkg/go.sum', 'proto/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-${{ matrix.service }}-
+            ${{ runner.os }}-go-
 
       - name: Install Task runner
         uses: arduino/setup-task@v2
@@ -113,8 +116,13 @@ jobs:
           version: 3.x
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Go Dependencies
-        run: task install_tools
+      - name: Install Tools
+        run: |
+          go install mvdan.cc/gofumpt@latest
+          go install golang.org/x/tools/cmd/goimports@latest
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
+          go install golang.org/x/tools/cmd/deadcode@latest
+          go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Check deadcode for ${{ matrix.service }}
         run: task deadcode SERVICE=${{ matrix.service }}
@@ -122,11 +130,37 @@ jobs:
       - name: Run Linter for ${{ matrix.service }}
         run: task lint SERVICE=${{ matrix.service }}
 
+      # - name: Run Security Vulnerability Scan for ${{ matrix.service }}
+      #   run: task security SERVICE=${{ matrix.service }}
+
       - name: Run Tests for ${{ matrix.service }}
-        run: task test SERVICE=${{ matrix.service }}
+        run: |
+          cd ${{ matrix.service }}
+          go test -v -race -covermode=atomic -coverprofile=coverage.out ./...
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload test coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./${{ matrix.service }}/coverage.out
+          flags: ${{ matrix.service }}
+          name: ${{ matrix.service }}-coverage
+          fail_ci_if_error: false
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.service }}-coverage
+          path: |
+            ./${{ matrix.service }}/coverage.out
+            ./${{ matrix.service }}/coverage.html
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: |
+            image=moby/buildkit:latest
 
       - name: Login to GitHub Container Registry
         # This uses a temporary token that is automatically created for the workflow run.
@@ -148,9 +182,38 @@ jobs:
 
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
+        id: build
         with:
           context: . # Use root as context to access pkg directory
           file: ./${{ matrix.service }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          load: true # Load image locally for security scanning
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.meta.outputs.tags }}
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Generate Job Summary
+        if: always()
+        run: |
+          echo "## Build Summary for ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          if [ -f "${{ matrix.service }}/coverage.out" ]; then
+            COVERAGE=$(go tool cover -func=${{ matrix.service }}/coverage.out | grep total: | awk '{print $3}')
+            echo "- **Test Coverage**: $COVERAGE" >> $GITHUB_STEP_SUMMARY
+          fi
