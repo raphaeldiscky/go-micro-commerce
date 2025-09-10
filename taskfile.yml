@@ -250,6 +250,21 @@ tasks:
         fi
     deps: ["format"]
 
+  deadcode:
+    desc: Run deadcode
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Running deadcode for all services..."
+          bash ./scripts/deadcode.sh
+        else
+          echo "Running deadcode for {{.SERVICE}}..."
+          bash ./scripts/deadcode.sh {{.SERVICE}}
+        fi
+    deps: ["format"]
+
   mock:
     desc: Generate mock
     vars:

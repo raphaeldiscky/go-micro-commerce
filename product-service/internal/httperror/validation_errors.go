@@ -17,27 +17,3 @@ func NewInvalidRequestBodyError() *httperror.ResponseError {
 
 	return httperror.NewResponseError(err, http.StatusBadRequest, msg)
 }
-
-// NewInvalidProductIDError creates a new invalid product ID error.
-func NewInvalidProductIDError() *httperror.ResponseError {
-	msg := constant.InvalidProductIDErrorMessage
-	err := errors.New(msg)
-
-	return httperror.NewResponseError(err, http.StatusBadRequest, msg)
-}
-
-// NewNameRequiredError creates a new name required error.
-func NewNameRequiredError() *httperror.ResponseError {
-	msg := constant.NameRequiredErrorMessage
-	err := errors.New(msg)
-
-	return httperror.NewResponseError(err, http.StatusBadRequest, msg)
-}
-
-// NewPriceMustBeGreaterThanZeroError creates a new price validation error.
-func NewPriceMustBeGreaterThanZeroError() *httperror.ResponseError {
-	msg := constant.PriceMustBeGreaterThanZeroErrorMessage
-	err := errors.New(msg)
-
-	return httperror.NewResponseError(err, http.StatusBadRequest, msg)
-}
