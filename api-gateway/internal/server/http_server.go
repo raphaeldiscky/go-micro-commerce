@@ -16,6 +16,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/provider"
 )
 
@@ -87,6 +88,7 @@ func RegisterMiddlewares(e *echo.Echo) {
 			return uuid.New().String()
 		},
 	}))
+	e.Use(tracing.Middleware())
 	e.Use(middleware.LoggerWithConfig(
 		middleware.LoggerConfig{
 			Format: "[${time_rfc3339}] ${method} ${uri} ${status} ${latency_human}\n",

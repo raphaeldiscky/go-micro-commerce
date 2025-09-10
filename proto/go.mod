@@ -1,6 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/proto
 
-go 1.23.6
+go 1.24.7
 
 require (
 	google.golang.org/grpc v1.75.0

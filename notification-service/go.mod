@@ -1,8 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/notification-service
 
-go 1.23.8
-
-toolchain go1.23.12
+go 1.24.7
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 

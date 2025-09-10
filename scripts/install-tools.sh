@@ -22,11 +22,24 @@ else
     echo "golangci-lint already installed"
 fi
 
+if ! command -v deadcode &> /dev/null; then
+    echo "Installing deadcode..."
+    go install golang.org/x/tools/cmd/deadcode@latest
+else 
+    echo "deadcode already installed"
+fi
+
+if ! command -v govulncheck &> /dev/null; then
+    echo "Installing govulncheck..."
+    go install golang.org/x/vuln/cmd/govulncheck@latest
+else
+    echo "govulncheck already installed"
+fi
+
 # install node.js tools
 npm install
 
 # add husky hooks
 npx husky init
-echo "task format && task lint && git add -A ." > .husky/pre-commit
-echo "task test" > .husky/pre-push
+echo "task full_check && git add -A ." > .husky/pre-commit
 echo "npx --no-install commitlint --edit \$1" > .husky/commit-msg

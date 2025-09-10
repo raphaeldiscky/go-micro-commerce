@@ -1,8 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/api-gateway
 
-go 1.23.8
-
-toolchain go1.23.12
+go 1.24.7
 
 require (
 	github.com/google/uuid v1.6.0

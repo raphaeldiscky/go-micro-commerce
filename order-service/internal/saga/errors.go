@@ -82,16 +82,6 @@ func NewTimeoutError(step constant.WorkflowStep, message string, cause error) *E
 	}
 }
 
-// NewBusinessRuleError creates a new business rule error.
-func NewBusinessRuleError(step constant.WorkflowStep, message string, cause error) *Error {
-	return &Error{
-		Type:    ErrorTypeBusinessRule,
-		Message: message,
-		Cause:   cause,
-		Step:    step,
-	}
-}
-
 // CategorizeError categorizes an error based on its type and context.
 func CategorizeError(step constant.WorkflowStep, err error) *Error {
 	if err == nil {

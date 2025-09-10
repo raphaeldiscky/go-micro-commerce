@@ -1,8 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/auth-service
 
-go 1.23.8
-
-toolchain go1.23.12
+go 1.24.7
 
 require (
 	github.com/go-playground/validator/v10 v10.27.0

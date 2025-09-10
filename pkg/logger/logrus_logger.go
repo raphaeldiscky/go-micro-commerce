@@ -176,12 +176,12 @@ func (l *LogrusEntry) Debugf(format string, args ...any) {
 func (l *LogrusEntry) WithField(key string, value any) (entry Logger) {
 	entry = &LogrusEntry{l.entry.WithField(key, value)}
 
-	return
+	return entry
 }
 
 // WithFields returns a new logger entry with multiple additional fields.
 func (l *LogrusEntry) WithFields(args map[string]any) (entry Logger) {
 	entry = &LogrusEntry{l.entry.WithFields(args)}
 
-	return
+	return entry
 }

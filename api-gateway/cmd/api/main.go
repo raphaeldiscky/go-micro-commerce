@@ -14,6 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
@@ -24,6 +25,9 @@ func main() {
 	}
 
 	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
+	if err := tracing.InitTracing(cfg.Tracing); err != nil {
+		appLogger.Fatalf("failed to initialize tracing: %v", err)
+	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
