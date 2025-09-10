@@ -86,14 +86,13 @@ jobs:
     # The 'matrix' strategy creates a parallel job for each service name
     # in the JSON array from the 'detect-changes' job output.
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # --- LINT AND TEST STEPS ADDED HERE ---
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
@@ -161,6 +160,9 @@ jobs:
         with:
           driver-opts: |
             image=moby/buildkit:latest
+          buildkitd-config-inline: |
+            [registry."docker.io"]
+              mirrors = []
 
       - name: Login to GitHub Container Registry
         # This uses a temporary token that is automatically created for the workflow run.
