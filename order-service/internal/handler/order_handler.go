@@ -134,12 +134,14 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
+		pkgconstant.DefaultLimit,
 		pkgconstant.DefaultMinLimit,
 		pkgconstant.DefaultMaxLimit,
 	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
+		pkgconstant.DefaultPage,
 		pkgconstant.DefaultMinPage,
 		pkgconstant.DefaultMaxPage,
 	)
@@ -178,12 +180,14 @@ func (h *OrderHandler) GetOrders(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
+		pkgconstant.DefaultLimit,
 		pkgconstant.DefaultMinLimit,
 		pkgconstant.DefaultMaxLimit,
 	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
+		pkgconstant.DefaultPage,
 		pkgconstant.DefaultMinPage,
 		pkgconstant.DefaultMaxPage,
 	)
@@ -218,12 +222,14 @@ func (h *OrderHandler) GetLoggedInOrders(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
+		pkgconstant.DefaultLimit,
 		pkgconstant.DefaultMinLimit,
 		pkgconstant.DefaultMaxLimit,
 	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
+		pkgconstant.DefaultPage,
 		pkgconstant.DefaultMinPage,
 		pkgconstant.DefaultMaxPage,
 	)

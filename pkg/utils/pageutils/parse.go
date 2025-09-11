@@ -7,14 +7,18 @@ import (
 )
 
 // ParseQueryInt64 parses a query parameter into int64 with default, min, max.
-func ParseQueryInt64(c echo.Context, key string, minValue, maxValue int64) int64 {
+func ParseQueryInt64(c echo.Context, key string, defaultValue, minValue, maxValue int64) int64 {
 	valStr := c.QueryParam(key)
 	if valStr == "" {
-		return minValue
+		return defaultValue
 	}
 
 	val, err := strconv.ParseInt(valStr, 10, 64)
-	if err != nil || val < minValue {
+	if err != nil {
+		return defaultValue
+	}
+
+	if val < minValue {
 		return minValue
 	}
 

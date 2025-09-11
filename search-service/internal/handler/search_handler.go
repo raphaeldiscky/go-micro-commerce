@@ -215,12 +215,14 @@ func (h *SearchHandler) parseSearchQuery(c echo.Context) *entity.SearchQuery {
 	limit := pageutils.ParseQueryInt64(
 		c,
 		"limit",
+		pkgconstant.DefaultLimit,
 		pkgconstant.DefaultMinLimit,
 		pkgconstant.DefaultMaxLimit,
 	)
 	page := pageutils.ParseQueryInt64(
 		c,
 		"page",
+		pkgconstant.DefaultPage,
 		pkgconstant.DefaultMinPage,
 		pkgconstant.DefaultMaxPage,
 	)

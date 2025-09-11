@@ -8,7 +8,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgConstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
@@ -74,14 +74,16 @@ func (h *ProductHandler) GetProducts(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgConstant.DefaultMinLimit,
-		pkgConstant.DefaultMaxLimit,
+		pkgconstant.DefaultLimit,
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
 	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgConstant.DefaultMinPage,
-		pkgConstant.DefaultMaxPage,
+		pkgconstant.DefaultPage,
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
 	)
 
 	if err := c.Validate(&req); err != nil {
