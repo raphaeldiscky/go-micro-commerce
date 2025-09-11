@@ -135,8 +135,7 @@ jobs:
       - name: Run Tests for ${{ matrix.service }}
         run: |
           cd ${{ matrix.service }}
-          go test -v -race -covermode=atomic -coverprofile=coverage.out ./...
-          go tool cover -html=coverage.out -o coverage.html
+          task test SERVICE=${{ matrix.service }}
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v4

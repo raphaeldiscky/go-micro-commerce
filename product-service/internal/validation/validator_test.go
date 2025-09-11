@@ -47,35 +47,35 @@ func TestDecimalValidators(t *testing.T) {
 		t.Parallel()
 		// Should pass with positive value
 		test1 := TestGT{Price: decimal.NewFromFloat(10.50)}
-		err := validate.Struct(test1)
-		require.NoError(t, err)
+		validationErr := validate.Struct(test1)
+		require.NoError(t, validationErr)
 
 		// Should fail with zero
 		test2 := TestGT{Price: decimal.Zero}
-		err = validate.Struct(test2)
-		require.Error(t, err)
+		validationErr = validate.Struct(test2)
+		require.Error(t, validationErr)
 
 		// Should fail with negative value
 		test3 := TestGT{Price: decimal.NewFromFloat(-5.00)}
-		err = validate.Struct(test3)
-		require.Error(t, err)
+		validationErr = validate.Struct(test3)
+		require.Error(t, validationErr)
 	})
 
 	t.Run("decimal_gte validator", func(t *testing.T) {
 		t.Parallel()
 		// Should pass with positive value
 		test1 := TestGTE{Price: decimal.NewFromFloat(10.50)}
-		err := validate.Struct(test1)
-		require.NoError(t, err)
+		validationErr := validate.Struct(test1)
+		require.NoError(t, validationErr)
 
 		// Should pass with zero
 		test2 := TestGTE{Price: decimal.Zero}
-		err = validate.Struct(test2)
-		require.NoError(t, err)
+		validationErr = validate.Struct(test2)
+		require.NoError(t, validationErr)
 
 		// Should fail with negative value
 		test3 := TestGTE{Price: decimal.NewFromFloat(-5.00)}
-		err = validate.Struct(test3)
-		require.Error(t, err)
+		validationErr = validate.Struct(test3)
+		require.Error(t, validationErr)
 	})
 }

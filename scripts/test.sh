@@ -31,11 +31,11 @@ run_tests() {
   fi
 
   echo "Running tests in $dir..."
-  (cd "$dir" && go test ./... -v -coverprofile=coverage.out -covermode=atomic)
+  (cd "$dir" && go test -v -race ./... -v -coverprofile=coverage.out -covermode=atomic)
   echo "Tests completed for $dir"
 
   echo "Coverage report for $dir:"
-  (cd "$dir" && go tool cover -func=coverage.out)
+  (cd "$dir" && go tool cover -func=coverage.out )
   echo
 }
 
