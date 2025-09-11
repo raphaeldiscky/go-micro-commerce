@@ -4,10 +4,13 @@ package db
 import (
 	"context"
 	"fmt"
-	"log"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // PostgresConfig holds the configuration for the PostgreSQL connection.
@@ -20,13 +23,18 @@ type PostgresConfig struct {
 	Port            int
 	MaxIdleConns    int
 	MaxOpenConns    int
-	MaxConnLifetime int
+	MaxConnLifetime time.Duration
 }
 
 // NewPostgresConnection creates a new PostgreSQL connection pool.
-func NewPostgresConnection(cfg *PostgresConfig) (*pgxpool.Pool, error) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
-		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode)
+func NewPostgresConnection(
+	ctx context.Context,
+	cfg *PostgresConfig,
+	appLogger logger.Logger,
+) (*pgxpool.Pool, error) {
+	hostPort := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
+	dsn := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+		cfg.User, cfg.Password, hostPort, cfg.Name, cfg.SSLMode)
 
 	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
@@ -36,10 +44,7 @@ func NewPostgresConnection(cfg *PostgresConfig) (*pgxpool.Pool, error) {
 	// Set pool configuration
 	poolConfig.MaxConns = int32(cfg.MaxOpenConns)
 	poolConfig.MinConns = int32(cfg.MaxIdleConns)
-	poolConfig.MaxConnLifetime = time.Duration(cfg.MaxConnLifetime) * time.Second
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	poolConfig.MaxConnLifetime = cfg.MaxConnLifetime
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {
@@ -47,11 +52,11 @@ func NewPostgresConnection(cfg *PostgresConfig) (*pgxpool.Pool, error) {
 	}
 
 	// Test the connection
-	if err := pool.Ping(ctx); err != nil {
+	if err = pool.Ping(ctx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Printf("PostgreSQL connection established to %s:%d/%s", cfg.Host, cfg.Port, cfg.Name)
+	appLogger.Info("PostgreSQL connection established to %s:%d/%s", cfg.Host, cfg.Port, cfg.Name)
 
 	return pool, nil
 }

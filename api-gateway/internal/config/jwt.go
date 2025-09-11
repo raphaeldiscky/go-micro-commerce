@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -33,9 +32,8 @@ func initJWTConfig() *JWTConfig {
 	viper.SetDefault("JWT_ALLOWED_ALGS", []string{"HS256"})
 
 	jwtConfig := &JWTConfig{}
-
-	if err := viper.Unmarshal(&jwtConfig); err != nil {
-		slog.Error("error mapping jwt config", "err", err)
+	if err := viper.Unmarshal(jwtConfig); err != nil {
+		panic(err)
 	}
 
 	return jwtConfig

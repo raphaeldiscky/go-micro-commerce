@@ -3,6 +3,7 @@ package kafka
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/IBM/sarama"
@@ -73,7 +74,7 @@ func TestConnection(brokers []string, appLogger logger.Logger) error {
 	}
 
 	defer func() {
-		if err := client.Close(); err != nil {
+		if err = client.Close(); err != nil {
 			appLogger.Errorf("Error closing Kafka client: %v", err)
 		}
 	}()
@@ -81,7 +82,7 @@ func TestConnection(brokers []string, appLogger logger.Logger) error {
 	// Test if we can get broker list
 	brokersList := client.Brokers()
 	if len(brokersList) == 0 {
-		return fmt.Errorf("no brokers available")
+		return errors.New("no brokers available")
 	}
 
 	appLogger.Infof("successfully connected to Kafka. Available brokers: %d", len(brokersList))

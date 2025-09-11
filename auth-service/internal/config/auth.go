@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"time"
 
 	"github.com/spf13/viper"
@@ -19,9 +18,8 @@ func initAuthConfig() *AuthConfig {
 	viper.SetDefault("AUTH_VERIFICATION_TOKEN_EXPIRATION", "10m")
 
 	authConfig := &AuthConfig{}
-
 	if err := viper.Unmarshal(&authConfig); err != nil {
-		log.Fatalf("error mapping auth config: %v", err)
+		panic(err)
 	}
 
 	return authConfig

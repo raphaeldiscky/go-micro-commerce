@@ -1,7 +1,6 @@
 package echoutils
 
 import (
-	"log"
 	"strconv"
 	"strings"
 
@@ -15,15 +14,11 @@ import (
 func GetXUserID(ctx echo.Context) (uuid.UUID, bool) {
 	xUserID := ctx.Request().Header.Get(constant.XUserID)
 	if xUserID == "" {
-		log.Printf("failed to get X-User-ID from headers")
-
 		return uuid.Nil, false
 	}
 
 	userID, err := uuid.Parse(xUserID)
 	if err != nil {
-		log.Printf("failed to parse X-User-ID as UUID: %v", err)
-
 		return uuid.Nil, false
 	}
 
@@ -34,8 +29,6 @@ func GetXUserID(ctx echo.Context) (uuid.UUID, bool) {
 func GetXEmail(ctx echo.Context) (string, bool) {
 	xEmail := ctx.Request().Header.Get(constant.XEmail)
 	if xEmail == "" {
-		log.Printf("failed to get X-Email from headers")
-
 		return "", false
 	}
 
@@ -46,8 +39,6 @@ func GetXEmail(ctx echo.Context) (string, bool) {
 func GetXRoles(ctx echo.Context) ([]string, bool) {
 	xRoles := ctx.Request().Header.Get(constant.XRoles)
 	if xRoles == "" {
-		log.Printf("failed to get X-Roles from headers")
-
 		return nil, false
 	}
 
@@ -62,18 +53,14 @@ func GetXRoles(ctx echo.Context) ([]string, bool) {
 }
 
 // GetXIsActive retrieves the X-Is-Active header from the context.
-func GetXIsActive(ctx echo.Context) (isActive, ok bool) {
+func GetXIsActive(ctx echo.Context) (bool, bool) {
 	xIsActive := ctx.Request().Header.Get(constant.XIsActive)
 	if xIsActive == "" {
-		log.Printf("failed to get X-Is-Active from headers")
-
 		return false, false
 	}
 
 	isActive, err := strconv.ParseBool(xIsActive)
 	if err != nil {
-		log.Printf("failed to parse X-Is-Active: %v", err)
-
 		return false, false
 	}
 
@@ -84,8 +71,6 @@ func GetXIsActive(ctx echo.Context) (isActive, ok bool) {
 func GetXRequestID(ctx echo.Context) (string, bool) {
 	xRequestID := ctx.Request().Header.Get(constant.XRequestID)
 	if xRequestID == "" {
-		log.Printf("failed to get X-Request-ID from headers")
-
 		return "", false
 	}
 

@@ -1,8 +1,6 @@
 package config
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 )
 
@@ -19,7 +17,7 @@ func initBcryptConfig() *BcryptConfig {
 	bcryptConfig := &BcryptConfig{}
 
 	if err := viper.Unmarshal(&bcryptConfig); err != nil {
-		log.Fatalf("error mapping bcrypt config: %v", err)
+		panic(err)
 	}
 
 	return bcryptConfig

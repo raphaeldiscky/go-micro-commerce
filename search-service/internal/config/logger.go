@@ -19,6 +19,9 @@ func initLoggerConfig() *LoggerConfig {
 	viper.SetDefault("LOGGER_LEVEL", defaultLoggerLevel)
 
 	loggerConfig := &LoggerConfig{}
+	if err := viper.Unmarshal(loggerConfig); err != nil {
+		panic(err)
+	}
 
 	return loggerConfig
 }

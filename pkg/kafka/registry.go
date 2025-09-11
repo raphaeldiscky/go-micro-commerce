@@ -50,7 +50,7 @@ func (r *EventRegistry) UnmarshalEvent(eventType string, payload []byte) (event.
 		return nil, err
 	}
 
-	if err := json.Unmarshal(payload, evt); err != nil {
+	if err = json.Unmarshal(payload, evt); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event payload: %w", err)
 	}
 

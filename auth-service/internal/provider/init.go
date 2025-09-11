@@ -1,8 +1,11 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/encryptutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
@@ -21,8 +24,12 @@ type Providers struct {
 }
 
 // SetupGlobal initializes and returns the providers.
-func SetupGlobal(cfg *config.Config) (*Providers, error) {
-	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
+func SetupGlobal(
+	ctx context.Context,
+	cfg *config.Config,
+	appLogger logger.Logger,
+) (*Providers, error) {
+	pgPool, err := db.NewPostgresConnection(ctx, &db.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
 		User:            cfg.Postgres.User,
@@ -32,7 +39,7 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
 		MaxOpenConns:    cfg.Postgres.MaxOpenConns,
 		MaxConnLifetime: cfg.Postgres.MaxConnLifetime,
-	})
+	}, appLogger)
 	if err != nil {
 		return nil, err
 	}
@@ -55,9 +62,14 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 	dataStore := repository.NewDataStore(pgPool)
 
 	// Setup kafka admin
-	kafkaAdmin := kafka.NewAdmin(&kafka.AdminConfig{
+	kafkaAdmin, err := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
-	})
+	}, appLogger)
+	if err != nil {
+		appLogger.Errorf("failed to create kafka admin: %v", err)
+
+		return nil, err
+	}
 
 	return &Providers{
 		DataStore:    dataStore,

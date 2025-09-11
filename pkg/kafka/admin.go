@@ -1,9 +1,9 @@
 package kafka
 
 import (
-	"log"
-
 	"github.com/IBM/sarama"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // AdminConfig holds the configuration for the Kafka admin.
@@ -13,33 +13,33 @@ type AdminConfig struct {
 
 // Admin represents a Kafka admin client.
 type Admin struct {
-	Client sarama.Client
+	client sarama.Client
+	logger logger.Logger
 }
 
 // NewAdmin creates a new instance of Admin.
-func NewAdmin(opt *AdminConfig) *Admin {
+func NewAdmin(opt *AdminConfig, logger logger.Logger) (*Admin, error) {
 	client, err := sarama.NewClient(opt.Brokers, sarama.NewConfig())
 	if err != nil {
-		log.Fatalf("failed to create kafka admin: %v", err)
+		return nil, err
 	}
-
-	log.Println("Kafka admin client created successfully")
 
 	return &Admin{
-		Client: client,
-	}
+		client: client,
+		logger: logger,
+	}, nil
 }
 
 // CreateTopic creates a new Kafka topic.
-func (admin *Admin) CreateTopic(topic string, numPartitions, replicationFactor int) {
-	adminClient, err := sarama.NewClusterAdminFromClient(admin.Client)
+func (admin *Admin) CreateTopic(topic string, numPartitions, replicationFactor int) error {
+	adminClient, err := sarama.NewClusterAdminFromClient(admin.client)
 	if err != nil {
-		log.Fatalf("failed to create kafka admin: %v", err)
+		return err
 	}
 
 	topics, err := adminClient.ListTopics()
 	if err != nil {
-		log.Fatalf("failed to list topics: %v", err)
+		return err
 	}
 
 	if _, exists := topics[topic]; !exists {
@@ -47,10 +47,12 @@ func (admin *Admin) CreateTopic(topic string, numPartitions, replicationFactor i
 			NumPartitions:     int32(numPartitions),
 			ReplicationFactor: int16(replicationFactor),
 		}
-		if err := adminClient.CreateTopic(topic, topicDetail, false); err != nil {
-			log.Fatalf("failed to create topic: %v", err)
+		if errTopic := adminClient.CreateTopic(topic, topicDetail, false); errTopic != nil {
+			admin.logger.Fatalf("failed to create topic: %v", errTopic)
 		}
 	}
 
-	log.Println("Kafka topic created successfully:", topic)
+	admin.logger.Info("Kafka topic created successfully:", topic)
+
+	return nil
 }

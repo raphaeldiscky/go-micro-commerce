@@ -19,12 +19,13 @@ type OutboxPublisherWorker struct {
 
 // NewOutboxPublisherWorker creates a new outbox publisher worker.
 func NewOutboxPublisherWorker(
+	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,
 ) *OutboxPublisherWorker {
 	return &OutboxPublisherWorker{
-		publisher: provider.SetupOutboxPublisher(cfg, appLogger, providers),
+		publisher: provider.SetupOutboxPublisher(ctx, cfg, appLogger, providers),
 		logger:    appLogger,
 	}
 }

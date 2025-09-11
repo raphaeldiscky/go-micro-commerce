@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/IBM/sarama"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -13,57 +15,89 @@ import (
 
 // SetupOutboxPublisher initializes the outbox publisher service.
 func SetupOutboxPublisher(
+	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *Providers,
 ) *worker.OutboxPublisher {
-	providers.KafkaAdmin.CreateTopic(
+	err := providers.KafkaAdmin.CreateTopic(
 		kafka.OrderLifecycleTopic,
 		constant.OrderLifecycleTopicNumPartitions,
 		constant.OrderLifecycleTopicReplicationFactor,
 	)
-	providers.KafkaAdmin.CreateTopic(
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.OrderDLQTopic,
 		constant.OrderDLQTopicNumPartitions,
 		constant.OrderDLQTopicReplicationFactor,
 	)
-	providers.KafkaAdmin.CreateTopic(
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.PaymentRequestTopic,
 		constant.PaymentRequestTopicNumPartitions,
 		constant.PaymentRequestTopicReplicationFactor,
 	)
-	providers.KafkaAdmin.CreateTopic(
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.PaymentDLQTopic,
 		constant.PaymentDLQTopicNumPartitions,
 		constant.PaymentDLQTopicReplicationFactor,
 	)
-	providers.KafkaAdmin.CreateTopic(
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.FulfillmentRequestTopic,
 		constant.FulfillmentRequestTopicNumPartitions,
 		constant.FulfillmentRequestTopicReplicationFactor,
 	)
-	providers.KafkaAdmin.CreateTopic(
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.FulfillmentDLQTopic,
 		constant.FulfillmentDLQTopicNumPartitions,
 		constant.FulfillmentDLQTopicReplicationFactor,
 	)
-	providers.KafkaAdmin.CreateTopic(
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.NotificationRequestTopic,
 		constant.NotificationRequestTopicNumPartitions,
 		constant.NotificationRequestTopicReplicationFactor,
 	)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
 
-	providers.KafkaAdmin.CreateTopic(
+	err = providers.KafkaAdmin.CreateTopic(
 		kafka.NotificationDLQTopic,
 		constant.NotificationDLQTopicNumPartitions,
 		constant.NotificationDLQTopicReplicationFactor,
 	)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
 
 	registry := kafka.NewEventRegistry()
 	// Create Kafka producer for outbox events
-	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
+		RetryTicker:    cfg.Kafka.RetryTicker,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,

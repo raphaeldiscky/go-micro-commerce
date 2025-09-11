@@ -1,9 +1,6 @@
 package config
 
 import (
-	"log"
-	"os"
-
 	"github.com/spf13/viper"
 )
 
@@ -27,12 +24,11 @@ type Config struct {
 func LoadConfig() (*Config, error) {
 	viper.AutomaticEnv()
 
-	configPath := parseConfigPath()
-	viper.SetConfigFile(configPath + "/.env")
+	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("error reading config file: %v", err)
+		panic(err)
 	}
 
 	cfg := &Config{
@@ -51,14 +47,4 @@ func LoadConfig() (*Config, error) {
 	}
 
 	return cfg, nil
-}
-
-// parseConfigPath returns the current working directory.
-func parseConfigPath() string {
-	wd, err := os.Getwd()
-	if err != nil {
-		panic(err)
-	}
-
-	return wd
 }

@@ -2,7 +2,7 @@
 package middleware
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"strings"
 
@@ -78,12 +78,12 @@ func (m *AuthMiddleware) Authorization() echo.MiddlewareFunc {
 func (m *AuthMiddleware) parseAccessToken(c echo.Context) (string, error) {
 	accessToken := c.Request().Header.Get("Authorization")
 	if accessToken == "" {
-		return "", fmt.Errorf("missing Authorization header")
+		return "", errors.New("missing Authorization header")
 	}
 
 	splitToken := strings.Split(accessToken, " ")
 	if len(splitToken) != 2 || splitToken[0] != "Bearer" {
-		return "", fmt.Errorf("invalid Authorization header format")
+		return "", errors.New("invalid Authorization header format")
 	}
 
 	return splitToken[1], nil

@@ -32,7 +32,7 @@ func SetupGlobal(
 	cfg *config.Config,
 	appLogger logger.Logger,
 ) (*Providers, error) {
-	pgPool, err := db.NewPostgresConnection(&db.PostgresConfig{
+	pgPool, err := db.NewPostgresConnection(ctx, &db.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
 		User:            cfg.Postgres.User,
@@ -42,7 +42,7 @@ func SetupGlobal(
 		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
 		MaxOpenConns:    cfg.Postgres.MaxOpenConns,
 		MaxConnLifetime: cfg.Postgres.MaxConnLifetime,
-	})
+	}, appLogger)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func SetupGlobal(
 		MaxIdleConn:     cfg.Redis.MaxIdleConn,
 		MaxActiveConn:   cfg.Redis.MaxActiveConn,
 		MaxConnLifetime: cfg.Redis.MaxConnLifetime,
-	})
+	}, appLogger)
 	if err != nil {
 		return nil, err
 	}
@@ -65,9 +65,14 @@ func SetupGlobal(
 	lockClient := redislock.New(redisClusterClient)
 	dataStore := repository.NewDataStore(pgPool, lockClient)
 	// Setup kafka admin
-	kafkaAdmin := kafka.NewAdmin(&kafka.AdminConfig{
+	kafkaAdmin, err := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
-	})
+	}, appLogger)
+	if err != nil {
+		appLogger.Errorf("failed to create kafka admin: %v", err)
+
+		return nil, err
+	}
 
 	// Setup fulfillment client for event correlation
 	fulfillmentClient, err := client.NewFulfillmentClient(

@@ -51,6 +51,9 @@ func initHTTPServerConfig() *HTTPServerConfig {
 	viper.SetDefault("HTTP_SERVER_RATE_LIMITER", defaultHTTPServerRateLimiter)
 
 	httpServerConfig := &HTTPServerConfig{}
+	if err := viper.Unmarshal(httpServerConfig); err != nil {
+		panic(err)
+	}
 
 	return httpServerConfig
 }

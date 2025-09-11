@@ -3,7 +3,7 @@ package echoutils
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -108,28 +108,28 @@ func GetUserAuthContexts(ctx context.Context) (dto.UserAuthInfo, error) {
 
 	userID, ok := ctx.Value(constant.CtxUserID).(uuid.UUID)
 	if !ok {
-		return uc, fmt.Errorf("failed to get user ID from context")
+		return uc, errors.New("failed to get user ID from context")
 	}
 
 	uc.UserID = userID
 
 	email, ok := ctx.Value(constant.CtxEmail).(string)
 	if !ok {
-		return uc, fmt.Errorf("failed to get email from context")
+		return uc, errors.New("failed to get email from context")
 	}
 
 	uc.Email = email
 
 	roles, ok := ctx.Value(constant.CtxRoles).([]string)
 	if !ok {
-		return uc, fmt.Errorf("failed to get roles from context")
+		return uc, errors.New("failed to get roles from context")
 	}
 
 	uc.Roles = roles
 
 	isActive, ok := ctx.Value(constant.CtxIsActive).(bool)
 	if !ok {
-		return uc, fmt.Errorf("failed to get is active from context")
+		return uc, errors.New("failed to get is active from context")
 	}
 
 	uc.IsActive = isActive

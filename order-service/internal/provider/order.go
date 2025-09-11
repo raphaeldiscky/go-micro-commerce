@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
@@ -17,16 +19,26 @@ import (
 )
 
 // SetupOrder initializes the order-related routes and services.
-func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
-	providers.KafkaAdmin.CreateTopic(
+func SetupOrder(
+	ctx context.Context,
+	cfg *config.Config,
+	e *echo.Echo,
+	appLogger logger.Logger,
+	providers *Providers,
+) {
+	err := providers.KafkaAdmin.CreateTopic(
 		kafka.OrderLifecycleTopic,
 		constant.OrderLifecycleTopicNumPartitions,
 		constant.OrderLifecycleTopicReplicationFactor,
 	)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
 
-	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
+		RetryTicker:    cfg.Kafka.RetryTicker,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,
@@ -37,37 +49,9 @@ func SetupOrder(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, provi
 	}
 
 	orderLifecycleProducer := producer.NewOrderLifecycleProducer(asyncProducer)
-
-	// Create payment request producer for saga
-	paymentRequestAsyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
-		Brokers:        cfg.Kafka.Brokers,
-		RetryMax:       cfg.Kafka.RetryMax,
-		FlushFrequency: cfg.Kafka.FlushFrequency,
-		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
-		ReturnErrors:   cfg.Kafka.ReturnErrors,
-		Acks:           sarama.WaitForAll,
-	})
-	if err != nil {
-		appLogger.Fatalf("failed to create Kafka async producer for payment requests: %v", err)
-	}
-
-	paymentRequestProducer := producer.NewPaymentRequestProducer(paymentRequestAsyncProducer)
-
-	// Create fulfillment request producer for saga
-	fulfillmentRequestAsyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
-		Brokers:        cfg.Kafka.Brokers,
-		RetryMax:       cfg.Kafka.RetryMax,
-		FlushFrequency: cfg.Kafka.FlushFrequency,
-		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
-		ReturnErrors:   cfg.Kafka.ReturnErrors,
-		Acks:           sarama.WaitForAll,
-	})
-	if err != nil {
-		appLogger.Fatalf("failed to create Kafka async producer for fulfillment requests: %v", err)
-	}
-
+	paymentRequestProducer := producer.NewPaymentRequestProducer(asyncProducer)
 	fulfillmentRequestProducer := producer.NewFulfillmentRequestProducer(
-		fulfillmentRequestAsyncProducer,
+		asyncProducer,
 	)
 
 	productClient, err := client.NewProductClient(cfg)

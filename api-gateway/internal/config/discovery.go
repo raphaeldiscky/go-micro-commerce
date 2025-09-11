@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -29,9 +28,8 @@ func initServiceDiscoveryConfig() *ServiceDiscoveryConfig {
 	viper.SetDefault("SERVICE_DISCOVERY_TIMEOUT", 5*time.Second)
 
 	serviceDiscoveryConfig := &ServiceDiscoveryConfig{}
-
-	if err := viper.Unmarshal(&serviceDiscoveryConfig); err != nil {
-		slog.Error("error mapping service discovery config", "err", err)
+	if err := viper.Unmarshal(serviceDiscoveryConfig); err != nil {
+		panic(err)
 	}
 
 	return serviceDiscoveryConfig

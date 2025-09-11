@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
@@ -16,20 +18,25 @@ import (
 
 // SetupFulfillment initializes the order-related routes and services.
 func SetupFulfillment(
+	ctx context.Context,
 	cfg *config.Config,
 	e *echo.Echo,
 	appLogger logger.Logger,
 	providers *Providers,
 ) {
-	providers.KafkaAdmin.CreateTopic(
+	err := providers.KafkaAdmin.CreateTopic(
 		kafka.FulfillmentLifecycleTopic,
 		constant.FulfillmentLifecycleTopicNumPartitions,
 		constant.FulfillmentLifecycleTopicReplicationFactor,
 	)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
 
-	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
+		RetryTicker:    cfg.Kafka.RetryTicker,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,

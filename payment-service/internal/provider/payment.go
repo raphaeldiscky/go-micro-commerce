@@ -1,6 +1,8 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
@@ -15,16 +17,26 @@ import (
 )
 
 // SetupPayment initializes the order-related routes and services.
-func SetupPayment(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
-	providers.KafkaAdmin.CreateTopic(
+func SetupPayment(
+	ctx context.Context,
+	cfg *config.Config,
+	e *echo.Echo,
+	appLogger logger.Logger,
+	providers *Providers,
+) {
+	err := providers.KafkaAdmin.CreateTopic(
 		kafka.PaymentLifecycleTopic,
 		constant.PaymentLifecycleTopicNumPartitions,
 		constant.PaymentLifecycleTopicReplicationFactor,
 	)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
 
-	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
+		RetryTicker:    cfg.Kafka.RetryTicker,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,

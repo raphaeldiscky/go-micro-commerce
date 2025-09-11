@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"context"
 	"log"
 
 	"github.com/IBM/sarama"
@@ -17,19 +18,29 @@ import (
 )
 
 // SetupAuth initializes the authentication-related components.
-func SetupAuth(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
-	providers.KafkaAdmin.CreateTopic(
+func SetupAuth(
+	ctx context.Context,
+	cfg *config.Config,
+	e *echo.Echo,
+	appLogger logger.Logger,
+	providers *Providers,
+) {
+	err := providers.KafkaAdmin.CreateTopic(
 		kafka.UserVerificationTopic,
 		constant.UserVerificationTopicNumPartitions,
 		constant.UserVerificationTopicReplicationFactor,
 	)
+	if err != nil {
+		log.Fatalf("failed to create Kafka topic: %v", err)
+	}
 
-	asyncProducer, err := kafka.NewAsyncProducer(&kafka.ProducerConfig{
+	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
+		RetryTicker:    cfg.Kafka.RetryTicker,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
-		ReturnErrors:   true, // Enable error returns for better error handling
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
 		Acks:           sarama.WaitForAll,
 	})
 	if err != nil {

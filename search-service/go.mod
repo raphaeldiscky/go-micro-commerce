@@ -2,7 +2,7 @@ module github.com/raphaeldiscky/go-micro-commerce/search-service
 
 go 1.24.7
 
-replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg 
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 
 require (
 	github.com/elastic/go-elasticsearch/v9 v9.1.0
