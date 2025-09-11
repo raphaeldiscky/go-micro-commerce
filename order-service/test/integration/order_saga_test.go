@@ -1,12 +1,10 @@
-package integration
+package integration_test
 
 import (
 	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -37,7 +35,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSaga() {
 
 	// Make request to saga endpoint
 	resp, err := s.makeRequest("POST", "/v1/saga", createReq)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -46,18 +44,18 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSaga() {
 	}()
 
 	// Should return 201 Created for successful order creation
-	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+	s.Equal(http.StatusCreated, resp.StatusCode)
 
 	var response pkgDto.WebResponse[dto.OrderResponse]
 
-	require.NoError(s.T(), s.parseResponse(resp, &response))
+	s.Require().NoError(s.parseResponse(resp, &response))
 
 	// Basic assertions on response structure
-	assert.NotNil(s.T(), response)
-	assert.NotNil(s.T(), response.Data)
-	assert.NotEmpty(s.T(), response.Data.ID)
-	assert.Equal(s.T(), "pending", string(response.Data.Status))
-	assert.Equal(s.T(), "USD", response.Data.Currency)
+	s.NotNil(response)
+	s.NotNil(response.Data)
+	s.NotEmpty(response.Data.ID)
+	s.Equal("pending", string(response.Data.Status))
+	s.Equal("USD", response.Data.Currency)
 }
 
 // TestCreateOrderWithSagaInvalidRequest tests saga endpoint with invalid data.
@@ -69,7 +67,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaInvalidRequest() {
 
 	// Make request to saga endpoint
 	resp, err := s.makeRequest("POST", "/v1/saga", createReq)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -78,7 +76,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaInvalidRequest() {
 	}()
 
 	// Should return validation error (400 Bad Request)
-	assert.Equal(s.T(), http.StatusBadRequest, resp.StatusCode)
+	s.Equal(http.StatusBadRequest, resp.StatusCode)
 }
 
 // TestCreateOrderWithSagaAuthentication tests that authentication is required.
@@ -95,7 +93,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaAuthentication() {
 
 	// Make request without authentication headers
 	resp, err := s.makeRequestWithoutAuth("POST", "/v1/saga", createReq)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -104,7 +102,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaAuthentication() {
 	}()
 
 	// Should return 401 Unauthorized
-	assert.Equal(s.T(), http.StatusUnauthorized, resp.StatusCode)
+	s.Equal(http.StatusUnauthorized, resp.StatusCode)
 }
 
 // Entrypoint to run the test suite.

@@ -22,16 +22,6 @@ type OrderLifecycleEvent struct {
 	Payload  event.OrderLifecyclePayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the OrderLifecycleEvent.
-func (e *OrderLifecycleEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the OrderLifecycleEvent.
-func (e *OrderLifecycleEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
-	return e.Metadata
-}
-
 // OrderLifecycleProducer is responsible for producing Order Lifecycle events.
 type OrderLifecycleProducer struct {
 	Producer *kafka.AsyncProducer
@@ -62,6 +52,16 @@ func NewOrderLifecycleEvent(
 			Items:      mapper.MapOrderItemsToPayload(items),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the OrderLifecycleEvent.
+func (e *OrderLifecycleEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the OrderLifecycleEvent.
+func (e *OrderLifecycleEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+	return e.Metadata
 }
 
 // NewOrderLifecycleProducer creates a new instance of OrderLifecycleProducer.

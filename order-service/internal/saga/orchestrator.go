@@ -11,7 +11,10 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -20,11 +23,11 @@ import (
 
 // Orchestrator manages saga workflow execution with state persistence.
 type Orchestrator struct {
-	executor              *Executor
-	orderSaga             *OrderSaga
-	dataStore             repository.DataStore
-	logger                logger.Logger
-	asyncExecutionTimeout time.Duration
+	executor         *Executor
+	orderSaga        *OrderSaga
+	dataStore        repository.DataStore
+	logger           logger.Logger
+	executionTimeout time.Duration
 }
 
 // NewSagaOrchestrator creates a new  orchestrator.
@@ -37,9 +40,10 @@ func NewSagaOrchestrator(
 	fulfillmentClient client.FulfillmentClientInterface,
 	paymentClient client.PaymentClientInterface,
 	appLogger logger.Logger,
+	cfg *config.Config,
 ) Orchestrator {
 	// Create executor
-	executor := NewExecutor(dataStore, appLogger)
+	executor := NewExecutor(dataStore, cfg, appLogger)
 
 	// Create activities
 	activities := NewOrderActivities(
@@ -60,11 +64,11 @@ func NewSagaOrchestrator(
 	orderSaga.ConfigureSteps(executor)
 
 	return Orchestrator{
-		executor:              executor,
-		orderSaga:             orderSaga,
-		dataStore:             dataStore,
-		logger:                appLogger,
-		asyncExecutionTimeout: 30 * time.Minute,
+		executor:         executor,
+		orderSaga:        orderSaga,
+		dataStore:        dataStore,
+		logger:           appLogger,
+		executionTimeout: cfg.Saga.DefaultExecutionTimeout,
 	}
 }
 
@@ -73,7 +77,7 @@ func (o *Orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) e
 	o.logger.Infof("Starting order saga execution for order: %s", payload.Order.ID)
 
 	// Create a context with timeout for async execution
-	sagaCtx, cancel := context.WithTimeout(ctx, o.asyncExecutionTimeout)
+	sagaCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
 	defer cancel()
 
 	// Execute the saga
@@ -99,7 +103,7 @@ func (o *Orchestrator) ExecuteOrderSagaAsync(
 	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
 
 	// Add timeout
-	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.asyncExecutionTimeout)
+	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.executionTimeout)
 
 	go func() {
 		defer cancel()
@@ -123,7 +127,7 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 	o.logger.Info("Starting recovery of failed sagas")
 	stateRepo := o.dataStore.SagaStateRepository()
 	// Find failed or pending sagas
-	failedSagas, err := stateRepo.FindPendingOrFailed(ctx, 100)
+	failedSagas, err := stateRepo.FindPendingOrFailed(ctx, pkgconstant.DefaultMaxLimit)
 	if err != nil {
 		return fmt.Errorf("failed to find sagas for recovery: %w", err)
 	}
@@ -137,9 +141,9 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 		// Note: You'll need to inject order repository or service
 		orderRepo := o.dataStore.OrderRepository()
 
-		order, err := orderRepo.FindByID(ctx, sagaState.OrderID)
-		if err != nil {
-			o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, err)
+		order, rowErr := orderRepo.FindByID(ctx, sagaState.OrderID)
+		if rowErr != nil {
+			o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, rowErr)
 
 			continue
 		}
@@ -148,7 +152,7 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 		go func(order *entity.Order, sagaState *entity.SagaState) {
 			recoveryCtx, cancel := context.WithTimeout(
 				context.Background(),
-				o.asyncExecutionTimeout,
+				o.executionTimeout,
 			)
 			defer cancel()
 
@@ -174,7 +178,7 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 				Shipping: shipping,
 			}
 
-			if err := o.executor.Execute(recoveryCtx, payload); err != nil {
+			if err = o.executor.Execute(recoveryCtx, payload); err != nil {
 				o.logger.Errorf("Failed to recover saga for order %s: %v", payload.Order.ID, err)
 			} else {
 				o.logger.Infof("Successfully recovered saga for order %s", payload.Order.ID)

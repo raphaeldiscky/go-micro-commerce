@@ -4,6 +4,7 @@ package consumer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -95,7 +96,7 @@ func (c *FulfillmentLifecycleConsumer) Handler(ctx context.Context, body []byte)
 		}
 
 		// Mark as processing
-		if err := inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processing: %w", err)
 		}
 
@@ -106,14 +107,14 @@ func (c *FulfillmentLifecycleConsumer) Handler(ctx context.Context, body []byte)
 		if processingErr != nil {
 			c.logger.Errorf("Failed to process event %s: %v", meta.Metadata.EventID, processingErr)
 
-			if err := inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
+			if err = inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", err)
 			}
 
 			return processingErr
 		}
 
-		if err := inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processed: %w", err)
 		}
 
@@ -223,7 +224,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentShipped(
 
 	// Update order status to shipped
 	order.Status = constant.OrderStatusShipped
-	if _, err := orderRepo.Update(ctx, order); err != nil {
+	if _, err = orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -280,7 +281,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 
 	// Update order status to delivered
 	order.Status = constant.OrderStatusDelivered
-	if _, err := orderRepo.Update(ctx, order); err != nil {
+	if _, err = orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -292,13 +293,13 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 	// Extract customer email from saga state
 	customerEmail, ok := sagaState.Data["customer_email"].(string)
 	if !ok {
-		return fmt.Errorf("customer email not found in saga state")
+		return errors.New("customer email not found in saga state")
 	}
 
 	// Extract reserved products from saga state
 	reservedProductsData, ok := sagaState.Data["reserved_products"]
 	if !ok {
-		return fmt.Errorf("reserved products not found in saga state")
+		return errors.New("reserved products not found in saga state")
 	}
 
 	// Convert reserved products interface{} to []entity.Product
@@ -309,7 +310,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 		return fmt.Errorf("failed to marshal reserved products: %w", err)
 	}
 
-	if err := json.Unmarshal(productsBytes, &reservedProducts); err != nil {
+	if err = json.Unmarshal(productsBytes, &reservedProducts); err != nil {
 		return fmt.Errorf("failed to unmarshal reserved products: %w", err)
 	}
 
@@ -342,7 +343,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 		Attempts:      0,
 	}
 
-	if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+	if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 		return fmt.Errorf("failed to create order delivered notification event: %w", err)
 	}
 
@@ -385,7 +386,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentCanceled(
 
 	// Update order status to canceled
 	order.Status = constant.OrderStatusCanceled
-	if _, err := orderRepo.Update(ctx, order); err != nil {
+	if _, err = orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 

@@ -16,7 +16,7 @@ type Config struct {
 	OutboxPublisher *OutboxPublisherConfig
 	Client          *ClientConfig
 	Saga            *SagaConfig
-	Jobs            *JobsConfig
+	Job             *JobConfig
 	Temporal        *TemporalConfig
 }
 
@@ -42,7 +42,7 @@ func LoadConfig() (*Config, error) {
 		OutboxPublisher: initOutboxPublisherConfig(),
 		Client:          initClientConfig(),
 		Saga:            initSagaConfig(),
-		Jobs:            initJobsConfig(),
+		Job:             initJobConfig(),
 		Temporal:        initTemporalConfig(),
 	}
 

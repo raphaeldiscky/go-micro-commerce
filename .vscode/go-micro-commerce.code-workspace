@@ -1,0 +1,47 @@
+{
+  "folders": [
+    {
+      "name": "api-gateway",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/api-gateway"
+    },
+    {
+      "name": "auth-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/auth-service"
+    },
+    {
+      "name": "fulfillment-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/fulfillment-service"
+    },
+    {
+      "name": "notification-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/notification-service"
+    },
+    {
+      "name": "order-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/order-service"
+    },
+    {
+      "name": "payment-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/payment-service"
+    },
+    {
+      "name": "product-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/product-service"
+    },
+    {
+      "name": "search-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/search-service"
+    },
+    {
+      "name": "pkg",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/pkg"
+    },
+    {
+      "name": "proto",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/proto"
+    },
+    {
+      "path": ".."
+    }
+  ]
+}

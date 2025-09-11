@@ -14,28 +14,28 @@ import (
 
 // MapProtoToProduct maps a proto.Product to an entity.
 func MapProtoToProduct(p *pb.Product) (entity.Product, error) {
-	uid, err := uuid.Parse(p.Id)
+	uid, err := uuid.Parse(p.GetId())
 	if err != nil {
 		return entity.Product{}, fmt.Errorf("invalid product ID from product-service: %w", err)
 	}
 
 	// Convert protobuf Timestamp → time.Time safely
 	var createdAt, updatedAt time.Time
-	if p.CreatedAt != nil {
-		createdAt = p.CreatedAt.AsTime()
+	if p.GetCreatedAt() != nil {
+		createdAt = p.GetCreatedAt().AsTime()
 	}
 
-	if p.UpdatedAt != nil {
-		updatedAt = p.UpdatedAt.AsTime()
+	if p.GetUpdatedAt() != nil {
+		updatedAt = p.GetUpdatedAt().AsTime()
 	}
 
 	return entity.Product{
 		ID:               uid,
-		Name:             p.Name,
-		UnitPrice:        decimal.NewFromFloat(p.Price), // safely convert double → decimal
-		Quantity:         p.Quantity,
-		Version:          p.Version,
-		ReservedQuantity: p.ReservedQuantity,
+		Name:             p.GetName(),
+		UnitPrice:        decimal.NewFromFloat(p.GetPrice()), // safely convert double → decimal
+		Quantity:         p.GetQuantity(),
+		Version:          p.GetVersion(),
+		ReservedQuantity: p.GetReservedQuantity(),
 		CreatedAt:        createdAt,
 		UpdatedAt:        updatedAt,
 	}, nil

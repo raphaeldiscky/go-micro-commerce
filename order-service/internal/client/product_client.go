@@ -4,7 +4,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
@@ -15,6 +14,7 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
@@ -87,7 +87,7 @@ func (pc *ProductClient) GetProducts(
 		stringIDs[i] = id.String()
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
 	resp, err := pc.client.GetProducts(ctx, &pb.GetProductsRequest{Ids: stringIDs})
@@ -95,12 +95,12 @@ func (pc *ProductClient) GetProducts(
 		return nil, fmt.Errorf("failed to call GetProducts: %w", err)
 	}
 
-	products := make([]entity.Product, len(resp.Products))
+	products := make([]entity.Product, len(resp.GetProducts()))
 
-	for i, p := range resp.Products {
-		product, err := mapper.MapProtoToProduct(p)
-		if err != nil {
-			return nil, err
+	for i, p := range resp.GetProducts() {
+		product, rowErr := mapper.MapProtoToProduct(p)
+		if rowErr != nil {
+			return nil, rowErr
 		}
 
 		products[i] = product
@@ -125,7 +125,7 @@ func (pc *ProductClient) ReserveProducts(
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
 	resp, err := pc.client.ReserveProducts(ctx, &pb.ReserveProductsRequest{
@@ -136,17 +136,20 @@ func (pc *ProductClient) ReserveProducts(
 		return nil, fmt.Errorf("failed to call ReserveProducts gRPC: %w", err)
 	}
 
-	if !resp.Success {
-		return nil, fmt.Errorf("reservation failed from product-service: %s", resp.ErrorMessage)
+	if !resp.GetSuccess() {
+		return nil, fmt.Errorf(
+			"reservation failed from product-service: %s",
+			resp.GetErrorMessage(),
+		)
 	}
 
 	// Convert response to entities
-	products := make([]entity.Product, len(resp.ReservedProducts))
+	products := make([]entity.Product, len(resp.GetReservedProducts()))
 
-	for i, p := range resp.ReservedProducts {
-		product, err := mapper.MapProtoToProduct(p)
-		if err != nil {
-			return nil, err
+	for i, p := range resp.GetReservedProducts() {
+		product, rowErr := mapper.MapProtoToProduct(p)
+		if rowErr != nil {
+			return nil, rowErr
 		}
 
 		products[i] = product
@@ -169,7 +172,7 @@ func (pc *ProductClient) ReleaseProducts(
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
 	resp, err := pc.client.ReleaseProducts(ctx, &pb.ReleaseProductsRequest{
@@ -179,8 +182,8 @@ func (pc *ProductClient) ReleaseProducts(
 		return fmt.Errorf("failed to call ReleaseProducts: %w", err)
 	}
 
-	if !resp.Success {
-		return fmt.Errorf("products release failed: %s", resp.ErrorMessage)
+	if !resp.GetSuccess() {
+		return fmt.Errorf("products release failed: %s", resp.GetErrorMessage())
 	}
 
 	return nil
@@ -201,7 +204,7 @@ func (pc *ProductClient) ConfirmProductsDeduction(
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
 	resp, err := pc.client.ConfirmProductsDeduction(ctx, &pb.ConfirmProductsDeductionRequest{
@@ -211,16 +214,16 @@ func (pc *ProductClient) ConfirmProductsDeduction(
 		return nil, fmt.Errorf("failed to call ConfirmProductsDeduction: %w", err)
 	}
 
-	if !resp.Success {
-		return nil, fmt.Errorf("stocks deduction confirmation failed: %s", resp.ErrorMessage)
+	if !resp.GetSuccess() {
+		return nil, fmt.Errorf("stocks deduction confirmation failed: %s", resp.GetErrorMessage())
 	}
 
-	products := make([]entity.Product, len(resp.UpdatedProducts))
+	products := make([]entity.Product, len(resp.GetUpdatedProducts()))
 
-	for i, p := range resp.UpdatedProducts {
-		product, err := mapper.MapProtoToProduct(p)
-		if err != nil {
-			return nil, err
+	for i, p := range resp.GetUpdatedProducts() {
+		product, rowErr := mapper.MapProtoToProduct(p)
+		if rowErr != nil {
+			return nil, rowErr
 		}
 
 		products[i] = product
@@ -243,7 +246,7 @@ func (pc *ProductClient) RestoreProducts(
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
 	resp, err := pc.client.RestoreProducts(ctx, &pb.RestoreProductsRequest{
@@ -254,17 +257,17 @@ func (pc *ProductClient) RestoreProducts(
 		return nil, fmt.Errorf("failed to call RestoreProducts: %w", err)
 	}
 
-	if !resp.Success {
-		return nil, fmt.Errorf("products restoration failed: %s", resp.ErrorMessage)
+	if !resp.GetSuccess() {
+		return nil, fmt.Errorf("products restoration failed: %s", resp.GetErrorMessage())
 	}
 
 	// Convert response to entities
-	products := make([]entity.Product, len(resp.RestoredProducts))
+	products := make([]entity.Product, len(resp.GetRestoredProducts()))
 
-	for i, p := range resp.RestoredProducts {
-		product, err := mapper.MapProtoToProduct(p)
-		if err != nil {
-			return nil, err
+	for i, p := range resp.GetRestoredProducts() {
+		product, rowErr := mapper.MapProtoToProduct(p)
+		if rowErr != nil {
+			return nil, rowErr
 		}
 
 		products[i] = product
@@ -275,7 +278,7 @@ func (pc *ProductClient) RestoreProducts(
 
 // HealthCheck verifies the connection to product-service.
 func (pc *ProductClient) HealthCheck(ctx context.Context) error {
-	_, cancel := context.WithTimeout(ctx, 2*time.Second)
+	_, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
 	resp, err := pc.client.Health(ctx, &emptypb.Empty{})
@@ -283,8 +286,8 @@ func (pc *ProductClient) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if resp.Status != pkgconstant.GRPCHealthServing {
-		return fmt.Errorf("service unhealthy: %s", resp.Status)
+	if resp.GetStatus() != pkgconstant.GRPCHealthServing {
+		return fmt.Errorf("service unhealthy: %s", resp.GetStatus())
 	}
 
 	return nil

@@ -22,3 +22,12 @@ const (
 	// InsufficientProductStockErrorMessage is the message returned when there is insufficient product stock.
 	InsufficientProductStockErrorMessage = "insufficient product stock"
 )
+
+const (
+	// InboxEventNotFoundErrorMessage is the message returned when an inbox event is not found.
+	InboxEventNotFoundErrorMessage = "inbox event not found"
+	// OutboxEventNotFoundErrorMessage is the message returned when an outbox event is not found.
+	OutboxEventNotFoundErrorMessage = "outbox event not found"
+	// SagaStateNotFoundErrorMessage is the message returned when a saga state is not found.
+	SagaStateNotFoundErrorMessage = "saga state not found"
+)

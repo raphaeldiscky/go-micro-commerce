@@ -19,16 +19,6 @@ type PaymentDLQEvent struct {
 	Payload  event.DLQPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the PaymentDLQEvent.
-func (e *PaymentDLQEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the PaymentDLQEvent.
-func (e *PaymentDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
-	return e.Metadata
-}
-
 // PaymentDLQProducer is responsible for producing Order DLQ events.
 type PaymentDLQProducer struct {
 	Producer *kafka.AsyncProducer
@@ -62,6 +52,16 @@ func NewPaymentDLQEvent(
 			FailedAt:        time.Now().UTC(),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the PaymentDLQEvent.
+func (e *PaymentDLQEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the PaymentDLQEvent.
+func (e *PaymentDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+	return e.Metadata
 }
 
 // NewPaymentDLQProducer creates a new instance of PaymentDLQProducer.

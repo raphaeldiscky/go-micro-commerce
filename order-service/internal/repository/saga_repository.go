@@ -239,15 +239,15 @@ func (r *SagaStateRepository) FindPendingOrFailed(
 	var states []*entity.SagaState
 
 	for rows.Next() {
-		state, err := scanSagaState(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan saga state: %w", err)
+		state, errNext := scanSagaState(rows)
+		if errNext != nil {
+			return nil, fmt.Errorf("failed to scan saga state: %w", errNext)
 		}
 
 		states = append(states, state)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating saga states: %w", err)
 	}
 
@@ -288,15 +288,15 @@ func (r *SagaStateRepository) FindTimeoutSagas(
 	var states []*entity.SagaState
 
 	for rows.Next() {
-		state, err := scanSagaState(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan saga state: %w", err)
+		state, rowErr := scanSagaState(rows)
+		if rowErr != nil {
+			return nil, fmt.Errorf("failed to scan saga state: %w", rowErr)
 		}
 
 		states = append(states, state)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating timeout sagas: %w", err)
 	}
 
@@ -509,7 +509,7 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.SagaStateNotFoundErrorMessage)
 		}
 
 		return nil, err
@@ -518,15 +518,15 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 	state.Status = constant.SagaStatus(statusStr)
 
 	// Unmarshal JSON fields
-	if err := json.Unmarshal(executedStepsJSON, &state.ExecutedSteps); err != nil {
+	if err = json.Unmarshal(executedStepsJSON, &state.ExecutedSteps); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal executed steps: %w", err)
 	}
 
-	if err := json.Unmarshal(compensatedStepsJSON, &state.CompensatedSteps); err != nil {
+	if err = json.Unmarshal(compensatedStepsJSON, &state.CompensatedSteps); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal compensated steps: %w", err)
 	}
 
-	if err := json.Unmarshal(dataJSON, &state.Data); err != nil {
+	if err = json.Unmarshal(dataJSON, &state.Data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 

@@ -195,13 +195,13 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	var orderItems []entity.OrderItem
 
 	for i, product := range reservedProducts {
-		orderItem, err := entity.NewOrderItem(
+		orderItem, rowErr := entity.NewOrderItem(
 			product.ID,
 			order.Items[i].Quantity,
 			product.UnitPrice,
 		)
-		if err != nil {
-			return nil, nil, err
+		if rowErr != nil {
+			return nil, nil, rowErr
 		}
 
 		orderItems = append(orderItems, *orderItem)
@@ -276,11 +276,11 @@ func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *en
 func (a *OrderActivitiesImpl) CreatePayment(
 	ctx context.Context,
 	order *entity.Order,
-) (paymentID uuid.UUID, err error) {
+) (uuid.UUID, error) {
 	a.logger.Infof("Create payment for order: %s", order.ID)
 
 	// Step 1: Create and publish payment request event
-	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err := a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
 		// Create payment request event
@@ -311,7 +311,7 @@ func (a *OrderActivitiesImpl) CreatePayment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create payment request event: %w", err)
 		}
 
@@ -331,7 +331,7 @@ func (a *OrderActivitiesImpl) CreatePayment(
 	response, err := a.paymentClient.WaitForPaymentResponse(
 		ctx,
 		order.ID,
-		30*time.Second,
+		constant.CreatePaymentStepTimeout,
 	)
 	if err != nil {
 		a.logger.Errorf("Failed to receive payment response for order %s: %v", order.ID, err)
@@ -386,7 +386,7 @@ func (a *OrderActivitiesImpl) SendPaymentRequiredNotification(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			a.logger.Errorf(
 				"Failed to create payment required notification for order %s: %v",
 				order.ID,
@@ -501,10 +501,10 @@ func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 func (a *OrderActivitiesImpl) ProcessFulfillment(
 	ctx context.Context,
 	payload *Payload,
-) (fulfillmentID uuid.UUID, shippingCost decimal.Decimal, trackingNumber string, err error) {
+) (uuid.UUID, decimal.Decimal, string, error) {
 	a.logger.Infof("Creating shipping for order: %s", payload.Order.ID)
 
-	err = a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+	err := a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
 		// Create fulfillment request event
@@ -529,7 +529,7 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create fulfillment request event: %w", err)
 		}
 
@@ -553,7 +553,7 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 	response, err := a.fulfillmentClient.WaitForFulfillmentResponse(
 		ctx,
 		payload.Order.ID,
-		30*time.Second,
+		constant.ProcessFulfillmentStepTimeout,
 	)
 	if err != nil {
 		a.logger.Errorf(
@@ -628,7 +628,7 @@ func (a *OrderActivitiesImpl) SendOrderConfirmedNotification(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create notification event: %w", err)
 		}
 

@@ -26,16 +26,6 @@ type PaymentRequestProducer struct {
 	topic    string
 }
 
-// GetPayload returns the data associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NewPaymentRequestEvent creates a new PaymentRequestEvent.
 func NewPaymentRequestEvent(
 	orderID uuid.UUID,
@@ -61,6 +51,16 @@ func NewPaymentRequestEvent(
 			PaymentMethod: string(paymentMethod),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the PaymentRequestEvent.
+func (e *PaymentRequestEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the PaymentRequestEvent.
+func (e *PaymentRequestEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // NewPaymentRequestProducer creates a new instance of PaymentRequestProducer.

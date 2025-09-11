@@ -41,7 +41,7 @@ func (s *OrderService) CreateOrderWithSaga(
 	}
 
 	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
+		if err = lockRepo.Release(ctx, lock); err != nil {
 			s.logger.Warnf("failed to release lock: %v", err)
 		}
 	}()
@@ -52,9 +52,9 @@ func (s *OrderService) CreateOrderWithSaga(
 		orderRepo := ds.OrderRepository()
 		stateRepo := ds.SagaStateRepository()
 
-		existingRes, shouldReturn, err := s.handleExistingOrder(ctx, req, orderRepo, stateRepo)
-		if err != nil {
-			return err
+		existingRes, shouldReturn, errExist := s.handleExistingOrder(ctx, req, orderRepo, stateRepo)
+		if errExist != nil {
+			return errExist
 		}
 
 		if shouldReturn {
@@ -76,20 +76,25 @@ func (s *OrderService) CreateOrderWithSaga(
 			}
 		}
 
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
-		if err != nil {
-			return fmt.Errorf("failed to create order entity: %w", err)
+		newOrder, newOrderErr := entity.NewOrder(
+			req.CustomerID,
+			req.IdempotencyKey,
+			"IDR",
+			orderItems,
+		)
+		if newOrderErr != nil {
+			return fmt.Errorf("failed to create order entity: %w", newOrderErr)
 		}
 
-		if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
-			return fmt.Errorf("failed to update order status: %w", err)
+		if updateErr := newOrder.UpdateStatus(constant.OrderStatusPending); updateErr != nil {
+			return fmt.Errorf("failed to update order status: %w", updateErr)
 		}
 
-		savedOrder, err := orderRepo.Create(ctx, newOrder)
-		if err != nil {
-			s.logger.Errorf("failed to save order: %v", err)
+		savedOrder, saveErr := orderRepo.Create(ctx, newOrder)
+		if saveErr != nil {
+			s.logger.Errorf("failed to save order: %v", saveErr)
 
-			return fmt.Errorf("failed to save order: %w", err)
+			return fmt.Errorf("failed to save order: %w", saveErr)
 		}
 
 		res = mapper.MapToOrderResponse(savedOrder)
@@ -184,17 +189,13 @@ func (s *OrderService) executeSagaSynchronously(
 		return nil, fmt.Errorf("failed to retrieve order: %w", err)
 	}
 
-	// Execute with timeout
-	sagaCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
-
 	// Create payload with order and shipping data from original request
 	payload := &saga.Payload{
 		Order:    order,
 		Shipping: req.Shipping,
 	}
 
-	if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, payload); err != nil {
+	if err = s.sagaOrchestrator.ExecuteOrderSaga(ctx, payload); err != nil {
 		s.logger.Errorf("Synchronous saga execution failed: %v", err)
 		// Update order status to failed
 		order, updateErr := s.UpdateOrderStatus(ctx, res.ID, constant.OrderStatusFailed)
@@ -229,13 +230,9 @@ func (s *OrderService) executeSagaAsynchronously(
 			bgCtx = context.WithValue(bgCtx, constant.CtxTraceIDKey, traceID)
 		}
 
-		// Add timeout
-		sagaCtx, cancel := context.WithTimeout(bgCtx, 30*time.Minute)
-		defer cancel()
-
 		orderRepo := s.dataStore.OrderRepository()
 
-		order, err := orderRepo.FindByID(sagaCtx, res.ID)
+		order, err := orderRepo.FindByID(bgCtx, res.ID)
 		if err != nil {
 			s.logger.Errorf("Failed to retrieve order for saga: %v", err)
 			s.handleSagaError(res.ID, err)
@@ -251,9 +248,9 @@ func (s *OrderService) executeSagaAsynchronously(
 			Shipping: req.Shipping,
 		}
 
-		if err := s.sagaOrchestrator.ExecuteOrderSaga(sagaCtx, payload); err != nil {
-			s.logger.Errorf("Async saga failed for order %s: %v", res.ID, err)
-			s.handleSagaError(res.ID, err)
+		if sagaErr := s.sagaOrchestrator.ExecuteOrderSaga(bgCtx, payload); sagaErr != nil {
+			s.logger.Errorf("Async saga failed for order %s: %v", res.ID, sagaErr)
+			s.handleSagaError(res.ID, sagaErr)
 		} else {
 			s.logger.Infof("Async saga completed for order %s", res.ID)
 		}

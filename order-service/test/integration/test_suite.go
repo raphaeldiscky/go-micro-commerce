@@ -1,5 +1,5 @@
-// Package integration provides integration tests for the order service.
-package integration
+// Package integration_test provides integration tests for the order service.
+package integration_test
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/stretchr/testify/require"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/testutils"
 	"github.com/stretchr/testify/suite"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -23,11 +23,17 @@ import (
 // TestSuite holds all integration tests.
 type TestSuite struct {
 	suite.Suite
+
 	tcSetup    *TestContainersSetup
 	httpServer *http.Server
 	baseURL    string
 	ctx        context.Context
 }
+
+const (
+	debugLevel         = 4
+	httpRequestTimeout = 15 * time.Second
+)
 
 // SetupSuite runs once before all tests.
 func (s *TestSuite) SetupSuite() {
@@ -42,10 +48,10 @@ func (s *TestSuite) SetupSuite() {
 	}
 
 	// Setup logger (not needed for basic HTTP testing)
-	_ = logger.NewLogrusLogger(4) // Debug level
+	_ = logger.NewLogrusLogger(debugLevel) // Debug level
 
-	// Create test config with random port
-	port := 10080 + (int(time.Now().UnixNano()/1000000) % 1000)
+	port, err := testutils.GetFreePort()
+	s.Require().NoError(err)
 	s.baseURL = fmt.Sprintf("http://localhost:%d", port)
 
 	// Setup simple HTTP server with basic endpoints for testing
@@ -53,38 +59,40 @@ func (s *TestSuite) SetupSuite() {
 	mux.HandleFunc("/v1/saga", s.mockSagaEndpoint)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
+
 		_, err = w.Write([]byte(`{"status":"ok"}`))
-		require.NoError(s.T(), err)
+		if err != nil {
+			// Log error but don't fail the handler
+			// In production, this would be logged properly
+			_ = err
+		}
 	})
 
 	s.httpServer = &http.Server{
 		Addr:              fmt.Sprintf(":%d", port),
 		Handler:           mux,
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadHeaderTimeout: httpRequestTimeout,
 	}
 
 	// Start HTTP server in goroutine
 	go func() {
-		if err := s.httpServer.ListenAndServe(); err != nil {
+		if err = s.httpServer.ListenAndServe(); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				s.T().Errorf("HTTP server error: %v", err)
 			}
 		}
 	}()
 
-	// Wait for server to start
-	time.Sleep(300 * time.Millisecond)
-
 	// Verify server is running
 	req, err := http.NewRequestWithContext(s.ctx, http.MethodGet, s.baseURL+"/health", http.NoBody)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	client := &http.Client{Timeout: 5 * time.Second}
+	client := &http.Client{Timeout: httpRequestTimeout}
 	resp, err := client.Do(req)
-	require.NoError(s.T(), err)
-	require.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	s.Require().NoError(err)
+	s.Require().Equal(http.StatusOK, resp.StatusCode)
 
-	if err := resp.Body.Close(); err != nil {
+	if err = resp.Body.Close(); err != nil {
 		s.T().Errorf("failed to close response body: %v", err)
 	}
 }
@@ -93,7 +101,7 @@ func (s *TestSuite) SetupSuite() {
 func (s *TestSuite) TearDownSuite() {
 	if s.httpServer != nil {
 		err := s.httpServer.Shutdown(s.ctx)
-		require.NoError(s.T(), err)
+		s.Require().NoError(err)
 	}
 
 	if s.tcSetup != nil {
@@ -111,7 +119,7 @@ func (s *TestSuite) mockSagaEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check for required auth headers
-	userID := r.Header.Get("X-User-ID")
+	userID := r.Header.Get("X-User-Id")
 	email := r.Header.Get("X-Email")
 
 	if userID == "" || email == "" {
@@ -164,7 +172,7 @@ func (s *TestSuite) mockSagaEndpoint(w http.ResponseWriter, r *http.Request) {
 func (s *TestSuite) SetupTest() {
 	// Clean up orders and related tables before each test
 	// Only if database is available
-	if s.tcSetup != nil && s.tcSetup.DbPool != nil {
+	if s.tcSetup != nil && s.tcSetup.DBPool != nil {
 		err := s.tcSetup.CleanupData()
 		if err != nil {
 			s.T().Logf("Database cleanup failed (not critical for HTTP tests): %v", err)
@@ -176,7 +184,7 @@ func (s *TestSuite) SetupTest() {
 func (s *TestSuite) makeRequest(
 	method string,
 	endpoint string,
-	body interface{},
+	body any,
 ) (*http.Response, error) {
 	var reqBody []byte
 
@@ -202,17 +210,17 @@ func (s *TestSuite) makeRequest(
 	req.Header.Set("Content-Type", "application/json")
 
 	// Add mock authentication headers for testing
-	req.Header.Set("X-User-ID", "550e8400-e29b-41d4-a716-446655440000") // Valid UUID format
+	req.Header.Set("X-User-Id", "550e8400-e29b-41d4-a716-446655440000") // Valid UUID format
 	req.Header.Set("X-Email", "test@example.com")
 	req.Header.Set("X-Roles", "admin,user")
 	req.Header.Set("X-Is-Active", "true")
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: httpRequestTimeout}
 
 	return client.Do(req)
 }
 
-func (s *TestSuite) parseResponse(resp *http.Response, target interface{}) error {
+func (s *TestSuite) parseResponse(resp *http.Response, target any) error {
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			s.T().Errorf("failed to close response body: %v", err)
@@ -226,7 +234,7 @@ func (s *TestSuite) parseResponse(resp *http.Response, target interface{}) error
 func (s *TestSuite) makeRequestWithoutAuth(
 	method string,
 	endpoint string,
-	body interface{},
+	body any,
 ) (*http.Response, error) {
 	var reqBody []byte
 
@@ -250,9 +258,8 @@ func (s *TestSuite) makeRequestWithoutAuth(
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	// Note: No authentication headers added
 
-	client := &http.Client{Timeout: 10 * time.Second}
+	client := &http.Client{Timeout: httpRequestTimeout}
 
 	return client.Do(req)
 }

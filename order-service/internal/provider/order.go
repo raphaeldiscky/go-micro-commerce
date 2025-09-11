@@ -74,6 +74,7 @@ func SetupOrder(
 		providers.FulfillmentClient,
 		providers.PaymentClient,
 		appLogger,
+		cfg,
 	)
 
 	// Setup Temporal client

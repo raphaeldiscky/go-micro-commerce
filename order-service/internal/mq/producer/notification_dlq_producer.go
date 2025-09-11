@@ -20,16 +20,6 @@ type NotificationDLQEvent struct {
 	Payload  event.DLQPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the NotificationDLQEvent.
-func (e *NotificationDLQEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the NotificationDLQEvent.
-func (e *NotificationDLQEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NotificationDLQProducer is responsible for producing Fulfillment DLQ events.
 type NotificationDLQProducer struct {
 	Producer *kafka.AsyncProducer
@@ -63,6 +53,16 @@ func NewNotificationDLQEvent(
 			FailedAt:        time.Now().UTC(),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the NotificationDLQEvent.
+func (e *NotificationDLQEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the NotificationDLQEvent.
+func (e *NotificationDLQEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // NewNotificationDLQProducer creates a new instance of NotificationDLQProducer.

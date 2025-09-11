@@ -1,11 +1,10 @@
 package temporal
 
 import (
-	"time"
-
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 )
@@ -14,6 +13,7 @@ import (
 func OrderSagaWorkflow(
 	ctx workflow.Context,
 	req dto.TemporalOrderSagaRequest,
+	config *config.TemporalConfig,
 ) (*dto.TemporalOrderSagaResponse, error) {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting Order Saga Workflow", "orderID", req.Order.ID)
@@ -26,12 +26,12 @@ func OrderSagaWorkflow(
 
 	// Configure activity options
 	activityOptions := workflow.ActivityOptions{
-		StartToCloseTimeout: 5 * time.Minute,
+		StartToCloseTimeout: config.WorkflowTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
-			InitialInterval:    time.Second,
-			BackoffCoefficient: 2.0,
-			MaximumInterval:    time.Minute,
-			MaximumAttempts:    3,
+			InitialInterval:    config.RetryInterval,
+			BackoffCoefficient: config.BackoffCoefficient,
+			MaximumInterval:    config.MaxInterval,
+			MaximumAttempts:    config.MaxAttempts,
 		},
 	}
 

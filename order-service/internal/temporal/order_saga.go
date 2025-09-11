@@ -213,12 +213,12 @@ func executeCompensation(
 
 	// Configure compensation activity options with shorter timeout
 	compensationOptions := workflow.ActivityOptions{
-		StartToCloseTimeout: 2 * time.Minute,
+		StartToCloseTimeout: constant.TemporalWorkflowTimeout,
 		RetryPolicy: &temporal.RetryPolicy{
 			InitialInterval:    time.Second,
-			BackoffCoefficient: 1.5,
-			MaximumInterval:    30 * time.Second,
-			MaximumAttempts:    2,
+			BackoffCoefficient: constant.TemporalBackoffCoefficient,
+			MaximumInterval:    constant.TemporalMaxInterval,
+			MaximumAttempts:    constant.TemporalMaxAttempts,
 		},
 	}
 

@@ -118,7 +118,7 @@ func (r *OrderRepositoryPostgres) Create(
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `
 
-		for i := 0; i < len(order.Items); i++ {
+		for i := range len(order.Items) {
 			item := &order.Items[i]
 
 			_, err = r.db.Exec(
@@ -179,7 +179,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.OrderNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan order: %w", err)
@@ -203,7 +203,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 	for rows.Next() {
 		var item entity.OrderItem
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&item.ID,
 			&item.OrderID,
 			&item.ProductID,
@@ -260,7 +260,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil // no order found
+			return nil, errors.New(constant.OrderNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan order: %w", err)
@@ -284,7 +284,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 	for rows.Next() {
 		var item entity.OrderItem
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&item.ID,
 			&item.OrderID,
 			&item.ProductID,
@@ -334,7 +334,7 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 	for rows.Next() {
 		var order entity.Order
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&order.ID,
 			&order.IdempotencyKey,
 			&order.CustomerID,
@@ -357,9 +357,9 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 
 	// Load items for each order
 	for _, order := range orders {
-		items, err := r.loadOrderItems(ctx, order.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load items for order %s: %w", order.ID, err)
+		items, rowErr := r.loadOrderItems(ctx, order.ID)
+		if rowErr != nil {
+			return nil, fmt.Errorf("failed to load items for order %s: %w", order.ID, rowErr)
 		}
 
 		order.Items = items
@@ -391,7 +391,7 @@ func (r *OrderRepositoryPostgres) FindAll(
 	for rows.Next() {
 		var order entity.Order
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&order.ID,
 			&order.IdempotencyKey,
 			&order.CustomerID,
@@ -414,9 +414,9 @@ func (r *OrderRepositoryPostgres) FindAll(
 
 	// Load items for each order
 	for _, order := range orders {
-		items, err := r.loadOrderItems(ctx, order.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load items for order %s: %w", order.ID, err)
+		items, rowErr := r.loadOrderItems(ctx, order.ID)
+		if rowErr != nil {
+			return nil, fmt.Errorf("failed to load items for order %s: %w", order.ID, rowErr)
 		}
 
 		order.Items = items
@@ -481,7 +481,7 @@ func (r *OrderRepositoryPostgres) Update(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil // order not found
+			return nil, errors.New(constant.OrderNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan updated order: %w", err)
@@ -500,7 +500,7 @@ func (r *OrderRepositoryPostgres) Update(
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		`
 
-		for i := 0; i < len(order.Items); i++ {
+		for i := range len(order.Items) {
 			item := &order.Items[i]
 
 			_, err = r.db.Exec(
@@ -642,7 +642,7 @@ func (r *OrderRepositoryPostgres) loadOrderItems(
 	for rows.Next() {
 		var item entity.OrderItem
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&item.ID,
 			&item.OrderID,
 			&item.ProductID,

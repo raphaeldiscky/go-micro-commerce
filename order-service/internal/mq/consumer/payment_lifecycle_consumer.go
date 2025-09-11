@@ -3,6 +3,7 @@ package consumer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
@@ -86,7 +87,7 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 		}
 
 		// Mark as processing
-		if err := inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processing: %w", err)
 		}
 
@@ -114,14 +115,14 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 		if processingErr != nil {
 			c.logger.Errorf("Failed to process event %s: %v", meta.Metadata.EventID, processingErr)
 
-			if err := inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
+			if err = inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", err)
 			}
 
 			return processingErr
 		}
 
-		if err := inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processed: %w", err)
 		}
 
@@ -159,7 +160,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 	// Update order status to processing if it's still pending
 	if order.Status == constant.OrderStatusPending {
 		order.Status = constant.OrderStatusProcessing
-		if _, err := orderRepo.Update(ctx, order); err != nil {
+		if _, err = orderRepo.Update(ctx, order); err != nil {
 			return fmt.Errorf("failed to update order status: %w", err)
 		}
 
@@ -226,7 +227,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 
 	// Update order status to paid
 	order.Status = constant.OrderStatusPaid
-	if _, err := orderRepo.Update(ctx, order); err != nil {
+	if _, err = orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -275,7 +276,7 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 
 	// Update order status to failed
 	order.Status = constant.OrderStatusFailed
-	if _, err := orderRepo.Update(ctx, order); err != nil {
+	if _, err = orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -287,7 +288,7 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 			PaymentID: evt.Payload.PaymentID,
 			Status:    "failed",
 			OrderID:   evt.Payload.OrderID,
-			Error:     fmt.Errorf("payment failed"),
+			Error:     errors.New("payment failed"),
 		}
 		c.paymentClient.NotifyWaitingSaga(response)
 	}
@@ -324,7 +325,7 @@ func (c *PaymentLifecycleConsumer) processPaymentRefunded(
 
 	// Update order status to canceled
 	order.Status = constant.OrderStatusCanceled
-	if _, err := orderRepo.Update(ctx, order); err != nil {
+	if _, err = orderRepo.Update(ctx, order); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 

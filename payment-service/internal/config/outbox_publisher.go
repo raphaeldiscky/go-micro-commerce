@@ -1,10 +1,18 @@
 package config
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
+)
+
+const (
+	defaultOutboxBatchSize        = 100
+	defaultOutboxPollInterval     = 5 * time.Second
+	defaultOutboxMaxRetryAttempts = 5
+	defaultOutboxRetryBackoff     = 30 * time.Second
+	defaultOutboxCleanupInterval  = 1 * time.Hour
+	defaultOutboxRetentionPeriod  = 24 * time.Hour
 )
 
 // OutboxPublisherConfig holds OutboxPublisher service discovery configuration.
@@ -20,17 +28,17 @@ type OutboxPublisherConfig struct {
 // initOutboxPublisherConfig initializes the OutboxPublisher configuration from environment variables.
 func initOutboxPublisherConfig() *OutboxPublisherConfig {
 	// Set defaults
-	viper.SetDefault("OUTBOX_BATCH_SIZE", 100)
-	viper.SetDefault("OUTBOX_POLL_INTERVAL", 5*time.Second)
-	viper.SetDefault("OUTBOX_MAX_RETRY_ATTEMPTS", 5)
-	viper.SetDefault("OUTBOX_RETRY_BACKOFF", 30*time.Second)
-	viper.SetDefault("OUTBOX_CLEANUP_INTERVAL", 1*time.Hour)
-	viper.SetDefault("OUTBOX_RETENTION_PERIOD", 24*time.Hour)
+	viper.SetDefault("OUTBOX_BATCH_SIZE", defaultOutboxBatchSize)
+	viper.SetDefault("OUTBOX_POLL_INTERVAL", defaultOutboxPollInterval)
+	viper.SetDefault("OUTBOX_MAX_RETRY_ATTEMPTS", defaultOutboxMaxRetryAttempts)
+	viper.SetDefault("OUTBOX_RETRY_BACKOFF", defaultOutboxRetryBackoff)
+	viper.SetDefault("OUTBOX_CLEANUP_INTERVAL", defaultOutboxCleanupInterval)
+	viper.SetDefault("OUTBOX_RETENTION_PERIOD", defaultOutboxRetentionPeriod)
 
 	outboxConfig := &OutboxPublisherConfig{}
 
-	if err := viper.Unmarshal(&outboxConfig); err != nil {
-		slog.Error("error mapping outbox config", "err", err)
+	if err := viper.Unmarshal(outboxConfig); err != nil {
+		panic(err)
 	}
 
 	return outboxConfig

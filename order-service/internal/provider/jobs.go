@@ -15,26 +15,27 @@ func SetupJobScheduler(
 	appLogger logger.Logger,
 	providers *Providers,
 ) *job.Scheduler {
-	scheduler := job.NewScheduler(appLogger)
+	scheduler := job.NewScheduler(appLogger, cfg.Job)
 
 	// Register saga recovery job if enabled
-	if cfg.Jobs.SagaRecovery.Enabled {
+	if cfg.Job.Recovery.Enabled {
 		sagaRecoveryJob := job.NewSagaRecoveryJob(
 			sagaOrchestrator,
 			providers.DataStore,
+			cfg,
 			appLogger,
-			cfg.Jobs.SagaRecovery.Interval,
+			cfg.Job.Recovery.Interval,
 		)
 
 		// Apply configuration overrides
-		sagaRecoveryJob.SetMaxRetries(cfg.Jobs.SagaRecovery.MaxRetries)
-		sagaRecoveryJob.SetMaxAge(cfg.Jobs.SagaRecovery.MaxAge)
+		sagaRecoveryJob.SetMaxRetries(cfg.Job.Recovery.MaxRetries)
+		sagaRecoveryJob.SetMaxAge(cfg.Job.Recovery.MaxAge)
 
 		scheduler.RegisterJob(sagaRecoveryJob)
 	}
 
 	// Register additional jobs here as they are implemented
-	// if cfg.Jobs.Cleanup != nil && cfg.Jobs.Cleanup.Enabled {
+	// if cfg.Job.Cleanup != nil && cfg.Job.Cleanup.Enabled {
 	//     cleanupJob := job.NewCleanupJob(...)
 	//     scheduler.RegisterJob(cleanupJob)
 	// }

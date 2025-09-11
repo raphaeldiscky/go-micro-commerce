@@ -30,7 +30,7 @@ func NewProduct(name string, price decimal.Decimal, quantity int64) (*Product, e
 		CreatedAt:        time.Now(),
 		UpdatedAt:        time.Now(),
 		Name:             name,
-		Price:            price.Round(constant.PricingDecimalScale),
+		Price:            price.Round(constant.DefaultPricingScale),
 		Quantity:         quantity,
 		Version:          1,
 		ReservedQuantity: 0,
@@ -84,7 +84,7 @@ func (p *Product) UpdateName(name string) error {
 
 // UpdatePrice updates the product price with validation.
 func (p *Product) UpdatePrice(price decimal.Decimal) error {
-	p.Price = price.Round(constant.PricingDecimalScale) // Ensure precision of 2 decimal places
+	p.Price = price.Round(constant.DefaultPricingScale) // Ensure precision of 2 decimal places
 	p.UpdatedAt = time.Now()
 
 	return p.validate()

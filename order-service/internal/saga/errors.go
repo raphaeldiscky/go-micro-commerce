@@ -33,25 +33,6 @@ type Error struct {
 	Step    constant.WorkflowStep
 }
 
-// Error returns the error message.
-func (e *Error) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("%s: %s (caused by: %v)", e.Step, e.Message, e.Cause)
-	}
-
-	return fmt.Sprintf("%s: %s", e.Step, e.Message)
-}
-
-// Unwrap returns the underlying error.
-func (e *Error) Unwrap() error {
-	return e.Cause
-}
-
-// IsRetriable returns true if the error can be retried.
-func (e *Error) IsRetriable() bool {
-	return e.Type == ErrorTypeRetriable
-}
-
 // NewRetriableError creates a new retriable error.
 func NewRetriableError(step constant.WorkflowStep, message string, cause error) *Error {
 	return &Error{
@@ -80,6 +61,25 @@ func NewTimeoutError(step constant.WorkflowStep, message string, cause error) *E
 		Cause:   cause,
 		Step:    step,
 	}
+}
+
+// Error returns the error message.
+func (e *Error) Error() string {
+	if e.Cause != nil {
+		return fmt.Sprintf("%s: %s (caused by: %v)", e.Step, e.Message, e.Cause)
+	}
+
+	return fmt.Sprintf("%s: %s", e.Step, e.Message)
+}
+
+// Unwrap returns the underlying error.
+func (e *Error) Unwrap() error {
+	return e.Cause
+}
+
+// IsRetriable returns true if the error can be retried.
+func (e *Error) IsRetriable() bool {
+	return e.Type == ErrorTypeRetriable
 }
 
 // CategorizeError categorizes an error based on its type and context.

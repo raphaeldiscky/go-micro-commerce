@@ -2,7 +2,7 @@ package saga
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -44,7 +44,7 @@ func (wc *WorkflowContext) OrderID() uuid.UUID {
 func (wc *WorkflowContext) GetXEmail() (string, error) {
 	email, ok := wc.ctx.Value(pkgconstant.CtxEmail).(string)
 	if !ok {
-		return "", fmt.Errorf("X-Email header not found in context")
+		return "", errors.New("X-Email header not found in context")
 	}
 
 	return email, nil
