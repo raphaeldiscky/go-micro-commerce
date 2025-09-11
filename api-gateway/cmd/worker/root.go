@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/spf13/cobra"
@@ -70,7 +69,6 @@ func Start(
 func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	wm.logger.Info("Starting all workers...")
 
-	// Initialize all workers
 	workers := []Worker{
 		NewHTTPWorker(wm.cfg, wm.logger, wm.providers, wm.gateway),
 	}
@@ -85,7 +83,7 @@ func (wm *Manager) runWorkers(ctx context.Context, workers []Worker) error {
 	for _, w := range workers {
 		wm.wg.Add(1)
 
-		worker := w // capture loop variable
+		worker := w
 
 		go func() {
 			defer wm.wg.Done()
@@ -100,11 +98,9 @@ func (wm *Manager) runWorkers(ctx context.Context, workers []Worker) error {
 
 	wm.logger.Info("All workers started successfully")
 
-	// Wait for context cancellation (shutdown signal)
 	<-ctx.Done()
 	wm.logger.Info("Shutdown signal received, initiating graceful shutdown...")
 
-	// Perform graceful shutdown
 	return wm.shutdown()
 }
 
@@ -112,11 +108,9 @@ func (wm *Manager) runWorkers(ctx context.Context, workers []Worker) error {
 func (wm *Manager) shutdown() error {
 	wm.logger.Info("Starting graceful shutdown...")
 
-	// Create shutdown context with timeout
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), wm.cfg.App.TimeoutShutdown)
 	defer cancel()
 
-	// Shutdown workers in reverse order
 	var shutdownErrors []error
 
 	for i := len(wm.workers) - 1; i >= 0; i-- {
@@ -131,7 +125,6 @@ func (wm *Manager) shutdown() error {
 		}
 	}
 
-	// Wait for all workers to finish with timeout
 	done := make(chan struct{})
 
 	go func() {

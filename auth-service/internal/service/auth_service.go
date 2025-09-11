@@ -143,7 +143,7 @@ func (s *AuthService) Register(
 		}
 		*user.EmailVerificationSentAt = time.Now()
 
-		if err := userRepo.Create(ctx, user); err != nil {
+		if err = userRepo.Create(ctx, user); err != nil {
 			return httperror.NewInternalServerError("failed to create user")
 		}
 
@@ -173,7 +173,7 @@ func (s *AuthService) Register(
 			ExpiresAt:    time.Now().Add(7 * 24 * time.Hour), // 7 days
 		}
 
-		if err := sessionRepo.Create(ctx, session); err != nil {
+		if err = sessionRepo.Create(ctx, session); err != nil {
 			return httperror.NewInternalServerError("failed to create session")
 		}
 
@@ -253,7 +253,7 @@ func (s *AuthService) Login(
 		}
 
 		// Update last login
-		if err := userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
+		if err = userRepo.UpdateLastLogin(ctx, user.ID); err != nil {
 			s.logger.Error("Failed to update last login", "error", err)
 			// Don't fail the login for this
 		}
@@ -288,7 +288,7 @@ func (s *AuthService) Login(
 			ExpiresAt:    time.Now().Add(7 * 24 * time.Hour), // 7 days
 		}
 
-		if err := sessionRepo.Create(ctx, session); err != nil {
+		if err = sessionRepo.Create(ctx, session); err != nil {
 			s.logger.Error("Failed to create session", "error", err)
 
 			return err
@@ -443,10 +443,9 @@ func (s *AuthService) UpdateUser(
 		}
 
 		if req.Username != "" && req.Username != user.Username {
-			// Check if new username is available
-			usernameExists, err := userRepo.UsernameExists(ctx, req.Username)
-			if err != nil {
-				s.logger.Error("Failed to check username existence", "error", err)
+			usernameExists, errExist := userRepo.UsernameExists(ctx, req.Username)
+			if errExist != nil {
+				s.logger.Error("Failed to check username existence", "error", errExist)
 
 				return httperror.NewInternalServerError("failed to check username existence")
 			}
@@ -578,7 +577,7 @@ func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailReque
 	}
 
 	// Verify email
-	if err := userRepo.VerifyEmail(ctx, user.ID); err != nil {
+	if err = userRepo.VerifyEmail(ctx, user.ID); err != nil {
 		s.logger.Error("Failed to verify email", "error", err)
 
 		return httperror.NewInternalServerError("failed to verify email")
@@ -634,7 +633,7 @@ func (s *AuthService) ResendVerification(
 	}
 
 	// Set new verification token
-	if err := userRepo.SetEmailVerificationToken(ctx, user.ID, verificationToken); err != nil {
+	if err = userRepo.SetEmailVerificationToken(ctx, user.ID, verificationToken); err != nil {
 		s.logger.Error("Failed to set verification token", "error", err)
 
 		return httperror.NewInternalServerError("failed to set verification token")
@@ -658,9 +657,13 @@ func (s *AuthService) ResendVerification(
 	return nil
 }
 
+const (
+	defaultTokenByteSize = 32
+)
+
 // generateVerificationToken generates a random verification token.
 func (s *AuthService) generateVerificationToken() (string, error) {
-	bytes := make([]byte, 32)
+	bytes := make([]byte, defaultTokenByteSize)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}

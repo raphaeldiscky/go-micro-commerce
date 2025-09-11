@@ -34,7 +34,7 @@ func main() {
 	defer cancel()
 
 	discoveryService := service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
-	circuitBreaker := service.NewCircuitBreakerService(appLogger)
+	circuitBreaker := service.NewCircuitBreakerService(appLogger, cfg)
 	loadBalancer := service.NewLoadBalancerService(appLogger)
 	metricsInstance := metrics.NewMetrics()
 

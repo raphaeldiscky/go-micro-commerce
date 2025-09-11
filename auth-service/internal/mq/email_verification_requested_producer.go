@@ -18,16 +18,6 @@ type EmailVerificationRequestedEvent struct {
 	Payload  event.EmailVerificationRequestedPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the EmailVerificationRequestedEvent.
-func (e *EmailVerificationRequestedEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the EmailVerificationRequestedEvent.
-func (e *EmailVerificationRequestedEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NewEmailVerificationRequestedEvent creates a new EmailVerificationRequestedEvent.
 func NewEmailVerificationRequestedEvent(
 	userID uuid.UUID,
@@ -79,4 +69,14 @@ func (p *EmailVerificationRequestedProducer) Send(
 // Topic returns the topic name.
 func (p *EmailVerificationRequestedProducer) Topic() string {
 	return p.topic
+}
+
+// GetPayload returns the data associated with the EmailVerificationRequestedEvent.
+func (e *EmailVerificationRequestedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the EmailVerificationRequestedEvent.
+func (e *EmailVerificationRequestedEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }

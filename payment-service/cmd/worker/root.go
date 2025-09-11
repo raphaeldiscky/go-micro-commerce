@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/spf13/cobra"
@@ -108,7 +107,7 @@ func (wm *Manager) shutdown() error {
 	wm.logger.Info("Starting graceful shutdown...")
 
 	// Create shutdown context with timeout
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), wm.cfg.App.TimeoutShutdown)
 	defer cancel()
 
 	// Shutdown workers in reverse order

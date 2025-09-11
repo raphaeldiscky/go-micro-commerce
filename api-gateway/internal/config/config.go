@@ -15,6 +15,7 @@ type Config struct {
 	RateLimit        *RateLimitConfig
 	Tracing          *TracingConfig
 	Metrics          *MetricsConfig
+	CircuitBreaker   *CircuitBreakerConfig
 }
 
 // LoadConfig loads configuration from environment variables and config files.
@@ -37,6 +38,7 @@ func LoadConfig() (*Config, error) {
 		RateLimit:        initRateLimitConfig(),
 		Tracing:          initTracingConfig(),
 		Metrics:          initMetricsConfig(),
+		CircuitBreaker:   initCircuitBreakerConfig(),
 	}
 
 	return cfg, nil

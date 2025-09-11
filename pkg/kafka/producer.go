@@ -25,7 +25,7 @@ type ProducerConfig struct {
 	ReturnSuccess  bool
 	ReturnErrors   bool
 	RetryMax       int
-	RetryTicker    time.Duration
+	RetryInterval  time.Duration
 	FlushFrequency int // in milliseconds
 	Acks           sarama.RequiredAcks
 }
@@ -267,7 +267,7 @@ func (p *AsyncProducer) handleErrors() {
 func (p *AsyncProducer) handleRetries(cfg *ProducerConfig) {
 	defer p.wg.Done()
 
-	retryTicker := time.NewTicker(cfg.RetryTicker) // Retry every 2 seconds
+	retryTicker := time.NewTicker(cfg.RetryInterval) // Retry every 2 seconds
 	defer retryTicker.Stop()
 
 	for {

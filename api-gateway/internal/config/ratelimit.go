@@ -6,6 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultRateLimitEnabled    = true
+	defaultRateLimitRequests   = 100
+	defaultRateLimitWindow     = 1 * time.Minute
+	defaultRateLimitBurstLimit = 10
+)
+
 // RateLimitConfig holds rate limiting configuration.
 type RateLimitConfig struct {
 	Enabled    bool          `mapstructure:"RATE_LIMIT_ENABLED"`
@@ -16,10 +23,10 @@ type RateLimitConfig struct {
 
 // initRateLimitConfig initializes the rate limit configuration from environment variables.
 func initRateLimitConfig() *RateLimitConfig {
-	viper.SetDefault("RATE_LIMIT_ENABLED", true)
-	viper.SetDefault("RATE_LIMIT_REQUESTS", 100)
-	viper.SetDefault("RATE_LIMIT_WINDOW", 1*time.Minute)
-	viper.SetDefault("RATE_LIMIT_BURST_LIMIT", 10)
+	viper.SetDefault("RATE_LIMIT_ENABLED", defaultRateLimitEnabled)
+	viper.SetDefault("RATE_LIMIT_REQUESTS", defaultRateLimitRequests)
+	viper.SetDefault("RATE_LIMIT_WINDOW", defaultRateLimitWindow)
+	viper.SetDefault("RATE_LIMIT_BURST_LIMIT", defaultRateLimitBurstLimit)
 
 	rateLimitConfig := &RateLimitConfig{}
 	if err := viper.Unmarshal(rateLimitConfig); err != nil {

@@ -4,6 +4,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultMetricsPort = 9090
+)
+
 // MetricsConfig holds metrics configuration.
 type MetricsConfig struct {
 	Enabled bool   `mapstructure:"METRICS_ENABLED"`
@@ -15,7 +19,7 @@ type MetricsConfig struct {
 func initMetricsConfig() *MetricsConfig {
 	viper.SetDefault("METRICS_ENABLED", true)
 	viper.SetDefault("METRICS_PATH", "/metrics")
-	viper.SetDefault("METRICS_PORT", 9090)
+	viper.SetDefault("METRICS_PORT", defaultMetricsPort)
 
 	metricsConfig := &MetricsConfig{}
 	if err := viper.Unmarshal(metricsConfig); err != nil {

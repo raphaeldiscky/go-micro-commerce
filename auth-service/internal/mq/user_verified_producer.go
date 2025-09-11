@@ -17,16 +17,6 @@ type UserVerifiedEvent struct {
 	Payload  event.UserVerifiedPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the UserVerifiedEvent.
-func (e *UserVerifiedEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the UserVerifiedEvent.
-func (e *UserVerifiedEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NewUserVerifiedEvent creates a new UserVerifiedEvent.
 func NewUserVerifiedEvent(
 	userID uuid.UUID,
@@ -69,4 +59,14 @@ func (p *UserVerifiedProducer) Send(ctx context.Context, evt event.BaseEvent) er
 // Topic returns the topic name.
 func (p *UserVerifiedProducer) Topic() string {
 	return p.topic
+}
+
+// GetPayload returns the data associated with the UserVerifiedEvent.
+func (e *UserVerifiedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the UserVerifiedEvent.
+func (e *UserVerifiedEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }

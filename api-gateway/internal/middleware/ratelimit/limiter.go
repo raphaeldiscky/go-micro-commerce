@@ -46,8 +46,7 @@ func (rl *RateLimiter) GetLimiter(key string) *rate.Limiter {
 	rl.mutex.Lock()
 	defer rl.mutex.Unlock()
 
-	// Double-check pattern
-	if limiter, exists := rl.limiters[key]; exists {
+	if limiter, exists = rl.limiters[key]; exists {
 		return limiter
 	}
 

@@ -2,7 +2,7 @@
 package handler
 
 import (
-	"fmt"
+	"errors"
 	"net/http"
 	"runtime"
 	"time"
@@ -129,9 +129,6 @@ func (h *MonitoringHandler) TestTrace(c echo.Context) error {
 		"test.action":   "trace-validation",
 	})
 
-	// Simulate some work
-	time.Sleep(10 * time.Millisecond)
-
 	// Get trace and span IDs
 	traceID := tracing.GetTraceID(spanCtx)
 	spanID := tracing.GetSpanID(spanCtx)
@@ -161,7 +158,7 @@ func (h *MonitoringHandler) TestError(c echo.Context) error {
 	defer endFunc()
 
 	// Create a test error
-	testErr := fmt.Errorf("this is a test error for monitoring validation")
+	testErr := errors.New("this is a test error for monitoring validation")
 
 	// Record the error in the span
 	tracing.SetSpanError(spanCtx, testErr)
@@ -201,12 +198,16 @@ func (h *MonitoringHandler) checkMemory() string {
 	return constant.HealthyStatus
 }
 
+const (
+	maxGoroutines = 1000
+)
+
 // checkGoroutines performs a basic goroutine count check.
 func (h *MonitoringHandler) checkGoroutines() string {
 	count := runtime.NumGoroutine()
 
 	// Consider > 1000 goroutines as warning
-	if count > 1000 {
+	if count > maxGoroutines {
 		return constant.WarningStatus
 	}
 

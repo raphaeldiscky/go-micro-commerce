@@ -239,7 +239,7 @@ func (r *UserRepositoryPostgres) List(
 	for rows.Next() {
 		user := &entity.User{}
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&user.ID, &user.Email, &user.Username, &user.PasswordHash,
 			&user.FirstName, &user.LastName, &user.Roles, &user.IsActive,
 			&user.IsEmailVerified, &user.EmailVerificationToken,

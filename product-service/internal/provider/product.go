@@ -54,7 +54,7 @@ func InitializeProductService(
 	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
-		RetryTicker:    cfg.Kafka.RetryTicker,
+		RetryInterval:  cfg.Kafka.RetryInterval,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,
