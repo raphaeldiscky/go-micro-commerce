@@ -30,7 +30,7 @@ func main() {
 	consulCleanup := setupConsulRegistration(cfg, appLogger)
 	defer consulCleanup()
 
-	if err := worker.Start(ctx, cfg, appLogger); err != nil {
+	if err = worker.Start(ctx, cfg, appLogger); err != nil {
 		appLogger.Fatalf("Worker failed to start: %v", err)
 	}
 
@@ -50,7 +50,7 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
-	if err := consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+	if err = consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
 		return func() {}
 	}
 
@@ -58,8 +58,8 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
 
 	return func() {
-		if err := consulClient.Deregister(cfg.Consul.ServiceName); err != nil {
-			appLogger.Errorf("Failed to deregister from Consul: %v", err)
+		if deregErr := consulClient.Deregister(cfg.Consul.ServiceName); deregErr != nil {
+			appLogger.Errorf("Failed to deregister from Consul: %v", deregErr)
 		}
 	}
 }

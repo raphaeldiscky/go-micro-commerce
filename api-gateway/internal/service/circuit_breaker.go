@@ -2,10 +2,11 @@ package service
 
 import (
 	"sync"
-	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/sony/gobreaker"
+
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 )
 
 // CircuitBreakerService manages circuit breakers for different services.
@@ -13,13 +14,15 @@ type CircuitBreakerService struct {
 	breakers map[string]*gobreaker.CircuitBreaker
 	mutex    sync.RWMutex
 	logger   logger.Logger
+	config   *config.Config
 }
 
 // NewCircuitBreakerService creates a new circuit breaker service.
-func NewCircuitBreakerService(appLogger logger.Logger) *CircuitBreakerService {
+func NewCircuitBreakerService(appLogger logger.Logger, cfg *config.Config) *CircuitBreakerService {
 	return &CircuitBreakerService{
 		breakers: make(map[string]*gobreaker.CircuitBreaker),
 		logger:   appLogger,
+		config:   cfg,
 	}
 }
 
@@ -36,17 +39,16 @@ func (cb *CircuitBreakerService) GetBreaker(serviceName string) *gobreaker.Circu
 	cb.mutex.Lock()
 	defer cb.mutex.Unlock()
 
-	// Double-check pattern
-	if breaker, exists := cb.breakers[serviceName]; exists {
+	if breaker, exists = cb.breakers[serviceName]; exists {
 		return breaker
 	}
 
 	// Create new circuit breaker
 	settings := gobreaker.Settings{
 		Name:        serviceName,
-		MaxRequests: 3,
-		Interval:    10 * time.Second,
-		Timeout:     30 * time.Second,
+		MaxRequests: cb.config.CircuitBreaker.MaxRequests,
+		Interval:    cb.config.CircuitBreaker.Interval,
+		Timeout:     cb.config.CircuitBreaker.Timeout,
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
 			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
 

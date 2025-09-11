@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"log"
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
@@ -31,20 +30,20 @@ func SetupAuth(
 		constant.UserVerificationTopicReplicationFactor,
 	)
 	if err != nil {
-		log.Fatalf("failed to create Kafka topic: %v", err)
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
 	}
 
 	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
 		Brokers:        cfg.Kafka.Brokers,
 		RetryMax:       cfg.Kafka.RetryMax,
-		RetryTicker:    cfg.Kafka.RetryTicker,
+		RetryInterval:  cfg.Kafka.RetryInterval,
 		FlushFrequency: cfg.Kafka.FlushFrequency,
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,
 		Acks:           sarama.WaitForAll,
 	})
 	if err != nil {
-		log.Fatalf("failed to create Kafka async producer: %v", err)
+		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
 	emailVerificationRequestedProducer := mq.NewEmailVerificationRequestedProducer(asyncProducer)

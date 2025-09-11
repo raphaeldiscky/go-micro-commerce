@@ -72,7 +72,7 @@ func Middleware() echo.MiddlewareFunc {
 }
 
 // StartSpan starts a new span with the given name.
-func StartSpan(ctx context.Context, name string) (spanCtx context.Context, endFunc func()) {
+func StartSpan(ctx context.Context, name string) (context.Context, func()) {
 	tracer := otel.Tracer("api-gateway")
 	spanCtx, span := tracer.Start(ctx, name)
 

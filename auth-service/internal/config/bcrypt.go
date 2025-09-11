@@ -4,6 +4,10 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultBcryptCost = 10
+)
+
 // BcryptConfig holds Bcrypt configuration.
 type BcryptConfig struct {
 	Cost int `mapstructure:"BCRYPT_COST"`
@@ -12,7 +16,7 @@ type BcryptConfig struct {
 // initBcryptConfig initializes the Bcrypt configuration from environment variables.
 func initBcryptConfig() *BcryptConfig {
 	// Set defaults
-	viper.SetDefault("BCRYPT_COST", 10)
+	viper.SetDefault("BCRYPT_COST", defaultBcryptCost)
 
 	bcryptConfig := &BcryptConfig{}
 

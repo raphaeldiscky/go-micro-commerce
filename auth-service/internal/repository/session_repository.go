@@ -103,7 +103,7 @@ func (r *sessionRepository) GetByRefreshToken(
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
+		return nil, errors.New("session not found")
 	}
 
 	return session, err
@@ -133,7 +133,7 @@ func (r *sessionRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
+		return nil, errors.New("session not found")
 	}
 
 	return session, err
@@ -162,7 +162,7 @@ func (r *sessionRepository) GetActiveSessionsByUserID(
 	for rows.Next() {
 		session := &entity.Session{}
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&session.ID,
 			&session.UserID,
 			&session.RefreshToken,

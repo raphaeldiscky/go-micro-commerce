@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -81,7 +83,10 @@ func (sd *ConsulDiscoveryService) RegisterService(serviceName, address string, p
 		Address: address,
 		Port:    port,
 		Check: &api.AgentServiceCheck{
-			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
+			HTTP: fmt.Sprintf(
+				"http://%s/health",
+				net.JoinHostPort(address, strconv.Itoa(port)),
+			),
 			Interval:                       "10s",
 			Timeout:                        "5s",
 			DeregisterCriticalServiceAfter: "30s",
@@ -110,7 +115,7 @@ func (sd *ConsulDiscoveryService) HealthCheck(serviceName string) bool {
 
 // refreshCache periodically refreshes the service cache.
 func (sd *ConsulDiscoveryService) refreshCache() {
-	ticker := time.NewTicker(2 * time.Second)
+	ticker := time.NewTicker(sd.config.Consul.RefreshInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -130,12 +135,12 @@ func (sd *ConsulDiscoveryService) updateCache() {
 	newCache := make(map[string][]string)
 
 	for serviceName := range services {
-		healthyServices, _, err := sd.client.Health().Service(serviceName, "", true, nil)
-		if err != nil {
+		healthyServices, _, errService := sd.client.Health().Service(serviceName, "", true, nil)
+		if errService != nil {
 			sd.logger.Error(
 				"Failed to fetch healthy services",
 				"service", serviceName,
-				"error", err,
+				"error", errService,
 			)
 
 			continue
@@ -144,7 +149,10 @@ func (sd *ConsulDiscoveryService) updateCache() {
 		var endpoints []string
 
 		for _, service := range healthyServices {
-			endpoint := fmt.Sprintf("http://%s:%d", service.Service.Address, service.Service.Port)
+			endpoint := fmt.Sprintf(
+				"http://%s",
+				net.JoinHostPort(service.Service.Address, strconv.Itoa(service.Service.Port)),
+			)
 			endpoints = append(endpoints, endpoint)
 		}
 
