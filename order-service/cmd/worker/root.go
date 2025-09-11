@@ -65,9 +65,9 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 
 	// Initialize all workers
 	workers := []Worker{
-		NewHTTPWorker(wm.cfg, wm.logger, wm.providers),
+		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers),
 		NewKafkaConsumerWorker(wm.cfg, wm.logger, wm.providers),
-		NewOutboxPublisherWorker(wm.cfg, wm.logger, wm.providers),
+		NewOutboxPublisherWorker(ctx, wm.cfg, wm.logger, wm.providers),
 		NewJobSchedulerWorker(wm.logger, wm.providers),
 		NewTemporalWorker(wm.logger, wm.providers),
 	}

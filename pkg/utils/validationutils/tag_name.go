@@ -5,6 +5,10 @@ import (
 	"strings"
 )
 
+const (
+	defaultSplitN = 2
+)
+
 // TagNameFormatter formats the field name from struct tags.
 func TagNameFormatter(fld *reflect.StructField) string {
 	var name string
@@ -13,9 +17,9 @@ func TagNameFormatter(fld *reflect.StructField) string {
 	formTag := fld.Tag.Get("form")
 
 	if jsonTag != "" {
-		name = strings.SplitN(jsonTag, ",", 2)[0]
+		name = strings.SplitN(jsonTag, ",", defaultSplitN)[0]
 	} else if formTag != "" {
-		name = strings.SplitN(formTag, ",", 2)[0]
+		name = strings.SplitN(formTag, ",", defaultSplitN)[0]
 	}
 
 	if name == "-" {

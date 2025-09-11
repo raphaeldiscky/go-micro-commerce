@@ -2,8 +2,6 @@
 package config
 
 import (
-	"strings"
-
 	"github.com/spf13/viper"
 )
 
@@ -23,7 +21,13 @@ type Config struct {
 // LoadConfig loads configuration from environment variables.
 func LoadConfig() (*Config, error) {
 	viper.AutomaticEnv()
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+
+	viper.SetConfigFile(".env")
+	viper.SetConfigType("env")
+
+	if err := viper.ReadInConfig(); err != nil {
+		panic(err)
+	}
 
 	config := &Config{
 		App:        initAppConfig(),

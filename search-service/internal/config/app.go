@@ -26,6 +26,9 @@ func initAppConfig() *AppConfig {
 	viper.SetDefault("APP_TIMEOUT_SHUTDOWN", defaultTimeoutShutdown)
 
 	appConfig := &AppConfig{}
+	if err := viper.Unmarshal(appConfig); err != nil {
+		panic(err)
+	}
 
 	return appConfig
 }

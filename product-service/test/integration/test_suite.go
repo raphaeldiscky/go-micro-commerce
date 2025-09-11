@@ -88,7 +88,7 @@ func (s *TestSuite) SetupSuite() {
 	}
 
 	// Setup HTTP server
-	s.httpServer = server.NewHTTPServer(testConfig, appLogger, testProviders)
+	s.httpServer = server.NewHTTPServer(s.ctx, testConfig, appLogger, testProviders)
 
 	// Start HTTP server in goroutine
 	go func() {

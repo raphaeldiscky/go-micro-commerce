@@ -10,6 +10,7 @@ require (
 	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-00010101000000-000000000000
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
+	golang.org/x/time v0.11.0
 )
 
 require (
@@ -42,7 +43,6 @@ require (
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/sync v0.15.0 // indirect
-	golang.org/x/time v0.11.0 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df // indirect
 )

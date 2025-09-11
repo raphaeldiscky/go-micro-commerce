@@ -1,9 +1,11 @@
 package config
 
 import (
-	"log/slog"
-
 	"github.com/spf13/viper"
+)
+
+const (
+	defaultLoggerLevel = 1
 )
 
 // LoggerConfig holds the logger configuration.
@@ -14,12 +16,11 @@ type LoggerConfig struct {
 // initLoggerConfig initializes the logger configuration.
 func initLoggerConfig() *LoggerConfig {
 	// Set defaults
-	viper.SetDefault("LOGGER_LEVEL", 4)
+	viper.SetDefault("LOGGER_LEVEL", defaultLoggerLevel)
 
 	loggerConfig := &LoggerConfig{}
-
-	if err := viper.Unmarshal(&loggerConfig); err != nil {
-		slog.Error("error mapping logger config", "err", err)
+	if err := viper.Unmarshal(loggerConfig); err != nil {
+		panic(err)
 	}
 
 	return loggerConfig

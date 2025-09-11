@@ -22,18 +22,20 @@ type JWTInterface interface {
 
 // RefreshTokenClaims represents the claims in a refresh token.
 type RefreshTokenClaims struct {
+	jwt.RegisteredClaims
+
 	UserID string `json:"user_id"`
 	Type   string `json:"type"`
-	jwt.RegisteredClaims
 }
 
 // AccessTokenClaims represents the claims in an access token.
 type AccessTokenClaims struct {
+	jwt.RegisteredClaims
+
 	UserID   string   `json:"user_id"`
 	Email    string   `json:"email"`
 	Roles    []string `json:"roles"`
 	IsActive bool     `json:"is_active"`
-	jwt.RegisteredClaims
 }
 
 // JWTUtils implements JWTUtilsInterface.

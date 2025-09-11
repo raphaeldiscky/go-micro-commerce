@@ -1,9 +1,13 @@
 package config
 
 import (
-	"log/slog"
-
 	"github.com/spf13/viper"
+)
+
+const (
+	defaultTracingSamplingRate  = 1.0
+	defaultTracingBatchTimeout  = 5
+	defaultTracingExportTimeout = 5
 )
 
 // TracingConfig holds tracing configuration.
@@ -22,15 +26,14 @@ func initTracingConfig() *TracingConfig {
 	viper.SetDefault("TRACING_ENABLED", true)
 	viper.SetDefault("TRACING_URL", "http://localhost:4318/v1/traces")
 	viper.SetDefault("TRACING_SERVICE_NAME", "api-gateway")
-	viper.SetDefault("TRACING_SAMPLING_RATE", 1.0)
+	viper.SetDefault("TRACING_SAMPLING_RATE", defaultTracingSamplingRate)
 	viper.SetDefault("TRACING_ENVIRONMENT", "development")
-	viper.SetDefault("TRACING_BATCH_TIMEOUT", 5)
-	viper.SetDefault("TRACING_EXPORT_TIMEOUT", 5)
+	viper.SetDefault("TRACING_BATCH_TIMEOUT", defaultTracingBatchTimeout)
+	viper.SetDefault("TRACING_EXPORT_TIMEOUT", defaultTracingExportTimeout)
 
 	tracingConfig := &TracingConfig{}
-
-	if err := viper.Unmarshal(&tracingConfig); err != nil {
-		slog.Error("error mapping tracing config", "err", err)
+	if err := viper.Unmarshal(tracingConfig); err != nil {
+		panic(err)
 	}
 
 	return tracingConfig

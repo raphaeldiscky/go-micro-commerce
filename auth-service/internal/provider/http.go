@@ -2,6 +2,8 @@
 package provider
 
 import (
+	"context"
+
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -11,8 +13,14 @@ import (
 )
 
 // SetupHTTP initializes the HTTP server routes and middleware.
-func SetupHTTP(cfg *config.Config, e *echo.Echo, appLogger logger.Logger, providers *Providers) {
+func SetupHTTP(
+	ctx context.Context,
+	cfg *config.Config,
+	e *echo.Echo,
+	appLogger logger.Logger,
+	providers *Providers,
+) {
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
-	SetupAuth(cfg, e, appLogger, providers)
+	SetupAuth(ctx, cfg, e, appLogger, providers)
 }

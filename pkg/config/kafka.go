@@ -9,7 +9,7 @@ import (
 const (
 	// Default Kafka configuration values.
 	defaultKafkaRetryMax       = 3
-	defaultKafkaRetryTicker    = 2 * time.Second
+	defaultKafkaRetryTicker    = 2 * time.Second // retry every 2 seconds
 	defaultKafkaFlushFrequency = 1000
 )
 

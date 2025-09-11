@@ -7,6 +7,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	defaultGRPCMaxAttempts      = 3
+	defaultGRPCMultiplier       = 2.0
+	defaultGRPCKeepaliveTime    = 30 * time.Second
+	defaultGRPCKeepaliveTimeout = 5 * time.Second
+)
+
 // GRPCClientConfig holds configuration for gRPC client creation.
 type GRPCClientConfig struct {
 	ServiceName           string        `mapstructure:"GRPC_SERVICE_NAME"`
@@ -32,20 +39,20 @@ func DefaultGRPCClientConfig(serviceName string) *GRPCClientConfig {
 		ServiceName:           serviceName,
 		UseServiceDiscovery:   false,
 		ConsulEnabled:         false,
-		MaxAttempts:           3,
+		MaxAttempts:           defaultGRPCMaxAttempts,
 		InitialBackoff:        "0.1s",
 		MaxBackoff:            "1s",
-		BackoffMultiplier:     2.0,
+		BackoffMultiplier:     defaultGRPCMultiplier,
 		RetryableStatusCodes:  []string{"UNAVAILABLE", "DEADLINE_EXCEEDED"},
 		LoadBalancingPolicy:   "round_robin",
-		KeepaliveTime:         30 * time.Second,
-		KeepaliveTimeout:      5 * time.Second,
+		KeepaliveTime:         defaultGRPCKeepaliveTime,
+		KeepaliveTimeout:      defaultGRPCKeepaliveTimeout,
 		KeepalivePermitStream: false,
 	}
 }
 
-// NewGRPCClientConfig creates a new gRPC client configuration from environment variables.
-func NewGRPCClientConfig(serviceName string) (*GRPCClientConfig, error) {
+// initGRPCClientConfig creates a new gRPC client configuration from environment variables.
+func initGRPCClientConfig(serviceName string) *GRPCClientConfig {
 	config := DefaultGRPCClientConfig(serviceName)
 
 	// Override with environment variables if they exist
@@ -93,7 +100,7 @@ func NewGRPCClientConfig(serviceName string) (*GRPCClientConfig, error) {
 		config.KeepalivePermitStream = viper.GetBool("GRPC_KEEPALIVE_PERMIT_STREAM")
 	}
 
-	return config, nil
+	return config
 }
 
 // SetStaticAddress sets the static address and port for the gRPC client.

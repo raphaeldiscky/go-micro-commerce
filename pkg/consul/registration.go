@@ -3,7 +3,9 @@ package consul
 
 import (
 	"fmt"
+	"net"
 	"os"
+	"strconv"
 
 	"github.com/hashicorp/consul/api"
 
@@ -78,7 +80,10 @@ func (s *ServiceRegistration) register(
 	case ServiceTypeHTTP:
 		tags = []string{"http", "api", "microservice"}
 		check = &api.AgentServiceCheck{
-			HTTP:                           fmt.Sprintf("http://%s:%d/health", address, port),
+			HTTP: fmt.Sprintf(
+				"http://%s/health",
+				net.JoinHostPort(address, strconv.Itoa(port)),
+			),
 			Interval:                       "10s",
 			Timeout:                        "5s",
 			DeregisterCriticalServiceAfter: "30s",

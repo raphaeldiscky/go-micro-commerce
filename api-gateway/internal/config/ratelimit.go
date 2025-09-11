@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -23,9 +22,8 @@ func initRateLimitConfig() *RateLimitConfig {
 	viper.SetDefault("RATE_LIMIT_BURST_LIMIT", 10)
 
 	rateLimitConfig := &RateLimitConfig{}
-
-	if err := viper.Unmarshal(&rateLimitConfig); err != nil {
-		slog.Error("error mapping ratelimits config", "err", err)
+	if err := viper.Unmarshal(rateLimitConfig); err != nil {
+		panic(err)
 	}
 
 	return rateLimitConfig

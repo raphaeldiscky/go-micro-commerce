@@ -22,5 +22,9 @@ func initConsulConfig() *ConsulConfig {
 
 	consulConfig := &ConsulConfig{}
 
+	if err := viper.Unmarshal(consulConfig); err != nil {
+		panic(err)
+	}
+
 	return consulConfig
 }

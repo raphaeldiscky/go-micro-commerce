@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"sync"
 	"time"
 
 	"github.com/IBM/sarama"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // ProducerInterface is an interface for sending events to Kafka.
@@ -25,6 +25,7 @@ type ProducerConfig struct {
 	ReturnSuccess  bool
 	ReturnErrors   bool
 	RetryMax       int
+	RetryTicker    time.Duration
 	FlushFrequency int // in milliseconds
 	Acks           sarama.RequiredAcks
 }
@@ -32,12 +33,14 @@ type ProducerConfig struct {
 // SyncProducer implements the EventProducer interface using Kafka.
 type SyncProducer struct {
 	producer sarama.SyncProducer
+	logger   logger.Logger
 }
 
 // AsyncProducer implements the EventProducer interface using Kafka.
 type AsyncProducer struct {
 	producer  sarama.AsyncProducer
-	RetryChan chan *sarama.ProducerMessage
+	logger    logger.Logger
+	retryChan chan *sarama.ProducerMessage
 	ctx       context.Context
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
@@ -68,7 +71,7 @@ func NewSyncProducer(cfg *ProducerConfig) (*SyncProducer, error) {
 }
 
 // NewAsyncProducer creates a new instance of async AsyncProducer.
-func NewAsyncProducer(cfg *ProducerConfig) (*AsyncProducer, error) {
+func NewAsyncProducer(ctx context.Context, cfg *ProducerConfig) (*AsyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = cfg.Acks
 	config.Producer.Return.Successes = cfg.ReturnSuccess
@@ -86,21 +89,21 @@ func NewAsyncProducer(cfg *ProducerConfig) (*AsyncProducer, error) {
 		return nil, fmt.Errorf("failed to create Kafka async producer: %w", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	asyncProducer := &AsyncProducer{
 		producer:  producer,
-		RetryChan: make(chan *sarama.ProducerMessage, 1000), // Buffered channel
+		retryChan: make(chan *sarama.ProducerMessage), // Buffered channel
 		ctx:       ctx,
 		cancel:    cancel,
 	}
-	// background goroutines
+
 	asyncProducer.wg.Add(1)
 
 	go asyncProducer.handleErrors()
 
 	asyncProducer.wg.Add(1)
 
-	go asyncProducer.handleRetries()
+	go asyncProducer.handleRetries(cfg)
 
 	asyncProducer.wg.Add(1)
 
@@ -142,7 +145,7 @@ func (p *SyncProducer) ProduceSync(topic string, evt event.BaseEvent) error {
 		return fmt.Errorf("failed to send sync message to Kafka: %w", err)
 	}
 
-	log.Printf("Event published to Kafka - Topic: %s, Partition: %d, Offset: %d, Type: %s",
+	p.logger.Printf("Event published to Kafka - Topic: %s, Partition: %d, Offset: %d, Type: %s",
 		topic, partition, offset, metadata.EventType)
 
 	return nil
@@ -151,7 +154,7 @@ func (p *SyncProducer) ProduceSync(topic string, evt event.BaseEvent) error {
 // CloseSync closes the Kafka producer.
 func (p *SyncProducer) CloseSync() error {
 	if p.producer != nil {
-		log.Println("Closing Kafka sync producer")
+		p.logger.Printf("Closing Kafka producer")
 
 		return p.producer.Close()
 	}
@@ -189,7 +192,7 @@ func (p *AsyncProducer) ProduceAsync(ctx context.Context, topic string, evt even
 	// Send message asynchronously
 	select {
 	case p.producer.Input() <- message:
-		log.Printf("Event sent to async producer - Topic: %s, Type: %s",
+		p.logger.Printf("Event sent to async producer - Topic: %s, Type: %s",
 			topic, metadata.EventType)
 
 		return nil
@@ -203,7 +206,7 @@ func (p *AsyncProducer) ProduceAsync(ctx context.Context, topic string, evt even
 // CloseAsync closes the Kafka async producer.
 func (p *AsyncProducer) CloseAsync() error {
 	if p.producer != nil {
-		log.Println("Closing Kafka async producer")
+		p.logger.Printf("Closing Kafka async producer")
 
 		// Signal shutdown
 		p.cancel()
@@ -212,7 +215,7 @@ func (p *AsyncProducer) CloseAsync() error {
 		p.wg.Wait()
 
 		// Close the retry channel
-		close(p.RetryChan)
+		close(p.retryChan)
 
 		return p.producer.Close()
 	}
@@ -228,7 +231,7 @@ func (p *AsyncProducer) handleSuccesses() {
 		select {
 		case msg := <-p.producer.Successes():
 			if msg != nil {
-				log.Printf("Message delivered successfully: topic=%s, partition=%d, offset=%d",
+				p.logger.Printf("Message delivered successfully: topic=%s, partition=%d, offset=%d",
 					msg.Topic, msg.Partition, msg.Offset)
 			}
 		case <-p.ctx.Done():
@@ -245,14 +248,13 @@ func (p *AsyncProducer) handleErrors() {
 		select {
 		case err := <-p.producer.Errors():
 			if err != nil {
-				log.Printf("failed to send message: %v", err.Err)
-
+				p.logger.Errorf("failed to send message: %v", err.Err)
 				// Add to retry channel if there's space
 				select {
-				case p.RetryChan <- err.Msg:
-					log.Printf("Message queued for retry: Topic=%s", err.Msg.Topic)
+				case p.retryChan <- err.Msg:
+					p.logger.Printf("Message queued for retry: Topic=%s", err.Msg.Topic)
 				default:
-					log.Printf("Retry channel full, dropping message: Topic=%s", err.Msg.Topic)
+					p.logger.Printf("Retry channel full, dropping message: Topic=%s", err.Msg.Topic)
 				}
 			}
 		case <-p.ctx.Done():
@@ -262,10 +264,10 @@ func (p *AsyncProducer) handleErrors() {
 }
 
 // handleRetries processes messages from the retry channel.
-func (p *AsyncProducer) handleRetries() {
+func (p *AsyncProducer) handleRetries(cfg *ProducerConfig) {
 	defer p.wg.Done()
 
-	retryTicker := time.NewTicker(2 * time.Second) // Retry every 2 seconds
+	retryTicker := time.NewTicker(cfg.RetryTicker) // Retry every 2 seconds
 	defer retryTicker.Stop()
 
 	for {
@@ -275,20 +277,20 @@ func (p *AsyncProducer) handleRetries() {
 		inner:
 			for {
 				select {
-				case msg := <-p.RetryChan:
+				case msg := <-p.retryChan:
 					// Retry sending the message
 					select {
 					case p.producer.Input() <- msg:
-						log.Printf("Message retried successfully: Topic=%s", msg.Topic)
+						p.logger.Printf("Message retried successfully: Topic=%s", msg.Topic)
 					case <-p.ctx.Done():
 						return
 					default:
 						// Producer input channel is full, put message back in retry channel
 						select {
-						case p.RetryChan <- msg:
-							log.Printf("Producer busy, message re-queued for retry: Topic=%s", msg.Topic)
+						case p.retryChan <- msg:
+							p.logger.Printf("Producer busy, message re-queued for retry: Topic=%s", msg.Topic)
 						default:
-							log.Printf("Retry channel full, dropping retried message: Topic=%s", msg.Topic)
+							p.logger.Printf("Retry channel full, dropping retried message: Topic=%s", msg.Topic)
 						}
 					}
 				default:

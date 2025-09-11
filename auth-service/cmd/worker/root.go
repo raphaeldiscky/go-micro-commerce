@@ -32,7 +32,7 @@ type Worker interface {
 
 // Start initializes and starts the worker services.
 func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) error {
-	providers, err := provider.SetupGlobal(cfg)
+	providers, err := provider.SetupGlobal(ctx, cfg, appLogger)
 	if err != nil {
 		appLogger.Fatal("failed to setup providers:", err)
 	}
@@ -65,7 +65,7 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 
 	// Initialize all workers
 	workers := []Worker{
-		NewHTTPWorker(wm.cfg, wm.logger, wm.providers),
+		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers),
 	}
 
 	return wm.runWorkers(ctx, workers)
