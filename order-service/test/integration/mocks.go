@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"context"
@@ -22,6 +22,11 @@ func NewMockProductGRPCClient() client.ProductClientInterface {
 	return &MockProductGRPCClient{}
 }
 
+const (
+	productUnitPrice = 99.99
+	productQuantity  = 100
+)
+
 // GetProducts returns mock product data for testing.
 func (m *MockProductGRPCClient) GetProducts(
 	_ context.Context,
@@ -34,8 +39,8 @@ func (m *MockProductGRPCClient) GetProducts(
 		product := entity.Product{
 			ID:        id,
 			Name:      "Test Product",
-			UnitPrice: decimal.NewFromFloat(99.99),
-			Quantity:  100,
+			UnitPrice: decimal.NewFromFloat(productUnitPrice),
+			Quantity:  productQuantity,
 		}
 		products = append(products, product)
 	}

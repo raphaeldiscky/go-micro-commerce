@@ -146,7 +146,7 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 		pkgconstant.DefaultMaxPage,
 	)
 
-	if err := c.Validate(&req); err != nil {
+	if err = c.Validate(&req); err != nil {
 		return err
 	}
 
@@ -299,11 +299,11 @@ func (h *OrderHandler) RequestPaymentOrder(c echo.Context) error {
 		CustomerEmail: echoutils.GetEmailFromContext(c),
 	}
 
-	if err := c.Bind(&req); err != nil {
+	if err = c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err = c.Validate(&req); err != nil {
 		return err
 	}
 

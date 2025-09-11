@@ -1,4 +1,4 @@
-// Package job provides background jobs for the order service.
+// Package job provides background job for the order service.
 package job
 
 import (
@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 )
 
 // SchedulerInterface defines the methods for a job.
@@ -22,6 +24,7 @@ type SchedulerInterface interface {
 type Scheduler struct {
 	jobs   []SchedulerInterface
 	logger logger.Logger
+	config *config.JobConfig
 	wg     sync.WaitGroup
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -29,10 +32,11 @@ type Scheduler struct {
 }
 
 // NewScheduler creates a new job scheduler.
-func NewScheduler(appLogger logger.Logger) *Scheduler {
+func NewScheduler(appLogger logger.Logger, config *config.JobConfig) *Scheduler {
 	return &Scheduler{
 		jobs:   make([]SchedulerInterface, 0),
 		logger: appLogger,
+		config: config,
 	}
 }
 
@@ -46,13 +50,13 @@ func (s *Scheduler) RegisterJob(job SchedulerInterface) {
 		job.Name(), job.Interval(), job.IsEnabled())
 }
 
-// Start begins executing all registered jobs.
+// Start begins executing all registered job.
 func (s *Scheduler) Start(ctx context.Context) error {
 	s.mu.Lock()
 	s.ctx, s.cancel = context.WithCancel(ctx)
 	s.mu.Unlock()
 
-	s.logger.Infof("Starting job scheduler with %d registered jobs", len(s.jobs))
+	s.logger.Infof("Starting job scheduler with %d registered job", len(s.jobs))
 
 	// Start each enabled job in its own goroutine
 	for _, job := range s.jobs {
@@ -69,10 +73,10 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	<-s.ctx.Done()
 	s.logger.Info("Job scheduler received shutdown signal")
 
-	// Stop all jobs
-	s.stopAllJobs()
+	// Stop all job
+	s.stopAllJob()
 
-	// Wait for all jobs to finish with timeout
+	// Wait for all job to finish with timeout
 	done := make(chan struct{})
 
 	go func() {
@@ -82,9 +86,9 @@ func (s *Scheduler) Start(ctx context.Context) error {
 
 	select {
 	case <-done:
-		s.logger.Info("All jobs stopped gracefully")
-	case <-time.After(30 * time.Second):
-		s.logger.Warn("Jobs shutdown timeout reached, some jobs may not have stopped gracefully")
+		s.logger.Info("All job stopped gracefully")
+	case <-time.After(s.config.Recovery.Timeout):
+		s.logger.Warn("Job shutdown timeout reached, some job may not have stopped gracefully")
 	}
 
 	return nil
@@ -138,19 +142,19 @@ func (s *Scheduler) executeJob(ctx context.Context, job SchedulerInterface) {
 	s.logger.Debugf("Job %s completed in %v", job.Name(), duration)
 }
 
-// stopAllJobs gracefully stops all jobs.
-func (s *Scheduler) stopAllJobs() {
+// stopAllJob gracefully stops all job.
+func (s *Scheduler) stopAllJob() {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	s.logger.Info("Stopping all jobs...")
+	s.logger.Info("Stopping all job...")
 
 	for _, job := range s.jobs {
 		job.Stop()
 	}
 }
 
-// Shutdown stops the scheduler and all jobs.
+// Shutdown stops the scheduler and all job.
 func (s *Scheduler) Shutdown(_ context.Context) error {
 	if s.cancel != nil {
 		s.cancel()
@@ -159,8 +163,8 @@ func (s *Scheduler) Shutdown(_ context.Context) error {
 	return nil
 }
 
-// GetJobStatus returns the status of all registered jobs.
-func (s *Scheduler) GetJobStatus() map[string]interface{} {
+// GetJobtatus returns the status of all registered job.
+func (s *Scheduler) GetJobtatus() map[string]interface{} {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -175,7 +179,7 @@ func (s *Scheduler) GetJobStatus() map[string]interface{} {
 	return status
 }
 
-// GetJobCount returns the number of registered jobs.
+// GetJobCount returns the number of registered job.
 func (s *Scheduler) GetJobCount() int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

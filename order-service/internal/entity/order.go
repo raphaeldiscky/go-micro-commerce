@@ -51,6 +51,102 @@ type OrderItem struct {
 	UpdatedAt     time.Time
 }
 
+// NewOrder creates a new order with validation.
+func NewOrder(
+	customerID, idempotencyKey uuid.UUID,
+	currency string,
+	items []OrderItem,
+) (*Order, error) {
+	// 1. Calculate core values from items
+	subtotal := decimal.Zero
+	totalDiscount := decimal.Zero
+	totalTax := decimal.Zero
+
+	for i := range items {
+		item := &items[i]
+		subtotal = subtotal.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
+		totalDiscount = totalDiscount.Add(item.TotalDiscount)
+		totalTax = totalTax.Add(item.TotalTax)
+	}
+
+	// 2. Set defaults for other costs
+	shippingCost := decimal.Zero // Will be updated later in the fulfillment saga
+
+	// 3. Calculate the FINAL total price
+	totalPrice := subtotal.
+		Sub(totalDiscount).
+		Add(totalTax).
+		Add(shippingCost).
+		Round(constant.DefaultPricingScale)
+
+	orderID := uuid.New()
+
+	// 4. Initialize items with OrderID
+	for i := range items {
+		items[i].OrderID = orderID
+		items[i].CreatedAt = time.Now()
+		items[i].UpdatedAt = time.Now()
+	}
+
+	// 5. Create the order
+	order := &Order{
+		ID:             orderID,
+		IdempotencyKey: idempotencyKey,
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
+		CustomerID:     customerID,
+		Status:         constant.OrderStatusPending,
+		Currency:       currency,
+		ShippingCost:   shippingCost,
+		Subtotal:       subtotal.Round(constant.DefaultPricingScale),
+		TotalPrice:     totalPrice,
+		TotalTax:       totalTax.Round(constant.DefaultPricingScale),
+		TotalDiscount:  totalDiscount.Round(constant.DefaultPricingScale),
+		Items:          items,
+	}
+
+	if err := order.validate(); err != nil {
+		return nil, err
+	}
+
+	return order, nil
+}
+
+// NewOrderItem creates a new order item with validation and proper defaults.
+func NewOrderItem(
+	productID uuid.UUID,
+	quantity int64,
+	unitPrice decimal.Decimal,
+) (*OrderItem, error) {
+	if productID == uuid.Nil {
+		return nil, errors.New("product_id must not be empty")
+	}
+
+	if quantity <= 0 {
+		return nil, errors.New("quantity must be greater than 0")
+	}
+
+	if unitPrice.LessThan(decimal.Zero) {
+		return nil, errors.New("unit_price must not be negative")
+	}
+
+	now := time.Now()
+	totalPrice := unitPrice.Mul(decimal.NewFromInt(quantity))
+
+	return &OrderItem{
+		ID:            uuid.New(),
+		ProductID:     productID,
+		Quantity:      quantity,
+		UnitPrice:     unitPrice,
+		TotalTax:      decimal.Zero, // Default to zero, can be updated later
+		TotalDiscount: decimal.Zero, // Default to zero, can be updated later
+		TaxRate:       decimal.Zero, // Default to zero, can be updated latera
+		TotalPrice:    totalPrice,
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}, nil
+}
+
 // validate performs business rule validation.
 func (o *Order) validate() error {
 	if err := o.validateOrderFields(); err != nil {
@@ -210,102 +306,6 @@ func (o *Order) validateTotals() error {
 	return nil
 }
 
-// NewOrder creates a new order with validation.
-func NewOrder(
-	customerID, idempotencyKey uuid.UUID,
-	currency string,
-	items []OrderItem,
-) (*Order, error) {
-	// 1. Calculate core values from items
-	subtotal := decimal.Zero
-	totalDiscount := decimal.Zero
-	totalTax := decimal.Zero
-
-	for i := range items {
-		item := &items[i]
-		subtotal = subtotal.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
-		totalDiscount = totalDiscount.Add(item.TotalDiscount)
-		totalTax = totalTax.Add(item.TotalTax)
-	}
-
-	// 2. Set defaults for other costs
-	shippingCost := decimal.Zero // Will be updated later in the fulfillment saga
-
-	// 3. Calculate the FINAL total price
-	totalPrice := subtotal.
-		Sub(totalDiscount).
-		Add(totalTax).
-		Add(shippingCost).
-		Round(2)
-
-	orderID := uuid.New()
-
-	// 4. Initialize items with OrderID
-	for i := range items {
-		items[i].OrderID = orderID
-		items[i].CreatedAt = time.Now()
-		items[i].UpdatedAt = time.Now()
-	}
-
-	// 5. Create the order
-	order := &Order{
-		ID:             orderID,
-		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		CustomerID:     customerID,
-		Status:         constant.OrderStatusPending,
-		Currency:       currency,
-		ShippingCost:   shippingCost,
-		Subtotal:       subtotal.Round(2),
-		TotalPrice:     totalPrice,
-		TotalTax:       totalTax.Round(2),
-		TotalDiscount:  totalDiscount.Round(2),
-		Items:          items,
-	}
-
-	if err := order.validate(); err != nil {
-		return nil, err
-	}
-
-	return order, nil
-}
-
-// NewOrderItem creates a new order item with validation and proper defaults.
-func NewOrderItem(
-	productID uuid.UUID,
-	quantity int64,
-	unitPrice decimal.Decimal,
-) (*OrderItem, error) {
-	if productID == uuid.Nil {
-		return nil, errors.New("product_id must not be empty")
-	}
-
-	if quantity <= 0 {
-		return nil, errors.New("quantity must be greater than 0")
-	}
-
-	if unitPrice.LessThan(decimal.Zero) {
-		return nil, errors.New("unit_price must not be negative")
-	}
-
-	now := time.Now()
-	totalPrice := unitPrice.Mul(decimal.NewFromInt(quantity))
-
-	return &OrderItem{
-		ID:            uuid.New(),
-		ProductID:     productID,
-		Quantity:      quantity,
-		UnitPrice:     unitPrice,
-		TotalTax:      decimal.Zero, // Default to zero, can be updated later
-		TotalDiscount: decimal.Zero, // Default to zero, can be updated later
-		TaxRate:       decimal.Zero, // Default to zero, can be updated latera
-		TotalPrice:    totalPrice,
-		CreatedAt:     now,
-		UpdatedAt:     now,
-	}, nil
-}
-
 // UpdateStatus updates the order status with validation.
 func (o *Order) UpdateStatus(status constant.OrderStatus) error {
 	o.Status = status
@@ -376,16 +376,16 @@ func (o *Order) recalculateTotals() {
 		totalTax = totalTax.Add(item.TotalTax)
 	}
 
-	o.Subtotal = subtotal.Round(2)
-	o.TotalDiscount = totalDiscount.Round(2)
-	o.TotalTax = totalTax.Round(2)
+	o.Subtotal = subtotal.Round(constant.DefaultPricingScale)
+	o.TotalDiscount = totalDiscount.Round(constant.DefaultPricingScale)
+	o.TotalTax = totalTax.Round(constant.DefaultPricingScale)
 
 	// Recalculate the final total including shipping
 	o.TotalPrice = o.Subtotal.
 		Sub(o.TotalDiscount).
 		Add(o.TotalTax).
 		Add(o.ShippingCost).
-		Round(2)
+		Round(constant.DefaultPricingScale)
 }
 
 // UpdateShippingCost updates the shipping cost and recalculates the total price.

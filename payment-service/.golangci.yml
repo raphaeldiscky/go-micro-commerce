@@ -1,5 +1,7 @@
 version: "2"
-
+run:
+  allow-parallel-runners: true
+  relative-path-mode: wd
 linters:
   enable:
     - asciicheck

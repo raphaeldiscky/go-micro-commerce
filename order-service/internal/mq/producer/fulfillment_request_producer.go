@@ -27,16 +27,6 @@ type FulfillmentRequestProducer struct {
 	topic    string
 }
 
-// GetPayload returns the data associated with the FulfillmentRequestEvent.
-func (e *FulfillmentRequestEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the FulfillmentRequestEvent.
-func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NewFulfillmentRequestEvent creates a new FulfillmentRequestEvent.
 func NewFulfillmentRequestEvent(
 	order *entity.Order,
@@ -67,6 +57,16 @@ func NewFulfillmentRequestEvent(
 			Shipping:   mapper.MapShippingDtoToEventPayload(shipping),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the FulfillmentRequestEvent.
+func (e *FulfillmentRequestEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the FulfillmentRequestEvent.
+func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // NewFulfillmentRequestProducer creates a new instance of FulfillmentRequestProducer.

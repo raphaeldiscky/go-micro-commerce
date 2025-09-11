@@ -4,6 +4,7 @@ package temporal
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -111,9 +112,7 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 	ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
 
 	if ta.productClient == nil {
-		return dto.ReserveProductsResponse{}, fmt.Errorf(
-			"product service is unavailable",
-		)
+		return dto.ReserveProductsResponse{}, errors.New("product service is unavailable")
 	}
 
 	productIDs := make([]uuid.UUID, len(order.Items))
@@ -207,13 +206,13 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 	var orderItems []entity.OrderItem
 
 	for i, product := range reservedProducts {
-		orderItem, err := entity.NewOrderItem(
+		orderItem, rowErr := entity.NewOrderItem(
 			product.ID,
 			order.Items[i].Quantity,
 			product.UnitPrice,
 		)
-		if err != nil {
-			return dto.ReserveProductsResponse{}, err
+		if rowErr != nil {
+			return dto.ReserveProductsResponse{}, rowErr
 		}
 
 		orderItems = append(orderItems, *orderItem)
@@ -233,9 +232,7 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 	// Get customer email from user auth
 	email := userAuth.Email
 	if email == "" {
-		return dto.ReserveProductsResponse{}, fmt.Errorf(
-			"customer email not found in user auth",
-		)
+		return dto.ReserveProductsResponse{}, errors.New("customer email not found in user auth")
 	}
 
 	logger.Info("Successfully reserved stock for order", "orderID", order.ID)
@@ -325,7 +322,7 @@ func (ta *OrderActivitiesImpl) CreatePayment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create payment request event: %w", err)
 		}
 
@@ -345,7 +342,7 @@ func (ta *OrderActivitiesImpl) CreatePayment(
 	response, err := ta.paymentClient.WaitForPaymentResponse(
 		ctx,
 		order.ID,
-		30*time.Second,
+		constant.CreatePaymentStepTimeout,
 	)
 	if err != nil {
 		logger.Error("Failed to receive payment response", "orderID", order.ID, "error", err)
@@ -406,7 +403,7 @@ func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			logger.Error(
 				"Failed to create payment required notification",
 				"orderID", req.Order.ID,
@@ -507,7 +504,7 @@ func (ta *OrderActivitiesImpl) ProcessFulfillment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create fulfillment request event: %w", err)
 		}
 
@@ -530,7 +527,7 @@ func (ta *OrderActivitiesImpl) ProcessFulfillment(
 	response, err := ta.fulfillmentClient.WaitForFulfillmentResponse(
 		ctx,
 		order.ID,
-		30*time.Second,
+		constant.ProcessFulfillmentStepTimeout,
 	)
 	if err != nil {
 		logger.Error("Failed to receive fulfillment response", "orderID", order.ID, "error", err)
@@ -613,7 +610,7 @@ func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
 	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
 
 	if ta.productClient == nil {
-		return fmt.Errorf("product service is unavailable")
+		return errors.New("product service is unavailable")
 	}
 
 	for i := range req.Order.Items {
@@ -697,7 +694,7 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmedNotification(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create notification event: %w", err)
 		}
 
@@ -732,7 +729,7 @@ func (ta *OrderActivitiesImpl) ReleaseProducts(
 	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
 
 	if ta.productClient == nil {
-		return fmt.Errorf("product service is unavailable")
+		return errors.New("product service is unavailable")
 	}
 
 	for i := range req.Order.Items {
@@ -803,7 +800,7 @@ func (ta *OrderActivitiesImpl) RestoreProducts(
 	ctx = echoutils.AddUserAuthToContexts(ctx, req.UserAuth)
 
 	if ta.productClient == nil {
-		return fmt.Errorf("product service is unavailable")
+		return errors.New("product service is unavailable")
 	}
 
 	for i := range req.Order.Items {

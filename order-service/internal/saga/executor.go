@@ -9,6 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -37,72 +38,6 @@ type Metadata struct {
 	FulfillmentID    *uuid.UUID       `json:"fulfillment_id"`
 	TrackingNumber   *string          `json:"tracking_number"`
 	PaymentID        *uuid.UUID       `json:"payment_id"`
-}
-
-// ToMap converts Metadata struct to map for persistence.
-func (m *Metadata) ToMap() map[string]interface{} {
-	result := make(map[string]interface{})
-
-	if len(m.ReservedProducts) > 0 {
-		result["reserved_products"] = m.ReservedProducts
-	}
-
-	if m.CustomerEmail != "" {
-		result["customer_email"] = m.CustomerEmail
-	}
-
-	if m.Shipping != nil {
-		result["shipping"] = m.Shipping
-	}
-
-	if m.ShippingCost != nil {
-		result["shipping_cost"] = *m.ShippingCost
-	}
-
-	if m.FulfillmentID != nil {
-		result["fulfillment_id"] = *m.FulfillmentID
-	}
-
-	if m.TrackingNumber != nil {
-		result["tracking_number"] = *m.TrackingNumber
-	}
-
-	if m.PaymentID != nil {
-		result["payment_id"] = *m.PaymentID
-	}
-
-	return result
-}
-
-// FromMap converts map from persistence to Metadata struct.
-func (m *Metadata) FromMap(data map[string]interface{}) {
-	if val, ok := data["reserved_products"].([]entity.Product); ok {
-		m.ReservedProducts = val
-	}
-
-	if val, ok := data["customer_email"].(string); ok {
-		m.CustomerEmail = val
-	}
-
-	if val, ok := data["shipping"].(*dto.Shipping); ok {
-		m.Shipping = val
-	}
-
-	if val, ok := data["shipping_cost"].(decimal.Decimal); ok {
-		m.ShippingCost = &val
-	}
-
-	if val, ok := data["fulfillment_id"].(uuid.UUID); ok {
-		m.FulfillmentID = &val
-	}
-
-	if val, ok := data["tracking_number"].(string); ok {
-		m.TrackingNumber = &val
-	}
-
-	if val, ok := data["payment_id"].(uuid.UUID); ok {
-		m.PaymentID = &val
-	}
 }
 
 // Merge adds data from another Metadata struct.
@@ -141,9 +76,9 @@ type Step struct {
 	Name        constant.WorkflowStep
 	Execute     func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error)
 	Compensate  func(ctx *WorkflowContext, payload *Payload, data *Metadata) error
-	MaxRetries  int64
+	MaxRetries  int
 	RetryDelay  time.Duration
-	Timeout     time.Duration // Individual step timeout
+	Timeout     time.Duration
 	Description string
 	Idempotent  bool // Whether this step is idempotent
 	Critical    bool // Whether failure of this step should fail the entire saga
@@ -154,21 +89,23 @@ type Executor struct {
 	steps      []Step
 	dataStore  repository.DataStore
 	logger     logger.Logger
-	maxRetries int64
+	config     *config.Config
+	maxRetries int
 	retryDelay time.Duration
 }
 
 // NewExecutor creates a new saga executor.
 func NewExecutor(
 	dataStore repository.DataStore,
+	cfg *config.Config,
 	appLogger logger.Logger,
 ) *Executor {
 	return &Executor{
 		steps:      make([]Step, 0),
 		dataStore:  dataStore,
 		logger:     appLogger,
-		maxRetries: 3,
-		retryDelay: 2 * time.Second,
+		maxRetries: cfg.Saga.DefaultMaxRetries,
+		retryDelay: cfg.Saga.DefaultRetryDelay,
 	}
 }
 
@@ -197,11 +134,11 @@ func (e *Executor) Execute(ctx context.Context, payload *Payload) error {
 		return e.compensateFromState(ctx, payload, sagaState)
 	}
 
-	if err := e.markSagaAsExecuting(ctx, sagaState); err != nil {
+	if err = e.markSagaAsExecuting(ctx, sagaState); err != nil {
 		return fmt.Errorf("failed to update saga state: %w", err)
 	}
 
-	if err := e.executeAllSteps(ctx, payload, sagaState); err != nil {
+	if err = e.executeAllSteps(ctx, payload, sagaState); err != nil {
 		return err
 	}
 
@@ -220,7 +157,7 @@ func (e *Executor) initializeSagaState(
 
 	// Set timeout if not already set
 	if sagaState.TimeoutAt == nil {
-		sagaState.SetTimeout(30 * time.Minute) // Default saga timeout
+		sagaState.SetTimeout(e.config.Saga.DefaultExecutionTimeout) // Default saga timeout
 	}
 
 	return sagaState, nil
@@ -403,8 +340,7 @@ func (e *Executor) executeStepWithRetry(
 ) (*StepResult, error) {
 	var lastErr error
 
-	var attempt int64
-	for attempt = 0; attempt <= step.MaxRetries; attempt++ {
+	for attempt := range step.MaxRetries + 1 {
 		if attempt > 0 {
 			e.logger.Infof("Retrying step %s (attempt %d/%d)", step.Name, attempt, step.MaxRetries)
 			time.Sleep(step.RetryDelay * time.Duration(attempt)) // Exponential backoff
@@ -558,8 +494,7 @@ func (e *Executor) compensateStepWithRetry(
 
 	var lastErr error
 
-	var attempt int64
-	for attempt = 0; attempt <= step.MaxRetries; attempt++ {
+	for attempt := range step.MaxRetries + 1 {
 		if attempt > 0 {
 			e.logger.Infof("Retrying compensation orderID (%s) for step %s (attempt %d/%d)",
 				payload.Order.ID, step.Name, attempt, step.MaxRetries)
@@ -612,7 +547,7 @@ func (e *Executor) getOrCreateSagaState(
 		UpdatedAt:        time.Now().UTC(),
 	}
 
-	if err := stateRepo.Create(ctx, state); err != nil {
+	if err = stateRepo.Create(ctx, state); err != nil {
 		return nil, fmt.Errorf("failed to create saga state: %w", err)
 	}
 
@@ -640,4 +575,70 @@ func (e *Executor) isStepCompensated(state *entity.SagaState, stepName constant.
 	}
 
 	return false
+}
+
+// ToMap converts Metadata struct to map for persistence.
+func (m *Metadata) ToMap() map[string]interface{} {
+	result := make(map[string]interface{})
+
+	if len(m.ReservedProducts) > 0 {
+		result["reserved_products"] = m.ReservedProducts
+	}
+
+	if m.CustomerEmail != "" {
+		result["customer_email"] = m.CustomerEmail
+	}
+
+	if m.Shipping != nil {
+		result["shipping"] = m.Shipping
+	}
+
+	if m.ShippingCost != nil {
+		result["shipping_cost"] = *m.ShippingCost
+	}
+
+	if m.FulfillmentID != nil {
+		result["fulfillment_id"] = *m.FulfillmentID
+	}
+
+	if m.TrackingNumber != nil {
+		result["tracking_number"] = *m.TrackingNumber
+	}
+
+	if m.PaymentID != nil {
+		result["payment_id"] = *m.PaymentID
+	}
+
+	return result
+}
+
+// FromMap converts map from persistence to Metadata struct.
+func (m *Metadata) FromMap(data map[string]interface{}) {
+	if val, ok := data["reserved_products"].([]entity.Product); ok {
+		m.ReservedProducts = val
+	}
+
+	if val, ok := data["customer_email"].(string); ok {
+		m.CustomerEmail = val
+	}
+
+	if val, ok := data["shipping"].(*dto.Shipping); ok {
+		m.Shipping = val
+	}
+
+	if val, ok := data["shipping_cost"].(decimal.Decimal); ok {
+		m.ShippingCost = &val
+	}
+
+	if val, ok := data["fulfillment_id"].(uuid.UUID); ok {
+		m.FulfillmentID = &val
+	}
+
+	if val, ok := data["tracking_number"].(string); ok {
+		m.TrackingNumber = &val
+	}
+
+	if val, ok := data["payment_id"].(uuid.UUID); ok {
+		m.PaymentID = &val
+	}
 }

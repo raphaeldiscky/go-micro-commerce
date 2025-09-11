@@ -128,7 +128,7 @@ func (s *OrderService) CreateOrderWithTemporal(
 	}
 
 	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
+		if err = lockRepo.Release(ctx, lock); err != nil {
 			s.logger.Warnf("failed to release lock: %v", err)
 		}
 	}()
@@ -138,9 +138,9 @@ func (s *OrderService) CreateOrderWithTemporal(
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		orderRepo := ds.OrderRepository()
 
-		existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
-		if err != nil {
-			return err
+		existingOrder, errExist := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if errExist != nil {
+			return errExist
 		}
 
 		if existingOrder != nil && existingOrder.CustomerID == req.CustomerID {
@@ -161,24 +161,24 @@ func (s *OrderService) CreateOrderWithTemporal(
 			}
 		}
 
-		newOrder, err := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
-		if err != nil {
-			return fmt.Errorf("failed to create order entity: %w", err)
+		newOrder, newErr := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
+		if newErr != nil {
+			return fmt.Errorf("failed to create order entity: %w", newErr)
 		}
 
-		if err := newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
+		if err = newOrder.UpdateStatus(constant.OrderStatusPending); err != nil {
 			return fmt.Errorf("failed to update order status: %w", err)
 		}
 
-		savedOrder, err := orderRepo.Create(ctx, newOrder)
-		if err != nil {
-			return err
+		savedOrder, createErr := orderRepo.Create(ctx, newOrder)
+		if createErr != nil {
+			return createErr
 		}
 
 		// Extract user authentication info from context
-		userAuth, err := echoutils.GetUserAuthContexts(ctx)
-		if err != nil {
-			return err
+		userAuth, userErr := echoutils.GetUserAuthContexts(ctx)
+		if userErr != nil {
+			return userErr
 		}
 
 		// Start Temporal workflow
@@ -190,20 +190,20 @@ func (s *OrderService) CreateOrderWithTemporal(
 
 		workflowOptions := s.temporalClient.CreateWorkflowOptions(savedOrder.ID)
 
-		workflowRun, err := s.temporalClient.Client.ExecuteWorkflow(
+		workflowRun, wfErr := s.temporalClient.Client.ExecuteWorkflow(
 			ctx,
 			workflowOptions,
 			constant.OrderSagaWorkflowName,
 			temporalReq,
 		)
-		if err != nil {
+		if wfErr != nil {
 			s.logger.Errorf(
 				"Failed to start Temporal workflow for order %s: %v",
 				savedOrder.ID,
-				err,
+				wfErr,
 			)
 
-			return fmt.Errorf("failed to start order processing workflow: %w", err)
+			return fmt.Errorf("failed to start order processing workflow: %w", wfErr)
 		}
 
 		s.logger.Infof("Started Temporal workflow for order %s with workflow ID: %s",
@@ -330,7 +330,7 @@ func (s *OrderService) UpdateOrderStatus(
 		}
 
 		// Update status
-		if err := existingOrder.UpdateStatus(status); err != nil {
+		if err = existingOrder.UpdateStatus(status); err != nil {
 			return httperror.NewBadRequestError("invalid order status")
 		}
 
@@ -348,7 +348,7 @@ func (s *OrderService) UpdateOrderStatus(
 			updatedOrder.TotalPrice,
 			updatedOrder.Items,
 		)
-		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
+		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send order status updated event")
 		}
 
@@ -385,7 +385,7 @@ func (s *OrderService) CancelOrder(
 	}
 
 	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
+		if err = lockRepo.Release(ctx, lock); err != nil {
 			s.logger.Warnf("failed to release lock: %v", err)
 		}
 	}()
@@ -394,8 +394,8 @@ func (s *OrderService) CancelOrder(
 		orderRepo := ds.OrderRepository()
 
 		// Check if order exists
-		existingOrder, err := orderRepo.FindByID(ctx, id)
-		if err != nil {
+		existingOrder, errExist := orderRepo.FindByID(ctx, id)
+		if errExist != nil {
 			return httperror.NewInternalServerError("failed to get order")
 		}
 
@@ -419,13 +419,13 @@ func (s *OrderService) CancelOrder(
 		}
 
 		// Update status to canceled
-		if err := existingOrder.UpdateStatus(constant.OrderStatusCanceled); err != nil {
+		if err = existingOrder.UpdateStatus(constant.OrderStatusCanceled); err != nil {
 			return httperror.NewBadRequestError("failed to cancel order entity")
 		}
 
 		// Save updated order
-		updatedOrder, err := orderRepo.Update(ctx, existingOrder)
-		if err != nil {
+		updatedOrder, updateErr := orderRepo.Update(ctx, existingOrder)
+		if updateErr != nil {
 			return httperror.NewInternalServerError("failed to cancel order")
 		}
 
@@ -437,7 +437,7 @@ func (s *OrderService) CancelOrder(
 			updatedOrder.TotalPrice,
 			updatedOrder.Items,
 		)
-		if err := s.orderLifecycleProducer.Send(ctx, evt); err != nil {
+		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send order canceled event")
 		}
 
@@ -472,7 +472,7 @@ func (s *OrderService) RequestPaymentOrder(
 	}
 
 	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
+		if err = lockRepo.Release(ctx, lock); err != nil {
 			s.logger.Warnf("failed to release lock: %v", err)
 		}
 	}()
@@ -484,8 +484,8 @@ func (s *OrderService) RequestPaymentOrder(
 		outboxRepo := ds.OutboxRepository()
 
 		// Check if order exists
-		existingOrder, err := orderRepo.FindByID(ctx, id)
-		if err != nil {
+		existingOrder, findErr := orderRepo.FindByID(ctx, id)
+		if findErr != nil {
 			return httperror.NewInternalServerError("failed to get order")
 		}
 
@@ -528,8 +528,8 @@ func (s *OrderService) RequestPaymentOrder(
 			req.PaymentMethod,
 		)
 
-		payload, err := json.Marshal(evt)
-		if err != nil {
+		payload, marshalErr := json.Marshal(evt)
+		if marshalErr != nil {
 			return httperror.NewInternalServerError("failed to marshal payment request event")
 		}
 
@@ -546,7 +546,7 @@ func (s *OrderService) RequestPaymentOrder(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError("failed to create payment request event")
 		}
 

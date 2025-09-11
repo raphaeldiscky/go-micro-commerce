@@ -2,8 +2,7 @@
 package saga
 
 import (
-	"fmt"
-	"time"
+	"errors"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -30,9 +29,9 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.ReserveProductsStep,
 		Description: "Reserve products",
-		MaxRetries:  3,
-		RetryDelay:  2 * time.Second,
-		Timeout:     30 * time.Second,
+		MaxRetries:  constant.ReserveProductsStepMaxRetries,
+		RetryDelay:  constant.ReserveProductsStepRetryDelay,
+		Timeout:     constant.ReserveProductsStepTimeout,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
@@ -70,14 +69,14 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.GetShippingCostStep,
 		Description: "Get shipping cost from shipping service",
-		MaxRetries:  2,
-		RetryDelay:  3 * time.Second,
-		Timeout:     30 * time.Second,
+		MaxRetries:  constant.GetShippingCostStepMaxRetries,
+		RetryDelay:  constant.GetShippingCostStepRetryDelay,
+		Timeout:     constant.GetShippingCostStepTimeout,
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if data.Shipping == nil {
-				return nil, fmt.Errorf("shipping data not found in saga state")
+				return nil, errors.New("shipping data not found in saga state")
 			}
 
 			shippingCost, err := s.activities.GetShippingCost(
@@ -103,14 +102,14 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.SetFinalPricesStep,
 		Description: "Update final order prices to include shipping cost and save to database",
-		MaxRetries:  3,
-		RetryDelay:  1 * time.Second,
-		Timeout:     10 * time.Second,
+		MaxRetries:  constant.SetFinalPricesStepMaxRetries,
+		RetryDelay:  constant.SetFinalPricesStepRetryDelay,
+		Timeout:     constant.SetFinalPricesStepTimeout,
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if data.ShippingCost == nil {
-				return nil, fmt.Errorf("shipping cost not found in data")
+				return nil, errors.New("shipping cost not found in data")
 			}
 
 			err := payload.Order.UpdateShippingCost(*data.ShippingCost)
@@ -118,7 +117,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
-			if err := s.activities.SetFinalOrderPrices(ctx.Context(), payload.Order); err != nil {
+			if err = s.activities.SetFinalOrderPrices(ctx.Context(), payload.Order); err != nil {
 				return nil, err
 			}
 
@@ -133,9 +132,9 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.CreatePaymentStep,
 		Description: "Create payment record for the order; get payment ID and how much need to be paid",
-		MaxRetries:  3,
-		RetryDelay:  5 * time.Second,
-		Timeout:     60 * time.Second,
+		MaxRetries:  constant.CreatePaymentStepMaxRetries,
+		RetryDelay:  constant.CreatePaymentStepRetryDelay,
+		Timeout:     constant.CreatePaymentStepTimeout,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
@@ -153,7 +152,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		},
 		Compensate: func(ctx *WorkflowContext, payload *Payload, data *Metadata) error {
 			if data.PaymentID == nil {
-				return fmt.Errorf("no payment ID found for refund")
+				return errors.New("no payment ID found for refund")
 			}
 
 			return s.activities.RefundPayment(ctx.Context(), payload.Order, *data.PaymentID)
@@ -164,19 +163,19 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.SendPaymentRequiredNotificationStep,
 		Description: "Send payment required notificatio",
-		MaxRetries:  3,
-		RetryDelay:  5 * time.Second,
-		Timeout:     60 * time.Second,
+		MaxRetries:  constant.SendPaymentRequiredNotificationStepMaxRetries,
+		RetryDelay:  constant.SendPaymentRequiredNotificationStepRetryDelay,
+		Timeout:     constant.SendPaymentRequiredNotificationStepTimeout,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if len(data.ReservedProducts) == 0 {
-				return nil, fmt.Errorf("reserved products not found in data")
+				return nil, errors.New("reserved products not found in data")
 			}
 			if data.CustomerEmail == "" {
 				ctx.logger.Error("No customer email found for notification")
 
-				return nil, fmt.Errorf("no customer email found")
+				return nil, errors.New("no customer email found")
 			}
 
 			err := s.activities.SendPaymentRequiredNotification(
@@ -203,9 +202,9 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.WaitForPaymentConfirmationStep,
 		Description: "Wait for payment confirmation",
-		MaxRetries:  3,
-		RetryDelay:  5 * time.Second,
-		Timeout:     1 * time.Hour, // 1-hour timeout for user payment confirmation
+		MaxRetries:  constant.WaitForPaymentConfirmationStepMaxRetries,
+		RetryDelay:  constant.WaitForPaymentConfirmationStepRetryDelay,
+		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 1-hour timeout for user payment confirmation
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
@@ -230,9 +229,9 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.ProcessFulfillmentStep,
 		Description: "Process fulfillment for the paid order; get fulfillmentID, shippingCost and trackingNumber",
-		MaxRetries:  2,
-		RetryDelay:  3 * time.Second,
-		Timeout:     30 * time.Second,
+		MaxRetries:  constant.ProcessFulfillmentStepMaxRetries,
+		RetryDelay:  constant.ProcessFulfillmentStepRetryDelay,
+		Timeout:     constant.ProcessFulfillmentStepTimeout,
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
@@ -266,14 +265,14 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.ConfirmProductsDeductionStep,
 		Description: "Permanently deduct products from inventory after successful payment",
-		MaxRetries:  3,
-		RetryDelay:  2 * time.Second,
-		Timeout:     20 * time.Second,
+		MaxRetries:  constant.ConfirmProductsDeductionStepMaxRetries,
+		RetryDelay:  constant.ConfirmProductsDeductionStepRetryDelay,
+		Timeout:     constant.ConfirmProductsDeductionStepTimeout,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if len(data.ReservedProducts) == 0 {
-				return nil, fmt.Errorf("no reserved products found")
+				return nil, errors.New("no reserved products found")
 			}
 
 			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), payload.Order, data.ReservedProducts); err != nil {
@@ -291,28 +290,28 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	executor.AddStep(&Step{
 		Name:        constant.SendOrderConfirmedNotificationStep,
 		Description: "Send order confirmation and receipt to customer after fulfillment created and order paid; includes invoice and tracking info",
-		MaxRetries:  3,
-		RetryDelay:  1 * time.Second,
-		Timeout:     10 * time.Second,
+		MaxRetries:  constant.SendOrderConfirmedNotificationStepMaxRetries,
+		RetryDelay:  constant.SendOrderConfirmedNotificationStepRetryDelay,
+		Timeout:     constant.SendOrderConfirmedNotificationStepTimeout,
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if data.TrackingNumber == nil {
 				ctx.logger.Warn("No tracking number found for notification")
 
-				return nil, fmt.Errorf("no tracking number found")
+				return nil, errors.New("no tracking number found")
 			}
 
 			if len(data.ReservedProducts) == 0 {
 				ctx.logger.Error("No reserved products found for notification")
 
-				return nil, fmt.Errorf("no reserved products found")
+				return nil, errors.New("no reserved products found")
 			}
 
 			if data.CustomerEmail == "" {
 				ctx.logger.Error("No customer email found for notification")
 
-				return nil, fmt.Errorf("no customer email found")
+				return nil, errors.New("no customer email found")
 			}
 
 			if err := s.activities.SendOrderConfirmedNotification(ctx.Context(), payload.Order, data.ReservedProducts, data.TrackingNumber, data.CustomerEmail); err != nil {

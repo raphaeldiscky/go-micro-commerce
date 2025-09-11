@@ -20,16 +20,6 @@ type OrderDLQEvent struct {
 	Payload  event.DLQPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the OrderDLQEvent.
-func (e *OrderDLQEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the OrderDLQEvent.
-func (e *OrderDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
-	return e.Metadata
-}
-
 // OrderDLQProducer is responsible for producing Order DLQ events.
 type OrderDLQProducer struct {
 	Producer *kafka.AsyncProducer
@@ -63,6 +53,16 @@ func NewOrderDLQEvent(
 			FailedAt:        time.Now().UTC(),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the OrderDLQEvent.
+func (e *OrderDLQEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the OrderDLQEvent.
+func (e *OrderDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+	return e.Metadata
 }
 
 // NewOrderDLQProducer creates a new instance of OrderDLQProducer.

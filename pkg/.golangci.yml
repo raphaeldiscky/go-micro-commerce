@@ -3,6 +3,9 @@ version: "2"
 issues:
   max-same-issues: 50
 
+run:
+  allow-parallel-runners: true
+
 linters:
   enable:
     - asasalint # checks for pass []any as any in variadic func(...any)

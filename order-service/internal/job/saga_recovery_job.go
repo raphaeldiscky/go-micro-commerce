@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 )
@@ -20,6 +21,7 @@ type SagaRecoveryJob struct {
 	orchestrator saga.Orchestrator
 	dataStore    repository.DataStore
 	logger       logger.Logger
+	config       *config.Config
 	interval     time.Duration
 	enabled      bool
 	running      bool
@@ -32,6 +34,7 @@ type SagaRecoveryJob struct {
 func NewSagaRecoveryJob(
 	orchestrator saga.Orchestrator,
 	dataStore repository.DataStore,
+	config *config.Config,
 	appLogger logger.Logger,
 	interval time.Duration,
 ) *SagaRecoveryJob {
@@ -39,10 +42,11 @@ func NewSagaRecoveryJob(
 		orchestrator: orchestrator,
 		dataStore:    dataStore,
 		logger:       appLogger,
+		config:       config,
 		interval:     interval,
 		enabled:      true,
-		maxRetries:   5,
-		maxAge:       24 * time.Hour,
+		maxRetries:   config.Job.Recovery.MaxRetries,
+		maxAge:       config.Job.Recovery.MaxAge,
 	}
 }
 
@@ -97,16 +101,14 @@ func (j *SagaRecoveryJob) recoverSagas(ctx context.Context) {
 		j.mu.Unlock()
 	}()
 
-	j.logger.Debug("Running saga recovery check")
-
 	// Acquire distributed lock to prevent concurrent recovery
 	lockRepo := j.dataStore.LockRepository()
 	lockKey := "saga:recovery:lock"
 
-	lock, err := lockRepo.Get(ctx, lockKey, 10*time.Minute, &redislock.Options{
+	lock, err := lockRepo.Get(ctx, lockKey, j.config.Job.Recovery.RedisLockTTL, &redislock.Options{
 		RetryStrategy: redislock.LimitRetry(
-			redislock.LinearBackoff(100*time.Millisecond),
-			3,
+			redislock.LinearBackoff(j.config.Job.Recovery.RedisLockBackoff),
+			j.config.Job.Recovery.RedisLockMaxRetries,
 		),
 	})
 	if err != nil {
@@ -116,19 +118,19 @@ func (j *SagaRecoveryJob) recoverSagas(ctx context.Context) {
 	}
 
 	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
+		if err = lockRepo.Release(ctx, lock); err != nil {
 			j.logger.Warnf("Failed to release recovery lock: %v", err)
 		}
 	}()
 
-	recoveryCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	recoveryCtx, cancel := context.WithTimeout(ctx, j.config.Job.Recovery.Timeout)
 	defer cancel()
 
-	if err := j.recoverFailedSagasWithRetries(recoveryCtx); err != nil {
+	if err = j.recoverFailedSagasWithRetries(recoveryCtx); err != nil {
 		j.logger.Errorf("Saga recovery failed: %v", err)
 	}
 
-	if err := j.recoverTimeoutSagas(recoveryCtx); err != nil {
+	if err = j.recoverTimeoutSagas(recoveryCtx); err != nil {
 		j.logger.Errorf("Timeout saga recovery failed: %v", err)
 	}
 }
@@ -138,7 +140,7 @@ func (j *SagaRecoveryJob) recoverFailedSagasWithRetries(ctx context.Context) err
 	stateRepo := j.dataStore.SagaStateRepository()
 
 	// Find failed sagas that can be retried
-	failedSagas, err := stateRepo.FindPendingOrFailed(ctx, 50)
+	failedSagas, err := stateRepo.FindPendingOrFailed(ctx, j.config.Job.Recovery.MaxRowsFetch)
 	if err != nil {
 		return fmt.Errorf("failed to find sagas for recovery: %w", err)
 	}
@@ -159,7 +161,7 @@ func (j *SagaRecoveryJob) recoverFailedSagasWithRetries(ctx context.Context) err
 				sagaState.ID,
 			)
 			// Mark as permanently failed
-			if err := stateRepo.MarkAsFailed(ctx, sagaState.ID, "exceeded retry limits"); err != nil {
+			if err = stateRepo.MarkAsFailed(ctx, sagaState.ID, "exceeded retry limits"); err != nil {
 				j.logger.Errorf("Failed to mark saga as permanently failed: %v", err)
 			}
 
@@ -172,7 +174,7 @@ func (j *SagaRecoveryJob) recoverFailedSagasWithRetries(ctx context.Context) err
 		// Increment retry count
 		sagaState.IncrementRetry()
 
-		if err := stateRepo.UpdateWithVersion(ctx, sagaState); err != nil {
+		if err = stateRepo.UpdateWithVersion(ctx, sagaState); err != nil {
 			j.logger.Errorf("Failed to update saga retry count: %v", err)
 
 			continue
@@ -189,7 +191,7 @@ func (j *SagaRecoveryJob) recoverFailedSagasWithRetries(ctx context.Context) err
 func (j *SagaRecoveryJob) recoverTimeoutSagas(ctx context.Context) error {
 	stateRepo := j.dataStore.SagaStateRepository()
 
-	timeoutSagas, err := stateRepo.FindTimeoutSagas(ctx, 20)
+	timeoutSagas, err := stateRepo.FindTimeoutSagas(ctx, j.config.Job.Recovery.MaxRowsFetch)
 	if err != nil {
 		return fmt.Errorf("failed to find timeout sagas: %w", err)
 	}
@@ -205,7 +207,7 @@ func (j *SagaRecoveryJob) recoverTimeoutSagas(ctx context.Context) error {
 			sagaState.ID, sagaState.OrderID)
 
 		// Mark as compensating and trigger compensation
-		if err := stateRepo.MarkAsCompensating(ctx, sagaState.ID); err != nil {
+		if err = stateRepo.MarkAsCompensating(ctx, sagaState.ID); err != nil {
 			j.logger.Errorf("Failed to mark timeout saga as compensating: %v", err)
 
 			continue
@@ -222,7 +224,7 @@ func (j *SagaRecoveryJob) recoverTimeoutSagas(ctx context.Context) error {
 func (j *SagaRecoveryJob) recoverSingleSaga(_ context.Context, orderID uuid.UUID) {
 	recoveryCtx, cancel := context.WithTimeout(
 		context.Background(),
-		30*time.Minute,
+		j.config.Job.Recovery.Timeout,
 	)
 	defer cancel()
 

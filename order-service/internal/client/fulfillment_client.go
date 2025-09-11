@@ -16,6 +16,7 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
@@ -97,7 +98,7 @@ func (c *FulfillmentClient) GetShippingCost(
 		Shipping: mapper.MapShippingDtoToProto(shipping),
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, constant.FulfillmentClientTimeout)
 	defer cancel()
 
 	resp, err := c.client.GetShippingCost(ctx, req)
@@ -107,7 +108,7 @@ func (c *FulfillmentClient) GetShippingCost(
 		return decimal.Zero, fmt.Errorf("failed to get shipping cost: %w", err)
 	}
 
-	shippingCost := decimal.NewFromFloat(resp.ShippingCost)
+	shippingCost := decimal.NewFromFloat(resp.GetShippingCost())
 	c.logger.Infof("Got shipping cost for order %s: %s %s", order.ID, shippingCost, order.Currency)
 
 	return shippingCost, nil

@@ -101,7 +101,7 @@ func (a *OrderActivitiesImpl) RefundPayment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return fmt.Errorf("failed to create refund request event: %w", err)
 		}
 

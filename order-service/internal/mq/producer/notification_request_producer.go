@@ -25,16 +25,6 @@ type NotificationRequestProducer struct {
 	topic    string
 }
 
-// GetPayload returns the data associated with the NotificationRequestEvent.
-func (e *NotificationRequestEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the NotificationRequestEvent.
-func (e *NotificationRequestEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NewNotificationRequestEvent creates a new order notification event.
 func NewNotificationRequestEvent(
 	order *entity.Order,
@@ -119,6 +109,16 @@ func NewNotificationRequestEvent(
 		},
 		Payload: payload,
 	}
+}
+
+// GetPayload returns the data associated with the NotificationRequestEvent.
+func (e *NotificationRequestEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the NotificationRequestEvent.
+func (e *NotificationRequestEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // NewNotificationRequestProducer creates a new instance of NotificationRequestProducer.

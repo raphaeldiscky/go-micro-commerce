@@ -1,7 +1,8 @@
-package integration
+package integration_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,7 +13,7 @@ import (
 
 // TestContainersSetup holds the test database setup.
 type TestContainersSetup struct {
-	DbPool *pgxpool.Pool
+	DBPool *pgxpool.Pool
 	ctx    context.Context
 }
 
@@ -30,14 +31,14 @@ func (tc *TestContainersSetup) SetupPostgres() error {
 	connStr := "postgres://testuser:testpass@localhost:5432/testdb?sslmode=disable"
 
 	// Try to connect to a test database
-	dbPool, err := pgxpool.New(tc.ctx, connStr)
+	dBPool, err := pgxpool.New(tc.ctx, connStr)
 	if err != nil {
 		// If no test database is available, we'll skip the database-dependent tests
 		// In a production setup, you'd set up testcontainers here
 		return fmt.Errorf("test database not available: %w", err)
 	}
 
-	tc.DbPool = dbPool
+	tc.DBPool = dBPool
 
 	// Create orders tables
 	return tc.createOrdersTables()
@@ -45,8 +46,8 @@ func (tc *TestContainersSetup) SetupPostgres() error {
 
 // Cleanup tears down the connections.
 func (tc *TestContainersSetup) Cleanup() {
-	if tc.DbPool != nil {
-		tc.DbPool.Close()
+	if tc.DBPool != nil {
+		tc.DBPool.Close()
 	}
 }
 
@@ -54,7 +55,7 @@ func (tc *TestContainersSetup) Cleanup() {
 func (tc *TestContainersSetup) CleanupData() error {
 	// Use TRUNCATE instead of DELETE for better performance and to reset sequences
 	// Clean up in proper order due to foreign key constraints
-	_, err := tc.DbPool.Exec(
+	_, err := tc.DBPool.Exec(
 		tc.ctx,
 		"TRUNCATE TABLE order_items, orders, outbox_events, inbox_events, saga_states RESTART IDENTITY CASCADE",
 	)
@@ -91,12 +92,12 @@ func (tc *TestContainersSetup) runMigrationFile(filePath string) error {
 
 	// Security check: ensure the file is a .sql file in the migrations directory
 	if !strings.HasSuffix(absPath, ".sql") {
-		return fmt.Errorf("invalid file type: only .sql files are allowed")
+		return errors.New("invalid file type: only .sql files are allowed")
 	}
 
 	// Additional validation: ensure path contains migrations directory
 	if !strings.Contains(absPath, "migrations") {
-		return fmt.Errorf("invalid path: file must be in migrations directory")
+		return errors.New("invalid path: file must be in migrations directory")
 	}
 
 	// Read the migration file
@@ -106,7 +107,7 @@ func (tc *TestContainersSetup) runMigrationFile(filePath string) error {
 	}
 
 	// Execute the migration
-	_, err = tc.DbPool.Exec(tc.ctx, string(query))
+	_, err = tc.DBPool.Exec(tc.ctx, string(query))
 
 	return err
 }
