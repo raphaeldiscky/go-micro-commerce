@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 
 	"github.com/spf13/viper"
@@ -28,7 +27,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigType("env")
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("error reading config file: %v", err)
+		return nil, err
 	}
 
 	cfg := &Config{

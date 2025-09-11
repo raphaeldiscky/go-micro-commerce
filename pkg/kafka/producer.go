@@ -95,12 +95,15 @@ func NewAsyncProducer(cfg *ProducerConfig) (*AsyncProducer, error) {
 	}
 	// background goroutines
 	asyncProducer.wg.Add(1)
+
 	go asyncProducer.handleErrors()
 
 	asyncProducer.wg.Add(1)
+
 	go asyncProducer.handleRetries()
 
 	asyncProducer.wg.Add(1)
+
 	go asyncProducer.handleSuccesses()
 
 	return asyncProducer, nil

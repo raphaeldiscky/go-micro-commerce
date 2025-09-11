@@ -125,6 +125,8 @@ services:
       - "15436:5432"
     networks:
       - go-micro-commerce
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -142,6 +144,8 @@ services:
       - "15437:5432"
     networks:
       - go-micro-commerce
+    volumes:
+      - postgres_search_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -155,6 +159,7 @@ volumes:
   postgres_payment_data:
   postgres_fulfillment_data:
   postgres_notification_data:
+  postgres_search_data:
 
 networks:
   go-micro-commerce:

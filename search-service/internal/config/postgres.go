@@ -1,9 +1,14 @@
 package config
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
+)
+
+const (
+	defaultPostgresPort            = 15437
+	defaultPostgresMaxIdleConns    = 10
+	defaultPostgresMaxOpenConns    = 32
+	defaultPostgresConnMaxLifetime = 60
 )
 
 // PostgresConfig holds the configuration for the PostgreSQL database.
@@ -23,20 +28,16 @@ type PostgresConfig struct {
 func initPostgresConfig() *PostgresConfig {
 	// Set defaults
 	viper.SetDefault("POSTGRES_HOST", "localhost")
-	viper.SetDefault("POSTGRES_PORT", 15437)
+	viper.SetDefault("POSTGRES_PORT", defaultPostgresPort)
 	viper.SetDefault("POSTGRES_DB", "search_db")
 	viper.SetDefault("POSTGRES_USER", "postgres")
 	viper.SetDefault("POSTGRES_PASSWORD", "postgres")
 	viper.SetDefault("POSTGRES_SSL_MODE", "disable")
-	viper.SetDefault("POSTGRES_MAX_IDLE_CONNS", 10)
-	viper.SetDefault("POSTGRES_MAX_OPEN_CONNS", 32)
-	viper.SetDefault("POSTGRES_CONN_MAX_LIFETIME", 60)
+	viper.SetDefault("POSTGRES_MAX_IDLE_CONNS", defaultPostgresMaxIdleConns)
+	viper.SetDefault("POSTGRES_MAX_OPEN_CONNS", defaultPostgresMaxOpenConns)
+	viper.SetDefault("POSTGRES_CONN_MAX_LIFETIME", defaultPostgresConnMaxLifetime)
 
 	pgConfig := &PostgresConfig{}
-
-	if err := viper.Unmarshal(&pgConfig); err != nil {
-		log.Fatalf("error mapping database config: %v", err)
-	}
 
 	return pgConfig
 }

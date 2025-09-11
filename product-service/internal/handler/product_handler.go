@@ -70,20 +70,19 @@ func (h *ProductHandler) GetProduct(c echo.Context) error {
 // GetProducts handles GET /products.
 func (h *ProductHandler) GetProducts(c echo.Context) error {
 	var req dto.GetProductsRequest
+
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgConstant.DefaultLimit,
-		1,
-		100,
-	) // min=1, max=100
+		pkgConstant.DefaultMinLimit,
+		pkgConstant.DefaultMaxLimit,
+	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgConstant.DefaultPage,
-		1,
-		0,
-	) // min=1, max=0 (no max)
+		pkgConstant.DefaultMinPage,
+		pkgConstant.DefaultMaxPage,
+	)
 
 	if err := c.Validate(&req); err != nil {
 		return err

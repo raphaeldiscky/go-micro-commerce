@@ -19,7 +19,6 @@ import (
 
 // SearchService defines the interface for search operations.
 type SearchService interface {
-	// Product operations
 	IndexProduct(ctx context.Context, product *entity.ProductDocument) error
 	UpdateProduct(ctx context.Context, product *entity.ProductDocument) error
 	DeleteProduct(ctx context.Context, productID string) error
@@ -28,30 +27,18 @@ type SearchService interface {
 		query *entity.SearchQuery,
 	) ([]entity.SearchResult, *pkgDto.PageMetaData, error)
 	GetProduct(ctx context.Context, productID string) (*entity.ProductDocument, error)
-
-	// Order and Customer operations - removed for now, only handling products and orders
-
-	// Bulk operations
 	BulkIndexProducts(ctx context.Context, products []entity.ProductDocument) error
-	// BulkIndexOrders and BulkIndexCustomers - removed for now, only handling products
-
-	// Index management
 	InitializeIndices(ctx context.Context) error
 	RefreshIndices(ctx context.Context) error
-
-	// Search utilities
 	AutoComplete(ctx context.Context, query string, documentType string) ([]string, error)
 	GetSuggestions(
 		ctx context.Context,
 		query string,
 		documentType string,
 	) ([]entity.SuggestionResult, error)
-
-	// Inbox event processing methods
 	ProcessProductCreated(ctx context.Context, inboxEvent *entity.InboxEvent) error
 	ProcessProductUpdated(ctx context.Context, inboxEvent *entity.InboxEvent) error
 	ProcessProductDeleted(ctx context.Context, inboxEvent *entity.InboxEvent) error
-	// ProcessOrderLifecycle - removed for now, only handling products
 }
 
 // searchService implements the SearchService interface.
@@ -70,8 +57,6 @@ func NewSearchService(
 		logger:     appLogger,
 	}
 }
-
-// Product operations
 
 // IndexProduct indexes a product document.
 func (s *searchService) IndexProduct(ctx context.Context, product *entity.ProductDocument) error {
@@ -133,15 +118,6 @@ func (s *searchService) SearchProducts(
 ) ([]entity.SearchResult, *pkgDto.PageMetaData, error) {
 	s.logger.Infof("Searching products with query: %s", query.Query)
 
-	// Set default values
-	if query.Size == 0 {
-		query.Size = 20
-	}
-
-	if query.Size > 100 {
-		query.Size = 100 // Limit maximum page size
-	}
-
 	result, err := s.searchRepo.SearchProducts(ctx, query)
 	if err != nil {
 		s.logger.Errorf("Failed to search products: %v", err)
@@ -201,12 +177,6 @@ func (s *searchService) BulkIndexProducts(
 	return nil
 }
 
-// BulkIndexOrders - removed for now, only handling products
-
-// BulkIndexCustomers - removed for now, only handling products and orders
-
-// Index management
-
 // InitializeIndices creates all necessary indices.
 func (s *searchService) InitializeIndices(ctx context.Context) error {
 	s.logger.Info("Initializing search indices")
@@ -234,8 +204,6 @@ func (s *searchService) RefreshIndices(ctx context.Context) error {
 
 	return nil
 }
-
-// Search utilities
 
 // AutoComplete provides autocomplete functionality.
 func (s *searchService) AutoComplete(
@@ -271,35 +239,6 @@ func (s *searchService) GetSuggestions(
 	}
 
 	return results, nil
-}
-
-// Helper methods for building suggest fields
-
-// buildProductSuggest builds the suggest field for products.
-func (s *searchService) buildProductSuggest(product *entity.ProductDocument) {
-	inputs := []string{product.Name}
-
-	product.Suggest = entity.SuggestField{
-		Input:  inputs,
-		Weight: s.calculateProductWeight(product),
-	}
-}
-
-// Weight calculation methods
-
-// calculateProductWeight calculates weight for product suggestions.
-func (s *searchService) calculateProductWeight(product *entity.ProductDocument) int {
-	weight := 1
-
-	if product.Quantity > 0 {
-		weight += 2
-	}
-
-	if product.Quantity > 10 {
-		weight++
-	}
-
-	return weight
 }
 
 // ProcessProductCreated processes a product created event from the inbox.
@@ -392,4 +331,31 @@ func (s *searchService) ProcessProductDeleted(
 	return nil
 }
 
-// ProcessOrderLifecycle - removed for now, only handling products
+// buildProductSuggest builds the suggest field for products.
+func (s *searchService) buildProductSuggest(product *entity.ProductDocument) {
+	inputs := []string{product.Name}
+
+	product.Suggest = entity.SuggestField{
+		Input:  inputs,
+		Weight: s.calculateProductWeight(product),
+	}
+}
+
+const (
+	defaultLimitProductWeight = 10
+)
+
+// calculateProductWeight calculates weight for product suggestions.
+func (s *searchService) calculateProductWeight(product *entity.ProductDocument) int {
+	weight := 1
+
+	if product.Quantity > 0 {
+		weight += 2
+	}
+
+	if product.Quantity > defaultLimitProductWeight {
+		weight++
+	}
+
+	return weight
+}

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -25,7 +25,7 @@ func initHTTPServerConfig() *HTTPServerConfig {
 	httpServerConfig := &HTTPServerConfig{}
 
 	if err := viper.Unmarshal(&httpServerConfig); err != nil {
-		log.Fatalf("error mapping http server config: %v", err)
+		slog.Error("error mapping http server config", "err", err)
 	}
 
 	return httpServerConfig

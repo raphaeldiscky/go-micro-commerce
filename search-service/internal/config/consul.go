@@ -1,8 +1,6 @@
 package config
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
 )
 
@@ -23,10 +21,6 @@ func initConsulConfig() *ConsulConfig {
 	viper.SetDefault("CONSUL_ENABLED", true)
 
 	consulConfig := &ConsulConfig{}
-
-	if err := viper.Unmarshal(&consulConfig); err != nil {
-		log.Fatalf("error mapping consul config: %v", err)
-	}
 
 	return consulConfig
 }

@@ -36,9 +36,11 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 
 	var createResponse dto.WebResponse[productDto.ProductResponse]
+
 	err = s.parseResponse(resp, &createResponse)
 	require.NoError(s.T(), err)
 
@@ -59,6 +61,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var updateResponse dto.WebResponse[productDto.ProductResponse]
+
 	err = s.parseResponse(resp, &updateResponse)
 	require.NoError(s.T(), err)
 
@@ -107,9 +110,11 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 
 	var createResponse dto.WebResponse[productDto.ProductResponse]
+
 	err = s.parseResponse(resp, &createResponse)
 	require.NoError(s.T(), err)
 

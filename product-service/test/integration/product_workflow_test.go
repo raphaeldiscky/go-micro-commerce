@@ -35,6 +35,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
 
 	var createResponse dto.WebResponse[productDto.ProductResponse]
@@ -51,6 +52,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var getResponse dto.WebResponse[productDto.ProductResponse]
@@ -76,6 +78,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var updateResponse dto.WebResponse[productDto.ProductResponse]

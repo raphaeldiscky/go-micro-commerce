@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -21,7 +21,7 @@ func initAppConfig() *AppConfig {
 	appConfig := &AppConfig{}
 
 	if err := viper.Unmarshal(&appConfig); err != nil {
-		log.Fatalf("error mapping app config: %v", err)
+		slog.Error("error mapping app config", "err", err)
 	}
 
 	return appConfig

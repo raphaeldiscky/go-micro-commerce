@@ -35,6 +35,7 @@ func (s *TestSuite) SetupSuite() {
 
 	// Setup testcontainers (optional for basic HTTP testing)
 	s.tcSetup = NewTestContainersSetup()
+
 	err := s.tcSetup.SetupPostgres()
 	if err != nil {
 		s.T().Logf("Database setup skipped (not required for basic HTTP tests): %v", err)

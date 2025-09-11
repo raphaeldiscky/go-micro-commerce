@@ -46,9 +46,11 @@ func (s *ProductListTestSuite) TestGetProducts() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var productList dto.WebResponse[[]productDto.ProductResponse]
+
 	err = s.parseResponse(resp, &productList)
 	require.NoError(s.T(), err)
 
@@ -84,9 +86,11 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
+
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
 	var productList dto.WebResponse[[]productDto.ProductResponse]
+
 	err = s.parseResponse(resp, &productList)
 	require.NoError(s.T(), err)
 

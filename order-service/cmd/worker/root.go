@@ -86,6 +86,7 @@ func (wm *Manager) runWorkers(ctx context.Context, workers []Worker) error {
 
 		go func() {
 			defer wm.wg.Done()
+
 			wm.logger.Infof("Starting worker: %s", worker.Name())
 
 			if err := worker.Start(ctx); err != nil {
@@ -129,6 +130,7 @@ func (wm *Manager) shutdown() error {
 
 	// Wait for all workers to finish with timeout
 	done := make(chan struct{})
+
 	go func() {
 		wm.wg.Wait()
 		close(done)

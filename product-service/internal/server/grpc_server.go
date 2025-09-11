@@ -289,9 +289,11 @@ func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResp
 }
 
 // Start runs the gRPC server.
-func (s *GRPCServer) Start() error {
+func (s *GRPCServer) Start(ctx context.Context) error {
 	address := fmt.Sprintf("%s:%d", s.cfg.GRPCServer.Host, s.cfg.GRPCServer.Port)
-	lis, err := net.Listen("tcp", address)
+	lc := &net.ListenConfig{}
+
+	lis, err := lc.Listen(ctx, "tcp", address)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", address, err)
 	}
@@ -324,6 +326,7 @@ func (s *GRPCServer) Shutdown(ctx context.Context) error {
 	}
 
 	stopped := make(chan struct{})
+
 	go func() {
 		s.grpcServer.GracefulStop()
 		close(stopped)

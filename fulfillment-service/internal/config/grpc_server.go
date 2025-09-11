@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 
@@ -27,7 +27,7 @@ func initGRPCServerConfig() *GRPCServerConfig {
 	grpcServerConfig := &GRPCServerConfig{}
 
 	if err := viper.Unmarshal(&grpcServerConfig); err != nil {
-		log.Fatalf("error mapping grpc server config: %v", err)
+		slog.Error("error mapping grpc server config", "err", err)
 	}
 
 	return grpcServerConfig

@@ -1,11 +1,10 @@
-package validation
+package validation_test
 
 import (
 	"testing"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,35 +47,35 @@ func TestDecimalValidators(t *testing.T) {
 		t.Parallel()
 		// Should pass with positive value
 		test1 := TestGT{Price: decimal.NewFromFloat(10.50)}
-		err := validate.Struct(test1)
-		assert.NoError(t, err)
+		err = validate.Struct(test1)
+		require.NoError(t, err)
 
 		// Should fail with zero
 		test2 := TestGT{Price: decimal.Zero}
 		err = validate.Struct(test2)
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		// Should fail with negative value
 		test3 := TestGT{Price: decimal.NewFromFloat(-5.00)}
 		err = validate.Struct(test3)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("decimal_gte validator", func(t *testing.T) {
 		t.Parallel()
 		// Should pass with positive value
 		test1 := TestGTE{Price: decimal.NewFromFloat(10.50)}
-		err := validate.Struct(test1)
-		assert.NoError(t, err)
+		err = validate.Struct(test1)
+		require.NoError(t, err)
 
 		// Should pass with zero
 		test2 := TestGTE{Price: decimal.Zero}
 		err = validate.Struct(test2)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Should fail with negative value
 		test3 := TestGTE{Price: decimal.NewFromFloat(-5.00)}
 		err = validate.Struct(test3)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }

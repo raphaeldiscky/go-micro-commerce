@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -30,7 +30,7 @@ func initTracingConfig() *TracingConfig {
 	tracingConfig := &TracingConfig{}
 
 	if err := viper.Unmarshal(&tracingConfig); err != nil {
-		log.Fatalf("error mapping tracing config: %v", err)
+		slog.Error("error mapping tracing config", "err", err)
 	}
 
 	return tracingConfig

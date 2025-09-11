@@ -515,6 +515,7 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 
 	// Execute all reservations in single batch
 	results := r.db.SendBatch(ctx, batch)
+
 	defer func() {
 		if err := results.Close(); err != nil {
 			return // ignore
@@ -579,6 +580,7 @@ func (r *ProductRepositoryPostgres) ReleaseProducts(
 	}
 
 	results := r.db.SendBatch(ctx, batch)
+
 	defer func() {
 		if err := results.Close(); err != nil {
 			return // ignore
@@ -647,6 +649,7 @@ func (r *ProductRepositoryPostgres) ConfirmProductsDeduction(
 	}
 
 	results := r.db.SendBatch(ctx, batch)
+
 	defer func() {
 		if err := results.Close(); err != nil {
 			return // ignore

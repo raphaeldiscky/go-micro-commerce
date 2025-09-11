@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -25,7 +25,7 @@ func initRateLimitConfig() *RateLimitConfig {
 	rateLimitConfig := &RateLimitConfig{}
 
 	if err := viper.Unmarshal(&rateLimitConfig); err != nil {
-		log.Fatalf("error mapping rate limit config: %v", err)
+		slog.Error("error mapping ratelimits config", "err", err)
 	}
 
 	return rateLimitConfig

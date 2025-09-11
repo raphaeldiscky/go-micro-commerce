@@ -39,7 +39,7 @@ func (w *GRPCWorker) Start(ctx context.Context) error {
 	errChan := make(chan error, 1)
 
 	go func() {
-		if err := w.server.Start(); err != nil {
+		if err := w.server.Start(ctx); err != nil {
 			errChan <- err
 		}
 	}()

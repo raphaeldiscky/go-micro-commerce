@@ -134,17 +134,15 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgconstant.DefaultLimit,
-		1,
-		100,
-	) // min=1, max=100
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
+	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgconstant.DefaultPage,
-		1,
-		0,
-	) // min=1, max=0 (no max)
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
+	)
 
 	if err := c.Validate(&req); err != nil {
 		return err
@@ -176,20 +174,19 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 // Authentication: Requires admin privileges.
 func (h *OrderHandler) GetOrders(c echo.Context) error {
 	var req dto.GetOrdersRequest
+
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgconstant.DefaultLimit,
-		1,
-		100,
-	) // min=1, max=100
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
+	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgconstant.DefaultPage,
-		1,
-		0,
-	) // min=1, max=0 (no max)
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
+	)
 
 	if err := c.Validate(&req); err != nil {
 		return err
@@ -217,20 +214,19 @@ func (h *OrderHandler) GetOrders(c echo.Context) error {
 // Authentication: Requires user authentication.
 func (h *OrderHandler) GetLoggedInOrders(c echo.Context) error {
 	var req dto.GetOrdersRequest
+
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgconstant.DefaultLimit,
-		1,
-		100,
-	) // min=1, max=100
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
+	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgconstant.DefaultPage,
-		1,
-		0,
-	) // min=1, max=0 (no max)
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
+	)
 
 	if err := c.Validate(&req); err != nil {
 		return err

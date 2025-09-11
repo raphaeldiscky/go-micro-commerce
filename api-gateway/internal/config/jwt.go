@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -35,7 +35,7 @@ func initJWTConfig() *JWTConfig {
 	jwtConfig := &JWTConfig{}
 
 	if err := viper.Unmarshal(&jwtConfig); err != nil {
-		log.Fatalf("error mapping jwt config: %v", err)
+		slog.Error("error mapping jwt config", "err", err)
 	}
 
 	return jwtConfig

@@ -25,7 +25,7 @@ func main() {
 	}
 
 	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
-	if err := tracing.InitTracing(cfg.Tracing); err != nil {
+	if err = tracing.InitTracing(cfg.Tracing); err != nil {
 		appLogger.Fatalf("failed to initialize tracing: %v", err)
 	}
 
@@ -48,7 +48,7 @@ func main() {
 		Config:           cfg,
 	})
 
-	if err := worker.Start(ctx, cfg, gw, appLogger); err != nil {
+	if err = worker.Start(ctx, cfg, gw, appLogger); err != nil {
 		appLogger.Fatalf("Worker failed to start: %v", err)
 	}
 
