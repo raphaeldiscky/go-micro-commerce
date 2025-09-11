@@ -19,16 +19,6 @@ type ProductCreatedEvent struct {
 	Payload  event.ProductCreatedPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
-	return e.Metadata
-}
-
 // NewProductCreatedEvent creates a new ProductCreatedEvent.
 func NewProductCreatedEvent(
 	productID uuid.UUID,
@@ -51,6 +41,16 @@ func NewProductCreatedEvent(
 			Quantity:  quantity,
 		},
 	}
+}
+
+// GetPayload returns the data associated with the ProductCreatedEvent.
+func (e *ProductCreatedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the ProductCreatedEvent.
+func (e *ProductCreatedEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+	return e.Metadata
 }
 
 // ProductCreatedProducer is responsible for producing product created events.

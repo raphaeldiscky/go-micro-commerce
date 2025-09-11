@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
 
@@ -160,7 +161,7 @@ func (r *ProductRepositoryPostgres) Update(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, err
+			return nil, errors.New(constant.ProductNotFoundErrorMessage)
 		}
 
 		return nil, err
@@ -168,6 +169,13 @@ func (r *ProductRepositoryPostgres) Update(
 
 	return &updatedProduct, nil
 }
+
+const (
+	defaultArgsLenMultiplier = 4
+	paramOffset1             = 1
+	paramOffset2             = 2
+	paramOffset3             = 3
+)
 
 // BulkUpdateQuantity updates the quantity of multiple products in the database.
 func (r *ProductRepositoryPostgres) BulkUpdateQuantity(
@@ -190,11 +198,14 @@ func (r *ProductRepositoryPostgres) BulkUpdateQuantity(
 	`
 
 	valueStrings := make([]string, 0, len(products))
-	valueArgs := make([]any, 0, len(products)*4)
+	valueArgs := make([]any, 0, len(products)*defaultArgsLenMultiplier)
 
 	i := 1
 	for _, product := range products {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d)", i, i+1, i+2, i+3))
+		valueStrings = append(
+			valueStrings,
+			fmt.Sprintf("($%d, $%d, $%d, $%d)", i, i+paramOffset1, i+paramOffset2, i+paramOffset3),
+		)
 		valueArgs = append(valueArgs, product.ID, product.Name, product.Price, product.Quantity)
 		i += 4
 	}
@@ -249,7 +260,7 @@ func (r *ProductRepositoryPostgres) FindByID(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.ProductNotFoundErrorMessage)
 		}
 
 		return nil, err
@@ -286,7 +297,7 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 	for rows.Next() {
 		var product entity.Product
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&product.ID,
 			&product.Name,
 			&product.Price,
@@ -303,7 +314,7 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 		products = append(products, &product)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -337,7 +348,7 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 	for rows.Next() {
 		var product entity.Product
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&product.ID,
 			&product.Name,
 			&product.Price,
@@ -354,7 +365,7 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 		products = append(products, &product)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -384,7 +395,7 @@ func (r *ProductRepositoryPostgres) FindAll(
 	for rows.Next() {
 		var product entity.Product
 
-		err := rows.Scan(
+		err = rows.Scan(
 			&product.ID,
 			&product.Name,
 			&product.Price,
@@ -401,7 +412,7 @@ func (r *ProductRepositoryPostgres) FindAll(
 		products = append(products, &product)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 
@@ -522,7 +533,7 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 		}
 	}()
 
-	for i := 0; i < batch.Len(); i++ {
+	for i := range batch.Len() {
 		row := results.QueryRow()
 
 		var product entity.Product
@@ -587,7 +598,7 @@ func (r *ProductRepositoryPostgres) ReleaseProducts(
 		}
 	}()
 
-	for i := 0; i < batch.Len(); i++ {
+	for i := range batch.Len() {
 		row := results.QueryRow()
 
 		var product entity.Product
@@ -656,7 +667,7 @@ func (r *ProductRepositoryPostgres) ConfirmProductsDeduction(
 		}
 	}()
 
-	for i := 0; i < batch.Len(); i++ {
+	for i := range batch.Len() {
 		row := results.QueryRow()
 
 		var product entity.Product

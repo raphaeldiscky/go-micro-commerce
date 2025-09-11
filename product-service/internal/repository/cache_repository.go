@@ -67,15 +67,11 @@ func (r *CacheRepositoryRedis) GetProduct(
 
 	result, err := r.client.Get(ctx, key).Result()
 	if err != nil {
-		if errors.Is(err, redis.Nil) {
-			return nil, nil
-		}
-
 		return nil, err
 	}
 
 	var product entity.Product
-	if err := json.Unmarshal([]byte(result), &product); err != nil {
+	if err = json.Unmarshal([]byte(result), &product); err != nil {
 		return nil, err
 	}
 
@@ -108,14 +104,14 @@ func (r *CacheRepositoryRedis) GetProducts(
 	result, err := r.client.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) {
-			return nil, nil // Cache miss
+			return nil, errors.New("cache miss: products not found")
 		}
 
 		return nil, err
 	}
 
 	var products []*entity.Product
-	if err := json.Unmarshal([]byte(result), &products); err != nil {
+	if err = json.Unmarshal([]byte(result), &products); err != nil {
 		return nil, err
 	}
 
@@ -146,18 +142,22 @@ func (r *CacheRepositoryRedis) DeleteProduct(ctx context.Context, id uuid.UUID) 
 	return r.client.Del(ctx, key).Err()
 }
 
+const (
+	defaultScanCount = 100
+)
+
 // DeleteProductsPattern removes products matching a pattern.
 func (r *CacheRepositoryRedis) DeleteProductsPattern(ctx context.Context, pattern string) error {
 	var cursor uint64
 
 	for {
-		keys, nextCursor, err := r.client.Scan(ctx, cursor, pattern, 100).Result()
+		keys, nextCursor, err := r.client.Scan(ctx, cursor, pattern, defaultScanCount).Result()
 		if err != nil {
 			return err
 		}
 
 		if len(keys) > 0 {
-			if err := r.client.Del(ctx, keys...).Err(); err != nil {
+			if err = r.client.Del(ctx, keys...).Err(); err != nil {
 				return err
 			}
 		}
@@ -171,14 +171,12 @@ func (r *CacheRepositoryRedis) DeleteProductsPattern(ctx context.Context, patter
 	return nil
 }
 
-// NullCacheRepository methods - all return no-op behavior
-
 // GetProduct always returns cache miss.
 func (n *NullCacheRepository) GetProduct(
 	_ context.Context,
 	_ uuid.UUID,
 ) (*entity.Product, error) {
-	return nil, nil
+	return nil, errors.New("cache miss: product not found")
 }
 
 // SetProduct does nothing.

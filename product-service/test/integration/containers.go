@@ -1,8 +1,8 @@
-package integration
+package integration_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,10 +14,15 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
+const (
+	postgresReadyLogOccurrence = 2
+	postgresStartupTimeoutMin  = 5
+)
+
 // TestContainersSetup holds the testcontainers setup.
 type TestContainersSetup struct {
 	PgContainer testcontainers.Container
-	DbPool      *pgxpool.Pool
+	DBPool      *pgxpool.Pool
 	ctx         context.Context
 }
 
@@ -38,8 +43,8 @@ func (tc *TestContainersSetup) SetupPostgres() error {
 		postgres.WithPassword("testpass"),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
-				WithOccurrence(2).
-				WithStartupTimeout(5*time.Minute)),
+				WithOccurrence(postgresReadyLogOccurrence).
+				WithStartupTimeout(postgresStartupTimeoutMin*time.Minute)),
 	)
 	if err != nil {
 		return err
@@ -59,7 +64,7 @@ func (tc *TestContainersSetup) SetupPostgres() error {
 		return err
 	}
 
-	tc.DbPool = dbPool
+	tc.DBPool = dbPool
 
 	// Create products table
 	return tc.createProductsTable()
@@ -67,8 +72,8 @@ func (tc *TestContainersSetup) SetupPostgres() error {
 
 // Cleanup tears down the containers and closes connections.
 func (tc *TestContainersSetup) Cleanup() {
-	if tc.DbPool != nil {
-		tc.DbPool.Close()
+	if tc.DBPool != nil {
+		tc.DBPool.Close()
 	}
 
 	if tc.PgContainer != nil {
@@ -82,7 +87,7 @@ func (tc *TestContainersSetup) Cleanup() {
 // CleanupData cleans up test data from tables.
 func (tc *TestContainersSetup) CleanupData() error {
 	// Use TRUNCATE instead of DELETE for better performance and to reset sequences
-	_, err := tc.DbPool.Exec(tc.ctx, "TRUNCATE TABLE products RESTART IDENTITY CASCADE")
+	_, err := tc.DBPool.Exec(tc.ctx, "TRUNCATE TABLE products RESTART IDENTITY CASCADE")
 
 	return err
 }
@@ -114,12 +119,12 @@ func (tc *TestContainersSetup) runMigrationFile(filePath string) error {
 
 	// Security check: ensure the file is a .sql file in the migrations directory
 	if !strings.HasSuffix(absPath, ".sql") {
-		return fmt.Errorf("invalid file type: only .sql files are allowed")
+		return errors.New("invalid file type: only .sql files are allowed")
 	}
 
 	// Additional validation: ensure path contains migrations directory
 	if !strings.Contains(absPath, "migrations") {
-		return fmt.Errorf("invalid path: file must be in migrations directory")
+		return errors.New("invalid path: file must be in migrations directory")
 	}
 
 	// Read the migration file
@@ -129,7 +134,7 @@ func (tc *TestContainersSetup) runMigrationFile(filePath string) error {
 	}
 
 	// Execute the migration
-	_, err = tc.DbPool.Exec(tc.ctx, string(query))
+	_, err = tc.DBPool.Exec(tc.ctx, string(query))
 
 	return err
 }

@@ -115,7 +115,7 @@ func (h *ProductHandler) UpdateProduct(c echo.Context) error {
 	}
 
 	var reqBody dto.UpdateProductRequest
-	if err := c.Bind(&reqBody); err != nil {
+	if err = c.Bind(&reqBody); err != nil {
 		return err
 	}
 
@@ -126,7 +126,7 @@ func (h *ProductHandler) UpdateProduct(c echo.Context) error {
 		Quantity: reqBody.Quantity,
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err = c.Validate(&req); err != nil {
 		return err
 	}
 

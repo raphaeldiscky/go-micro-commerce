@@ -23,6 +23,7 @@ import (
 // GRPCServer is the gRPC server for product service.
 type GRPCServer struct {
 	pb.UnimplementedProductServiceServer
+
 	cfg            *config.Config
 	productService service.ProductServiceInterface
 	logger         logger.Logger
@@ -43,9 +44,9 @@ func (s *GRPCServer) GetProducts(
 	ctx context.Context,
 	req *pb.GetProductsRequest,
 ) (*pb.GetProductsResponse, error) {
-	ids := make([]uuid.UUID, len(req.Ids))
+	ids := make([]uuid.UUID, len(req.GetIds()))
 
-	for i, idStr := range req.Ids {
+	for i, idStr := range req.GetIds() {
 		uid, err := uuid.Parse(idStr)
 		if err != nil {
 			return nil, fmt.Errorf("invalid product ID: %w", err)
@@ -83,23 +84,23 @@ func (s *GRPCServer) ReserveProducts(
 ) (*pb.ReserveProductsResponse, error) {
 	// Convert protobuf request to service DTO
 	reserveReq := dto.ReserveProductsRequest{
-		IdempotencyKey: req.IdempotencyKey,
-		Items:          make([]dto.ProductReservationItem, len(req.Items)),
+		IdempotencyKey: req.GetIdempotencyKey(),
+		Items:          make([]dto.ProductReservationItem, len(req.GetItems())),
 	}
 
-	for i, item := range req.Items {
-		productID, err := uuid.Parse(item.ProductId)
+	for i, item := range req.GetItems() {
+		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
 			return &pb.ReserveProductsResponse{
 				Success:      false,
-				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
-			}, nil
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
+			}, err
 		}
 
 		reserveReq.Items[i] = dto.ProductReservationItem{
 			ProductID:       productID,
-			Quantity:        item.Quantity,
-			ExpectedVersion: item.Version,
+			Quantity:        item.GetQuantity(),
+			ExpectedVersion: item.GetVersion(),
 		}
 	}
 
@@ -109,7 +110,7 @@ func (s *GRPCServer) ReserveProducts(
 		return &pb.ReserveProductsResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, nil
+		}, err
 	}
 
 	// Convert service response to protobuf
@@ -140,22 +141,22 @@ func (s *GRPCServer) ConfirmProductsDeduction(
 ) (*pb.ConfirmProductsDeductionResponse, error) {
 	// Convert protobuf request to service DTO
 	deductReq := dto.ConfirmProductsDeductionRequest{
-		Items: make([]dto.ProductReservationItem, len(req.Items)),
+		Items: make([]dto.ProductReservationItem, len(req.GetItems())),
 	}
 
-	for i, item := range req.Items {
-		productID, err := uuid.Parse(item.ProductId)
+	for i, item := range req.GetItems() {
+		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
 			return &pb.ConfirmProductsDeductionResponse{
 				Success:      false,
-				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
-			}, nil
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
+			}, err
 		}
 
 		deductReq.Items[i] = dto.ProductReservationItem{
 			ProductID:       productID,
-			Quantity:        item.Quantity,
-			ExpectedVersion: item.Version,
+			Quantity:        item.GetQuantity(),
+			ExpectedVersion: item.GetVersion(),
 		}
 	}
 
@@ -165,7 +166,7 @@ func (s *GRPCServer) ConfirmProductsDeduction(
 		return &pb.ConfirmProductsDeductionResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, nil
+		}, err
 	}
 
 	// Convert service response to protobuf
@@ -196,22 +197,22 @@ func (s *GRPCServer) ReleaseProducts(
 ) (*pb.ReleaseProductsResponse, error) {
 	// Convert protobuf request to service DTO
 	releaseReq := dto.ReleaseProductsRequest{
-		Items: make([]dto.ProductReservationItem, len(req.Items)),
+		Items: make([]dto.ProductReservationItem, len(req.GetItems())),
 	}
 
-	for i, item := range req.Items {
-		productID, err := uuid.Parse(item.ProductId)
+	for i, item := range req.GetItems() {
+		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
 			return &pb.ReleaseProductsResponse{
 				Success:      false,
-				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
-			}, nil
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
+			}, err
 		}
 
 		releaseReq.Items[i] = dto.ProductReservationItem{
 			ProductID:       productID,
-			Quantity:        item.Quantity,
-			ExpectedVersion: item.Version,
+			Quantity:        item.GetQuantity(),
+			ExpectedVersion: item.GetVersion(),
 		}
 	}
 
@@ -221,7 +222,7 @@ func (s *GRPCServer) ReleaseProducts(
 		return &pb.ReleaseProductsResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, nil
+		}, err
 	}
 
 	return &pb.ReleaseProductsResponse{Success: true}, nil
@@ -234,22 +235,22 @@ func (s *GRPCServer) RestoreProducts(
 ) (*pb.RestoreProductsResponse, error) {
 	// Convert protobuf request to service DTO
 	restoreReq := dto.RestoreProductsRequest{
-		Items:  make([]dto.ProductRestorationItem, len(req.Items)),
-		Reason: req.Reason,
+		Items:  make([]dto.ProductRestorationItem, len(req.GetItems())),
+		Reason: req.GetReason(),
 	}
 
-	for i, item := range req.Items {
-		productID, err := uuid.Parse(item.ProductId)
+	for i, item := range req.GetItems() {
+		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
 			return &pb.RestoreProductsResponse{
 				Success:      false,
-				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.ProductId),
-			}, nil
+				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
+			}, err
 		}
 
 		restoreReq.Items[i] = dto.ProductRestorationItem{
 			ProductID: productID,
-			Quantity:  item.Quantity,
+			Quantity:  item.GetQuantity(),
 		}
 	}
 
@@ -259,7 +260,7 @@ func (s *GRPCServer) RestoreProducts(
 		return &pb.RestoreProductsResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, nil
+		}, err
 	}
 
 	// Convert service response to protobuf

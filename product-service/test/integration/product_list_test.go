@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"fmt"
@@ -7,8 +7,6 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	productDto "github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
@@ -29,17 +27,17 @@ func (s *ProductListTestSuite) TestGetProducts() {
 
 	for _, product := range products {
 		resp, err := s.makeRequest("POST", "/v1", product)
-		require.NoError(s.T(), err)
-		assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+		s.Require().NoError(err)
+		s.Equal(http.StatusCreated, resp.StatusCode)
 
-		if err := resp.Body.Close(); err != nil {
+		if err = resp.Body.Close(); err != nil {
 			s.T().Errorf("failed to close response body: %v", err)
 		}
 	}
 
 	// Test getting all products with default pagination
 	resp, err := s.makeRequest("GET", "/v1", nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -47,17 +45,17 @@ func (s *ProductListTestSuite) TestGetProducts() {
 		}
 	}()
 
-	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	s.Equal(http.StatusOK, resp.StatusCode)
 
 	var productList dto.WebResponse[[]productDto.ProductResponse]
 
 	err = s.parseResponse(resp, &productList)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.Equal(s.T(), "success", productList.Message)
-	assert.NotNil(s.T(), productList.Pagination)
-	assert.Equal(s.T(), int64(3), productList.Pagination.TotalItem)
-	assert.Len(s.T(), productList.Data, 3)
+	s.Equal("success", productList.Message)
+	s.NotNil(productList.Pagination)
+	s.Equal(int64(3), productList.Pagination.TotalItem)
+	s.Len(productList.Data, 3)
 }
 
 func (s *ProductListTestSuite) TestGetProductsWithPagination() {
@@ -69,17 +67,17 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 			Quantity: int64(i * 5),
 		}
 		resp, err := s.makeRequest("POST", "/v1", product)
-		require.NoError(s.T(), err)
-		assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+		s.Require().NoError(err)
+		s.Equal(http.StatusCreated, resp.StatusCode)
 
-		if err := resp.Body.Close(); err != nil {
+		if err = resp.Body.Close(); err != nil {
 			s.T().Errorf("failed to close response body: %v", err)
 		}
 	}
 
 	// Test pagination - using limit=2&page=2 (second page with 2 items)
 	resp, err := s.makeRequest("GET", "/v1?limit=2&page=2", nil)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -87,19 +85,19 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 		}
 	}()
 
-	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	s.Equal(http.StatusOK, resp.StatusCode)
 
 	var productList dto.WebResponse[[]productDto.ProductResponse]
 
 	err = s.parseResponse(resp, &productList)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.Equal(s.T(), "success", productList.Message)
-	assert.NotNil(s.T(), productList.Pagination)
-	assert.Equal(s.T(), int64(5), productList.Pagination.TotalItem)
-	assert.Equal(s.T(), int64(2), productList.Pagination.Size)
-	assert.Equal(s.T(), int64(2), productList.Pagination.Page)
-	assert.Len(s.T(), productList.Data, 2)
+	s.Equal("success", productList.Message)
+	s.NotNil(productList.Pagination)
+	s.Equal(int64(5), productList.Pagination.TotalItem)
+	s.Equal(int64(2), productList.Pagination.Size)
+	s.Equal(int64(2), productList.Pagination.Page)
+	s.Len(productList.Data, 2)
 }
 
 // TestProductListSuite runs the product listing test suite.
