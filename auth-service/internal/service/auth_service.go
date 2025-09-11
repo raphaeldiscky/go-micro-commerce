@@ -334,7 +334,7 @@ func (s *AuthService) RefreshToken(
 	// Parse user ID from claims
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
-		return nil, errors.New("invalid user ID in token")
+		return nil, err
 	}
 
 	// Get user

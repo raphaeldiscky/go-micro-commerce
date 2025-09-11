@@ -7,13 +7,14 @@ import (
 )
 
 const (
-	defaultRedisDialTimeout     = 5 * time.Second
-	defaultRedisReadTimeout     = 3 * time.Second
-	defaultRedisWriteTimeout    = 3 * time.Second
-	defaultRedisMinIdleConn     = 10
-	defaultRedisMaxIdleConn     = 100
-	defaultRedisMaxActiveConn   = 100
-	defaultRedisMaxConnLifetime = 5 * time.Minute
+	defaultRedisDialTimeout       = 5 * time.Second
+	defaultRedisReadTimeout       = 3 * time.Second
+	defaultRedisWriteTimeout      = 3 * time.Second
+	defaultRedisMinIdleConn       = 10
+	defaultRedisMaxIdleConn       = 100
+	defaultRedisMaxActiveConn     = 100
+	defaultRedisMaxConnLifetime   = 5 * time.Minute
+	defaultRedisProductExpiration = 15 * time.Minute
 )
 
 // RedisConfig holds Redis configuration.

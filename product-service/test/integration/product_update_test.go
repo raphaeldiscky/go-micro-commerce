@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"fmt"
@@ -8,8 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
 	productDto "github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
@@ -29,20 +27,14 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 	}
 
 	resp, err := s.makeRequest("POST", "/v1", createReq)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	defer func() {
-		if cerr := resp.Body.Close(); cerr != nil {
-			s.T().Errorf("failed to close response body: %v", cerr)
-		}
-	}()
-
-	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+	s.Equal(http.StatusCreated, resp.StatusCode)
 
 	var createResponse dto.WebResponse[productDto.ProductResponse]
 
 	err = s.parseResponse(resp, &createResponse)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Update the product
 	updateReq := productDto.UpdateProductRequest{
@@ -52,24 +44,34 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 		Quantity: 30,
 	}
 
+	// Close the previous response body before reassigning
+	if err = resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+
 	resp, err = s.makeRequest(
 		"PUT",
 		fmt.Sprintf("/v1/%s", createResponse.Data.ID),
 		updateReq,
 	)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
+	s.Require().NoError(err)
+	s.Equal(http.StatusOK, resp.StatusCode)
 
 	var updateResponse dto.WebResponse[productDto.ProductResponse]
 
 	err = s.parseResponse(resp, &updateResponse)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
-	assert.Equal(s.T(), createResponse.Data.ID, updateResponse.Data.ID)
-	assert.Equal(s.T(), "Updated Product", updateResponse.Data.Name)
-	assert.True(s.T(), updateResponse.Data.Price.Equal(decimal.NewFromFloat(35.00)))
-	assert.Equal(s.T(), int64(30), updateResponse.Data.Quantity)
-	assert.True(s.T(), updateResponse.Data.UpdatedAt.After(createResponse.Data.UpdatedAt))
+	s.Equal(createResponse.Data.ID, updateResponse.Data.ID)
+	s.Equal("Updated Product", updateResponse.Data.Name)
+	s.True(updateResponse.Data.Price.Equal(decimal.NewFromFloat(35.00)))
+	s.Equal(int64(30), updateResponse.Data.Quantity)
+	s.True(updateResponse.Data.UpdatedAt.After(createResponse.Data.UpdatedAt))
+
+	// Close the final response body
+	if err = resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
 }
 
 func (s *ProductUpdateTestSuite) TestUpdateProductNotFound() {
@@ -86,10 +88,10 @@ func (s *ProductUpdateTestSuite) TestUpdateProductNotFound() {
 		fmt.Sprintf("/v1/%s", nonExistentID),
 		updateReq,
 	)
-	require.NoError(s.T(), err)
-	assert.Equal(s.T(), http.StatusNotFound, resp.StatusCode)
+	s.Require().NoError(err)
+	s.Equal(http.StatusNotFound, resp.StatusCode)
 
-	if err := resp.Body.Close(); err != nil {
+	if err = resp.Body.Close(); err != nil {
 		s.T().Errorf("failed to close response body: %v", err)
 	}
 }
@@ -103,7 +105,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 	}
 
 	resp, err := s.makeRequest("POST", "/v1", createReq)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	defer func() {
 		if cerr := resp.Body.Close(); cerr != nil {
@@ -111,12 +113,12 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 		}
 	}()
 
-	assert.Equal(s.T(), http.StatusCreated, resp.StatusCode)
+	s.Equal(http.StatusCreated, resp.StatusCode)
 
 	var createResponse dto.WebResponse[productDto.ProductResponse]
 
 	err = s.parseResponse(resp, &createResponse)
-	require.NoError(s.T(), err)
+	s.Require().NoError(err)
 
 	// Test validation errors
 	testCases := []struct {
@@ -147,18 +149,20 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 	}
 
 	for _, tc := range testCases {
-		s.T().Run(tc.name, func(t *testing.T) {
-			resp, err := s.makeRequest(
+		s.Run(tc.name, func() {
+			resp, err = s.makeRequest(
 				"PUT",
 				fmt.Sprintf("/v1/%s", createResponse.Data.ID),
 				tc.request,
 			)
-			require.NoError(t, err)
-			assert.Equal(t, tc.wantCode, resp.StatusCode)
+			s.Require().NoError(err)
+			s.Equal(tc.wantCode, resp.StatusCode)
 
-			if err := resp.Body.Close(); err != nil {
-				t.Errorf("failed to close response body: %v", err)
-			}
+			defer func() {
+				if cerr := resp.Body.Close(); cerr != nil {
+					s.T().Errorf("failed to close response body: %v", cerr)
+				}
+			}()
 		})
 	}
 }

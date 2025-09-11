@@ -7,18 +7,40 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
+
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 )
 
 // Product represents a product in the marketplace.
 type Product struct {
-	ID               uuid.UUID
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	Name             string
-	Price            decimal.Decimal
-	Quantity         int64
-	Version          int64 // for optimistic locking
-	ReservedQuantity int64 // quantity reserved for orders
+	ID               uuid.UUID       `json:"id"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
+	Name             string          `json:"name"`
+	Price            decimal.Decimal `json:"price"`
+	Quantity         int64           `json:"quantity"`
+	Version          int64           `json:"version"`           // for optimistic locking
+	ReservedQuantity int64           `json:"reserved_quantity"` // quantity reserved for orders
+}
+
+// NewProduct creates a new product with validation.
+func NewProduct(name string, price decimal.Decimal, quantity int64) (*Product, error) {
+	product := &Product{
+		ID:               uuid.New(),
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
+		Name:             name,
+		Price:            price.Round(constant.PricingDecimalScale),
+		Quantity:         quantity,
+		Version:          1,
+		ReservedQuantity: 0,
+	}
+
+	if err := product.validate(); err != nil {
+		return nil, err
+	}
+
+	return product, nil
 }
 
 // validate performs business rule validation.
@@ -52,26 +74,6 @@ func (p *Product) validate() error {
 	return nil
 }
 
-// NewProduct creates a new product with validation.
-func NewProduct(name string, price decimal.Decimal, quantity int64) (*Product, error) {
-	product := &Product{
-		ID:               uuid.New(),
-		CreatedAt:        time.Now(),
-		UpdatedAt:        time.Now(),
-		Name:             name,
-		Price:            price.Round(2), // Ensure precision of 2 decimal places
-		Quantity:         quantity,
-		Version:          1,
-		ReservedQuantity: 0,
-	}
-
-	if err := product.validate(); err != nil {
-		return nil, err
-	}
-
-	return product, nil
-}
-
 // UpdateName updates the product name with validation.
 func (p *Product) UpdateName(name string) error {
 	p.Name = name
@@ -82,7 +84,7 @@ func (p *Product) UpdateName(name string) error {
 
 // UpdatePrice updates the product price with validation.
 func (p *Product) UpdatePrice(price decimal.Decimal) error {
-	p.Price = price.Round(2) // Ensure precision of 2 decimal places
+	p.Price = price.Round(constant.PricingDecimalScale) // Ensure precision of 2 decimal places
 	p.UpdatedAt = time.Now()
 
 	return p.validate()

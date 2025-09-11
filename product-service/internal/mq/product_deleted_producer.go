@@ -17,16 +17,6 @@ type ProductDeletedEvent struct {
 	Payload  event.ProductDeletedPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the ProductDeletedEvent.
-func (e *ProductDeletedEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the ProductDeletedEvent.
-func (e *ProductDeletedEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // NewProductDeletedEvent creates a new ProductDeletedEvent.
 func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 	return &ProductDeletedEvent{
@@ -41,6 +31,16 @@ func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 			ProductID: productID,
 		},
 	}
+}
+
+// GetPayload returns the data associated with the ProductDeletedEvent.
+func (e *ProductDeletedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the ProductDeletedEvent.
+func (e *ProductDeletedEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // ProductDeletedProducer is responsible for producing product deleted events.

@@ -13,6 +13,7 @@ import (
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/httperror"
@@ -50,6 +51,10 @@ type ProductServiceInterface interface {
 		req dto.RestoreProductsRequest,
 	) ([]dto.ProductResponse, error)
 }
+
+const (
+	defaultProductExpiration = 15 * time.Minute
+)
 
 // ProductService implements the ProductServiceInterface.
 type ProductService struct {
@@ -104,7 +109,7 @@ func (s *ProductService) CreateProduct(
 			savedProduct.Quantity,
 		)
 
-		if err := s.productCreatedProducer.Send(ctx, evt); err != nil {
+		if err = s.productCreatedProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send product created event")
 		}
 
@@ -144,6 +149,10 @@ func (s *ProductService) GetProduct(
 	// Cache miss or unavailable, get from database
 	product, err := productRepo.FindByID(ctx, id)
 	if err != nil {
+		if err.Error() == constant.ProductNotFoundErrorMessage {
+			return nil, httperror.NewProductNotFoundError()
+		}
+
 		return nil, httperror.NewInternalServerError("failed to get product")
 	}
 
@@ -152,7 +161,7 @@ func (s *ProductService) GetProduct(
 	}
 
 	// Store in cache for future requests if cache is available
-	err = cacheRepo.SetProduct(ctx, product, 15*time.Minute)
+	err = cacheRepo.SetProduct(ctx, product, defaultProductExpiration)
 	if err != nil {
 		return nil, err
 	}
@@ -177,8 +186,8 @@ func (s *ProductService) GetProducts(
 		}
 
 		// Still need to get total count for metadata (could be cached separately)
-		total, err := productRepo.Count(ctx)
-		if err != nil {
+		total, errCount := productRepo.Count(ctx)
+		if errCount != nil {
 			return nil, nil, httperror.NewInternalServerError("failed to count products")
 		}
 
@@ -206,7 +215,7 @@ func (s *ProductService) GetProducts(
 	}
 
 	// Store in cache for future requests if cache is available
-	err = cacheRepo.SetProducts(ctx, req.Page, req.Limit, products, 15*time.Minute)
+	err = cacheRepo.SetProducts(ctx, req.Page, req.Limit, products, defaultProductExpiration)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -249,6 +258,10 @@ func (s *ProductService) UpdateProduct(
 
 		existingProduct, err := productRepo.FindByID(ctx, req.ID)
 		if err != nil {
+			if err.Error() == constant.ProductNotFoundErrorMessage {
+				return httperror.NewProductNotFoundError()
+			}
+
 			return httperror.NewInternalServerError("failed to get product")
 		}
 
@@ -256,15 +269,15 @@ func (s *ProductService) UpdateProduct(
 			return httperror.NewProductNotFoundError()
 		}
 
-		if err := existingProduct.UpdateName(req.Name); err != nil {
+		if err = existingProduct.UpdateName(req.Name); err != nil {
 			return httperror.NewBadRequestError("invalid product name")
 		}
 
-		if err := existingProduct.UpdatePrice(req.Price); err != nil {
+		if err = existingProduct.UpdatePrice(req.Price); err != nil {
 			return httperror.NewBadRequestError("invalid product price")
 		}
 
-		if err := existingProduct.UpdateQuantity(req.Quantity); err != nil {
+		if err = existingProduct.UpdateQuantity(req.Quantity); err != nil {
 			return httperror.NewBadRequestError("invalid product quantity")
 		}
 
@@ -281,7 +294,7 @@ func (s *ProductService) UpdateProduct(
 			updatedProduct.Price,
 			updatedProduct.Quantity,
 		)
-		if err := s.productUpdatedProducer.Send(ctx, evt); err != nil {
+		if err = s.productUpdatedProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send product updated event")
 		}
 
@@ -324,13 +337,13 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 		}
 
 		// Delete product
-		if err := productRepo.Delete(ctx, id); err != nil {
+		if err = productRepo.Delete(ctx, id); err != nil {
 			return httperror.NewInternalServerError("failed to delete product")
 		}
 
 		// Produce domain event
 		evt := mq.NewProductDeletedEvent(id)
-		if err := s.productDeletedProducer.Send(ctx, evt); err != nil {
+		if err = s.productDeletedProducer.Send(ctx, evt); err != nil {
 			return httperror.NewInternalServerError("failed to send product deleted event")
 		}
 
@@ -543,9 +556,13 @@ func (s *ProductService) RestoreProducts(
 
 		// Update products with restored quantities
 		for _, product := range products {
-			updated, err := productRepo.UpdateWithOptimisticLock(ctx, product, product.Version-1)
-			if err != nil {
-				return fmt.Errorf("failed to restore stocks: %w", err)
+			updated, errUpdate := productRepo.UpdateWithOptimisticLock(
+				ctx,
+				product,
+				product.Version-1,
+			)
+			if errUpdate != nil {
+				return fmt.Errorf("failed to restore stocks: %w", errUpdate)
 			}
 
 			restoredProducts = append(restoredProducts, updated)

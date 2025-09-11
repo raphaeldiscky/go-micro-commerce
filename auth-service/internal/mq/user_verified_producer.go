@@ -37,6 +37,16 @@ func NewUserVerifiedEvent(
 	}
 }
 
+// GetPayload returns the data associated with the UserVerifiedEvent.
+func (e *UserVerifiedEvent) GetPayload() interface{} {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the UserVerifiedEvent.
+func (e *UserVerifiedEvent) GetMetadata() event.Metadata {
+	return e.Metadata
+}
+
 // UserVerifiedProducer is responsible for producing product created events.
 type UserVerifiedProducer struct {
 	Producer *kafka.AsyncProducer
@@ -59,14 +69,4 @@ func (p *UserVerifiedProducer) Send(ctx context.Context, evt event.BaseEvent) er
 // Topic returns the topic name.
 func (p *UserVerifiedProducer) Topic() string {
 	return p.topic
-}
-
-// GetPayload returns the data associated with the UserVerifiedEvent.
-func (e *UserVerifiedEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the UserVerifiedEvent.
-func (e *UserVerifiedEvent) GetMetadata() event.Metadata {
-	return e.Metadata
 }
