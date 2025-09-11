@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -45,7 +45,7 @@ func initRedisConfig() *RedisConfig {
 	redisConfig := &RedisConfig{}
 
 	if err := viper.Unmarshal(&redisConfig); err != nil {
-		log.Fatalf("error mapping Redis config: %v", err)
+		slog.Error("error mapping redis config", "err", err)
 	}
 
 	return redisConfig

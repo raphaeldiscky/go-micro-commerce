@@ -113,7 +113,7 @@ func (r *SearchRepository) GetProduct(
 	}
 
 	var product entity.ProductDocument
-	if err := json.Unmarshal(resp.Source_, &product); err != nil {
+	if err = json.Unmarshal(resp.Source_, &product); err != nil {
 		return nil, fmt.Errorf("failed to decode product: %w", err)
 	}
 
@@ -190,71 +190,6 @@ func (r *SearchRepository) SearchProducts(
 	}
 
 	return r.parseTypedSearchResponse(resp, query)
-}
-
-// parseTypedSearchResponse parses the typed search response.
-func (r *SearchRepository) parseTypedSearchResponse(
-	resp *search.Response,
-	query *entity.SearchQuery,
-) (*entity.SearchResponse, error) {
-	results := make([]entity.SearchResult, 0, len(resp.Hits.Hits))
-
-	for i := range resp.Hits.Hits {
-		hit := &resp.Hits.Hits[i]
-
-		var source map[string]interface{}
-
-		if err := json.Unmarshal(hit.Source_, &source); err != nil {
-			r.logger.Warnf("Failed to decode hit source: %v", err)
-
-			continue
-		}
-
-		var id string
-		if hit.Id_ != nil {
-			id = *hit.Id_
-		}
-
-		var score float64
-		if hit.Score_ != nil {
-			score = float64(*hit.Score_)
-		}
-
-		searchResult := entity.SearchResult{
-			ID:     id,
-			Score:  score,
-			Source: source,
-		}
-
-		// Handle highlights if available
-		if hit.Highlight != nil {
-			searchResult.Highlight = make(map[string][]string)
-			for field, fragments := range hit.Highlight {
-				searchResult.Highlight[field] = fragments
-			}
-		}
-
-		results = append(results, searchResult)
-	}
-
-	perPage := query.Size
-	if perPage == 0 {
-		perPage = 10
-	}
-
-	page := (query.From / perPage) + 1
-	totalPages := int((resp.Hits.Total.Value + int64(perPage) - 1) / int64(perPage))
-
-	response := &entity.SearchResponse{
-		Results:    results,
-		Total:      resp.Hits.Total.Value,
-		Page:       page,
-		PerPage:    perPage,
-		TotalPages: totalPages,
-		Took:       int(resp.Took),
-	}
-
-	return response, nil
 }
 
 // BulkIndex performs bulk indexing using individual index operations.
@@ -441,7 +376,7 @@ func (r *SearchRepository) AutoComplete(
 
 		var source map[string]interface{}
 
-		if err := json.Unmarshal(hit.Source_, &source); err != nil {
+		if err = json.Unmarshal(hit.Source_, &source); err != nil {
 			continue
 		}
 
@@ -494,7 +429,7 @@ func (r *SearchRepository) GetSuggestions(
 
 		var source map[string]interface{}
 
-		if err := json.Unmarshal(hit.Source_, &source); err != nil {
+		if err = json.Unmarshal(hit.Source_, &source); err != nil {
 			continue
 		}
 
@@ -523,4 +458,69 @@ func (r *SearchRepository) getIndexNameByType(documentType string) string {
 	default:
 		return ""
 	}
+}
+
+// parseTypedSearchResponse parses the typed search response.
+func (r *SearchRepository) parseTypedSearchResponse(
+	resp *search.Response,
+	query *entity.SearchQuery,
+) (*entity.SearchResponse, error) {
+	results := make([]entity.SearchResult, 0, len(resp.Hits.Hits))
+
+	for i := range resp.Hits.Hits {
+		hit := &resp.Hits.Hits[i]
+
+		var source map[string]interface{}
+
+		if err := json.Unmarshal(hit.Source_, &source); err != nil {
+			r.logger.Warnf("Failed to decode hit source: %v", err)
+
+			continue
+		}
+
+		var id string
+		if hit.Id_ != nil {
+			id = *hit.Id_
+		}
+
+		var score float64
+		if hit.Score_ != nil {
+			score = float64(*hit.Score_)
+		}
+
+		searchResult := entity.SearchResult{
+			ID:     id,
+			Score:  score,
+			Source: source,
+		}
+
+		// Handle highlights if available
+		if hit.Highlight != nil {
+			searchResult.Highlight = make(map[string][]string)
+			for field, fragments := range hit.Highlight {
+				searchResult.Highlight[field] = fragments
+			}
+		}
+
+		results = append(results, searchResult)
+	}
+
+	perPage := query.Size
+	if perPage == 0 {
+		perPage = 10
+	}
+
+	page := (query.From / perPage) + 1
+	totalPages := int((resp.Hits.Total.Value + int64(perPage) - 1) / int64(perPage))
+
+	response := &entity.SearchResponse{
+		Results:    results,
+		Total:      resp.Hits.Total.Value,
+		Page:       page,
+		PerPage:    perPage,
+		TotalPages: totalPages,
+		Took:       int(resp.Took),
+	}
+
+	return response, nil
 }

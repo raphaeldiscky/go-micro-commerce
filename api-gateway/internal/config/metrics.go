@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -22,7 +22,7 @@ func initMetricsConfig() *MetricsConfig {
 	metricsConfig := &MetricsConfig{}
 
 	if err := viper.Unmarshal(&metricsConfig); err != nil {
-		log.Fatalf("error mapping metrics config: %v", err)
+		slog.Error("error mapping metrics config", "err", err)
 	}
 
 	return metricsConfig

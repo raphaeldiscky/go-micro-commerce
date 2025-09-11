@@ -77,12 +77,14 @@ func (j *SagaRecoveryJob) Start(ctx context.Context) {
 // recoverSagas attempts to recover failed sagas with distributed locking.
 func (j *SagaRecoveryJob) recoverSagas(ctx context.Context) {
 	j.mu.RLock()
+
 	if j.running {
 		j.mu.RUnlock()
 		j.logger.Debug("Saga recovery already running, skipping")
 
 		return
 	}
+
 	j.mu.RUnlock()
 
 	j.mu.Lock()
@@ -235,6 +237,7 @@ func (j *SagaRecoveryJob) recoverSingleSaga(_ context.Context, orderID uuid.UUID
 func (j *SagaRecoveryJob) Stop() {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+
 	j.enabled = false
 	j.logger.Info("Saga recovery job stopped")
 }
@@ -243,6 +246,7 @@ func (j *SagaRecoveryJob) Stop() {
 func (j *SagaRecoveryJob) Resume() {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+
 	j.enabled = true
 }
 
@@ -258,6 +262,7 @@ func (j *SagaRecoveryJob) IsRunning() bool {
 func (j *SagaRecoveryJob) SetMaxRetries(maxRetries int64) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+
 	j.maxRetries = maxRetries
 }
 
@@ -265,5 +270,6 @@ func (j *SagaRecoveryJob) SetMaxRetries(maxRetries int64) {
 func (j *SagaRecoveryJob) SetMaxAge(maxAge time.Duration) {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+
 	j.maxAge = maxAge
 }

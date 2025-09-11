@@ -70,7 +70,7 @@ func (r *InboxRepository) Create(
 		// Mark as duplicate and return existing event
 		existingEvent.MarkAsDuplicate()
 
-		if err := r.updateEventStatus(ctx, existingEvent.ID, constant.InboxStatusDuplicate, nil); err != nil {
+		if err = r.updateEventStatus(ctx, existingEvent.ID, constant.InboxStatusDuplicate, nil); err != nil {
 			return nil, fmt.Errorf("failed to mark event as duplicate: %w", err)
 		}
 
@@ -142,15 +142,15 @@ func (r *InboxRepository) GetEventsForProcessing(
 	var events []*entity.InboxEvent
 
 	for rows.Next() {
-		event, err := scanInboxEvent(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan inbox event: %w", err)
+		event, errEvt := scanInboxEvent(rows)
+		if errEvt != nil {
+			return nil, fmt.Errorf("failed to scan inbox event: %w", errEvt)
 		}
 
 		events = append(events, event)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating inbox events: %w", err)
 	}
 
@@ -250,7 +250,7 @@ func (r *InboxRepository) GetEventByMessageID(
 	event, err := scanInboxEvent(row)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil // Not found, not an error
+			return nil, errors.New("event not found")
 		}
 
 		return nil, err
@@ -360,7 +360,7 @@ func scanInboxEvent(row pgx.Row) (*entity.InboxEvent, error) {
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New("event not found")
 		}
 
 		return nil, err

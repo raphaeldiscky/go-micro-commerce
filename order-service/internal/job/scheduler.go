@@ -58,6 +58,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	for _, job := range s.jobs {
 		if job.IsEnabled() {
 			s.wg.Add(1)
+
 			go s.runJob(s.ctx, job)
 		} else {
 			s.logger.Infof("Job %s is disabled, skipping", job.Name())
@@ -73,6 +74,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 
 	// Wait for all jobs to finish with timeout
 	done := make(chan struct{})
+
 	go func() {
 		s.wg.Wait()
 		close(done)

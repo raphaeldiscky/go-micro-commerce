@@ -4,6 +4,7 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -36,13 +37,13 @@ func NewElasticsearchClient(
 	// Configure HTTP transport for ES v9
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
-		return nil, fmt.Errorf("failed to get http transport")
+		return nil, errors.New("failed to get http transport")
 	}
 
 	transport = transport.Clone()
 	transport.MaxIdleConns = cfg.MaxIdleConns
 	transport.MaxIdleConnsPerHost = cfg.MaxIdleConns
-	transport.IdleConnTimeout = time.Duration(cfg.MaxIdleTime) * time.Second
+	transport.IdleConnTimeout = cfg.MaxIdleTime
 
 	// Configure TLS settings
 	if !cfg.EnableSSL {
@@ -80,7 +81,7 @@ func NewElasticsearchClient(
 
 	// Enable sniffing if configured (usually disabled in containerized environments)
 	esConfig.DiscoverNodesOnStart = cfg.SnifferEnabled
-	esConfig.DiscoverNodesInterval = 60 * time.Second
+	esConfig.DiscoverNodesInterval = cfg.DiscoverNodesInterval
 
 	// Create the typed client
 	typedClient, err := elasticsearch.NewTypedClient(esConfig)
@@ -95,7 +96,7 @@ func NewElasticsearchClient(
 	}
 
 	// Test connection with direct ping since Ping method will be removed
-	if _, err := typedClient.Ping().Do(context.Background()); err != nil {
+	if _, err = typedClient.Ping().Do(context.Background()); err != nil {
 		appLogger.Warnf("Elasticsearch connection test failed: %v", err)
 	} else {
 		appLogger.Info("Elasticsearch client connected successfully")

@@ -76,6 +76,7 @@ func (s *KafkaConsumer) Shutdown(ctx context.Context) error {
 
 	// Wait for all consumers to finish gracefully or timeout
 	done := make(chan struct{})
+
 	go func() {
 		s.wg.Wait()
 		close(done)

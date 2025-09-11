@@ -103,7 +103,6 @@ func (p *InboxProcessor) cleanupLoop(ctx context.Context) {
 	}
 }
 
-// processPendingEvents processes events that are pending.
 func (p *InboxProcessor) processPendingEvents(ctx context.Context) {
 	events, err := p.dataStore.InboxRepository().GetEventsForProcessing(ctx, p.config.BatchSize)
 	if err != nil {
@@ -113,7 +112,7 @@ func (p *InboxProcessor) processPendingEvents(ctx context.Context) {
 	}
 
 	for _, event := range events {
-		if err := p.processEvent(ctx, event); err != nil {
+		if err = p.processEvent(ctx, event); err != nil {
 			p.logger.Errorf("failed to process event %s: %v", event.ID, err)
 		}
 	}

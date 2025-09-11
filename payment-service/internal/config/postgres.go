@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -35,7 +35,7 @@ func initPostgresConfig() *PostgresConfig {
 	pgConfig := &PostgresConfig{}
 
 	if err := viper.Unmarshal(&pgConfig); err != nil {
-		log.Fatalf("error mapping database config: %v", err)
+		slog.Error("error mapping postgres config", "err", err)
 	}
 
 	return pgConfig

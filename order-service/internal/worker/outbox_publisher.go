@@ -74,6 +74,7 @@ func (p *OutboxPublisher) Start(ctx context.Context) {
 
 	// Start cleanup loop
 	go p.cleanupLoop(ctx)
+
 	p.logger.Info("outbox publisher started successfully")
 }
 

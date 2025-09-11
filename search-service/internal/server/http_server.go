@@ -5,7 +5,6 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -38,7 +37,7 @@ func NewHTTPServer(
 	e.Validator = validation.NewValidator()
 
 	// Middlewares
-	RegisterMiddlewares(e)
+	RegisterMiddlewares(e, cfg)
 
 	// Setup HTTP
 	provider.SetupHTTP(cfg, e, appLogger, providers)
@@ -56,10 +55,11 @@ func (s *HTTPServer) Start() error {
 	server := &http.Server{
 		Addr:              ":" + port,
 		Handler:           s.echo,
-		ReadTimeout:       30 * time.Second,
-		WriteTimeout:      30 * time.Second,
-		IdleTimeout:       120 * time.Second,
-		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       s.config.HTTPServer.ReadTimeout,
+		WriteTimeout:      s.config.HTTPServer.WriteTimeout,
+		IdleTimeout:       s.config.HTTPServer.IdleTimeout,
+		ReadHeaderTimeout: s.config.HTTPServer.ReadHeaderTimeout,
+		MaxHeaderBytes:    s.config.HTTPServer.MaxHeaderBytes,
 	}
 
 	s.echo.Logger.Infof("Starting HTTP server on port %s", port)
@@ -83,7 +83,7 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 }
 
 // RegisterMiddlewares registers custom middleware for the HTTP server.
-func RegisterMiddlewares(e *echo.Echo) {
+func RegisterMiddlewares(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
 			return uuid.New().String()
@@ -115,12 +115,14 @@ func RegisterMiddlewares(e *echo.Echo) {
 		XSSProtection:         "1; mode=block",
 		ContentTypeNosniff:    "nosniff",
 		XFrameOptions:         "DENY",
-		HSTSMaxAge:            3600,
+		HSTSMaxAge:            cfg.HTTPServer.HSTSMaxAge,
 		ContentSecurityPolicy: "default-src 'self'",
 	}))
-	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(1000))) // 1000 req/sec
+	e.Use(
+		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(cfg.HTTPServer.RateLimiter)),
+	) // 1000 req/sec
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: 30 * time.Second,
+		Timeout: cfg.HTTPServer.IdleTimeout,
 	}))
 	e.Use(middleware.BodyLimit("10M"))
 	e.Use(custommiddleware.ErrorHandler())

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -31,7 +31,7 @@ func initServiceDiscoveryConfig() *ServiceDiscoveryConfig {
 	serviceDiscoveryConfig := &ServiceDiscoveryConfig{}
 
 	if err := viper.Unmarshal(&serviceDiscoveryConfig); err != nil {
-		log.Fatalf("error mapping service discovery config: %v", err)
+		slog.Error("error mapping service discovery config", "err", err)
 	}
 
 	return serviceDiscoveryConfig

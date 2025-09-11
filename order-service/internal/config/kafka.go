@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -26,7 +26,7 @@ func initKafkaConfig() *KafkaConfig {
 	kafkaConfig := &KafkaConfig{}
 
 	if err := viper.Unmarshal(&kafkaConfig); err != nil {
-		log.Fatalf("error mapping kafka config: %v", err)
+		slog.Error("error mapping kafka config", "err", err)
 	}
 
 	return kafkaConfig

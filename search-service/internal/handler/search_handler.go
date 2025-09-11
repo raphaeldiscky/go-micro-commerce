@@ -2,7 +2,6 @@ package handler
 
 import (
 	"strconv"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -14,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/service"
 )
@@ -59,16 +59,8 @@ func (h *SearchHandler) AutoComplete(c echo.Context) error {
 	query := c.QueryParam("q")
 	docType := c.QueryParam("type")
 
-	if query == "" {
-		return echo.NewHTTPError(400, "Query parameter 'q' is required")
-	}
-
-	if docType == "" {
-		return echo.NewHTTPError(400, "Query parameter 'type' is required")
-	}
-
 	if !isValidDocumentType(docType) {
-		return echo.NewHTTPError(400, "Invalid document type. Valid types: product")
+		return httperror.NewBadRequestError("Invalid document type. Valid types: product")
 	}
 
 	suggestions, err := h.searchService.AutoComplete(c.Request().Context(), query, docType)
@@ -86,16 +78,8 @@ func (h *SearchHandler) GetSuggestions(c echo.Context) error {
 	query := c.QueryParam("q")
 	docType := c.QueryParam("type")
 
-	if query == "" {
-		return echo.NewHTTPError(400, "Query parameter 'q' is required")
-	}
-
-	if docType == "" {
-		return echo.NewHTTPError(400, "Query parameter 'type' is required")
-	}
-
 	if !isValidDocumentType(docType) {
-		return echo.NewHTTPError(400, "Invalid document type. Valid types: product")
+		return httperror.NewBadRequestError("Invalid document type. Valid types: product")
 	}
 
 	suggestions, err := h.searchService.GetSuggestions(c.Request().Context(), query, docType)
@@ -171,9 +155,6 @@ func (h *SearchHandler) UpdateProduct(c echo.Context) error {
 // DeleteProduct handles product deletion requests.
 func (h *SearchHandler) DeleteProduct(c echo.Context) error {
 	productID := c.Param("id")
-	if productID == "" {
-		return echo.NewHTTPError(400, "Product ID is required")
-	}
 
 	if err := h.searchService.DeleteProduct(c.Request().Context(), productID); err != nil {
 		h.logger.Errorf("Failed to delete product: %v", err)
@@ -192,16 +173,9 @@ func (h *SearchHandler) DeleteProduct(c echo.Context) error {
 // GetProduct handles product retrieval requests.
 func (h *SearchHandler) GetProduct(c echo.Context) error {
 	productID := c.Param("id")
-	if productID == "" {
-		return echo.NewHTTPError(400, "Product ID is required")
-	}
 
 	product, err := h.searchService.GetProduct(c.Request().Context(), productID)
 	if err != nil {
-		if strings.Contains(err.Error(), "not found") {
-			return echo.NewHTTPError(404, "Product not found")
-		}
-
 		h.logger.Errorf("Failed to get product: %v", err)
 
 		return err
@@ -236,25 +210,22 @@ func (h *SearchHandler) RefreshIndices(c echo.Context) error {
 	return echoutils.ResponseOK(c, responseData)
 }
 
-// Helper functions
-
 // parseSearchQuery parses query parameters into SearchQuery entity.
 func (h *SearchHandler) parseSearchQuery(c echo.Context) *entity.SearchQuery {
-	// Parse pagination using pageutils
 	limit := pageutils.ParseQueryInt64(
 		c,
 		"limit",
 		pkgconstant.DefaultLimit,
-		1,
-		100,
-	) // min=1, max=100
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
+	)
 	page := pageutils.ParseQueryInt64(
 		c,
 		"page",
 		pkgconstant.DefaultPage,
-		1,
-		0,
-	) // min=1, max=0 (no max)
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
+	)
 
 	query := &entity.SearchQuery{
 		Query:   c.QueryParam("q"),

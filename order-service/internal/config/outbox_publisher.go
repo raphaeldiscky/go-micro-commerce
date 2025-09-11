@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/spf13/viper"
@@ -30,7 +30,7 @@ func initOutboxPublisherConfig() *OutboxPublisherConfig {
 	outboxConfig := &OutboxPublisherConfig{}
 
 	if err := viper.Unmarshal(&outboxConfig); err != nil {
-		log.Fatalf("error mapping outbox config: %v", err)
+		slog.Error("error mapping outbox config", "err", err)
 	}
 
 	return outboxConfig

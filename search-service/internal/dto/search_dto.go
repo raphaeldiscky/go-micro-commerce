@@ -2,7 +2,7 @@
 package dto
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
@@ -20,19 +20,19 @@ type ProductIndexRequest struct {
 // Validate validates the product index request.
 func (r *ProductIndexRequest) Validate() error {
 	if r.ProductID == uuid.Nil {
-		return fmt.Errorf("product_id is required")
+		return errors.New("product_id is required")
 	}
 
 	if r.Name == "" {
-		return fmt.Errorf("name is required")
+		return errors.New("name is required")
 	}
 
 	if r.Price.IsNegative() {
-		return fmt.Errorf("price cannot be negative")
+		return errors.New("price cannot be negative")
 	}
 
 	if r.Quantity < 0 {
-		return fmt.Errorf("quantity cannot be negative")
+		return errors.New("quantity cannot be negative")
 	}
 
 	return nil

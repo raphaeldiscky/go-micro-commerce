@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/spf13/cobra"
@@ -85,6 +84,7 @@ func (wm *Manager) runWorkers(ctx context.Context, workers []Worker) error {
 
 		go func() {
 			defer wm.wg.Done()
+
 			wm.logger.Infof("Starting worker: %s", worker.Name())
 
 			if err := worker.Start(ctx); err != nil {
@@ -107,11 +107,9 @@ func (wm *Manager) runWorkers(ctx context.Context, workers []Worker) error {
 func (wm *Manager) shutdown() error {
 	wm.logger.Info("Starting graceful shutdown...")
 
-	// Create shutdown context with timeout
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), wm.cfg.App.TimeoutShutdown)
 	defer cancel()
 
-	// Shutdown workers in reverse order
 	var shutdownErrors []error
 
 	for i := len(wm.workers) - 1; i >= 0; i-- {
@@ -128,6 +126,7 @@ func (wm *Manager) shutdown() error {
 
 	// Wait for all workers to finish with timeout
 	done := make(chan struct{})
+
 	go func() {
 		wm.wg.Wait()
 		close(done)

@@ -8,7 +8,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgConstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
@@ -70,20 +70,21 @@ func (h *ProductHandler) GetProduct(c echo.Context) error {
 // GetProducts handles GET /products.
 func (h *ProductHandler) GetProducts(c echo.Context) error {
 	var req dto.GetProductsRequest
+
 	req.Limit = pageutils.ParseQueryInt64(
 		c,
 		"limit",
-		pkgConstant.DefaultLimit,
-		1,
-		100,
-	) // min=1, max=100
+		pkgconstant.DefaultLimit,
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
+	)
 	req.Page = pageutils.ParseQueryInt64(
 		c,
 		"page",
-		pkgConstant.DefaultPage,
-		1,
-		0,
-	) // min=1, max=0 (no max)
+		pkgconstant.DefaultPage,
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
+	)
 
 	if err := c.Validate(&req); err != nil {
 		return err

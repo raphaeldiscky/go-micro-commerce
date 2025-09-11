@@ -1,4 +1,4 @@
-// Package httperror provides custom error responses for the Order service.
+// Package httperror provides custom error responses for the Search service.
 package httperror
 
 import (
@@ -20,11 +20,4 @@ func NewInternalServerError(message string) *httperror.ResponseError {
 	err := errors.New(message)
 
 	return httperror.NewResponseError(err, http.StatusInternalServerError, message)
-}
-
-// NewServiceUnavailableError returns a 503 error.
-func NewServiceUnavailableError(message string) *httperror.ResponseError {
-	err := errors.New(message)
-
-	return httperror.NewResponseError(err, http.StatusServiceUnavailable, message)
 }

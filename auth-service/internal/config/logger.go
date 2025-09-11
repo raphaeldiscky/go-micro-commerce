@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"log/slog"
 
 	"github.com/spf13/viper"
 )
@@ -19,7 +19,7 @@ func initLoggerConfig() *LoggerConfig {
 	loggerConfig := &LoggerConfig{}
 
 	if err := viper.Unmarshal(&loggerConfig); err != nil {
-		log.Fatalf("error mapping logger config: %v", err)
+		slog.Error("error mapping logger config", "err", err)
 	}
 
 	return loggerConfig
