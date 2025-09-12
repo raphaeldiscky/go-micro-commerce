@@ -18,7 +18,7 @@ func (gw *Gateway) DebugServices() echo.HandlerFunc {
 			"fulfillment-service",
 			"payment-service",
 		}
-		result := make(map[string]interface{})
+		result := make(map[string]any)
 
 		for _, serviceName := range services {
 			endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
@@ -35,7 +35,7 @@ func (gw *Gateway) DebugServices() echo.HandlerFunc {
 			}
 		}
 
-		return c.JSON(http.StatusOK, map[string]interface{}{
+		return c.JSON(http.StatusOK, map[string]any{
 			"services":  result,
 			"timestamp": time.Now().Unix(),
 		})

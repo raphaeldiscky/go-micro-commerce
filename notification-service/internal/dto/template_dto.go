@@ -84,9 +84,9 @@ type PaymentConfirmedTemplateData struct {
 
 // GenericTemplateData represents data for generic email template.
 type GenericTemplateData struct {
-	Subject       string                 `json:"subject"`
-	RecipientName string                 `json:"recipient_name"`
-	Data          map[string]interface{} `json:"data,omitempty"`
+	Subject       string         `json:"subject"`
+	RecipientName string         `json:"recipient_name"`
+	Data          map[string]any `json:"data,omitempty"`
 }
 
 // EmailVerificationTemplateData represents data for email verification template.

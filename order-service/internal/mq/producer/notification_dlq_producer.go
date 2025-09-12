@@ -56,7 +56,7 @@ func NewNotificationDLQEvent(
 }
 
 // GetPayload returns the data associated with the NotificationDLQEvent.
-func (e *NotificationDLQEvent) GetPayload() interface{} {
+func (e *NotificationDLQEvent) GetPayload() any {
 	return e.Payload
 }
 

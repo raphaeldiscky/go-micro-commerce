@@ -135,7 +135,7 @@ func (r *PaymentRepositoryPostgres) FindByID(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.PaymentNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan payment: %w", err)
@@ -178,7 +178,7 @@ func (r *PaymentRepositoryPostgres) FindByOrderID(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.PaymentNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan payment: %w", err)
@@ -247,7 +247,7 @@ func (r *PaymentRepositoryPostgres) Update(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil // payment not found
+			return nil, errors.New(constant.PaymentNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan updated payment: %w", err)

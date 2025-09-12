@@ -374,7 +374,7 @@ func (r *SearchRepository) AutoComplete(
 	for i := range resp.Hits.Hits {
 		hit := &resp.Hits.Hits[i]
 
-		var source map[string]interface{}
+		var source map[string]any
 
 		if err = json.Unmarshal(hit.Source_, &source); err != nil {
 			continue
@@ -427,7 +427,7 @@ func (r *SearchRepository) GetSuggestions(
 	for i := range resp.Hits.Hits {
 		hit := &resp.Hits.Hits[i]
 
-		var source map[string]interface{}
+		var source map[string]any
 
 		if err = json.Unmarshal(hit.Source_, &source); err != nil {
 			continue
@@ -470,7 +470,7 @@ func (r *SearchRepository) parseTypedSearchResponse(
 	for i := range resp.Hits.Hits {
 		hit := &resp.Hits.Hits[i]
 
-		var source map[string]interface{}
+		var source map[string]any
 
 		if err := json.Unmarshal(hit.Source_, &source); err != nil {
 			r.logger.Warnf("Failed to decode hit source: %v", err)

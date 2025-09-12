@@ -2,14 +2,21 @@ package mock
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/random"
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
+)
+
+const (
+	fakeGatewayDelay             = time.Millisecond * 100
+	fakeGatewayFailPaymentAmount = 1000000 // Fail payments > 1M IDR
+	fakeGatewayFee               = 0.029   // 2.9% fee
+
 )
 
 // FakePaymentGatewayClient provides a simple mock implementation of PaymentGatewayClientInterface.
@@ -22,7 +29,7 @@ type FakePaymentGatewayClient struct {
 func NewFakePaymentGatewayClient() *FakePaymentGatewayClient {
 	return &FakePaymentGatewayClient{
 		shouldFail: false,
-		delay:      time.Millisecond * 100,
+		delay:      fakeGatewayDelay,
 	}
 }
 
@@ -39,17 +46,19 @@ func (c *FakePaymentGatewayClient) ProcessPayment(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("payment gateway error")
+		return nil, errors.New("payment gateway error")
 	}
 
 	// Simple success/failure logic
 	status := constant.PaymentGatewayStatusSucceeded
-	if req.Amount.GreaterThan(decimal.NewFromInt(1000000)) { // Fail payments > 1M IDR
+	if req.Amount.GreaterThan(
+		decimal.NewFromInt(fakeGatewayFailPaymentAmount),
+	) { // Fail payments > 1M IDR
 		status = constant.PaymentGatewayStatusFailed
 	}
 
-	gatewayID := fmt.Sprintf("pi_%s", random.String(8))
-	fees := req.Amount.Mul(decimal.NewFromFloat(0.029)) // 2.9% fee
+	gatewayID := uuid.NewString()
+	fees := req.Amount.Mul(decimal.NewFromFloat(fakeGatewayFee)) // 2.9% fee
 
 	return &dto.PaymentGatewayResponse{
 		TransactionID:   req.TransactionID,
@@ -59,7 +68,7 @@ func (c *FakePaymentGatewayClient) ProcessPayment(
 		Currency:        req.Currency,
 		ProcessedAt:     time.Now(),
 		Fees:            &fees,
-		GatewayResponse: map[string]interface{}{"status": string(status)},
+		GatewayResponse: map[string]any{"status": string(status)},
 	}, nil
 }
 
@@ -110,7 +119,7 @@ func (c *FakePaymentGatewayClient) RefundPayment(
 	return &dto.RefundResponse{
 		RefundID:        req.RefundID,
 		TransactionID:   req.TransactionID,
-		GatewayRefundID: fmt.Sprintf("re_%s", random.String(8)),
+		GatewayRefundID: uuid.NewString(),
 		Status:          constant.RefundStatusSucceeded,
 		Amount:          req.Amount,
 		Currency:        req.Currency,

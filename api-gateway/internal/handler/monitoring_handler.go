@@ -69,7 +69,7 @@ func (h *MonitoringHandler) Health(c echo.Context) error {
 func (h *MonitoringHandler) Ready(c echo.Context) error {
 	// Check if the service is ready to accept requests
 	// Add any specific readiness checks here
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":    "ready",
 		"timestamp": time.Now(),
 	}
@@ -97,7 +97,7 @@ func (h *MonitoringHandler) Metrics(c echo.Context) error {
 
 // Info returns general information about the API gateway.
 func (h *MonitoringHandler) Info(c echo.Context) error {
-	response := map[string]interface{}{
+	response := map[string]any{
 		"service":    "api-gateway",
 		"timestamp":  time.Now(),
 		"uptime":     time.Since(h.startTime).String(),
@@ -123,7 +123,7 @@ func (h *MonitoringHandler) TestTrace(c echo.Context) error {
 	defer endFunc()
 
 	// Add some attributes to the span
-	tracing.AddSpanAttributes(spanCtx, map[string]interface{}{
+	tracing.AddSpanAttributes(spanCtx, map[string]any{
 		"test.endpoint": "/test/trace",
 		"test.user":     "monitoring-test",
 		"test.action":   "trace-validation",
@@ -138,7 +138,7 @@ func (h *MonitoringHandler) TestTrace(c echo.Context) error {
 		"span_id", spanID,
 	)
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":    "success",
 		"message":   "Test trace created successfully",
 		"trace_id":  traceID,
@@ -168,7 +168,7 @@ func (h *MonitoringHandler) TestError(c echo.Context) error {
 		"trace_id", tracing.GetTraceID(spanCtx),
 	)
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":    "error",
 		"error":     testErr.Error(),
 		"trace_id":  tracing.GetTraceID(spanCtx),

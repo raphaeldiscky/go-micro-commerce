@@ -26,5 +26,5 @@ type GenericEvent struct {
 // BaseEvent represents a base event interface.
 type BaseEvent interface {
 	GetMetadata() Metadata
-	GetPayload() interface{}
+	GetPayload() any
 }

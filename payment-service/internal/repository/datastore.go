@@ -7,13 +7,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // DBTX is an interface that wraps the database transaction methods.
 type DBTX interface {
-	Exec(ctx context.Context, sql string, arguments ...interface{}) (pgconn.CommandTag, error)
-	Query(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
-	QueryRow(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 // DataStore is an interface that wraps the database access methods.
@@ -27,17 +28,18 @@ type DataStore interface {
 
 // dataStore is a struct that implements the DataStore interface.
 type dataStore struct {
-	pool *pgxpool.Pool
-	db   DBTX
-	rdl  *redislock.Client
+	pool   *pgxpool.Pool
+	db     DBTX
+	rdl    *redislock.Client
+	logger logger.Logger
 }
 
 // NewDataStore creates a new DataStore.
-func NewDataStore(pool *pgxpool.Pool, rdl *redislock.Client) DataStore {
+func NewDataStore(pool *pgxpool.Pool, rdl *redislock.Client, appLogger logger.Logger) DataStore {
 	return &dataStore{
-		pool: pool,
-		db:   pool,
-		rdl:  rdl,
+		pool:   pool,
+		rdl:    rdl,
+		logger: appLogger,
 	}
 }
 
@@ -67,7 +69,7 @@ func (s *dataStore) PaymentRepository() PaymentRepositoryInterface {
 
 // LockRepository returns a new LockRepository.
 func (s *dataStore) LockRepository() LockRepositoryInterface {
-	return NewLockRepository(s.rdl)
+	return NewLockRepository(s.rdl, s.logger)
 }
 
 // OutboxRepository returns a new OutboxRepository.

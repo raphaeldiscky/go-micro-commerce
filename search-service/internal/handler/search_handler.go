@@ -229,7 +229,7 @@ func (h *SearchHandler) parseSearchQuery(c echo.Context) *entity.SearchQuery {
 
 	query := &entity.SearchQuery{
 		Query:   c.QueryParam("q"),
-		Filters: make(map[string]interface{}),
+		Filters: make(map[string]any),
 		Sort:    []entity.SortField{},
 		From:    int((page - 1) * limit),
 		Size:    int(limit),
@@ -323,9 +323,9 @@ func (h *SearchHandler) parseRangeParam(
 		return
 	}
 
-	rangeFilter, ok := query.Filters[filterName].(map[string]interface{})
+	rangeFilter, ok := query.Filters[filterName].(map[string]any)
 	if !ok {
-		rangeFilter = make(map[string]interface{})
+		rangeFilter = make(map[string]any)
 		query.Filters[filterName] = rangeFilter
 	}
 

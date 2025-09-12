@@ -82,7 +82,7 @@ func StartSpan(ctx context.Context, name string) (context.Context, func()) {
 }
 
 // AddSpanAttributes adds attributes to the current span.
-func AddSpanAttributes(ctx context.Context, attributes map[string]interface{}) {
+func AddSpanAttributes(ctx context.Context, attributes map[string]any) {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return

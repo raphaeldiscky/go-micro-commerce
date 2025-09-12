@@ -34,7 +34,7 @@ func NewProductDeletedEvent(productID uuid.UUID) *ProductDeletedEvent {
 }
 
 // GetPayload returns the data associated with the ProductDeletedEvent.
-func (e *ProductDeletedEvent) GetPayload() interface{} {
+func (e *ProductDeletedEvent) GetPayload() any {
 	return e.Payload
 }
 

@@ -22,16 +22,6 @@ type PaymentLifecycleEvent struct {
 	Payload  event.PaymentLifecyclePayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the PaymentLifecycleEvent.
-func (e *PaymentLifecycleEvent) GetPayload() interface{} {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the PaymentLifecycleEvent.
-func (e *PaymentLifecycleEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
-	return e.Metadata
-}
-
 // PaymentLifecycleProducer is responsible for producing Payment Lifecycle events.
 type PaymentLifecycleProducer struct {
 	Producer *kafka.AsyncProducer
@@ -60,6 +50,16 @@ func NewPaymentLifecycleEvent(
 			TotalPrice: totalPrice,
 		},
 	}
+}
+
+// GetPayload returns the data associated with the PaymentLifecycleEvent.
+func (e *PaymentLifecycleEvent) GetPayload() any {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the PaymentLifecycleEvent.
+func (e *PaymentLifecycleEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+	return e.Metadata
 }
 
 // NewPaymentLifecycleProducer creates a new instance of PaymentLifecycleProducer.

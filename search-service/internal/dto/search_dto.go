@@ -46,13 +46,13 @@ type BulkIndexRequest struct {
 
 // SearchQueryRequest represents a search request with advanced options.
 type SearchQueryRequest struct {
-	Query        string                 `json:"query"`
-	Filters      map[string]interface{} `json:"filters"`
-	Sort         []SortFieldRequest     `json:"sort"`
-	From         int                    `json:"from"`
-	Size         int                    `json:"size"`
-	Aggregations map[string]interface{} `json:"aggregations,omitempty"`
-	Highlight    *HighlightRequest      `json:"highlight,omitempty"`
+	Query        string             `json:"query"`
+	Filters      map[string]any     `json:"filters"`
+	Sort         []SortFieldRequest `json:"sort"`
+	From         int                `json:"from"`
+	Size         int                `json:"size"`
+	Aggregations map[string]any     `json:"aggregations,omitempty"`
+	Highlight    *HighlightRequest  `json:"highlight,omitempty"`
 }
 
 // SortFieldRequest represents a sort field in the request.

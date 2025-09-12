@@ -164,13 +164,13 @@ func (s *Scheduler) Shutdown(_ context.Context) error {
 }
 
 // GetJobtatus returns the status of all registered job.
-func (s *Scheduler) GetJobtatus() map[string]interface{} {
+func (s *Scheduler) GetJobtatus() map[string]any {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	status := make(map[string]interface{})
+	status := make(map[string]any)
 	for _, job := range s.jobs {
-		status[job.Name()] = map[string]interface{}{
+		status[job.Name()] = map[string]any{
 			"enabled":  job.IsEnabled(),
 			"interval": job.Interval().String(),
 		}

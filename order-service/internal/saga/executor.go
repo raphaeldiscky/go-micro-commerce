@@ -542,7 +542,7 @@ func (e *Executor) getOrCreateSagaState(
 		CurrentStep:      0,
 		ExecutedSteps:    []string{},
 		CompensatedSteps: []string{},
-		Data:             make(map[string]interface{}),
+		Data:             make(map[string]any),
 		CreatedAt:        time.Now().UTC(),
 		UpdatedAt:        time.Now().UTC(),
 	}
@@ -578,8 +578,8 @@ func (e *Executor) isStepCompensated(state *entity.SagaState, stepName constant.
 }
 
 // ToMap converts Metadata struct to map for persistence.
-func (m *Metadata) ToMap() map[string]interface{} {
-	result := make(map[string]interface{})
+func (m *Metadata) ToMap() map[string]any {
+	result := make(map[string]any)
 
 	if len(m.ReservedProducts) > 0 {
 		result["reserved_products"] = m.ReservedProducts
@@ -613,7 +613,7 @@ func (m *Metadata) ToMap() map[string]interface{} {
 }
 
 // FromMap converts map from persistence to Metadata struct.
-func (m *Metadata) FromMap(data map[string]interface{}) {
+func (m *Metadata) FromMap(data map[string]any) {
 	if val, ok := data["reserved_products"].([]entity.Product); ok {
 		m.ReservedProducts = val
 	}

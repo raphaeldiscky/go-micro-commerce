@@ -21,39 +21,11 @@ type Payment struct {
 	PaymentMethod      constant.PaymentMethod
 	PaymentGateway     *string
 	GatewayReferenceID *string
-	GatewayResponse    map[string]interface{} // JSONB data
+	GatewayResponse    map[string]any // JSONB data
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 	CompletedAt        *time.Time
 	FailedAt           *time.Time
-}
-
-// validate performs business rule validation.
-func (p *Payment) validate() error {
-	if p.OrderID == uuid.Nil {
-		return errors.New("order_id must not be empty")
-	}
-
-	if p.Amount.LessThanOrEqual(decimal.Zero) {
-		return errors.New("amount must be greater than zero")
-	}
-
-	if p.Currency == "" {
-		return errors.New("currency must not be empty")
-	}
-
-	if len(p.Currency) != 3 {
-		return errors.New("currency must be a 3-character ISO code")
-	}
-
-	if p.CreatedAt.After(p.UpdatedAt) {
-		return errors.New("created_at must be before or equal to updated_at")
-	}
-
-	// Status validation is handled by database constraints
-	// PaymentMethod validation is handled by database constraints
-
-	return nil
 }
 
 // NewPayment creates a new payment with validation.
@@ -67,7 +39,7 @@ func NewPayment(
 	payment := &Payment{
 		ID:            uuid.New(),
 		OrderID:       orderID,
-		Amount:        amount.Round(2),
+		Amount:        amount.Round(constant.DefaultPricingScale),
 		Currency:      currency,
 		Status:        constant.PaymentStatusPending,
 		PaymentMethod: paymentMethod,
@@ -109,7 +81,7 @@ func (p *Payment) UpdateStatus(status constant.PaymentStatus) error {
 // SetGatewayReference sets the payment gateway reference information.
 func (p *Payment) SetGatewayReference(
 	gateway, referenceID string,
-	response map[string]interface{},
+	response map[string]any,
 ) error {
 	p.PaymentGateway = &gateway
 	p.GatewayReferenceID = &referenceID
@@ -137,4 +109,32 @@ func (p *Payment) IsCompleted() bool {
 // IsFailed checks if payment has failed.
 func (p *Payment) IsFailed() bool {
 	return p.Status == constant.PaymentStatusFailed
+}
+
+// validate performs business rule validation.
+func (p *Payment) validate() error {
+	if p.OrderID == uuid.Nil {
+		return errors.New("order_id must not be empty")
+	}
+
+	if p.Amount.LessThanOrEqual(decimal.Zero) {
+		return errors.New("amount must be greater than zero")
+	}
+
+	if p.Currency == "" {
+		return errors.New("currency must not be empty")
+	}
+
+	if len(p.Currency) != constant.CurrencyLength {
+		return errors.New("currency must be a 3-character ISO code")
+	}
+
+	if p.CreatedAt.After(p.UpdatedAt) {
+		return errors.New("created_at must be before or equal to updated_at")
+	}
+
+	// Status validation is handled by database constraints
+	// PaymentMethod validation is handled by database constraints
+
+	return nil
 }

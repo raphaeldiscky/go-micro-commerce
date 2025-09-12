@@ -55,7 +55,7 @@ func NewOrderLifecycleEvent(
 }
 
 // GetPayload returns the data associated with the OrderLifecycleEvent.
-func (e *OrderLifecycleEvent) GetPayload() interface{} {
+func (e *OrderLifecycleEvent) GetPayload() any {
 	return e.Payload
 }
 

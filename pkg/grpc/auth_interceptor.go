@@ -27,10 +27,10 @@ func NewAuthInterceptor() *AuthInterceptor {
 func (a *AuthInterceptor) ServiceToServiceAuth() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
+	) (any, error) {
 		// Skip auth for health checks
 		if strings.HasSuffix(info.FullMethod, "Health") {
 			return handler(ctx, req)

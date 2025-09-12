@@ -302,7 +302,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 		return errors.New("reserved products not found in saga state")
 	}
 
-	// Convert reserved products interface{} to []entity.Product
+	// Convert reserved products any to []entity.Product
 	var reservedProducts []entity.Product
 
 	productsBytes, err := json.Marshal(reservedProductsData)

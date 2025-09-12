@@ -99,7 +99,7 @@ func (j *JWTUtils) ValidateRefreshToken(tokenString string) (*RefreshTokenClaims
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&RefreshTokenClaims{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}
@@ -129,7 +129,7 @@ func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, 
 	token, err := jwt.ParseWithClaims(
 		tokenString,
 		&AccessTokenClaims{},
-		func(token *jwt.Token) (interface{}, error) {
+		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}

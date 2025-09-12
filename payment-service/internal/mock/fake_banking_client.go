@@ -3,6 +3,7 @@ package mock
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,6 +13,20 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
+)
+
+const (
+	fakeBankingDelay              = time.Millisecond * 200 // Simulate network delay
+	fakeBankingTransferFailAmount = 10000000               // Fail transfers > 10M IDR
+	fakeBankingEstimateComplete   = time.Hour * 2
+	fakeBankingSuccessAmount      = 1000000 // Success transfers > 1M IDR
+	fakeBankingProcessedAt        = 2 * time.Hour
+	fakeBankingBalance            = 100000000
+	fakeBankingBaseFee            = 6500
+	fakeBankingPercentageFee      = 0.001
+	fakeBankingMaxFee             = 25000
+	fakeBankingRefLength          = 12
+	fakeBankingMinRoutingLength   = 3
 )
 
 // FakeBankingClient provides a mock implementation of BankingClientInterface for testing.
@@ -24,7 +39,7 @@ type FakeBankingClient struct {
 func NewFakeBankingClient() *FakeBankingClient {
 	return &FakeBankingClient{
 		shouldFail: false,
-		delay:      time.Millisecond * 200, // Simulate network delay
+		delay:      fakeBankingDelay,
 	}
 }
 
@@ -46,7 +61,7 @@ func (c *FakeBankingClient) TransferFunds(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("simulated banking API error")
+		return nil, errors.New("simulated banking API error")
 	}
 
 	// Simulate validation
@@ -65,11 +80,11 @@ func (c *FakeBankingClient) TransferFunds(
 	status := constant.BankTransferStatusCompleted
 
 	// Simulate failures for large amounts
-	if req.Amount.GreaterThan(decimal.NewFromInt(10000000)) { // > 10M IDR
+	if req.Amount.GreaterThan(decimal.NewFromInt(fakeBankingTransferFailAmount)) { // > 10M IDR
 		status = constant.BankTransferStatusFailed
 	}
 
-	estimatedComplete := time.Now().Add(2 * time.Hour)
+	estimatedComplete := time.Now().Add(fakeBankingEstimateComplete)
 	if status == constant.BankTransferStatusCompleted {
 		estimatedComplete = time.Now()
 	}
@@ -96,7 +111,7 @@ func (c *FakeBankingClient) GetTransferStatus(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("failed to get transfer status: banking API error")
+		return nil, errors.New("failed to get transfer status: banking API error")
 	}
 
 	// Simulate different statuses based on transaction ID
@@ -111,9 +126,11 @@ func (c *FakeBankingClient) GetTransferStatus(
 	statusIndex := len(transactionID.String()) % len(statuses)
 	status := statuses[statusIndex]
 
-	amount := decimal.NewFromFloat(float64(random.Int(1000000))) // Random amount up to 1M IDR
+	amount := decimal.NewFromFloat(
+		float64(random.Int(fakeBankingSuccessAmount)),
+	) // Random amount up to 1M IDR
 	fees := c.calculateTransferFees(amount)
-	estimatedComplete := time.Now().Add(time.Duration(random.Int(24)) * time.Hour)
+	estimatedComplete := time.Now().Add(fakeBankingEstimateComplete)
 
 	return &dto.BankTransferResponse{
 		TransactionID:     transactionID,
@@ -121,7 +138,7 @@ func (c *FakeBankingClient) GetTransferStatus(
 		Status:            status,
 		Amount:            amount,
 		Currency:          "IDR",
-		ProcessedAt:       time.Now().Add(-time.Duration(random.Int(48)) * time.Hour),
+		ProcessedAt:       time.Now().Add(fakeBankingProcessedAt),
 		EstimatedComplete: &estimatedComplete,
 		Fees:              &fees,
 	}, nil
@@ -135,7 +152,7 @@ func (c *FakeBankingClient) VerifyAccount(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("failed to verify account: banking API error")
+		return nil, errors.New("failed to verify account: banking API error")
 	}
 
 	// Simulate validation logic
@@ -165,16 +182,16 @@ func (c *FakeBankingClient) GetAccountBalance(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return decimal.Zero, fmt.Errorf("failed to get account balance: banking API error")
+		return decimal.Zero, errors.New("failed to get account balance: banking API error")
 	}
 
 	// Simulate validation
 	if !c.isValidAccountNumber(account.AccountNumber) {
-		return decimal.Zero, fmt.Errorf("invalid account number")
+		return decimal.Zero, errors.New("invalid account number")
 	}
 
 	// Generate mock balance based on account number
-	balanceFloat := float64(random.Int(100000000)) // Up to 100M IDR
+	balanceFloat := float64(random.Int(fakeBankingBalance)) // Up to 100M IDR
 
 	return decimal.NewFromFloat(balanceFloat), nil
 }
@@ -201,7 +218,7 @@ func (c *FakeBankingClient) CancelTransfer(
 func (c *FakeBankingClient) generateBankReferenceID() string {
 	bankCodes := []string{"BCA", "BNI", "BRI", "MANDIRI", "CIMB"}
 	bankCode := bankCodes[random.Int(int64(len(bankCodes)))]
-	refNumber := random.NumericString(12)
+	refNumber := random.NumericString(fakeBankingRefLength)
 
 	return fmt.Sprintf("%s%s", bankCode, refNumber)
 }
@@ -209,15 +226,15 @@ func (c *FakeBankingClient) generateBankReferenceID() string {
 // calculateTransferFees calculates transfer fees based on amount.
 func (c *FakeBankingClient) calculateTransferFees(amount decimal.Decimal) decimal.Decimal {
 	// Indonesian banking fees simulation
-	baseFee := decimal.NewFromInt(6500)          // Base fee 6,500 IDR
-	percentageFee := decimal.NewFromFloat(0.001) // 0.1% of amount
+	baseFee := decimal.NewFromInt(fakeBankingBaseFee)               // Base fee 6,500 IDR
+	percentageFee := decimal.NewFromFloat(fakeBankingPercentageFee) // 0.1% of amount
 
 	calculatedFee := amount.Mul(percentageFee)
 	if calculatedFee.LessThan(baseFee) {
 		return baseFee
 	}
 
-	maxFee := decimal.NewFromInt(25000) // Max fee 25,000 IDR
+	maxFee := decimal.NewFromInt(fakeBankingMaxFee) // Max fee 25,000 IDR
 	if calculatedFee.GreaterThan(maxFee) {
 		return maxFee
 	}
@@ -290,7 +307,7 @@ func (c *FakeBankingClient) getBankNameFromRouting(routingNumber string) string 
 	}
 
 	// Extract first 3 digits for mapping
-	if len(routingNumber) >= 3 {
+	if len(routingNumber) >= fakeBankingMinRoutingLength {
 		bankCode := routingNumber[:3]
 		if bankName, exists := bankMappings[bankCode]; exists {
 			return bankName

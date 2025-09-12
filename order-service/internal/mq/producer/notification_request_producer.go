@@ -112,7 +112,7 @@ func NewNotificationRequestEvent(
 }
 
 // GetPayload returns the data associated with the NotificationRequestEvent.
-func (e *NotificationRequestEvent) GetPayload() interface{} {
+func (e *NotificationRequestEvent) GetPayload() any {
 	return e.Payload
 }
 
