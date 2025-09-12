@@ -56,7 +56,7 @@ func NewOrderDLQEvent(
 }
 
 // GetPayload returns the data associated with the OrderDLQEvent.
-func (e *OrderDLQEvent) GetPayload() interface{} {
+func (e *OrderDLQEvent) GetPayload() any {
 	return e.Payload
 }
 

@@ -8,7 +8,7 @@ import (
 )
 
 // DecimalType converts a decimal.Decimal to its string representation.
-func DecimalType(field reflect.Value) interface{} {
+func DecimalType(field reflect.Value) any {
 	if valuer, ok := field.Interface().(decimal.Decimal); ok {
 		return valuer.String()
 	}

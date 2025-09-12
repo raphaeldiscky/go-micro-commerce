@@ -20,7 +20,7 @@ type FulfillmentDLQEvent struct {
 }
 
 // GetPayload returns the data associated with the FulfillmentDLQEvent.
-func (e *FulfillmentDLQEvent) GetPayload() interface{} {
+func (e *FulfillmentDLQEvent) GetPayload() any {
 	return e.Payload
 }
 

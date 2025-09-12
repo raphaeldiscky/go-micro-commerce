@@ -53,33 +53,33 @@ type SuggestField struct {
 
 // SearchResult represents a generic search result.
 type SearchResult struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type"`
-	Score     float64                `json:"score"`
-	Source    map[string]interface{} `json:"source"`
-	Highlight map[string][]string    `json:"highlight,omitempty"`
+	ID        string              `json:"id"`
+	Type      string              `json:"type"`
+	Score     float64             `json:"score"`
+	Source    map[string]any      `json:"source"`
+	Highlight map[string][]string `json:"highlight,omitempty"`
 }
 
 // SearchResponse represents a search response with pagination.
 type SearchResponse struct {
-	Results      []SearchResult         `json:"results"`
-	Total        int64                  `json:"total"`
-	Page         int                    `json:"page"`
-	PerPage      int                    `json:"per_page"`
-	TotalPages   int                    `json:"total_pages"`
-	Took         int                    `json:"took_ms"`
-	Aggregations map[string]interface{} `json:"aggregations,omitempty"`
+	Results      []SearchResult `json:"results"`
+	Total        int64          `json:"total"`
+	Page         int            `json:"page"`
+	PerPage      int            `json:"per_page"`
+	TotalPages   int            `json:"total_pages"`
+	Took         int            `json:"took_ms"`
+	Aggregations map[string]any `json:"aggregations,omitempty"`
 }
 
 // SearchQuery represents a search query with filters and pagination.
 type SearchQuery struct {
-	Query        string                 `json:"query"`
-	Filters      map[string]interface{} `json:"filters"`
-	Sort         []SortField            `json:"sort"`
-	From         int                    `json:"from"`
-	Size         int                    `json:"size"`
-	Aggregations map[string]interface{} `json:"aggregations,omitempty"`
-	Highlight    *HighlightConfig       `json:"highlight,omitempty"`
+	Query        string           `json:"query"`
+	Filters      map[string]any   `json:"filters"`
+	Sort         []SortField      `json:"sort"`
+	From         int              `json:"from"`
+	Size         int              `json:"size"`
+	Aggregations map[string]any   `json:"aggregations,omitempty"`
+	Highlight    *HighlightConfig `json:"highlight,omitempty"`
 }
 
 // SortField represents a sort configuration.

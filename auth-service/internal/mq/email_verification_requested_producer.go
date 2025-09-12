@@ -43,7 +43,7 @@ func NewEmailVerificationRequestedEvent(
 }
 
 // GetPayload returns the data associated with the EmailVerificationRequestedEvent.
-func (e *EmailVerificationRequestedEvent) GetPayload() interface{} {
+func (e *EmailVerificationRequestedEvent) GetPayload() any {
 	return e.Payload
 }
 

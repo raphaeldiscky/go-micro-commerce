@@ -83,7 +83,7 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		}
 
 		// Mark as processing
-		if err := inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processing: %w", err)
 		}
 
@@ -103,14 +103,14 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		if processingErr != nil {
 			c.logger.Errorf("Failed to process event %s: %v", meta.Metadata.EventID, processingErr)
 
-			if err := inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
+			if err = inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", err)
 			}
 
 			return processingErr
 		}
 
-		if err := inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processed: %w", err)
 		}
 

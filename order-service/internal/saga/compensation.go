@@ -73,7 +73,7 @@ func (a *OrderActivitiesImpl) RefundPayment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Create refund request event
-		refundEvent := map[string]interface{}{
+		refundEvent := map[string]any{
 			"order_id":    order.ID,
 			"customer_id": order.CustomerID,
 			"amount":      order.TotalPrice,

@@ -51,7 +51,7 @@ type PaymentGatewayResponse struct {
 	ProcessedAt     time.Time                     `json:"processed_at"`
 	Fees            *decimal.Decimal              `json:"fees,omitempty"`
 	NetworkFees     *decimal.Decimal              `json:"network_fees,omitempty"`
-	GatewayResponse map[string]interface{}        `json:"gateway_response,omitempty"`
+	GatewayResponse map[string]any                `json:"gateway_response,omitempty"`
 	FailureReason   string                        `json:"failure_reason,omitempty"`
 	RequiresAction  bool                          `json:"requires_action,omitempty"`
 	NextAction      *PaymentAction                `json:"next_action,omitempty"`
@@ -61,7 +61,7 @@ type PaymentGatewayResponse struct {
 type PaymentAction struct {
 	Type constant.PaymentActionType `json:"type"`
 	URL  string                     `json:"url,omitempty"`
-	Data map[string]interface{}     `json:"data,omitempty"`
+	Data map[string]any             `json:"data,omitempty"`
 }
 
 // RefundRequest represents a refund request.

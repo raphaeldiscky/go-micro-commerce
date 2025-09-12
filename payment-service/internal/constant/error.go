@@ -6,6 +6,10 @@ const (
 	FailedToPingDatabase = "failed to ping database: %w"
 	// PaymentNotFoundErrorMessage is the message returned when a paymentis not found.
 	PaymentNotFoundErrorMessage = "payment not found"
+	// InboxEventNotFoundErrorMessage is the message returned when an inbox event is not found.
+	InboxEventNotFoundErrorMessage = "inbox event not found"
+	// OutboxEventNotFoundErrorMessage is the message returned when an outbox event is not found.
+	OutboxEventNotFoundErrorMessage = "outbox event not found"
 	// InvalidRequestBodyErrorMessage is the message returned when request body is invalid.
 	InvalidRequestBodyErrorMessage = "invalid request body"
 	// InvalidPaymentIDErrorMessage is the message returned when paymentID is invalid.

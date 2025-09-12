@@ -60,7 +60,7 @@ func NewFulfillmentRequestEvent(
 }
 
 // GetPayload returns the data associated with the FulfillmentRequestEvent.
-func (e *FulfillmentRequestEvent) GetPayload() interface{} {
+func (e *FulfillmentRequestEvent) GetPayload() any {
 	return e.Payload
 }
 

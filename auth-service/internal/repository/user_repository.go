@@ -111,7 +111,7 @@ func (r *UserRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*en
 func (r *UserRepositoryPostgres) getUserByField(
 	ctx context.Context,
 	fieldName string,
-	value interface{},
+	value any,
 ) (*entity.User, error) {
 	user := &entity.User{}
 	query := `

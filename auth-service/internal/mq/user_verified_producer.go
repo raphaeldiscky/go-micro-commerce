@@ -38,7 +38,7 @@ func NewUserVerifiedEvent(
 }
 
 // GetPayload returns the data associated with the UserVerifiedEvent.
-func (e *UserVerifiedEvent) GetPayload() interface{} {
+func (e *UserVerifiedEvent) GetPayload() any {
 	return e.Payload
 }
 

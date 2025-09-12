@@ -55,7 +55,7 @@ func NewPaymentDLQEvent(
 }
 
 // GetPayload returns the data associated with the PaymentDLQEvent.
-func (e *PaymentDLQEvent) GetPayload() interface{} {
+func (e *PaymentDLQEvent) GetPayload() any {
 	return e.Payload
 }
 

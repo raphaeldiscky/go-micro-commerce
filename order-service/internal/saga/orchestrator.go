@@ -160,7 +160,7 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 			var shipping dto.Shipping
 
 			if shippingData, exists := sagaState.Data["shipping"]; exists {
-				if shippingMap, ok := shippingData.(map[string]interface{}); ok {
+				if shippingMap, ok := shippingData.(map[string]any); ok {
 					// Convert map to ShippingRequest - this is a simplified approach
 					// In production, you might want to use JSON marshal/unmarshal for type safety
 					o.logger.Infof("Recovered shipping data from saga state for order %s", order.ID)
@@ -198,7 +198,7 @@ func (o *Orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
 
 // convertMapToShippingRequest converts a map from saga state back to ShippingRequest.
 // This is a simplified implementation - in production consider using JSON marshal/unmarshal.
-func convertMapToShippingRequest(data map[string]interface{}) dto.Shipping {
+func convertMapToShippingRequest(data map[string]any) dto.Shipping {
 	var shipping dto.Shipping
 
 	if carrierID, ok := data["carrier_id"].(string); ok {

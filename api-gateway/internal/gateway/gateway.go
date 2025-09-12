@@ -69,7 +69,7 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 		}
 
 		// Execute request through circuit breaker
-		result, err := gw.circuitBreaker.Execute(serviceName, func() (interface{}, error) {
+		result, err := gw.circuitBreaker.Execute(serviceName, func() (any, error) {
 			return gw.proxyRequest(c, endpoint, path)
 		})
 

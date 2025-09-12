@@ -33,7 +33,7 @@ func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
 }
 
 // GetPayload returns the payload associated with the FulfillmentRequestEvent.
-func (e *FulfillmentRequestEvent) GetPayload() interface{} {
+func (e *FulfillmentRequestEvent) GetPayload() any {
 	return e.Payload
 }
 

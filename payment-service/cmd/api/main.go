@@ -30,7 +30,7 @@ func main() {
 	consulCleanup := setupConsulRegistration(cfg, appLogger)
 	defer consulCleanup()
 
-	if err := worker.Start(ctx, cfg, appLogger); err != nil {
+	if err = worker.Start(ctx, cfg, appLogger); err != nil {
 		appLogger.Fatalf("Worker failed to start: %v", err)
 	}
 

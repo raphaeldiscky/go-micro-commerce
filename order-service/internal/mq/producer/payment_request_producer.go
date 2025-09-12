@@ -54,7 +54,7 @@ func NewPaymentRequestEvent(
 }
 
 // GetPayload returns the data associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetPayload() interface{} {
+func (e *PaymentRequestEvent) GetPayload() any {
 	return e.Payload
 }
 

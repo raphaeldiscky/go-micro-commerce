@@ -44,7 +44,7 @@ func NewProductCreatedEvent(
 }
 
 // GetPayload returns the data associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetPayload() interface{} {
+func (e *ProductCreatedEvent) GetPayload() any {
 	return e.Payload
 }
 

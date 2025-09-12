@@ -135,7 +135,7 @@ func (s *PaymentService) CreatePayment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError("failed to create outbox event")
 		}
 
@@ -172,7 +172,7 @@ func (s *PaymentService) ProcessPayment(
 	}
 
 	defer func() {
-		if err := lockRepo.Release(ctx, lock); err != nil {
+		if err = lockRepo.Release(ctx, lock); err != nil {
 			s.logger.Warnf("failed to release lock: %v", err)
 		}
 	}()
@@ -184,8 +184,8 @@ func (s *PaymentService) ProcessPayment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Get payment
-		payment, err := paymentRepo.FindByOrderID(ctx, orderID)
-		if err != nil {
+		payment, errFind := paymentRepo.FindByOrderID(ctx, orderID)
+		if errFind != nil {
 			return httperror.NewInternalServerError("failed to get payment")
 		}
 
@@ -199,13 +199,13 @@ func (s *PaymentService) ProcessPayment(
 		}
 
 		// Update status to processing
-		if err := payment.UpdateStatus(constant.PaymentStatusProcessing); err != nil {
+		if err = payment.UpdateStatus(constant.PaymentStatusProcessing); err != nil {
 			return httperror.NewBadRequestError("failed to update payment status")
 		}
 
 		// Process payment with payment gateway
-		paymentResult, err := s.processWithPaymentGateway(ctx, payment, req)
-		if err != nil {
+		paymentResult, errProcess := s.processWithPaymentGateway(ctx, payment, req)
+		if errProcess != nil {
 			return httperror.NewInternalServerError("failed to process payment with gateway")
 		}
 
@@ -217,18 +217,18 @@ func (s *PaymentService) ProcessPayment(
 		}
 
 		// Set gateway reference
-		if err := payment.SetGatewayReference("stripe", paymentResult.GatewayID, paymentResult.GatewayResponse); err != nil {
+		if err = payment.SetGatewayReference("stripe", paymentResult.GatewayID, paymentResult.GatewayResponse); err != nil {
 			return httperror.NewInternalServerError("failed to set gateway reference")
 		}
 
 		// Update final status
-		if err := payment.UpdateStatus(finalStatus); err != nil {
+		if err = payment.UpdateStatus(finalStatus); err != nil {
 			return httperror.NewBadRequestError("failed to update final payment status")
 		}
 
 		// Save updated payment
-		updatedPayment, err := paymentRepo.Update(ctx, payment)
-		if err != nil {
+		updatedPayment, errUpdate := paymentRepo.Update(ctx, payment)
+		if errUpdate != nil {
 			return httperror.NewInternalServerError("failed to update payment")
 		}
 
@@ -240,8 +240,8 @@ func (s *PaymentService) ProcessPayment(
 			updatedPayment.Amount,
 		)
 
-		payload, err := json.Marshal(evt)
-		if err != nil {
+		payload, errMarshal := json.Marshal(evt)
+		if errMarshal != nil {
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}
 
@@ -263,7 +263,7 @@ func (s *PaymentService) ProcessPayment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError("failed to create payment completion event")
 		}
 

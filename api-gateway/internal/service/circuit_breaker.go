@@ -73,8 +73,8 @@ func (cb *CircuitBreakerService) GetBreaker(serviceName string) *gobreaker.Circu
 // Execute executes a request through the circuit breaker.
 func (cb *CircuitBreakerService) Execute(
 	serviceName string,
-	req func() (interface{}, error),
-) (interface{}, error) {
+	req func() (any, error),
+) (any, error) {
 	breaker := cb.GetBreaker(serviceName)
 
 	return breaker.Execute(req)

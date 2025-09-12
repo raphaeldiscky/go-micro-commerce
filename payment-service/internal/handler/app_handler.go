@@ -18,7 +18,7 @@ func NewAppHandler() *AppHandler {
 // Health handles health check.
 func (c *AppHandler) Health(e echo.Context) error {
 	return e.JSON(http.StatusOK, dto.WebResponse[any]{
-		Data: map[string]interface{}{
+		Data: map[string]any{
 			"status":  "healthy",
 			"service": "payment-service",
 		},

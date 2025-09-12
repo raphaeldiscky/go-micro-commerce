@@ -31,7 +31,7 @@ func NewValidator() echo.Validator {
 }
 
 // Validate implements the echo.Validator interface.
-func (cv *CustomValidator) Validate(i interface{}) error {
+func (cv *CustomValidator) Validate(i any) error {
 	return cv.validator.Struct(i)
 }
 

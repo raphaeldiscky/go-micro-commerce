@@ -16,7 +16,7 @@ import (
 // EmailService handles email template rendering and sending operations.
 type EmailService interface {
 	LoadTemplate(templateName string) (string, error)
-	RenderTemplate(templateName string, data interface{}) (string, error)
+	RenderTemplate(templateName string, data any) (string, error)
 	SendEmail(ctx context.Context, to, subject, body string) error
 }
 
@@ -77,7 +77,7 @@ func (ts *EmailServiceImpl) LoadTemplate(templateName string) (string, error) {
 }
 
 // RenderTemplate renders a template with the provided data using html/template.
-func (ts *EmailServiceImpl) RenderTemplate(templateName string, data interface{}) (string, error) {
+func (ts *EmailServiceImpl) RenderTemplate(templateName string, data any) (string, error) {
 	templateContent, err := ts.LoadTemplate(templateName)
 	if err != nil {
 		return "", fmt.Errorf("failed to load template %s: %w", templateName, err)

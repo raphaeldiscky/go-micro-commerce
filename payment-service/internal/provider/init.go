@@ -60,7 +60,7 @@ func SetupGlobal(
 	}
 
 	lockClient := redislock.New(redisClusterClient)
-	dataStore := repository.NewDataStore(pgPool, lockClient)
+	dataStore := repository.NewDataStore(pgPool, lockClient, appLogger)
 	// Setup kafka admin
 	kafkaAdmin, err := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,

@@ -21,7 +21,7 @@ type FulfillmentLifecycleEvent struct {
 }
 
 // GetPayload returns the data associated with the FulfillmentLifecycleEvent.
-func (e *FulfillmentLifecycleEvent) GetPayload() interface{} {
+func (e *FulfillmentLifecycleEvent) GetPayload() any {
 	return e.Payload
 }
 
