@@ -33,3 +33,8 @@ const (
 	// CarrierSiCepat represents the SiCepat carrier.
 	CarrierSiCepat CarrierID = "sicepat"
 )
+
+const (
+	// MockEstimatedDeliveryDays is a mock estimated delivery days.
+	MockEstimatedDeliveryDays = 7
+)

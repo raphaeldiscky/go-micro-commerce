@@ -1,9 +1,11 @@
 package config
 
 import (
-	"log"
-
 	"github.com/spf13/viper"
+)
+
+const (
+	defaultSMTPPort = 1025
 )
 
 // SMTPConfig holds the configuration for the SMTP server.
@@ -18,12 +20,12 @@ func initSMTPConfig() *SMTPConfig {
 	// Set defaults
 	viper.SetDefault("SMTP_HOST", "localhost")
 	viper.SetDefault("SMTP_EMAIL", "zundria.putra@gmail.com")
-	viper.SetDefault("SMTP_PORT", 1025)
+	viper.SetDefault("SMTP_PORT", defaultSMTPPort)
 
 	smtpConfig := &SMTPConfig{}
 
-	if err := viper.Unmarshal(&smtpConfig); err != nil {
-		log.Fatalf("error mapping smtp config: %v", err)
+	if err := viper.Unmarshal(smtpConfig); err != nil {
+		panic(err)
 	}
 
 	return smtpConfig

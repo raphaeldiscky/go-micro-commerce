@@ -22,6 +22,7 @@ import (
 // GRPCServer is the gRPC server for fulfillment service.
 type GRPCServer struct {
 	pb.UnimplementedFulfillmentServiceServer
+
 	cfg                *config.Config
 	fulfillmentService service.FulfillmentServiceInterface
 	logger             logger.Logger

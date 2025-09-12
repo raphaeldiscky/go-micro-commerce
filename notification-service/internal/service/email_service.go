@@ -62,7 +62,7 @@ func (ts *EmailServiceImpl) LoadTemplate(templateName string) (string, error) {
 	}
 
 	// Check if file exists
-	if _, err := os.Stat(resolvedPath); os.IsNotExist(err) {
+	if _, err = os.Stat(resolvedPath); os.IsNotExist(err) {
 		return "", fmt.Errorf("template file %s not found: %w", resolvedPath, err)
 	}
 
@@ -91,7 +91,7 @@ func (ts *EmailServiceImpl) RenderTemplate(templateName string, data any) (strin
 
 	// Render the template with data
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+	if err = tmpl.Execute(&buf, data); err != nil {
 		return "", fmt.Errorf("failed to execute template %s: %w", templateName, err)
 	}
 

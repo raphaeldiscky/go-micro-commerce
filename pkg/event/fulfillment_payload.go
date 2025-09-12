@@ -27,7 +27,6 @@ type FulfillmentRequestPayload struct {
 	CustomerID uuid.UUID                `json:"customer_id"`
 	Currency   string                   `json:"currency"`
 	Items      []FulfillmentItemPayload `json:"items"`
-	WeightKG   decimal.Decimal          `json:"weight_kg"`
 	Shipping   Shipping                 `json:"shipping"`
 }
 

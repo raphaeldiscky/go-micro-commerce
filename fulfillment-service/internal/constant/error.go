@@ -6,6 +6,10 @@ const (
 	FailedToPingDatabase = "failed to ping database: %w"
 	// FulfillmentNotFoundErrorMessage is the message returned when a fulfillment is not found.
 	FulfillmentNotFoundErrorMessage = "fulfillment not found"
+	// InboxEventNotFoundErrorMessage is the message returned when an inbox event is not found.
+	InboxEventNotFoundErrorMessage = "inbox event not found"
+	// OutboxEventNotFoundErrorMessage is the message returned when an outbox event is not found.
+	OutboxEventNotFoundErrorMessage = "outbox event not found"
 	// InvalidRequestBodyErrorMessage is the message returned when request body is invalid.
 	InvalidRequestBodyErrorMessage = "invalid request body"
 	// InvalidFulfillmentIDErrorMessage is the message returned when fulfillmentID is invalid.

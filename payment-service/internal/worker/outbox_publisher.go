@@ -23,8 +23,8 @@ type OutboxPublisher struct {
 	logger                   logger.Logger
 	paymentLifecycleProducer kafka.ProducerInterface
 	paymentDLQProducer       kafka.ProducerInterface
-	config                   config.OutboxPublisherConfig
 	eventRegistry            *kafka.EventRegistry
+	config                   config.OutboxPublisherConfig
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.

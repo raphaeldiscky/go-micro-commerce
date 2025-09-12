@@ -3,6 +3,7 @@ package mock
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,16 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
+)
+
+const (
+	fakeCarrierDelay             = time.Millisecond * 100
+	fakeCarrierBaseDateAdd       = 24 * time.Hour
+	fakeCarrierShippingCost      = 25000
+	fakeCarrierTransitDays       = 2
+	fakeCarrierLastUpdateAdd     = 24 * time.Hour
+	fakeCarrierDeliveredAtAdd    = 24 * time.Hour
+	fakeCarrierTrackingNumberMax = 999999999
 )
 
 // FakeCarrierClient provides a mock implementation of CarrierClientInterface for testing.
@@ -23,7 +34,7 @@ type FakeCarrierClient struct {
 func NewFakeCarrierClient() *FakeCarrierClient {
 	return &FakeCarrierClient{
 		shouldFail: false,
-		delay:      time.Millisecond * 100, // Simulate network delay
+		delay:      fakeCarrierDelay, // Simulate network delay
 	}
 }
 
@@ -45,35 +56,35 @@ func (c *FakeCarrierClient) GetRates(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("simulated carrier API error")
+		return nil, errors.New("simulated carrier API error")
 	}
 
-	baseDate := time.Now().Add(24 * time.Hour)
+	baseDate := time.Now().Add(fakeCarrierBaseDateAdd)
 
 	rates := []dto.ShippingRate{
 		{
 			CarrierID:         constant.CarrierJNE,
 			Service:           "JNE Regular",
-			ShippingCost:      decimal.NewFromFloat(25000),
+			ShippingCost:      decimal.NewFromFloat(fakeCarrierShippingCost),
 			Currency:          "IDR",
 			EstimatedDelivery: baseDate.Add(2 * 24 * time.Hour),
-			TransitDays:       2,
+			TransitDays:       fakeCarrierTransitDays,
 		},
 		{
 			CarrierID:         constant.CarrierJT,
 			Service:           "J&T Express",
-			ShippingCost:      decimal.NewFromFloat(22000),
+			ShippingCost:      decimal.NewFromFloat(fakeCarrierShippingCost),
 			Currency:          "IDR",
 			EstimatedDelivery: baseDate.Add(3 * 24 * time.Hour),
-			TransitDays:       3,
+			TransitDays:       fakeCarrierTransitDays,
 		},
 		{
 			CarrierID:         constant.CarrierSiCepat,
 			Service:           "SiCepat REG",
-			ShippingCost:      decimal.NewFromFloat(20000),
+			ShippingCost:      decimal.NewFromFloat(fakeCarrierShippingCost),
 			Currency:          "IDR",
 			EstimatedDelivery: baseDate.Add(4 * 24 * time.Hour),
-			TransitDays:       3,
+			TransitDays:       fakeCarrierTransitDays,
 		},
 	}
 
@@ -88,7 +99,7 @@ func (c *FakeCarrierClient) GetRate(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("simulated carrier API error")
+		return nil, errors.New("simulated carrier API error")
 	}
 
 	rates, err := c.GetRates(ctx, req)
@@ -102,7 +113,7 @@ func (c *FakeCarrierClient) GetRate(
 		}
 	}
 
-	return nil, fmt.Errorf("shipping rate not found")
+	return nil, errors.New("shipping rate not found")
 }
 
 // CreateShipment creates a mock shipping label.
@@ -113,7 +124,7 @@ func (c *FakeCarrierClient) CreateShipment(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("failed to create shipment: carrier API error")
+		return nil, errors.New("failed to create shipment: carrier API error")
 	}
 
 	carrierService := c.getCarrierInfo(req.CarrierID)
@@ -152,7 +163,7 @@ func (c *FakeCarrierClient) GetTracking(
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, fmt.Errorf("failed to get tracking: carrier API error")
+		return nil, errors.New("failed to get tracking: carrier API error")
 	}
 
 	statuses := []constant.FulfillmentStatus{
@@ -172,13 +183,13 @@ func (c *FakeCarrierClient) GetTracking(
 		TrackingNumber: trackingNumber,
 		Status:         status,
 		CarrierID:      carrierID,
-		LastUpdate:     time.Now().Add(-time.Duration(random.Int(24)) * time.Hour),
+		LastUpdate:     time.Now().Add(fakeCarrierLastUpdateAdd),
 		Location:       location,
 		Description:    description,
 	}
 
 	if status == constant.FulfillmentStatusDelivered {
-		deliveredAt := time.Now().Add(-time.Duration(random.Int(48)) * time.Hour)
+		deliveredAt := time.Now().Add(fakeCarrierDeliveredAtAdd)
 		info.DeliveredAt = &deliveredAt
 	}
 
@@ -207,7 +218,7 @@ func (c *FakeCarrierClient) CancelShipment(
 // generateTrackingNumber creates a mock tracking number.
 func (c *FakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID) string {
 	prefix := carrierID
-	randomSuffix := random.Int(999999999)
+	randomSuffix := random.Int(fakeCarrierTrackingNumberMax)
 
 	return fmt.Sprintf("%s-%09d", prefix, randomSuffix)
 }

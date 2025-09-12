@@ -114,7 +114,7 @@ func (p *InboxProcessor) processPendingEvents(ctx context.Context) {
 	}
 
 	for _, event := range events {
-		if err := p.processEvent(ctx, event); err != nil {
+		if err = p.processEvent(ctx, event); err != nil {
 			p.logger.Errorf("failed to process event %s: %v", event.ID, err)
 		}
 	}

@@ -20,16 +20,6 @@ type FulfillmentLifecycleEvent struct {
 	Payload  event.FulfillmentLifecyclePayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the FulfillmentLifecycleEvent.
-func (e *FulfillmentLifecycleEvent) GetPayload() any {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the FulfillmentLifecycleEvent.
-func (e *FulfillmentLifecycleEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // FulfillmentLifecycleProducer is responsible for producing Fulfillment Lifecycle events.
 type FulfillmentLifecycleProducer struct {
 	Producer *kafka.AsyncProducer
@@ -57,6 +47,16 @@ func NewFulfillmentLifecycleEvent(
 			EstimatedDeliveryAt: fulfillment.EstimatedDeliveryAt,
 		},
 	}
+}
+
+// GetPayload returns the data associated with the FulfillmentLifecycleEvent.
+func (e *FulfillmentLifecycleEvent) GetPayload() any {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the FulfillmentLifecycleEvent.
+func (e *FulfillmentLifecycleEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // NewFulfillmentLifecycleProducer creates a new instance of FulfillmentLifecycleProducer.

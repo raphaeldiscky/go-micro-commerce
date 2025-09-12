@@ -12,7 +12,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
@@ -102,7 +101,7 @@ func (c *FulfillmentRequestConsumer) Handler(ctx context.Context, body []byte) e
 		}
 
 		// Mark as processing
-		if err := inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessing(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processing: %w", err)
 		}
 
@@ -122,14 +121,14 @@ func (c *FulfillmentRequestConsumer) Handler(ctx context.Context, body []byte) e
 		if processingErr != nil {
 			c.logger.Errorf("Failed to process event %s: %v", meta.Metadata.EventID, processingErr)
 
-			if err := inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
+			if err = inboxRepo.MarkAsFailed(ctx, storedEvent.ID, processingErr.Error()); err != nil {
 				return fmt.Errorf("failed to mark event as failed: %w", err)
 			}
 
 			return processingErr
 		}
 
-		if err := inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
+		if err = inboxRepo.MarkAsProcessed(ctx, storedEvent.ID); err != nil {
 			return fmt.Errorf("failed to mark event as processed: %w", err)
 		}
 
@@ -196,31 +195,31 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 ) (*entity.Fulfillment, error) {
 	// Mock for now
 	toAddress := entity.ToAddress{
-		City:       "Magelang",
-		State:      "Central Java",
-		PostalCode: "42151",
-		Country:    "Indonesia",
+		City:       evt.Payload.Shipping.ToAddress.City,
+		State:      evt.Payload.Shipping.ToAddress.State,
+		PostalCode: evt.Payload.Shipping.ToAddress.PostalCode,
+		Country:    evt.Payload.Shipping.ToAddress.Country,
 	}
 	fromAddress := entity.FromAddress{
-		City:       "Jakart",
-		State:      "DKI Jakarta",
-		PostalCode: "12445",
-		Country:    "Indonesia",
+		City:       evt.Payload.Shipping.FromAddress.City,
+		State:      evt.Payload.Shipping.FromAddress.State,
+		PostalCode: evt.Payload.Shipping.FromAddress.PostalCode,
+		Country:    evt.Payload.Shipping.FromAddress.Country,
 	}
 
 	dimensions := entity.Dimensions{
-		Length: decimal.NewFromFloat(12.5),
-		Height: decimal.NewFromFloat(8.5),
-		Width:  decimal.NewFromFloat(10.5),
-		Unit:   "cm",
+		Length: evt.Payload.Shipping.Dimensions.Length,
+		Height: evt.Payload.Shipping.Dimensions.Height,
+		Width:  evt.Payload.Shipping.Dimensions.Width,
+		Unit:   evt.Payload.Shipping.Dimensions.Unit,
 	}
 
-	weightKG := decimal.NewFromFloat(0.5)
+	weightKG := evt.Payload.Shipping.WeightKG
 
 	// Create shipping request
 	shippingRequest := &dto.ShippingRequest{
 		OrderID:     evt.Payload.OrderID,
-		CarrierID:   "jne",
+		CarrierID:   constant.CarrierID(evt.Payload.Shipping.CarrierID),
 		FromAddress: fromAddress,
 		ToAddress:   toAddress,
 		WeightKG:    weightKG,
@@ -315,7 +314,7 @@ func (c *FulfillmentRequestConsumer) publishFulfillmentCreatedEvent(
 		Attempts:      0,
 	}
 
-	if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+	if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 		return fmt.Errorf("failed to create fulfillment created outbox event: %w", err)
 	}
 

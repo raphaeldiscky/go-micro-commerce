@@ -15,8 +15,8 @@ import (
 
 // PaymentDLQEvent is the envelope for all Payment events.
 type PaymentDLQEvent struct {
-	Metadata event.Metadata   `json:"metadata"`
 	Payload  event.DLQPayload `json:"payload"`
+	Metadata event.Metadata   `json:"metadata"`
 }
 
 // PaymentDLQProducer is responsible for producing Payment DLQ events.

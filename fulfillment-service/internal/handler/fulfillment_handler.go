@@ -41,11 +41,11 @@ func (h *FulfillmentHandler) UpdateFulfillmentStatusByOrderID(c echo.Context) er
 	}
 
 	var req dto.UpdateFulfillmentStatusRequest
-	if err := c.Bind(&req); err != nil {
+	if err = c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err = c.Validate(&req); err != nil {
 		return err
 	}
 

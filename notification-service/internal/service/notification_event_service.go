@@ -4,8 +4,8 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
@@ -112,7 +112,7 @@ func (s *NotificationEventServiceImpl) processEmailEvent(
 
 	subject := getSubjectForEventType(eventType)
 
-	if err := s.emailService.SendEmail(ctx, email, subject, body); err != nil {
+	if err = s.emailService.SendEmail(ctx, email, subject, body); err != nil {
 		return fmt.Errorf("failed to send %s email: %w", eventType, err)
 	}
 
@@ -215,12 +215,12 @@ func (s *NotificationEventServiceImpl) sendEmailNotification(
 		return fmt.Errorf("failed to generate email body: %w", err)
 	}
 
-	if err := s.emailService.SendEmail(ctx, payload.RecipientEmail, payload.Subject, emailBody); err != nil {
+	if err = s.emailService.SendEmail(ctx, payload.RecipientEmail, payload.Subject, emailBody); err != nil {
 		return fmt.Errorf("failed to send email to %s: %w", payload.RecipientEmail, err)
 	}
 
 	s.logger.Infof("Successfully sent email to %s", payload.RecipientEmail)
-	log.Printf("EMAIL SENT: To=%s, Subject=%s, Template=%s",
+	s.logger.Printf("EMAIL SENT: To=%s, Subject=%s, Template=%s",
 		payload.RecipientEmail, payload.Subject, payload.TemplateID)
 
 	return nil
@@ -260,7 +260,7 @@ func (s *NotificationEventServiceImpl) generateOrderConfirmedEmail(
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
-		return "", fmt.Errorf("order data not found in payload")
+		return "", errors.New("order data not found in payload")
 	}
 
 	orderJSON, err := json.Marshal(orderData)
@@ -269,7 +269,7 @@ func (s *NotificationEventServiceImpl) generateOrderConfirmedEmail(
 	}
 
 	var order event.OrderConfirmedData
-	if err := json.Unmarshal(orderJSON, &order); err != nil {
+	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
 
@@ -310,7 +310,7 @@ func (s *NotificationEventServiceImpl) generateOrderDeliveredEmail(
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
-		return "", fmt.Errorf("order data not found in payload")
+		return "", errors.New("order data not found in payload")
 	}
 
 	orderJSON, err := json.Marshal(orderData)
@@ -319,7 +319,7 @@ func (s *NotificationEventServiceImpl) generateOrderDeliveredEmail(
 	}
 
 	var order event.OrderConfirmedData
-	if err := json.Unmarshal(orderJSON, &order); err != nil {
+	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
 
@@ -411,7 +411,7 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
-		return "", fmt.Errorf("order data not found in payload")
+		return "", errors.New("order data not found in payload")
 	}
 
 	orderJSON, err := json.Marshal(orderData)
@@ -420,7 +420,7 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 	}
 
 	var order event.OrderConfirmedData
-	if err := json.Unmarshal(orderJSON, &order); err != nil {
+	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
 	}
 
@@ -439,9 +439,9 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 	// Get payment deadline from payload data
 	paymentDeadline := time.Now().Add(1 * time.Hour) // Default 1 hour
 
-	if deadlineData, exists := payload.Data["payment_deadline"]; exists {
+	if deadlineData, existsDeadline := payload.Data["payment_deadline"]; existsDeadline {
 		if deadlineStr, ok := deadlineData.(string); ok {
-			if parsedTime, err := time.Parse(time.RFC3339, deadlineStr); err == nil {
+			if parsedTime, errParse := time.Parse(time.RFC3339, deadlineStr); errParse == nil {
 				paymentDeadline = parsedTime
 			}
 		}
@@ -450,7 +450,7 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 	// Get payment URL from payload data
 	var paymentURL *string
 
-	if urlData, exists := payload.Data["payment_url"]; exists {
+	if urlData, existsURL := payload.Data["payment_url"]; existsURL {
 		if urlStr, ok := urlData.(string); ok && urlStr != "" {
 			paymentURL = &urlStr
 		}
