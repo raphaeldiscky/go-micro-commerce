@@ -18,12 +18,6 @@ func SetupSearchRoutes(e *echo.Echo, searchHandler *handler.SearchHandler) {
 	search.PUT("/index/product", searchHandler.UpdateProduct)
 	search.DELETE("/index/product/:id", searchHandler.DeleteProduct)
 
-	// Order search - removed for now, only handling products
-	// search.GET("/orders", searchHandler.SearchOrders)
-
-	// Customer search - removed for now, only handling products and orders
-	// search.GET("/customers", searchHandler.SearchCustomers)
-
 	// Autocomplete and suggestions
 	search.GET("/autocomplete", searchHandler.AutoComplete)
 	search.GET("/suggestions", searchHandler.GetSuggestions)
