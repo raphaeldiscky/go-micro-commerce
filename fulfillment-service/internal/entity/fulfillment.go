@@ -55,37 +55,6 @@ type Fulfillment struct {
 	UpdatedAt           time.Time
 }
 
-// validate performs business rule validation.
-func (f *Fulfillment) validate() error {
-	if f.OrderID == uuid.Nil {
-		return errors.New("order_id must not be empty")
-	}
-
-	if f.TrackingNumber == "" {
-		return errors.New("tracking_number must not be empty")
-	}
-
-	if f.ShippingCost.LessThan(decimal.Zero) {
-		return errors.New("shipping_cost must not be negative")
-	}
-
-	if f.WeightKG.LessThanOrEqual(decimal.Zero) {
-		return errors.New("weight_kg must be greater than zero")
-	}
-
-	if f.EstimatedDeliveryAt.Before(f.CreatedAt) {
-		return errors.New("estimated_delivery_at must be after created_at")
-	}
-
-	if f.CreatedAt.After(f.UpdatedAt) {
-		return errors.New("created_at must be before or equal to updated_at")
-	}
-
-	// Status validation is handled by database constraints
-
-	return nil
-}
-
 // NewFulfillment creates a new fulfillment with validation.
 func NewFulfillment(
 	orderID uuid.UUID,
@@ -102,8 +71,8 @@ func NewFulfillment(
 		Status:              constant.FulfillmentStatusPending,
 		TrackingNumber:      trackingNumber,
 		Currency:            currency,
-		ShippingCost:        shippingCost.Round(2),
-		WeightKG:            weightKG.Round(2),
+		ShippingCost:        shippingCost.Round(constant.DefaultPricingScale),
+		WeightKG:            weightKG.Round(constant.DefaultPricingScale),
 		EstimatedDeliveryAt: estimatedDeliveryAt,
 		ToAddress:           toAddress,
 		FromAddress:         fromAddress,
@@ -182,4 +151,35 @@ func (f *Fulfillment) IsDelivered() bool {
 // IsCanceled checks if fulfillment has been canceled.
 func (f *Fulfillment) IsCanceled() bool {
 	return f.Status == constant.FulfillmentStatusCanceled
+}
+
+// validate performs business rule validation.
+func (f *Fulfillment) validate() error {
+	if f.OrderID == uuid.Nil {
+		return errors.New("order_id must not be empty")
+	}
+
+	if f.TrackingNumber == "" {
+		return errors.New("tracking_number must not be empty")
+	}
+
+	if f.ShippingCost.LessThan(decimal.Zero) {
+		return errors.New("shipping_cost must not be negative")
+	}
+
+	if f.WeightKG.LessThanOrEqual(decimal.Zero) {
+		return errors.New("weight_kg must be greater than zero")
+	}
+
+	if f.EstimatedDeliveryAt.Before(f.CreatedAt) {
+		return errors.New("estimated_delivery_at must be after created_at")
+	}
+
+	if f.CreatedAt.After(f.UpdatedAt) {
+		return errors.New("created_at must be before or equal to updated_at")
+	}
+
+	// Status validation is handled by database constraints
+
+	return nil
 }

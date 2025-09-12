@@ -5,7 +5,6 @@ issues:
 
 run:
   allow-parallel-runners: true
-  relative-path-mode: wd
 
 linters:
   enable:

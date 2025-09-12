@@ -12,22 +12,22 @@ import (
 
 // InboxEvent represents an event consumed from message brokers using the inbox pattern.
 type InboxEvent struct {
-	ID            uuid.UUID
-	MessageID     uuid.UUID       // Unique identifier from Kafka message metadata
-	AggregateType string          // Type of aggregate from source service (e.g., 'order', 'product')
-	AggregateID   uuid.UUID       // ID of the aggregate from source service
-	EventType     string          // Type of event from source service
-	Topic         string          // Kafka topic from which event was consumed
-	SourceService string          // Name of the microservice that published the event
-	Payload       json.RawMessage // Complete event payload from source service
-	Status        constant.InboxStatus
 	CreatedAt     time.Time
-	ProcessedAt   *time.Time
 	ScheduledFor  time.Time
-	Attempts      int64
+	CausationID   *uuid.UUID
+	CorrelationID *uuid.UUID
 	LastError     *string
-	CorrelationID *uuid.UUID // For tracing requests across services
-	CausationID   *uuid.UUID // For linking cause-and-effect events
+	ProcessedAt   *time.Time
+	Status        constant.InboxStatus
+	SourceService string
+	Topic         string
+	EventType     string
+	AggregateType string
+	Payload       json.RawMessage
+	Attempts      int64
+	ID            uuid.UUID
+	AggregateID   uuid.UUID
+	MessageID     uuid.UUID
 }
 
 // NewInboxEvent creates a new inbox event with validation.

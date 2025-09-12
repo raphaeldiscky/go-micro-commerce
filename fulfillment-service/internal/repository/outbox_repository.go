@@ -109,15 +109,15 @@ func (r *OutboxRepository) GetEventsForProcessing(
 	var events []*entity.OutboxEvent
 
 	for rows.Next() {
-		event, err := scanOutboxEvent(rows)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan outbox event: %w", err)
+		event, errRow := scanOutboxEvent(rows)
+		if errRow != nil {
+			return nil, fmt.Errorf("failed to scan outbox event: %w", errRow)
 		}
 
 		events = append(events, event)
 	}
 
-	if err := rows.Err(); err != nil {
+	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("error iterating outbox events: %w", err)
 	}
 
@@ -296,7 +296,7 @@ func scanOutboxEvent(row pgx.Row) (*entity.OutboxEvent, error) {
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.OutboxEventNotFoundErrorMessage)
 		}
 
 		return nil, err

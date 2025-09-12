@@ -18,8 +18,8 @@ const (
 
 // RedisConfig holds Redis configuration.
 type RedisConfig struct {
-	Addrs           []string      `mapstructure:"REDIS_ADDRS"`
 	Password        string        `mapstructure:"REDIS_PASSWORD"`
+	Addrs           []string      `mapstructure:"REDIS_ADDRS"`
 	DialTimeout     time.Duration `mapstructure:"REDIS_DIAL_TIMEOUT"`
 	ReadTimeout     time.Duration `mapstructure:"REDIS_READ_TIMEOUT"`
 	WriteTimeout    time.Duration `mapstructure:"REDIS_WRITE_TIMEOUT"`

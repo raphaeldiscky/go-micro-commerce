@@ -19,16 +19,6 @@ type FulfillmentDLQEvent struct {
 	Payload  event.DLQPayload `json:"payload"`
 }
 
-// GetPayload returns the data associated with the FulfillmentDLQEvent.
-func (e *FulfillmentDLQEvent) GetPayload() any {
-	return e.Payload
-}
-
-// GetMetadata returns the metadata associated with the FulfillmentDLQEvent.
-func (e *FulfillmentDLQEvent) GetMetadata() event.Metadata {
-	return e.Metadata
-}
-
 // FulfillmentDLQProducer is responsible for producing fulfillment events to the Dead Letter Queue.
 type FulfillmentDLQProducer struct {
 	Producer *kafka.AsyncProducer
@@ -62,6 +52,16 @@ func NewFulfillmentDLQEvent(
 			FailedAt:        time.Now().UTC(),
 		},
 	}
+}
+
+// GetPayload returns the data associated with the FulfillmentDLQEvent.
+func (e *FulfillmentDLQEvent) GetPayload() any {
+	return e.Payload
+}
+
+// GetMetadata returns the metadata associated with the FulfillmentDLQEvent.
+func (e *FulfillmentDLQEvent) GetMetadata() event.Metadata {
+	return e.Metadata
 }
 
 // NewFulfillmentDLQProducer creates a new instance of FulfillmentDLQProducer.

@@ -106,7 +106,7 @@ func (p *OutboxPublisher) processPendingEvents(ctx context.Context) {
 	}
 
 	for _, event := range events {
-		if err := p.processEvent(ctx, event); err != nil {
+		if err = p.processEvent(ctx, event); err != nil {
 			p.logger.Errorf("failed to process event %s: %v", event.ID, err)
 		}
 	}
@@ -135,14 +135,14 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	}
 
 	// Publish to Kafka
-	if err := p.fulfillmentLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
+	if err = p.fulfillmentLifecycleProducer.Send(ctx, kafkaEvent); err != nil {
 		p.handleProcessingError(ctx, outboxEvent.ID, "failed to publish event to Kafka", err)
 
 		return err
 	}
 
 	// Mark as processed
-	if err := p.dataStore.OutboxRepository().MarkAsProcessed(ctx, outboxEvent.ID); err != nil {
+	if err = p.dataStore.OutboxRepository().MarkAsProcessed(ctx, outboxEvent.ID); err != nil {
 		return fmt.Errorf("failed to mark event as processed: %w", err)
 	}
 

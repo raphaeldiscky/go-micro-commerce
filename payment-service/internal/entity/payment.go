@@ -13,19 +13,19 @@ import (
 
 // Payment represents a payment transaction in the marketplace.
 type Payment struct {
-	ID                 uuid.UUID
-	OrderID            uuid.UUID // Reference to order from order-service
-	Amount             decimal.Decimal
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	PaymentGateway     *string
+	GatewayReferenceID *string
+	GatewayResponse    map[string]any
+	CompletedAt        *time.Time
+	FailedAt           *time.Time
 	Currency           string
 	Status             constant.PaymentStatus
 	PaymentMethod      constant.PaymentMethod
-	PaymentGateway     *string
-	GatewayReferenceID *string
-	GatewayResponse    map[string]any // JSONB data
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	CompletedAt        *time.Time
-	FailedAt           *time.Time
+	Amount             decimal.Decimal
+	ID                 uuid.UUID
+	OrderID            uuid.UUID
 }
 
 // NewPayment creates a new payment with validation.

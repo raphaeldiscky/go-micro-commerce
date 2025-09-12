@@ -186,7 +186,7 @@ func (s *FulfillmentService) CreateFulfillment(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError("failed to create outbox event")
 		}
 
@@ -224,7 +224,7 @@ func (s *FulfillmentService) UpdateFulfillmentStatusByOrderID(
 		}
 
 		// Update status
-		if err := fulfillment.UpdateStatus(req.Status); err != nil {
+		if err = fulfillment.UpdateStatus(req.Status); err != nil {
 			return httperror.NewBadRequestError("failed to update fulfillment status")
 		}
 
@@ -259,7 +259,7 @@ func (s *FulfillmentService) UpdateFulfillmentStatusByOrderID(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError("failed to create fulfillment status event")
 		}
 
@@ -291,7 +291,7 @@ func (s *FulfillmentService) SetCarrierInfo(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err := fulfillment.SetCarrierInfo(req.CarrierID, req.ShippingLabelURL); err != nil {
+	if err = fulfillment.SetCarrierInfo(req.CarrierID, req.ShippingLabelURL); err != nil {
 		return nil, httperror.NewBadRequestError("failed to set carrier info")
 	}
 
@@ -320,7 +320,7 @@ func (s *FulfillmentService) SetDimensions(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err := fulfillment.SetDimensions(req.Dimensions); err != nil {
+	if err = fulfillment.SetDimensions(req.Dimensions); err != nil {
 		return nil, httperror.NewBadRequestError("failed to set dimensions")
 	}
 
@@ -349,7 +349,7 @@ func (s *FulfillmentService) SetActualDelivery(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err := fulfillment.SetActualDelivery(req.ActualDeliveryAt); err != nil {
+	if err = fulfillment.SetActualDelivery(req.ActualDeliveryAt); err != nil {
 		return nil, httperror.NewBadRequestError("failed to set actual delivery")
 	}
 
@@ -408,11 +408,15 @@ func (s *FulfillmentService) HandleOrderFulfillmentRequested(
 ) error {
 	// Create fulfillment record for the order
 	req := dto.CreateFulfillmentRequest{
-		OrderID:             orderID,
-		TrackingNumber:      trackingNumber,
-		ShippingCost:        shippingCost,
-		WeightKG:            decimal.NewFromFloat(1.0),   // Default 1kg
-		EstimatedDeliveryAt: time.Now().AddDate(0, 0, 7), // 7 days from now
+		OrderID:        orderID,
+		TrackingNumber: trackingNumber,
+		ShippingCost:   shippingCost,
+		WeightKG: decimal.NewFromFloat(
+			1.0,
+		), // Default 1kg
+		EstimatedDeliveryAt: time.Now().
+			AddDate(0, 0, constant.MockEstimatedDeliveryDays),
+		// 7 days from now
 	}
 
 	_, err := s.CreateFulfillment(ctx, &req)
@@ -546,7 +550,7 @@ func (s *FulfillmentService) CreateShipment(
 
 	// Update fulfillment with shipping information
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		fulfillmentRepo := ds.FulfillmentRepository()
+		fulfillmentRepo = ds.FulfillmentRepository()
 
 		// Update with carrier information
 		existingFulfillment.ShippingLabelURL = label.LabelURL
@@ -554,7 +558,7 @@ func (s *FulfillmentService) CreateShipment(
 		existingFulfillment.Status = constant.FulfillmentStatusShipped
 		existingFulfillment.UpdatedAt = time.Now().UTC()
 
-		_, err := fulfillmentRepo.Update(ctx, existingFulfillment)
+		_, err = fulfillmentRepo.Update(ctx, existingFulfillment)
 
 		return err
 	})
@@ -569,7 +573,7 @@ func (s *FulfillmentService) CreateShipment(
 		existingFulfillment,
 	)
 
-	if err := s.fulfillmentLifecycleProducer.Send(ctx, event); err != nil {
+	if err = s.fulfillmentLifecycleProducer.Send(ctx, event); err != nil {
 		s.logger.Errorf("Failed to publish fulfillment shipped event: %v", err)
 		// Don't fail the operation, just log the error
 	}
@@ -605,7 +609,7 @@ func (s *FulfillmentService) UpdateTrackingStatus(
 	// Update fulfillment status if it has changed
 	if trackingInfo.Status != existingFulfillment.Status {
 		err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-			fulfillmentRepo := ds.FulfillmentRepository()
+			fulfillmentRepo = ds.FulfillmentRepository()
 
 			existingFulfillment.Status = trackingInfo.Status
 			existingFulfillment.UpdatedAt = time.Now().UTC()
@@ -616,7 +620,7 @@ func (s *FulfillmentService) UpdateTrackingStatus(
 				existingFulfillment.ActualDeliveryAt = trackingInfo.DeliveredAt
 			}
 
-			_, err := fulfillmentRepo.Update(ctx, existingFulfillment)
+			_, err = fulfillmentRepo.Update(ctx, existingFulfillment)
 
 			return err
 		})
@@ -629,7 +633,7 @@ func (s *FulfillmentService) UpdateTrackingStatus(
 		// Publish status update event
 		event := mq.NewFulfillmentLifecycleEvent(existingFulfillment)
 
-		if err := s.fulfillmentLifecycleProducer.Send(ctx, event); err != nil {
+		if err = s.fulfillmentLifecycleProducer.Send(ctx, event); err != nil {
 			s.logger.Errorf("Failed to publish fulfillment status update event: %v", err)
 			// Don't fail the operation, just log the error
 		}

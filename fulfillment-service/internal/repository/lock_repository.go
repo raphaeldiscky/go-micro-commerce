@@ -3,11 +3,11 @@ package repository
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/bsm/redislock"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // LockRepositoryInterface defines the interface for acquiring distributed locks.
@@ -23,13 +23,15 @@ type LockRepositoryInterface interface {
 
 // LockRepository is the implementation of LockRepositoryInterface.
 type LockRepository struct {
-	rdl *redislock.Client
+	rdl    *redislock.Client
+	logger logger.Logger
 }
 
 // NewLockRepository creates a new instance of LockRepository.
-func NewLockRepository(rdl *redislock.Client) LockRepositoryInterface {
+func NewLockRepository(rdl *redislock.Client, logger logger.Logger) LockRepositoryInterface {
 	return &LockRepository{
-		rdl: rdl,
+		rdl:    rdl,
+		logger: logger,
 	}
 }
 
@@ -46,7 +48,7 @@ func (r *LockRepository) Get(
 			return nil, httperror.NewRequestDuplicateError()
 		}
 
-		log.Printf("failed to obtain lock: %v", err)
+		r.logger.Printf("failed to obtain lock: %v", err)
 
 		return nil, err
 	}
@@ -57,7 +59,7 @@ func (r *LockRepository) Get(
 // Release releases a distributed lock.
 func (r *LockRepository) Release(ctx context.Context, lock *redislock.Lock) error {
 	if err := lock.Release(ctx); err != nil {
-		log.Printf("failed to release lock: %v", err)
+		r.logger.Printf("failed to release lock: %v", err)
 
 		return err
 	}

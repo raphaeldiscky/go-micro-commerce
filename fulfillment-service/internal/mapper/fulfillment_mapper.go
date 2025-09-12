@@ -35,26 +35,26 @@ func MapToCalculateShippingRateRequest(
 	req *pb.GetShippingCostRequest,
 ) *dto.CalculateShippingRateRequest {
 	return &dto.CalculateShippingRateRequest{
-		CarrierID: constant.CarrierID(req.Shipping.CarrierId),
+		CarrierID: constant.CarrierID(req.GetShipping().GetCarrierId()),
 		Dimensions: entity.Dimensions{
-			Width:  decimal.NewFromFloat(req.Shipping.Dimensions.Width),
-			Height: decimal.NewFromFloat(req.Shipping.Dimensions.Height),
-			Length: decimal.NewFromFloat(req.Shipping.Dimensions.Length),
-			Unit:   req.Shipping.Dimensions.Unit,
+			Width:  decimal.NewFromFloat(req.GetShipping().GetDimensions().GetWidth()),
+			Height: decimal.NewFromFloat(req.GetShipping().GetDimensions().GetHeight()),
+			Length: decimal.NewFromFloat(req.GetShipping().GetDimensions().GetLength()),
+			Unit:   req.GetShipping().GetDimensions().GetUnit(),
 		},
-		WeightKG: decimal.NewFromFloat(req.Shipping.WeightKg),
-		Currency: req.Currency,
+		WeightKG: decimal.NewFromFloat(req.GetShipping().GetWeightKg()),
+		Currency: req.GetCurrency(),
 		FromAddress: entity.FromAddress{
-			City:       req.Shipping.FromAddress.City,
-			State:      req.Shipping.FromAddress.State,
-			PostalCode: req.Shipping.FromAddress.PostalCode,
-			Country:    req.Shipping.FromAddress.Country,
+			City:       req.GetShipping().GetFromAddress().GetCity(),
+			State:      req.GetShipping().GetFromAddress().GetState(),
+			PostalCode: req.GetShipping().GetFromAddress().GetPostalCode(),
+			Country:    req.GetShipping().GetFromAddress().GetCountry(),
 		},
 		ToAddress: entity.ToAddress{
-			City:       req.Shipping.ToAddress.City,
-			State:      req.Shipping.ToAddress.State,
-			PostalCode: req.Shipping.ToAddress.PostalCode,
-			Country:    req.Shipping.ToAddress.Country,
+			City:       req.GetShipping().GetToAddress().GetCity(),
+			State:      req.GetShipping().GetToAddress().GetState(),
+			PostalCode: req.GetShipping().GetToAddress().GetPostalCode(),
+			Country:    req.GetShipping().GetToAddress().GetCountry(),
 		},
 	}
 }

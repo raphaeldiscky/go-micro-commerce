@@ -285,26 +285,26 @@ func (r *FulfillmentRepositoryPostgres) scanFulfillment(row pgx.Row) (*entity.Fu
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
+			return nil, errors.New(constant.FulfillmentNotFoundErrorMessage)
 		}
 
 		return nil, fmt.Errorf("failed to scan fulfillment: %w", err)
 	}
 
 	// Unmarshal from_address
-	if err := json.Unmarshal(fromAddressJSON, &fulfillment.FromAddress); err != nil {
+	if err = json.Unmarshal(fromAddressJSON, &fulfillment.FromAddress); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal from_address: %w", err)
 	}
 
 	// Unmarshal to_address
-	if err := json.Unmarshal(toAddressJSON, &fulfillment.ToAddress); err != nil {
+	if err = json.Unmarshal(toAddressJSON, &fulfillment.ToAddress); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal to_address: %w", err)
 	}
 
 	// Unmarshal dimensions if present
 	if dimensionsJSON != nil {
 		var dimensions entity.Dimensions
-		if err := json.Unmarshal(dimensionsJSON, &dimensions); err != nil {
+		if err = json.Unmarshal(dimensionsJSON, &dimensions); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal dimensions: %w", err)
 		}
 
