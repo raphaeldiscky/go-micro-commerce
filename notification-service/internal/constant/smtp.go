@@ -1,6 +1,11 @@
 package constant
 
 const (
+	// SMTPPort is the default SMTP port.
+	SMTPPort = 1025
+)
+
+const (
 	// SendVerificationSubject is the subject for email verification.
 	SendVerificationSubject = "Email Verification"
 	// UserVerifiedSubject is the subject for User verification.

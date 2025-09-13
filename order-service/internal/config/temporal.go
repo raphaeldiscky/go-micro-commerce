@@ -28,7 +28,7 @@ func initTemporalConfig() *TemporalConfig {
 
 	return &TemporalConfig{
 		APIKey:                      viper.GetString("TEMPORAL_API_KEY"),
-		Address:                     viper.GetString("TEMPORAL_ADDRESS"), // host port
+		Address:                     viper.GetString("TEMPORAL_ADDRESS"),
 		Namespace:                   viper.GetString("TEMPORAL_NAMESPACE"),
 		TaskQueue:                   viper.GetString("TEMPORAL_TASK_QUEUE"),
 		WorkflowTimeout:             viper.GetDuration("TEMPORAL_WORKFLOW_TIMEOUT"),
@@ -42,6 +42,7 @@ func initTemporalConfig() *TemporalConfig {
 
 // setTemporalDefaults sets default values for Temporal configuration.
 func setTemporalDefaults() {
+	viper.SetDefault("TEMPORAL_API_KEY", "supersecret")
 	viper.SetDefault("TEMPORAL_ADDRESS", "localhost:7233")
 	viper.SetDefault("TEMPORAL_NAMESPACE", "default")
 	viper.SetDefault("TEMPORAL_TASK_QUEUE", "order-saga-task-queue")

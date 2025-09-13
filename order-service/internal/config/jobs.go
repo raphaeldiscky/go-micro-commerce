@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // JobConfig holds the job configuration.
@@ -25,17 +27,6 @@ type JobRecoveryConfig struct {
 	RedisLockBackoff    time.Duration
 	RedisLockMaxRetries int
 }
-
-const (
-	defaultJobRecoveryInterval     = 5 * time.Minute
-	defaultJobRecoveryMaxRetries   = 5
-	defaultJobRecoveryMaxAge       = 24 * time.Hour
-	defaultJobRecoveryTimeout      = 30 * time.Second
-	defaultJobRecoveryMaxRowsFetch = 100
-	jobRecoveryRedisLockTTL        = 10 * time.Minute
-	jobRecoveryRedisLockBackoff    = 100 * time.Millisecond
-	jobRecoveryRedisLockMaxRetries = 10
-)
 
 // initJobConfig initializes the job configuration from environment variables.
 func initJobConfig() *JobConfig {
@@ -65,15 +56,15 @@ func initJobConfig() *JobConfig {
 func setJobDefaults() {
 	//  Recovery Job defaults
 	viper.SetDefault("JOB_RECOVERY_ENABLED", true)
-	viper.SetDefault("JOB_RECOVERY_INTERVAL", defaultJobRecoveryInterval)
-	viper.SetDefault("JOB_RECOVERY_MAX_RETRIES", defaultJobRecoveryMaxRetries)
-	viper.SetDefault("JOB_RECOVERY_MAX_AGE", defaultJobRecoveryMaxAge)
-	viper.SetDefault("JOB_RECOVERY_TIMEOUT", defaultJobRecoveryTimeout)
-	viper.SetDefault("JOB_RECOVERY_MAX_ROWS_FETCH", defaultJobRecoveryMaxRowsFetch)
+	viper.SetDefault("JOB_RECOVERY_INTERVAL", constant.JobRecoveryInterval)
+	viper.SetDefault("JOB_RECOVERY_MAX_RETRIES", constant.JobRecoveryMaxRetries)
+	viper.SetDefault("JOB_RECOVERY_MAX_AGE", constant.JobRecoveryMaxAge)
+	viper.SetDefault("JOB_RECOVERY_TIMEOUT", constant.JobRecoveryTimeout)
+	viper.SetDefault("JOB_RECOVERY_MAX_ROWS_FETCH", constant.JobRecoveryMaxRowsFetch)
 
-	viper.SetDefault("JOB_RECOVERY_REDIS_LOCK_TTL", jobRecoveryRedisLockTTL)
-	viper.SetDefault("JOB_RECOVERY_REDIS_LOCK_BACKOFF", jobRecoveryRedisLockBackoff)
-	viper.SetDefault("JOB_RECOVERY_REDIS_LOCK_MAX_RETRIES", jobRecoveryRedisLockMaxRetries)
+	viper.SetDefault("JOB_RECOVERY_REDIS_LOCK_TTL", constant.JobRecoveryRedisLockTTL)
+	viper.SetDefault("JOB_RECOVERY_REDIS_LOCK_BACKOFF", constant.JobRecoveryRedisLockBackoff)
+	viper.SetDefault("JOB_RECOVERY_REDIS_LOCK_MAX_RETRIES", constant.JobRecoveryRedisLockMaxRetries)
 	// Add other job defaults here
 	// viper.SetDefault("JOB_CLEANUP_ENABLED", true)
 	// viper.SetDefault("JOB_CLEANUP_INTERVAL", "1h")

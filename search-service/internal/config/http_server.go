@@ -5,19 +5,8 @@ import (
 
 	"github.com/spf13/viper"
 	"golang.org/x/time/rate"
-)
 
-const (
-	defaultHTTPServerPort                            = 8087
-	defaultHTTPServerGracePeriod                     = 10 * time.Second
-	defaultHTTPServerRequestTimeoutPeriod            = 30 * time.Second
-	defaultHTTPServerReadTimeout                     = 30 * time.Second
-	defaultHTTPServerWriteTimeout                    = 30 * time.Second
-	defaultHTTPServerIdleTimeout                     = 120 * time.Second
-	defaultHTTPServerReadHeaderTimeout               = 10 * time.Second
-	defaultHTTPServerMaxHeaderBytes                  = 1 << 20
-	defaultHTTPServerHSTSMaxAge                      = 3600
-	defaultHTTPServerRateLimiter          rate.Limit = 1000
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 )
 
 // HTTPServerConfig holds the configuration for the HTTP server.
@@ -39,16 +28,16 @@ type HTTPServerConfig struct {
 func initHTTPServerConfig() *HTTPServerConfig {
 	// Set defaults
 	viper.SetDefault("HTTP_SERVER_HOST", "localhost")
-	viper.SetDefault("HTTP_SERVER_PORT", defaultHTTPServerPort)
-	viper.SetDefault("HTTP_SERVER_GRACE_PERIOD", defaultHTTPServerGracePeriod)
-	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", defaultHTTPServerRequestTimeoutPeriod)
-	viper.SetDefault("HTTP_SERVER_READ_TIMEOUT", defaultHTTPServerReadTimeout)
-	viper.SetDefault("HTTP_SERVER_WRITE_TIMEOUT", defaultHTTPServerWriteTimeout)
-	viper.SetDefault("HTTP_SERVER_IDLE_TIMEOUT", defaultHTTPServerIdleTimeout)
-	viper.SetDefault("HTTP_SERVER_READ_HEADER_TIMEOUT", defaultHTTPServerReadHeaderTimeout)
-	viper.SetDefault("HTTP_SERVER_MAX_HEADER_BYTES", defaultHTTPServerMaxHeaderBytes)
-	viper.SetDefault("HTTP_SERVER_HSTS_MAX_AGE", defaultHTTPServerHSTSMaxAge)
-	viper.SetDefault("HTTP_SERVER_RATE_LIMITER", defaultHTTPServerRateLimiter)
+	viper.SetDefault("HTTP_SERVER_PORT", constant.HTTPServerPort)
+	viper.SetDefault("HTTP_SERVER_GRACE_PERIOD", constant.HTTPServerGracePeriod)
+	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", constant.HTTPServerRequestTimeoutPeriod)
+	viper.SetDefault("HTTP_SERVER_READ_TIMEOUT", constant.HTTPServerReadTimeout)
+	viper.SetDefault("HTTP_SERVER_WRITE_TIMEOUT", constant.HTTPServerWriteTimeout)
+	viper.SetDefault("HTTP_SERVER_IDLE_TIMEOUT", constant.HTTPServerIdleTimeout)
+	viper.SetDefault("HTTP_SERVER_READ_HEADER_TIMEOUT", constant.HTTPServerReadHeaderTimeout)
+	viper.SetDefault("HTTP_SERVER_MAX_HEADER_BYTES", constant.HTTPServerMaxHeaderBytes)
+	viper.SetDefault("HTTP_SERVER_HSTS_MAX_AGE", constant.HTTPServerHSTSMaxAge)
+	viper.SetDefault("HTTP_SERVER_RATE_LIMITER", constant.HTTPServerRateLimiter)
 
 	httpServerConfig := &HTTPServerConfig{}
 	if err := viper.Unmarshal(httpServerConfig); err != nil {

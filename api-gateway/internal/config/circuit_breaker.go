@@ -4,12 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultCircuitBreakerMaxRequests = 3
-	defaultCircuitBreakerInterval    = 10 * time.Second
-	defaultCircuitBreakerTimeout     = 30 * time.Second
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
 )
 
 // CircuitBreakerConfig holds CircuitBreaker configuration values.
@@ -21,9 +17,9 @@ type CircuitBreakerConfig struct {
 
 // initCircuitBreakerConfig initializes the CircuitBreaker configuration.
 func initCircuitBreakerConfig() *CircuitBreakerConfig {
-	viper.SetDefault("CIRCUIT_BREAKER_MAX_REQUESTS", defaultCircuitBreakerMaxRequests)
-	viper.SetDefault("CIRCUIT_BREAKER_INTERVAL", defaultCircuitBreakerInterval)
-	viper.SetDefault("CIRCUIT_BREAKER_TIMEOUT", defaultCircuitBreakerTimeout)
+	viper.SetDefault("CIRCUIT_BREAKER_MAX_REQUESTS", constant.CircuitBreakerMaxRequests)
+	viper.SetDefault("CIRCUIT_BREAKER_INTERVAL", constant.CircuitBreakerInterval)
+	viper.SetDefault("CIRCUIT_BREAKER_TIMEOUT", constant.CircuitBreakerTimeout)
 
 	circuitBreakerConfig := &CircuitBreakerConfig{}
 	if err := viper.Unmarshal(circuitBreakerConfig); err != nil {

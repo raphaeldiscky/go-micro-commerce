@@ -33,7 +33,7 @@ func SetupGlobal(
 		Port:            cfg.Postgres.Port,
 		User:            cfg.Postgres.User,
 		Password:        cfg.Postgres.Password,
-		Name:            cfg.Postgres.Name,
+		DB:              cfg.Postgres.DB,
 		SSLMode:         cfg.Postgres.SSLMode,
 		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
 		MaxOpenConns:    cfg.Postgres.MaxOpenConns,

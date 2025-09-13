@@ -2,10 +2,8 @@ package config
 
 import (
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultMetricsPort = 9090
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
 )
 
 // MetricsConfig holds metrics configuration.
@@ -19,7 +17,7 @@ type MetricsConfig struct {
 func initMetricsConfig() *MetricsConfig {
 	viper.SetDefault("METRICS_ENABLED", true)
 	viper.SetDefault("METRICS_PATH", "/metrics")
-	viper.SetDefault("METRICS_PORT", defaultMetricsPort)
+	viper.SetDefault("METRICS_PORT", constant.MetricsPort)
 
 	metricsConfig := &MetricsConfig{}
 	if err := viper.Unmarshal(metricsConfig); err != nil {

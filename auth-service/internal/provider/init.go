@@ -32,9 +32,9 @@ func SetupGlobal(
 	pgPool, err := db.NewPostgresConnection(ctx, &db.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
+		DB:              cfg.Postgres.DB,
 		User:            cfg.Postgres.User,
 		Password:        cfg.Postgres.Password,
-		Name:            cfg.Postgres.Name,
 		SSLMode:         cfg.Postgres.SSLMode,
 		MaxIdleConns:    cfg.Postgres.MaxIdleConns,
 		MaxOpenConns:    cfg.Postgres.MaxOpenConns,

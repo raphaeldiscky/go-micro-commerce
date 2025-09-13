@@ -6,11 +6,8 @@ import (
 	"github.com/spf13/viper"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-)
 
-const (
-	defaultGRPCGracePeriod = 10 * time.Second
-	defaultGRPCPort        = 50052
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 )
 
 // GRPCServerConfig holds the configuration for the gRPC server.
@@ -26,8 +23,8 @@ func initGRPCServerConfig() *GRPCServerConfig {
 	// Set defaults
 	viper.SetDefault("GRPC_SERVER_SERVICE_NAME", pkgconstant.GRPCServiceNameProduct)
 	viper.SetDefault("GRPC_SERVER_HOST", "0.0.0.0")
-	viper.SetDefault("GRPC_SERVER_PORT", defaultGRPCPort)
-	viper.SetDefault("GRPC_SERVER_GRACE_PERIOD", defaultGRPCGracePeriod)
+	viper.SetDefault("GRPC_SERVER_PORT", constant.GRPCPort)
+	viper.SetDefault("GRPC_SERVER_GRACE_PERIOD", constant.GRPCGracePeriod)
 
 	grpcServerConfig := &GRPCServerConfig{}
 	if err := viper.Unmarshal(grpcServerConfig); err != nil {

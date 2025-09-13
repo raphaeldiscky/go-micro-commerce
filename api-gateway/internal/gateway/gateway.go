@@ -195,7 +195,7 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 
 	// Perform request
 	client := &http.Client{
-		Timeout: gw.config.App.TimeoutGateway,
+		Timeout: gw.config.App.TimeoutProxyRequest,
 	}
 
 	resp, err := client.Do(req)
