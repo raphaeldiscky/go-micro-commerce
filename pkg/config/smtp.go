@@ -2,10 +2,8 @@ package config
 
 import (
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultSMTPPort = 587
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // SMTPConfig holds the SMTP server configuration.
@@ -19,8 +17,8 @@ type SMTPConfig struct {
 func initSMTPConfig() *SMTPConfig {
 	// Set defaults
 	viper.SetDefault("SMTP_HOST", "localhost")
-	viper.SetDefault("SMTP_EMAIL", "no-reply@example.com")
-	viper.SetDefault("SMTP_PORT", defaultSMTPPort)
+	viper.SetDefault("SMTP_EMAIL", "zundria.putra@gmail.com")
+	viper.SetDefault("SMTP_PORT", constant.SMTPPort)
 
 	smtpConfig := &SMTPConfig{}
 

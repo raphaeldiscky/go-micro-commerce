@@ -17,7 +17,7 @@ vars:
         -f {{.DC_DIR}}/redis.yaml \
         -f {{.DC_DIR}}/kafka.yaml \
         -f {{.DC_DIR}}/monitoring.yaml \
-        -f {{.DC_DIR}}/security.yaml \
+        -f {{.DC_DIR}}/vault.yaml \
         -f {{.DC_DIR}}/dev-tools.yaml \
         -f {{.DC_DIR}}/api-gateway.yaml \
         -f {{.DC_DIR}}/temporal.yaml \
