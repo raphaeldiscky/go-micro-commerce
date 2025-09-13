@@ -36,9 +36,9 @@ func NewConsulDiscoveryService(
 	appLogger logger.Logger,
 ) *ConsulDiscoveryService {
 	consulConfig := api.DefaultConfig()
-	consulConfig.Address = cfg.Consul.Address
-	consulConfig.Datacenter = cfg.Consul.Datacenter
-	consulConfig.Token = cfg.Consul.Token
+	consulConfig.Address = cfg.ConsulAddress
+	consulConfig.Datacenter = cfg.ConsulDatacenter
+	consulConfig.Token = cfg.ConsulToken
 
 	client, err := api.NewClient(consulConfig)
 	if err != nil {
@@ -115,7 +115,7 @@ func (sd *ConsulDiscoveryService) HealthCheck(serviceName string) bool {
 
 // refreshCache periodically refreshes the service cache.
 func (sd *ConsulDiscoveryService) refreshCache() {
-	ticker := time.NewTicker(sd.config.Consul.RefreshInterval)
+	ticker := time.NewTicker(sd.config.ConsulRefreshInterval)
 	defer ticker.Stop()
 
 	for range ticker.C {
@@ -164,6 +164,4 @@ func (sd *ConsulDiscoveryService) updateCache() {
 	sd.mutex.Lock()
 	sd.cache = newCache
 	sd.mutex.Unlock()
-
-	sd.logger.Debug("service cache updated", "services", len(newCache))
 }

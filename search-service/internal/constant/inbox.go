@@ -1,6 +1,23 @@
 // Package constant contains constants related to inbox events.
 package constant
 
+import "time"
+
+const (
+	// InboxPollInterval is the interval at which the inbox processor will poll for events.
+	InboxPollInterval = 5 * time.Second
+	// InboxCleanupInterval is the interval at which the inbox processor will clean up processed events.
+	InboxCleanupInterval = 24 * time.Hour
+	// InboxRetentionPeriod is the time-to-live for processed events.
+	InboxRetentionPeriod = 168 * time.Hour
+	// InboxBatchSize is the maximum number of events to process in a single batch.
+	InboxBatchSize = 100
+	// InboxMaxRetryAttempts is the maximum number of retry attempts for a failed event.
+	InboxMaxRetryAttempts = 3
+	// InboxRetryBackoff is the backoff duration for retry attempts.
+	InboxRetryBackoff = 5 * time.Second
+)
+
 // InboxStatus represents the status of an inbox event.
 type InboxStatus string
 

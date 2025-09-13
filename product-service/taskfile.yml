@@ -16,6 +16,11 @@ tasks:
     cmds:
       - air -c .air.toml
 
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run ./...
+
   test:
     desc: Run tests with verbose output and coverage (sequential)
     cmds:

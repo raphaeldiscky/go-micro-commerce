@@ -24,7 +24,8 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
+	appLogger := logger.NewLogrusLogger(cfg.App.LoggerLevel)
+
 	if err = tracing.InitTracing(cfg.Tracing); err != nil {
 		appLogger.Fatalf("failed to initialize tracing: %v", err)
 	}

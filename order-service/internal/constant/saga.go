@@ -2,6 +2,29 @@ package constant
 
 import "time"
 
+const (
+	// SagaDefaultExecutionTimeout is the default execution timeout for sagas.
+	SagaDefaultExecutionTimeout = 30 * time.Minute
+	// SagaMaxConcurrent is the maximum number of concurrent sagas.
+	SagaMaxConcurrent = 1000
+	// SagaDefaultMaxRetries is the default maximum number of retries for sagas.
+	SagaDefaultMaxRetries = 3
+	// SagaDefaultRetryDelay is the default delay between retries for sagas.
+	SagaDefaultRetryDelay = 2 * time.Second
+	// SagaMaxRetryDelay is the maximum delay between retries for sagas.
+	SagaMaxRetryDelay = 1 * time.Minute
+	// SagaRecoveryInterval is the interval at which the recovery job runs.
+	SagaRecoveryInterval = 5 * time.Minute
+	// SagaRecoveryBatchSize is the number of sagas to process in a single recovery job run.
+	SagaRecoveryBatchSize = 100
+	// SagaMaxRecoveryAge is the maximum age for which a saga can be recovered.
+	SagaMaxRecoveryAge = 24 * time.Hour
+	// SagaStateRetention is the time period for which saga states are retained.
+	SagaStateRetention = 30 * 24 * time.Hour
+	// SagaPurgeInterval is the interval at which the saga state purge job runs.
+	SagaPurgeInterval = 24 * time.Hour
+)
+
 // OrderSagaWorkflowName defines the workflow name.
 const OrderSagaWorkflowName = "OrderSagaWorkflow"
 

@@ -4,16 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultRedisDialTimeout     = 5 * time.Second
-	defaultRedisReadTimeout     = 3 * time.Second
-	defaultRedisWriteTimeout    = 3 * time.Second
-	defaultRedisMinIdleConn     = 10
-	defaultRedisMaxIdleConn     = 100
-	defaultRedisMaxActiveConn   = 100
-	defaultRedisMaxConnLifetime = 5 * time.Minute
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 )
 
 // RedisConfig holds Redis configuration.
@@ -44,13 +36,13 @@ func initRedisConfig() *RedisConfig {
 		},
 	)
 	viper.SetDefault("REDIS_PASSWORD", "supersecret")
-	viper.SetDefault("REDIS_DIAL_TIMEOUT", defaultRedisDialTimeout)
-	viper.SetDefault("REDIS_READ_TIMEOUT", defaultRedisReadTimeout)
-	viper.SetDefault("REDIS_WRITE_TIMEOUT", defaultRedisWriteTimeout)
-	viper.SetDefault("REDIS_MIN_IDLE_CONN", defaultRedisMinIdleConn)
-	viper.SetDefault("REDIS_MAX_IDLE_CONN", defaultRedisMaxIdleConn)
-	viper.SetDefault("REDIS_MAX_ACTIVE_CONN", defaultRedisMaxActiveConn)
-	viper.SetDefault("REDIS_MAX_CONN_LIFETIME", defaultRedisMaxConnLifetime)
+	viper.SetDefault("REDIS_DIAL_TIMEOUT", constant.RedisDialTimeout)
+	viper.SetDefault("REDIS_READ_TIMEOUT", constant.RedisReadTimeout)
+	viper.SetDefault("REDIS_WRITE_TIMEOUT", constant.RedisWriteTimeout)
+	viper.SetDefault("REDIS_MIN_IDLE_CONN", constant.RedisMinIdleConn)
+	viper.SetDefault("REDIS_MAX_IDLE_CONN", constant.RedisMaxIdleConn)
+	viper.SetDefault("REDIS_MAX_ACTIVE_CONN", constant.RedisMaxActiveConn)
+	viper.SetDefault("REDIS_MAX_CONN_LIFETIME", constant.RedisMaxConnLifetime)
 
 	redisConfig := &RedisConfig{}
 	if err := viper.Unmarshal(redisConfig); err != nil {

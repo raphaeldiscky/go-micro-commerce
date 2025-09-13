@@ -4,6 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
+
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 )
 
 // InboxProcessorConfig holds the configuration for the inbox processor.
@@ -18,12 +20,18 @@ type InboxProcessorConfig struct {
 
 // initInboxProcessorConfig initializes the inbox processor configuration.
 func initInboxProcessorConfig() *InboxProcessorConfig {
-	return &InboxProcessorConfig{
-		PollInterval:     time.Duration(viper.GetInt("INBOX_POLL_INTERVAL")) * time.Second,
-		CleanupInterval:  time.Duration(viper.GetInt("INBOX_CLEANUP_INTERVAL")) * time.Hour,
-		RetentionPeriod:  time.Duration(viper.GetInt("INBOX_RETENTION_PERIOD")) * time.Hour,
-		BatchSize:        viper.GetInt64("INBOX_BATCH_SIZE"),
-		MaxRetryAttempts: viper.GetInt64("INBOX_MAX_RETRY_ATTEMPTS"),
-		RetryBackoff:     time.Duration(viper.GetInt("INBOX_RETRY_BACKOFF")) * time.Second,
+	viper.SetDefault("INBOX_POLL_INTERVAL", constant.InboxPollInterval)
+	viper.SetDefault("INBOX_CLEANUP_INTERVAL", constant.InboxCleanupInterval)
+	viper.SetDefault("INBOX_RETENTION_PERIOD", constant.InboxRetentionPeriod)
+	viper.SetDefault("INBOX_BATCH_SIZE", constant.InboxBatchSize)
+	viper.SetDefault("INBOX_MAX_RETRY_ATTEMPTS", constant.InboxMaxRetryAttempts)
+	viper.SetDefault("INBOX_RETRY_BACKOFF", constant.InboxRetryBackoff)
+
+	inboxProcessorConfig := &InboxProcessorConfig{}
+
+	if err := viper.Unmarshal(inboxProcessorConfig); err != nil {
+		panic(err)
 	}
+
+	return inboxProcessorConfig
 }

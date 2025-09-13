@@ -119,11 +119,13 @@ func (s *ServiceRegistration) register(
 
 	s.serviceIDs = append(s.serviceIDs, serviceID)
 
+	s.logger.Infof("Service %s registered with Consul", serviceID)
+
 	return nil
 }
 
 // Deregister removes all registered services from Consul.
-func (s *ServiceRegistration) Deregister(serviceName string) error {
+func (s *ServiceRegistration) Deregister() error {
 	if len(s.serviceIDs) == 0 {
 		return nil
 	}
@@ -131,11 +133,15 @@ func (s *ServiceRegistration) Deregister(serviceName string) error {
 	for _, serviceID := range s.serviceIDs {
 		err := s.client.Agent().ServiceDeregister(serviceID)
 		if err != nil {
-			return fmt.Errorf("failed to deregister service %s: %w", serviceID, err)
+			// Log the error but don't fail the entire deregistration process
+			s.logger.Errorf("Failed to deregister service %s: %v", serviceID, err)
+			continue
 		}
+
+		s.logger.Infof("Service %s deregistered from Consul", serviceID)
 	}
 
-	s.logger.Infof("%s deregistered from Consul", serviceName)
+	s.logger.Infof("Deregistration process completed")
 
 	return nil
 }

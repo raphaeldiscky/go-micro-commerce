@@ -2,10 +2,8 @@ package config
 
 import (
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultBcryptCost = 10
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 )
 
 // BcryptConfig holds Bcrypt configuration.
@@ -16,7 +14,7 @@ type BcryptConfig struct {
 // initBcryptConfig initializes the Bcrypt configuration from environment variables.
 func initBcryptConfig() *BcryptConfig {
 	// Set defaults
-	viper.SetDefault("BCRYPT_COST", defaultBcryptCost)
+	viper.SetDefault("BCRYPT_COST", constant.BcryptCost)
 
 	bcryptConfig := &BcryptConfig{}
 

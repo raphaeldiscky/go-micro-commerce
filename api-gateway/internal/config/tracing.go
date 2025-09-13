@@ -2,12 +2,8 @@ package config
 
 import (
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultTracingSamplingRate  = 1.0
-	defaultTracingBatchTimeout  = 5
-	defaultTracingExportTimeout = 5
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
 )
 
 // TracingConfig holds tracing configuration.
@@ -26,10 +22,10 @@ func initTracingConfig() *TracingConfig {
 	viper.SetDefault("TRACING_ENABLED", true)
 	viper.SetDefault("TRACING_URL", "http://localhost:4318/v1/traces")
 	viper.SetDefault("TRACING_SERVICE_NAME", "api-gateway")
-	viper.SetDefault("TRACING_SAMPLING_RATE", defaultTracingSamplingRate)
+	viper.SetDefault("TRACING_SAMPLING_RATE", constant.TracingSamplingRate)
 	viper.SetDefault("TRACING_ENVIRONMENT", "development")
-	viper.SetDefault("TRACING_BATCH_TIMEOUT", defaultTracingBatchTimeout)
-	viper.SetDefault("TRACING_EXPORT_TIMEOUT", defaultTracingExportTimeout)
+	viper.SetDefault("TRACING_BATCH_TIMEOUT", constant.TracingBatchTimeout)
+	viper.SetDefault("TRACING_EXPORT_TIMEOUT", constant.TracingExportTimeout)
 
 	tracingConfig := &TracingConfig{}
 	if err := viper.Unmarshal(tracingConfig); err != nil {

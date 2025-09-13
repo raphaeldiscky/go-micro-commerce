@@ -4,19 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultSagaExecutionTimeout  = 30 * time.Minute
-	defaultSagaMaxConcurrent     = 100
-	defaultSagaDefaultMaxRetries = 3
-	defaultSagaDefaultRetryDelay = 2 * time.Second
-	defaultSagaMaxRetryDelay     = 1 * time.Minute
-	defaultSagaRecoveryInterval  = 5 * time.Minute
-	defaultSagaRecoveryBatchSize = 100
-	defaultSagaMaxRecoveryAge    = 24 * time.Hour
-	defaultSagaStateRetention    = 30 * 24 * time.Hour
-	defaultSagaPurgeInterval     = 24 * time.Hour
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // SagaConfig holds saga configuration.
@@ -46,21 +35,20 @@ type SagaConfig struct {
 
 // initSagaConfig initializes the saga configuration from environment variables.
 func initSagaConfig() *SagaConfig {
-	// Set defaults
 	viper.SetDefault("SAGA_EXECUTION_MODE", "async")
-	viper.SetDefault("SAGA_DEFAULT_EXECUTION_TIMEOUT", defaultSagaExecutionTimeout)
-	viper.SetDefault("SAGA_MAX_CONCURRENT", defaultSagaMaxConcurrent)
-	viper.SetDefault("SAGA_DEFAULT_MAX_RETRIES", defaultSagaDefaultMaxRetries)
-	viper.SetDefault("SAGA_DEFAULT_RETRY_DELAY", defaultSagaDefaultRetryDelay)
+	viper.SetDefault("SAGA_DEFAULT_EXECUTION_TIMEOUT", constant.SagaDefaultExecutionTimeout)
+	viper.SetDefault("SAGA_MAX_CONCURRENT", constant.SagaMaxConcurrent)
+	viper.SetDefault("SAGA_DEFAULT_MAX_RETRIES", constant.SagaDefaultMaxRetries)
+	viper.SetDefault("SAGA_DEFAULT_RETRY_DELAY", constant.SagaDefaultRetryDelay)
 	viper.SetDefault("SAGA_EXPONENTIAL_BACKOFF", true)
-	viper.SetDefault("SAGA_MAX_RETRY_DELAY", defaultSagaMaxRetryDelay)
+	viper.SetDefault("SAGA_MAX_RETRY_DELAY", constant.SagaMaxRetryDelay)
 	viper.SetDefault("SAGA_RECOVERY_ENABLED", true)
-	viper.SetDefault("SAGA_RECOVERY_INTERVAL", defaultSagaRecoveryInterval)
-	viper.SetDefault("SAGA_RECOVERY_BATCH_SIZE", defaultSagaRecoveryBatchSize)
-	viper.SetDefault("SAGA_MAX_RECOVERY_AGE", defaultSagaMaxRecoveryAge)
-	viper.SetDefault("SAGA_STATE_RETENTION", defaultSagaStateRetention)
+	viper.SetDefault("SAGA_RECOVERY_INTERVAL", constant.SagaRecoveryInterval)
+	viper.SetDefault("SAGA_RECOVERY_BATCH_SIZE", constant.SagaRecoveryBatchSize)
+	viper.SetDefault("SAGA_MAX_RECOVERY_AGE", constant.SagaMaxRecoveryAge)
+	viper.SetDefault("SAGA_STATE_RETENTION", constant.SagaStateRetention)
 	viper.SetDefault("SAGA_PURGE_COMPLETED", true)
-	viper.SetDefault("SAGA_PURGE_INTERVAL", defaultSagaPurgeInterval)
+	viper.SetDefault("SAGA_PURGE_INTERVAL", constant.SagaPurgeInterval)
 
 	sagaConfig := &SagaConfig{}
 	if err := viper.Unmarshal(&sagaConfig); err != nil {

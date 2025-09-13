@@ -5,15 +5,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultElasticPort                                = 9200
-	defaultElasticMaxRetries                          = 3
-	defaultElasticMaxIdleConns                        = 10 * 1024
-	defaultElasticMaxIdleTime                         = 30 * time.Second
-	defaultElasticRequestTimeout                      = 30 * time.Second
-	defaultElasticDiscoverNodesInterval time.Duration = 60 * time.Second
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 )
 
 // ElasticsearchConfig holds the configuration for Elasticsearch connection.
@@ -36,20 +29,23 @@ type ElasticsearchConfig struct {
 // initElasticsearchConfig initializes Elasticsearch configuration with defaults.
 func initElasticsearchConfig() *ElasticsearchConfig {
 	viper.SetDefault("ELASTICSEARCH_HOST", "localhost")
-	viper.SetDefault("ELASTICSEARCH_PORT", defaultElasticPort)
+	viper.SetDefault("ELASTICSEARCH_PORT", constant.ElasticPort)
 	viper.SetDefault("ELASTICSEARCH_USERNAME", "elastic")
 	viper.SetDefault("ELASTICSEARCH_PASSWORD", "elasticsearch")
 	viper.SetDefault("ELASTICSEARCH_ENABLE_SECURITY", true)
 	viper.SetDefault("ELASTICSEARCH_ENABLE_SSL", false)
-	viper.SetDefault("ELASTICSEARCH_MAX_RETRIES", defaultElasticMaxRetries)
-	viper.SetDefault("ELASTICSEARCH_MAX_IDLE_CONNS", defaultElasticMaxIdleConns)
-	viper.SetDefault("ELASTICSEARCH_MAX_IDLE_TIME", defaultElasticMaxIdleTime)
-	viper.SetDefault("ELASTICSEARCH_REQUEST_TIMEOUT", defaultElasticRequestTimeout)
-	viper.SetDefault("ELASTICSEARCH_DISCOVER_NODES_INTERVAL", defaultElasticDiscoverNodesInterval)
+	viper.SetDefault("ELASTICSEARCH_MAX_RETRIES", constant.ElasticMaxRetries)
+	viper.SetDefault("ELASTICSEARCH_MAX_IDLE_CONNS", constant.ElasticMaxIdleConns)
+	viper.SetDefault("ELASTICSEARCH_MAX_IDLE_TIME", constant.ElasticMaxIdleTime)
+	viper.SetDefault("ELASTICSEARCH_REQUEST_TIMEOUT", constant.ElasticRequestTimeout)
+	viper.SetDefault("ELASTICSEARCH_DISCOVER_NODES_INTERVAL", constant.ElasticDiscoverNodesInterval)
 	viper.SetDefault("ELASTICSEARCH_SNIFFER_ENABLED", false)
 	viper.SetDefault("ELASTICSEARCH_HEALTHCHECK_URL", "/_cluster/health")
 
 	esConfig := &ElasticsearchConfig{}
+	if err := viper.Unmarshal(esConfig); err != nil {
+		panic(err)
+	}
 
 	return esConfig
 }

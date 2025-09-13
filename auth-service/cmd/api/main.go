@@ -21,7 +21,7 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	appLogger := logger.NewLogrusLogger(cfg.Logger.Level)
+	appLogger := logger.NewLogrusLogger(cfg.App.LoggerLevel)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
@@ -41,7 +41,6 @@ func main() {
 func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func() {
 	if !cfg.Consul.Enabled {
 		appLogger.Infof("Consul service discovery is disabled")
-
 		return func() {}
 	}
 
@@ -50,15 +49,12 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
-	if err = consulClient.RegisterHTTP(cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port); err != nil {
+	if err = consulClient.RegisterHTTP(cfg.App.Name, cfg.HTTPServer.Host, cfg.HTTPServer.Port); err != nil {
 		return func() {}
 	}
 
-	appLogger.Infof("Service registered with Consul: %s at %s:%d",
-		cfg.Consul.ServiceName, cfg.Consul.ServiceHost, cfg.HTTPServer.Port)
-
 	return func() {
-		if deregErr := consulClient.Deregister(cfg.Consul.ServiceName); deregErr != nil {
+		if deregErr := consulClient.Deregister(); deregErr != nil {
 			appLogger.Errorf("Failed to deregister from Consul: %v", deregErr)
 		}
 	}

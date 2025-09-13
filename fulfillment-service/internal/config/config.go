@@ -7,7 +7,6 @@ import (
 // Config holds the application configuration.
 type Config struct {
 	App             *AppConfig
-	Logger          *LoggerConfig
 	HTTPServer      *HTTPServerConfig
 	GRPCServer      *GRPCServerConfig
 	Postgres        *PostgresConfig
@@ -30,7 +29,6 @@ func LoadConfig() (*Config, error) {
 
 	cfg := &Config{
 		App:             initAppConfig(),
-		Logger:          initLoggerConfig(),
 		HTTPServer:      initHTTPServerConfig(),
 		GRPCServer:      initGRPCServerConfig(),
 		Postgres:        initPostgresConfig(),

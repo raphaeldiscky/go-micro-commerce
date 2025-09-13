@@ -16,7 +16,7 @@ import (
 // PostgresConfig holds the configuration for the PostgreSQL connection.
 type PostgresConfig struct {
 	Host            string
-	Name            string
+	DB              string
 	User            string
 	Password        string
 	SSLMode         string
@@ -34,7 +34,7 @@ func NewPostgresConnection(
 ) (*pgxpool.Pool, error) {
 	hostPort := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
 	dsn := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-		cfg.User, cfg.Password, hostPort, cfg.Name, cfg.SSLMode)
+		cfg.User, cfg.Password, hostPort, cfg.DB, cfg.SSLMode)
 
 	poolConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
@@ -56,7 +56,7 @@ func NewPostgresConnection(
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	appLogger.Info("PostgreSQL connection established to %s:%d/%s", cfg.Host, cfg.Port, cfg.Name)
+	appLogger.Info("PostgreSQL connection established to %s:%d/%s", cfg.Host, cfg.Port, cfg.DB)
 
 	return pool, nil
 }

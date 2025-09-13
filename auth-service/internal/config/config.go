@@ -8,7 +8,6 @@ import (
 // Config represents the application configuration.
 type Config struct {
 	App        *AppConfig
-	Logger     *LoggerConfig
 	HTTPServer *HTTPServerConfig
 	JWT        *JWTConfig
 	Bcrypt     *BcryptConfig
@@ -31,7 +30,6 @@ func LoadConfig() (*Config, error) {
 
 	config := &Config{
 		App:        initAppConfig(),
-		Logger:     initLoggerConfig(),
 		HTTPServer: initHTTPServerConfig(),
 		Postgres:   initPostgresConfig(),
 		Kafka:      initKafkaConfig(),

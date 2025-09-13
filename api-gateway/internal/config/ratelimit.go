@@ -4,13 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultRateLimitEnabled    = true
-	defaultRateLimitRequests   = 100
-	defaultRateLimitWindow     = 1 * time.Minute
-	defaultRateLimitBurstLimit = 10
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
 )
 
 // RateLimitConfig holds rate limiting configuration.
@@ -23,10 +18,10 @@ type RateLimitConfig struct {
 
 // initRateLimitConfig initializes the rate limit configuration from environment variables.
 func initRateLimitConfig() *RateLimitConfig {
-	viper.SetDefault("RATE_LIMIT_ENABLED", defaultRateLimitEnabled)
-	viper.SetDefault("RATE_LIMIT_REQUESTS", defaultRateLimitRequests)
-	viper.SetDefault("RATE_LIMIT_WINDOW", defaultRateLimitWindow)
-	viper.SetDefault("RATE_LIMIT_BURST_LIMIT", defaultRateLimitBurstLimit)
+	viper.SetDefault("RATE_LIMIT_ENABLED", constant.RateLimitEnabled)
+	viper.SetDefault("RATE_LIMIT_REQUESTS", constant.RateLimitRequests)
+	viper.SetDefault("RATE_LIMIT_WINDOW", constant.RateLimitWindow)
+	viper.SetDefault("RATE_LIMIT_BURST_LIMIT", constant.RateLimitBurstLimit)
 
 	rateLimitConfig := &RateLimitConfig{}
 	if err := viper.Unmarshal(rateLimitConfig); err != nil {

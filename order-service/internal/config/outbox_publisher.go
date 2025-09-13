@@ -4,15 +4,8 @@ import (
 	"time"
 
 	"github.com/spf13/viper"
-)
 
-const (
-	defaultOutboxBatchSize        = 100
-	defaultOutboxPollInterval     = 5 * time.Second
-	defaultOutboxMaxRetryAttempts = 5
-	defaultOutboxRetryBackoff     = 30 * time.Second
-	defaultOutboxCleanupInterval  = 1 * time.Hour
-	defaultOutboxRetentionPeriod  = 24 * time.Hour
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // OutboxPublisherConfig holds OutboxPublisher service discovery configuration.
@@ -28,12 +21,12 @@ type OutboxPublisherConfig struct {
 // initOutboxPublisherConfig initializes the OutboxPublisher configuration from environment variables.
 func initOutboxPublisherConfig() *OutboxPublisherConfig {
 	// Set defaults
-	viper.SetDefault("OUTBOX_BATCH_SIZE", defaultOutboxBatchSize)
-	viper.SetDefault("OUTBOX_POLL_INTERVAL", defaultOutboxPollInterval)
-	viper.SetDefault("OUTBOX_MAX_RETRY_ATTEMPTS", defaultOutboxMaxRetryAttempts)
-	viper.SetDefault("OUTBOX_RETRY_BACKOFF", defaultOutboxRetryBackoff)
-	viper.SetDefault("OUTBOX_CLEANUP_INTERVAL", defaultOutboxCleanupInterval)
-	viper.SetDefault("OUTBOX_RETENTION_PERIOD", defaultOutboxRetentionPeriod)
+	viper.SetDefault("OUTBOX_BATCH_SIZE", constant.OutboxBatchSize)
+	viper.SetDefault("OUTBOX_POLL_INTERVAL", constant.OutboxPollInterval)
+	viper.SetDefault("OUTBOX_MAX_RETRY_ATTEMPTS", constant.OutboxMaxRetryAttempts)
+	viper.SetDefault("OUTBOX_RETRY_BACKOFF", constant.OutboxRetryBackoff)
+	viper.SetDefault("OUTBOX_CLEANUP_INTERVAL", constant.OutboxCleanupInterval)
+	viper.SetDefault("OUTBOX_RETENTION_PERIOD", constant.OutboxRetentionPeriod)
 
 	outboxConfig := &OutboxPublisherConfig{}
 
