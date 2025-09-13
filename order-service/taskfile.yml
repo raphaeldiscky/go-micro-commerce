@@ -11,6 +11,11 @@ tasks:
     cmds:
       - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -tags="sonic avx" -v -o {{.CURDIR}}/bin/main {{.CURDIR}}/cmd/main.go
 
+  run:
+    desc: Run the application
+    cmds:
+      - air -c .air.toml
+
   test:
     desc: Run tests with verbose output and coverage
     cmds:
