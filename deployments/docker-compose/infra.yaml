@@ -6,7 +6,7 @@ include:
   - temporal.yaml
   - elasticsearch.yaml
   - monitoring.yaml
-  - security.yaml
+  - vault.yaml
   - dev-tools.yaml
   - api-gateway.yaml
   # - dev.yaml
