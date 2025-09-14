@@ -118,15 +118,15 @@ func createGRPCConnection(
 			"name": [{"service": "%s"}],
 			"retryPolicy": {
 				"MaxAttempts": %d,
-				"InitialBackoff": "%s",
-				"MaxBackoff": "%s", 
+				"InitialBackoff": "%.3fs",
+				"MaxBackoff": "%.3fs",
 				"BackoffMultiplier": %f,
 				"RetryableStatusCodes": [%s]
 			}
 		}],
 		"loadBalancingPolicy": "%s"
 	}`, getServiceNameFromFullService(cfg.ServiceName), cfg.MaxAttempts,
-		cfg.InitialBackoff, cfg.MaxBackoff, cfg.BackoffMultiplier,
+		cfg.InitialBackoff.Seconds(), cfg.MaxBackoff.Seconds(), cfg.BackoffMultiplier,
 		buildRetryableCodesString(cfg.RetryableStatusCodes), cfg.LoadBalancingPolicy)
 
 	conn, err := grpc.NewClient(

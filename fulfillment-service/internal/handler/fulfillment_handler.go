@@ -88,12 +88,13 @@ func (h *FulfillmentHandler) GetFulfillmentByOrderID(c echo.Context) error {
 //
 // Authentication: Requires user authentication.
 func (h *FulfillmentHandler) CalculateShippingRates(c echo.Context) error {
-	var req *dto.CalculateShippingRatesRequest
-	if err := c.Bind(&req); err != nil {
+	req := &dto.CalculateShippingRatesRequest{}
+
+	if err := c.Bind(req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err := c.Validate(req); err != nil {
 		return err
 	}
 

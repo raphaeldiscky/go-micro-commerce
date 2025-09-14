@@ -148,6 +148,10 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for payment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 
@@ -216,6 +220,10 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for payment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 
@@ -265,6 +273,10 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for payment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 
@@ -314,6 +326,10 @@ func (c *PaymentLifecycleConsumer) processPaymentRefunded(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for payment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 

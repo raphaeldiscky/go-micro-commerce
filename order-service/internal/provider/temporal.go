@@ -2,9 +2,11 @@ package provider
 
 import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"go.temporal.io/sdk/activity"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/temporal"
 )
 
@@ -50,20 +52,59 @@ func SetupTemporal(
 
 	// Register workflow and activities
 	temporalClient.Worker.RegisterWorkflow(temporal.OrderSagaWorkflow)
-	temporalClient.Worker.RegisterActivity(activities.ReserveProducts)
-	temporalClient.Worker.RegisterActivity(activities.GetShippingCost)
-	temporalClient.Worker.RegisterActivity(activities.SetFinalOrderPrices)
-	temporalClient.Worker.RegisterActivity(activities.CreatePayment)
-	temporalClient.Worker.RegisterActivity(activities.SendPaymentRequiredNotification)
-	temporalClient.Worker.RegisterActivity(activities.WaitForPaymentConfirmation)
-	temporalClient.Worker.RegisterActivity(activities.ProcessFulfillment)
-	temporalClient.Worker.RegisterActivity(activities.ConfirmProductsDeduction)
-	temporalClient.Worker.RegisterActivity(activities.SendOrderConfirmedNotification)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.ReserveProducts,
+		activity.RegisterOptions{Name: string(constant.ReserveProductsStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.GetShippingCost,
+		activity.RegisterOptions{Name: string(constant.GetShippingCostStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.SetFinalOrderPrices,
+		activity.RegisterOptions{Name: string(constant.SetFinalPricesStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.CreatePayment,
+		activity.RegisterOptions{Name: string(constant.CreatePaymentStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.SendPaymentRequiredNotification,
+		activity.RegisterOptions{Name: string(constant.SendPaymentRequiredNotificationStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.WaitForPaymentConfirmation,
+		activity.RegisterOptions{Name: string(constant.WaitForPaymentConfirmationStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.ProcessFulfillment,
+		activity.RegisterOptions{Name: string(constant.ProcessFulfillmentStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.ConfirmProductsDeduction,
+		activity.RegisterOptions{Name: string(constant.ConfirmProductsDeductionStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.SendOrderConfirmedNotification,
+		activity.RegisterOptions{Name: string(constant.SendOrderConfirmedNotificationStep)},
+	)
 	// Compensations
-	temporalClient.Worker.RegisterActivity(activities.ReleaseProducts)
-	temporalClient.Worker.RegisterActivity(activities.RefundPayment)
-	temporalClient.Worker.RegisterActivity(activities.RestoreProducts)
-	temporalClient.Worker.RegisterActivity(activities.CancelShipping)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.ReleaseProducts,
+		activity.RegisterOptions{Name: string(constant.ReleaseProductsStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.RefundPayment,
+		activity.RegisterOptions{Name: string(constant.RefundPaymentStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.RestoreProducts,
+		activity.RegisterOptions{Name: string(constant.RestoreProductsStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.CancelShipping,
+		activity.RegisterOptions{Name: string(constant.CancelShippingStep)},
+	)
 
 	appLogger.Infof("Temporal client initialized with task queue: %s", cfg.Temporal.TaskQueue)
 

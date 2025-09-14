@@ -104,6 +104,7 @@ func NewExecutor(
 		steps:      make([]Step, 0),
 		dataStore:  dataStore,
 		logger:     appLogger,
+		config:     cfg,
 		maxRetries: cfg.Saga.DefaultMaxRetries,
 		retryDelay: cfg.Saga.DefaultRetryDelay,
 	}
@@ -527,7 +528,11 @@ func (e *Executor) getOrCreateSagaState(
 	stateRepo := e.dataStore.SagaStateRepository()
 	// Try to find existing saga state
 	state, err := stateRepo.FindByOrderID(ctx, orderID)
-	if err == nil && state != nil {
+	if err != nil && err.Error() != constant.SagaStateNotFoundErrorMessage {
+		return nil, fmt.Errorf("failed to check existing saga state: %w", err)
+	}
+
+	if state != nil {
 		e.logger.Infof("Resuming saga %s for order %s from step %d",
 			state.ID, orderID, state.CurrentStep)
 

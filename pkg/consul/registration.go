@@ -4,7 +4,6 @@ package consul
 import (
 	"fmt"
 	"net"
-	"os"
 	"strconv"
 
 	"github.com/hashicorp/consul/api"
@@ -21,6 +20,14 @@ const (
 	// ServiceTypeGRPC represents gRPC service type for Consul registration.
 	ServiceTypeGRPC ServiceType = "grpc"
 )
+
+// ServiceRegistrationInterface defines the interface for service registration.
+type ServiceRegistrationInterface interface {
+	RegisterHTTP(serviceName, address string, port int) error
+	RegisterGRPC(serviceName, address string, port int) error
+	DeregisterGRPC(serviceID string) error
+	DeregisterHTTP(serviceID string) error
+}
 
 // ServiceRegistration handles Consul service registration.
 type ServiceRegistration struct {
@@ -48,9 +55,21 @@ func NewServiceRegistration(
 	}, nil
 }
 
+// GetServiceID generates a unique service ID based on service name, hostname, and port.
+func (s *ServiceRegistration) GetServiceID(serviceName, host string, port int) (string, error) {
+	serviceID := fmt.Sprintf("%s-%s-%d", serviceName, host, port)
+
+	return serviceID, nil
+}
+
 // RegisterHTTP registers an HTTP service with Consul.
 func (s *ServiceRegistration) RegisterHTTP(serviceName, address string, port int) error {
 	return s.register(serviceName, address, port, ServiceTypeHTTP)
+}
+
+// DeregisterHTTP deregisters an HTTP service from Consul.
+func (s *ServiceRegistration) DeregisterHTTP(serviceID string) error {
+	return s.deregister(serviceID, ServiceTypeHTTP)
 }
 
 // RegisterGRPC registers a gRPC service with Consul.
@@ -58,19 +77,21 @@ func (s *ServiceRegistration) RegisterGRPC(serviceName, address string, port int
 	return s.register(serviceName, address, port, ServiceTypeGRPC)
 }
 
+// DeregisterGRPC deregisters a gRPC service from Consul.
+func (s *ServiceRegistration) DeregisterGRPC(serviceID string) error {
+	return s.deregister(serviceID, ServiceTypeGRPC)
+}
+
 // register registers a service with Consul based on service type.
 func (s *ServiceRegistration) register(
-	serviceName, address string,
+	serviceName, host string,
 	port int,
 	serviceType ServiceType,
 ) error {
-	// Generate unique service ID
-	hostname, err := os.Hostname()
+	serviceID, err := s.GetServiceID(serviceName, host, port)
 	if err != nil {
-		return fmt.Errorf("failed to get hostname: %w", err)
+		return fmt.Errorf("failed to get service ID: %w", err)
 	}
-
-	serviceID := fmt.Sprintf("%s-%s-%d", serviceName, hostname, port)
 
 	var tags []string
 
@@ -82,7 +103,7 @@ func (s *ServiceRegistration) register(
 		check = &api.AgentServiceCheck{
 			HTTP: fmt.Sprintf(
 				"http://%s/health",
-				net.JoinHostPort(address, strconv.Itoa(port)),
+				net.JoinHostPort(host, strconv.Itoa(port)),
 			),
 			Interval:                       "10s",
 			Timeout:                        "5s",
@@ -92,7 +113,7 @@ func (s *ServiceRegistration) register(
 		tags = []string{"grpc", "api", "microservice"}
 		// For gRPC health checks, use TCP check since we have custom health method
 		check = &api.AgentServiceCheck{
-			TCP:                            fmt.Sprintf("%s:%d", address, port),
+			TCP:                            fmt.Sprintf("%s:%d", host, port),
 			Interval:                       "10s",
 			Timeout:                        "5s",
 			DeregisterCriticalServiceAfter: "30s",
@@ -103,7 +124,7 @@ func (s *ServiceRegistration) register(
 	registration := &api.AgentServiceRegistration{
 		ID:      serviceID,
 		Name:    serviceName,
-		Address: address,
+		Address: host,
 		Port:    port,
 		Tags:    tags,
 		Check:   check,
@@ -120,6 +141,18 @@ func (s *ServiceRegistration) register(
 	s.serviceIDs = append(s.serviceIDs, serviceID)
 
 	s.logger.Infof("Service %s registered with Consul", serviceID)
+
+	return nil
+}
+
+// deregister removes a service from Consul by service type.
+func (s *ServiceRegistration) deregister(serviceID string, serviceType ServiceType) error {
+	err := s.client.Agent().ServiceDeregister(serviceID)
+	if err != nil {
+		return fmt.Errorf("failed to deregister %s service %s: %w", serviceType, serviceID, err)
+	}
+
+	s.logger.Infof("%s service %s deregistered from Consul", serviceType, serviceID)
 
 	return nil
 }

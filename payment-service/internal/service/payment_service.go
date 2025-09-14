@@ -86,7 +86,7 @@ func (s *PaymentService) CreatePayment(
 
 		// Check if payment already exists for this order
 		existingPayment, err := paymentRepo.FindByOrderID(ctx, req.OrderID)
-		if err != nil {
+		if err != nil && err.Error() != constant.PaymentNotFoundErrorMessage {
 			return httperror.NewInternalServerError("failed to check existing payment")
 		}
 
@@ -186,6 +186,10 @@ func (s *PaymentService) ProcessPayment(
 		// Get payment
 		payment, errFind := paymentRepo.FindByOrderID(ctx, orderID)
 		if errFind != nil {
+			if errFind.Error() == constant.PaymentNotFoundErrorMessage {
+				return httperror.NewNotFoundError("payment not found for order")
+			}
+
 			return httperror.NewInternalServerError("failed to get payment")
 		}
 
@@ -287,6 +291,10 @@ func (s *PaymentService) GetPaymentByOrderID(
 
 	payment, err := paymentRepo.FindByOrderID(ctx, orderID)
 	if err != nil {
+		if err.Error() == constant.PaymentNotFoundErrorMessage {
+			return nil, httperror.NewNotFoundError("payment not found for order")
+		}
+
 		return nil, httperror.NewInternalServerError("failed to get payment")
 	}
 

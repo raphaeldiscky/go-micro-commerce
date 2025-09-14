@@ -47,7 +47,7 @@ type AuthServiceInterface interface {
 	) (*dto.UserResponse, error)
 	DeleteUser(ctx context.Context, userID uuid.UUID) error
 	ChangePassword(ctx context.Context, userID uuid.UUID, req *dto.ChangePasswordRequest) error
-	VerifyEmail(ctx context.Context, req *dto.VerifyEmailRequest) error
+	VerifyUser(ctx context.Context, req *dto.VerifyEmailRequest) error
 	ResendVerification(ctx context.Context, req *dto.ResendVerificationRequest) error
 	GetActiveSessions(ctx context.Context, userID uuid.UUID) ([]*dto.SessionResponse, error)
 }
@@ -545,8 +545,8 @@ func (s *AuthService) ChangePassword(
 	return nil
 }
 
-// VerifyEmail verifies user email.
-func (s *AuthService) VerifyEmail(ctx context.Context, req *dto.VerifyEmailRequest) error {
+// VerifyUser verifies user by email.
+func (s *AuthService) VerifyUser(ctx context.Context, req *dto.VerifyEmailRequest) error {
 	userRepo := s.dataStore.UserRepository()
 
 	// Get user by verification token

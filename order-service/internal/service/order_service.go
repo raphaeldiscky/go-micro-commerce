@@ -139,7 +139,7 @@ func (s *OrderService) CreateOrderWithTemporal(
 		orderRepo := ds.OrderRepository()
 
 		existingOrder, errExist := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
-		if errExist != nil {
+		if errExist != nil && errExist.Error() != constant.OrderNotFoundErrorMessage {
 			return errExist
 		}
 
@@ -195,6 +195,7 @@ func (s *OrderService) CreateOrderWithTemporal(
 			workflowOptions,
 			constant.OrderSagaWorkflowName,
 			temporalReq,
+			s.config.Temporal,
 		)
 		if wfErr != nil {
 			s.logger.Errorf(
@@ -405,7 +406,9 @@ func (s *OrderService) CancelOrder(
 
 		// Check if order can be canceled
 		if !existingOrder.CanBeCancelled() {
-			return httperror.NewBadRequestError("order cannot be canceled in current status")
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("order cannot be canceled in current status: %s", existingOrder.Status),
+			)
 		}
 
 		if existingOrder.IdempotencyKey == req.IdempotencyKey {
@@ -495,7 +498,9 @@ func (s *OrderService) RequestPaymentOrder(
 
 		// Check if order can be paid
 		if !existingOrder.CanBePaid() {
-			return httperror.NewBadRequestError("order cannot be paid in current status")
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("order cannot be paid in current status: %s", existingOrder.Status),
+			)
 		}
 
 		if existingOrder.IdempotencyKey == req.IdempotencyKey {
