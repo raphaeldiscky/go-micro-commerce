@@ -33,7 +33,7 @@ func executeSagaSteps(
 	}
 
 	var reserveResult dto.ReserveProductsResponse
-	if err := workflow.ExecuteActivity(ctx, constant.ReserveProductsStep, reserveRequest).Get(ctx, &reserveResult); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.ReserveProductsStep), reserveRequest).Get(ctx, &reserveResult); err != nil {
 		return temporal.NewNonRetryableApplicationError(
 			"ReserveProducts failed",
 			"ReserveProductsError",
@@ -57,7 +57,7 @@ func executeSagaSteps(
 	}
 
 	var shippingResult dto.GetShippingCostResponse
-	if err := workflow.ExecuteActivity(ctx, constant.GetShippingCostStep, shippingRequest).Get(ctx, &shippingResult); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.GetShippingCostStep), shippingRequest).Get(ctx, &shippingResult); err != nil {
 		// Non-critical step, log but continue
 		logger.Warn(
 			"GetShippingCost failed, but saga will continue",
@@ -82,7 +82,7 @@ func executeSagaSteps(
 
 		var setPricesResult dto.SetFinalOrderPricesResponse
 
-		if err := workflow.ExecuteActivity(ctx, constant.SetFinalPricesStep, setPricesInput).Get(ctx, &setPricesResult); err != nil {
+		if err := workflow.ExecuteActivity(ctx, string(constant.SetFinalPricesStep), setPricesInput).Get(ctx, &setPricesResult); err != nil {
 			// Non-critical step, log but continue
 			logger.Warn(
 				"SetFinalOrderPrices failed, but saga will continue",
@@ -102,7 +102,7 @@ func executeSagaSteps(
 	logger.Info("Executing CreatePayment", "orderID", order.ID)
 
 	var paymentID uuid.UUID
-	if err := workflow.ExecuteActivity(ctx, constant.CreatePaymentStep, order).Get(ctx, &paymentID); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.CreatePaymentStep), order).Get(ctx, &paymentID); err != nil {
 		return err
 	}
 
@@ -118,7 +118,7 @@ func executeSagaSteps(
 			ReservedProducts: state.ReservedProducts,
 			CustomerEmail:    state.CustomerEmail,
 		}
-		if err := workflow.ExecuteActivity(ctx, constant.SendPaymentRequiredNotificationStep, paymentNotificationInput).Get(ctx, nil); err != nil {
+		if err := workflow.ExecuteActivity(ctx, string(constant.SendPaymentRequiredNotificationStep), paymentNotificationInput).Get(ctx, nil); err != nil {
 			return err
 		}
 
@@ -133,7 +133,7 @@ func executeSagaSteps(
 	}
 
 	var paymentConfirmationResult dto.WaitForPaymentConfirmationResponse
-	if err := workflow.ExecuteActivity(ctx, constant.WaitForPaymentConfirmationStep, waitPaymentRequest).Get(ctx, &paymentConfirmationResult); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.WaitForPaymentConfirmationStep), waitPaymentRequest).Get(ctx, &paymentConfirmationResult); err != nil {
 		return err
 	}
 
@@ -145,7 +145,7 @@ func executeSagaSteps(
 	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
 
 	var fulfillmentResult dto.ProcessFulfillmentResponse
-	if err := workflow.ExecuteActivity(ctx, constant.ProcessFulfillmentStep, order, shipping).Get(ctx, &fulfillmentResult); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.ProcessFulfillmentStep), order, shipping).Get(ctx, &fulfillmentResult); err != nil {
 		// Non-critical step, log but continue
 		logger.Warn(
 			"ProcessFulfillment failed, but saga will continue",
@@ -168,7 +168,7 @@ func executeSagaSteps(
 		ReservedProducts: state.ReservedProducts,
 		UserAuth:         userAuth,
 	}
-	if err := workflow.ExecuteActivity(ctx, constant.ConfirmProductsDeductionStep, confirmDeductionInput).Get(ctx, nil); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.ConfirmProductsDeductionStep), confirmDeductionInput).Get(ctx, nil); err != nil {
 		return err
 	}
 
@@ -184,7 +184,7 @@ func executeSagaSteps(
 			TrackingNumber: *state.TrackingNumber,
 			CustomerEmail:  state.CustomerEmail,
 		}
-		if err := workflow.ExecuteActivity(ctx, constant.SendOrderConfirmedNotificationStep, confirmationInput).Get(ctx, nil); err != nil {
+		if err := workflow.ExecuteActivity(ctx, string(constant.SendOrderConfirmedNotificationStep), confirmationInput).Get(ctx, nil); err != nil {
 			// This is not critical, log but don't fail the saga
 			logger.Warn(
 				"SendOrderConfirmedNotification failed, but saga will continue",
@@ -236,7 +236,7 @@ func executeCompensation(
 			*state.ShippingID,
 		)
 
-		if err := workflow.ExecuteActivity(compensationCtx, constant.CancelShippingStep, *state.ShippingID).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, string(constant.CancelShippingStep), *state.ShippingID).Get(compensationCtx, nil); err != nil {
 			logger.Error("CancelShipping compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
@@ -249,7 +249,7 @@ func executeCompensation(
 			Order:    order,
 			UserAuth: userAuth,
 		}
-		if err := workflow.ExecuteActivity(compensationCtx, constant.RestoreProductsStep, restoreReq).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, string(constant.RestoreProductsStep), restoreReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("RestoreProducts compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
@@ -269,7 +269,7 @@ func executeCompensation(
 			Order:     order,
 			PaymentID: *state.PaymentID,
 		}
-		if err := workflow.ExecuteActivity(compensationCtx, constant.RefundPaymentStep, refundInput).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, string(constant.RefundPaymentStep), refundInput).Get(compensationCtx, nil); err != nil {
 			logger.Error("RefundPayment compensation failed", "error", err, "orderID", order.ID)
 		}
 	}
@@ -282,7 +282,7 @@ func executeCompensation(
 			Order:    order,
 			UserAuth: userAuth,
 		}
-		if err := workflow.ExecuteActivity(compensationCtx, constant.ReleaseProductsStep, releaseReq).Get(compensationCtx, nil); err != nil {
+		if err := workflow.ExecuteActivity(compensationCtx, string(constant.ReleaseProductsStep), releaseReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("ReleaseProducts compensation failed", "error", err, "orderID", order.ID)
 		}
 	}

@@ -24,24 +24,6 @@ type TemporalConfig struct {
 
 // initTemporalConfig initializes the Temporal configuration.
 func initTemporalConfig() *TemporalConfig {
-	setTemporalDefaults()
-
-	return &TemporalConfig{
-		APIKey:                      viper.GetString("TEMPORAL_API_KEY"),
-		Address:                     viper.GetString("TEMPORAL_ADDRESS"),
-		Namespace:                   viper.GetString("TEMPORAL_NAMESPACE"),
-		TaskQueue:                   viper.GetString("TEMPORAL_TASK_QUEUE"),
-		WorkflowTimeout:             viper.GetDuration("TEMPORAL_WORKFLOW_TIMEOUT"),
-		CompensationWorkflowTimeout: viper.GetDuration("TEMPORAL_COMPENSATION_WORKFLOW_TIMEOUT"),
-		RetryInterval:               viper.GetDuration("TEMPORAL_RETRY_INTERVAL"),
-		BackoffCoefficient:          viper.GetFloat64("TEMPORAL_BACKOFF_COEFFICIENT"),
-		MaxAttempts:                 viper.GetInt32("TEMPORAL_MAX_ATTEMPTS"),
-		MaxInterval:                 viper.GetDuration("TEMPORAL_MAX_INTERVAL"),
-	}
-}
-
-// setTemporalDefaults sets default values for Temporal configuration.
-func setTemporalDefaults() {
 	viper.SetDefault("TEMPORAL_API_KEY", "supersecret")
 	viper.SetDefault("TEMPORAL_ADDRESS", "localhost:7233")
 	viper.SetDefault("TEMPORAL_NAMESPACE", "default")
@@ -55,4 +37,11 @@ func setTemporalDefaults() {
 	viper.SetDefault("TEMPORAL_BACKOFF_COEFFICIENT", constant.TemporalBackoffCoefficient)
 	viper.SetDefault("TEMPORAL_MAX_ATTEMPTS", constant.TemporalMaxAttempts)
 	viper.SetDefault("TEMPORAL_MAX_INTERVAL", constant.TemporalMaxInterval)
+
+	temporalConfig := &TemporalConfig{}
+	if err := viper.Unmarshal(&temporalConfig); err != nil {
+		panic(err)
+	}
+
+	return temporalConfig
 }

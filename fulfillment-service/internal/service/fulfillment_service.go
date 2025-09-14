@@ -129,7 +129,7 @@ func (s *FulfillmentService) CreateFulfillment(
 
 		// Check if fulfillment already exists for this order
 		existingFulfillment, err := fulfillmentRepo.FindByOrderID(ctx, req.OrderID)
-		if err != nil {
+		if err != nil && err.Error() != constant.FulfillmentNotFoundErrorMessage {
 			return httperror.NewInternalServerError("failed to check existing fulfillment")
 		}
 

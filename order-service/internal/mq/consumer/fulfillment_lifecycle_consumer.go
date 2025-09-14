@@ -213,6 +213,10 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentShipped(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for fulfillment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 
@@ -270,6 +274,10 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for fulfillment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 
@@ -286,8 +294,18 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 	}
 
 	sagaState, err := sagaStateRepo.FindByOrderID(ctx, order.ID)
-	if err != nil {
+	if err != nil && err.Error() != constant.SagaStateNotFoundErrorMessage {
 		return fmt.Errorf("failed to get order saga: %w", err)
+	}
+
+	// If no saga state found, skip email extraction (saga might not be used for this order)
+	if sagaState == nil {
+		c.logger.Infof(
+			"No saga state found for order %s, skipping customer email extraction",
+			order.ID,
+		)
+
+		return nil
 	}
 
 	// Extract customer email from saga state
@@ -375,6 +393,10 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentCanceled(
 
 	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
 	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for fulfillment event: %s", evt.Payload.OrderID)
+		}
+
 		return fmt.Errorf("failed to get order: %w", err)
 	}
 

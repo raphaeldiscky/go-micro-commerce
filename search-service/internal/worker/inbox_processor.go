@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/service"
@@ -196,6 +197,11 @@ func (p *InboxProcessor) handleProcessingError(
 	// Get current event to check attempts
 	inboxEvent, getErr := p.dataStore.InboxRepository().GetEventByID(ctx, eventID)
 	if getErr != nil {
+		if getErr.Error() == constant.InboxEventNotFoundErrorMessage {
+			p.logger.Warnf("event %s not found during error handling, possibly cleaned up", eventID)
+			return
+		}
+
 		p.logger.Errorf("failed to get event for error handling: %v", getErr)
 
 		return

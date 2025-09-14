@@ -137,8 +137,8 @@ func (h *AuthHandler) UpdateLoggedInUser(c echo.Context) error {
 	return echoutils.ResponseCreated(c, user)
 }
 
-// VerifyEmail verify user's email.
-func (h *AuthHandler) VerifyEmail(c echo.Context) error {
+// VerifyUser verify user.
+func (h *AuthHandler) VerifyUser(c echo.Context) error {
 	req := dto.VerifyEmailRequest{
 		Token: c.QueryParam("token"),
 	}
@@ -147,7 +147,7 @@ func (h *AuthHandler) VerifyEmail(c echo.Context) error {
 		return err
 	}
 
-	if err := h.authService.VerifyEmail(c.Request().Context(), &req); err != nil {
+	if err := h.authService.VerifyUser(c.Request().Context(), &req); err != nil {
 		return err
 	}
 

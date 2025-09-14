@@ -62,7 +62,7 @@ func (r *InboxRepository) Create(
 ) (*entity.InboxEvent, error) {
 	// First try to get existing event by message_id to handle duplicates
 	existingEvent, err := r.GetEventByMessageID(ctx, event.MessageID)
-	if err != nil {
+	if err != nil && err.Error() != constant.InboxEventNotFoundErrorMessage {
 		return nil, fmt.Errorf("failed to check for existing event: %w", err)
 	}
 

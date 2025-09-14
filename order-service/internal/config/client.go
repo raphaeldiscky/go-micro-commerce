@@ -17,11 +17,11 @@ type ClientConfig struct {
 
 // initClientConfig initializes the client configuration.
 func initClientConfig() *ClientConfig {
-	viper.SetDefault("CLIENT_PRODUCT_GRPC_HOST", "0.0.0.0")
+	viper.SetDefault("CLIENT_PRODUCT_GRPC_HOST", "localhost")
 	viper.SetDefault("CLIENT_PRODUCT_GRPC_PORT", constant.ClientProductGRPCPort)
-	viper.SetDefault("CLIENT_FULFILLMENT_GRPC_HOST", "0.0.0.0")
+	viper.SetDefault("CLIENT_FULFILLMENT_GRPC_HOST", "localhost")
 	viper.SetDefault("CLIENT_FULFILLMENT_GRPC_PORT", constant.ClientFulfillmentGRPCPort)
-	viper.SetDefault("CLIENT_USE_SERVICE_DISCOVERY", false)
+	viper.SetDefault("CLIENT_USE_SERVICE_DISCOVERY", true)
 
 	clientCfg := &ClientConfig{}
 	if err := viper.Unmarshal(&clientCfg); err != nil {

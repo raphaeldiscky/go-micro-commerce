@@ -4,8 +4,9 @@ package constant
 const (
 	// UserAlreadyExistErrorMessage is returned when a user already exists.
 	UserAlreadyExistErrorMessage = "user already exist"
-	// InvalidCredentialErrorMessage is returned when email or password is incorrect.
-	InvalidCredentialErrorMessage = "email or password is incorrect"
+	// InvalidCredentialErrorMessage is returned when token is incorrect or invalid credentials.
+	//nolint:gosec // false positive
+	InvalidCredentialErrorMessage = "invalid credentials, wrong token or email or password"
 	// InvalidRefreshToken is returned when the refresh token is invalid.
 	InvalidRefreshToken = "invalid refresh token"
 	// UserNotVerifiedErrorMessage is returned when a user has not verified their email.

@@ -59,7 +59,7 @@ func InitializeProductService(
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,
 		Acks:           sarama.WaitForAll,
-	})
+	}, appLogger)
 	if err != nil {
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}

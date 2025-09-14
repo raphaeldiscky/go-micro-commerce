@@ -111,7 +111,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, []entity.Product, error) {
-	a.logger.Infof("Get and Reserving products for product: %s")
+	a.logger.Infof("Get and Reserving products for order: %s", order.ID)
 
 	if a.productClient == nil {
 		return nil, nil, NewNonRetriableError(

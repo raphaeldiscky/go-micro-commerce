@@ -175,7 +175,7 @@ func (c *FulfillmentRequestConsumer) checkExistingFulfillment(
 	fulfillmentRepo := ds.FulfillmentRepository()
 
 	existingFulfillment, err := fulfillmentRepo.FindByOrderID(ctx, orderID)
-	if err != nil {
+	if err != nil && err.Error() != constant.FulfillmentNotFoundErrorMessage {
 		return false, fmt.Errorf("failed to check existing fulfillment: %w", err)
 	}
 

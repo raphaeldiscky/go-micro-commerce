@@ -38,6 +38,7 @@ type dataStore struct {
 func NewDataStore(pool *pgxpool.Pool, rdl *redislock.Client, appLogger logger.Logger) DataStore {
 	return &dataStore{
 		pool:   pool,
+		db:     pool,
 		rdl:    rdl,
 		logger: appLogger,
 	}

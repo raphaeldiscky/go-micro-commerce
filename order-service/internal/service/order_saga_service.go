@@ -116,7 +116,7 @@ func (s *OrderService) handleExistingOrder(
 	stateRepo repository.SagaStateRepositoryInterface,
 ) (*dto.OrderResponse, bool, error) {
 	existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
-	if err != nil {
+	if err != nil && err.Error() != constant.OrderNotFoundErrorMessage {
 		return nil, false, err
 	}
 
@@ -125,7 +125,7 @@ func (s *OrderService) handleExistingOrder(
 	}
 
 	sagaState, err := stateRepo.FindByOrderID(ctx, existingOrder.ID)
-	if err != nil {
+	if err != nil && err.Error() != constant.SagaStateNotFoundErrorMessage {
 		return nil, false, err
 	}
 

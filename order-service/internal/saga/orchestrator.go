@@ -137,13 +137,15 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 	for _, sagaState := range failedSagas {
 		o.logger.Infof("Recovering saga %s for order %s", sagaState.ID, sagaState.OrderID)
 
-		// Retrieve the order
-		// Note: You'll need to inject order repository or service
 		orderRepo := o.dataStore.OrderRepository()
 
 		order, rowErr := orderRepo.FindByID(ctx, sagaState.OrderID)
 		if rowErr != nil {
-			o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, rowErr)
+			if rowErr.Error() == constant.OrderNotFoundErrorMessage {
+				o.logger.Errorf("Order not found for saga recovery: %s", sagaState.OrderID)
+			} else {
+				o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, rowErr)
+			}
 
 			continue
 		}

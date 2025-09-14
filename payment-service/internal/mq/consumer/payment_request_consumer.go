@@ -144,7 +144,7 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 
 	// Check if payment already exists for this order
 	existingPayment, err := paymentRepo.FindByOrderID(ctx, evt.Payload.OrderID)
-	if err != nil {
+	if err != nil && err.Error() != constant.PaymentNotFoundErrorMessage {
 		return fmt.Errorf("failed to check existing payment: %w", err)
 	}
 

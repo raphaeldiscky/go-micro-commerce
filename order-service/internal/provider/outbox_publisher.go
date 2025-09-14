@@ -102,7 +102,7 @@ func SetupOutboxPublisher(
 		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
 		ReturnErrors:   cfg.Kafka.ReturnErrors,
 		Acks:           sarama.WaitForAll,
-	})
+	}, appLogger)
 	if err != nil {
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}

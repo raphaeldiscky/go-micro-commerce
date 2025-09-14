@@ -47,7 +47,7 @@ type AsyncProducer struct {
 }
 
 // NewSyncProducer creates a new instance of sync ProducerKafka.
-func NewSyncProducer(cfg *ProducerConfig) (*SyncProducer, error) {
+func NewSyncProducer(cfg *ProducerConfig, appLogger logger.Logger) (*SyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = cfg.Acks
 	config.Producer.Return.Successes = cfg.ReturnSuccess
@@ -67,11 +67,16 @@ func NewSyncProducer(cfg *ProducerConfig) (*SyncProducer, error) {
 
 	return &SyncProducer{
 		producer: producer,
+		logger:   appLogger,
 	}, nil
 }
 
 // NewAsyncProducer creates a new instance of async AsyncProducer.
-func NewAsyncProducer(ctx context.Context, cfg *ProducerConfig) (*AsyncProducer, error) {
+func NewAsyncProducer(
+	ctx context.Context,
+	cfg *ProducerConfig,
+	appLogger logger.Logger,
+) (*AsyncProducer, error) {
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = cfg.Acks
 	config.Producer.Return.Successes = cfg.ReturnSuccess
@@ -92,6 +97,7 @@ func NewAsyncProducer(ctx context.Context, cfg *ProducerConfig) (*AsyncProducer,
 	ctx, cancel := context.WithCancel(ctx)
 	asyncProducer := &AsyncProducer{
 		producer:  producer,
+		logger:    appLogger,
 		retryChan: make(chan *sarama.ProducerMessage), // Buffered channel
 		ctx:       ctx,
 		cancel:    cancel,

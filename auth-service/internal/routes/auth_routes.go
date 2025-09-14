@@ -19,7 +19,7 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	public.POST("/login", h.Login)
 	public.POST("/refresh-token", h.RefreshToken)
 	public.POST("/logout", h.Logout)
-	public.POST("/verify", h.VerifyEmail)
+	public.POST("/verify", h.VerifyUser)
 	public.POST("/resend-verification", h.ResendVerification)
 
 	// User routes (protected)
