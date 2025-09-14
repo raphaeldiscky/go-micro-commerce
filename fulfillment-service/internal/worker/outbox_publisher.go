@@ -12,6 +12,7 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/repository"
@@ -164,6 +165,11 @@ func (p *OutboxPublisher) handleProcessingError(
 	// Get current event to check attempts
 	outboxEvent, getErr := p.dataStore.OutboxRepository().GetEventByID(ctx, eventID)
 	if getErr != nil {
+		if getErr.Error() == constant.OutboxEventNotFoundErrorMessage {
+			p.logger.Warnf("event %s not found during error handling, possibly cleaned up", eventID)
+			return
+		}
+
 		p.logger.Errorf("failed to get event for error handling: %v", getErr)
 
 		return

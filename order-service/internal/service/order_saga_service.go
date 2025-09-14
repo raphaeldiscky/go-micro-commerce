@@ -125,7 +125,7 @@ func (s *OrderService) handleExistingOrder(
 	}
 
 	sagaState, err := stateRepo.FindByOrderID(ctx, existingOrder.ID)
-	if err != nil {
+	if err != nil && err.Error() != constant.SagaStateNotFoundErrorMessage {
 		return nil, false, err
 	}
 
