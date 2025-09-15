@@ -21,6 +21,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
 // OrderActivities defines the interface for order saga activities to match saga implementation.
@@ -74,6 +75,7 @@ type OrderActivitiesImpl struct {
 	fulfillmentRequestProducer kafka.ProducerInterface
 	fulfillmentClient          client.FulfillmentClientInterface
 	paymentClient              client.PaymentClientInterface
+	paymentReminderService     *service.PaymentReminderService
 }
 
 // NewTemporalActivities creates a new OrderActivities instance.
@@ -85,6 +87,7 @@ func NewTemporalActivities(
 	fulfillmentRequestProducer kafka.ProducerInterface,
 	fulfillmentClient client.FulfillmentClientInterface,
 	paymentClient client.PaymentClientInterface,
+	paymentReminderService *service.PaymentReminderService,
 ) OrderActivities {
 	return &OrderActivitiesImpl{
 		dataStore:                  dataStore,
@@ -94,6 +97,7 @@ func NewTemporalActivities(
 		fulfillmentRequestProducer: fulfillmentRequestProducer,
 		fulfillmentClient:          fulfillmentClient,
 		paymentClient:              paymentClient,
+		paymentReminderService:     paymentReminderService,
 	}
 }
 
@@ -427,6 +431,30 @@ func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
 		return fmt.Errorf("failed to create payment required notification: %w", err)
 	}
 
+	// Create payment reminder schedule if payment reminder service is available
+	if ta.paymentReminderService != nil {
+		reminderRequest := dto.PaymentReminderWorkflowRequest{
+			OrderID:       req.Order.ID,
+			CustomerEmail: req.CustomerEmail,
+			PaymentID:     uuid.Nil, // Will be set when payment is created
+			TotalPrice:    req.Order.TotalPrice,
+			Currency:      req.Order.Currency,
+			TaskQueue:     "order-service",
+		}
+
+		_, err = ta.paymentReminderService.CreatePaymentReminderSchedule(ctx, reminderRequest)
+		if err != nil {
+			// Log error but don't fail the saga - reminder is nice-to-have
+			logger.Warn(
+				"Failed to create payment reminder schedule",
+				"orderID", req.Order.ID,
+				"error", err,
+			)
+		} else {
+			logger.Info("Successfully created payment reminder schedule", "orderID", req.Order.ID)
+		}
+	}
+
 	return nil
 }
 
@@ -464,6 +492,21 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 		"paymentID", response.PaymentID,
 		"status", response.Status,
 	)
+
+	// Cancel payment reminder schedule since payment is confirmed
+	if ta.paymentReminderService != nil {
+		err = ta.paymentReminderService.CancelPaymentReminderSchedule(ctx, req.Order.ID)
+		if err != nil {
+			// Log error but don't fail the saga - cancellation failure is not critical
+			logger.Warn(
+				"Failed to cancel payment reminder schedule",
+				"orderID", req.Order.ID,
+				"error", err,
+			)
+		} else {
+			logger.Info("Successfully cancelled payment reminder schedule", "orderID", req.Order.ID)
+		}
+	}
 
 	return dto.WaitForPaymentConfirmationResponse{
 		PaymentID: response.PaymentID,

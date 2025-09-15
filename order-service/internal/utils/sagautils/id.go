@@ -11,3 +11,8 @@ import (
 func CreateOrderSagaID(orderID uuid.UUID) string {
 	return fmt.Sprintf("order-saga-%s", orderID)
 }
+
+// CreatePaymentReminderID creates a unique ID for the payment reminder.
+func CreatePaymentReminderID(orderID uuid.UUID) string {
+	return fmt.Sprintf("payment-reminder-%s", orderID)
+}

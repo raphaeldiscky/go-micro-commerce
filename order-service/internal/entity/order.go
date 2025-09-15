@@ -355,6 +355,12 @@ func (o *Order) CanBePaid() bool {
 	return o.Status == constant.OrderStatusPending
 }
 
+// IsPaymentConfirmed checks if payment is confirmed.
+func (o *Order) IsPaymentConfirmed() bool {
+	return o.Status == constant.OrderStatusPaid || o.Status == constant.OrderStatusDelivered ||
+		o.Status == constant.OrderStatusShipped || o.Status == constant.OrderStatusConfirmed
+}
+
 // UpdateItems updates order items and recalculates total.
 func (o *Order) UpdateItems(items []OrderItem) error {
 	o.Items = items

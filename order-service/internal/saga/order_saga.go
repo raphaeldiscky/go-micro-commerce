@@ -162,7 +162,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 5: Send Payment Required Notification
 	executor.AddStep(&Step{
 		Name:        constant.SendPaymentRequiredNotificationStep,
-		Description: "Send payment required notificatio",
+		Description: "Send payment required notification",
 		MaxRetries:  constant.SendPaymentRequiredNotificationStepMaxRetries,
 		RetryDelay:  constant.SendPaymentRequiredNotificationStepRetryDelay,
 		Timeout:     constant.SendPaymentRequiredNotificationStepTimeout,
@@ -201,7 +201,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 	// Step 6: Wait for payment confirmation
 	executor.AddStep(&Step{
 		Name:        constant.WaitForPaymentConfirmationStep,
-		Description: "Wait for payment confirmation",
+		Description: "Wait for customer to pay the order",
 		MaxRetries:  constant.WaitForPaymentConfirmationStepMaxRetries,
 		RetryDelay:  constant.WaitForPaymentConfirmationStepRetryDelay,
 		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 1-hour timeout for user payment confirmation
