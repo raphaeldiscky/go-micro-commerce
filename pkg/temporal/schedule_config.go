@@ -202,7 +202,7 @@ func WeeklySchedule(
 		WithWorkflowAction(workflowType, input, nil)
 }
 
-// IntevalSchedule creates a schedule with custom intervals.
+// IntervalSchedule creates a schedule with custom intervals.
 func IntervalSchedule(
 	id, workflowType string,
 	input interface{},
