@@ -43,6 +43,5 @@ func GetPaymentReminderExecutionTimes() []time.Duration {
 	return []time.Duration{
 		1 * time.Minute, // First reminder after 1 minute
 		2 * time.Minute, // Second reminder after 2 minutes
-		3 * time.Minute, // Final reminder after 3 minutes
 	}
 }

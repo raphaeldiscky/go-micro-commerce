@@ -62,6 +62,12 @@ func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) err
 func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	wm.logger.Info("Starting all workers...")
 
+	// Initialize asynq worker separately to handle potential errors
+	asynqWorker, err := NewAsynqWorker(wm.cfg, wm.logger, wm.providers)
+	if err != nil {
+		return fmt.Errorf("failed to create asynq worker: %w", err)
+	}
+
 	// Initialize all workers
 	workers := []Worker{
 		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers),
@@ -69,6 +75,7 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 		NewOutboxPublisherWorker(ctx, wm.cfg, wm.logger, wm.providers),
 		NewJobSchedulerWorker(wm.logger, wm.providers),
 		NewTemporalWorker(wm.logger, wm.providers),
+		asynqWorker,
 	}
 
 	return wm.runWorkers(ctx, workers)

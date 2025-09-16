@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
@@ -19,6 +20,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/task"
 )
 
 // OrderActivities defines the interface for order saga activities.
@@ -44,6 +46,7 @@ type OrderActivities interface {
 	WaitForPaymentConfirmation(
 		ctx context.Context,
 		order *entity.Order,
+		customerEmail string,
 	) (paymentID uuid.UUID, err error) // 20-min timeout
 	ProcessFulfillment(
 		ctx context.Context,
@@ -80,6 +83,7 @@ type OrderActivitiesImpl struct {
 	fulfillmentRequestProducer kafka.ProducerInterface
 	fulfillmentClient          client.FulfillmentClientInterface
 	paymentClient              client.PaymentClientInterface
+	asynqClient                asynq.ClientInterface
 	logger                     logger.Logger
 }
 
@@ -92,6 +96,7 @@ func NewOrderActivities(
 	fulfillmentRequestProducer kafka.ProducerInterface,
 	fulfillmentClient client.FulfillmentClientInterface,
 	paymentClient client.PaymentClientInterface,
+	asynqClient asynq.ClientInterface,
 	appLogger logger.Logger,
 ) OrderActivities {
 	return &OrderActivitiesImpl{
@@ -102,6 +107,7 @@ func NewOrderActivities(
 		fulfillmentRequestProducer: fulfillmentRequestProducer,
 		fulfillmentClient:          fulfillmentClient,
 		paymentClient:              paymentClient,
+		asynqClient:                asynqClient,
 		logger:                     appLogger,
 	}
 }
@@ -416,20 +422,31 @@ func (a *OrderActivitiesImpl) SendPaymentRequiredNotification(
 	return nil
 }
 
-// WaitForPaymentConfirmation waits for payment confirmation with 1-hour timeout.
+// WaitForPaymentConfirmation waits for payment confirmation with 10-minute timeout.
 func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 	ctx context.Context,
 	order *entity.Order,
+	customerEmail string,
 ) (uuid.UUID, error) {
 	a.logger.Infof("Waiting for payment confirmation for order: %s", order.ID)
 
 	response, err := a.paymentClient.WaitForPaymentResponse(
 		ctx,
 		order.ID,
-		constant.WaitForPaymentConfirmationStepTimeout, // 20-min timeout for user payment confirmation
+		constant.WaitForPaymentConfirmationStepTimeout, // 10-min timeout for user payment confirmation
 	)
 	if err != nil {
-		a.logger.Errorf("Failed to receive payment confirmation for order %s: %v", order.ID, err)
+		a.logger.Errorf("Payment confirmation timeout for order %s: %v", order.ID, err)
+
+		// Payment timed out - schedule reminder tasks
+		if scheduleErr := a.schedulePaymentReminders(ctx, order, customerEmail); scheduleErr != nil {
+			a.logger.Errorf(
+				"Failed to schedule payment reminders for order %s: %v",
+				order.ID,
+				scheduleErr,
+			)
+			// Continue with original error - scheduling failure shouldn't block saga
+		}
 
 		return uuid.Nil, fmt.Errorf("failed to receive payment confirmation: %w", err)
 	}
@@ -438,6 +455,87 @@ func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 		order.ID, response.PaymentID, response.Status)
 
 	return response.PaymentID, nil
+}
+
+// schedulePaymentReminders schedules payment reminder tasks using asynq.
+func (a *OrderActivitiesImpl) schedulePaymentReminders(
+	_ context.Context,
+	order *entity.Order,
+	customerEmail string,
+) error {
+	a.logger.Infof("Scheduling payment reminders for order: %s", order.ID)
+
+	// Get reserved products for reminder notifications
+	var reservedProducts []entity.Product
+	// Note: In production, you might want to fetch this from database or pass it as parameter
+	// For now, creating empty slice since it's used in notification template
+
+	// Schedule immediate reminder (0 minutes)
+	immediatePayload := &dto.PaymentReminderRequest{
+		OrderID:          order.ID,
+		CustomerEmail:    customerEmail,
+		ReservedProducts: reservedProducts,
+		PaymentID:        uuid.Nil, // Will be set by payment service
+		TotalPrice:       order.TotalPrice,
+		Currency:         order.Currency,
+		ReminderCount:    constant.FirstReminderCount,
+		MaxReminders:     constant.MaxPaymentReminders,
+	}
+
+	immediateTask, err := task.NewPaymentReminderTask(immediatePayload)
+	if err != nil {
+		return fmt.Errorf("failed to create immediate reminder task: %w", err)
+	}
+
+	if _, err = a.asynqClient.Enqueue(immediateTask); err != nil {
+		return fmt.Errorf("failed to enqueue immediate reminder: %w", err)
+	}
+
+	// Schedule final reminder (10 minutes later)
+	finalPayload := &dto.PaymentReminderRequest{
+		OrderID:          order.ID,
+		CustomerEmail:    customerEmail,
+		ReservedProducts: reservedProducts,
+		PaymentID:        uuid.Nil, // Will be set by payment service
+		TotalPrice:       order.TotalPrice,
+		Currency:         order.Currency,
+		ReminderCount:    constant.SecondReminderCount,
+		MaxReminders:     constant.MaxPaymentReminders,
+	}
+
+	finalTask, err := task.NewPaymentReminderTask(finalPayload)
+	if err != nil {
+		return fmt.Errorf("failed to create final reminder task: %w", err)
+	}
+
+	if _, err = a.asynqClient.EnqueueIn(constant.FinalTaskDelayMinutes*time.Minute, finalTask); err != nil {
+		return fmt.Errorf("failed to enqueue final reminder: %w", err)
+	}
+
+	// Schedule order cancellation (20 minutes total - 10 min after final reminder)
+	cancelPayload := &dto.CancelOrderRequest{
+		CustomerID:     order.CustomerID,
+		CustomerEmail:  customerEmail,
+		OrderID:        order.ID,
+		IdempotencyKey: uuid.New(),
+		Reason:         string(constant.CancelOrderReasonPaymentTimeout),
+	}
+
+	cancelTask, err := task.NewCancelOrderTask(cancelPayload)
+	if err != nil {
+		return fmt.Errorf("failed to create cancel order task: %w", err)
+	}
+
+	if _, err = a.asynqClient.EnqueueIn(constant.CancelTaskDelayMinutes*time.Minute, cancelTask); err != nil {
+		return fmt.Errorf("failed to enqueue order cancellation: %w", err)
+	}
+
+	a.logger.Infof(
+		"Successfully scheduled payment reminders and cancellation for order: %s",
+		order.ID,
+	)
+
+	return nil
 }
 
 // ConfirmProductsDeduction confirms stock deduction after successful payment.

@@ -208,7 +208,15 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
-			paymentID, err := s.activities.WaitForPaymentConfirmation(ctx.Context(), payload.Order)
+			if data.CustomerEmail == "" {
+				ctx.logger.Error("No customer email found for notification")
+				return nil, errors.New("no customer email found")
+			}
+			paymentID, err := s.activities.WaitForPaymentConfirmation(
+				ctx.Context(),
+				payload.Order,
+				data.CustomerEmail,
+			)
 			if err != nil {
 				return nil, err
 			}

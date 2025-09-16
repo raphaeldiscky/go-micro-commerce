@@ -105,8 +105,9 @@ type UpdateOrderStatusRequest struct {
 
 // CancelOrderRequest represents the request to cancel an order.
 type CancelOrderRequest struct {
-	CustomerID     uuid.UUID
-	CustomerEmail  string
+	CustomerID     uuid.UUID `json:"customer_id"`
+	CustomerEmail  string    `json:"customer_email"`
+	OrderID        uuid.UUID `json:"order_id"        validate:"required"`
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
 	Reason         string    `json:"reason"          validate:"required,min=5,max=255"`
 }

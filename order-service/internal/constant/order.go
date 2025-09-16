@@ -21,3 +21,15 @@ const (
 	// OrderStatusFailed indicates that the order has failed.
 	OrderStatusFailed OrderStatus = "failed"
 )
+
+// CancelOrderReason represents the reason for canceling an order.
+type CancelOrderReason string
+
+const (
+	// CancelOrderReasonPaymentTimeout for payment timeout cancellation.
+	CancelOrderReasonPaymentTimeout CancelOrderReason = "payment_timeout"
+	// CancelOrderReasonUserCancellation for user-initiated cancellation.
+	CancelOrderReasonUserCancellation CancelOrderReason = "user_cancellation"
+	// CancelOrderReasonSystemError for system error cancellation.
+	CancelOrderReasonSystemError CancelOrderReason = "system_error"
+)

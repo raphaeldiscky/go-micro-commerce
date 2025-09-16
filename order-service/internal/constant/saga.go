@@ -134,7 +134,7 @@ const (
 	// WaitForPaymentConfirmationStepRetryDelay is the delay between retries for the WaitForPaymentConfirmationStep.
 	WaitForPaymentConfirmationStepRetryDelay = 5 * time.Second
 	// WaitForPaymentConfirmationStepTimeout is the timeout for the WaitForPaymentConfirmationStep.
-	WaitForPaymentConfirmationStepTimeout = 5 * time.Minute
+	WaitForPaymentConfirmationStepTimeout = 10 * time.Minute
 	// ExtendedPaymentTimeout is the extended timeout while reminders are active.
 	ExtendedPaymentTimeout = 30 * time.Minute
 )

@@ -73,6 +73,7 @@ func SetupOrder(
 		fulfillmentRequestProducer,
 		providers.FulfillmentClient,
 		providers.PaymentClient,
+		providers.AsyncqClient,
 		appLogger,
 		cfg,
 	)
