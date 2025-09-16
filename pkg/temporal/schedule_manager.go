@@ -58,10 +58,6 @@ func (m *ScheduleManager) Create(
 		Action: options.Action,
 	}
 
-	if options.Memo != nil {
-		clientOptions.Memo = options.Memo
-	}
-
 	return m.client.ScheduleClient().Create(ctx, clientOptions)
 }
 

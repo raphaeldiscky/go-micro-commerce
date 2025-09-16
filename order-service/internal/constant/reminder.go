@@ -32,3 +32,17 @@ const (
 	// CheckPaymentStatusActivity is the activity name for checking payment status.
 	CheckPaymentStatusActivity = "CheckPaymentStatusActivity"
 )
+
+const (
+	// PaymentReminderWorkflowType is the workflow type for payment reminders.
+	PaymentReminderWorkflowType = "PaymentReminderWorkflow"
+)
+
+// GetPaymentReminderExecutionTimes returns the execution times for payment reminders.
+func GetPaymentReminderExecutionTimes() []time.Duration {
+	return []time.Duration{
+		1 * time.Minute, // First reminder after 1 minute
+		2 * time.Minute, // Second reminder after 2 minutes
+		3 * time.Minute, // Final reminder after 3 minutes
+	}
+}

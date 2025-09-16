@@ -39,9 +39,9 @@ func NewNotificationRequestEvent(
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		product := &products[i]
+		productName := products[i].Name
 		items[i] = event.OrderItemData{
-			ProductName: product.Name,
+			ProductName: productName,
 			Quantity:    item.Quantity,
 			UnitPrice:   item.UnitPrice,
 			TotalPrice:  item.TotalPrice,
@@ -77,6 +77,10 @@ func NewNotificationRequestEvent(
 	// Add template-specific data based on template ID
 	switch templateID {
 	case pkgconstant.TemplateOrderPaymentRequired:
+		paymentDeadline := time.Now().UTC().Add(1 * time.Hour) // 1 hour deadline
+		templateData["payment_deadline"] = paymentDeadline.Format(time.RFC3339)
+		templateData["payment_url"] = nil // No payment URL provided
+	case pkgconstant.TemplateOrderPaymentReminder:
 		paymentDeadline := time.Now().UTC().Add(1 * time.Hour) // 1 hour deadline
 		templateData["payment_deadline"] = paymentDeadline.Format(time.RFC3339)
 		templateData["payment_url"] = nil // No payment URL provided

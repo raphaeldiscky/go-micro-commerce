@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
@@ -59,21 +60,20 @@ func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
 
 	switch {
 	case req.ReminderCount == constant.FirstReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentRequired
-		subject = "Payment Reminder - Your Order is Waiting (15min)"
+		templateID = pkgconstant.TemplateOrderPaymentReminder
+		subject = "Payment Reminder - Your Order is Waiting"
 	case req.ReminderCount == constant.SecondReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentRequired
-		subject = "Second Payment Reminder - Complete Your Order (40min)"
+		templateID = pkgconstant.TemplateOrderPaymentReminder
+		subject = "Payment Reminder - Complete Your Order"
 	case req.ReminderCount == constant.FinalReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentRequired
-		subject = "FINAL Payment Reminder - Order Expiring Soon (55min)"
+		templateID = pkgconstant.TemplateOrderPaymentReminder
+		subject = "Final Payment Reminder - Order Expiring Soon"
 	case req.ReminderCount >= req.MaxReminders:
 		// Escalated case - when reminder count reaches or exceeds max
-		templateID = pkgconstant.TemplateOrderPaymentRequired
+		templateID = pkgconstant.TemplateOrderPaymentReminder
 		subject = "URGENT: Final Notice - Order Cancellation Pending"
 	default:
-		templateID = pkgconstant.TemplateOrderPaymentRequired
-		subject = "Payment Reminder - Complete Your Order"
+		// do nothing
 	}
 
 	err = pra.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
@@ -82,7 +82,7 @@ func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
 		// Create notification event for reminder
 		notificationEvent := producer.NewNotificationRequestEvent(
 			order,
-			nil, // No product details needed for reminder
+			req.ReservedProducts,
 			req.CustomerEmail,
 			"Customer", // TODO: Get actual customer name
 			nil,        // No tracking number for reminder
@@ -103,6 +103,8 @@ func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
 			EventType:     kafka.NotificationRequestedEventType,
 			Topic:         kafka.NotificationRequestTopic,
 			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			ScheduledFor:  time.Now().UTC(),
 		}
 
 		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Payment Reminder</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #ffe6e6;
+        padding: 20px;
+        text-align: center;
+        border-radius: 8px;
+        border: 1px solid #ffcccc;
+      }
+      .payment-button {
+        background-color: #dc3545;
+        color: white;
+        padding: 12px 24px;
+        text-decoration: none;
+        border-radius: 5px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 15px 0;
+      }
+      .payment-button:hover {
+        background-color: #c82333;
+      }
+      .urgent {
+        color: #dc3545;
+        font-weight: bold;
+      }
+      .simple-section {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>⏰ Payment Reminder</h1>
+      <p>
+        Hello {{.CustomerName}}, this is a reminder that your payment is still
+        pending.
+      </p>
+    </div>
+
+    <div class="simple-section">
+      <p><strong>Order ID:</strong> {{.OrderID}}</p>
+      <p><strong>Total Amount:</strong> {{.TotalPrice}}</p>
+      <p>
+        <strong>Payment Deadline:</strong>
+        <span class="urgent">{{.PaymentDeadline}}</span>
+      </p>
+
+      {{if .PaymentURL}}
+      <div style="text-align: center; margin: 20px 0">
+        <a href="{{.PaymentURL}}" class="payment-button"
+          >Complete Payment Now</a
+        >
+      </div>
+      {{end}}
+    </div>
+
+    <div class="simple-section">
+      <p>
+        <strong>⚠️ Important:</strong> Please complete your payment before the
+        deadline to avoid order cancellation.
+      </p>
+      <p>Need help? Contact us at support@company.com</p>
+    </div>
+  </body>
+</html>

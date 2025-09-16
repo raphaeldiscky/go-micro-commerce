@@ -19,6 +19,7 @@ const (
 	TemplateFileOrderCanceled        = "order_canceled_template.html"
 	TemplateFileOrderDelivered       = "order_delivered_template.html"
 	TemplateFileOrderPaymentRequired = "order_payment_required_template.html"
+	TemplateFileOrderPaymentReminder = "order_payment_reminder_template.html"
 	TemplateFileEmailVerification    = "verification_template.html"
 	TemplateFileUserVerified         = "user_verified_template.html"
 )

@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"go.temporal.io/sdk/client"
 )
 
-// ReminderScheduler provides specialized scheduling for reminder workflows.
+// ReminderScheduler provides specialized scheduling for reminder workflows with calendar.
 type ReminderScheduler struct {
 	manager ScheduleManagerInterface
 }
@@ -44,20 +45,25 @@ func (rs *ReminderScheduler) CreateReminderSchedule(
 		return nil, errors.New("workflow type is required")
 	}
 
-	if len(req.Config.Intervals) == 0 {
-		return nil, errors.New("reminder intervals are required")
+	if len(req.Config.ExecutionTimes) == 0 {
+		return nil, errors.New("reminder times are required")
 	}
 
-	// Use the first interval for the schedule - the workflow itself will handle escalation
-	interval := req.Config.Intervals[0]
-	if interval <= 0 {
-		return nil, errors.New("reminder interval must be positive")
+	// Calculate specific execution times based on intervals
+	baseTime := req.Config.BaseTime
+	if baseTime.IsZero() {
+		baseTime = time.Now().UTC()
+	}
+
+	executionTimes := make([]time.Time, len(req.Config.ExecutionTimes))
+	for i, time := range req.Config.ExecutionTimes {
+		executionTimes[i] = baseTime.Add(time)
 	}
 
 	builder := NewScheduleConfigBuilder().
 		WithID(req.ID).
 		WithDescription(req.Description).
-		WithIntervalSpec(interval, 0)
+		WithCalendarSpec(executionTimes)
 
 	// Set workflow action with task queue if provided
 	workflowOptions := &client.StartWorkflowOptions{}
@@ -66,25 +72,6 @@ func (rs *ReminderScheduler) CreateReminderSchedule(
 	}
 
 	builder = builder.WithWorkflowAction(req.WorkflowType, req.Input, workflowOptions)
-
-	// Add memo with reminder metadata
-	memo := map[string]any{
-		"reminderType": string(req.Config.Type),
-		"maxReminders": req.Config.MaxReminders,
-	}
-
-	if req.Config.Timezone != nil {
-		memo["timezone"] = req.Config.Timezone.String()
-	}
-
-	builder = builder.WithMemo(memo)
-
-	// Add search attributes for easy filtering
-	searchAttributes := map[string]any{
-		"ReminderType": string(req.Config.Type),
-		"EntityID":     req.ID,
-	}
-	builder = builder.WithSearchAttributes(searchAttributes)
 
 	options, err := builder.Build()
 	if err != nil {

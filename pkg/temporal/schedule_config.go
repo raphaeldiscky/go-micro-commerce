@@ -87,6 +87,36 @@ func (b *ScheduleConfigBuilder) WithCronSpec(
 	return b
 }
 
+// WithCalendarSpec sets a calendar-based schedule specification for one-time or specific executions.
+func (b *ScheduleConfigBuilder) WithCalendarSpec(
+	executionTimes []time.Time,
+) *ScheduleConfigBuilder {
+	if len(executionTimes) == 0 {
+		b.errors = append(b.errors, errors.New("at least one execution time is required"))
+		return b
+	}
+
+	calendars := make([]client.ScheduleCalendarSpec, len(executionTimes))
+	for i, execTime := range executionTimes {
+		calendars[i] = client.ScheduleCalendarSpec{
+			Year: []client.ScheduleRange{{Start: execTime.Year(), End: execTime.Year()}},
+			Month: []client.ScheduleRange{
+				{Start: int(execTime.Month()), End: int(execTime.Month())},
+			},
+			DayOfMonth: []client.ScheduleRange{{Start: execTime.Day(), End: execTime.Day()}},
+			Hour:       []client.ScheduleRange{{Start: execTime.Hour(), End: execTime.Hour()}},
+			Minute:     []client.ScheduleRange{{Start: execTime.Minute(), End: execTime.Minute()}},
+			Second:     []client.ScheduleRange{{Start: execTime.Second(), End: execTime.Second()}},
+		}
+	}
+
+	b.options.Spec = client.ScheduleSpec{
+		Calendars: calendars,
+	}
+
+	return b
+}
+
 // WithWorkflowAction sets a workflow action for the schedule.
 func (b *ScheduleConfigBuilder) WithWorkflowAction(
 	workflowType string,
@@ -109,20 +139,6 @@ func (b *ScheduleConfigBuilder) WithWorkflowAction(
 
 	b.options.Action = action
 
-	return b
-}
-
-// WithMemo sets memo for the schedule.
-func (b *ScheduleConfigBuilder) WithMemo(memo map[string]interface{}) *ScheduleConfigBuilder {
-	b.options.Memo = memo
-	return b
-}
-
-// WithSearchAttributes sets search attributes for the schedule.
-func (b *ScheduleConfigBuilder) WithSearchAttributes(
-	searchAttributes map[string]interface{},
-) *ScheduleConfigBuilder {
-	b.options.SearchAttributes = searchAttributes
 	return b
 }
 
@@ -186,8 +202,8 @@ func WeeklySchedule(
 		WithWorkflowAction(workflowType, input, nil)
 }
 
-// ReminderSchedule creates a schedule for reminders with custom intervals.
-func ReminderSchedule(
+// IntevalSchedule creates a schedule with custom intervals.
+func IntervalSchedule(
 	id, workflowType string,
 	input interface{},
 	interval time.Duration,

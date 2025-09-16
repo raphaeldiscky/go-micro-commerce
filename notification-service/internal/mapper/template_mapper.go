@@ -105,3 +105,29 @@ func MapToOrderPaymentRequiredTemplateData(
 
 	return data
 }
+
+// MapToPaymentReminderTemplateData converts payment reminder data to template data.
+func MapToPaymentReminderTemplateData(
+	customerName, orderID, customerEmail string,
+	items []dto.OrderItemTemplateData,
+	currency string,
+	totalPrice decimal.Decimal,
+	paymentDeadline time.Time,
+	paymentURL *string,
+) *dto.PaymentReminderTemplateData {
+	data := &dto.PaymentReminderTemplateData{
+		CustomerName:    customerName,
+		OrderID:         orderID,
+		CustomerEmail:   customerEmail,
+		Items:           items,
+		Currency:        currency,
+		TotalPrice:      currency + " " + totalPrice.String(),
+		PaymentDeadline: paymentDeadline.Format("January 2, 2006 at 3:04pm (MST)"),
+	}
+
+	if paymentURL != nil {
+		data.PaymentURL = *paymentURL
+	}
+
+	return data
+}

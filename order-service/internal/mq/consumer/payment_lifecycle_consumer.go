@@ -175,7 +175,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 	if c.paymentClient != nil {
 		response := &dto.PaymentResponse{
 			PaymentID: evt.Payload.PaymentID,
-			Status:    evt.Payload.Status,
+			Status:    constant.PaymentStatus(evt.Payload.Status),
 			OrderID:   evt.Payload.OrderID,
 			Error:     nil,
 		}

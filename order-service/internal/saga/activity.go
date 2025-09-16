@@ -44,7 +44,7 @@ type OrderActivities interface {
 	WaitForPaymentConfirmation(
 		ctx context.Context,
 		order *entity.Order,
-	) (paymentID uuid.UUID, err error) // 1-hour timeout
+	) (paymentID uuid.UUID, err error) // 20-min timeout
 	ProcessFulfillment(
 		ctx context.Context,
 		payload *Payload,
@@ -426,7 +426,7 @@ func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 	response, err := a.paymentClient.WaitForPaymentResponse(
 		ctx,
 		order.ID,
-		1*time.Hour, // 1-hour timeout for user payment confirmation
+		constant.WaitForPaymentConfirmationStepTimeout, // 20-min timeout for user payment confirmation
 	)
 	if err != nil {
 		a.logger.Errorf("Failed to receive payment confirmation for order %s: %v", order.ID, err)

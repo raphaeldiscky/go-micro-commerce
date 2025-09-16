@@ -8,6 +8,8 @@ const (
 	PaymentStatusPending PaymentStatus = "pending"
 	// PaymentStatusProcessing indicates that the payment is being processed.
 	PaymentStatusProcessing PaymentStatus = "processing"
+	// PaymentStatusTimeout indicates that the payment has timed out.
+	PaymentStatusTimeout PaymentStatus = "timeout"
 	// PaymentStatusCompleted indicates that the payment has been completed successfully.
 	PaymentStatusCompleted PaymentStatus = "completed"
 	// PaymentStatusFailed indicates that the payment has failed.

@@ -10,4 +10,5 @@ const (
 	TemplateOrderCanceled        TemplateIDType = "order_canceled"
 	TemplateOrderDelivered       TemplateIDType = "order_delivered"
 	TemplateOrderPaymentRequired TemplateIDType = "order_payment_required"
+	TemplateOrderPaymentReminder TemplateIDType = "order_payment_reminder"
 )

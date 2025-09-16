@@ -38,11 +38,16 @@ func (prs *PaymentReminderService) CreatePaymentReminderSchedule(
 
 	reminderRequest := pkgtemporal.ReminderScheduleRequest{
 		ID:           scheduleID,
-		WorkflowType: "PaymentReminderWorkflow",
+		WorkflowType: constant.PaymentReminderWorkflowType,
 		Input:        req,
-		Config:       prs.getDefaultPaymentReminderConfig(),
-		TaskQueue:    req.TaskQueue,
-		Description:  fmt.Sprintf("Payment reminder for order %s", req.OrderID),
+		Config: pkgtemporal.ReminderConfig{
+			Type:           pkgtemporal.ReminderTypePayment,
+			MaxReminders:   constant.MaxPaymentReminders,
+			ExecutionTimes: constant.GetPaymentReminderExecutionTimes(),
+			Timezone:       time.UTC,
+		},
+		TaskQueue:   req.TaskQueue,
+		Description: fmt.Sprintf("Payment reminder for order %s", req.OrderID),
 	}
 
 	return prs.reminderScheduler.CreateReminderSchedule(ctx, reminderRequest)
@@ -75,18 +80,4 @@ func (prs *PaymentReminderService) ResumePaymentReminderSchedule(
 ) error {
 	scheduleID := sagautils.CreatePaymentReminderID(orderID)
 	return prs.reminderScheduler.ResumeReminderSchedule(ctx, scheduleID, reason)
-}
-
-// getDefaultPaymentReminderConfig returns the default payment reminder configuration.
-func (prs *PaymentReminderService) getDefaultPaymentReminderConfig() pkgtemporal.ReminderConfig {
-	return pkgtemporal.ReminderConfig{
-		Type:         pkgtemporal.ReminderTypePayment,
-		MaxReminders: constant.MaxPaymentReminders,
-		Intervals: []time.Duration{
-			15 * time.Minute, // First reminder after 15 minutes
-			40 * time.Minute, // Second reminder after 40 minutes
-			55 * time.Minute, // Final reminder after 55 minutes (before order canceled)
-		},
-		Timezone: time.UTC,
-	}
 }

@@ -36,11 +36,7 @@ func PaymentReminderWorkflow(
 
 	// Use hardcoded config for payment reminders: 15min, 40min, 55min
 	maxReminders := 3
-	reminderIntervals := []time.Duration{
-		15 * time.Minute, // First reminder after 15 minutes
-		40 * time.Minute, // Second reminder after 40 minutes
-		55 * time.Minute, // Final reminder after 55 minutes
-	}
+	reminderTimes := constant.GetPaymentReminderExecutionTimes()
 
 	for reminderCount < maxReminders {
 		reminderCount++
@@ -54,13 +50,14 @@ func PaymentReminderWorkflow(
 
 		// Prepare reminder request
 		reminderRequest := dto.PaymentReminderRequest{
-			OrderID:       req.OrderID,
-			CustomerEmail: req.CustomerEmail,
-			PaymentID:     req.PaymentID,
-			TotalPrice:    req.TotalPrice,
-			Currency:      req.Currency,
-			ReminderCount: reminderCount,
-			MaxReminders:  maxReminders,
+			OrderID:          req.OrderID,
+			CustomerEmail:    req.CustomerEmail,
+			ReservedProducts: req.ReservedProducts,
+			PaymentID:        req.PaymentID,
+			TotalPrice:       req.TotalPrice,
+			Currency:         req.Currency,
+			ReminderCount:    reminderCount,
+			MaxReminders:     maxReminders,
 		}
 
 		// Send reminder notification
@@ -87,13 +84,13 @@ func PaymentReminderWorkflow(
 			break
 		}
 
-		// Calculate next reminder interval
+		// Calculate next reminder time
 		var nextInterval time.Duration
-		if reminderCount <= len(reminderIntervals) {
-			nextInterval = reminderIntervals[reminderCount-1]
+		if reminderCount <= len(reminderTimes) {
+			nextInterval = reminderTimes[reminderCount-1]
 		} else {
 			// Use last interval if we've exceeded the configured intervals
-			nextInterval = reminderIntervals[len(reminderIntervals)-1]
+			nextInterval = reminderTimes[len(reminderTimes)-1]
 		}
 
 		logger.Info(
@@ -145,13 +142,14 @@ func PaymentReminderWorkflow(
 
 		// Execute final escalation reminder (reminder count will be at max)
 		finalReminderRequest := dto.PaymentReminderRequest{
-			OrderID:       req.OrderID,
-			CustomerEmail: req.CustomerEmail,
-			PaymentID:     req.PaymentID,
-			TotalPrice:    req.TotalPrice,
-			Currency:      req.Currency,
-			ReminderCount: reminderCount,
-			MaxReminders:  maxReminders,
+			OrderID:          req.OrderID,
+			CustomerEmail:    req.CustomerEmail,
+			ReservedProducts: req.ReservedProducts,
+			PaymentID:        req.PaymentID,
+			TotalPrice:       req.TotalPrice,
+			Currency:         req.Currency,
+			ReminderCount:    reminderCount,
+			MaxReminders:     maxReminders,
 		}
 
 		err := workflow.ExecuteActivity(ctx, string(constant.SendPaymentReminderActivity), finalReminderRequest).

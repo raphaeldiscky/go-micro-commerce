@@ -247,6 +247,8 @@ func (s *NotificationEventServiceImpl) generateEmailBody(
 		return s.generateOrderDeliveredEmail(payload)
 	case pkgconstant.TemplateOrderPaymentRequired:
 		return s.generateOrderPaymentRequiredEmail(payload)
+	case pkgconstant.TemplateOrderPaymentReminder:
+		return s.generateOrderPaymentReminderEmail(payload)
 	default:
 		s.logger.Infof("Unknown template ID: %s", payload.TemplateID)
 
@@ -473,4 +475,69 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 	)
 
 	return s.emailService.RenderTemplate(constant.TemplateFileOrderPaymentRequired, templateData)
+}
+
+// generateOrderPaymentReminderEmail generates HTML email for payment required notification.
+func (s *NotificationEventServiceImpl) generateOrderPaymentReminderEmail(
+	payload *event.NotificationRequestPayload,
+) (string, error) {
+	orderData, exists := payload.Data["order"]
+	if !exists {
+		return "", errors.New("order data not found in payload")
+	}
+
+	orderJSON, err := json.Marshal(orderData)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal order data: %w", err)
+	}
+
+	var order event.OrderConfirmedData
+	if err = json.Unmarshal(orderJSON, &order); err != nil {
+		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
+	}
+
+	// Convert order items to template data
+	var items []dto.OrderItemTemplateData
+	for _, item := range order.Items {
+		items = append(items, dto.OrderItemTemplateData{
+			ProductName: item.ProductName,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice.String(),
+			TotalPrice:  item.TotalPrice.String(),
+			Currency:    order.Currency,
+		})
+	}
+
+	// Get payment deadline from payload data
+	paymentDeadline := time.Now().Add(1 * time.Hour) // Default 1 hour
+
+	if deadlineData, existsDeadline := payload.Data["payment_deadline"]; existsDeadline {
+		if deadlineStr, ok := deadlineData.(string); ok {
+			if parsedTime, errParse := time.Parse(time.RFC3339, deadlineStr); errParse == nil {
+				paymentDeadline = parsedTime
+			}
+		}
+	}
+
+	// Get payment URL from payload data
+	var paymentURL *string
+
+	if urlData, existsURL := payload.Data["payment_url"]; existsURL {
+		if urlStr, ok := urlData.(string); ok && urlStr != "" {
+			paymentURL = &urlStr
+		}
+	}
+
+	templateData := mapper.MapToPaymentReminderTemplateData(
+		order.CustomerName,
+		order.OrderID.String(),
+		order.CustomerEmail,
+		items,
+		order.Currency,
+		order.TotalPrice,
+		paymentDeadline,
+		paymentURL,
+	)
+
+	return s.emailService.RenderTemplate(constant.TemplateFileOrderPaymentReminder, templateData)
 }

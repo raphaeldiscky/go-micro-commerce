@@ -16,6 +16,7 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -69,6 +70,7 @@ type OrderActivities interface {
 // OrderActivitiesImpl implements order saga activities for Temporal workflows.
 type OrderActivitiesImpl struct {
 	dataStore                  repository.DataStore
+	config                     *config.TemporalConfig
 	productClient              client.ProductClientInterface
 	paymentRequestProducer     kafka.ProducerInterface
 	orderLifecycleProducer     kafka.ProducerInterface
@@ -81,6 +83,7 @@ type OrderActivitiesImpl struct {
 // NewTemporalActivities creates a new OrderActivities instance.
 func NewTemporalActivities(
 	dataStore repository.DataStore,
+	config *config.TemporalConfig,
 	productClient client.ProductClientInterface,
 	paymentRequestProducer kafka.ProducerInterface,
 	orderLifecycleProducer kafka.ProducerInterface,
@@ -91,6 +94,7 @@ func NewTemporalActivities(
 ) OrderActivities {
 	return &OrderActivitiesImpl{
 		dataStore:                  dataStore,
+		config:                     config,
 		productClient:              productClient,
 		paymentRequestProducer:     paymentRequestProducer,
 		orderLifecycleProducer:     orderLifecycleProducer,
@@ -124,8 +128,6 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 		productIDs[i] = order.Items[i].ProductID
 	}
 
-	logger.Info("Requesting products", "productIDs", productIDs, "count", len(productIDs))
-
 	products, err := ta.productClient.GetProducts(ctx, productIDs)
 	if err != nil {
 		logger.Error(
@@ -139,25 +141,7 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 		return dto.ReserveProductsResponse{}, err
 	}
 
-	logger.Info(
-		"Retrieved products",
-		"foundCount",
-		len(products),
-		"requestedCount",
-		len(productIDs),
-	)
-
 	if len(products) != len(productIDs) {
-		logger.Error(
-			"Product count mismatch",
-			"foundCount",
-			len(products),
-			"requestedCount",
-			len(productIDs),
-			"requestedIDs",
-			productIDs,
-		)
-
 		return dto.ReserveProductsResponse{}, fmt.Errorf(
 			"not all products found: requested %d, found %d",
 			len(productIDs),
@@ -289,14 +273,6 @@ func (ta *OrderActivitiesImpl) CreatePayment(
 	// Step 1: Create and publish payment request event
 	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
-
-		logger.Info(
-			"Creating payment request",
-			"orderID",
-			order.ID,
-			"totalPrice",
-			order.TotalPrice.String(),
-		)
 
 		// Create payment request event
 		paymentEvent := producer.NewPaymentRequestEvent(
@@ -431,29 +407,8 @@ func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
 		return fmt.Errorf("failed to create payment required notification: %w", err)
 	}
 
-	// Create payment reminder schedule if payment reminder service is available
-	if ta.paymentReminderService != nil {
-		reminderRequest := dto.PaymentReminderWorkflowRequest{
-			OrderID:       req.Order.ID,
-			CustomerEmail: req.CustomerEmail,
-			PaymentID:     uuid.Nil, // Will be set when payment is created
-			TotalPrice:    req.Order.TotalPrice,
-			Currency:      req.Order.Currency,
-			TaskQueue:     "order-service",
-		}
-
-		_, err = ta.paymentReminderService.CreatePaymentReminderSchedule(ctx, reminderRequest)
-		if err != nil {
-			// Log error but don't fail the saga - reminder is nice-to-have
-			logger.Warn(
-				"Failed to create payment reminder schedule",
-				"orderID", req.Order.ID,
-				"error", err,
-			)
-		} else {
-			logger.Info("Successfully created payment reminder schedule", "orderID", req.Order.ID)
-		}
-	}
+	// Note: Payment reminder schedules will be created later in WaitForPaymentConfirmation
+	// if payment times out, ensuring optimal timing and resource usage.
 
 	return nil
 }
@@ -469,21 +424,64 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 	response, err := ta.paymentClient.WaitForPaymentResponse(
 		ctx,
 		req.Order.ID,
-		1*time.Hour, // 1-hour timeout for user payment confirmation
+		constant.WaitForPaymentConfirmationStepTimeout,
 	)
 	if err != nil {
+		// Check if this is a timeout (not a payment failure)
+		if response.Status == constant.PaymentStatusTimeout {
+			logger.Info(
+				"Payment confirmation timed out, creating reminder schedule",
+				"orderID", req.Order.ID,
+				"timeout", constant.WaitForPaymentConfirmationStepTimeout,
+			)
+
+			// Create payment reminder schedule on timeout
+			if ta.paymentReminderService != nil {
+				// We need to get reserved products and customer email from the order context
+				// For now, we'll pass empty reserved products since reminders don't require full product details
+				reminderRequest := dto.PaymentReminderWorkflowRequest{
+					OrderID:          req.Order.ID,
+					CustomerEmail:    "",                 // Will be populated from user context in the reminder workflow
+					ReservedProducts: []entity.Product{}, // Empty for now
+					PaymentID:        uuid.Nil,
+					TotalPrice:       req.Order.TotalPrice,
+					Currency:         req.Order.Currency,
+					TaskQueue:        ta.config.TaskQueue,
+				}
+
+				_, reminderErr := ta.paymentReminderService.CreatePaymentReminderSchedule(
+					ctx,
+					reminderRequest,
+				)
+				if reminderErr != nil {
+					logger.Warn(
+						"Failed to create payment reminder schedule on timeout",
+						"orderID", req.Order.ID,
+						"error", reminderErr,
+					)
+				} else {
+					logger.Info("Successfully created payment reminder schedule on timeout", "orderID", req.Order.ID)
+				}
+			}
+
+			// Return timeout status instead of error to prevent saga failure
+			return dto.WaitForPaymentConfirmationResponse{
+				Status:    "timeout",
+				PaymentID: uuid.Nil,
+			}, nil
+		}
+
+		// For non-timeout errors, return the error (payment failures, etc.)
 		logger.Error(
 			"Failed to receive payment confirmation",
-			"orderID",
-			req.Order.ID,
-			"error",
-			err,
+			"orderID", req.Order.ID,
+			"error", err,
 		)
 
-		return dto.WaitForPaymentConfirmationResponse{}, fmt.Errorf(
-			"failed to receive payment confirmation: %w",
-			err,
-		)
+		return dto.WaitForPaymentConfirmationResponse{
+			Status:    "failed",
+			PaymentID: uuid.Nil,
+		}, fmt.Errorf("failed to receive payment confirmation: %w", err)
 	}
 
 	logger.Info(
@@ -493,7 +491,7 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 		"status", response.Status,
 	)
 
-	// Cancel payment reminder schedule since payment is confirmed
+	// Cancel any existing payment reminder schedule since payment is completed
 	if ta.paymentReminderService != nil {
 		err = ta.paymentReminderService.CancelPaymentReminderSchedule(ctx, req.Order.ID)
 		if err != nil {
@@ -509,6 +507,7 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 	}
 
 	return dto.WaitForPaymentConfirmationResponse{
+		Status:    "completed",
 		PaymentID: response.PaymentID,
 	}, nil
 }

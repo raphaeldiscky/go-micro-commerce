@@ -52,6 +52,7 @@ func SetupTemporal(
 	// Note: Temporal activities use simplified approach for event handling
 	activities := temporal.NewTemporalActivities(
 		providers.DataStore,
+		cfg.Temporal,
 		productClient,
 		nil, // paymentRequestProducer - not needed for Temporal direct approach
 		nil, // orderLifecycleProducer - not needed for Temporal direct approach
