@@ -20,6 +20,8 @@ const (
 	PaymentFailedEventType = "PaymentFailed"
 	// PaymentRefundedEventType is the event type for payment refund events.
 	PaymentRefundedEventType = "PaymentRefunded"
+	// PaymentTimeoutEventType is the event type for payment timeout events.
+	PaymentTimeoutEventType = "PaymentTimeout"
 )
 
 const (

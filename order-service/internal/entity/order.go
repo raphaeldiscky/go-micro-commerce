@@ -29,13 +29,6 @@ type Order struct {
 	UpdatedAt      time.Time
 }
 
-// OrderPricing represents the pricing details for an order.
-type OrderPricing struct {
-	TotalPrice    decimal.Decimal
-	TotalDiscount decimal.Decimal
-	TotalTax      decimal.Decimal
-}
-
 // OrderItem represents an item in an order.
 type OrderItem struct {
 	ID            uuid.UUID
@@ -353,6 +346,12 @@ func (o *Order) CanBeCancelled() bool {
 // CanBePaid checks if order can be paid.
 func (o *Order) CanBePaid() bool {
 	return o.Status == constant.OrderStatusPending
+}
+
+// IsPaymentConfirmed checks if payment is confirmed.
+func (o *Order) IsPaymentConfirmed() bool {
+	return o.Status == constant.OrderStatusPaid || o.Status == constant.OrderStatusDelivered ||
+		o.Status == constant.OrderStatusShipped || o.Status == constant.OrderStatusConfirmed
 }
 
 // UpdateItems updates order items and recalculates total.

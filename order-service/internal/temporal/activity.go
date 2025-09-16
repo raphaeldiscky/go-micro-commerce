@@ -16,11 +16,13 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
 // OrderActivities defines the interface for order saga activities to match saga implementation.
@@ -68,32 +70,38 @@ type OrderActivities interface {
 // OrderActivitiesImpl implements order saga activities for Temporal workflows.
 type OrderActivitiesImpl struct {
 	dataStore                  repository.DataStore
+	config                     *config.TemporalConfig
 	productClient              client.ProductClientInterface
 	paymentRequestProducer     kafka.ProducerInterface
 	orderLifecycleProducer     kafka.ProducerInterface
 	fulfillmentRequestProducer kafka.ProducerInterface
 	fulfillmentClient          client.FulfillmentClientInterface
 	paymentClient              client.PaymentClientInterface
+	paymentReminderService     *service.PaymentReminderService
 }
 
 // NewTemporalActivities creates a new OrderActivities instance.
 func NewTemporalActivities(
 	dataStore repository.DataStore,
+	config *config.TemporalConfig,
 	productClient client.ProductClientInterface,
 	paymentRequestProducer kafka.ProducerInterface,
 	orderLifecycleProducer kafka.ProducerInterface,
 	fulfillmentRequestProducer kafka.ProducerInterface,
 	fulfillmentClient client.FulfillmentClientInterface,
 	paymentClient client.PaymentClientInterface,
+	paymentReminderService *service.PaymentReminderService,
 ) OrderActivities {
 	return &OrderActivitiesImpl{
 		dataStore:                  dataStore,
+		config:                     config,
 		productClient:              productClient,
 		paymentRequestProducer:     paymentRequestProducer,
 		orderLifecycleProducer:     orderLifecycleProducer,
 		fulfillmentRequestProducer: fulfillmentRequestProducer,
 		fulfillmentClient:          fulfillmentClient,
 		paymentClient:              paymentClient,
+		paymentReminderService:     paymentReminderService,
 	}
 }
 
@@ -120,8 +128,6 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 		productIDs[i] = order.Items[i].ProductID
 	}
 
-	logger.Info("Requesting products", "productIDs", productIDs, "count", len(productIDs))
-
 	products, err := ta.productClient.GetProducts(ctx, productIDs)
 	if err != nil {
 		logger.Error(
@@ -135,25 +141,7 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 		return dto.ReserveProductsResponse{}, err
 	}
 
-	logger.Info(
-		"Retrieved products",
-		"foundCount",
-		len(products),
-		"requestedCount",
-		len(productIDs),
-	)
-
 	if len(products) != len(productIDs) {
-		logger.Error(
-			"Product count mismatch",
-			"foundCount",
-			len(products),
-			"requestedCount",
-			len(productIDs),
-			"requestedIDs",
-			productIDs,
-		)
-
 		return dto.ReserveProductsResponse{}, fmt.Errorf(
 			"not all products found: requested %d, found %d",
 			len(productIDs),
@@ -285,14 +273,6 @@ func (ta *OrderActivitiesImpl) CreatePayment(
 	// Step 1: Create and publish payment request event
 	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
-
-		logger.Info(
-			"Creating payment request",
-			"orderID",
-			order.ID,
-			"totalPrice",
-			order.TotalPrice.String(),
-		)
 
 		// Create payment request event
 		paymentEvent := producer.NewPaymentRequestEvent(
@@ -427,6 +407,31 @@ func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
 		return fmt.Errorf("failed to create payment required notification: %w", err)
 	}
 
+	// Create payment reminder schedule if payment reminder service is available
+	if ta.paymentReminderService != nil {
+		reminderRequest := dto.PaymentReminderWorkflowRequest{
+			OrderID:          req.Order.ID,
+			CustomerEmail:    req.CustomerEmail,
+			ReservedProducts: req.ReservedProducts,
+			PaymentID:        uuid.Nil, // Will be set when payment is created
+			TotalPrice:       req.Order.TotalPrice,
+			Currency:         req.Order.Currency,
+			TaskQueue:        ta.config.TaskQueue,
+		}
+
+		_, err = ta.paymentReminderService.CreatePaymentReminderSchedule(ctx, reminderRequest)
+		if err != nil {
+			// Log error but don't fail the saga - reminder is nice-to-have
+			logger.Warn(
+				"Failed to create payment reminder schedule",
+				"orderID", req.Order.ID,
+				"error", err,
+			)
+		} else {
+			logger.Info("Successfully created payment reminder schedule", "orderID", req.Order.ID)
+		}
+	}
+
 	return nil
 }
 
@@ -441,7 +446,7 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 	response, err := ta.paymentClient.WaitForPaymentResponse(
 		ctx,
 		req.Order.ID,
-		1*time.Hour, // 1-hour timeout for user payment confirmation
+		constant.WaitForPaymentConfirmationStepTimeout,
 	)
 	if err != nil {
 		logger.Error(
@@ -464,6 +469,21 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 		"paymentID", response.PaymentID,
 		"status", response.Status,
 	)
+
+	// Cancel payment reminder schedule since payment is confirmed
+	if ta.paymentReminderService != nil {
+		err = ta.paymentReminderService.CancelPaymentReminderSchedule(ctx, req.Order.ID)
+		if err != nil {
+			// Log error but don't fail the saga - cancellation failure is not critical
+			logger.Warn(
+				"Failed to cancel payment reminder schedule",
+				"orderID", req.Order.ID,
+				"error", err,
+			)
+		} else {
+			logger.Info("Successfully cancelled payment reminder schedule", "orderID", req.Order.ID)
+		}
+	}
 
 	return dto.WaitForPaymentConfirmationResponse{
 		PaymentID: response.PaymentID,

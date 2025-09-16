@@ -61,6 +61,8 @@ func MapStatusToEventType(status constant.PaymentStatus) string {
 		return kafka.PaymentFailedEventType
 	case constant.PaymentStatusRefunded:
 		return kafka.PaymentRefundedEventType
+	case constant.PaymentStatusTimeout:
+		return kafka.PaymentTimeoutEventType
 	default:
 		return "unknown"
 	}

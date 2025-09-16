@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// SagaDefaultExecutionTimeout is the default execution timeout for sagas.
-	SagaDefaultExecutionTimeout = 30 * time.Minute
+	SagaDefaultExecutionTimeout = 20 * time.Minute
 	// SagaMaxConcurrent is the maximum number of concurrent sagas.
 	SagaMaxConcurrent = 1000
 	// SagaDefaultMaxRetries is the default maximum number of retries for sagas.
@@ -44,6 +44,18 @@ const (
 	SagaStatusFailed SagaStatus = "failed"
 	// SagaStatusCompensated indicates that the saga has been compensated after a failure.
 	SagaStatusCompensated SagaStatus = "compensated"
+)
+
+// PaymentStatus indicates the status of waiting for payment.
+type PaymentStatus string
+
+const (
+	// PaymentStatusTimeout indicates that the payment is pending.
+	PaymentStatusTimeout PaymentStatus = "timeout"
+	// PaymentStatusCompleted indicates that the payment has completed.
+	PaymentStatusCompleted PaymentStatus = "completed"
+	// PaymentStatusFailed indicates that the payment has failed.
+	PaymentStatusFailed PaymentStatus = "failed"
 )
 
 // WorkflowStep represents a step in the workflow.
@@ -122,7 +134,9 @@ const (
 	// WaitForPaymentConfirmationStepRetryDelay is the delay between retries for the WaitForPaymentConfirmationStep.
 	WaitForPaymentConfirmationStepRetryDelay = 5 * time.Second
 	// WaitForPaymentConfirmationStepTimeout is the timeout for the WaitForPaymentConfirmationStep.
-	WaitForPaymentConfirmationStepTimeout = 1 * time.Hour
+	WaitForPaymentConfirmationStepTimeout = 5 * time.Minute
+	// ExtendedPaymentTimeout is the extended timeout while reminders are active.
+	ExtendedPaymentTimeout = 30 * time.Minute
 )
 
 // ====== Step 7 ======.

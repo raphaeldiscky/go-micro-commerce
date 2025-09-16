@@ -39,20 +39,24 @@ type TemporalOrderSagaRequest struct {
 
 // TemporalOrderSagaResponse represents the result of the order saga workflow.
 type TemporalOrderSagaResponse struct {
-	Success        bool                 `json:"success"`
-	OrderID        uuid.UUID            `json:"order_id"`
-	PaymentID      *uuid.UUID           `json:"payment_id,omitempty"`
-	ShippingID     *uuid.UUID           `json:"shipping_id,omitempty"`
-	TrackingNumber *string              `json:"tracking_number,omitempty"`
-	Pricing        *entity.OrderPricing `json:"pricing,omitempty"`
-	Error          string               `json:"error,omitempty"`
+	Success        bool            `json:"success"`
+	OrderID        uuid.UUID       `json:"order_id"`
+	PaymentID      *uuid.UUID      `json:"payment_id,omitempty"`
+	ShippingID     *uuid.UUID      `json:"shipping_id,omitempty"`
+	TrackingNumber *string         `json:"tracking_number,omitempty"`
+	TotalPrice     decimal.Decimal `json:"total_price,omitempty"`
+	TotalDiscount  decimal.Decimal `json:"total_discount,omitempty"`
+	TotalTax       decimal.Decimal `json:"total_tax,omitempty"`
+	Error          string          `json:"error,omitempty"`
 }
 
 // TemporalWorkflowState holds the state of the workflow execution.
 type TemporalWorkflowState struct {
 	OrderID          uuid.UUID                      `json:"order_id"`
 	ReservedProducts []entity.Product               `json:"reserved_products"`
-	Pricing          *entity.OrderPricing           `json:"pricing"`
+	TotalPrice       decimal.Decimal                `json:"total_price"`
+	TotalDiscount    decimal.Decimal                `json:"total_discount"`
+	TotalTax         decimal.Decimal                `json:"total_tax"`
 	PaymentID        *uuid.UUID                     `json:"payment_id"`
 	ShippingID       *uuid.UUID                     `json:"shipping_id"`
 	TrackingNumber   *string                        `json:"tracking_number"`
@@ -137,5 +141,6 @@ type WaitForPaymentConfirmationRequest struct {
 
 // WaitForPaymentConfirmationResponse represents the result of waiting for payment confirmation.
 type WaitForPaymentConfirmationResponse struct {
-	PaymentID uuid.UUID `json:"payment_id"`
+	PaymentID uuid.UUID              `json:"payment_id"`
+	Status    constant.PaymentStatus `json:"status"` // "completed", "timeout", "failed"
 }

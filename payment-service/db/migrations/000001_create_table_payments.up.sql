@@ -26,7 +26,7 @@ CREATE INDEX idx_payments_payment_method ON payments(payment_method);
 
 ALTER TABLE payments 
 ADD CONSTRAINT chk_payments_status 
-CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'refunded'));
+CHECK (status IN ('pending', 'processing', 'timeout', 'completed', 'failed', 'refunded'));
 
 ALTER TABLE payments 
 ADD CONSTRAINT chk_payments_amount 

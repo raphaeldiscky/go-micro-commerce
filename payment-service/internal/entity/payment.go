@@ -68,6 +68,7 @@ func (p *Payment) UpdateStatus(status constant.PaymentStatus) error {
 		now := time.Now()
 		p.FailedAt = &now
 	case constant.PaymentStatusPending,
+		constant.PaymentStatusTimeout,
 		constant.PaymentStatusProcessing,
 		constant.PaymentStatusRefunded:
 		// No action needed

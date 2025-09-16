@@ -53,6 +53,19 @@ type OrderPaymentRequiredTemplateData struct {
 	PaymentURL      string                  `json:"payment_url,omitempty"`
 }
 
+// PaymentReminderTemplateData represents data for payment reminder email template.
+type PaymentReminderTemplateData struct {
+	CustomerName    string                  `json:"customer_name"`
+	CustomerEmail   string                  `json:"customer_email"`
+	OrderID         string                  `json:"order_id"`
+	PaymentID       string                  `json:"payment_id"`
+	Items           []OrderItemTemplateData `json:"items"`
+	TotalPrice      string                  `json:"total_price"`
+	Currency        string                  `json:"currency"`
+	PaymentDeadline string                  `json:"payment_deadline,omitempty"`
+	PaymentURL      string                  `json:"payment_url,omitempty"`
+}
+
 // OrderItemTemplateData represents an order item for email template.
 type OrderItemTemplateData struct {
 	ProductName string `json:"product_name"`

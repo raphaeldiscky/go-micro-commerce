@@ -65,6 +65,8 @@ func OrderSagaWorkflow(
 		PaymentID:      state.PaymentID,
 		ShippingID:     state.ShippingID,
 		TrackingNumber: state.TrackingNumber,
-		Pricing:        state.Pricing,
+		TotalPrice:     state.TotalPrice,
+		TotalDiscount:  state.TotalDiscount,
+		TotalTax:       state.TotalTax,
 	}, nil
 }

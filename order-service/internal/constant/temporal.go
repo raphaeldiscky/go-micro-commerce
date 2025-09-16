@@ -12,7 +12,7 @@ const (
 	// TemporalMaxInterval is the maximum interval for Temporal tasks.
 	TemporalMaxInterval = 1 * time.Minute
 	// TemporalWorkflowTimeout is the start-to-close timeout for Temporal tasks.
-	TemporalWorkflowTimeout = 90 * time.Minute
+	TemporalWorkflowTimeout = 20 * time.Minute
 	// TemporalCompensationWorkflowTimeout is the start-to-close timeout for compensation Temporal tasks.
 	TemporalCompensationWorkflowTimeout = 15 * time.Minute
 )

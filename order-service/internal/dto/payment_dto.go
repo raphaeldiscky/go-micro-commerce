@@ -22,8 +22,8 @@ type PayOrderResponse struct {
 
 // PaymentResponse represents the response from payment service.
 type PaymentResponse struct {
-	PaymentID uuid.UUID `json:"payment_id"`
-	Status    string    `json:"status"`
-	OrderID   uuid.UUID `json:"order_id"`
-	Error     error     `json:"error,omitempty"`
+	PaymentID uuid.UUID              `json:"payment_id"`
+	Status    constant.PaymentStatus `json:"status"`
+	OrderID   uuid.UUID              `json:"order_id"`
+	Error     error                  `json:"error,omitempty"`
 }
