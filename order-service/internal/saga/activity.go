@@ -478,7 +478,7 @@ func (a *OrderActivitiesImpl) schedulePaymentReminders(
 		PaymentID:        uuid.Nil, // Will be set by payment service
 		TotalPrice:       order.TotalPrice,
 		Currency:         order.Currency,
-		ReminderCount:    constant.FirstReminderCount,
+		ReminderCount:    constant.FirstReminderSequence,
 		MaxReminders:     constant.MaxPaymentReminders,
 	}
 
@@ -499,7 +499,7 @@ func (a *OrderActivitiesImpl) schedulePaymentReminders(
 		PaymentID:        uuid.Nil, // Will be set by payment service
 		TotalPrice:       order.TotalPrice,
 		Currency:         order.Currency,
-		ReminderCount:    constant.SecondReminderCount,
+		ReminderCount:    constant.SecondReminderSequence,
 		MaxReminders:     constant.MaxPaymentReminders,
 	}
 

@@ -64,10 +64,7 @@ func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
 		subject = "Payment Reminder - Your Order is Waiting"
 	case req.ReminderCount == constant.SecondReminderSequence:
 		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "Payment Reminder - Complete Your Order"
-	case req.ReminderCount == constant.FinalReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "Final Payment Reminder - Order Expiring Soon"
+		subject = "Payment Reminder - Expiring Soon"
 	case req.ReminderCount >= req.MaxReminders:
 		// Escalated case - when reminder count reaches or exceeds max
 		templateID = pkgconstant.TemplateOrderPaymentReminder

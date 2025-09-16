@@ -7,8 +7,6 @@ const (
 	FirstReminderSequence = 1
 	// SecondReminderSequence represents the second reminder in the sequence.
 	SecondReminderSequence = 2
-	// FinalReminderSequence represents the final reminder in the sequence.
-	FinalReminderSequence = 3
 	// MaxPaymentReminders represents the max number of payment reminders.
 	MaxPaymentReminders = 3
 )

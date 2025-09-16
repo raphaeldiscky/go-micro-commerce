@@ -36,9 +36,13 @@ const (
 	SecondPaymentReminderMinutes = 10 * time.Minute
 	// CancelOrderDelayMinutes is the delay for cancel task scheduling.
 	CancelOrderDelayMinutes = 15 * time.Minute
-
-	// FirstReminderCount is the count for first reminder.
-	FirstReminderCount = 1
-	// SecondReminderCount is the count for second reminder.
-	SecondReminderCount = 2
 )
+
+// GetDefaultAsynqQueues returns the default queue configuration for asynq.
+func GetDefaultAsynqQueues() map[string]int {
+	return map[string]int{
+		"critical": QueuePriorityCritical, // High priority for urgent tasks
+		"default":  QueuePriorityDefault,  // Normal priority
+		"low":      QueuePriorityLow,      // Low priority for background tasks
+	}
+}

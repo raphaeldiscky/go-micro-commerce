@@ -30,3 +30,12 @@ const (
 	// CancelTaskDelayMinutes is the delay for cancel task scheduling.
 	CancelTaskDelayMinutes = 20
 )
+
+// GetDefaultAsynqQueues returns the default queue configuration for asynq.
+func GetDefaultAsynqQueues() map[string]int {
+	return map[string]int{
+		"critical": QueuePriorityCritical, // High priority for urgent tasks
+		"default":  QueuePriorityDefault,  // Normal priority
+		"low":      QueuePriorityLow,      // Low priority for background tasks
+	}
+}
