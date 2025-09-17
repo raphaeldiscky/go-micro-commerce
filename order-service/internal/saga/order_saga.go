@@ -167,7 +167,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		RetryDelay:  constant.SendPaymentRequiredNotificationStepRetryDelay,
 		Timeout:     constant.SendPaymentRequiredNotificationStepTimeout,
 		Idempotent:  true,
-		Critical:    true,
+		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if len(data.ReservedProducts) == 0 {
 				return nil, errors.New("reserved products not found in data")
@@ -205,7 +205,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		MaxRetries:  constant.WaitForPaymentConfirmationStepMaxRetries,
 		RetryDelay:  constant.WaitForPaymentConfirmationStepRetryDelay,
 		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 5 minutes timeout for user payment confirmation
-		Idempotent:  true,
+		Idempotent:  false,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if data.CustomerEmail == "" {
