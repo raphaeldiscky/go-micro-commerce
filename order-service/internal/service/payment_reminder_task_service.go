@@ -2,14 +2,15 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -17,13 +18,14 @@ import (
 // PaymentReminderTaskService handles payment reminder task processing.
 type PaymentReminderTaskService interface {
 	ProcessPaymentReminder(ctx context.Context, req *dto.PaymentReminderRequest) error
-	ProcessOrderCancellation(ctx context.Context, req *dto.CancelOrderRequest) error
+	ProcessOrderExpirePayment(ctx context.Context, req *dto.ExpireOrderPaymentRequest) error
 }
 
 // PaymentReminderTaskServiceImpl implements PaymentReminderTaskService.
 type PaymentReminderTaskServiceImpl struct {
 	notificationProducer kafka.ProducerInterface
 	dataStore            repository.DataStore
+	orderService         OrderServiceInterface
 	logger               logger.Logger
 }
 
@@ -31,11 +33,13 @@ type PaymentReminderTaskServiceImpl struct {
 func NewPaymentReminderTaskService(
 	notificationProducer kafka.ProducerInterface,
 	dataStore repository.DataStore,
+	orderService OrderServiceInterface,
 	logger logger.Logger,
 ) PaymentReminderTaskService {
 	return &PaymentReminderTaskServiceImpl{
 		notificationProducer: notificationProducer,
 		dataStore:            dataStore,
+		orderService:         orderService,
 		logger:               logger,
 	}
 }
@@ -49,15 +53,30 @@ func (s *PaymentReminderTaskServiceImpl) ProcessPaymentReminder(
 		"Processing payment reminder for order %s (reminder count: %d/%d)",
 		req.OrderID,
 		req.ReminderCount,
-		req.MaxReminders,
 	)
 
-	// Create order entity from DTO data - no need to fetch from database
-	order := &entity.Order{
-		ID:         req.OrderID,
-		TotalPrice: req.TotalPrice,
-		Currency:   req.Currency,
+	s.logger.Infof(
+		"====REMINDER 1====, payment reminder request: %+v",
+		req,
+	)
+	// Fetch order from database to get complete order information including items
+	orderRepo := s.dataStore.OrderRepository()
+
+	s.logger.Infof(
+		"====REMINDER 2====, orderRepo: %+v",
+		orderRepo,
+	)
+
+	order, err := orderRepo.FindByID(ctx, req.OrderID)
+	if err != nil {
+		s.logger.Errorf("Failed to fetch order %s for payment reminder: %v", req.OrderID, err)
+		return fmt.Errorf("failed to fetch order: %w", err)
 	}
+
+	s.logger.Infof(
+		"====REMINDER 3====, order: %+v",
+		order,
+	)
 
 	// Determine template and subject based on reminder count
 	var (
@@ -65,16 +84,24 @@ func (s *PaymentReminderTaskServiceImpl) ProcessPaymentReminder(
 		subject    string
 	)
 
-	switch {
-	case req.ReminderCount >= req.MaxReminders:
+	s.logger.Infof(
+		"====REMINDER 4====, req.ReminderCount: %d, req.MaxReminders: %d",
+		req.ReminderCount,
+	)
+
+	switch req.ReminderCount {
+	case constant.FirstReminderSequence:
 		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "Final Notice - Payment Required for Your Order"
-	case req.ReminderCount == 1:
-		templateID = pkgconstant.TemplateOrderPaymentRequired
-		subject = "Payment Required - Complete Your Order"
+		subject = constant.FirstPaymentReminderEmailSubject
+	case constant.SecondReminderSequence:
+		templateID = pkgconstant.TemplateOrderPaymentReminder
+		subject = constant.SecondPaymentReminderEmailSubject
 	default:
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "Payment Reminder - Complete Your Order"
+		s.logger.Warnf(
+			"Invalid reminder count %d for order %s",
+			req.ReminderCount,
+			req.OrderID,
+		)
 	}
 
 	// Create notification event using the existing producer function
@@ -88,8 +115,13 @@ func (s *PaymentReminderTaskServiceImpl) ProcessPaymentReminder(
 		subject,
 	)
 
+	s.logger.Infof(
+		"====REMINDER 4====, notificationEvent: %+v",
+		notificationEvent,
+	)
+
 	// Send notification
-	if err := s.notificationProducer.Send(ctx, notificationEvent); err != nil {
+	if err = s.notificationProducer.Send(ctx, notificationEvent); err != nil {
 		s.logger.Errorf(
 			"Failed to send payment reminder notification for order %s: %v",
 			req.OrderID,
@@ -103,48 +135,48 @@ func (s *PaymentReminderTaskServiceImpl) ProcessPaymentReminder(
 		"Payment reminder notification sent successfully for order %s (reminder: %d/%d)",
 		req.OrderID,
 		req.ReminderCount,
-		req.MaxReminders,
 	)
 
 	return nil
 }
 
-// ProcessOrderCancellation processes an order cancellation task.
-func (s *PaymentReminderTaskServiceImpl) ProcessOrderCancellation(
+// ProcessOrderExpirePayment processes an order Expire task.
+func (s *PaymentReminderTaskServiceImpl) ProcessOrderExpirePayment(
 	ctx context.Context,
-	req *dto.CancelOrderRequest,
+	req *dto.ExpireOrderPaymentRequest,
 ) error {
 	s.logger.Infof(
-		"Processing order cancellation for order %s (reason: %s)",
+		"Processing order Expire for order %s (reason: %s)",
 		req.OrderID,
-		req.Reason,
 	)
 
-	// For cancellation, we need to fetch the order to get complete order details
-	// since CancelOrderTaskPayload only contains basic information
-	orderRepo := s.dataStore.OrderRepository()
-
-	order, err := orderRepo.FindByID(ctx, req.OrderID)
+	// Update order status to canceled
+	order, err := s.orderService.ExpireOrderPayment(ctx, req)
 	if err != nil {
-		s.logger.Errorf("Failed to get order %s: %v", req.OrderID, err)
-		return err
+		s.logger.Errorf(
+			"Failed to update order status to canceled for order %s: %v",
+			req.OrderID,
+			err,
+		)
+
+		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
-	// Create notification event for order cancellation
+	// Create notification event for order Expire
 	notificationEvent := producer.NewNotificationRequestEvent(
 		order,
 		nil,
-		"",  // Email will be retrieved from customer lookup or order data
-		"",  // Customer name will be retrieved from customer lookup
-		nil, // No tracking number for cancelled orders
-		pkgconstant.TemplateOrderCanceled,
-		"Order Cancelled - Payment Timeout",
+		req.CustomerEmail, // Use customer email from cancel request
+		"Customer Name",   // Customer name - could be retrieved from customer service if needed
+		nil,               // No tracking number for expired orders
+		pkgconstant.TemplateOrderPaymentExpired,
+		constant.OrderPaymentExpiredEmailSubject,
 	)
 
 	// Send notification
 	if err = s.notificationProducer.Send(ctx, notificationEvent); err != nil {
 		s.logger.Errorf(
-			"Failed to send order cancellation notification for order %s: %v",
+			"Failed to send order Expire notification for order %s: %v",
 			req.OrderID,
 			err,
 		)
@@ -153,7 +185,7 @@ func (s *PaymentReminderTaskServiceImpl) ProcessOrderCancellation(
 	}
 
 	s.logger.Infof(
-		"Order cancellation notification sent successfully for order %s",
+		"Order Expire notification sent successfully for order %s",
 		req.OrderID,
 	)
 

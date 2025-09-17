@@ -102,7 +102,7 @@ func (c *Client) EnqueueIn(
 		return nil, ErrClientNotInitialized
 	}
 
-	allOpts := make([]asynq.Option, 0, len(opts)+1)
+	allOpts := make([]asynq.Option, len(opts)+1)
 	copy(allOpts, opts)
 	allOpts[len(opts)] = asynq.ProcessIn(d)
 

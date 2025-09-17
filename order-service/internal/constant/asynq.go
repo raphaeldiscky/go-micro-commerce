@@ -4,15 +4,15 @@ import "time"
 
 const (
 	// DefaultAsynqConcurrency is the default number of concurrent workers.
-	DefaultAsynqConcurrency = 10
+	DefaultAsynqConcurrency = 100
 	// DefaultAsynqMaxRetry is the default maximum number of retries.
-	DefaultAsynqMaxRetry = 3
+	DefaultAsynqMaxRetry = 0
 
-	// QueuePriorityCritical is the priority for critical tasks.
-	QueuePriorityCritical = 6
-	// QueuePriorityDefault is the priority for default tasks.
+	// QueuePriorityCritical is the priority distribution for critical tasks.
+	QueuePriorityCritical = 6 // 60%
+	// QueuePriorityDefault is the priority distribution for default tasks.
 	QueuePriorityDefault = 3
-	// QueuePriorityLow is the priority for low priority tasks.
+	// QueuePriorityLow is the priority distribution for low priority tasks.
 	QueuePriorityLow = 1
 
 	// DefaultRetryDelay is the default delay between retries.
@@ -25,24 +25,13 @@ const (
 	// DefaultDelayedTaskCheckInterval is the default delayed task check interval.
 	DefaultDelayedTaskCheckInterval = 5 * time.Second
 
-	// FinalTaskDelayMinutes is the delay for final task scheduling.
-	FinalTaskDelayMinutes = 10
-	// CancelTaskDelayMinutes is the delay for cancel task scheduling.
-	CancelTaskDelayMinutes = 20
-
 	// FirstPaymentReminderMinutes is the delay for first task scheduling.
-	FirstPaymentReminderMinutes = 0 * time.Minute
+	FirstPaymentReminderMinutes = 10 * time.Minute
 	// SecondPaymentReminderMinutes is the delay for second task scheduling.
-	SecondPaymentReminderMinutes = 10 * time.Minute
+	SecondPaymentReminderMinutes = 20 * time.Minute
 	// CancelOrderDelayMinutes is the delay for cancel task scheduling.
-	CancelOrderDelayMinutes = 15 * time.Minute
-)
+	CancelOrderDelayMinutes = 30 * time.Minute
 
-// GetDefaultAsynqQueues returns the default queue configuration for asynq.
-func GetDefaultAsynqQueues() map[string]int {
-	return map[string]int{
-		"critical": QueuePriorityCritical, // High priority for urgent tasks
-		"default":  QueuePriorityDefault,  // Normal priority
-		"low":      QueuePriorityLow,      // Low priority for background tasks
-	}
-}
+	// TaskRetentionHours is the retention period for completed tasks.
+	TaskRetentionHours = 24 * time.Hour
+)

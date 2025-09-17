@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -124,10 +125,10 @@ func (s *NotificationEventServiceImpl) processEmailEvent(
 // getSubjectForEventType returns the appropriate subject for the event type.
 func getSubjectForEventType(eventType string) string {
 	switch eventType {
-	case "email verification request":
-		return constant.SendVerificationSubject
-	case "user verified":
-		return constant.UserVerifiedSubject
+	case kafka.EmailVerificationRequestedEventType:
+		return constant.SendVerificationEmailSubject
+	case kafka.UserVerifiedEventType:
+		return constant.UserVerifiedEmailSubject
 	default:
 		return ""
 	}
@@ -152,7 +153,12 @@ func (s *NotificationEventServiceImpl) ProcessEmailVerificationRequest(
 		return emailVerificationEvent.Payload.Email, body, nil
 	}
 
-	return s.processEmailEvent(ctx, inboxEvent, "email verification request", unmarshalFn)
+	return s.processEmailEvent(
+		ctx,
+		inboxEvent,
+		kafka.EmailVerificationRequestedEventType,
+		unmarshalFn,
+	)
 }
 
 // ProcessEmailUserVerified handles user verified events.
@@ -174,7 +180,7 @@ func (s *NotificationEventServiceImpl) ProcessEmailUserVerified(
 		return userVerifiedEvent.Payload.Email, body, nil
 	}
 
-	return s.processEmailEvent(ctx, inboxEvent, "user verified", unmarshalFn)
+	return s.processEmailEvent(ctx, inboxEvent, kafka.UserVerifiedEventType, unmarshalFn)
 }
 
 // generateVerificationEmail creates an email verification email body.
@@ -243,6 +249,8 @@ func (s *NotificationEventServiceImpl) generateEmailBody(
 		return s.generateOrderShippedEmail(payload)
 	case pkgconstant.TemplateOrderCanceled:
 		return s.generateOrderCancelledEmail(payload)
+	case pkgconstant.TemplateOrderPaymentExpired:
+		return s.generateOrderPaymentExpiredEmail(payload)
 	case pkgconstant.TemplateOrderDelivered:
 		return s.generateOrderDeliveredEmail(payload)
 	case pkgconstant.TemplateOrderPaymentRequired:
@@ -540,4 +548,53 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentReminderEmail(
 	)
 
 	return s.emailService.RenderTemplate(constant.TemplateFileOrderPaymentReminder, templateData)
+}
+
+// generateOrderPaymentExpiredEmail generates HTML email for order payment expired notification.
+func (s *NotificationEventServiceImpl) generateOrderPaymentExpiredEmail(
+	payload *event.NotificationRequestPayload,
+) (string, error) {
+	recipientName := payload.RecipientName
+	orderNumber := ""
+	orderDate := ""
+	totalPrice := ""
+	currency := ""
+
+	// Extract order number from payload
+	if orderData, exists := payload.Data["order_number"]; exists {
+		if str, ok := orderData.(string); ok {
+			orderNumber = str
+		}
+	}
+
+	// Extract order date from payload
+	if dateData, exists := payload.Data["order_date"]; exists {
+		if str, ok := dateData.(string); ok {
+			orderDate = str
+		}
+	}
+
+	// Extract total price from payload
+	if priceData, exists := payload.Data["total_price"]; exists {
+		if str, ok := priceData.(string); ok {
+			totalPrice = str
+		}
+	}
+
+	// Extract currency from payload
+	if currencyData, exists := payload.Data["currency"]; exists {
+		if str, ok := currencyData.(string); ok {
+			currency = str
+		}
+	}
+
+	templateData := &dto.OrderPaymentExpiredTemplateData{
+		RecipientName: recipientName,
+		OrderNumber:   orderNumber,
+		OrderDate:     orderDate,
+		TotalPrice:    totalPrice,
+		Currency:      currency,
+	}
+
+	return s.emailService.RenderTemplate(constant.TemplateFileOrderPaymentExpired, templateData)
 }

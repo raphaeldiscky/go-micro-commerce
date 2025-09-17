@@ -41,6 +41,7 @@ func NewSagaOrchestrator(
 	fulfillmentClient client.FulfillmentClientInterface,
 	paymentClient client.PaymentClientInterface,
 	asynqClient asynq.ClientInterface,
+	taskCancellationService asynq.TaskCancellationService,
 	appLogger logger.Logger,
 	cfg *config.Config,
 ) Orchestrator {
@@ -57,6 +58,7 @@ func NewSagaOrchestrator(
 		fulfillmentClient,
 		paymentClient,
 		asynqClient,
+		taskCancellationService,
 		appLogger,
 	)
 

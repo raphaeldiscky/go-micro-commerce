@@ -33,7 +33,6 @@ type ScheduleOptions struct {
 // ReminderConfig contains configuration for reminder schedules.
 type ReminderConfig struct {
 	Type           ReminderType
-	MaxReminders   int
 	ExecutionTimes []time.Duration
 	Timezone       *time.Location
 	BaseTime       time.Time

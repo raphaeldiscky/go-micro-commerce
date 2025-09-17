@@ -50,14 +50,12 @@ func PaymentReminderWorkflow(
 
 		// Prepare reminder request
 		reminderRequest := dto.PaymentReminderRequest{
-			OrderID:          req.OrderID,
-			CustomerEmail:    req.CustomerEmail,
-			ReservedProducts: req.ReservedProducts,
-			PaymentID:        req.PaymentID,
-			TotalPrice:       req.TotalPrice,
-			Currency:         req.Currency,
-			ReminderCount:    reminderCount,
-			MaxReminders:     maxReminders,
+			OrderID:       req.OrderID,
+			CustomerEmail: req.CustomerEmail,
+			PaymentID:     req.PaymentID,
+			TotalPrice:    req.TotalPrice,
+			Currency:      req.Currency,
+			ReminderCount: reminderCount,
 		}
 
 		// Send reminder notification
@@ -142,14 +140,12 @@ func PaymentReminderWorkflow(
 
 		// Execute final escalation reminder (reminder count will be at max)
 		finalReminderRequest := dto.PaymentReminderRequest{
-			OrderID:          req.OrderID,
-			CustomerEmail:    req.CustomerEmail,
-			ReservedProducts: req.ReservedProducts,
-			PaymentID:        req.PaymentID,
-			TotalPrice:       req.TotalPrice,
-			Currency:         req.Currency,
-			ReminderCount:    reminderCount,
-			MaxReminders:     maxReminders,
+			OrderID:       req.OrderID,
+			CustomerEmail: req.CustomerEmail,
+			PaymentID:     req.PaymentID,
+			TotalPrice:    req.TotalPrice,
+			Currency:      req.Currency,
+			ReminderCount: reminderCount,
 		}
 
 		err := workflow.ExecuteActivity(ctx, string(constant.SendPaymentReminderActivity), finalReminderRequest).

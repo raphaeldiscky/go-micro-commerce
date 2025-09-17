@@ -58,17 +58,13 @@ func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
 		subject    string
 	)
 
-	switch {
-	case req.ReminderCount == constant.FirstReminderSequence:
+	switch req.ReminderCount {
+	case constant.FirstReminderSequence:
 		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "Payment Reminder - Your Order is Waiting"
-	case req.ReminderCount == constant.SecondReminderSequence:
+		subject = constant.FirstPaymentReminderEmailSubject
+	case constant.SecondReminderSequence:
 		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "Payment Reminder - Expiring Soon"
-	case req.ReminderCount >= req.MaxReminders:
-		// Escalated case - when reminder count reaches or exceeds max
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = "URGENT: Final Notice - Order Cancellation Pending"
+		subject = constant.SecondPaymentReminderEmailSubject
 	default:
 		// do nothing
 	}
@@ -79,7 +75,7 @@ func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
 		// Create notification event for reminder
 		notificationEvent := producer.NewNotificationRequestEvent(
 			order,
-			req.ReservedProducts,
+			nil,
 			req.CustomerEmail,
 			"Customer", // TODO: Get actual customer name
 			nil,        // No tracking number for reminder

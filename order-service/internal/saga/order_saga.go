@@ -204,7 +204,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Description: "Wait for customer to pay the order",
 		MaxRetries:  constant.WaitForPaymentConfirmationStepMaxRetries,
 		RetryDelay:  constant.WaitForPaymentConfirmationStepRetryDelay,
-		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 20 minutes timeout for user payment confirmation
+		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 5 minutes timeout for user payment confirmation
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {

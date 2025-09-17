@@ -21,8 +21,9 @@ type PaymentReminderWorkflowRequest struct {
 // PaymentReminderRequest contains parameters for sending a payment reminder.
 type PaymentReminderRequest struct {
 	OrderID          uuid.UUID        `json:"order_id"`
-	CustomerEmail    string           `json:"customer_email"`
 	ReservedProducts []entity.Product `json:"reserved_products"`
+	CorrelationID    uuid.UUID        `json:"correlation_id"` // For task cleanup and correlation
+	CustomerEmail    string           `json:"customer_email"`
 	PaymentID        uuid.UUID        `json:"payment_id"`
 	TotalPrice       decimal.Decimal  `json:"total_price"`
 	Currency         string           `json:"currency"`

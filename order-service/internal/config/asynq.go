@@ -13,12 +13,12 @@ type AsynqConfig struct {
 	RedisAddrs               []string       `mapstructure:"ASYNQ_REDIS_ADDRS"`
 	RedisPassword            string         `mapstructure:"ASYNQ_REDIS_PASSWORD"`
 	Concurrency              int            `mapstructure:"ASYNQ_CONCURRENCY"`
-	Queues                   map[string]int `mapstructure:"ASYNQ_QUEUES"`
 	MaxRetry                 int            `mapstructure:"ASYNQ_MAX_RETRY"`
 	RetryDelay               time.Duration  `mapstructure:"ASYNQ_RETRY_DELAY"`
 	RetryMaxDelay            time.Duration  `mapstructure:"ASYNQ_RETRY_MAX_DELAY"`
 	HealthCheckInterval      time.Duration  `mapstructure:"ASYNQ_HEALTH_CHECK_INTERVAL"`
 	DelayedTaskCheckInterval time.Duration  `mapstructure:"ASYNQ_DELAYED_TASK_CHECK_INTERVAL"`
+	Queues                   map[string]int `mapstructure:"-"`
 }
 
 // initAsynqConfig initializes Asynq configuration from environment variables.
@@ -38,15 +38,23 @@ func initAsynqConfig() *AsynqConfig {
 	viper.SetDefault("ASYNQ_REDIS_PASSWORD", "supersecret")
 	viper.SetDefault("ASYNQ_CONCURRENCY", constant.DefaultAsynqConcurrency)
 	viper.SetDefault("ASYNQ_MAX_RETRY", constant.DefaultAsynqMaxRetry)
-	viper.SetDefault("ASYNQ_QUEUES", constant.GetDefaultAsynqQueues())
 	viper.SetDefault("ASYNQ_RETRY_DELAY", constant.DefaultRetryDelay)
 	viper.SetDefault("ASYNQ_RETRY_MAX_DELAY", constant.DefaultRetryMaxDelay)
 	viper.SetDefault("ASYNQ_HEALTH_CHECK_INTERVAL", constant.DefaultHealthCheckInterval)
 	viper.SetDefault("ASYNQ_DELAYED_TASK_CHECK_INTERVAL", constant.DefaultDelayedTaskCheckInterval)
+	viper.SetDefault("ASYNQ_QUEUE_CRITICAL_PRIORITY", constant.QueuePriorityCritical)
+	viper.SetDefault("ASYNQ_QUEUE_DEFAULT_PRIORITY", constant.QueuePriorityDefault)
+	viper.SetDefault("ASYNQ_QUEUE_LOW_PRIORITY", constant.QueuePriorityLow)
 
 	asynqConfig := &AsynqConfig{}
 	if err := viper.Unmarshal(asynqConfig); err != nil {
 		panic(err)
+	}
+
+	asynqConfig.Queues = map[string]int{
+		"critical": viper.GetInt("ASYNQ_QUEUE_CRITICAL_PRIORITY"),
+		"default":  viper.GetInt("ASYNQ_QUEUE_DEFAULT_PRIORITY"),
+		"low":      viper.GetInt("ASYNQ_QUEUE_LOW_PRIORITY"),
 	}
 
 	return asynqConfig

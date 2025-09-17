@@ -16,7 +16,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
 
-// SetupPayment initializes the order-related routes and services.
+// SetupPayment initializes the payment-related routes and services.
 func SetupPayment(
 	ctx context.Context,
 	cfg *config.Config,
@@ -46,16 +46,17 @@ func SetupPayment(
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	orderLifecycleProducer := producer.NewPaymentLifecycleProducer(asyncProducer)
+	paymentLifecycleProducer := producer.NewPaymentLifecycleProducer(asyncProducer)
 
-	orderService := service.NewPaymentService(
+	paymentService := service.NewPaymentService(
 		providers.DataStore,
 		appLogger,
-		orderLifecycleProducer,
+		paymentLifecycleProducer,
 		providers.BankingClient,
 		providers.PaymentGatewayClient,
 	)
-	orderHandler := handler.NewPaymentHandler(orderService, appLogger)
+	providers.PaymentService = paymentService
+	paymentHandler := handler.NewPaymentHandler(paymentService, appLogger)
 
-	routes.SetupPaymentRoutes(e, orderHandler)
+	routes.SetupPaymentRoutes(e, paymentHandler)
 }

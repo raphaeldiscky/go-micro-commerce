@@ -5,6 +5,7 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -64,6 +65,9 @@ func SetupOrder(
 		productClient = nil
 	}
 
+	// Create task cancellation service
+	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector.Inspector)
+
 	// Create saga orchestrator
 	sagaOrchestrator := saga.NewSagaOrchestrator(
 		providers.DataStore,
@@ -73,7 +77,8 @@ func SetupOrder(
 		fulfillmentRequestProducer,
 		providers.FulfillmentClient,
 		providers.PaymentClient,
-		providers.AsyncqClient,
+		providers.AsynqClient,
+		taskCancellationService,
 		appLogger,
 		cfg,
 	)
@@ -93,7 +98,7 @@ func SetupOrder(
 		sagaOrchestrator,
 		temporalClient,
 	)
-
+	providers.OrderService = orderService
 	orderHandler := handler.NewOrderHandler(orderService, appLogger)
 
 	routes.SetupOrderRoutes(e, orderHandler)

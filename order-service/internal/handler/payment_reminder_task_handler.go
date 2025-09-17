@@ -53,25 +53,25 @@ func (h *PaymentReminderTaskHandler) HandlePaymentReminderTask(
 	return nil
 }
 
-// HandleCancelOrderTask handles order cancellation tasks.
-func (h *PaymentReminderTaskHandler) HandleCancelOrderTask(
+// HandleExpireOrderPaymentTask handles order cancellation tasks.
+func (h *PaymentReminderTaskHandler) HandleExpireOrderPaymentTask(
 	ctx context.Context,
 	t *asynq.Task,
 ) error {
 	h.logger.Infof("Processing cancel order task: %s", t.Type())
 
 	// Parse the task payload
-	payload, err := task.ParseCancelOrderTask(t)
+	payload, err := task.ParseExpireOrderPaymentTask(t)
 	if err != nil {
 		h.logger.Errorf("Failed to parse cancel order task: %v", err)
 		return err
 	}
 
-	// Process the order cancellation
-	err = h.paymentReminderService.ProcessOrderCancellation(ctx, payload)
+	// Process the order expire
+	err = h.paymentReminderService.ProcessOrderExpirePayment(ctx, payload)
 	if err != nil {
 		h.logger.Errorf(
-			"Failed to process order cancellation for order %s: %v",
+			"Failed to process order expire for order %s: %v",
 			payload.OrderID,
 			err,
 		)
@@ -79,7 +79,7 @@ func (h *PaymentReminderTaskHandler) HandleCancelOrderTask(
 		return err
 	}
 
-	h.logger.Infof("Successfully processed order cancellation for order: %s", payload.OrderID)
+	h.logger.Infof("Successfully processed order expire for order: %s", payload.OrderID)
 
 	return nil
 }

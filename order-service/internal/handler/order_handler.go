@@ -268,12 +268,13 @@ func (h *OrderHandler) CancelOrder(c echo.Context) error {
 		return err
 	}
 
-	req := dto.CancelOrderRequest{
+	req := &dto.CancelOrderRequest{
 		CustomerID:    echoutils.GetUserIDFromContext(c),
 		CustomerEmail: echoutils.GetEmailFromContext(c),
+		OrderID:       orderID,
 	}
 
-	err = h.orderService.CancelOrder(c.Request().Context(), req, orderID)
+	err = h.orderService.CancelOrder(c.Request().Context(), req)
 	if err != nil {
 		return err
 	}

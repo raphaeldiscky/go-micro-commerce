@@ -29,7 +29,9 @@ type Providers struct {
 	NotificationRequestProducer kafka.ProducerInterface
 	ReminderScheduler           *temporal.ReminderScheduler
 	PaymentReminderService      *service.PaymentReminderService
-	AsyncqClient                *asynq.Client
+	OrderService                service.OrderServiceInterface
+	AsynqClient                 *asynq.Client
+	AsynqInspector              *asynq.Inspector
 }
 
 // SetupGlobal initializes all providers.

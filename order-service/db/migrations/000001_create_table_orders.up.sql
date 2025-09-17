@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS orders(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     idempotency_key UUID NOT NULL UNIQUE,
     customer_id UUID NOT NULL,
-    status VARCHAR(50) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
     currency VARCHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
     shipping_cost DECIMAL(10, 2) NOT NULL CHECK (shipping_cost >= 0), -- generated from fulfillment-service
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0), -- SUM(unit_price * quantity) for all items
@@ -14,6 +14,14 @@ CREATE TABLE IF NOT EXISTS orders(
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE orders
+ADD CONSTRAINT chk_order_status
+CHECK (status IN ('pending', 'processing', 'payment_expired', 'paid', 'delivered', 'completed', 'failed', 'canceled'));
+
+ALTER TABLE orders
+ADD CONSTRAINT chk_order_currency
+CHECK (currency ~ '^[A-Z]{3}$');
 
 CREATE TABLE IF NOT EXISTS order_items(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

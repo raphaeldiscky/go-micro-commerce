@@ -19,4 +19,5 @@ type OrderLifecyclePayload struct {
 	TotalPrice decimal.Decimal    `json:"total_price"`
 	Currency   string             `json:"currency"`
 	Items      []OrderItemPayload `json:"items"`
+	Reason     string             `json:"reason,omitempty"`
 }

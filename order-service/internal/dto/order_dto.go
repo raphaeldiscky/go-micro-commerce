@@ -97,17 +97,19 @@ type GetOrdersRequest struct {
 	Page  int64 `json:"page"  validate:"min=1"`
 }
 
-// UpdateOrderStatusRequest represents the request to update order status.
-type UpdateOrderStatusRequest struct {
-	Status  constant.OrderStatus `json:"status"   validate:"required"`
-	OrderID uuid.UUID            `json:"order_id" validate:"required"`
-}
-
 // CancelOrderRequest represents the request to cancel an order.
 type CancelOrderRequest struct {
 	CustomerID     uuid.UUID `json:"customer_id"`
 	CustomerEmail  string    `json:"customer_email"`
 	OrderID        uuid.UUID `json:"order_id"        validate:"required"`
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
-	Reason         string    `json:"reason"          validate:"required,min=5,max=255"`
+}
+
+// ExpireOrderPaymentRequest represents the request to expire an order.
+type ExpireOrderPaymentRequest struct {
+	CustomerID     uuid.UUID `json:"customer_id"`
+	CustomerEmail  string    `json:"customer_email"`
+	OrderID        uuid.UUID `json:"order_id"        validate:"required"`
+	CorrelationID  uuid.UUID `json:"correlation_id"` // For task cleanup and correlation
+	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
 }

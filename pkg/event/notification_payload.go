@@ -55,7 +55,7 @@ type OrderConfirmedData struct {
 	OrderID           uuid.UUID       `json:"order_id"`
 	CustomerName      string          `json:"customer_name"`
 	CustomerEmail     string          `json:"customer_email"`
-	Items             []OrderItemData `json:"items"`
+	Items             []OrderItemData `json:"items,omitempty"`
 	Subtotal          decimal.Decimal `json:"subtotal"`
 	ShippingCost      decimal.Decimal `json:"shipping_cost"`
 	TotalTax          decimal.Decimal `json:"total_tax"`

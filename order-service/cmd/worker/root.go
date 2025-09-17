@@ -62,15 +62,24 @@ func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) err
 func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	wm.logger.Info("Starting all workers...")
 
-	// Initialize asynq worker separately to handle potential errors
-	asynqWorker, err := NewAsynqWorker(wm.cfg, wm.logger, wm.providers)
+	// Initialize asynq client and inspector early to resolve dependencies
+	err := provider.SetupAsynqClient(wm.cfg, wm.providers, wm.logger)
+	if err != nil {
+		return fmt.Errorf("failed to setup asynq client: %w", err)
+	}
+
+	// Initialize HTTP worker first to ensure order service is created
+	httpWorker := NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers)
+
+	// Initialize asynq worker after HTTP worker to ensure dependencies are available
+	asynqWorker, err := NewAsynqWorker(ctx, wm.cfg, wm.logger, wm.providers)
 	if err != nil {
 		return fmt.Errorf("failed to create asynq worker: %w", err)
 	}
 
 	// Initialize all workers
 	workers := []Worker{
-		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers),
+		httpWorker,
 		NewKafkaConsumerWorker(wm.cfg, wm.logger, wm.providers),
 		NewOutboxPublisherWorker(ctx, wm.cfg, wm.logger, wm.providers),
 		NewJobSchedulerWorker(wm.logger, wm.providers),

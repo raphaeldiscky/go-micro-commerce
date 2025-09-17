@@ -6,7 +6,9 @@ import (
 
 	"github.com/hibiken/asynq"
 
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/sagautils"
 )
 
 const (
@@ -16,7 +18,7 @@ const (
 	PaymentReminderQueue = "critical"
 )
 
-// NewPaymentReminderTask creates a new payment reminder task.
+// NewPaymentReminderTask creates a new payment reminder task with correlation metadata.
 func NewPaymentReminderTask(payload *dto.PaymentReminderRequest) (*asynq.Task, error) {
 	if payload == nil {
 		return nil, errors.New("payload is required")
@@ -27,7 +29,16 @@ func NewPaymentReminderTask(payload *dto.PaymentReminderRequest) (*asynq.Task, e
 		return nil, err
 	}
 
-	return asynq.NewTask(PaymentReminderTaskType, data, asynq.Queue(PaymentReminderQueue)), nil
+	// Add task options with correlation metadata for cleanup
+	opts := []asynq.Option{
+		asynq.Queue(PaymentReminderQueue),
+		asynq.TaskID(
+			sagautils.GenerateTaskID(payload.OrderID, payload.CorrelationID, payload.ReminderCount),
+		),
+		asynq.Retention(constant.TaskRetentionHours), // Keep completed tasks for debugging
+	}
+
+	return asynq.NewTask(PaymentReminderTaskType, data, opts...), nil
 }
 
 // ParsePaymentReminderTask parses a payment reminder task payload.

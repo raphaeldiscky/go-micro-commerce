@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Payment Expired - Order Canceled</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        background-color: #fff3cd;
+        padding: 20px;
+        text-align: center;
+        border-radius: 8px;
+        border: 1px solid #ffeaa7;
+      }
+      .expired-status {
+        background-color: #fd7e14;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: bold;
+        margin: 10px 0;
+      }
+      .order-details {
+        margin: 20px 0;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+      }
+      .expiration-section {
+        background-color: #fff3cd;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #fd7e14;
+      }
+      .total-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      .warning {
+        color: #856404;
+        font-weight: bold;
+      }
+      .amount {
+        color: #fd7e14;
+        font-weight: bold;
+        font-size: 1.2em;
+      }
+      .next-steps {
+        background-color: #d1ecf1;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 8px;
+        border-left: 4px solid #17a2b8;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #ddd;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>⏰ Payment Time Expired</h1>
+      <div class="expired-status">PAYMENT EXPIRED</div>
+      <p>Hi <strong class="warning">{{.RecipientName}}</strong>, your payment window has expired and your order has been canceled.</p>
+    </div>
+
+    <div class="order-details">
+      <h2>Order Details</h2>
+      {{if .OrderNumber}}
+      <p><strong>Order Number:</strong> {{.OrderNumber}}</p>
+      {{end}}
+      {{if .OrderDate}}
+      <p><strong>Order Date:</strong> {{.OrderDate}}</p>
+      {{end}}
+      {{if .TotalPrice}}
+      <p><strong>Order Amount:</strong> <span class="amount">{{.Currency}} {{.TotalPrice}}</span></p>
+      {{end}}
+    </div>
+
+    <div class="expiration-section">
+      <h3>⚠️ What Happened?</h3>
+      <p><strong class="warning">Your payment window has expired.</strong></p>
+      <p>We held your order for the allocated time, but payment was not completed within the deadline. As a result, your order has been automatically canceled.</p>
+      <ul>
+        <li>No payment has been charged to your account</li>
+        <li>Reserved items have been released back to inventory</li>
+        <li>Your order reservation has been canceled</li>
+      </ul>
+    </div>
+
+    <div class="next-steps">
+      <h3>🛒 Want to Reorder?</h3>
+      <p><strong>You can place a new order anytime!</strong></p>
+      <p>If you still want these items, simply:</p>
+      <ul>
+        <li>Visit our website and add items to your cart again</li>
+        <li>Complete the checkout process</li>
+        <li>Make payment within the allocated time window</li>
+      </ul>
+      <p><em>Note: Prices and availability may have changed since your original order.</em></p>
+    </div>
+
+    <div class="total-section">
+      <h3>💳 No Charges Applied</h3>
+      <p><strong>Important:</strong> Since payment was not completed, no charges have been made to your payment method.</p>
+      <p>You will not see any pending transactions or holds on your account related to this order.</p>
+    </div>
+
+    <div class="footer">
+      <p>Thank you for your interest in our products.</p>
+      <p>
+        If you have any questions about payment timing or need assistance with placing a new order,
+        please contact our customer service team.
+      </p>
+      <p><em>We appreciate your understanding and look forward to serving you again.</em></p>
+    </div>
+  </body>
+</html>
