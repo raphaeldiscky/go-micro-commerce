@@ -30,7 +30,7 @@ func SetupProduct(
 	}
 
 	// Set up HTTP routes
-	productHandler := handler.NewProductHandler(providers.ProductService, appLogger)
+	productHandler := handler.NewProductHandler(providers.ProductService)
 	routes.SetupProductRoutes(e, productHandler)
 }
 
@@ -70,7 +70,6 @@ func InitializeProductService(
 
 	productService := service.NewProductService(
 		providers.DataStore,
-		appLogger,
 		productCreatedProducer,
 		productUpdatedProducer,
 		productDeletedProducer,

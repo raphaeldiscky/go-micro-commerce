@@ -14,7 +14,6 @@ import (
 // KafkaConsumerWorker wraps the Kafka consumer server as a Worker.
 type KafkaConsumerWorker struct {
 	consumer *worker.KafkaConsumer
-	logger   logger.Logger
 }
 
 // NewKafkaConsumerWorker creates a new Kafka consumer worker.
@@ -25,7 +24,6 @@ func NewKafkaConsumerWorker(
 ) *KafkaConsumerWorker {
 	return &KafkaConsumerWorker{
 		consumer: provider.SetupKafkaConsumers(cfg, appLogger, providers),
-		logger:   appLogger,
 	}
 }
 

@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
@@ -25,7 +24,6 @@ import (
 // Orchestrator manages saga workflow execution with state persistence.
 type Orchestrator struct {
 	executor         *Executor
-	orderSaga        *OrderSaga
 	dataStore        repository.DataStore
 	logger           logger.Logger
 	executionTimeout time.Duration
@@ -35,9 +33,6 @@ type Orchestrator struct {
 func NewSagaOrchestrator(
 	dataStore repository.DataStore,
 	productClient client.ProductClient,
-	paymentRequestProducer kafka.Producer,
-	orderLifecycleProducer kafka.Producer,
-	fulfillmentRequestProducer kafka.Producer,
 	fulfillmentClient client.FulfillmentClient,
 	paymentClient client.PaymentClient,
 	asynqClient asynq.Client,
@@ -52,9 +47,6 @@ func NewSagaOrchestrator(
 	activities := NewOrderActivities(
 		dataStore,
 		productClient,
-		paymentRequestProducer,
-		orderLifecycleProducer,
-		fulfillmentRequestProducer,
 		fulfillmentClient,
 		paymentClient,
 		asynqClient,
@@ -63,14 +55,13 @@ func NewSagaOrchestrator(
 	)
 
 	// Create  order saga
-	orderSaga := NewOrderSaga(activities, appLogger)
+	orderSaga := NewOrderSaga(activities)
 
 	// Configure saga steps in executor
 	orderSaga.ConfigureSteps(executor)
 
 	return Orchestrator{
 		executor:         executor,
-		orderSaga:        orderSaga,
 		dataStore:        dataStore,
 		logger:           appLogger,
 		executionTimeout: cfg.Saga.DefaultExecutionTimeout,

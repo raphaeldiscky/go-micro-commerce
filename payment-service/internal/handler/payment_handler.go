@@ -4,7 +4,6 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
@@ -14,17 +13,14 @@ import (
 // PaymentHandler handles HTTP requests for Payment operations.
 type PaymentHandler struct {
 	paymentService service.PaymentService
-	logger         logger.Logger
 }
 
 // NewPaymentHandler creates a new instance of PaymentHandler.
 func NewPaymentHandler(
 	paymentService service.PaymentService,
-	appLogger logger.Logger,
 ) *PaymentHandler {
 	return &PaymentHandler{
 		paymentService: paymentService,
-		logger:         appLogger,
 	}
 }
 

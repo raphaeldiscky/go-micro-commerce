@@ -31,10 +31,9 @@ type FulfillmentLifecycleEvent struct {
 
 // FulfillmentLifecycleConsumer handles the logic for processing fulfillment lifecycle events.
 type FulfillmentLifecycleConsumer struct {
-	logger                      logger.Logger
-	datastore                   repository.DataStore
-	fulfillmentClient           client.FulfillmentClient
-	notificationRequestProducer kafka.Producer
+	logger            logger.Logger
+	datastore         repository.DataStore
+	fulfillmentClient client.FulfillmentClient
 }
 
 // NewFulfillmentLifecycleConsumer creates a new consumer for fulfillment lifecycle events.
@@ -42,13 +41,11 @@ func NewFulfillmentLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
 	fulfillmentClient client.FulfillmentClient,
-	notificationRequestProducer kafka.Producer,
 ) *FulfillmentLifecycleConsumer {
 	return &FulfillmentLifecycleConsumer{
-		logger:                      appLogger,
-		datastore:                   ds,
-		fulfillmentClient:           fulfillmentClient,
-		notificationRequestProducer: notificationRequestProducer,
+		logger:            appLogger,
+		datastore:         ds,
+		fulfillmentClient: fulfillmentClient,
 	}
 }
 

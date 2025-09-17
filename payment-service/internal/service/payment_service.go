@@ -44,27 +44,21 @@ type PaymentService interface {
 
 // paymentService implements the PaymentService.
 type paymentService struct {
-	dataStore                repository.DataStore
-	logger                   logger.Logger
-	paymentLifecycleProducer kafka.Producer
-	bankingClient            client.BankingClient
-	paymentGatewayClient     client.PaymentGatewayClient
+	dataStore            repository.DataStore
+	logger               logger.Logger
+	paymentGatewayClient client.PaymentGatewayClient
 }
 
 // NewPaymentService creates a new instance of paymentService.
 func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentLifecycleProducer kafka.Producer,
-	bankingClient client.BankingClient,
 	paymentGatewayClient client.PaymentGatewayClient,
 ) PaymentService {
 	return &paymentService{
-		dataStore:                dataStore,
-		logger:                   appLogger,
-		paymentLifecycleProducer: paymentLifecycleProducer,
-		bankingClient:            bankingClient,
-		paymentGatewayClient:     paymentGatewayClient,
+		dataStore:            dataStore,
+		logger:               appLogger,
+		paymentGatewayClient: paymentGatewayClient,
 	}
 }
 

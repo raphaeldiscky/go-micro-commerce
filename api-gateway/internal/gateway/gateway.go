@@ -26,7 +26,6 @@ type Gateway struct {
 	logger           logger.Logger
 	serviceDiscovery service.Discovery
 	circuitBreaker   *service.CircuitBreakerService
-	loadBalancer     service.LoadBalancer
 	metrics          *metrics.Metrics
 	config           *config.Config
 }
@@ -36,7 +35,6 @@ type Config struct {
 	Logger           logger.Logger
 	ServiceDiscovery service.Discovery
 	CircuitBreaker   *service.CircuitBreakerService
-	LoadBalancer     service.LoadBalancer
 	Metrics          *metrics.Metrics
 	Config           *config.Config
 }
@@ -47,7 +45,6 @@ func NewAPIGateway(cfg Config) *Gateway {
 		logger:           cfg.Logger,
 		serviceDiscovery: cfg.ServiceDiscovery,
 		circuitBreaker:   cfg.CircuitBreaker,
-		loadBalancer:     cfg.LoadBalancer,
 		metrics:          cfg.Metrics,
 		config:           cfg.Config,
 	}

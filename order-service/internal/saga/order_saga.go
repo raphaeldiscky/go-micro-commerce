@@ -4,22 +4,18 @@ package saga
 import (
 	"errors"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 // OrderSaga implements the order processing saga workflow.
 type OrderSaga struct {
 	activities OrderActivities
-	logger     logger.Logger
 }
 
 // NewOrderSaga creates a new order saga.
-func NewOrderSaga(activities OrderActivities, appLogger logger.Logger) *OrderSaga {
+func NewOrderSaga(activities OrderActivities) *OrderSaga {
 	return &OrderSaga{
 		activities: activities,
-		logger:     appLogger,
 	}
 }
 

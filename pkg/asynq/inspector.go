@@ -20,7 +20,6 @@ type Inspector interface {
 // inspector wraps asynq inspector functionality.
 type inspector struct {
 	inspector *asynq.Inspector
-	logger    logger.Logger
 }
 
 // NewInspector creates a new asynq inspector.
@@ -36,7 +35,6 @@ func NewInspector(cfg *config.AsynqConfig, logger logger.Logger) (Inspector, err
 
 	return &inspector{
 		inspector: ins,
-		logger:    logger,
 	}, nil
 }
 

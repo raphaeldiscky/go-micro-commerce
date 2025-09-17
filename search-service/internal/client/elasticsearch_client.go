@@ -25,7 +25,6 @@ type ElasticsearchClient interface {
 // elasticsearchClient wraps the Elasticsearch client with additional functionality.
 type elasticsearchClient struct {
 	client *elasticsearch.TypedClient
-	config *config.ElasticsearchConfig
 	logger logger.Logger
 }
 
@@ -91,7 +90,6 @@ func NewElasticsearchClient(
 
 	esClient := &elasticsearchClient{
 		client: typedClient,
-		config: cfg,
 		logger: appLogger,
 	}
 

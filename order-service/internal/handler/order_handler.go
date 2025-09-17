@@ -4,7 +4,6 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
@@ -19,17 +18,14 @@ import (
 // OrderHandler handles HTTP requests for Order operations.
 type OrderHandler struct {
 	orderService service.OrderService
-	logger       logger.Logger
 }
 
 // NewOrderHandler creates a new instance of OrderHandler.
 func NewOrderHandler(
 	orderService service.OrderService,
-	appLogger logger.Logger,
 ) *OrderHandler {
 	return &OrderHandler{
 		orderService: orderService,
-		logger:       appLogger,
 	}
 }
 

@@ -51,9 +51,6 @@ func SetupTemporal(
 		providers.DataStore,
 		cfg.Temporal,
 		productClient,
-		nil, // paymentRequestProducer - not needed for Temporal direct approach
-		nil, // orderLifecycleProducer - not needed for Temporal direct approach
-		nil, // fulfillmentRequestProducer - not needed for Temporal direct approach
 		providers.FulfillmentClient,
 		providers.PaymentClient,
 		paymentReminderScheduler,

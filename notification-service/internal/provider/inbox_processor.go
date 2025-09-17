@@ -30,7 +30,6 @@ func SetupInboxProcessor(
 
 	// Create notification event service with all dependencies
 	notificationEventService := service.NewNotificationEventService(
-		providers.DataStore,
 		emailService,
 		appLogger,
 	)

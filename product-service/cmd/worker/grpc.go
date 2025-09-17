@@ -13,7 +13,6 @@ import (
 // GRPCWorker wraps the GRPC server as a Worker.
 type GRPCWorker struct {
 	server *server.GRPCServer
-	logger logger.Logger
 }
 
 // NewGRPCWorker creates a new GRPC worker.
@@ -24,7 +23,6 @@ func NewGRPCWorker(
 ) *GRPCWorker {
 	return &GRPCWorker{
 		server: server.NewGRPCServer(providers.ProductService, appLogger, cfg),
-		logger: appLogger,
 	}
 }
 

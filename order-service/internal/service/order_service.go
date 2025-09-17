@@ -76,7 +76,6 @@ type OrderService interface {
 // orderService implements the OrderService.
 type orderService struct {
 	dataStore              repository.DataStore
-	productClient          client.ProductClient
 	logger                 logger.Logger
 	orderLifecycleProducer kafka.Producer
 	sagaOrchestrator       saga.Orchestrator
@@ -88,7 +87,6 @@ type orderService struct {
 func NewOrderService(
 	cfg *config.Config,
 	dataStore repository.DataStore,
-	productClient client.ProductClient,
 	appLogger logger.Logger,
 	orderLifecycleProducer kafka.Producer,
 	sagaOrchestrator saga.Orchestrator,
@@ -96,7 +94,6 @@ func NewOrderService(
 ) OrderService {
 	return &orderService{
 		dataStore:              dataStore,
-		productClient:          productClient,
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
 		sagaOrchestrator:       sagaOrchestrator,

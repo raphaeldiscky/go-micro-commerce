@@ -46,7 +46,6 @@ type FulfillmentClient interface {
 
 // fulfillmentClient implements FulfillmentClient using event-based correlation.
 type fulfillmentClient struct {
-	config         *config.Config
 	logger         logger.Logger
 	grpcClient     *grpc.Client
 	client         pb.FulfillmentServiceClient
@@ -76,7 +75,6 @@ func NewFulfillmentClient(
 	client := pb.NewFulfillmentServiceClient(gClient.GetConnection())
 
 	return &fulfillmentClient{
-		config:         cfg,
 		logger:         appLogger,
 		grpcClient:     gClient,
 		client:         client,

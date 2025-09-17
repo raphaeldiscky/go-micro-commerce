@@ -15,21 +15,17 @@ import (
 
 // Client provides a reusable gRPC client with Consul service discovery support.
 type Client struct {
-	conn         *grpc.ClientConn
-	consulClient *api.Client
-	config       *config.GRPCClientConfig
+	conn *grpc.ClientConn
 }
 
 // NewGRPCClient creates a new GRPCClient instance with the specified configuration.
 func NewGRPCClient(cfg *config.GRPCClientConfig) (*Client, error) {
 	var conn *grpc.ClientConn
 
-	var consulClient *api.Client
-
 	var err error
 
 	if shouldUseServiceDiscovery(cfg) {
-		conn, consulClient, err = createConsulConnection(cfg)
+		conn, _, err = createConsulConnection(cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -41,9 +37,7 @@ func NewGRPCClient(cfg *config.GRPCClientConfig) (*Client, error) {
 	}
 
 	return &Client{
-		conn:         conn,
-		consulClient: consulClient,
-		config:       cfg,
+		conn: conn,
 	}, nil
 }
 

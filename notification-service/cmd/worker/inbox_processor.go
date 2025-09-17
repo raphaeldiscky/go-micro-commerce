@@ -13,7 +13,6 @@ import (
 // InboxProcessorWorker wraps the Kafka consumer server as a Worker.
 type InboxProcessorWorker struct {
 	consumer *worker.InboxProcessor
-	logger   logger.Logger
 }
 
 // NewInboxProcessorWorker creates a new Kafka consumer worker.
@@ -24,7 +23,6 @@ func NewInboxProcessorWorker(
 ) *InboxProcessorWorker {
 	return &InboxProcessorWorker{
 		consumer: provider.SetupInboxProcessor(cfg, appLogger, providers),
-		logger:   appLogger,
 	}
 }
 

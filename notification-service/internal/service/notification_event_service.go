@@ -18,7 +18,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
 )
 
 // NotificationRequestEvent is the envelope for notification request events.
@@ -48,19 +47,16 @@ type NotificationEventService interface {
 
 // notificationEventService implements notification business logic.
 type notificationEventService struct {
-	dataStore    repository.DataStore
 	emailService EmailService
 	logger       logger.Logger
 }
 
 // NewNotificationEventService creates a new notification service instance.
 func NewNotificationEventService(
-	dataStore repository.DataStore,
 	emailService EmailService,
 	appLogger logger.Logger,
 ) NotificationEventService {
 	return &notificationEventService{
-		dataStore:    dataStore,
 		emailService: emailService,
 		logger:       appLogger,
 	}

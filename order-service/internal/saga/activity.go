@@ -76,25 +76,19 @@ type OrderActivities interface {
 
 // orderActivities implements the OrderActivities interface.
 type orderActivities struct {
-	dataStore                  repository.DataStore
-	productClient              client.ProductClient
-	paymentRequestProducer     kafka.Producer
-	orderLifecycleProducer     kafka.Producer
-	fulfillmentRequestProducer kafka.Producer
-	fulfillmentClient          client.FulfillmentClient
-	paymentClient              client.PaymentClient
-	asynqClient                asynq.Client
-	taskCancellationHelper     *task.CancellationHelper
-	logger                     logger.Logger
+	dataStore              repository.DataStore
+	productClient          client.ProductClient
+	fulfillmentClient      client.FulfillmentClient
+	paymentClient          client.PaymentClient
+	asynqClient            asynq.Client
+	taskCancellationHelper *task.CancellationHelper
+	logger                 logger.Logger
 }
 
 // NewOrderActivities creates a new orderActivities instance.
 func NewOrderActivities(
 	dataStore repository.DataStore,
 	productClient client.ProductClient,
-	paymentRequestProducer kafka.Producer,
-	orderLifecycleProducer kafka.Producer,
-	fulfillmentRequestProducer kafka.Producer,
 	fulfillmentClient client.FulfillmentClient,
 	paymentClient client.PaymentClient,
 	asynqClient asynq.Client,
@@ -104,16 +98,13 @@ func NewOrderActivities(
 	taskCancellationHelper := task.NewCancellationHelper(taskCancellationService, appLogger)
 
 	return &orderActivities{
-		dataStore:                  dataStore,
-		productClient:              productClient,
-		paymentRequestProducer:     paymentRequestProducer,
-		orderLifecycleProducer:     orderLifecycleProducer,
-		fulfillmentRequestProducer: fulfillmentRequestProducer,
-		fulfillmentClient:          fulfillmentClient,
-		paymentClient:              paymentClient,
-		asynqClient:                asynqClient,
-		taskCancellationHelper:     taskCancellationHelper,
-		logger:                     appLogger,
+		dataStore:              dataStore,
+		productClient:          productClient,
+		fulfillmentClient:      fulfillmentClient,
+		paymentClient:          paymentClient,
+		asynqClient:            asynqClient,
+		taskCancellationHelper: taskCancellationHelper,
+		logger:                 appLogger,
 	}
 }
 

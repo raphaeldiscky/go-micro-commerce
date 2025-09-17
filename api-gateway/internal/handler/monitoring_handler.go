@@ -11,7 +11,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
@@ -19,15 +18,13 @@ import (
 
 // MonitoringHandler handles monitoring and health check endpoints.
 type MonitoringHandler struct {
-	config    *config.Config
 	logger    logger.Logger
 	startTime time.Time
 }
 
 // NewMonitoringHandler creates a new monitoring handler.
-func NewMonitoringHandler(cfg *config.Config, appLogger logger.Logger) *MonitoringHandler {
+func NewMonitoringHandler(appLogger logger.Logger) *MonitoringHandler {
 	return &MonitoringHandler{
-		config:    cfg,
 		logger:    appLogger,
 		startTime: time.Now(),
 	}

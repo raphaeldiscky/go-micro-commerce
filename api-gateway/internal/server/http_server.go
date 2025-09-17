@@ -39,7 +39,7 @@ func NewHTTPServer(
 	RegisterMiddlewares(e, cfg)
 
 	// Setup HTTP
-	provider.SetupHTTP(e, cfg, appLogger, gw, providers)
+	provider.SetupHTTP(e, appLogger, gw, providers)
 
 	return &HTTPServer{
 		echo:   e,

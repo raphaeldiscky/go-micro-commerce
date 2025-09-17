@@ -73,7 +73,6 @@ func (s *TestSuite) SetupSuite() {
 	mockProducer := &mockKafkaProducer{}
 	s.productService = service.NewProductService(
 		dataStore,
-		nil,
 		mockProducer,
 		mockProducer,
 		mockProducer,

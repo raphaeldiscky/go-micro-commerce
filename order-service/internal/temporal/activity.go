@@ -68,15 +68,12 @@ type OrderActivities interface {
 
 // orderActivities implements order saga activities for Temporal workflows.
 type orderActivities struct {
-	dataStore                  repository.DataStore
-	config                     *config.TemporalConfig
-	productClient              client.ProductClient
-	paymentRequestProducer     kafka.Producer
-	orderLifecycleProducer     kafka.Producer
-	fulfillmentRequestProducer kafka.Producer
-	fulfillmentClient          client.FulfillmentClient
-	paymentClient              client.PaymentClient
-	paymentReminderScheduler   *PaymentReminderScheduler
+	dataStore                repository.DataStore
+	config                   *config.TemporalConfig
+	productClient            client.ProductClient
+	fulfillmentClient        client.FulfillmentClient
+	paymentClient            client.PaymentClient
+	paymentReminderScheduler *PaymentReminderScheduler
 }
 
 // NewTemporalActivities creates a new OrderActivities instance.
@@ -84,23 +81,17 @@ func NewTemporalActivities(
 	dataStore repository.DataStore,
 	config *config.TemporalConfig,
 	productClient client.ProductClient,
-	paymentRequestProducer kafka.Producer,
-	orderLifecycleProducer kafka.Producer,
-	fulfillmentRequestProducer kafka.Producer,
 	fulfillmentClient client.FulfillmentClient,
 	paymentClient client.PaymentClient,
 	paymentReminderScheduler *PaymentReminderScheduler,
 ) OrderActivities {
 	return &orderActivities{
-		dataStore:                  dataStore,
-		config:                     config,
-		productClient:              productClient,
-		paymentRequestProducer:     paymentRequestProducer,
-		orderLifecycleProducer:     orderLifecycleProducer,
-		fulfillmentRequestProducer: fulfillmentRequestProducer,
-		fulfillmentClient:          fulfillmentClient,
-		paymentClient:              paymentClient,
-		paymentReminderScheduler:   paymentReminderScheduler,
+		dataStore:                dataStore,
+		config:                   config,
+		productClient:            productClient,
+		fulfillmentClient:        fulfillmentClient,
+		paymentClient:            paymentClient,
+		paymentReminderScheduler: paymentReminderScheduler,
 	}
 }
 

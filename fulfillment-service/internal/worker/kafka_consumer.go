@@ -9,8 +9,6 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
 )
 
 // KafkaConsumer represents a worker for consuming messages from Kafka topics.
@@ -18,14 +16,12 @@ type KafkaConsumer struct {
 	ctx       context.Context
 	cancel    context.CancelFunc
 	logger    logger.Logger
-	config    *config.Config
 	consumers []kafka.Consumer
 	wg        sync.WaitGroup
 }
 
 // NewKafkaConsumer creates a new Kafka consumer worker.
 func NewKafkaConsumer(
-	cfg *config.Config,
 	appLogger logger.Logger,
 	consumers []kafka.Consumer,
 ) *KafkaConsumer {
@@ -35,7 +31,6 @@ func NewKafkaConsumer(
 		ctx:       ctx,
 		cancel:    cancel,
 		logger:    appLogger,
-		config:    cfg,
 		consumers: consumers,
 	}
 }
