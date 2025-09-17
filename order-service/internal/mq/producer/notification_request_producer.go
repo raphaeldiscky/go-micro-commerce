@@ -35,16 +35,21 @@ func NewNotificationRequestEvent(
 	subject string,
 ) *NotificationRequestEvent {
 	// Prepare order items data for email template
-	items := make([]event.OrderItemData, len(order.Items))
+	var items []event.OrderItemData
 
-	for i := range order.Items {
-		item := &order.Items[i]
-		productName := products[i].Name
-		items[i] = event.OrderItemData{
-			ProductName: productName,
-			Quantity:    item.Quantity,
-			UnitPrice:   item.UnitPrice,
-			TotalPrice:  item.TotalPrice,
+	// Only include items if we have matching products data
+	if len(products) > 0 {
+		for i := range order.Items {
+			if i < len(products) {
+				item := &order.Items[i]
+				product := &products[i]
+				items = append(items, event.OrderItemData{
+					ProductName: product.Name,
+					Quantity:    item.Quantity,
+					UnitPrice:   item.UnitPrice,
+					TotalPrice:  item.TotalPrice,
+				})
+			}
 		}
 	}
 
@@ -85,6 +90,7 @@ func NewNotificationRequestEvent(
 		templateData["payment_deadline"] = paymentDeadline.Format(time.RFC3339)
 		templateData["payment_url"] = nil // No payment URL provided
 	case pkgconstant.TemplateOrderConfirmed,
+		pkgconstant.TemplateOrderPaymentExpired,
 		pkgconstant.TemplateOrderShipped,
 		pkgconstant.TemplateOrderCanceled,
 		pkgconstant.TemplateOrderDelivered:

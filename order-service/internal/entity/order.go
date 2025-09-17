@@ -18,6 +18,7 @@ type Order struct {
 	IdempotencyKey uuid.UUID // generated from client
 	CustomerID     uuid.UUID
 	Status         constant.OrderStatus
+	Reason         *string
 	Currency       string
 	ShippingCost   decimal.Decimal // generated from fulfillment-service
 	Subtotal       decimal.Decimal // SUM(unit_price * quantity) for all items
@@ -340,7 +341,8 @@ func (o *Order) RemoveItem(itemID uuid.UUID) error {
 
 // CanBeCancelled checks if order can be canceled.
 func (o *Order) CanBeCancelled() bool {
-	return o.Status != constant.OrderStatusDelivered && o.Status != constant.OrderStatusCanceled
+	return o.Status != constant.OrderStatusDelivered && o.Status != constant.OrderStatusCanceled &&
+		o.Status != constant.OrderStatusPaymentExpired
 }
 
 // CanBePaid checks if order can be paid.
@@ -351,7 +353,7 @@ func (o *Order) CanBePaid() bool {
 // IsPaymentConfirmed checks if payment is confirmed.
 func (o *Order) IsPaymentConfirmed() bool {
 	return o.Status == constant.OrderStatusPaid || o.Status == constant.OrderStatusDelivered ||
-		o.Status == constant.OrderStatusShipped || o.Status == constant.OrderStatusConfirmed
+		o.Status == constant.OrderStatusShipped
 }
 
 // UpdateItems updates order items and recalculates total.

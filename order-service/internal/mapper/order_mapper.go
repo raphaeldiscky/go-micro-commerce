@@ -64,8 +64,8 @@ func MapStatusToEventType(status constant.OrderStatus) string {
 		return kafka.OrderDeliveredEventType
 	case constant.OrderStatusCanceled:
 		return kafka.OrderCanceledEventType
-	case constant.OrderStatusConfirmed:
-		return kafka.OrderConfirmedEventType
+	case constant.OrderStatusPaymentExpired:
+		return kafka.OrderPaymentExpiredEventType
 	case constant.OrderStatusProcessing:
 		return kafka.OrderProcessingEventType
 	case constant.OrderStatusFailed:

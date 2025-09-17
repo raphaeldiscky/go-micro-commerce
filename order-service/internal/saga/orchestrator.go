@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
@@ -39,6 +40,8 @@ func NewSagaOrchestrator(
 	fulfillmentRequestProducer kafka.ProducerInterface,
 	fulfillmentClient client.FulfillmentClientInterface,
 	paymentClient client.PaymentClientInterface,
+	asynqClient asynq.ClientInterface,
+	taskCancellationService asynq.TaskCancellationService,
 	appLogger logger.Logger,
 	cfg *config.Config,
 ) Orchestrator {
@@ -54,6 +57,8 @@ func NewSagaOrchestrator(
 		fulfillmentRequestProducer,
 		fulfillmentClient,
 		paymentClient,
+		asynqClient,
+		taskCancellationService,
 		appLogger,
 	)
 

@@ -26,6 +26,22 @@ services:
     networks:
       - go-micro-commerce
 
+  # Asynq UI for background jobs
+  asynq-ui:
+    image: hibiken/asynqmon:latest
+    container_name: asynq-ui
+    ports:
+      - "8092:8080" # Web UI port
+    environment:
+      - REDIS_CLUSTER_NODES=redis-1:6379,redis-2:6379,redis-3:6379,redis-4:6379,redis-5:6379,redis-6:6379
+      - REDIS_PASSWORD=supersecret
+      - REDIS_DB=0
+    networks:
+      - go-micro-commerce
+    depends_on:
+      redis-1:
+        condition: service_healthy
+
 networks:
   go-micro-commerce:
     name: go-micro-commerce

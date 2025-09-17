@@ -167,7 +167,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		RetryDelay:  constant.SendPaymentRequiredNotificationStepRetryDelay,
 		Timeout:     constant.SendPaymentRequiredNotificationStepTimeout,
 		Idempotent:  true,
-		Critical:    true,
+		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			if len(data.ReservedProducts) == 0 {
 				return nil, errors.New("reserved products not found in data")
@@ -204,11 +204,19 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Description: "Wait for customer to pay the order",
 		MaxRetries:  constant.WaitForPaymentConfirmationStepMaxRetries,
 		RetryDelay:  constant.WaitForPaymentConfirmationStepRetryDelay,
-		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 20 minutes timeout for user payment confirmation
-		Idempotent:  true,
+		Timeout:     constant.WaitForPaymentConfirmationStepTimeout, // 5 minutes timeout for user payment confirmation
+		Idempotent:  false,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
-			paymentID, err := s.activities.WaitForPaymentConfirmation(ctx.Context(), payload.Order)
+			if data.CustomerEmail == "" {
+				ctx.logger.Error("No customer email found for notification")
+				return nil, errors.New("no customer email found")
+			}
+			paymentID, err := s.activities.WaitForPaymentConfirmation(
+				ctx.Context(),
+				payload.Order,
+				data.CustomerEmail,
+			)
 			if err != nil {
 				return nil, err
 			}

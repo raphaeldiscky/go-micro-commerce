@@ -14,6 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
 
 // OrderLifecycleEvent is the envelope for all Order events.
@@ -24,18 +25,21 @@ type OrderLifecycleEvent struct {
 
 // OrderLifecycleConsumer handles the logic for processing product created events.
 type OrderLifecycleConsumer struct {
-	logger    logger.Logger
-	datastore repository.DataStore
+	logger         logger.Logger
+	datastore      repository.DataStore
+	paymentService service.PaymentServiceInterface
 }
 
 // NewOrderLifecycleConsumer creates a new consumer for product lifecycle events.
 func NewOrderLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
+	paymentService service.PaymentServiceInterface,
 ) *OrderLifecycleConsumer {
 	return &OrderLifecycleConsumer{
-		logger:    appLogger,
-		datastore: ds,
+		logger:         appLogger,
+		datastore:      ds,
+		paymentService: paymentService,
 	}
 }
 
@@ -93,6 +97,8 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		switch meta.Metadata.EventType {
 		case kafka.OrderCreatedEventType:
 			processingErr = c.processCreatedOrder(ctx, ds, body)
+		case kafka.OrderPaymentExpiredEventType:
+			processingErr = c.processPaymentExpiredOrder(ctx, c.paymentService, body)
 		default:
 			c.logger.Warnf("ignoring unknown event type: %s", meta.Metadata.EventType)
 			// Mark as processed even for unknown events to avoid reprocessing
@@ -138,6 +144,35 @@ func (c *OrderLifecycleConsumer) processCreatedOrder(
 		"Order %s created, payment will be created when payment is requested",
 		evt.Payload.OrderID,
 	)
+
+	return nil
+}
+
+// processPaymentExpiredOrder handles order canceled events to timeout payment records.
+func (c *OrderLifecycleConsumer) processPaymentExpiredOrder(
+	ctx context.Context,
+	paymentService service.PaymentServiceInterface,
+	body []byte,
+) error {
+	var evt OrderLifecycleEvent
+	if err := sonic.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal order canceled event: %w", err)
+	}
+
+	c.logger.Infof("Handling order canceled event for order ID: %s", evt.Payload.OrderID)
+
+	// Timeout the payment for this order (if it exists)
+	if err := paymentService.TimeoutPayment(ctx, evt.Payload.OrderID); err != nil {
+		c.logger.Errorf(
+			"Failed to timeout payment for canceled order %s: %v",
+			evt.Payload.OrderID,
+			err,
+		)
+
+		return fmt.Errorf("failed to timeout payment: %w", err)
+	}
+
+	c.logger.Infof("Successfully processed order cancellation for order: %s", evt.Payload.OrderID)
 
 	return nil
 }

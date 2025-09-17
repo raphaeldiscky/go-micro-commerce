@@ -11,6 +11,7 @@ type Config struct {
 	SMTP       *SMTPConfig
 	GRPCClient *GRPCClientConfig
 	Kafka      *KafkaConfig
+	Asynq      *AsynqConfig
 }
 
 // NewConfig creates a new configuration instance by loading environment variables.
@@ -29,5 +30,6 @@ func NewConfig() (*Config, error) {
 		SMTP:       initSMTPConfig(),
 		GRPCClient: initGRPCClientConfig("api"),
 		Kafka:      initKafkaConfig(),
+		Asynq:      initAsynqConfig(),
 	}, nil
 }

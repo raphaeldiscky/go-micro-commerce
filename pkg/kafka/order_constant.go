@@ -12,9 +12,6 @@ const (
 	// OrderProcessingEventType is when order is being processed (processing).
 	// Needed by: shipping service, accounting, notification service.
 	OrderProcessingEventType = "OrderProcessing"
-	// OrderConfirmedEventType is when order is confirmed (confirmed).
-	// Needed by: inventory service to update stock, notification service.
-	OrderConfirmedEventType = "OrderConfirmed"
 	// OrderPaidEventType is when payment succeeded (paid).
 	// Needed by: shipping service, accounting, notification service.
 	OrderPaidEventType = "OrderPaid"
@@ -27,6 +24,9 @@ const (
 	// OrderCanceledEventType is when canceled by system or customer (canceled)
 	// Needed by: inventory release, refund, analytics.
 	OrderCanceledEventType = "OrderCanceled"
+	// OrderPaymentExpiredEventType is when order payment expired (payment_expired).
+	// Needed by: inventory release, no refund needed, analytics.
+	OrderPaymentExpiredEventType = "OrderPaymentExpired"
 	// OrderFailedEventType is when order processing failed (failed).
 	// Needed by: notification service, analytics.
 	OrderFailedEventType = "OrderFailed"

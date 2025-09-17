@@ -7,10 +7,6 @@ const (
 	FirstReminderSequence = 1
 	// SecondReminderSequence represents the second reminder in the sequence.
 	SecondReminderSequence = 2
-	// FinalReminderSequence represents the final reminder in the sequence.
-	FinalReminderSequence = 3
-	// MaxPaymentReminders represents the max number of payment reminders.
-	MaxPaymentReminders = 3
 )
 
 const (
@@ -21,9 +17,9 @@ const (
 	// PaymentReminderBackoffCoefficient is the backoff coefficient for payment reminders.
 	PaymentReminderBackoffCoefficient = 2.0
 	// PaymentReminderMaxInterval is the Max interval for payment reminders.
-	PaymentReminderMaxInterval = 30 * time.Second
+	PaymentReminderMaxInterval = 5 * time.Second
 	// PaymentReminderMaxAttempts is the Max number of attempts for payment reminders.
-	PaymentReminderMaxAttempts = 3
+	PaymentReminderMaxAttempts = 0
 )
 
 const (
@@ -43,6 +39,14 @@ func GetPaymentReminderExecutionTimes() []time.Duration {
 	return []time.Duration{
 		1 * time.Minute, // First reminder after 1 minute
 		2 * time.Minute, // Second reminder after 2 minutes
-		3 * time.Minute, // Final reminder after 3 minutes
 	}
 }
+
+const (
+	// FirstPaymentReminderEmailSubject is the subject for the first payment reminder.
+	FirstPaymentReminderEmailSubject = "Payment Reminder - Your Order is Waiting"
+	// SecondPaymentReminderEmailSubject is the subject for the second payment reminder.
+	SecondPaymentReminderEmailSubject = "Final Payment Reminder - Your Order Expires Soon"
+	// OrderPaymentExpiredEmailSubject is the subject for the order cancellation email.
+	OrderPaymentExpiredEmailSubject = "Your Order Has Expired - Payment Timeout"
+)

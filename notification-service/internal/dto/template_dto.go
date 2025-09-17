@@ -88,6 +88,15 @@ type OrderCanceledTemplateData struct {
 	OrderNumber   string `json:"order_number,omitempty"`
 }
 
+// OrderPaymentExpiredTemplateData represents data for order payment expired email template.
+type OrderPaymentExpiredTemplateData struct {
+	RecipientName string `json:"recipient_name"`
+	OrderNumber   string `json:"order_number,omitempty"`
+	OrderDate     string `json:"order_date,omitempty"`
+	TotalPrice    string `json:"total_price,omitempty"`
+	Currency      string `json:"currency,omitempty"`
+}
+
 // PaymentConfirmedTemplateData represents data for payment confirmation email template.
 type PaymentConfirmedTemplateData struct {
 	RecipientName string `json:"recipient_name"`

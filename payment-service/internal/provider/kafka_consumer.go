@@ -22,7 +22,11 @@ func SetupKafkaConsumers(
 		cfg.Kafka.Brokers,
 		kafka.OrderLifecycleTopic,
 		kafka.PaymentOrderEventsConsumerGroup,
-		consumer.NewOrderLifecycleConsumer(appLogger, providers.DataStore).Handler,
+		consumer.NewOrderLifecycleConsumer(
+			appLogger,
+			providers.DataStore,
+			providers.PaymentService,
+		).Handler,
 		appLogger,
 	)
 	if err != nil {

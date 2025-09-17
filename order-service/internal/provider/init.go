@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bsm/redislock"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -28,6 +29,9 @@ type Providers struct {
 	NotificationRequestProducer kafka.ProducerInterface
 	ReminderScheduler           *temporal.ReminderScheduler
 	PaymentReminderService      *service.PaymentReminderService
+	OrderService                service.OrderServiceInterface
+	AsynqClient                 *asynq.Client
+	AsynqInspector              *asynq.Inspector
 }
 
 // SetupGlobal initializes all providers.

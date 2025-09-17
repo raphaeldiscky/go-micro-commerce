@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -37,14 +36,10 @@ type PaymentServiceInterface interface {
 		orderID uuid.UUID,
 		req dto.ProcessPaymentRequest,
 	) (*dto.PaymentResponse, error)
+	// TimeoutPayment times out a payment transaction
+	TimeoutPayment(ctx context.Context, orderID uuid.UUID) error
 	// GetPaymentByOrderID retrieves payment by order ID
 	GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*dto.PaymentResponse, error)
-	// HandleOrderPaymentRequested handles payment requests from order service
-	HandleOrderPaymentRequested(
-		ctx context.Context,
-		orderID uuid.UUID,
-		amount decimal.Decimal,
-	) error
 }
 
 // PaymentService implements the PaymentServiceInterface.
@@ -305,32 +300,6 @@ func (s *PaymentService) GetPaymentByOrderID(
 	return mapper.MapToPaymentResponse(payment), nil
 }
 
-// HandleOrderPaymentRequested handles payment requests from order service.
-func (s *PaymentService) HandleOrderPaymentRequested(
-	ctx context.Context,
-	orderID uuid.UUID,
-	amount decimal.Decimal,
-) error {
-	// Create payment record for the order
-	req := dto.CreatePaymentRequest{
-		OrderID:       orderID,
-		Amount:        amount,
-		Currency:      "IDR",                            // Default currency
-		PaymentMethod: constant.PaymentMethodCreditCard, // Default payment method
-	}
-
-	_, err := s.CreatePayment(ctx, req)
-	if err != nil {
-		s.logger.Errorf("Failed to create payment for order %s: %v", orderID, err)
-
-		return err
-	}
-
-	s.logger.Infof("Successfully created payment record for order %s", orderID)
-
-	return nil
-}
-
 // processWithPaymentGateway processes payment with payment gateway client.
 func (s *PaymentService) processWithPaymentGateway(
 	ctx context.Context,
@@ -355,4 +324,85 @@ func (s *PaymentService) processWithPaymentGateway(
 	}
 
 	return s.paymentGatewayClient.ProcessPayment(ctx, paymentRequest)
+}
+
+// TimeoutPayment times out a payment transaction.
+func (s *PaymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) error {
+	s.logger.Infof("Processing payment timeout for order: %s", orderID)
+
+	return s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		paymentRepo := ds.PaymentRepository()
+		outboxRepo := ds.OutboxRepository()
+
+		payment, err := paymentRepo.FindByOrderID(ctx, orderID)
+		if err != nil {
+			if err.Error() == constant.PaymentNotFoundErrorMessage {
+				s.logger.Warnf("Payment not found for order %s during timeout", orderID)
+				return nil // Don't error if payment doesn't exist
+			}
+
+			return httperror.NewInternalServerError("failed to get payment")
+		}
+
+		if payment == nil {
+			s.logger.Warnf("Payment not found for order %s during timeout", orderID)
+			return nil // Don't error if payment doesn't exist
+		}
+
+		// Check if payment can be timed out (only pending payments)
+		if payment.Status != constant.PaymentStatusPending {
+			s.logger.Infof(
+				"Payment for order %s is already in status %s, skipping timeout",
+				orderID,
+				payment.Status,
+			)
+
+			return nil
+		}
+
+		// Update payment status to timed out
+		if err = payment.UpdateStatus(constant.PaymentStatusTimeout); err != nil {
+			return httperror.NewInternalServerError("failed to update payment status to timeout")
+		}
+
+		// Save updated payment
+		updatedPayment, err := paymentRepo.Update(ctx, payment)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to update payment")
+		}
+
+		// Publish payment timeout event using outbox pattern
+		evt := producer.NewPaymentLifecycleEvent(
+			updatedPayment.ID,
+			updatedPayment.OrderID,
+			constant.PaymentStatusTimeout,
+			updatedPayment.Amount,
+		)
+
+		payload, err := json.Marshal(evt)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to marshal payment timeout event")
+		}
+
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "payment",
+			AggregateID:   updatedPayment.ID,
+			EventType:     kafka.PaymentTimeoutEventType,
+			Topic:         kafka.PaymentLifecycleTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return httperror.NewInternalServerError("failed to create payment timeout event")
+		}
+
+		s.logger.Infof("Successfully timed out payment for order %s", orderID)
+
+		return nil
+	})
 }

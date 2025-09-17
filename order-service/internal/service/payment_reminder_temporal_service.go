@@ -42,7 +42,6 @@ func (prs *PaymentReminderService) CreatePaymentReminderSchedule(
 		Input:        req,
 		Config: pkgtemporal.ReminderConfig{
 			Type:           pkgtemporal.ReminderTypePayment,
-			MaxReminders:   constant.MaxPaymentReminders,
 			ExecutionTimes: constant.GetPaymentReminderExecutionTimes(),
 			Timezone:       time.UTC,
 		},

@@ -410,13 +410,12 @@ func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
 	// Create payment reminder schedule if payment reminder service is available
 	if ta.paymentReminderService != nil {
 		reminderRequest := dto.PaymentReminderWorkflowRequest{
-			OrderID:          req.Order.ID,
-			CustomerEmail:    req.CustomerEmail,
-			ReservedProducts: req.ReservedProducts,
-			PaymentID:        uuid.Nil, // Will be set when payment is created
-			TotalPrice:       req.Order.TotalPrice,
-			Currency:         req.Order.Currency,
-			TaskQueue:        ta.config.TaskQueue,
+			OrderID:       req.Order.ID,
+			CustomerEmail: req.CustomerEmail,
+			PaymentID:     uuid.Nil, // Will be set when payment is created
+			TotalPrice:    req.Order.TotalPrice,
+			Currency:      req.Order.Currency,
+			TaskQueue:     ta.config.TaskQueue,
 		}
 
 		_, err = ta.paymentReminderService.CreatePaymentReminderSchedule(ctx, reminderRequest)

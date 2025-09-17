@@ -17,6 +17,7 @@ type Config struct {
 	Saga            *SagaConfig
 	Job             *JobConfig
 	Temporal        *TemporalConfig
+	Asynq           *AsynqConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -42,6 +43,7 @@ func LoadConfig() (*Config, error) {
 		Saga:            initSagaConfig(),
 		Job:             initJobConfig(),
 		Temporal:        initTemporalConfig(),
+		Asynq:           initAsynqConfig(),
 	}
 
 	return cfg, nil

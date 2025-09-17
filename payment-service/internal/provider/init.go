@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mock"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
 
 // Providers holds all initialized providers.
@@ -21,6 +22,7 @@ type Providers struct {
 	KafkaAdmin           *kafka.Admin
 	BankingClient        client.BankingClientInterface
 	PaymentGatewayClient client.PaymentGatewayClientInterface
+	PaymentService       service.PaymentServiceInterface
 }
 
 // SetupGlobal initializes all providers.
