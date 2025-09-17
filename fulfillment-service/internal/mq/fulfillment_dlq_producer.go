@@ -65,7 +65,7 @@ func (e *FulfillmentDLQEvent) GetMetadata() event.Metadata {
 }
 
 // NewFulfillmentDLQProducer creates a new instance of FulfillmentDLQProducer.
-func NewFulfillmentDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewFulfillmentDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &FulfillmentDLQProducer{
 		Producer: producer,
 		topic:    kafka.FulfillmentDLQTopic,

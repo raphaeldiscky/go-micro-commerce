@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 )
@@ -19,27 +20,27 @@ const (
 
 )
 
-// FakePaymentGatewayClient provides a simple mock implementation of PaymentGatewayClientInterface.
-type FakePaymentGatewayClient struct {
+// fakePaymentGatewayClient provides a simple mock implementation of PaymentGatewayClient.
+type fakePaymentGatewayClient struct {
 	shouldFail bool
 	delay      time.Duration
 }
 
-// NewFakePaymentGatewayClient creates a new instance of FakePaymentGatewayClient.
-func NewFakePaymentGatewayClient() *FakePaymentGatewayClient {
-	return &FakePaymentGatewayClient{
+// NewFakePaymentGatewayClient creates a new instance of fakePaymentGatewayClient with test utilities.
+func NewFakePaymentGatewayClient() client.PaymentGatewayClient {
+	return &fakePaymentGatewayClient{
 		shouldFail: false,
 		delay:      fakeGatewayDelay,
 	}
 }
 
 // SetShouldFail configures the client to simulate failures.
-func (c *FakePaymentGatewayClient) SetShouldFail(shouldFail bool) {
+func (c *fakePaymentGatewayClient) SetShouldFail(shouldFail bool) {
 	c.shouldFail = shouldFail
 }
 
 // ProcessPayment processes a payment through the gateway.
-func (c *FakePaymentGatewayClient) ProcessPayment(
+func (c *fakePaymentGatewayClient) ProcessPayment(
 	_ context.Context,
 	req *dto.PaymentGatewayRequest,
 ) (*dto.PaymentGatewayResponse, error) {
@@ -73,7 +74,7 @@ func (c *FakePaymentGatewayClient) ProcessPayment(
 }
 
 // GetPaymentStatus retrieves payment status.
-func (c *FakePaymentGatewayClient) GetPaymentStatus(
+func (c *fakePaymentGatewayClient) GetPaymentStatus(
 	_ context.Context,
 	gatewayID string,
 ) (*dto.PaymentGatewayResponse, error) {
@@ -87,7 +88,7 @@ func (c *FakePaymentGatewayClient) GetPaymentStatus(
 }
 
 // CapturePayment captures an authorized payment.
-func (c *FakePaymentGatewayClient) CapturePayment(
+func (c *fakePaymentGatewayClient) CapturePayment(
 	_ context.Context,
 	gatewayID string,
 	amount decimal.Decimal,
@@ -103,14 +104,14 @@ func (c *FakePaymentGatewayClient) CapturePayment(
 }
 
 // CancelPayment cancels a payment.
-func (c *FakePaymentGatewayClient) CancelPayment(_ context.Context, _ string) error {
+func (c *fakePaymentGatewayClient) CancelPayment(_ context.Context, _ string) error {
 	time.Sleep(c.delay)
 
 	return nil
 }
 
 // RefundPayment refunds a payment.
-func (c *FakePaymentGatewayClient) RefundPayment(
+func (c *fakePaymentGatewayClient) RefundPayment(
 	_ context.Context,
 	req *dto.RefundRequest,
 ) (*dto.RefundResponse, error) {
@@ -128,7 +129,7 @@ func (c *FakePaymentGatewayClient) RefundPayment(
 }
 
 // GetRefundStatus retrieves refund status.
-func (c *FakePaymentGatewayClient) GetRefundStatus(
+func (c *fakePaymentGatewayClient) GetRefundStatus(
 	_ context.Context,
 	gatewayRefundID string,
 ) (*dto.RefundResponse, error) {
@@ -142,7 +143,7 @@ func (c *FakePaymentGatewayClient) GetRefundStatus(
 }
 
 // ValidateCard validates a payment card.
-func (c *FakePaymentGatewayClient) ValidateCard(_ context.Context, _ *dto.PaymentCard) error {
+func (c *fakePaymentGatewayClient) ValidateCard(_ context.Context, _ *dto.PaymentCard) error {
 	time.Sleep(c.delay)
 
 	return nil

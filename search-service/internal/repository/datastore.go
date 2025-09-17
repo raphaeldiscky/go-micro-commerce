@@ -22,22 +22,22 @@ type DBTX interface {
 // DataStore is an interface that wraps the database access methods.
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
-	InboxRepository() InboxRepositoryInterface
-	SearchRepository() SearchRepositoryInterface
+	InboxRepository() InboxRepository
+	SearchRepository() SearchRepository
 }
 
 // dataStore is a struct that implements the DataStore interface.
 type dataStore struct {
 	pool          *pgxpool.Pool
 	db            DBTX
-	elasticClient client.ElasticsearchClientInterface
+	elasticClient client.ElasticsearchClient
 	logger        logger.Logger
 }
 
 // NewDataStore creates a new DataStore.
 func NewDataStore(
 	pool *pgxpool.Pool,
-	elasticClient client.ElasticsearchClientInterface,
+	elasticClient client.ElasticsearchClient,
 	appLogger logger.Logger,
 ) DataStore {
 	return &dataStore{
@@ -68,11 +68,11 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 }
 
 // InboxRepository returns a new InboxRepository.
-func (s *dataStore) InboxRepository() InboxRepositoryInterface {
+func (s *dataStore) InboxRepository() InboxRepository {
 	return NewInboxRepository(s.db)
 }
 
 // SearchRepository returns a new SearchRepository.
-func (s *dataStore) SearchRepository() SearchRepositoryInterface {
+func (s *dataStore) SearchRepository() SearchRepository {
 	return NewSearchRepository(s.elasticClient, s.logger)
 }

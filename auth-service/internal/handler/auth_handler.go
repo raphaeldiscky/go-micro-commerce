@@ -12,13 +12,13 @@ import (
 
 // AuthHandler handles HTTP requests for authentication.
 type AuthHandler struct {
-	authService service.AuthServiceInterface
+	authService service.AuthService
 	logger      logger.Logger
 }
 
 // NewAuthHandler creates a new auth handler.
 func NewAuthHandler(
-	authService service.AuthServiceInterface,
+	authService service.AuthService,
 	appLogger logger.Logger,
 ) *AuthHandler {
 	return &AuthHandler{

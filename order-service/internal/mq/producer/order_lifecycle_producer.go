@@ -65,7 +65,7 @@ func (e *OrderLifecycleEvent) GetMetadata() event.Metadata { // Use the correct 
 }
 
 // NewOrderLifecycleProducer creates a new instance of OrderLifecycleProducer.
-func NewOrderLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewOrderLifecycleProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &OrderLifecycleProducer{
 		Producer: producer,
 		topic:    kafka.OrderLifecycleTopic,

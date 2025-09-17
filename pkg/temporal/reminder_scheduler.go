@@ -12,11 +12,11 @@ import (
 
 // ReminderScheduler provides specialized scheduling for reminder workflows with calendar.
 type ReminderScheduler struct {
-	manager ScheduleManagerInterface
+	manager ScheduleManager
 }
 
 // NewReminderScheduler creates a new ReminderScheduler.
-func NewReminderScheduler(manager ScheduleManagerInterface) *ReminderScheduler {
+func NewReminderScheduler(manager ScheduleManager) *ReminderScheduler {
 	return &ReminderScheduler{
 		manager: manager,
 	}

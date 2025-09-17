@@ -42,7 +42,7 @@ type TestSuite struct {
 	tcSetup        *TestContainersSetup
 	httpServer     *server.HTTPServer
 	baseURL        string
-	productService service.ProductServiceInterface
+	productService service.ProductService
 	ctx            context.Context
 }
 

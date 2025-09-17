@@ -11,8 +11,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 )
 
-// SchedulerInterface defines the methods for a job.
-type SchedulerInterface interface {
+// Job defines the methods for a job.
+type Job interface {
 	Start(ctx context.Context)
 	Stop()
 	Name() string
@@ -22,7 +22,7 @@ type SchedulerInterface interface {
 
 // Scheduler manages and coordinates multiple jobs.
 type Scheduler struct {
-	jobs   []SchedulerInterface
+	jobs   []Job
 	logger logger.Logger
 	config *config.JobConfig
 	wg     sync.WaitGroup
@@ -34,14 +34,14 @@ type Scheduler struct {
 // NewScheduler creates a new job scheduler.
 func NewScheduler(appLogger logger.Logger, config *config.JobConfig) *Scheduler {
 	return &Scheduler{
-		jobs:   make([]SchedulerInterface, 0),
+		jobs:   make([]Job, 0),
 		logger: appLogger,
 		config: config,
 	}
 }
 
 // RegisterJob adds a job to the scheduler.
-func (s *Scheduler) RegisterJob(job SchedulerInterface) {
+func (s *Scheduler) RegisterJob(job Job) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -95,7 +95,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 }
 
 // runJob executes a single job with its configured interval.
-func (s *Scheduler) runJob(ctx context.Context, job SchedulerInterface) {
+func (s *Scheduler) runJob(ctx context.Context, job Job) {
 	defer s.wg.Done()
 
 	s.logger.Infof("Starting job: %s with interval %v", job.Name(), job.Interval())
@@ -124,7 +124,7 @@ func (s *Scheduler) runJob(ctx context.Context, job SchedulerInterface) {
 }
 
 // executeJob runs a single job execution with error handling.
-func (s *Scheduler) executeJob(ctx context.Context, job SchedulerInterface) {
+func (s *Scheduler) executeJob(ctx context.Context, job Job) {
 	defer func() {
 		if r := recover(); r != nil {
 			s.logger.Errorf("Job %s panicked: %v", job.Name(), r)

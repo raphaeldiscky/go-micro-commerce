@@ -66,7 +66,7 @@ func SetupOrder(
 	}
 
 	// Create task cancellation service
-	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector.Inspector)
+	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector)
 
 	// Create saga orchestrator
 	sagaOrchestrator := saga.NewSagaOrchestrator(

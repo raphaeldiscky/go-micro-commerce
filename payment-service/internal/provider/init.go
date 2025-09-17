@@ -20,9 +20,9 @@ import (
 type Providers struct {
 	DataStore            repository.DataStore
 	KafkaAdmin           *kafka.Admin
-	BankingClient        client.BankingClientInterface
-	PaymentGatewayClient client.PaymentGatewayClientInterface
-	PaymentService       service.PaymentServiceInterface
+	BankingClient        client.BankingClient
+	PaymentGatewayClient client.PaymentGatewayClient
+	PaymentService       service.PaymentService
 }
 
 // SetupGlobal initializes all providers.

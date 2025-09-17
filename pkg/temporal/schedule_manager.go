@@ -7,8 +7,8 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
-// ScheduleManagerInterface provides interface for managing Temporal schedules.
-type ScheduleManagerInterface interface {
+// ScheduleManager provides interface for managing Temporal schedules.
+type ScheduleManager interface {
 	// Create creates a new schedule.
 	Create(ctx context.Context, options ScheduleOptions) (client.ScheduleHandle, error)
 	// Pause pauses a schedule.
@@ -27,20 +27,20 @@ type ScheduleManagerInterface interface {
 	Trigger(ctx context.Context, scheduleID string) error
 }
 
-// ScheduleManager implements ScheduleManagerInterface using Temporal client.
-type ScheduleManager struct {
+// scheduleManager implements ScheduleManager using Temporal client.
+type scheduleManager struct {
 	client client.Client
 }
 
-// NewTemporalScheduleManager creates a new ScheduleManager.
-func NewTemporalScheduleManager(temporalClient client.Client) *ScheduleManager {
-	return &ScheduleManager{
+// NewTemporalScheduleManager creates a new scheduleManager.
+func NewTemporalScheduleManager(temporalClient client.Client) ScheduleManager {
+	return &scheduleManager{
 		client: temporalClient,
 	}
 }
 
 // Create creates a new schedule.
-func (m *ScheduleManager) Create(
+func (m *scheduleManager) Create(
 	ctx context.Context,
 	options ScheduleOptions,
 ) (client.ScheduleHandle, error) {
@@ -62,7 +62,7 @@ func (m *ScheduleManager) Create(
 }
 
 // Pause pauses a schedule.
-func (m *ScheduleManager) Pause(ctx context.Context, scheduleID string, note string) error {
+func (m *scheduleManager) Pause(ctx context.Context, scheduleID string, note string) error {
 	handle := m.client.ScheduleClient().GetHandle(ctx, scheduleID)
 
 	return handle.Pause(ctx, client.SchedulePauseOptions{
@@ -71,7 +71,7 @@ func (m *ScheduleManager) Pause(ctx context.Context, scheduleID string, note str
 }
 
 // Resume resumes a paused schedule.
-func (m *ScheduleManager) Resume(
+func (m *scheduleManager) Resume(
 	ctx context.Context,
 	scheduleID string,
 	note string,
@@ -84,13 +84,13 @@ func (m *ScheduleManager) Resume(
 }
 
 // Delete deletes a schedule.
-func (m *ScheduleManager) Delete(ctx context.Context, scheduleID string) error {
+func (m *scheduleManager) Delete(ctx context.Context, scheduleID string) error {
 	handle := m.client.ScheduleClient().GetHandle(ctx, scheduleID)
 	return handle.Delete(ctx)
 }
 
 // Get retrieves a schedule handle.
-func (m *ScheduleManager) Get(
+func (m *scheduleManager) Get(
 	ctx context.Context,
 	scheduleID string,
 ) (client.ScheduleHandle, error) {
@@ -99,7 +99,7 @@ func (m *ScheduleManager) Get(
 }
 
 // Describe describes a schedule.
-func (m *ScheduleManager) Describe(
+func (m *scheduleManager) Describe(
 	ctx context.Context,
 	scheduleID string,
 ) (*client.ScheduleDescription, error) {
@@ -108,7 +108,7 @@ func (m *ScheduleManager) Describe(
 }
 
 // List lists all schedules.
-func (m *ScheduleManager) List(
+func (m *scheduleManager) List(
 	ctx context.Context,
 	query string,
 ) (client.ScheduleListIterator, error) {
@@ -118,7 +118,7 @@ func (m *ScheduleManager) List(
 }
 
 // Trigger triggers a schedule immediately.
-func (m *ScheduleManager) Trigger(ctx context.Context, scheduleID string) error {
+func (m *scheduleManager) Trigger(ctx context.Context, scheduleID string) error {
 	handle := m.client.ScheduleClient().GetHandle(ctx, scheduleID)
 	return handle.Trigger(ctx, client.ScheduleTriggerOptions{})
 }

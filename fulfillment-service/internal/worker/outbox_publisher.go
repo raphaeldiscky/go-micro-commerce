@@ -22,8 +22,8 @@ import (
 type OutboxPublisher struct {
 	dataStore                    repository.DataStore
 	logger                       logger.Logger
-	fulfillmentLifecycleProducer kafka.ProducerInterface
-	fulfillmentDLQProducer       kafka.ProducerInterface
+	fulfillmentLifecycleProducer kafka.Producer
+	fulfillmentDLQProducer       kafka.Producer
 	config                       config.OutboxPublisherConfig
 	eventRegistry                *kafka.EventRegistry
 }
@@ -32,8 +32,8 @@ type OutboxPublisher struct {
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	fulfillmentLifecycleProducer kafka.ProducerInterface,
-	fulfillmentDLQProducer kafka.ProducerInterface,
+	fulfillmentLifecycleProducer kafka.Producer,
+	fulfillmentDLQProducer kafka.Producer,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {

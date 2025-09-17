@@ -23,13 +23,13 @@ type Providers struct {
 	KafkaAdmin                  *kafka.Admin
 	JobScheduler                *job.Scheduler
 	TemporalClient              *client.TemporalClient
-	FulfillmentClient           client.FulfillmentClientInterface
-	PaymentClient               client.PaymentClientInterface
-	NotificationRequestProducer kafka.ProducerInterface
-	OrderService                service.OrderServiceInterface
-	PaymentReminderService      service.PaymentReminderServiceInterface
-	AsynqClient                 *asynq.Client
-	AsynqInspector              *asynq.Inspector
+	FulfillmentClient           client.FulfillmentClient
+	PaymentClient               client.PaymentClient
+	NotificationRequestProducer kafka.Producer
+	OrderService                service.OrderService
+	PaymentReminderService      service.PaymentReminderService
+	AsynqClient                 asynq.Client
+	AsynqInspector              asynq.Inspector
 }
 
 // SetupGlobal initializes all providers.

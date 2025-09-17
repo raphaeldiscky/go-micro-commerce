@@ -18,13 +18,13 @@ import (
 
 // OrderHandler handles HTTP requests for Order operations.
 type OrderHandler struct {
-	orderService service.OrderServiceInterface
+	orderService service.OrderService
 	logger       logger.Logger
 }
 
 // NewOrderHandler creates a new instance of OrderHandler.
 func NewOrderHandler(
-	orderService service.OrderServiceInterface,
+	orderService service.OrderService,
 	appLogger logger.Logger,
 ) *OrderHandler {
 	return &OrderHandler{

@@ -3,8 +3,6 @@ package asynq
 import (
 	"context"
 	"fmt"
-
-	"github.com/hibiken/asynq"
 )
 
 // TaskCancellationService handles cancellation of scheduled tasks for cleanup.
@@ -14,11 +12,11 @@ type TaskCancellationService interface {
 }
 
 type taskCancellationService struct {
-	inspector *asynq.Inspector
+	inspector Inspector
 }
 
 // NewTaskCancellationService creates a new task cancellation service.
-func NewTaskCancellationService(inspector *asynq.Inspector) TaskCancellationService {
+func NewTaskCancellationService(inspector Inspector) TaskCancellationService {
 	return &taskCancellationService{
 		inspector: inspector,
 	}

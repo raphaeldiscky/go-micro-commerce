@@ -16,7 +16,7 @@ import (
 )
 
 // ReleaseProducts releases reserved products.
-func (a *OrderActivitiesImpl) ReleaseProducts(
+func (a *orderActivities) ReleaseProducts(
 	_ context.Context,
 	order *entity.Order,
 ) error {
@@ -62,7 +62,7 @@ func (a *OrderActivitiesImpl) ReleaseProducts(
 }
 
 // RefundPayment refunds payment for the order.
-func (a *OrderActivitiesImpl) RefundPayment(
+func (a *orderActivities) RefundPayment(
 	ctx context.Context,
 	order *entity.Order,
 	paymentID uuid.UUID,
@@ -112,7 +112,7 @@ func (a *OrderActivitiesImpl) RefundPayment(
 }
 
 // CancelShipping cancels shipping arrangement.
-func (a *OrderActivitiesImpl) CancelShipping(_ context.Context, shippingID uuid.UUID) error {
+func (a *orderActivities) CancelShipping(_ context.Context, shippingID uuid.UUID) error {
 	a.logger.Infof("Canceling shipping: %s", shippingID)
 
 	// In a real implementation, you would call a shipping service API
@@ -125,7 +125,7 @@ func (a *OrderActivitiesImpl) CancelShipping(_ context.Context, shippingID uuid.
 }
 
 // RestoreProducts restores stock in case of compensation.
-func (a *OrderActivitiesImpl) RestoreProducts(ctx context.Context, order *entity.Order) error {
+func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Restoring products for order: %s", order.ID)
 
 	if a.productClient == nil {

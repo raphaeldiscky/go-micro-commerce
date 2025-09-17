@@ -22,13 +22,13 @@ type PaymentReminderActivities interface {
 // paymentReminderActivities implements payment reminder activities.
 type paymentReminderActivities struct {
 	dataStore              repository.DataStore
-	paymentReminderService service.PaymentReminderServiceInterface
+	paymentReminderService service.PaymentReminderService
 }
 
 // NewPaymentReminderActivities creates a new PaymentReminderActivities instance.
 func NewPaymentReminderActivities(
 	dataStore repository.DataStore,
-	paymentReminderService service.PaymentReminderServiceInterface,
+	paymentReminderService service.PaymentReminderService,
 ) PaymentReminderActivities {
 	return &paymentReminderActivities{
 		dataStore:              dataStore,

@@ -8,8 +8,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
 )
 
-// CarrierClientInterface defines the interface for carrier service integration.
-type CarrierClientInterface interface {
+// CarrierClient defines the interface for carrier service integration.
+type CarrierClient interface {
 	// GetRates retrieves shipping rates for a package.
 	GetRates(ctx context.Context, req *dto.ShippingRequest) ([]dto.ShippingRate, error)
 

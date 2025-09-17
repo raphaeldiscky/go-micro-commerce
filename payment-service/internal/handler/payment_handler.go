@@ -13,13 +13,13 @@ import (
 
 // PaymentHandler handles HTTP requests for Payment operations.
 type PaymentHandler struct {
-	paymentService service.PaymentServiceInterface
+	paymentService service.PaymentService
 	logger         logger.Logger
 }
 
 // NewPaymentHandler creates a new instance of PaymentHandler.
 func NewPaymentHandler(
-	paymentService service.PaymentServiceInterface,
+	paymentService service.PaymentService,
 	appLogger logger.Logger,
 ) *PaymentHandler {
 	return &PaymentHandler{

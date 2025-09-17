@@ -16,24 +16,24 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/config"
 )
 
-// ElasticsearchClient wraps the Elasticsearch client with additional functionality.
-type ElasticsearchClient struct {
+// ElasticsearchClient defines the interface for Elasticsearch operations.
+type ElasticsearchClient interface {
+	GetClient() *elasticsearch.TypedClient
+	DeleteIndex(ctx context.Context, indexName string) error
+}
+
+// elasticsearchClient wraps the Elasticsearch client with additional functionality.
+type elasticsearchClient struct {
 	client *elasticsearch.TypedClient
 	config *config.ElasticsearchConfig
 	logger logger.Logger
-}
-
-// ElasticsearchClientInterface defines the interface for Elasticsearch operations.
-type ElasticsearchClientInterface interface {
-	GetClient() *elasticsearch.TypedClient
-	DeleteIndex(ctx context.Context, indexName string) error
 }
 
 // NewElasticsearchClient creates a new Elasticsearch client instance.
 func NewElasticsearchClient(
 	cfg *config.ElasticsearchConfig,
 	appLogger logger.Logger,
-) (ElasticsearchClientInterface, error) {
+) (ElasticsearchClient, error) {
 	// Configure HTTP transport for ES v9
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
@@ -89,7 +89,7 @@ func NewElasticsearchClient(
 		return nil, fmt.Errorf("failed to create Elasticsearch TypedClient: %w", err)
 	}
 
-	esClient := &ElasticsearchClient{
+	esClient := &elasticsearchClient{
 		client: typedClient,
 		config: cfg,
 		logger: appLogger,
@@ -106,12 +106,12 @@ func NewElasticsearchClient(
 }
 
 // GetClient returns the underlying Elasticsearch client.
-func (c *ElasticsearchClient) GetClient() *elasticsearch.TypedClient {
+func (c *elasticsearchClient) GetClient() *elasticsearch.TypedClient {
 	return c.client
 }
 
 // DeleteIndex deletes an index.
-func (c *ElasticsearchClient) DeleteIndex(ctx context.Context, indexName string) error {
+func (c *elasticsearchClient) DeleteIndex(ctx context.Context, indexName string) error {
 	_, err := c.client.Indices.Delete(indexName).Do(ctx)
 	if err != nil {
 		// Ignore "index not found" errors

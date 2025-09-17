@@ -61,7 +61,7 @@ type EmailVerificationRequestedProducer struct {
 // NewEmailVerificationRequestedProducer creates a new instance of EmailVerificationRequestedProducer.
 func NewEmailVerificationRequestedProducer(
 	producer *kafka.AsyncProducer,
-) kafka.ProducerInterface {
+) kafka.Producer {
 	return &EmailVerificationRequestedProducer{
 		Producer: producer,
 		topic:    kafka.UserVerificationTopic,

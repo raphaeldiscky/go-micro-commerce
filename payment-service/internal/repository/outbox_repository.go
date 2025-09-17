@@ -14,8 +14,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 )
 
-// OutboxRepositoryInterface defines the methods for interacting with the outbox.
-type OutboxRepositoryInterface interface {
+// OutboxRepository defines the methods for interacting with the outbox.
+type OutboxRepository interface {
 	// Create inserts a new outbox event.
 	Create(ctx context.Context, event *entity.OutboxEvent) error
 	// GetEventsForProcessing retrieves events that are ready for processing.
@@ -41,20 +41,20 @@ type OutboxRepositoryInterface interface {
 	CleanupProcessedEvents(ctx context.Context, olderThan time.Duration) error
 }
 
-// OutboxRepository implements the OutboxRepositoryInterface.
-type OutboxRepository struct {
+// outboxRepository implements the OutboxRepository.
+type outboxRepository struct {
 	db DBTX
 }
 
 // NewOutboxRepository creates a new instance of OutboxRepositoryPostgres.
-func NewOutboxRepository(db DBTX) OutboxRepositoryInterface {
-	return &OutboxRepository{
+func NewOutboxRepository(db DBTX) OutboxRepository {
+	return &outboxRepository{
 		db: db,
 	}
 }
 
 // Create inserts a new outbox event.
-func (r *OutboxRepository) Create(ctx context.Context, event *entity.OutboxEvent) error {
+func (r *outboxRepository) Create(ctx context.Context, event *entity.OutboxEvent) error {
 	query := `
 		INSERT INTO outbox_events (
 			id, aggregate_type, aggregate_id, event_type, topic, 
@@ -84,7 +84,7 @@ func (r *OutboxRepository) Create(ctx context.Context, event *entity.OutboxEvent
 }
 
 // GetEventsForProcessing retrieves events ready for processing.
-func (r *OutboxRepository) GetEventsForProcessing(
+func (r *outboxRepository) GetEventsForProcessing(
 	ctx context.Context,
 	limit int64,
 ) ([]*entity.OutboxEvent, error) {
@@ -125,7 +125,7 @@ func (r *OutboxRepository) GetEventsForProcessing(
 }
 
 // MarkAsProcessing updates an event status to processing.
-func (r *OutboxRepository) MarkAsProcessing(ctx context.Context, id uuid.UUID) error {
+func (r *outboxRepository) MarkAsProcessing(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE outbox_events 
 		SET status = 'processing', attempts = attempts + 1
@@ -145,7 +145,7 @@ func (r *OutboxRepository) MarkAsProcessing(ctx context.Context, id uuid.UUID) e
 }
 
 // MarkAsProcessed updates an event status to processed.
-func (r *OutboxRepository) MarkAsProcessed(ctx context.Context, id uuid.UUID) error {
+func (r *outboxRepository) MarkAsProcessed(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE outbox_events 
 		SET status = 'processed', processed_at = $1, last_error = NULL
@@ -165,7 +165,7 @@ func (r *OutboxRepository) MarkAsProcessed(ctx context.Context, id uuid.UUID) er
 }
 
 // MarkAsFailed updates an event status to failed.
-func (r *OutboxRepository) MarkAsFailed(ctx context.Context, id uuid.UUID, errorMsg string) error {
+func (r *outboxRepository) MarkAsFailed(ctx context.Context, id uuid.UUID, errorMsg string) error {
 	query := `
 		UPDATE outbox_events 
 		SET status = 'failed', last_error = $1
@@ -185,7 +185,7 @@ func (r *OutboxRepository) MarkAsFailed(ctx context.Context, id uuid.UUID, error
 }
 
 // ScheduleForRetry schedules an event for retry.
-func (r *OutboxRepository) ScheduleForRetry(
+func (r *outboxRepository) ScheduleForRetry(
 	ctx context.Context,
 	id uuid.UUID,
 	errorMsg string,
@@ -210,7 +210,7 @@ func (r *OutboxRepository) ScheduleForRetry(
 }
 
 // GetEventByID retrieves an event by its ID.
-func (r *OutboxRepository) GetEventByID(
+func (r *outboxRepository) GetEventByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.OutboxEvent, error) {
@@ -229,7 +229,7 @@ func (r *OutboxRepository) GetEventByID(
 }
 
 // IncrementAttempts increments the attempt count for an event.
-func (r *OutboxRepository) IncrementAttempts(ctx context.Context, id uuid.UUID) error {
+func (r *outboxRepository) IncrementAttempts(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE outbox_events 
 		SET attempts = attempts + 1
@@ -249,7 +249,7 @@ func (r *OutboxRepository) IncrementAttempts(ctx context.Context, id uuid.UUID) 
 }
 
 // CleanupProcessedEvents removes processed events older than specified duration.
-func (r *OutboxRepository) CleanupProcessedEvents(
+func (r *outboxRepository) CleanupProcessedEvents(
 	ctx context.Context,
 	olderThan time.Duration,
 ) error {

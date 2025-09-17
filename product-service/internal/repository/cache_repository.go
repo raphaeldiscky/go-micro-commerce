@@ -13,8 +13,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/utils/redisutils"
 )
 
-// CacheRepositoryInterface defines the interface for cache operations.
-type CacheRepositoryInterface interface {
+// CacheRepository defines the interface for cache operations.
+type CacheRepository interface {
 	// GetProduct retrieves a single product from cache by ID
 	GetProduct(ctx context.Context, id uuid.UUID) (*entity.Product, error)
 
@@ -39,27 +39,27 @@ type CacheRepositoryInterface interface {
 	DeleteProductsPattern(ctx context.Context, pattern string) error
 }
 
-// CacheRepositoryRedis implements CacheRepositoryInterface using Redis.
-type CacheRepositoryRedis struct {
+// cacheRepositoryRedis implements CacheRepository using Redis.
+type cacheRepositoryRedis struct {
 	client redis.UniversalClient
 }
 
 // NewCacheRepositoryRedis creates a new Redis cache repository, or null repository if client is nil.
-func NewCacheRepositoryRedis(client redis.UniversalClient) CacheRepositoryInterface {
+func NewCacheRepositoryRedis(client redis.UniversalClient) CacheRepository {
 	if client == nil {
 		return &NullCacheRepository{}
 	}
 
-	return &CacheRepositoryRedis{
+	return &cacheRepositoryRedis{
 		client: client,
 	}
 }
 
-// NullCacheRepository implements CacheRepositoryInterface as a no-op for when Redis is unavailable.
+// NullCacheRepository implements CacheRepository as a no-op for when Redis is unavailable.
 type NullCacheRepository struct{}
 
 // GetProduct retrieves a single product from Redis cache.
-func (r *CacheRepositoryRedis) GetProduct(
+func (r *cacheRepositoryRedis) GetProduct(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Product, error) {
@@ -79,7 +79,7 @@ func (r *CacheRepositoryRedis) GetProduct(
 }
 
 // SetProduct stores a single product in Redis cache.
-func (r *CacheRepositoryRedis) SetProduct(
+func (r *cacheRepositoryRedis) SetProduct(
 	ctx context.Context,
 	product *entity.Product,
 	expiration time.Duration,
@@ -95,7 +95,7 @@ func (r *CacheRepositoryRedis) SetProduct(
 }
 
 // GetProducts retrieves paginated products from Redis cache.
-func (r *CacheRepositoryRedis) GetProducts(
+func (r *cacheRepositoryRedis) GetProducts(
 	ctx context.Context,
 	page, limit int64,
 ) ([]*entity.Product, error) {
@@ -119,7 +119,7 @@ func (r *CacheRepositoryRedis) GetProducts(
 }
 
 // SetProducts stores paginated products in Redis cache.
-func (r *CacheRepositoryRedis) SetProducts(
+func (r *cacheRepositoryRedis) SetProducts(
 	ctx context.Context,
 	page, limit int64,
 	products []*entity.Product,
@@ -136,7 +136,7 @@ func (r *CacheRepositoryRedis) SetProducts(
 }
 
 // DeleteProduct removes a product from cache by ID.
-func (r *CacheRepositoryRedis) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+func (r *cacheRepositoryRedis) DeleteProduct(ctx context.Context, id uuid.UUID) error {
 	key := redisutils.NewCacheProductKey(id)
 
 	return r.client.Del(ctx, key).Err()
@@ -147,7 +147,7 @@ const (
 )
 
 // DeleteProductsPattern removes products matching a pattern.
-func (r *CacheRepositoryRedis) DeleteProductsPattern(ctx context.Context, pattern string) error {
+func (r *cacheRepositoryRedis) DeleteProductsPattern(ctx context.Context, pattern string) error {
 	var cursor uint64
 
 	for {

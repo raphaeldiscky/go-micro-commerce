@@ -16,13 +16,13 @@ import (
 
 // ProductHandler handles HTTP requests for product operations.
 type ProductHandler struct {
-	productService service.ProductServiceInterface
+	productService service.ProductService
 	logger         logger.Logger
 }
 
 // NewProductHandler creates a new instance of ProductHandler.
 func NewProductHandler(
-	productService service.ProductServiceInterface,
+	productService service.ProductService,
 	appLogger logger.Logger,
 ) *ProductHandler {
 	return &ProductHandler{

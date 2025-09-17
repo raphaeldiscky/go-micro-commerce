@@ -54,7 +54,7 @@ type UserVerifiedProducer struct {
 }
 
 // NewUserVerifiedProducer creates a new instance of UserVerifiedProducer.
-func NewUserVerifiedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewUserVerifiedProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &UserVerifiedProducer{
 		Producer: producer,
 		topic:    kafka.UserVerificationTopic,

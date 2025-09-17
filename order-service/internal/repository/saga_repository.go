@@ -15,8 +15,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
-// SagaStateRepositoryInterface interface for persisting saga state.
-type SagaStateRepositoryInterface interface {
+// SagaStateRepository interface for persisting saga state.
+type SagaStateRepository interface {
 	// Create inserts a new saga state.
 	Create(ctx context.Context, state *entity.SagaState) error
 	// Update updates an existing saga state.
@@ -43,20 +43,20 @@ type SagaStateRepositoryInterface interface {
 	MarkAsCompensated(ctx context.Context, id uuid.UUID) error
 }
 
-// SagaStateRepository implements the SagaStateRepositoryInterface.
-type SagaStateRepository struct {
+// sagaStateRepository implements the SagaStateRepository.
+type sagaStateRepository struct {
 	db DBTX
 }
 
-// NewSagaStateRepository creates a new instance of SagaStateRepository.
-func NewSagaStateRepository(db DBTX) SagaStateRepositoryInterface {
-	return &SagaStateRepository{
+// NewSagaStateRepository creates a new instance of sagaStateRepository.
+func NewSagaStateRepository(db DBTX) SagaStateRepository {
+	return &sagaStateRepository{
 		db: db,
 	}
 }
 
 // Create inserts a new saga state.
-func (r *SagaStateRepository) Create(ctx context.Context, state *entity.SagaState) error {
+func (r *sagaStateRepository) Create(ctx context.Context, state *entity.SagaState) error {
 	query := `
 		INSERT INTO saga_states (
 			id, order_id, status, current_step, 
@@ -107,7 +107,7 @@ func (r *SagaStateRepository) Create(ctx context.Context, state *entity.SagaStat
 }
 
 // Update updates an existing saga state.
-func (r *SagaStateRepository) Update(ctx context.Context, state *entity.SagaState) error {
+func (r *sagaStateRepository) Update(ctx context.Context, state *entity.SagaState) error {
 	query := `
 		UPDATE saga_states SET
 			status = $2,
@@ -165,7 +165,7 @@ func (r *SagaStateRepository) Update(ctx context.Context, state *entity.SagaStat
 }
 
 // FindByID finds a saga state by ID.
-func (r *SagaStateRepository) FindByID(
+func (r *sagaStateRepository) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.SagaState, error) {
@@ -184,7 +184,7 @@ func (r *SagaStateRepository) FindByID(
 }
 
 // FindByOrderID finds a saga state by order ID.
-func (r *SagaStateRepository) FindByOrderID(
+func (r *sagaStateRepository) FindByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (*entity.SagaState, error) {
@@ -205,7 +205,7 @@ func (r *SagaStateRepository) FindByOrderID(
 }
 
 // FindPendingOrFailed finds pending or failed sagas for recovery.
-func (r *SagaStateRepository) FindPendingOrFailed(
+func (r *sagaStateRepository) FindPendingOrFailed(
 	ctx context.Context,
 	limit int64,
 ) ([]*entity.SagaState, error) {
@@ -255,7 +255,7 @@ func (r *SagaStateRepository) FindPendingOrFailed(
 }
 
 // FindTimeoutSagas finds sagas that have timed out.
-func (r *SagaStateRepository) FindTimeoutSagas(
+func (r *sagaStateRepository) FindTimeoutSagas(
 	ctx context.Context,
 	limit int64,
 ) ([]*entity.SagaState, error) {
@@ -304,7 +304,7 @@ func (r *SagaStateRepository) FindTimeoutSagas(
 }
 
 // UpdateWithVersion updates saga state with optimistic locking.
-func (r *SagaStateRepository) UpdateWithVersion(
+func (r *sagaStateRepository) UpdateWithVersion(
 	ctx context.Context,
 	state *entity.SagaState,
 ) error {
@@ -369,17 +369,17 @@ func (r *SagaStateRepository) UpdateWithVersion(
 }
 
 // MarkAsExecuting updates saga status to executing.
-func (r *SagaStateRepository) MarkAsExecuting(ctx context.Context, id uuid.UUID) error {
+func (r *sagaStateRepository) MarkAsExecuting(ctx context.Context, id uuid.UUID) error {
 	return r.updateStatus(ctx, id, constant.SagaStatusExecuting)
 }
 
 // MarkAsCompensating updates saga status to compensating.
-func (r *SagaStateRepository) MarkAsCompensating(ctx context.Context, id uuid.UUID) error {
+func (r *sagaStateRepository) MarkAsCompensating(ctx context.Context, id uuid.UUID) error {
 	return r.updateStatus(ctx, id, constant.SagaStatusCompensating)
 }
 
 // MarkAsCompleted updates saga status to completed.
-func (r *SagaStateRepository) MarkAsCompleted(ctx context.Context, id uuid.UUID) error {
+func (r *sagaStateRepository) MarkAsCompleted(ctx context.Context, id uuid.UUID) error {
 	const query = `
 		UPDATE saga_states 
 		SET status = $2, completed_at = $3
@@ -399,7 +399,7 @@ func (r *SagaStateRepository) MarkAsCompleted(ctx context.Context, id uuid.UUID)
 }
 
 // MarkAsFailed updates saga status to failed with error message.
-func (r *SagaStateRepository) MarkAsFailed(
+func (r *sagaStateRepository) MarkAsFailed(
 	ctx context.Context,
 	id uuid.UUID,
 	errorMsg string,
@@ -430,7 +430,7 @@ func (r *SagaStateRepository) MarkAsFailed(
 }
 
 // MarkAsCompensated updates saga status to compensated.
-func (r *SagaStateRepository) MarkAsCompensated(ctx context.Context, id uuid.UUID) error {
+func (r *sagaStateRepository) MarkAsCompensated(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE saga_states 
 		SET status = $2, completed_at = $3
@@ -450,7 +450,7 @@ func (r *SagaStateRepository) MarkAsCompensated(ctx context.Context, id uuid.UUI
 }
 
 // updateStatus updates the status of a saga state.
-func (r *SagaStateRepository) updateStatus(
+func (r *sagaStateRepository) updateStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	status constant.SagaStatus,

@@ -63,7 +63,7 @@ func (e *PaymentLifecycleEvent) GetMetadata() event.Metadata { // Use the correc
 }
 
 // NewPaymentLifecycleProducer creates a new instance of PaymentLifecycleProducer.
-func NewPaymentLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewPaymentLifecycleProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &PaymentLifecycleProducer{
 		Producer: producer,
 		topic:    kafka.PaymentLifecycleTopic,

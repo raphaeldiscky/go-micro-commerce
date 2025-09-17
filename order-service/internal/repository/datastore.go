@@ -20,11 +20,11 @@ type DBTX interface {
 // DataStore is an interface that wraps the database access methods.
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
-	OrderRepository() OrderRepositoryInterface
-	LockRepository() LockRepositoryInterface
-	OutboxRepository() OutboxRepositoryInterface
-	SagaStateRepository() SagaStateRepositoryInterface
-	InboxRepository() InboxRepositoryInterface
+	OrderRepository() OrderRepository
+	LockRepository() LockRepository
+	OutboxRepository() OutboxRepository
+	SagaStateRepository() SagaStateRepository
+	InboxRepository() InboxRepository
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -65,26 +65,26 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 }
 
 // OrderRepository returns a new OrderRepository.
-func (s *dataStore) OrderRepository() OrderRepositoryInterface {
-	return NewOrderRepositoryPostgres(s.db)
+func (s *dataStore) OrderRepository() OrderRepository {
+	return NewOrderRepository(s.db)
 }
 
 // LockRepository returns a new LockRepository.
-func (s *dataStore) LockRepository() LockRepositoryInterface {
+func (s *dataStore) LockRepository() LockRepository {
 	return NewLockRepository(s.rdl, s.logger)
 }
 
 // OutboxRepository returns a new OutboxRepository.
-func (s *dataStore) OutboxRepository() OutboxRepositoryInterface {
+func (s *dataStore) OutboxRepository() OutboxRepository {
 	return NewOutboxRepository(s.db)
 }
 
 // SagaStateRepository returns a new SagaStateRepository.
-func (s *dataStore) SagaStateRepository() SagaStateRepositoryInterface {
+func (s *dataStore) SagaStateRepository() SagaStateRepository {
 	return NewSagaStateRepository(s.db)
 }
 
 // InboxRepository returns a new InboxRepository.
-func (s *dataStore) InboxRepository() InboxRepositoryInterface {
+func (s *dataStore) InboxRepository() InboxRepository {
 	return NewInboxRepository(s.db)
 }

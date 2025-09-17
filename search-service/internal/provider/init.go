@@ -17,8 +17,8 @@ import (
 type Providers struct {
 	DataStore     repository.DataStore
 	KafkaAdmin    *kafka.Admin
-	ElasticClient client.ElasticsearchClientInterface
-	SearchRepo    repository.SearchRepositoryInterface
+	ElasticClient client.ElasticsearchClient
+	SearchRepo    repository.SearchRepository
 	SearchService service.SearchService
 }
 

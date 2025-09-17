@@ -12,13 +12,13 @@ import (
 
 // FulfillmentHandler handles HTTP requests for Fulfillment operations.
 type FulfillmentHandler struct {
-	fulfillmentService service.FulfillmentServiceInterface
+	fulfillmentService service.FulfillmentService
 	logger             logger.Logger
 }
 
 // NewFulfillmentHandler creates a new instance of FulfillmentHandler.
 func NewFulfillmentHandler(
-	fulfillmentService service.FulfillmentServiceInterface,
+	fulfillmentService service.FulfillmentService,
 	appLogger logger.Logger,
 ) *FulfillmentHandler {
 	return &FulfillmentHandler{

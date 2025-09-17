@@ -24,14 +24,14 @@ type GRPCServer struct {
 	pb.UnimplementedFulfillmentServiceServer
 
 	cfg                *config.Config
-	fulfillmentService service.FulfillmentServiceInterface
+	fulfillmentService service.FulfillmentService
 	logger             logger.Logger
 	grpcServer         *grpc.Server
 }
 
 // NewGRPCServer creates a new gRPC server for fulfillment service.
 func NewGRPCServer(
-	fulfillmentService service.FulfillmentServiceInterface,
+	fulfillmentService service.FulfillmentService,
 	appLogger logger.Logger,
 	cfg *config.Config,
 ) *GRPCServer {

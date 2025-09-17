@@ -13,8 +13,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
-// ProducerInterface is an interface for sending events to Kafka.
-type ProducerInterface interface {
+// Producer is an interface for sending events to Kafka.
+type Producer interface {
 	Send(ctx context.Context, evt event.BaseEvent) error
 	Topic() string
 }

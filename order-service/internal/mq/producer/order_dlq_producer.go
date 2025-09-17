@@ -66,7 +66,7 @@ func (e *OrderDLQEvent) GetMetadata() event.Metadata { // Use the correct type f
 }
 
 // NewOrderDLQProducer creates a new instance of OrderDLQProducer.
-func NewOrderDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewOrderDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &OrderDLQProducer{
 		Producer: producer,
 		topic:    kafka.OrderDLQTopic,

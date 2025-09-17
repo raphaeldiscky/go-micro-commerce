@@ -25,14 +25,14 @@ type GRPCServer struct {
 	pb.UnimplementedProductServiceServer
 
 	cfg            *config.Config
-	productService service.ProductServiceInterface
+	productService service.ProductService
 	logger         logger.Logger
 	grpcServer     *grpc.Server
 }
 
 // NewGRPCServer creates a new gRPC server for product service.
 func NewGRPCServer(
-	productService service.ProductServiceInterface,
+	productService service.ProductService,
 	appLogger logger.Logger,
 	cfg *config.Config,
 ) *GRPCServer {

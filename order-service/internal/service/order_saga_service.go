@@ -21,7 +21,7 @@ import (
 )
 
 // CreateOrderWithSaga creates an order with improved saga handling.
-func (s *OrderService) CreateOrderWithSaga(
+func (s *orderService) CreateOrderWithSaga(
 	ctx context.Context,
 	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
@@ -109,11 +109,11 @@ func (s *OrderService) CreateOrderWithSaga(
 }
 
 // handleExistingOrder checks for duplicate orders and handles saga state.
-func (s *OrderService) handleExistingOrder(
+func (s *orderService) handleExistingOrder(
 	ctx context.Context,
 	req *dto.CreateOrderRequest,
-	orderRepo repository.OrderRepositoryInterface,
-	stateRepo repository.SagaStateRepositoryInterface,
+	orderRepo repository.OrderRepository,
+	stateRepo repository.SagaStateRepository,
 ) (*dto.OrderResponse, bool, error) {
 	existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
 	if err != nil && err.Error() != constant.OrderNotFoundErrorMessage {
@@ -157,7 +157,7 @@ func (s *OrderService) handleExistingOrder(
 }
 
 // executeSagaWorkflow executes the saga based on configuration.
-func (s *OrderService) executeSagaWorkflow(
+func (s *orderService) executeSagaWorkflow(
 	ctx context.Context,
 	res *dto.OrderResponse,
 	req *dto.CreateOrderRequest,
@@ -177,7 +177,7 @@ func (s *OrderService) executeSagaWorkflow(
 }
 
 // executeSagaSynchronously handles synchronous saga execution and error management.
-func (s *OrderService) executeSagaSynchronously(
+func (s *orderService) executeSagaSynchronously(
 	ctx context.Context,
 	res *dto.OrderResponse,
 	req *dto.CreateOrderRequest,
@@ -216,7 +216,7 @@ func (s *OrderService) executeSagaSynchronously(
 }
 
 // executeSagaAsynchronously executes saga in background.
-func (s *OrderService) executeSagaAsynchronously(
+func (s *orderService) executeSagaAsynchronously(
 	ctx context.Context,
 	res *dto.OrderResponse,
 	req *dto.CreateOrderRequest,
@@ -258,7 +258,7 @@ func (s *OrderService) executeSagaAsynchronously(
 }
 
 // handleSagaError handles saga execution errors.
-func (s *OrderService) handleSagaError(orderID uuid.UUID, err error) {
+func (s *orderService) handleSagaError(orderID uuid.UUID, err error) {
 	ctx := context.Background()
 
 	// Update order status to failed

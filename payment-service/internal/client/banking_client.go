@@ -10,8 +10,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 )
 
-// BankingClientInterface defines the interface for banking service integration.
-type BankingClientInterface interface {
+// BankingClient defines the interface for banking service integration.
+type BankingClient interface {
 	// TransferFunds transfers money between bank accounts
 	TransferFunds(
 		ctx context.Context,

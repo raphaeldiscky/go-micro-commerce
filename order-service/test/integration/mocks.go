@@ -14,11 +14,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 )
 
-// MockProductGRPCClient is a mock implementation of ProductClientInterface for testing.
+// MockProductGRPCClient is a mock implementation of ProductClient for testing.
 type MockProductGRPCClient struct{}
 
 // NewMockProductGRPCClient creates a new mock product gRPC client.
-func NewMockProductGRPCClient() client.ProductClientInterface {
+func NewMockProductGRPCClient() client.ProductClient {
 	return &MockProductGRPCClient{}
 }
 
@@ -91,7 +91,7 @@ func (m *MockProductGRPCClient) Close() error {
 	return nil
 }
 
-// MockKafkaProducer is a mock implementation of KafkaProducerInterface for testing.
+// MockKafkaProducer is a mock implementation of KafkaProducer for testing.
 type MockKafkaProducer struct{}
 
 // Send simulates successful message send.
@@ -130,6 +130,6 @@ func NewMockTemporalClient() *client.TemporalClient {
 type MockOutboxPublisher struct{}
 
 // NewMockOutboxPublisher creates a new mock outbox publisher.
-func NewMockOutboxPublisher() kafka.ProducerInterface {
+func NewMockOutboxPublisher() kafka.Producer {
 	return &MockKafkaProducer{}
 }

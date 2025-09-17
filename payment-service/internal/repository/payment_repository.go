@@ -13,8 +13,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 )
 
-// PaymentRepositoryInterface defines the interface for payment data operations.
-type PaymentRepositoryInterface interface {
+// PaymentRepository defines the interface for payment data operations.
+type PaymentRepository interface {
 	// Create creates a new payment
 	Create(ctx context.Context, payment *entity.Payment) (*entity.Payment, error)
 
@@ -31,20 +31,20 @@ type PaymentRepositoryInterface interface {
 	FindByOrderID(ctx context.Context, orderID uuid.UUID) (*entity.Payment, error)
 }
 
-// PaymentRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
-type PaymentRepositoryPostgres struct {
+// paymentRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
+type paymentRepositoryPostgres struct {
 	db DBTX
 }
 
-// NewPaymentRepositoryPostgres creates a new instance of PaymentRepositoryPostgres.
-func NewPaymentRepositoryPostgres(db DBTX) PaymentRepositoryInterface {
-	return &PaymentRepositoryPostgres{
+// NewPaymentRepository creates a new instance of paymentRepositoryPostgres.
+func NewPaymentRepository(db DBTX) PaymentRepository {
+	return &paymentRepositoryPostgres{
 		db: db,
 	}
 }
 
 // Create creates a new payment.
-func (r *PaymentRepositoryPostgres) Create(
+func (r *paymentRepositoryPostgres) Create(
 	ctx context.Context,
 	payment *entity.Payment,
 ) (*entity.Payment, error) {
@@ -102,7 +102,7 @@ func (r *PaymentRepositoryPostgres) Create(
 }
 
 // FindByID retrieves a payment by its ID.
-func (r *PaymentRepositoryPostgres) FindByID(
+func (r *paymentRepositoryPostgres) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Payment, error) {
@@ -145,7 +145,7 @@ func (r *PaymentRepositoryPostgres) FindByID(
 }
 
 // FindByOrderID retrieves a payment by its order ID.
-func (r *PaymentRepositoryPostgres) FindByOrderID(
+func (r *paymentRepositoryPostgres) FindByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (*entity.Payment, error) {
@@ -188,7 +188,7 @@ func (r *PaymentRepositoryPostgres) FindByOrderID(
 }
 
 // Update updates an existing payment.
-func (r *PaymentRepositoryPostgres) Update(
+func (r *paymentRepositoryPostgres) Update(
 	ctx context.Context,
 	payment *entity.Payment,
 ) (*entity.Payment, error) {
@@ -257,7 +257,7 @@ func (r *PaymentRepositoryPostgres) Update(
 }
 
 // UpdateStatus updates only the status of a payment.
-func (r *PaymentRepositoryPostgres) UpdateStatus(
+func (r *paymentRepositoryPostgres) UpdateStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	status constant.PaymentStatus,

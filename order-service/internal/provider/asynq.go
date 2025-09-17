@@ -59,9 +59,9 @@ func SetupAsynqClient(
 
 // AsynqProvider holds asynq client, server and related services.
 type AsynqProvider struct {
-	Client                 pkgAsynq.ClientInterface
-	Server                 *pkgAsynq.Server
-	PaymentReminderService service.PaymentReminderServiceInterface
+	Client                 pkgAsynq.Client
+	Server                 pkgAsynq.Server
+	PaymentReminderService service.PaymentReminderService
 	TaskHandler            *handler.PaymentReminderTaskHandler
 	Mux                    *asynq.ServeMux
 }
@@ -86,7 +86,7 @@ func SetupAsynq(
 		DelayedTaskCheckInterval: cfg.Asynq.DelayedTaskCheckInterval,
 	}
 
-	var client *pkgAsynq.Client
+	var client pkgAsynq.Client
 
 	if providers.AsynqClient == nil {
 		var err error

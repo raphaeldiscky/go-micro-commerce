@@ -11,6 +11,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/random"
 	"github.com/shopspring/decimal"
 
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 )
@@ -29,32 +30,32 @@ const (
 	fakeBankingMinRoutingLength   = 3
 )
 
-// FakeBankingClient provides a mock implementation of BankingClientInterface for testing.
-type FakeBankingClient struct {
+// fakeBankingClient provides a mock implementation of BankingClient for testing.
+type fakeBankingClient struct {
 	shouldFail bool
 	delay      time.Duration
 }
 
-// NewFakeBankingClient creates a new instance of FakeBankingClient.
-func NewFakeBankingClient() *FakeBankingClient {
-	return &FakeBankingClient{
+// NewFakeBankingClient creates a new instance of fakeBankingClient.
+func NewFakeBankingClient() client.BankingClient {
+	return &fakeBankingClient{
 		shouldFail: false,
 		delay:      fakeBankingDelay,
 	}
 }
 
 // SetShouldFail configures the client to simulate failures.
-func (c *FakeBankingClient) SetShouldFail(shouldFail bool) {
+func (c *fakeBankingClient) SetShouldFail(shouldFail bool) {
 	c.shouldFail = shouldFail
 }
 
 // SetDelay configures the simulated network delay.
-func (c *FakeBankingClient) SetDelay(delay time.Duration) {
+func (c *fakeBankingClient) SetDelay(delay time.Duration) {
 	c.delay = delay
 }
 
 // TransferFunds transfers money between bank accounts.
-func (c *FakeBankingClient) TransferFunds(
+func (c *fakeBankingClient) TransferFunds(
 	_ context.Context,
 	req *dto.BankTransferRequest,
 ) (*dto.BankTransferResponse, error) {
@@ -104,7 +105,7 @@ func (c *FakeBankingClient) TransferFunds(
 }
 
 // GetTransferStatus retrieves the status of a bank transfer.
-func (c *FakeBankingClient) GetTransferStatus(
+func (c *fakeBankingClient) GetTransferStatus(
 	_ context.Context,
 	transactionID uuid.UUID,
 ) (*dto.BankTransferResponse, error) {
@@ -145,7 +146,7 @@ func (c *FakeBankingClient) GetTransferStatus(
 }
 
 // VerifyAccount verifies if a bank account is valid and active.
-func (c *FakeBankingClient) VerifyAccount(
+func (c *fakeBankingClient) VerifyAccount(
 	_ context.Context,
 	account *dto.BankAccount,
 ) (*dto.AccountVerificationResponse, error) {
@@ -175,7 +176,7 @@ func (c *FakeBankingClient) VerifyAccount(
 }
 
 // GetAccountBalance retrieves the balance of a bank account.
-func (c *FakeBankingClient) GetAccountBalance(
+func (c *fakeBankingClient) GetAccountBalance(
 	_ context.Context,
 	account *dto.BankAccount,
 ) (decimal.Decimal, error) {
@@ -197,7 +198,7 @@ func (c *FakeBankingClient) GetAccountBalance(
 }
 
 // CancelTransfer cancels a pending bank transfer.
-func (c *FakeBankingClient) CancelTransfer(
+func (c *fakeBankingClient) CancelTransfer(
 	_ context.Context,
 	transactionID uuid.UUID,
 ) error {
@@ -215,7 +216,7 @@ func (c *FakeBankingClient) CancelTransfer(
 }
 
 // generateBankReferenceID creates a mock bank reference ID.
-func (c *FakeBankingClient) generateBankReferenceID() string {
+func (c *fakeBankingClient) generateBankReferenceID() string {
 	bankCodes := []string{"BCA", "BNI", "BRI", "MANDIRI", "CIMB"}
 	bankCode := bankCodes[random.Int(int64(len(bankCodes)))]
 	refNumber := random.NumericString(fakeBankingRefLength)
@@ -224,7 +225,7 @@ func (c *FakeBankingClient) generateBankReferenceID() string {
 }
 
 // calculateTransferFees calculates transfer fees based on amount.
-func (c *FakeBankingClient) calculateTransferFees(amount decimal.Decimal) decimal.Decimal {
+func (c *fakeBankingClient) calculateTransferFees(amount decimal.Decimal) decimal.Decimal {
 	// Indonesian banking fees simulation
 	baseFee := decimal.NewFromInt(fakeBankingBaseFee)               // Base fee 6,500 IDR
 	percentageFee := decimal.NewFromFloat(fakeBankingPercentageFee) // 0.1% of amount
@@ -243,7 +244,7 @@ func (c *FakeBankingClient) calculateTransferFees(amount decimal.Decimal) decima
 }
 
 // isValidAccountNumber validates Indonesian bank account numbers.
-func (c *FakeBankingClient) isValidAccountNumber(accountNumber string) bool {
+func (c *fakeBankingClient) isValidAccountNumber(accountNumber string) bool {
 	// Basic validation: 10-16 digits
 	if len(accountNumber) < 10 || len(accountNumber) > 16 {
 		return false
@@ -260,7 +261,7 @@ func (c *FakeBankingClient) isValidAccountNumber(accountNumber string) bool {
 }
 
 // isValidRoutingNumber validates Indonesian bank routing numbers.
-func (c *FakeBankingClient) isValidRoutingNumber(routingNumber string) bool {
+func (c *fakeBankingClient) isValidRoutingNumber(routingNumber string) bool {
 	// Indonesian bank codes are typically 3-4 digits
 	if len(routingNumber) < 3 || len(routingNumber) > 4 {
 		return false
@@ -277,7 +278,7 @@ func (c *FakeBankingClient) isValidRoutingNumber(routingNumber string) bool {
 }
 
 // generateAccountName generates a mock account holder name.
-func (c *FakeBankingClient) generateAccountName() string {
+func (c *fakeBankingClient) generateAccountName() string {
 	firstNames := []string{
 		"Ahmad", "Budi", "Citra", "Dewi", "Eko", "Fitri",
 		"Gina", "Handi", "Indira", "Joko", "Kartika", "Lina",
@@ -294,7 +295,7 @@ func (c *FakeBankingClient) generateAccountName() string {
 }
 
 // getBankNameFromRouting returns bank name based on routing number.
-func (c *FakeBankingClient) getBankNameFromRouting(routingNumber string) string {
+func (c *fakeBankingClient) getBankNameFromRouting(routingNumber string) string {
 	bankMappings := map[string]string{
 		"014": "Bank Central Asia (BCA)",
 		"009": "Bank Negara Indonesia (BNI)",

@@ -70,7 +70,7 @@ func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
 }
 
 // NewFulfillmentRequestProducer creates a new instance of FulfillmentRequestProducer.
-func NewFulfillmentRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewFulfillmentRequestProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &FulfillmentRequestProducer{
 		Producer: producer,
 		topic:    kafka.FulfillmentRequestTopic,

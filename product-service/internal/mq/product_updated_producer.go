@@ -59,7 +59,7 @@ type ProductUpdatedProducer struct {
 }
 
 // NewProductUpdatedProducer creates a new instance of ProductUpdatedProducer.
-func NewProductUpdatedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewProductUpdatedProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &ProductUpdatedProducer{
 		Producer: producer,
 		topic:    kafka.ProductLifecycleTopic,
