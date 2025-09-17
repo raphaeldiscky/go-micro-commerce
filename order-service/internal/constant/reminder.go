@@ -39,8 +39,9 @@ const (
 // GetPaymentReminderExecutionTimes returns the execution times for payment reminders.
 func GetPaymentReminderExecutionTimes() []time.Duration {
 	return []time.Duration{
-		1 * time.Minute, // First reminder after 1 minute
-		2 * time.Minute, // Second reminder after 2 minutes
+		10 * time.Minute,
+		20 * time.Minute,
+		30 * time.Minute,
 	}
 }
 
