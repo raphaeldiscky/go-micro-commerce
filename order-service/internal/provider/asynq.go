@@ -59,11 +59,11 @@ func SetupAsynqClient(
 
 // AsynqProvider holds asynq client, server and related services.
 type AsynqProvider struct {
-	Client                     pkgAsynq.ClientInterface
-	Server                     *pkgAsynq.Server
-	PaymentReminderTaskService service.PaymentReminderTaskService
-	TaskHandler                *handler.PaymentReminderTaskHandler
-	Mux                        *asynq.ServeMux
+	Client                 pkgAsynq.ClientInterface
+	Server                 *pkgAsynq.Server
+	PaymentReminderService service.PaymentReminderServiceInterface
+	TaskHandler            *handler.PaymentReminderTaskHandler
+	Mux                    *asynq.ServeMux
 }
 
 // SetupAsynq initializes asynq client, server and task handlers.
@@ -86,7 +86,6 @@ func SetupAsynq(
 		DelayedTaskCheckInterval: cfg.Asynq.DelayedTaskCheckInterval,
 	}
 
-	// Use existing client or create new one if not already set
 	var client *pkgAsynq.Client
 
 	if providers.AsynqClient == nil {
@@ -133,7 +132,7 @@ func SetupAsynq(
 	}
 
 	// Create payment reminder task service
-	paymentReminderTaskService := service.NewPaymentReminderTaskService(
+	paymentReminderService := service.NewPaymentReminderService(
 		providers.NotificationRequestProducer,
 		providers.DataStore,
 		providers.OrderService,
@@ -142,7 +141,7 @@ func SetupAsynq(
 
 	// Create task handler
 	taskHandler := handler.NewPaymentReminderTaskHandler(
-		paymentReminderTaskService,
+		paymentReminderService,
 		logger,
 	)
 
@@ -158,10 +157,10 @@ func SetupAsynq(
 	)
 
 	return &AsynqProvider{
-		Client:                     client,
-		Server:                     server,
-		PaymentReminderTaskService: paymentReminderTaskService,
-		TaskHandler:                taskHandler,
-		Mux:                        mux,
+		Client:                 client,
+		Server:                 server,
+		PaymentReminderService: paymentReminderService,
+		TaskHandler:            taskHandler,
+		Mux:                    mux,
 	}, nil
 }

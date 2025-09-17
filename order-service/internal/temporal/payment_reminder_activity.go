@@ -2,123 +2,78 @@ package temporal
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"go.temporal.io/sdk/activity"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
 // PaymentReminderActivities defines the interface for payment reminder activities.
 type PaymentReminderActivities interface {
 	SendPaymentReminderActivity(ctx context.Context, req dto.PaymentReminderRequest) error
 	CheckPaymentStatusActivity(ctx context.Context, orderID uuid.UUID) (bool, error)
+	ExpireOrderPaymentActivity(ctx context.Context, req dto.ExpireOrderPaymentRequest) error
 }
 
-// PaymentReminderActivitiesImpl implements payment reminder activities.
-type PaymentReminderActivitiesImpl struct {
-	dataStore repository.DataStore
+// paymentReminderActivities implements payment reminder activities.
+type paymentReminderActivities struct {
+	dataStore              repository.DataStore
+	paymentReminderService service.PaymentReminderServiceInterface
 }
 
 // NewPaymentReminderActivities creates a new PaymentReminderActivities instance.
-func NewPaymentReminderActivities(dataStore repository.DataStore) PaymentReminderActivities {
-	return &PaymentReminderActivitiesImpl{
-		dataStore: dataStore,
+func NewPaymentReminderActivities(
+	dataStore repository.DataStore,
+	paymentReminderService service.PaymentReminderServiceInterface,
+) PaymentReminderActivities {
+	return &paymentReminderActivities{
+		dataStore:              dataStore,
+		paymentReminderService: paymentReminderService,
 	}
 }
 
 // SendPaymentReminderActivity sends a payment reminder notification to the customer.
-func (pra *PaymentReminderActivitiesImpl) SendPaymentReminderActivity(
+func (pra *paymentReminderActivities) SendPaymentReminderActivity(
 	ctx context.Context,
 	req dto.PaymentReminderRequest,
 ) error {
 	logger := activity.GetLogger(ctx)
-	orderID := req.OrderID
-	logger.Info("Executing SendPaymentReminderActivity", "orderID", orderID)
-
-	orderRepo := pra.dataStore.OrderRepository()
-
-	order, err := orderRepo.FindByID(ctx, orderID)
-	if err != nil {
-		return fmt.Errorf("failed to get order: %w", err)
-	}
-
-	var (
-		templateID pkgconstant.TemplateIDType
-		subject    string
+	logger.Info(
+		"Executing SendPaymentReminderActivity",
+		"orderID",
+		req.OrderID,
+		"reminderCount",
+		req.ReminderCount,
 	)
 
-	switch req.ReminderCount {
-	case constant.FirstReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = constant.FirstPaymentReminderEmailSubject
-	case constant.SecondReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = constant.SecondPaymentReminderEmailSubject
-	default:
-		// do nothing
-	}
-
-	err = pra.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		outboxRepo := ds.OutboxRepository()
-
-		// Create notification event for reminder
-		notificationEvent := producer.NewNotificationRequestEvent(
-			order,
-			nil,
-			req.CustomerEmail,
-			"Customer", // TODO: Get actual customer name
-			nil,        // No tracking number for reminder
-			templateID,
-			subject,
-		)
-
-		payload, marshalErr := json.Marshal(notificationEvent)
-		if marshalErr != nil {
-			return fmt.Errorf("failed to marshal notification event: %w", marshalErr)
-		}
-
-		// Create outbox event for reliable delivery
-		outboxEvent := &entity.OutboxEvent{
-			ID:            uuid.New(),
-			AggregateType: "notification",
-			AggregateID:   orderID,
-			EventType:     kafka.NotificationRequestedEventType,
-			Topic:         kafka.NotificationRequestTopic,
-			Payload:       payload,
-			Status:        constant.OutboxStatusPending,
-			ScheduledFor:  time.Now().UTC(),
-		}
-
-		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
-			return fmt.Errorf("failed to create payment reminder notification event: %w", err)
-		}
-
-		logger.Info(
-			"Successfully created payment reminder notification",
+	// Use the payment reminder task service to process the reminder
+	err := pra.paymentReminderService.ProcessPaymentReminder(ctx, &req)
+	if err != nil {
+		logger.Error(
+			"Failed to process payment reminder",
 			"orderID", req.OrderID,
 			"reminderCount", req.ReminderCount,
-			"template", templateID,
+			"error", err,
 		)
 
-		return nil
-	})
+		return fmt.Errorf("failed to process payment reminder: %w", err)
+	}
 
-	return err
+	logger.Info(
+		"Payment reminder processed successfully",
+		"orderID", req.OrderID,
+		"reminderCount", req.ReminderCount,
+	)
+
+	return nil
 }
 
 // CheckPaymentStatusActivity checks if payment has been received for the order.
-func (pra *PaymentReminderActivitiesImpl) CheckPaymentStatusActivity(
+func (pra *paymentReminderActivities) CheckPaymentStatusActivity(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (bool, error) {
@@ -142,4 +97,32 @@ func (pra *PaymentReminderActivitiesImpl) CheckPaymentStatusActivity(
 	)
 
 	return paymentReceived, nil
+}
+
+// ExpireOrderPaymentActivity handles order payment expiration using the service layer.
+func (pra *paymentReminderActivities) ExpireOrderPaymentActivity(
+	ctx context.Context,
+	req dto.ExpireOrderPaymentRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing ExpireOrderPaymentActivity", "orderID", req.OrderID)
+
+	// Use the payment reminder task service to process the order expiration
+	err := pra.paymentReminderService.ProcessOrderExpirePayment(ctx, &req)
+	if err != nil {
+		logger.Error(
+			"Failed to process order payment expiration",
+			"orderID", req.OrderID,
+			"error", err,
+		)
+
+		return fmt.Errorf("failed to process order payment expiration: %w", err)
+	}
+
+	logger.Info(
+		"Order payment expiration processed successfully",
+		"orderID", req.OrderID,
+	)
+
+	return nil
 }

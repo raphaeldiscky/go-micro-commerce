@@ -1,4 +1,4 @@
-package service
+package temporal
 
 import (
 	"context"
@@ -15,22 +15,22 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/sagautils"
 )
 
-// PaymentReminderService handles payment reminder scheduling for orders.
-type PaymentReminderService struct {
+// PaymentReminderScheduler handles payment reminder scheduling for orders.
+type PaymentReminderScheduler struct {
 	reminderScheduler *pkgtemporal.ReminderScheduler
 }
 
-// NewPaymentReminderService creates a new PaymentReminderService.
-func NewPaymentReminderService(
+// NewPaymentReminderScheduler creates a new PaymentReminderScheduler.
+func NewPaymentReminderScheduler(
 	reminderScheduler *pkgtemporal.ReminderScheduler,
-) *PaymentReminderService {
-	return &PaymentReminderService{
+) *PaymentReminderScheduler {
+	return &PaymentReminderScheduler{
 		reminderScheduler: reminderScheduler,
 	}
 }
 
 // CreatePaymentReminderSchedule creates a payment reminder schedule for an order.
-func (prs *PaymentReminderService) CreatePaymentReminderSchedule(
+func (prs *PaymentReminderScheduler) CreatePaymentReminderSchedule(
 	ctx context.Context,
 	req dto.PaymentReminderWorkflowRequest,
 ) (client.ScheduleHandle, error) {
@@ -53,7 +53,7 @@ func (prs *PaymentReminderService) CreatePaymentReminderSchedule(
 }
 
 // CancelPaymentReminderSchedule cancels a payment reminder schedule for an order.
-func (prs *PaymentReminderService) CancelPaymentReminderSchedule(
+func (prs *PaymentReminderScheduler) CancelPaymentReminderSchedule(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) error {
@@ -62,7 +62,7 @@ func (prs *PaymentReminderService) CancelPaymentReminderSchedule(
 }
 
 // PausePaymentReminderSchedule pauses a payment reminder schedule for an order.
-func (prs *PaymentReminderService) PausePaymentReminderSchedule(
+func (prs *PaymentReminderScheduler) PausePaymentReminderSchedule(
 	ctx context.Context,
 	orderID uuid.UUID,
 	reason string,
@@ -72,7 +72,7 @@ func (prs *PaymentReminderService) PausePaymentReminderSchedule(
 }
 
 // ResumePaymentReminderSchedule resumes a payment reminder schedule for an order.
-func (prs *PaymentReminderService) ResumePaymentReminderSchedule(
+func (prs *PaymentReminderScheduler) ResumePaymentReminderSchedule(
 	ctx context.Context,
 	orderID uuid.UUID,
 	reason string,
