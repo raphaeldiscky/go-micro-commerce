@@ -15,28 +15,28 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
-// PaymentReminderTaskService handles payment reminder task processing.
-type PaymentReminderTaskService interface {
+// PaymentReminderServiceInterface handles payment reminder task processing.
+type PaymentReminderServiceInterface interface {
 	ProcessPaymentReminder(ctx context.Context, req *dto.PaymentReminderRequest) error
 	ProcessOrderExpirePayment(ctx context.Context, req *dto.ExpireOrderPaymentRequest) error
 }
 
-// PaymentReminderTaskServiceImpl implements PaymentReminderTaskService.
-type PaymentReminderTaskServiceImpl struct {
+// PaymentReminderService implements PaymentReminderServiceInterface.
+type PaymentReminderService struct {
 	notificationProducer kafka.ProducerInterface
 	dataStore            repository.DataStore
 	orderService         OrderServiceInterface
 	logger               logger.Logger
 }
 
-// NewPaymentReminderTaskService creates a new payment reminder task service.
-func NewPaymentReminderTaskService(
+// NewPaymentReminderService creates a new payment reminder task service.
+func NewPaymentReminderService(
 	notificationProducer kafka.ProducerInterface,
 	dataStore repository.DataStore,
 	orderService OrderServiceInterface,
 	logger logger.Logger,
-) PaymentReminderTaskService {
-	return &PaymentReminderTaskServiceImpl{
+) PaymentReminderServiceInterface {
+	return &PaymentReminderService{
 		notificationProducer: notificationProducer,
 		dataStore:            dataStore,
 		orderService:         orderService,
@@ -45,7 +45,7 @@ func NewPaymentReminderTaskService(
 }
 
 // ProcessPaymentReminder processes a payment reminder task.
-func (s *PaymentReminderTaskServiceImpl) ProcessPaymentReminder(
+func (s *PaymentReminderService) ProcessPaymentReminder(
 	ctx context.Context,
 	req *dto.PaymentReminderRequest,
 ) error {
@@ -141,7 +141,7 @@ func (s *PaymentReminderTaskServiceImpl) ProcessPaymentReminder(
 }
 
 // ProcessOrderExpirePayment processes an order Expire task.
-func (s *PaymentReminderTaskServiceImpl) ProcessOrderExpirePayment(
+func (s *PaymentReminderService) ProcessOrderExpirePayment(
 	ctx context.Context,
 	req *dto.ExpireOrderPaymentRequest,
 ) error {

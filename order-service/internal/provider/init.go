@@ -9,7 +9,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/temporal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -27,9 +26,8 @@ type Providers struct {
 	FulfillmentClient           client.FulfillmentClientInterface
 	PaymentClient               client.PaymentClientInterface
 	NotificationRequestProducer kafka.ProducerInterface
-	ReminderScheduler           *temporal.ReminderScheduler
-	PaymentReminderService      *service.PaymentReminderService
 	OrderService                service.OrderServiceInterface
+	PaymentReminderService      service.PaymentReminderServiceInterface
 	AsynqClient                 *asynq.Client
 	AsynqInspector              *asynq.Inspector
 }

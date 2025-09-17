@@ -24,9 +24,11 @@ const (
 
 const (
 	// SendPaymentReminderActivity is the activity name for sending payment reminders.
-	SendPaymentReminderActivity = "SendPaymentReminderActivity"
+	SendPaymentReminderActivity WorkflowStep = "SendPaymentReminderActivity"
 	// CheckPaymentStatusActivity is the activity name for checking payment status.
-	CheckPaymentStatusActivity = "CheckPaymentStatusActivity"
+	CheckPaymentStatusActivity WorkflowStep = "CheckPaymentStatusActivity"
+	// ExpireOrderPaymentActivity is the activity name for expiring order payment.
+	ExpireOrderPaymentActivity WorkflowStep = "ExpireOrderPaymentActivity"
 )
 
 const (
