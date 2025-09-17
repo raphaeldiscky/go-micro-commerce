@@ -127,9 +127,7 @@ jobs:
         run: bash scripts/security.sh ${{ matrix.service }}
 
       - name: Run Tests for ${{ matrix.service }}
-        run: |
-          cd ${{ matrix.service }}
-          bash scripts/test.sh ${{ matrix.service }}
+        run: bash scripts/test.sh ${{ matrix.service }}
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v4
