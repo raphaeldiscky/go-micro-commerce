@@ -132,7 +132,7 @@ func (e *NotificationRequestEvent) GetMetadata() event.Metadata {
 }
 
 // NewNotificationRequestProducer creates a new instance of NotificationRequestProducer.
-func NewNotificationRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewNotificationRequestProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &NotificationRequestProducer{
 		Producer: producer,
 		topic:    kafka.NotificationRequestTopic,

@@ -13,8 +13,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 )
 
-// UserRepositoryInterface defines the methods for user repository.
-type UserRepositoryInterface interface {
+// UserRepository defines the methods for user repository.
+type UserRepository interface {
 	// User CRUD operations
 	Create(ctx context.Context, user *entity.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error)
@@ -44,18 +44,18 @@ type UserRepositoryInterface interface {
 	UsernameExists(ctx context.Context, username string) (bool, error)
 }
 
-// UserRepositoryPostgres implements UserRepositoryInterface using PostgreSQL.
-type UserRepositoryPostgres struct {
+// userRepository implements UserRepository using PostgreSQL.
+type userRepository struct {
 	db DBTX
 }
 
 // NewUserRepository creates a new UserRepository.
-func NewUserRepository(db DBTX) UserRepositoryInterface {
-	return &UserRepositoryPostgres{db: db}
+func NewUserRepository(db DBTX) UserRepository {
+	return &userRepository{db: db}
 }
 
 // Create creates a new user.
-func (r *UserRepositoryPostgres) Create(ctx context.Context, user *entity.User) error {
+func (r *userRepository) Create(ctx context.Context, user *entity.User) error {
 	user.ID = uuid.New()
 	user.CreatedAt = time.Now()
 	user.UpdatedAt = time.Now()
@@ -80,7 +80,7 @@ func (r *UserRepositoryPostgres) Create(ctx context.Context, user *entity.User) 
 }
 
 // GetByID retrieves a user by ID.
-func (r *UserRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
+func (r *userRepository) GetByID(ctx context.Context, id uuid.UUID) (*entity.User, error) {
 	user := &entity.User{}
 	query := `
 		SELECT id, email, username, password_hash, first_name, last_name,
@@ -108,7 +108,7 @@ func (r *UserRepositoryPostgres) GetByID(ctx context.Context, id uuid.UUID) (*en
 }
 
 // getUserByField is a helper method to get a user by a specific field.
-func (r *UserRepositoryPostgres) getUserByField(
+func (r *userRepository) getUserByField(
 	ctx context.Context,
 	fieldName string,
 	value any,
@@ -140,7 +140,7 @@ func (r *UserRepositoryPostgres) getUserByField(
 }
 
 // GetByEmail retrieves a user by email.
-func (r *UserRepositoryPostgres) GetByEmail(
+func (r *userRepository) GetByEmail(
 	ctx context.Context,
 	email string,
 ) (*entity.User, error) {
@@ -148,7 +148,7 @@ func (r *UserRepositoryPostgres) GetByEmail(
 }
 
 // GetByUsername retrieves a user by username.
-func (r *UserRepositoryPostgres) GetByUsername(
+func (r *userRepository) GetByUsername(
 	ctx context.Context,
 	username string,
 ) (*entity.User, error) {
@@ -156,7 +156,7 @@ func (r *UserRepositoryPostgres) GetByUsername(
 }
 
 // GetByEmailVerificationToken retrieves a user by email verification token.
-func (r *UserRepositoryPostgres) GetByEmailVerificationToken(
+func (r *userRepository) GetByEmailVerificationToken(
 	ctx context.Context,
 	token string,
 ) (*entity.User, error) {
@@ -164,7 +164,7 @@ func (r *UserRepositoryPostgres) GetByEmailVerificationToken(
 }
 
 // Update updates a user.
-func (r *UserRepositoryPostgres) Update(
+func (r *userRepository) Update(
 	ctx context.Context,
 	user *entity.User,
 ) (*entity.User, error) {
@@ -207,7 +207,7 @@ func (r *UserRepositoryPostgres) Update(
 }
 
 // Delete deletes a user by ID.
-func (r *UserRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM users WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id)
 
@@ -215,7 +215,7 @@ func (r *UserRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // List retrieves a list of users with pagination.
-func (r *UserRepositoryPostgres) List(
+func (r *userRepository) List(
 	ctx context.Context,
 	limit, offset int64,
 ) ([]*entity.User, error) {
@@ -257,7 +257,7 @@ func (r *UserRepositoryPostgres) List(
 }
 
 // Count returns the total number of users.
-func (r *UserRepositoryPostgres) Count(ctx context.Context) (int64, error) {
+func (r *userRepository) Count(ctx context.Context) (int64, error) {
 	var count int64
 
 	query := `SELECT COUNT(*) FROM users`
@@ -267,7 +267,7 @@ func (r *UserRepositoryPostgres) Count(ctx context.Context) (int64, error) {
 }
 
 // ActivateUser activates a user.
-func (r *UserRepositoryPostgres) ActivateUser(ctx context.Context, id uuid.UUID) error {
+func (r *userRepository) ActivateUser(ctx context.Context, id uuid.UUID) error {
 	query := `UPDATE users SET is_active = true, updated_at = $2 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id, time.Now())
 
@@ -275,7 +275,7 @@ func (r *UserRepositoryPostgres) ActivateUser(ctx context.Context, id uuid.UUID)
 }
 
 // DeactivateUser deactivates a user.
-func (r *UserRepositoryPostgres) DeactivateUser(ctx context.Context, id uuid.UUID) error {
+func (r *userRepository) DeactivateUser(ctx context.Context, id uuid.UUID) error {
 	query := `UPDATE users SET is_active = false, updated_at = $2 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id, time.Now())
 
@@ -283,7 +283,7 @@ func (r *UserRepositoryPostgres) DeactivateUser(ctx context.Context, id uuid.UUI
 }
 
 // VerifyEmail verifies a user's email.
-func (r *UserRepositoryPostgres) VerifyEmail(ctx context.Context, id uuid.UUID) error {
+func (r *userRepository) VerifyEmail(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE users SET 
 			is_email_verified = true, 
@@ -297,7 +297,7 @@ func (r *UserRepositoryPostgres) VerifyEmail(ctx context.Context, id uuid.UUID) 
 }
 
 // UpdateLastLogin updates the last login time.
-func (r *UserRepositoryPostgres) UpdateLastLogin(ctx context.Context, id uuid.UUID) error {
+func (r *userRepository) UpdateLastLogin(ctx context.Context, id uuid.UUID) error {
 	query := `UPDATE users SET last_login_at = $2, updated_at = $2 WHERE id = $1`
 	_, err := r.db.Exec(ctx, query, id, time.Now())
 
@@ -305,7 +305,7 @@ func (r *UserRepositoryPostgres) UpdateLastLogin(ctx context.Context, id uuid.UU
 }
 
 // UpdateRoles updates user roles.
-func (r *UserRepositoryPostgres) UpdateRoles(
+func (r *userRepository) UpdateRoles(
 	ctx context.Context,
 	id uuid.UUID,
 	roles []string,
@@ -317,7 +317,7 @@ func (r *UserRepositoryPostgres) UpdateRoles(
 }
 
 // SetEmailVerificationToken sets the email verification token.
-func (r *UserRepositoryPostgres) SetEmailVerificationToken(
+func (r *userRepository) SetEmailVerificationToken(
 	ctx context.Context,
 	id uuid.UUID,
 	token string,
@@ -335,7 +335,7 @@ func (r *UserRepositoryPostgres) SetEmailVerificationToken(
 }
 
 // ClearEmailVerificationToken clears the email verification token.
-func (r *UserRepositoryPostgres) ClearEmailVerificationToken(
+func (r *userRepository) ClearEmailVerificationToken(
 	ctx context.Context,
 	id uuid.UUID,
 ) error {
@@ -351,7 +351,7 @@ func (r *UserRepositoryPostgres) ClearEmailVerificationToken(
 }
 
 // EmailExists checks if an email already exists.
-func (r *UserRepositoryPostgres) EmailExists(ctx context.Context, email string) (bool, error) {
+func (r *userRepository) EmailExists(ctx context.Context, email string) (bool, error) {
 	var exists bool
 
 	query := `SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`
@@ -361,7 +361,7 @@ func (r *UserRepositoryPostgres) EmailExists(ctx context.Context, email string) 
 }
 
 // UsernameExists checks if a username already exists.
-func (r *UserRepositoryPostgres) UsernameExists(
+func (r *userRepository) UsernameExists(
 	ctx context.Context,
 	username string,
 ) (bool, error) {

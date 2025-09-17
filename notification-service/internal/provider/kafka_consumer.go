@@ -47,5 +47,5 @@ func SetupKafkaConsumers(
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
-	return worker.NewKafkaConsumer(cfg, appLogger, consumers)
+	return worker.NewKafkaConsumer(appLogger, consumers)
 }

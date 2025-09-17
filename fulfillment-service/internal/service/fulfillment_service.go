@@ -22,8 +22,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/repository"
 )
 
-// FulfillmentServiceInterface defines the interface for fulfillment business operations.
-type FulfillmentServiceInterface interface {
+// FulfillmentService defines the interface for fulfillment business operations.
+type FulfillmentService interface {
 	// CreateFulfillment creates a new fulfillment record from order information
 	CreateFulfillment(
 		ctx context.Context,
@@ -93,22 +93,22 @@ type FulfillmentServiceInterface interface {
 	) (*dto.FulfillmentResponse, error)
 }
 
-// FulfillmentService implements the FulfillmentServiceInterface.
-type FulfillmentService struct {
+// fulfillmentService implements the FulfillmentService.
+type fulfillmentService struct {
 	dataStore                    repository.DataStore
 	logger                       logger.Logger
-	fulfillmentLifecycleProducer kafka.ProducerInterface
-	carrierClient                client.CarrierClientInterface
+	fulfillmentLifecycleProducer kafka.Producer
+	carrierClient                client.CarrierClient
 }
 
-// NewFulfillmentService creates a new instance of FulfillmentService.
+// NewFulfillmentService creates a new instance of fulfillmentService.
 func NewFulfillmentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	fulfillmentLifecycleProducer kafka.ProducerInterface,
-	carrierClient client.CarrierClientInterface,
-) FulfillmentServiceInterface {
-	return &FulfillmentService{
+	fulfillmentLifecycleProducer kafka.Producer,
+	carrierClient client.CarrierClient,
+) FulfillmentService {
+	return &fulfillmentService{
 		dataStore:                    dataStore,
 		logger:                       appLogger,
 		fulfillmentLifecycleProducer: fulfillmentLifecycleProducer,
@@ -117,7 +117,7 @@ func NewFulfillmentService(
 }
 
 // CreateFulfillment creates a new fulfillment record from order information.
-func (s *FulfillmentService) CreateFulfillment(
+func (s *fulfillmentService) CreateFulfillment(
 	ctx context.Context,
 	req *dto.CreateFulfillmentRequest,
 ) (*dto.FulfillmentResponse, error) {
@@ -202,7 +202,7 @@ func (s *FulfillmentService) CreateFulfillment(
 }
 
 // UpdateFulfillmentStatusByOrderID updates the status of a fulfillment.
-func (s *FulfillmentService) UpdateFulfillmentStatusByOrderID(
+func (s *fulfillmentService) UpdateFulfillmentStatusByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 	req dto.UpdateFulfillmentStatusRequest,
@@ -275,7 +275,7 @@ func (s *FulfillmentService) UpdateFulfillmentStatusByOrderID(
 }
 
 // SetCarrierInfo sets carrier and shipping label information.
-func (s *FulfillmentService) SetCarrierInfo(
+func (s *fulfillmentService) SetCarrierInfo(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
 	req dto.SetCarrierInfoRequest,
@@ -304,7 +304,7 @@ func (s *FulfillmentService) SetCarrierInfo(
 }
 
 // SetDimensions sets package dimensions.
-func (s *FulfillmentService) SetDimensions(
+func (s *fulfillmentService) SetDimensions(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
 	req dto.SetDimensionsRequest,
@@ -333,7 +333,7 @@ func (s *FulfillmentService) SetDimensions(
 }
 
 // SetActualDelivery sets the actual delivery time.
-func (s *FulfillmentService) SetActualDelivery(
+func (s *fulfillmentService) SetActualDelivery(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
 	req dto.SetActualDeliveryRequest,
@@ -362,7 +362,7 @@ func (s *FulfillmentService) SetActualDelivery(
 }
 
 // GetFulfillmentByOrderID retrieves fulfillment by order ID.
-func (s *FulfillmentService) GetFulfillmentByOrderID(
+func (s *fulfillmentService) GetFulfillmentByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (*dto.FulfillmentResponse, error) {
@@ -381,7 +381,7 @@ func (s *FulfillmentService) GetFulfillmentByOrderID(
 }
 
 // GetFulfillmentByTrackingNumber retrieves fulfillment by tracking number.
-func (s *FulfillmentService) GetFulfillmentByTrackingNumber(
+func (s *fulfillmentService) GetFulfillmentByTrackingNumber(
 	ctx context.Context,
 	trackingNumber string,
 ) (*dto.FulfillmentResponse, error) {
@@ -400,7 +400,7 @@ func (s *FulfillmentService) GetFulfillmentByTrackingNumber(
 }
 
 // HandleOrderFulfillmentRequested handles fulfillment requests from order service.
-func (s *FulfillmentService) HandleOrderFulfillmentRequested(
+func (s *fulfillmentService) HandleOrderFulfillmentRequested(
 	ctx context.Context,
 	orderID uuid.UUID,
 	trackingNumber string,
@@ -432,7 +432,7 @@ func (s *FulfillmentService) HandleOrderFulfillmentRequested(
 }
 
 // CalculateShippingRates retrieves many shipping rates for a fulfillment request.
-func (s *FulfillmentService) CalculateShippingRates(
+func (s *fulfillmentService) CalculateShippingRates(
 	ctx context.Context,
 	req *dto.CalculateShippingRatesRequest,
 ) ([]dto.ShippingRateResponse, error) {
@@ -475,7 +475,7 @@ func (s *FulfillmentService) CalculateShippingRates(
 }
 
 // CalculateShippingRate retrieves single shipping rate for a fulfillment request.
-func (s *FulfillmentService) CalculateShippingRate(
+func (s *fulfillmentService) CalculateShippingRate(
 	ctx context.Context,
 	req *dto.CalculateShippingRateRequest,
 ) (*dto.ShippingRateResponse, error) {
@@ -517,7 +517,7 @@ func (s *FulfillmentService) CalculateShippingRate(
 }
 
 // CreateShipment creates a shipment with carrier and generates tracking number.
-func (s *FulfillmentService) CreateShipment(
+func (s *fulfillmentService) CreateShipment(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
 	req *dto.CreateShipmentRequest,
@@ -582,7 +582,7 @@ func (s *FulfillmentService) CreateShipment(
 }
 
 // UpdateTrackingStatus updates fulfillment status based on carrier tracking.
-func (s *FulfillmentService) UpdateTrackingStatus(
+func (s *fulfillmentService) UpdateTrackingStatus(
 	ctx context.Context,
 	trackingNumber string,
 ) (*dto.FulfillmentResponse, error) {
@@ -643,7 +643,7 @@ func (s *FulfillmentService) UpdateTrackingStatus(
 }
 
 // getEventTypeFromStatus returns the appropriate event type based on fulfillment status.
-func (s *FulfillmentService) getEventTypeFromStatus(status constant.FulfillmentStatus) string {
+func (s *fulfillmentService) getEventTypeFromStatus(status constant.FulfillmentStatus) string {
 	switch status {
 	case constant.FulfillmentStatusShipped:
 		return kafka.FulfillmentShippedEventType

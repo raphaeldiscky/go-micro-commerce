@@ -11,25 +11,25 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 )
 
-// JWTInterface defines the methods for JWT utilities.
-type JWTInterface interface {
+// JWT defines the methods for JWT utilities.
+type JWT interface {
 	GenerateAccessToken(userID, email string, roles []string, isActive bool) (string, error)
 	GenerateRefreshToken(userID string) (string, error)
-	ValidateRefreshToken(tokenString string) (*RefreshTokenClaims, error)
-	ValidateAccessToken(tokenString string) (*AccessTokenClaims, error)
+	ValidateRefreshToken(tokenString string) (*refreshTokenClaims, error)
+	ValidateAccessToken(tokenString string) (*accessTokenClaims, error)
 	GetExpirationTime(tokenString string) (int64, error)
 }
 
-// RefreshTokenClaims represents the claims in a refresh token.
-type RefreshTokenClaims struct {
+// refreshTokenClaims represents the claims in a refresh token.
+type refreshTokenClaims struct {
 	jwt.RegisteredClaims
 
 	UserID string `json:"user_id"`
 	Type   string `json:"type"`
 }
 
-// AccessTokenClaims represents the claims in an access token.
-type AccessTokenClaims struct {
+// accessTokenClaims represents the claims in an access token.
+type accessTokenClaims struct {
 	jwt.RegisteredClaims
 
 	UserID   string   `json:"user_id"`
@@ -38,27 +38,27 @@ type AccessTokenClaims struct {
 	IsActive bool     `json:"is_active"`
 }
 
-// JWTUtils implements JWTUtilsInterface.
-type JWTUtils struct {
+// jwtUtils implements JWTUtils.
+type jwtUtils struct {
 	config *config.JWTConfig
 }
 
-// NewJWTUtils creates a new JWTUtils instance.
-func NewJWTUtils(cfg *config.JWTConfig) JWTInterface {
-	return &JWTUtils{
+// NewJWTUtils creates a new jwtUtils instance.
+func NewJWTUtils(cfg *config.JWTConfig) JWT {
+	return &jwtUtils{
 		config: cfg,
 	}
 }
 
 // GenerateAccessToken generates a JWT access token for the given user.
-func (j *JWTUtils) GenerateAccessToken(
+func (j *jwtUtils) GenerateAccessToken(
 	userID, email string,
 	roles []string,
 	isActive bool,
 ) (string, error) {
 	now := time.Now()
 
-	claims := &AccessTokenClaims{
+	claims := &accessTokenClaims{
 		UserID:   userID,
 		Email:    email,
 		Roles:    roles,
@@ -76,10 +76,10 @@ func (j *JWTUtils) GenerateAccessToken(
 }
 
 // GenerateRefreshToken generates a JWT refresh token for the given user.
-func (j *JWTUtils) GenerateRefreshToken(userID string) (string, error) {
+func (j *jwtUtils) GenerateRefreshToken(userID string) (string, error) {
 	now := time.Now()
 
-	claims := &RefreshTokenClaims{
+	claims := &refreshTokenClaims{
 		UserID: userID,
 		Type:   "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -95,10 +95,10 @@ func (j *JWTUtils) GenerateRefreshToken(userID string) (string, error) {
 }
 
 // ValidateRefreshToken validates and parses a refresh token.
-func (j *JWTUtils) ValidateRefreshToken(tokenString string) (*RefreshTokenClaims, error) {
+func (j *jwtUtils) ValidateRefreshToken(tokenString string) (*refreshTokenClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&RefreshTokenClaims{},
+		&refreshTokenClaims{},
 		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
@@ -111,7 +111,7 @@ func (j *JWTUtils) ValidateRefreshToken(tokenString string) (*RefreshTokenClaims
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*RefreshTokenClaims)
+	claims, ok := token.Claims.(*refreshTokenClaims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")
 	}
@@ -125,10 +125,10 @@ func (j *JWTUtils) ValidateRefreshToken(tokenString string) (*RefreshTokenClaims
 }
 
 // ValidateAccessToken validates and parses an access token.
-func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, error) {
+func (j *jwtUtils) ValidateAccessToken(tokenString string) (*accessTokenClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&AccessTokenClaims{},
+		&accessTokenClaims{},
 		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
@@ -141,7 +141,7 @@ func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, 
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*AccessTokenClaims)
+	claims, ok := token.Claims.(*accessTokenClaims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token test 2")
 	}
@@ -150,7 +150,7 @@ func (j *JWTUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, 
 }
 
 // GetUserIDFromRefreshToken extracts user ID from a refresh token string.
-func (j *JWTUtils) GetUserIDFromRefreshToken(tokenString string) (uuid.UUID, error) {
+func (j *jwtUtils) GetUserIDFromRefreshToken(tokenString string) (uuid.UUID, error) {
 	claims, err := j.ValidateRefreshToken(tokenString)
 	if err != nil {
 		return uuid.Nil, err
@@ -165,7 +165,7 @@ func (j *JWTUtils) GetUserIDFromRefreshToken(tokenString string) (uuid.UUID, err
 }
 
 // GetUserIDFromAccessToken extracts user ID from an access token string.
-func (j *JWTUtils) GetUserIDFromAccessToken(tokenString string) (uuid.UUID, error) {
+func (j *jwtUtils) GetUserIDFromAccessToken(tokenString string) (uuid.UUID, error) {
 	claims, err := j.ValidateAccessToken(tokenString)
 	if err != nil {
 		return uuid.Nil, err
@@ -180,7 +180,7 @@ func (j *JWTUtils) GetUserIDFromAccessToken(tokenString string) (uuid.UUID, erro
 }
 
 // GetExpirationTime extracts the expiration time from a token string.
-func (j *JWTUtils) GetExpirationTime(tokenString string) (int64, error) {
+func (j *jwtUtils) GetExpirationTime(tokenString string) (int64, error) {
 	claims, err := j.ValidateAccessToken(tokenString)
 	if err != nil {
 		return 0, err

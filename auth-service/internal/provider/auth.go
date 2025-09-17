@@ -58,7 +58,7 @@ func SetupAuth(
 		emailVerificationRequestedProducer,
 		userVerifiedProducer,
 	)
-	authHandler := handler.NewAuthHandler(authService, appLogger)
+	authHandler := handler.NewAuthHandler(authService)
 
 	routes.SetupAuthRoutes(e, authHandler)
 }

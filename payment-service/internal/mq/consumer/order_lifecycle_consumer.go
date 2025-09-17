@@ -27,14 +27,14 @@ type OrderLifecycleEvent struct {
 type OrderLifecycleConsumer struct {
 	logger         logger.Logger
 	datastore      repository.DataStore
-	paymentService service.PaymentServiceInterface
+	paymentService service.PaymentService
 }
 
 // NewOrderLifecycleConsumer creates a new consumer for product lifecycle events.
 func NewOrderLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-	paymentService service.PaymentServiceInterface,
+	paymentService service.PaymentService,
 ) *OrderLifecycleConsumer {
 	return &OrderLifecycleConsumer{
 		logger:         appLogger,
@@ -151,7 +151,7 @@ func (c *OrderLifecycleConsumer) processCreatedOrder(
 // processPaymentExpiredOrder handles order canceled events to timeout payment records.
 func (c *OrderLifecycleConsumer) processPaymentExpiredOrder(
 	ctx context.Context,
-	paymentService service.PaymentServiceInterface,
+	paymentService service.PaymentService,
 	body []byte,
 ) error {
 	var evt OrderLifecycleEvent

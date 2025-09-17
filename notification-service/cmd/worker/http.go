@@ -12,7 +12,6 @@ import (
 // HTTPWorker wraps the HTTP server as a Worker.
 type HTTPWorker struct {
 	server *server.HTTPServer
-	logger logger.Logger
 }
 
 // NewHTTPWorker creates a new HTTP worker.
@@ -22,7 +21,6 @@ func NewHTTPWorker(
 ) *HTTPWorker {
 	return &HTTPWorker{
 		server: server.NewHTTPServer(cfg, appLogger),
-		logger: appLogger,
 	}
 }
 

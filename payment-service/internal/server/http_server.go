@@ -27,7 +27,6 @@ type HTTPServer struct {
 
 // NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(
-	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,
@@ -41,7 +40,7 @@ func NewHTTPServer(
 	RegisterMiddlewares(e, cfg)
 
 	// Setup HTTP
-	provider.SetupHTTP(ctx, cfg, e, appLogger, providers)
+	provider.SetupHTTP(e, appLogger, providers)
 
 	return &HTTPServer{
 		echo:   e,

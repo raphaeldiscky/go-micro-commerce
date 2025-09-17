@@ -21,16 +21,15 @@ const (
 	ServiceTypeGRPC ServiceType = "grpc"
 )
 
-// ServiceRegistrationInterface defines the interface for service registration.
-type ServiceRegistrationInterface interface {
+// ServiceRegistration defines the interface for service registration.
+type ServiceRegistration interface {
 	RegisterHTTP(serviceName, address string, port int) error
 	RegisterGRPC(serviceName, address string, port int) error
-	DeregisterGRPC(serviceID string) error
-	DeregisterHTTP(serviceID string) error
+	Deregister() error
 }
 
-// ServiceRegistration handles Consul service registration.
-type ServiceRegistration struct {
+// serviceRegistration handles Consul service registration.
+type serviceRegistration struct {
 	client     *api.Client
 	logger     logger.Logger
 	serviceIDs []string
@@ -40,7 +39,7 @@ type ServiceRegistration struct {
 func NewServiceRegistration(
 	consulAddr string,
 	appLogger logger.Logger,
-) (*ServiceRegistration, error) {
+) (ServiceRegistration, error) {
 	config := api.DefaultConfig()
 	config.Address = consulAddr
 
@@ -49,41 +48,31 @@ func NewServiceRegistration(
 		return nil, fmt.Errorf("failed to create consul client: %w", err)
 	}
 
-	return &ServiceRegistration{
+	return &serviceRegistration{
 		client: client,
 		logger: appLogger,
 	}, nil
 }
 
 // GetServiceID generates a unique service ID based on service name, hostname, and port.
-func (s *ServiceRegistration) GetServiceID(serviceName, host string, port int) (string, error) {
+func (s *serviceRegistration) GetServiceID(serviceName, host string, port int) (string, error) {
 	serviceID := fmt.Sprintf("%s-%s-%d", serviceName, host, port)
 
 	return serviceID, nil
 }
 
 // RegisterHTTP registers an HTTP service with Consul.
-func (s *ServiceRegistration) RegisterHTTP(serviceName, address string, port int) error {
+func (s *serviceRegistration) RegisterHTTP(serviceName, address string, port int) error {
 	return s.register(serviceName, address, port, ServiceTypeHTTP)
 }
 
-// DeregisterHTTP deregisters an HTTP service from Consul.
-func (s *ServiceRegistration) DeregisterHTTP(serviceID string) error {
-	return s.deregister(serviceID, ServiceTypeHTTP)
-}
-
 // RegisterGRPC registers a gRPC service with Consul.
-func (s *ServiceRegistration) RegisterGRPC(serviceName, address string, port int) error {
+func (s *serviceRegistration) RegisterGRPC(serviceName, address string, port int) error {
 	return s.register(serviceName, address, port, ServiceTypeGRPC)
 }
 
-// DeregisterGRPC deregisters a gRPC service from Consul.
-func (s *ServiceRegistration) DeregisterGRPC(serviceID string) error {
-	return s.deregister(serviceID, ServiceTypeGRPC)
-}
-
 // register registers a service with Consul based on service type.
-func (s *ServiceRegistration) register(
+func (s *serviceRegistration) register(
 	serviceName, host string,
 	port int,
 	serviceType ServiceType,
@@ -145,20 +134,8 @@ func (s *ServiceRegistration) register(
 	return nil
 }
 
-// deregister removes a service from Consul by service type.
-func (s *ServiceRegistration) deregister(serviceID string, serviceType ServiceType) error {
-	err := s.client.Agent().ServiceDeregister(serviceID)
-	if err != nil {
-		return fmt.Errorf("failed to deregister %s service %s: %w", serviceType, serviceID, err)
-	}
-
-	s.logger.Infof("%s service %s deregistered from Consul", serviceType, serviceID)
-
-	return nil
-}
-
 // Deregister removes all registered services from Consul.
-func (s *ServiceRegistration) Deregister() error {
+func (s *serviceRegistration) Deregister() error {
 	if len(s.serviceIDs) == 0 {
 		return nil
 	}

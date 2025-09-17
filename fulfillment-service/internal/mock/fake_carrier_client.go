@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/random"
 	"github.com/shopspring/decimal"
 
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
 )
@@ -24,32 +25,32 @@ const (
 	fakeCarrierTrackingNumberMax = 999999999
 )
 
-// FakeCarrierClient provides a mock implementation of CarrierClientInterface for testing.
-type FakeCarrierClient struct {
+// fakeCarrierClient provides a mock implementation of CarrierClient interface for testing.
+type fakeCarrierClient struct {
 	shouldFail bool
 	delay      time.Duration
 }
 
-// NewFakeCarrierClient creates a new instance of FakeCarrierClient.
-func NewFakeCarrierClient() *FakeCarrierClient {
-	return &FakeCarrierClient{
+// NewFakeCarrierClient creates a new instance of fakeCarrierClient.
+func NewFakeCarrierClient() client.CarrierClient {
+	return &fakeCarrierClient{
 		shouldFail: false,
 		delay:      fakeCarrierDelay, // Simulate network delay
 	}
 }
 
 // SetShouldFail configures the client to simulate failures.
-func (c *FakeCarrierClient) SetShouldFail(shouldFail bool) {
+func (c *fakeCarrierClient) SetShouldFail(shouldFail bool) {
 	c.shouldFail = shouldFail
 }
 
 // SetDelay configures the simulated network delay.
-func (c *FakeCarrierClient) SetDelay(delay time.Duration) {
+func (c *fakeCarrierClient) SetDelay(delay time.Duration) {
 	c.delay = delay
 }
 
 // GetRates returns mock shipping rates for different carriers.
-func (c *FakeCarrierClient) GetRates(
+func (c *fakeCarrierClient) GetRates(
 	_ context.Context,
 	_ *dto.ShippingRequest,
 ) ([]dto.ShippingRate, error) {
@@ -92,7 +93,7 @@ func (c *FakeCarrierClient) GetRates(
 }
 
 // GetRate returns a mock shipping rate for a specific carrier.
-func (c *FakeCarrierClient) GetRate(
+func (c *fakeCarrierClient) GetRate(
 	ctx context.Context,
 	req *dto.ShippingRequest,
 ) (*dto.ShippingRate, error) {
@@ -117,7 +118,7 @@ func (c *FakeCarrierClient) GetRate(
 }
 
 // CreateShipment creates a mock shipping label.
-func (c *FakeCarrierClient) CreateShipment(
+func (c *fakeCarrierClient) CreateShipment(
 	_ context.Context,
 	req *dto.ShippingRequest,
 ) (*dto.ShippingLabel, error) {
@@ -139,7 +140,7 @@ func (c *FakeCarrierClient) CreateShipment(
 }
 
 // getCarrierInfo get carrier name and service.
-func (c *FakeCarrierClient) getCarrierInfo(carrierID constant.CarrierID) string {
+func (c *fakeCarrierClient) getCarrierInfo(carrierID constant.CarrierID) string {
 	switch carrierID {
 	case constant.CarrierJNE:
 		return "JNE Regular"
@@ -155,7 +156,7 @@ func (c *FakeCarrierClient) getCarrierInfo(carrierID constant.CarrierID) string 
 }
 
 // GetTracking returns mock tracking information.
-func (c *FakeCarrierClient) GetTracking(
+func (c *fakeCarrierClient) GetTracking(
 	_ context.Context,
 	trackingNumber string,
 	carrierID constant.CarrierID,
@@ -197,7 +198,7 @@ func (c *FakeCarrierClient) GetTracking(
 }
 
 // CancelShipment cancels a mock shipment.
-func (c *FakeCarrierClient) CancelShipment(
+func (c *fakeCarrierClient) CancelShipment(
 	_ context.Context,
 	trackingNumber string,
 	carrierID constant.CarrierID,
@@ -216,7 +217,7 @@ func (c *FakeCarrierClient) CancelShipment(
 }
 
 // generateTrackingNumber creates a mock tracking number.
-func (c *FakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID) string {
+func (c *fakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID) string {
 	prefix := carrierID
 	randomSuffix := random.Int(fakeCarrierTrackingNumberMax)
 
@@ -224,7 +225,7 @@ func (c *FakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID)
 }
 
 // generateLocation creates a mock location.
-func (c *FakeCarrierClient) generateLocation() string {
+func (c *fakeCarrierClient) generateLocation() string {
 	locations := []string{
 		"Jakarta, Indonesia",
 		"Surabaya, Indonesia",
@@ -239,7 +240,7 @@ func (c *FakeCarrierClient) generateLocation() string {
 }
 
 // generateDescription creates a status description.
-func (c *FakeCarrierClient) generateDescription(status constant.FulfillmentStatus) string {
+func (c *fakeCarrierClient) generateDescription(status constant.FulfillmentStatus) string {
 	descriptions := map[constant.FulfillmentStatus]string{
 		constant.FulfillmentStatusProcessing: "Package is being prepared for shipment",
 		constant.FulfillmentStatusShipped:    "Package has been picked up by carrier",

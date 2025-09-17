@@ -20,8 +20,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
-// ProductClientInterface defines methods available for fetching products.
-type ProductClientInterface interface {
+// ProductClient defines methods available for fetching products.
+type ProductClient interface {
 	GetProducts(ctx context.Context, ids []uuid.UUID) ([]entity.Product, error)
 	ReserveProducts(
 		ctx context.Context,
@@ -44,16 +44,16 @@ type ProductClientInterface interface {
 	Close() error
 }
 
-// ProductClient is a gRPC client for interacting with the product service.
-type ProductClient struct {
+// productClient is a gRPC client for interacting with the product service.
+type productClient struct {
 	grpcClient *grpc.Client
 	client     pb.ProductServiceClient
 }
 
-// NewProductClient creates a new ProductClient instance with gRPC connection.
+// NewProductClient creates a new productClient instance with gRPC connection.
 func NewProductClient(
 	cfg *config.Config,
-) (ProductClientInterface, error) {
+) (ProductClient, error) {
 	// Create gRPC client configuration
 	grpcConfig := pkgconfig.DefaultGRPCClientConfig(pkgconstant.GRPCServiceNameProduct)
 
@@ -71,14 +71,14 @@ func NewProductClient(
 	// Create the product service client
 	client := pb.NewProductServiceClient(gClient.GetConnection())
 
-	return &ProductClient{
+	return &productClient{
 		grpcClient: gClient,
 		client:     client,
 	}, nil
 }
 
 // GetProducts fetches product data by IDs.
-func (pc *ProductClient) GetProducts(
+func (pc *productClient) GetProducts(
 	ctx context.Context,
 	ids []uuid.UUID,
 ) ([]entity.Product, error) {
@@ -110,7 +110,7 @@ func (pc *ProductClient) GetProducts(
 }
 
 // ReserveProducts reserves stock for products with optimistic locking.
-func (pc *ProductClient) ReserveProducts(
+func (pc *productClient) ReserveProducts(
 	ctx context.Context,
 	idempotencyKey uuid.UUID,
 	items []dto.ProductReservationItem,
@@ -159,7 +159,7 @@ func (pc *ProductClient) ReserveProducts(
 }
 
 // ReleaseProducts releases reserved stock for products.
-func (pc *ProductClient) ReleaseProducts(
+func (pc *productClient) ReleaseProducts(
 	ctx context.Context,
 	items []dto.ProductReservationItem,
 ) error {
@@ -190,7 +190,7 @@ func (pc *ProductClient) ReleaseProducts(
 }
 
 // ConfirmProductsDeduction confirms the reserved stock and removes reserved quantity.
-func (pc *ProductClient) ConfirmProductsDeduction(
+func (pc *productClient) ConfirmProductsDeduction(
 	ctx context.Context,
 	items []dto.ProductReservationItem,
 ) ([]entity.Product, error) {
@@ -233,7 +233,7 @@ func (pc *ProductClient) ConfirmProductsDeduction(
 }
 
 // RestoreProducts restores stock in case of compensation.
-func (pc *ProductClient) RestoreProducts(
+func (pc *productClient) RestoreProducts(
 	ctx context.Context,
 	items []dto.ProductRestorationItem,
 ) ([]entity.Product, error) {
@@ -277,7 +277,7 @@ func (pc *ProductClient) RestoreProducts(
 }
 
 // HealthCheck verifies the connection to product-service.
-func (pc *ProductClient) HealthCheck(ctx context.Context) error {
+func (pc *productClient) HealthCheck(ctx context.Context) error {
 	_, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
@@ -294,6 +294,6 @@ func (pc *ProductClient) HealthCheck(ctx context.Context) error {
 }
 
 // Close closes the gRPC connection.
-func (pc *ProductClient) Close() error {
+func (pc *productClient) Close() error {
 	return pc.grpcClient.Close()
 }

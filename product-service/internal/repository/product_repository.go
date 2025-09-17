@@ -14,8 +14,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/entity"
 )
 
-// ProductRepositoryInterface defines the interface for product data operations.
-type ProductRepositoryInterface interface {
+// ProductRepository defines the interface for product data operations.
+type ProductRepository interface {
 	// Create saves a new product
 	Create(ctx context.Context, product *entity.Product) (*entity.Product, error)
 
@@ -72,20 +72,20 @@ type ProductRepositoryInterface interface {
 	Count(ctx context.Context) (int64, error)
 }
 
-// ProductRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
-type ProductRepositoryPostgres struct {
+// productRepository implements the ProductRepository interface for PostgreSQL.
+type productRepository struct {
 	db DBTX
 }
 
-// NewProductRepositoryPostgres creates a new instance of ProductRepositoryPostgres.
-func NewProductRepositoryPostgres(db DBTX) ProductRepositoryInterface {
-	return &ProductRepositoryPostgres{
+// NewProductRepository creates a new instance of productRepository.
+func NewProductRepository(db DBTX) ProductRepository {
+	return &productRepository{
 		db: db,
 	}
 }
 
 // Create creates a new product in the database.
-func (r *ProductRepositoryPostgres) Create(
+func (r *productRepository) Create(
 	ctx context.Context,
 	product *entity.Product,
 ) (*entity.Product, error) {
@@ -126,7 +126,7 @@ func (r *ProductRepositoryPostgres) Create(
 }
 
 // Update updates an existing product in the database.
-func (r *ProductRepositoryPostgres) Update(
+func (r *productRepository) Update(
 	ctx context.Context,
 	product *entity.Product,
 ) (*entity.Product, error) {
@@ -178,7 +178,7 @@ const (
 )
 
 // BulkUpdateQuantity updates the quantity of multiple products in the database.
-func (r *ProductRepositoryPostgres) BulkUpdateQuantity(
+func (r *productRepository) BulkUpdateQuantity(
 	ctx context.Context,
 	products []*entity.Product,
 ) error {
@@ -218,7 +218,7 @@ func (r *ProductRepositoryPostgres) BulkUpdateQuantity(
 }
 
 // Delete deletes a product from the database.
-func (r *ProductRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *productRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	query := `DELETE FROM products WHERE id = $1`
 
 	result, err := r.db.Exec(ctx, query, id)
@@ -234,7 +234,7 @@ func (r *ProductRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) er
 }
 
 // FindByID finds a product by its ID.
-func (r *ProductRepositoryPostgres) FindByID(
+func (r *productRepository) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Product, error) {
@@ -270,7 +270,7 @@ func (r *ProductRepositoryPostgres) FindByID(
 }
 
 // FindByIDsForUpdate finds products by their IDs.
-func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
+func (r *productRepository) FindByIDsForUpdate(
 	ctx context.Context,
 	ids []uuid.UUID,
 ) ([]*entity.Product, error) {
@@ -322,7 +322,7 @@ func (r *ProductRepositoryPostgres) FindByIDsForUpdate(
 }
 
 // FindByIDs finds products by their IDs without locking.
-func (r *ProductRepositoryPostgres) FindByIDs(
+func (r *productRepository) FindByIDs(
 	ctx context.Context,
 	ids []uuid.UUID,
 ) ([]*entity.Product, error) {
@@ -373,7 +373,7 @@ func (r *ProductRepositoryPostgres) FindByIDs(
 }
 
 // FindAll finds all products with pagination.
-func (r *ProductRepositoryPostgres) FindAll(
+func (r *productRepository) FindAll(
 	ctx context.Context,
 	limit, offset int64,
 ) ([]*entity.Product, error) {
@@ -420,7 +420,7 @@ func (r *ProductRepositoryPostgres) FindAll(
 }
 
 // Count returns the total number of products.
-func (r *ProductRepositoryPostgres) Count(ctx context.Context) (int64, error) {
+func (r *productRepository) Count(ctx context.Context) (int64, error) {
 	query := `SELECT COUNT(*) FROM products`
 
 	var count int64
@@ -434,7 +434,7 @@ func (r *ProductRepositoryPostgres) Count(ctx context.Context) (int64, error) {
 }
 
 // Exists checks if a product exists by ID.
-func (r *ProductRepositoryPostgres) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
+func (r *productRepository) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM products WHERE id = $1)`
 
 	var exists bool
@@ -448,7 +448,7 @@ func (r *ProductRepositoryPostgres) Exists(ctx context.Context, id uuid.UUID) (b
 }
 
 // UpdateWithOptimisticLock updates a product using optimistic locking.
-func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
+func (r *productRepository) UpdateWithOptimisticLock(
 	ctx context.Context,
 	product *entity.Product,
 	expectedVersion int64,
@@ -495,7 +495,7 @@ func (r *ProductRepositoryPostgres) UpdateWithOptimisticLock(
 }
 
 // ReserveProducts reserves stock for multiple products atomically.
-func (r *ProductRepositoryPostgres) ReserveProducts(
+func (r *productRepository) ReserveProducts(
 	ctx context.Context,
 	reservations []entity.ProductReservation,
 ) ([]*entity.Product, error) {
@@ -566,7 +566,7 @@ func (r *ProductRepositoryPostgres) ReserveProducts(
 }
 
 // ReleaseProducts releases reserved stock atomically.
-func (r *ProductRepositoryPostgres) ReleaseProducts(
+func (r *productRepository) ReleaseProducts(
 	ctx context.Context,
 	releases []entity.ProductReservation,
 ) ([]*entity.Product, error) {
@@ -631,7 +631,7 @@ func (r *ProductRepositoryPostgres) ReleaseProducts(
 }
 
 // ConfirmProductsDeduction confirms stock deduction.
-func (r *ProductRepositoryPostgres) ConfirmProductsDeduction(
+func (r *productRepository) ConfirmProductsDeduction(
 	ctx context.Context,
 	confirmations []entity.ProductReservation,
 ) ([]*entity.Product, error) {

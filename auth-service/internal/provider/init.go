@@ -19,8 +19,8 @@ import (
 type Providers struct {
 	DataStore    repository.DataStore
 	KafkaAdmin   *kafka.Admin
-	JWTUtils     jwtutils.JWTInterface
-	BcryptHasher encryptutils.HasherInterface
+	JWTUtils     jwtutils.JWT
+	BcryptHasher encryptutils.Hasher
 }
 
 // SetupGlobal initializes and returns the providers.

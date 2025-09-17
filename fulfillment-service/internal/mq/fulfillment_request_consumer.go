@@ -40,14 +40,14 @@ func (e *FulfillmentRequestEvent) GetPayload() any {
 type FulfillmentRequestConsumer struct {
 	logger        logger.Logger
 	datastore     repository.DataStore
-	carrierClient client.CarrierClientInterface
+	carrierClient client.CarrierClient
 }
 
 // NewFulfillmentRequestConsumer creates a new consumer for fulfillment request events.
 func NewFulfillmentRequestConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-	carrierClient client.CarrierClientInterface,
+	carrierClient client.CarrierClient,
 ) *FulfillmentRequestConsumer {
 	return &FulfillmentRequestConsumer{
 		logger:        appLogger,

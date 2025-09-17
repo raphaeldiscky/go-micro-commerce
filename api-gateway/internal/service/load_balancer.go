@@ -4,8 +4,6 @@ package service
 import (
 	"errors"
 	"sync"
-
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // LoadBalancer interface for service load balancing.
@@ -17,14 +15,12 @@ type LoadBalancer interface {
 type RoundRobinLoadBalancer struct {
 	counters map[string]int
 	mutex    sync.RWMutex
-	logger   logger.Logger
 }
 
 // NewLoadBalancerService creates a new round-robin load balancer.
-func NewLoadBalancerService(appLogger logger.Logger) *RoundRobinLoadBalancer {
+func NewLoadBalancerService() *RoundRobinLoadBalancer {
 	return &RoundRobinLoadBalancer{
 		counters: make(map[string]int),
-		logger:   appLogger,
 	}
 }
 

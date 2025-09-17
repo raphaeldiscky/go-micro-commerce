@@ -60,7 +60,7 @@ func (e *FulfillmentLifecycleEvent) GetMetadata() event.Metadata {
 }
 
 // NewFulfillmentLifecycleProducer creates a new instance of FulfillmentLifecycleProducer.
-func NewFulfillmentLifecycleProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewFulfillmentLifecycleProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &FulfillmentLifecycleProducer{
 		Producer: producer,
 		topic:    kafka.FulfillmentLifecycleTopic,

@@ -20,10 +20,10 @@ type DBTX interface {
 // DataStore is an interface that wraps the database access methods.
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
-	PaymentRepository() PaymentRepositoryInterface
-	LockRepository() LockRepositoryInterface
-	OutboxRepository() OutboxRepositoryInterface
-	InboxRepository() InboxRepositoryInterface
+	PaymentRepository() PaymentRepository
+	LockRepository() LockRepository
+	OutboxRepository() OutboxRepository
+	InboxRepository() InboxRepository
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -64,21 +64,21 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 }
 
 // PaymentRepository returns a new PaymentRepository.
-func (s *dataStore) PaymentRepository() PaymentRepositoryInterface {
-	return NewPaymentRepositoryPostgres(s.db)
+func (s *dataStore) PaymentRepository() PaymentRepository {
+	return NewPaymentRepository(s.db)
 }
 
 // LockRepository returns a new LockRepository.
-func (s *dataStore) LockRepository() LockRepositoryInterface {
+func (s *dataStore) LockRepository() LockRepository {
 	return NewLockRepository(s.rdl, s.logger)
 }
 
 // OutboxRepository returns a new OutboxRepository.
-func (s *dataStore) OutboxRepository() OutboxRepositoryInterface {
+func (s *dataStore) OutboxRepository() OutboxRepository {
 	return NewOutboxRepository(s.db)
 }
 
 // InboxRepository returns a new InboxRepository.
-func (s *dataStore) InboxRepository() InboxRepositoryInterface {
+func (s *dataStore) InboxRepository() InboxRepository {
 	return NewInboxRepository(s.db)
 }

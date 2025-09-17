@@ -66,7 +66,7 @@ func (e *NotificationDLQEvent) GetMetadata() event.Metadata {
 }
 
 // NewNotificationDLQProducer creates a new instance of NotificationDLQProducer.
-func NewNotificationDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewNotificationDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &NotificationDLQProducer{
 		Producer: producer,
 		topic:    kafka.NotificationDLQTopic,

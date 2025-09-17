@@ -74,51 +74,42 @@ type OrderActivities interface {
 	CancelShipping(ctx context.Context, shippingID uuid.UUID) error
 }
 
-// OrderActivitiesImpl implements the OrderActivities interface.
-type OrderActivitiesImpl struct {
-	dataStore                  repository.DataStore
-	productClient              client.ProductClientInterface
-	paymentRequestProducer     kafka.ProducerInterface
-	orderLifecycleProducer     kafka.ProducerInterface
-	fulfillmentRequestProducer kafka.ProducerInterface
-	fulfillmentClient          client.FulfillmentClientInterface
-	paymentClient              client.PaymentClientInterface
-	asynqClient                asynq.ClientInterface
-	taskCancellationHelper     *task.CancellationHelper
-	logger                     logger.Logger
+// orderActivities implements the OrderActivities interface.
+type orderActivities struct {
+	dataStore              repository.DataStore
+	productClient          client.ProductClient
+	fulfillmentClient      client.FulfillmentClient
+	paymentClient          client.PaymentClient
+	asynqClient            asynq.Client
+	taskCancellationHelper *task.CancellationHelper
+	logger                 logger.Logger
 }
 
-// NewOrderActivities creates a new OrderActivitiesImpl instance.
+// NewOrderActivities creates a new orderActivities instance.
 func NewOrderActivities(
 	dataStore repository.DataStore,
-	productClient client.ProductClientInterface,
-	paymentRequestProducer kafka.ProducerInterface,
-	orderLifecycleProducer kafka.ProducerInterface,
-	fulfillmentRequestProducer kafka.ProducerInterface,
-	fulfillmentClient client.FulfillmentClientInterface,
-	paymentClient client.PaymentClientInterface,
-	asynqClient asynq.ClientInterface,
+	productClient client.ProductClient,
+	fulfillmentClient client.FulfillmentClient,
+	paymentClient client.PaymentClient,
+	asynqClient asynq.Client,
 	taskCancellationService asynq.TaskCancellationService,
 	appLogger logger.Logger,
 ) OrderActivities {
 	taskCancellationHelper := task.NewCancellationHelper(taskCancellationService, appLogger)
 
-	return &OrderActivitiesImpl{
-		dataStore:                  dataStore,
-		productClient:              productClient,
-		paymentRequestProducer:     paymentRequestProducer,
-		orderLifecycleProducer:     orderLifecycleProducer,
-		fulfillmentRequestProducer: fulfillmentRequestProducer,
-		fulfillmentClient:          fulfillmentClient,
-		paymentClient:              paymentClient,
-		asynqClient:                asynqClient,
-		taskCancellationHelper:     taskCancellationHelper,
-		logger:                     appLogger,
+	return &orderActivities{
+		dataStore:              dataStore,
+		productClient:          productClient,
+		fulfillmentClient:      fulfillmentClient,
+		paymentClient:          paymentClient,
+		asynqClient:            asynqClient,
+		taskCancellationHelper: taskCancellationHelper,
+		logger:                 appLogger,
 	}
 }
 
 // ReserveProductsAndCalculate reserves products for the order items.
-func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
+func (a *orderActivities) ReserveProductsAndCalculate(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, []entity.Product, error) {
@@ -235,7 +226,7 @@ func (a *OrderActivitiesImpl) ReserveProductsAndCalculate(
 }
 
 // GetShippingCost calculates shipping cost by calling fulfillment service without creating actual shipment.
-func (a *OrderActivitiesImpl) GetShippingCost(
+func (a *orderActivities) GetShippingCost(
 	ctx context.Context,
 	order *entity.Order,
 	shipping *dto.Shipping,
@@ -259,7 +250,7 @@ func (a *OrderActivitiesImpl) GetShippingCost(
 }
 
 // SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
-func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *entity.Order) error {
+func (a *orderActivities) SetFinalOrderPrices(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Updating order prices in database for order: %s", order.ID)
 
 	return a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
@@ -284,7 +275,7 @@ func (a *OrderActivitiesImpl) SetFinalOrderPrices(ctx context.Context, order *en
 }
 
 // CreatePayment create payment for the order.
-func (a *OrderActivitiesImpl) CreatePayment(
+func (a *orderActivities) CreatePayment(
 	ctx context.Context,
 	order *entity.Order,
 ) (uuid.UUID, error) {
@@ -357,7 +348,7 @@ func (a *OrderActivitiesImpl) CreatePayment(
 }
 
 // SendPaymentRequiredNotification sends a payment required notification to the customer.
-func (a *OrderActivitiesImpl) SendPaymentRequiredNotification(
+func (a *orderActivities) SendPaymentRequiredNotification(
 	ctx context.Context,
 	order *entity.Order,
 	reservedProducts []entity.Product,
@@ -428,7 +419,7 @@ func (a *OrderActivitiesImpl) SendPaymentRequiredNotification(
 }
 
 // WaitForPaymentConfirmation waits for payment confirmation with 30-minute timeout, with payment reminder notification, no retry and auto-cancel.
-func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
+func (a *orderActivities) WaitForPaymentConfirmation(
 	ctx context.Context,
 	order *entity.Order,
 	customerEmail string,
@@ -473,7 +464,7 @@ func (a *OrderActivitiesImpl) WaitForPaymentConfirmation(
 }
 
 // schedulePaymentReminders schedules payment reminder tasks using asynq.
-func (a *OrderActivitiesImpl) schedulePaymentReminders(
+func (a *orderActivities) schedulePaymentReminders(
 	_ context.Context,
 	order *entity.Order,
 	customerEmail string,
@@ -564,7 +555,7 @@ func (a *OrderActivitiesImpl) schedulePaymentReminders(
 }
 
 // ConfirmProductsDeduction confirms stock deduction after successful payment.
-func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
+func (a *orderActivities) ConfirmProductsDeduction(
 	ctx context.Context,
 	order *entity.Order,
 	reservedProducts []entity.Product,
@@ -621,7 +612,7 @@ func (a *OrderActivitiesImpl) ConfirmProductsDeduction(
 }
 
 // ProcessFulfillment creates shipping/fulfillment arrangement for the order.
-func (a *OrderActivitiesImpl) ProcessFulfillment(
+func (a *orderActivities) ProcessFulfillment(
 	ctx context.Context,
 	payload *Payload,
 ) (uuid.UUID, decimal.Decimal, string, error) {
@@ -703,7 +694,7 @@ func (a *OrderActivitiesImpl) ProcessFulfillment(
 }
 
 // SendOrderConfirmedNotification sends order confirmation to customer.
-func (a *OrderActivitiesImpl) SendOrderConfirmedNotification(
+func (a *orderActivities) SendOrderConfirmedNotification(
 	ctx context.Context,
 	order *entity.Order,
 	products []entity.Product,

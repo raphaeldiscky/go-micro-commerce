@@ -22,8 +22,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
-// FulfillmentClientInterface defines the interface for fulfillment service integration.
-type FulfillmentClientInterface interface {
+// FulfillmentClient defines the interface for fulfillment service integration.
+type FulfillmentClient interface {
 	// GetShippingCost gets the shipping cost for the order.
 	GetShippingCost(
 		ctx context.Context,
@@ -44,9 +44,8 @@ type FulfillmentClientInterface interface {
 	Close() error
 }
 
-// FulfillmentClient implements FulfillmentClientInterface using event-based correlation.
-type FulfillmentClient struct {
-	config         *config.Config
+// fulfillmentClient implements FulfillmentClient using event-based correlation.
+type fulfillmentClient struct {
 	logger         logger.Logger
 	grpcClient     *grpc.Client
 	client         pb.FulfillmentServiceClient
@@ -54,11 +53,11 @@ type FulfillmentClient struct {
 	mutex          sync.RWMutex
 }
 
-// NewFulfillmentClient creates a new FulfillmentClient instance.
+// NewFulfillmentClient creates a new fulfillmentClient instance.
 func NewFulfillmentClient(
 	cfg *config.Config,
 	appLogger logger.Logger,
-) (FulfillmentClientInterface, error) {
+) (FulfillmentClient, error) {
 	// Create gRPC client configuration
 	grpcConfig := pkgconfig.DefaultGRPCClientConfig(pkgconstant.GRPCServiceNameFulfillment)
 	// Configure based on existing client config
@@ -75,8 +74,7 @@ func NewFulfillmentClient(
 	// Create the fulfillment service client
 	client := pb.NewFulfillmentServiceClient(gClient.GetConnection())
 
-	return &FulfillmentClient{
-		config:         cfg,
+	return &fulfillmentClient{
 		logger:         appLogger,
 		grpcClient:     gClient,
 		client:         client,
@@ -85,7 +83,7 @@ func NewFulfillmentClient(
 }
 
 // GetShippingCost gets the shipping cost for the order.
-func (c *FulfillmentClient) GetShippingCost(
+func (c *fulfillmentClient) GetShippingCost(
 	ctx context.Context,
 	order *entity.Order,
 	shipping *dto.Shipping,
@@ -115,7 +113,7 @@ func (c *FulfillmentClient) GetShippingCost(
 }
 
 // WaitForFulfillmentResponse waits for fulfillment service response with timeout.
-func (c *FulfillmentClient) WaitForFulfillmentResponse(
+func (c *fulfillmentClient) WaitForFulfillmentResponse(
 	ctx context.Context,
 	orderID uuid.UUID,
 	timeout time.Duration,
@@ -176,7 +174,7 @@ func (c *FulfillmentClient) WaitForFulfillmentResponse(
 }
 
 // NotifyWaitingSaga notifies waiting sagas about fulfillment response.
-func (c *FulfillmentClient) NotifyWaitingSaga(response *dto.FulfillmentResponse) {
+func (c *fulfillmentClient) NotifyWaitingSaga(response *dto.FulfillmentResponse) {
 	if response == nil {
 		c.logger.Warn("Received nil fulfillment response")
 
@@ -212,7 +210,7 @@ func (c *FulfillmentClient) NotifyWaitingSaga(response *dto.FulfillmentResponse)
 }
 
 // Close cleans up resources.
-func (c *FulfillmentClient) Close() error {
+func (c *fulfillmentClient) Close() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

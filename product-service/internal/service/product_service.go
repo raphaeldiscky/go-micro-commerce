@@ -8,7 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -23,8 +22,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/utils/redisutils"
 )
 
-// ProductServiceInterface defines the interface for product business operations.
-type ProductServiceInterface interface {
+// ProductService defines the interface for product business operations.
+type ProductService interface {
 	CreateProduct(ctx context.Context, req dto.CreateProductRequest) (*dto.ProductResponse, error)
 	GetProduct(ctx context.Context, id uuid.UUID) (*dto.ProductResponse, error)
 	GetProducts(
@@ -56,26 +55,23 @@ const (
 	defaultProductExpiration = 15 * time.Minute
 )
 
-// ProductService implements the ProductServiceInterface.
-type ProductService struct {
+// productService implements the ProductService.
+type productService struct {
 	dataStore              repository.DataStore
-	logger                 logger.Logger
-	productCreatedProducer kafka.ProducerInterface
-	productUpdatedProducer kafka.ProducerInterface
-	productDeletedProducer kafka.ProducerInterface
+	productCreatedProducer kafka.Producer
+	productUpdatedProducer kafka.Producer
+	productDeletedProducer kafka.Producer
 }
 
-// NewProductService creates a new instance of ProductService.
+// NewProductService creates a new instance of productService.
 func NewProductService(
 	dataStore repository.DataStore,
-	appLogger logger.Logger,
-	productCreatedProducer kafka.ProducerInterface,
-	productUpdatedProducer kafka.ProducerInterface,
-	productDeletedProducer kafka.ProducerInterface,
-) ProductServiceInterface {
-	return &ProductService{
+	productCreatedProducer kafka.Producer,
+	productUpdatedProducer kafka.Producer,
+	productDeletedProducer kafka.Producer,
+) ProductService {
+	return &productService{
 		dataStore:              dataStore,
-		logger:                 appLogger,
 		productCreatedProducer: productCreatedProducer,
 		productUpdatedProducer: productUpdatedProducer,
 		productDeletedProducer: productDeletedProducer,
@@ -83,7 +79,7 @@ func NewProductService(
 }
 
 // CreateProduct creates a new product.
-func (s *ProductService) CreateProduct(
+func (s *productService) CreateProduct(
 	ctx context.Context,
 	req dto.CreateProductRequest,
 ) (*dto.ProductResponse, error) {
@@ -133,7 +129,7 @@ func (s *ProductService) CreateProduct(
 }
 
 // GetProduct retrieves a product by ID with caching.
-func (s *ProductService) GetProduct(
+func (s *productService) GetProduct(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.ProductResponse, error) {
@@ -170,7 +166,7 @@ func (s *ProductService) GetProduct(
 }
 
 // GetProducts retrieves products with pagination and caching.
-func (s *ProductService) GetProducts(
+func (s *productService) GetProducts(
 	ctx context.Context,
 	req dto.GetProductsRequest,
 ) ([]dto.ProductResponse, *pkgDto.PageMetaData, error) {
@@ -226,7 +222,7 @@ func (s *ProductService) GetProducts(
 }
 
 // GetProductsByIDs retrieves products by their IDs.
-func (s *ProductService) GetProductsByIDs(
+func (s *productService) GetProductsByIDs(
 	ctx context.Context,
 	ids []uuid.UUID,
 ) ([]dto.ProductResponse, error) {
@@ -246,7 +242,7 @@ func (s *ProductService) GetProductsByIDs(
 }
 
 // UpdateProduct updates an existing product.
-func (s *ProductService) UpdateProduct(
+func (s *productService) UpdateProduct(
 	ctx context.Context,
 	req dto.UpdateProductRequest,
 ) (*dto.ProductResponse, error) {
@@ -323,7 +319,7 @@ func (s *ProductService) UpdateProduct(
 }
 
 // DeleteProduct deletes a product by ID.
-func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
+func (s *productService) DeleteProduct(ctx context.Context, id uuid.UUID) error {
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		productRepo := ds.ProductRepository()
 
@@ -370,7 +366,7 @@ func (s *ProductService) DeleteProduct(ctx context.Context, id uuid.UUID) error 
 }
 
 // ReserveProducts reserves stock for products atomically with optimistic locking.
-func (s *ProductService) ReserveProducts(
+func (s *productService) ReserveProducts(
 	ctx context.Context,
 	req dto.ReserveProductsRequest,
 ) ([]dto.ProductResponse, error) {
@@ -427,7 +423,7 @@ func (s *ProductService) ReserveProducts(
 }
 
 // ReleaseProducts releases reserved stock for products.
-func (s *ProductService) ReleaseProducts(
+func (s *productService) ReleaseProducts(
 	ctx context.Context,
 	req dto.ReleaseProductsRequest,
 ) error {
@@ -472,7 +468,7 @@ func (s *ProductService) ReleaseProducts(
 }
 
 // ConfirmProductsDeduction confirms the stock deduction for reserved products and removes reserved quantity.
-func (s *ProductService) ConfirmProductsDeduction(
+func (s *productService) ConfirmProductsDeduction(
 	ctx context.Context,
 	req dto.ConfirmProductsDeductionRequest,
 ) ([]dto.ProductResponse, error) {
@@ -527,7 +523,7 @@ func (s *ProductService) ConfirmProductsDeduction(
 }
 
 // RestoreProducts restores stock quantities for products (compensation).
-func (s *ProductService) RestoreProducts(
+func (s *productService) RestoreProducts(
 	ctx context.Context,
 	req dto.RestoreProductsRequest,
 ) ([]dto.ProductResponse, error) {

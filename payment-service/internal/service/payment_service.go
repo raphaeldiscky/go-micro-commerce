@@ -23,8 +23,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/utils/redisutils"
 )
 
-// PaymentServiceInterface defines the interface for payment business operations.
-type PaymentServiceInterface interface {
+// PaymentService defines the interface for payment business operations.
+type PaymentService interface {
 	// CreatePayment creates a new payment record from order information
 	CreatePayment(
 		ctx context.Context,
@@ -42,34 +42,28 @@ type PaymentServiceInterface interface {
 	GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*dto.PaymentResponse, error)
 }
 
-// PaymentService implements the PaymentServiceInterface.
-type PaymentService struct {
-	dataStore                repository.DataStore
-	logger                   logger.Logger
-	paymentLifecycleProducer kafka.ProducerInterface
-	bankingClient            client.BankingClientInterface
-	paymentGatewayClient     client.PaymentGatewayClientInterface
+// paymentService implements the PaymentService.
+type paymentService struct {
+	dataStore            repository.DataStore
+	logger               logger.Logger
+	paymentGatewayClient client.PaymentGatewayClient
 }
 
-// NewPaymentService creates a new instance of PaymentService.
+// NewPaymentService creates a new instance of paymentService.
 func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentLifecycleProducer kafka.ProducerInterface,
-	bankingClient client.BankingClientInterface,
-	paymentGatewayClient client.PaymentGatewayClientInterface,
-) PaymentServiceInterface {
-	return &PaymentService{
-		dataStore:                dataStore,
-		logger:                   appLogger,
-		paymentLifecycleProducer: paymentLifecycleProducer,
-		bankingClient:            bankingClient,
-		paymentGatewayClient:     paymentGatewayClient,
+	paymentGatewayClient client.PaymentGatewayClient,
+) PaymentService {
+	return &paymentService{
+		dataStore:            dataStore,
+		logger:               appLogger,
+		paymentGatewayClient: paymentGatewayClient,
 	}
 }
 
 // CreatePayment creates a new payment record from order information.
-func (s *PaymentService) CreatePayment(
+func (s *paymentService) CreatePayment(
 	ctx context.Context,
 	req dto.CreatePaymentRequest,
 ) (*dto.PaymentResponse, error) {
@@ -145,8 +139,8 @@ func (s *PaymentService) CreatePayment(
 	return res, nil
 }
 
-//nolint:gocyclo,revive,cyclop // ignore complexity, ProcessPayment processes a payment transaction is large but intentional.
-func (s *PaymentService) ProcessPayment(
+//nolint:gocyclo,revive,cyclop,nolintlint // ignore complexity, ProcessPayment processes a payment transaction is large but intentional.
+func (s *paymentService) ProcessPayment(
 	ctx context.Context,
 	orderID uuid.UUID,
 	req dto.ProcessPaymentRequest,
@@ -278,7 +272,7 @@ func (s *PaymentService) ProcessPayment(
 }
 
 // GetPaymentByOrderID retrieves payment by order ID.
-func (s *PaymentService) GetPaymentByOrderID(
+func (s *paymentService) GetPaymentByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (*dto.PaymentResponse, error) {
@@ -301,7 +295,7 @@ func (s *PaymentService) GetPaymentByOrderID(
 }
 
 // processWithPaymentGateway processes payment with payment gateway client.
-func (s *PaymentService) processWithPaymentGateway(
+func (s *paymentService) processWithPaymentGateway(
 	ctx context.Context,
 	payment *entity.Payment,
 	req dto.ProcessPaymentRequest,
@@ -327,7 +321,7 @@ func (s *PaymentService) processWithPaymentGateway(
 }
 
 // TimeoutPayment times out a payment transaction.
-func (s *PaymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) error {
+func (s *paymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) error {
 	s.logger.Infof("Processing payment timeout for order: %s", orderID)
 
 	return s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {

@@ -36,7 +36,6 @@ func main() {
 
 	discoveryService := service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
 	circuitBreaker := service.NewCircuitBreakerService(appLogger, cfg)
-	loadBalancer := service.NewLoadBalancerService(appLogger)
 	metricsInstance := metrics.NewMetrics()
 
 	// Initialize API Gateway
@@ -44,7 +43,6 @@ func main() {
 		Logger:           appLogger,
 		ServiceDiscovery: discoveryService,
 		CircuitBreaker:   circuitBreaker,
-		LoadBalancer:     loadBalancer,
 		Metrics:          metricsInstance,
 		Config:           cfg,
 	})

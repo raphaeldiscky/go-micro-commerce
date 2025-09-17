@@ -12,8 +12,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 )
 
-// PaymentClientInterface defines the interface for payment service integration.
-type PaymentClientInterface interface {
+// PaymentClient defines the interface for payment service integration.
+type PaymentClient interface {
 	// WaitForPaymentResponse waits for payment service response with timeout
 	WaitForPaymentResponse(
 		ctx context.Context,
@@ -28,23 +28,23 @@ type PaymentClientInterface interface {
 	Close() error
 }
 
-// PaymentClient implements PaymentClientInterface using event-based correlation.
-type PaymentClient struct {
+// paymentClient implements PaymentClient using event-based correlation.
+type paymentClient struct {
 	logger     logger.Logger
 	paymentMap map[uuid.UUID]chan *dto.PaymentResponse
 	mutex      sync.RWMutex
 }
 
-// NewPaymentClient creates a new PaymentClient instance.
-func NewPaymentClient(appLogger logger.Logger) PaymentClientInterface {
-	return &PaymentClient{
+// NewPaymentClient creates a new paymentClient instance.
+func NewPaymentClient(appLogger logger.Logger) PaymentClient {
+	return &paymentClient{
 		logger:     appLogger,
 		paymentMap: make(map[uuid.UUID]chan *dto.PaymentResponse),
 	}
 }
 
 // WaitForPaymentResponse waits for payment service response with timeout.
-func (c *PaymentClient) WaitForPaymentResponse(
+func (c *paymentClient) WaitForPaymentResponse(
 	ctx context.Context,
 	orderID uuid.UUID,
 	timeout time.Duration,
@@ -105,7 +105,7 @@ func (c *PaymentClient) WaitForPaymentResponse(
 }
 
 // NotifyWaitingSaga notifies waiting sagas about payment response.
-func (c *PaymentClient) NotifyWaitingSaga(response *dto.PaymentResponse) {
+func (c *paymentClient) NotifyWaitingSaga(response *dto.PaymentResponse) {
 	if response == nil {
 		c.logger.Warn("Received nil payment response")
 
@@ -141,7 +141,7 @@ func (c *PaymentClient) NotifyWaitingSaga(response *dto.PaymentResponse) {
 }
 
 // Close cleans up resources.
-func (c *PaymentClient) Close() error {
+func (c *paymentClient) Close() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 

@@ -3,7 +3,6 @@ package handler
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
@@ -12,18 +11,15 @@ import (
 
 // AuthHandler handles HTTP requests for authentication.
 type AuthHandler struct {
-	authService service.AuthServiceInterface
-	logger      logger.Logger
+	authService service.AuthService
 }
 
 // NewAuthHandler creates a new auth handler.
 func NewAuthHandler(
-	authService service.AuthServiceInterface,
-	appLogger logger.Logger,
+	authService service.AuthService,
 ) *AuthHandler {
 	return &AuthHandler{
 		authService: authService,
-		logger:      appLogger,
 	}
 }
 

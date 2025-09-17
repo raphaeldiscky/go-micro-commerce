@@ -20,8 +20,8 @@ type DBTX interface {
 // DataStore is an interface that wraps the database access methods.
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
-	ProductRepository() ProductRepositoryInterface
-	CacheRepository() CacheRepositoryInterface
+	ProductRepository() ProductRepository
+	CacheRepository() CacheRepository
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -60,11 +60,11 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 }
 
 // ProductRepository returns a new ProductRepository.
-func (s *dataStore) ProductRepository() ProductRepositoryInterface {
-	return NewProductRepositoryPostgres(s.db)
+func (s *dataStore) ProductRepository() ProductRepository {
+	return NewProductRepository(s.db)
 }
 
 // CacheRepository returns a new CacheRepository.
-func (s *dataStore) CacheRepository() CacheRepositoryInterface {
+func (s *dataStore) CacheRepository() CacheRepository {
 	return NewCacheRepositoryRedis(s.cacheClient)
 }

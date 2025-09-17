@@ -16,8 +16,8 @@ type Mailer interface {
 	SendMail(ctx context.Context, to, subject, body string) error
 }
 
-// mailerImpl is an implementation of the Mailer interface.
-type mailerImpl struct {
+// mailer is an implementation of the Mailer interface.
+type mailer struct {
 	dialer *gomail.Dialer
 	cfg    *config.SMTPConfig
 }
@@ -37,7 +37,7 @@ func NewMailer(cfg *config.SMTPConfig) Mailer {
 
 			once.Do(func() {
 				d := gomail.NewDialer(cfg.Host, cfg.Port, "", "")
-				instance = &mailerImpl{
+				instance = &mailer{
 					dialer: d,
 					cfg:    cfg,
 				}
@@ -57,7 +57,7 @@ func (f mailerFunc) SendMail(ctx context.Context, to, subject, body string) erro
 }
 
 // SendMail sends an email using the provided function.
-func (m *mailerImpl) SendMail(ctx context.Context, to, subject, body string) error {
+func (m *mailer) SendMail(ctx context.Context, to, subject, body string) error {
 	select {
 	case <-ctx.Done():
 		return ctx.Err()

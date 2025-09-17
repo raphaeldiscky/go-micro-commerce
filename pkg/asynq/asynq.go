@@ -10,20 +10,42 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
-// Client wraps asynq.Client and provides additional functionality.
-type Client struct {
+// Client defines the interface for Asynq client operations.
+type Client interface {
+	// Enqueue enqueues a task to be processed immediately.
+	Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error)
+	// EnqueueIn enqueues a task to be processed after the given delay.
+	EnqueueIn(d time.Duration, task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error)
+	// EnqueueAt enqueues a task to be processed at the given time.
+	EnqueueAt(t time.Time, task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error)
+	// Close closes the client connection.
+	Close() error
+}
+
+// Server defines the interface for Asynq server operations.
+type Server interface {
+	// Start starts the task server.
+	Start(handler asynq.Handler) error
+	// Stop stops the task server.
+	Stop()
+	// Shutdown gracefully shuts down the server.
+	Shutdown()
+}
+
+// client wraps asynq.Client and provides additional functionality.
+type client struct {
 	client *asynq.Client
 	logger logger.Logger
 }
 
-// Server wraps asynq.Server and provides additional functionality.
-type Server struct {
+// server wraps asynq.Server and provides additional functionality.
+type server struct {
 	server *asynq.Server
 	logger logger.Logger
 }
 
 // NewClient creates a new Asynq client.
-func NewClient(cfg *config.AsynqConfig, appLogger logger.Logger) (*Client, error) {
+func NewClient(cfg *config.AsynqConfig, appLogger logger.Logger) (Client, error) {
 	if err := validateAsynqConfig(cfg); err != nil {
 		return nil, err
 	}
@@ -34,18 +56,18 @@ func NewClient(cfg *config.AsynqConfig, appLogger logger.Logger) (*Client, error
 		Password: cfg.RedisPassword,
 	}
 
-	client := asynq.NewClient(redisOpt)
+	c := asynq.NewClient(redisOpt)
 
 	appLogger.Printf("asynq client connected to redis cluster at %v", cfg.RedisAddrs)
 
-	return &Client{
-		client: client,
+	return &client{
+		client: c,
 		logger: appLogger,
 	}, nil
 }
 
 // NewServer creates a new Asynq server.
-func NewServer(cfg *config.AsynqConfig, appLogger logger.Logger) (*Server, error) {
+func NewServer(cfg *config.AsynqConfig, appLogger logger.Logger) (Server, error) {
 	if err := validateAsynqConfig(cfg); err != nil {
 		return nil, err
 	}
@@ -65,18 +87,18 @@ func NewServer(cfg *config.AsynqConfig, appLogger logger.Logger) (*Server, error
 		Logger:                   &asynqLogger{logger: appLogger},
 	}
 
-	server := asynq.NewServer(redisOpt, serverConfig)
+	svr := asynq.NewServer(redisOpt, serverConfig)
 
 	appLogger.Printf("asynq server created with concurrency %d", cfg.Concurrency)
 
-	return &Server{
-		server: server,
+	return &server{
+		server: svr,
 		logger: appLogger,
 	}, nil
 }
 
 // Enqueue enqueues a task to be processed immediately.
-func (c *Client) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error) {
+func (c *client) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInfo, error) {
 	if c.client == nil {
 		return nil, ErrClientNotInitialized
 	}
@@ -93,7 +115,7 @@ func (c *Client) Enqueue(task *asynq.Task, opts ...asynq.Option) (*asynq.TaskInf
 }
 
 // EnqueueIn enqueues a task to be processed after the given delay.
-func (c *Client) EnqueueIn(
+func (c *client) EnqueueIn(
 	d time.Duration,
 	task *asynq.Task,
 	opts ...asynq.Option,
@@ -118,7 +140,7 @@ func (c *Client) EnqueueIn(
 }
 
 // EnqueueAt enqueues a task to be processed at the given time.
-func (c *Client) EnqueueAt(
+func (c *client) EnqueueAt(
 	t time.Time,
 	task *asynq.Task,
 	opts ...asynq.Option,
@@ -148,7 +170,7 @@ func (c *Client) EnqueueAt(
 }
 
 // Close closes the client connection.
-func (c *Client) Close() error {
+func (c *client) Close() error {
 	if c.client == nil {
 		return ErrClientNotInitialized
 	}
@@ -165,7 +187,7 @@ func (c *Client) Close() error {
 }
 
 // Start starts the task server.
-func (s *Server) Start(handler asynq.Handler) error {
+func (s *server) Start(handler asynq.Handler) error {
 	if s.server == nil {
 		return ErrServerNotInitialized
 	}
@@ -183,7 +205,7 @@ func (s *Server) Start(handler asynq.Handler) error {
 }
 
 // Stop stops the task server.
-func (s *Server) Stop() {
+func (s *server) Stop() {
 	if s.server != nil {
 		s.server.Stop()
 		s.logger.Printf("asynq server stopped")
@@ -191,7 +213,7 @@ func (s *Server) Stop() {
 }
 
 // Shutdown gracefully shuts down the server.
-func (s *Server) Shutdown() {
+func (s *server) Shutdown() {
 	if s.server != nil {
 		s.server.Shutdown()
 		s.logger.Printf("asynq server shutdown gracefully")

@@ -50,10 +50,6 @@ func SetupOrder(
 	}
 
 	orderLifecycleProducer := producer.NewOrderLifecycleProducer(asyncProducer)
-	paymentRequestProducer := producer.NewPaymentRequestProducer(asyncProducer)
-	fulfillmentRequestProducer := producer.NewFulfillmentRequestProducer(
-		asyncProducer,
-	)
 
 	productClient, err := client.NewProductClient(cfg)
 	if err != nil {
@@ -66,15 +62,12 @@ func SetupOrder(
 	}
 
 	// Create task cancellation service
-	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector.Inspector)
+	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector)
 
 	// Create saga orchestrator
 	sagaOrchestrator := saga.NewSagaOrchestrator(
 		providers.DataStore,
 		productClient,
-		paymentRequestProducer,
-		orderLifecycleProducer,
-		fulfillmentRequestProducer,
 		providers.FulfillmentClient,
 		providers.PaymentClient,
 		providers.AsynqClient,
@@ -92,14 +85,13 @@ func SetupOrder(
 	orderService := service.NewOrderService(
 		cfg,
 		providers.DataStore,
-		productClient,
 		appLogger,
 		orderLifecycleProducer,
 		sagaOrchestrator,
 		temporalClient,
 	)
 	providers.OrderService = orderService
-	orderHandler := handler.NewOrderHandler(orderService, appLogger)
+	orderHandler := handler.NewOrderHandler(orderService)
 
 	routes.SetupOrderRoutes(e, orderHandler)
 }

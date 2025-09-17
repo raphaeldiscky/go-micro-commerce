@@ -14,8 +14,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
 )
 
-// InboxRepositoryInterface defines the methods for interacting with the inbox.
-type InboxRepositoryInterface interface {
+// InboxRepository defines the methods for interacting with the inbox.
+type InboxRepository interface {
 	// Create inserts a new inbox event or returns existing if duplicate message_id.
 	Create(ctx context.Context, event *entity.InboxEvent) (*entity.InboxEvent, error)
 	// GetEventsForProcessing retrieves events that are ready for processing.
@@ -43,20 +43,20 @@ type InboxRepositoryInterface interface {
 	CleanupProcessedEvents(ctx context.Context, olderThan time.Duration) error
 }
 
-// InboxRepository implements the InboxRepositoryInterface.
-type InboxRepository struct {
+// inboxRepository implements the InboxRepository.
+type inboxRepository struct {
 	db DBTX
 }
 
-// NewInboxRepository creates a new instance of InboxRepository.
-func NewInboxRepository(db DBTX) InboxRepositoryInterface {
-	return &InboxRepository{
+// NewInboxRepository creates a new instance of inboxRepository.
+func NewInboxRepository(db DBTX) InboxRepository {
+	return &inboxRepository{
 		db: db,
 	}
 }
 
 // Create inserts a new inbox event or returns existing if duplicate message_id.
-func (r *InboxRepository) Create(
+func (r *inboxRepository) Create(
 	ctx context.Context,
 	event *entity.InboxEvent,
 ) (*entity.InboxEvent, error) {
@@ -117,7 +117,7 @@ func (r *InboxRepository) Create(
 }
 
 // GetEventsForProcessing retrieves events ready for processing.
-func (r *InboxRepository) GetEventsForProcessing(
+func (r *inboxRepository) GetEventsForProcessing(
 	ctx context.Context,
 	limit int64,
 ) ([]*entity.InboxEvent, error) {
@@ -158,7 +158,7 @@ func (r *InboxRepository) GetEventsForProcessing(
 }
 
 // MarkAsProcessing updates an event status to processing.
-func (r *InboxRepository) MarkAsProcessing(ctx context.Context, id uuid.UUID) error {
+func (r *inboxRepository) MarkAsProcessing(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE inbox_events 
 		SET status = 'processing', attempts = attempts + 1
@@ -178,17 +178,17 @@ func (r *InboxRepository) MarkAsProcessing(ctx context.Context, id uuid.UUID) er
 }
 
 // MarkAsProcessed updates an event status to processed.
-func (r *InboxRepository) MarkAsProcessed(ctx context.Context, id uuid.UUID) error {
+func (r *inboxRepository) MarkAsProcessed(ctx context.Context, id uuid.UUID) error {
 	return r.updateEventStatus(ctx, id, constant.InboxStatusProcessed, nil)
 }
 
 // MarkAsFailed updates an event status to failed.
-func (r *InboxRepository) MarkAsFailed(ctx context.Context, id uuid.UUID, errorMsg string) error {
+func (r *inboxRepository) MarkAsFailed(ctx context.Context, id uuid.UUID, errorMsg string) error {
 	return r.updateEventStatus(ctx, id, constant.InboxStatusFailed, &errorMsg)
 }
 
 // ScheduleForRetry schedules an event for retry.
-func (r *InboxRepository) ScheduleForRetry(
+func (r *inboxRepository) ScheduleForRetry(
 	ctx context.Context,
 	id uuid.UUID,
 	errorMsg string,
@@ -213,7 +213,7 @@ func (r *InboxRepository) ScheduleForRetry(
 }
 
 // GetEventByID retrieves an event by its ID.
-func (r *InboxRepository) GetEventByID(
+func (r *inboxRepository) GetEventByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.InboxEvent, error) {
@@ -232,7 +232,7 @@ func (r *InboxRepository) GetEventByID(
 }
 
 // GetEventByMessageID retrieves an event by its message ID for duplicate detection.
-func (r *InboxRepository) GetEventByMessageID(
+func (r *inboxRepository) GetEventByMessageID(
 	ctx context.Context,
 	messageID uuid.UUID,
 ) (*entity.InboxEvent, error) {
@@ -260,7 +260,7 @@ func (r *InboxRepository) GetEventByMessageID(
 }
 
 // IncrementAttempts increments the attempt count for an event.
-func (r *InboxRepository) IncrementAttempts(ctx context.Context, id uuid.UUID) error {
+func (r *inboxRepository) IncrementAttempts(ctx context.Context, id uuid.UUID) error {
 	query := `
 		UPDATE inbox_events 
 		SET attempts = attempts + 1
@@ -280,7 +280,7 @@ func (r *InboxRepository) IncrementAttempts(ctx context.Context, id uuid.UUID) e
 }
 
 // CleanupProcessedEvents removes processed events older than specified duration.
-func (r *InboxRepository) CleanupProcessedEvents(
+func (r *inboxRepository) CleanupProcessedEvents(
 	ctx context.Context,
 	olderThan time.Duration,
 ) error {
@@ -301,7 +301,7 @@ func (r *InboxRepository) CleanupProcessedEvents(
 }
 
 // updateEventStatus is a helper function to update event status.
-func (r *InboxRepository) updateEventStatus(
+func (r *inboxRepository) updateEventStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	status constant.InboxStatus,

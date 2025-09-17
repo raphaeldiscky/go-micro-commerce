@@ -20,8 +20,8 @@ import (
 type Providers struct {
 	DataStore          repository.DataStore
 	KafkaAdmin         *kafka.Admin
-	CarrierClient      client.CarrierClientInterface
-	FulfillmentService service.FulfillmentServiceInterface
+	CarrierClient      client.CarrierClient
+	FulfillmentService service.FulfillmentService
 }
 
 // SetupGlobal initializes all providers.

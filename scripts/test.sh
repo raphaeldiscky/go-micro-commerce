@@ -14,6 +14,7 @@ SERVICES=(
   "fulfillment-service"
   "api-gateway"
   "pkg"
+  "proto"
   "search-service"
 )
 

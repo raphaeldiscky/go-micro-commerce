@@ -8,8 +8,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 )
 
-// PaymentGatewayClientInterface defines the interface for payment gateway service integration.
-type PaymentGatewayClientInterface interface {
+// PaymentGatewayClient defines the interface for payment gateway service integration.
+type PaymentGatewayClient interface {
 	// ProcessPayment processes a payment through the gateway
 	ProcessPayment(
 		ctx context.Context,

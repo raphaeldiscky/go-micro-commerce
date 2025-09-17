@@ -13,8 +13,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
-// OrderRepositoryInterface defines the interface for order data operations.
-type OrderRepositoryInterface interface {
+// OrderRepository defines the interface for order data operations.
+type OrderRepository interface {
 	// Create saves a new order
 	Create(ctx context.Context, order *entity.Order) (*entity.Order, error)
 
@@ -53,20 +53,20 @@ type OrderRepositoryInterface interface {
 	CountByCustomer(ctx context.Context, customerID uuid.UUID) (int64, error)
 }
 
-// OrderRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
-type OrderRepositoryPostgres struct {
+// orderRepository implements the ProductRepository interface for PostgreSQL.
+type orderRepository struct {
 	db DBTX
 }
 
-// NewOrderRepositoryPostgres creates a new instance of OrderRepositoryPostgres.
-func NewOrderRepositoryPostgres(db DBTX) OrderRepositoryInterface {
-	return &OrderRepositoryPostgres{
+// NewOrderRepository creates a new instance of orderRepository.
+func NewOrderRepository(db DBTX) OrderRepository {
+	return &orderRepository{
 		db: db,
 	}
 }
 
 // Create creates a new order in the database.
-func (r *OrderRepositoryPostgres) Create(
+func (r *orderRepository) Create(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, error) {
@@ -148,7 +148,7 @@ func (r *OrderRepositoryPostgres) Create(
 }
 
 // FindByID retrieves an order by its ID.
-func (r *OrderRepositoryPostgres) FindByID(
+func (r *orderRepository) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Order, error) {
@@ -229,7 +229,7 @@ func (r *OrderRepositoryPostgres) FindByID(
 }
 
 // FindByIdempotencyKey retrieves an order by its idempotency key.
-func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
+func (r *orderRepository) FindByIdempotencyKey(
 	ctx context.Context,
 	idempotencyKey uuid.UUID,
 ) (*entity.Order, error) {
@@ -310,7 +310,7 @@ func (r *OrderRepositoryPostgres) FindByIdempotencyKey(
 }
 
 // FindByCustomerID retrieves all orders for a specific customer.
-func (r *OrderRepositoryPostgres) FindByCustomerID(
+func (r *orderRepository) FindByCustomerID(
 	ctx context.Context,
 	customerID uuid.UUID,
 	limit, offset int64,
@@ -369,7 +369,7 @@ func (r *OrderRepositoryPostgres) FindByCustomerID(
 }
 
 // FindAll retrieves all orders with optional pagination.
-func (r *OrderRepositoryPostgres) FindAll(
+func (r *orderRepository) FindAll(
 	ctx context.Context,
 	limit, offset int64,
 ) ([]*entity.Order, error) {
@@ -426,7 +426,7 @@ func (r *OrderRepositoryPostgres) FindAll(
 }
 
 // Update updates an existing order.
-func (r *OrderRepositoryPostgres) Update(
+func (r *orderRepository) Update(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, error) {
@@ -531,7 +531,7 @@ func (r *OrderRepositoryPostgres) Update(
 }
 
 // Delete removes an order by ID.
-func (r *OrderRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) error {
+func (r *orderRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	// Delete order items first
 	_, err := r.db.Exec(ctx, "DELETE FROM order_items WHERE order_id = $1", id)
 	if err != nil {
@@ -552,7 +552,7 @@ func (r *OrderRepositoryPostgres) Delete(ctx context.Context, id uuid.UUID) erro
 }
 
 // UpdateStatus updates only the status of an order.
-func (r *OrderRepositoryPostgres) UpdateStatus(
+func (r *orderRepository) UpdateStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	status constant.OrderStatus,
@@ -576,7 +576,7 @@ func (r *OrderRepositoryPostgres) UpdateStatus(
 }
 
 // Exists checks if an order exists by ID.
-func (r *OrderRepositoryPostgres) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
+func (r *orderRepository) Exists(ctx context.Context, id uuid.UUID) (bool, error) {
 	query := "SELECT EXISTS(SELECT 1 FROM orders WHERE id = $1)"
 
 	var exists bool
@@ -590,7 +590,7 @@ func (r *OrderRepositoryPostgres) Exists(ctx context.Context, id uuid.UUID) (boo
 }
 
 // Count returns the total number of orders.
-func (r *OrderRepositoryPostgres) Count(ctx context.Context) (int64, error) {
+func (r *orderRepository) Count(ctx context.Context) (int64, error) {
 	query := "SELECT COUNT(*) FROM orders"
 
 	var count int64
@@ -604,7 +604,7 @@ func (r *OrderRepositoryPostgres) Count(ctx context.Context) (int64, error) {
 }
 
 // CountByCustomer returns the total number of orders for a specific customer.
-func (r *OrderRepositoryPostgres) CountByCustomer(
+func (r *orderRepository) CountByCustomer(
 	ctx context.Context,
 	customerID uuid.UUID,
 ) (int64, error) {
@@ -621,7 +621,7 @@ func (r *OrderRepositoryPostgres) CountByCustomer(
 }
 
 // loadOrderItems is a helper method to load items for an order.
-func (r *OrderRepositoryPostgres) loadOrderItems(
+func (r *orderRepository) loadOrderItems(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) ([]entity.OrderItem, error) {

@@ -17,7 +17,7 @@ import (
 type Providers struct {
 	DataStore      repository.DataStore
 	KafkaAdmin     *kafka.Admin
-	ProductService service.ProductServiceInterface
+	ProductService service.ProductService
 }
 
 // SetupGlobal initializes all providers.

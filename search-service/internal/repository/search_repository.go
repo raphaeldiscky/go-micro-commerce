@@ -16,8 +16,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
 )
 
-// SearchRepositoryInterface defines the interface for search operations.
-type SearchRepositoryInterface interface {
+// SearchRepository defines the interface for search operations.
+type SearchRepository interface {
 	// Product operations
 	IndexProduct(ctx context.Context, product *entity.ProductDocument) error
 	UpdateProduct(ctx context.Context, product *entity.ProductDocument) error
@@ -44,25 +44,25 @@ type SearchRepositoryInterface interface {
 	) ([]entity.SuggestionResult, error)
 }
 
-// SearchRepository implements SearchRepository using Elasticsearch.
-type SearchRepository struct {
-	client client.ElasticsearchClientInterface
+// searchRepository implements searchRepository using Elasticsearch.
+type searchRepository struct {
+	client client.ElasticsearchClient
 	logger logger.Logger
 }
 
 // NewSearchRepository creates a new Elasticsearch repository.
 func NewSearchRepository(
-	clt client.ElasticsearchClientInterface,
+	clt client.ElasticsearchClient,
 	appLogger logger.Logger,
-) SearchRepositoryInterface {
-	return &SearchRepository{
+) SearchRepository {
+	return &searchRepository{
 		client: clt,
 		logger: appLogger,
 	}
 }
 
 // IndexProduct indexes a product document using TypedAPI.
-func (r *SearchRepository) IndexProduct(
+func (r *searchRepository) IndexProduct(
 	ctx context.Context,
 	product *entity.ProductDocument,
 ) error {
@@ -81,7 +81,7 @@ func (r *SearchRepository) IndexProduct(
 }
 
 // UpdateProduct updates a product document using TypedAPI.
-func (r *SearchRepository) UpdateProduct(
+func (r *searchRepository) UpdateProduct(
 	ctx context.Context,
 	product *entity.ProductDocument,
 ) error {
@@ -99,7 +99,7 @@ func (r *SearchRepository) UpdateProduct(
 }
 
 // GetProduct retrieves a product document using TypedAPI.
-func (r *SearchRepository) GetProduct(
+func (r *searchRepository) GetProduct(
 	ctx context.Context,
 	productID string,
 ) (*entity.ProductDocument, error) {
@@ -121,7 +121,7 @@ func (r *SearchRepository) GetProduct(
 }
 
 // DeleteProduct deletes a product document using TypedAPI.
-func (r *SearchRepository) DeleteProduct(ctx context.Context, productID string) error {
+func (r *searchRepository) DeleteProduct(ctx context.Context, productID string) error {
 	_, err := r.client.GetClient().Delete("products", productID).
 		Refresh(refresh.True).
 		Do(ctx)
@@ -135,7 +135,7 @@ func (r *SearchRepository) DeleteProduct(ctx context.Context, productID string) 
 }
 
 // SearchProducts searches for products using TypedAPI.
-func (r *SearchRepository) SearchProducts(
+func (r *searchRepository) SearchProducts(
 	ctx context.Context,
 	query *entity.SearchQuery,
 ) (*entity.SearchResponse, error) {
@@ -193,7 +193,7 @@ func (r *SearchRepository) SearchProducts(
 }
 
 // BulkIndex performs bulk indexing using individual index operations.
-func (r *SearchRepository) BulkIndex(ctx context.Context, documents []entity.SearchDocument) error {
+func (r *searchRepository) BulkIndex(ctx context.Context, documents []entity.SearchDocument) error {
 	if len(documents) == 0 {
 		return nil
 	}
@@ -218,7 +218,7 @@ func (r *SearchRepository) BulkIndex(ctx context.Context, documents []entity.Sea
 }
 
 // CreateIndices creates indices with proper typed mappings.
-func (r *SearchRepository) CreateIndices(ctx context.Context) error {
+func (r *searchRepository) CreateIndices(ctx context.Context) error {
 	// Product mapping based on actual ProductDocument and event payloads
 	standard := "standard"
 	simple := "simple"
@@ -257,7 +257,7 @@ func (r *SearchRepository) CreateIndices(ctx context.Context) error {
 }
 
 // BulkUpdate performs bulk updates using individual update operations.
-func (r *SearchRepository) BulkUpdate(
+func (r *searchRepository) BulkUpdate(
 	ctx context.Context,
 	documents []entity.SearchDocument,
 ) error {
@@ -284,7 +284,7 @@ func (r *SearchRepository) BulkUpdate(
 }
 
 // BulkDelete performs bulk deletion using individual delete operations.
-func (r *SearchRepository) BulkDelete(
+func (r *searchRepository) BulkDelete(
 	ctx context.Context,
 	documentIDs []string,
 	indexName string,
@@ -311,7 +311,7 @@ func (r *SearchRepository) BulkDelete(
 }
 
 // DeleteIndices deletes indices using client interface.
-func (r *SearchRepository) DeleteIndices(ctx context.Context) error {
+func (r *searchRepository) DeleteIndices(ctx context.Context) error {
 	indices := []string{"products"}
 
 	for _, indexName := range indices {
@@ -325,7 +325,7 @@ func (r *SearchRepository) DeleteIndices(ctx context.Context) error {
 }
 
 // RefreshIndices refreshes indices using TypedAPI.
-func (r *SearchRepository) RefreshIndices(ctx context.Context) error {
+func (r *searchRepository) RefreshIndices(ctx context.Context) error {
 	_, err := r.client.GetClient().Indices.Refresh().
 		Index("products").
 		Do(ctx)
@@ -337,7 +337,7 @@ func (r *SearchRepository) RefreshIndices(ctx context.Context) error {
 }
 
 // AutoComplete provides autocomplete functionality using TypedAPI.
-func (r *SearchRepository) AutoComplete(
+func (r *searchRepository) AutoComplete(
 	ctx context.Context,
 	query string,
 	documentType string,
@@ -389,7 +389,7 @@ func (r *SearchRepository) AutoComplete(
 }
 
 // GetSuggestions provides enhanced suggestions using TypedAPI.
-func (r *SearchRepository) GetSuggestions(
+func (r *searchRepository) GetSuggestions(
 	ctx context.Context,
 	query string,
 	documentType string,
@@ -451,7 +451,7 @@ func (r *SearchRepository) GetSuggestions(
 }
 
 // getIndexNameByType returns index name for document type.
-func (r *SearchRepository) getIndexNameByType(documentType string) string {
+func (r *searchRepository) getIndexNameByType(documentType string) string {
 	switch documentType {
 	case "product":
 		return "products"
@@ -461,7 +461,7 @@ func (r *SearchRepository) getIndexNameByType(documentType string) string {
 }
 
 // parseTypedSearchResponse parses the typed search response.
-func (r *SearchRepository) parseTypedSearchResponse(
+func (r *searchRepository) parseTypedSearchResponse(
 	resp *search.Response,
 	query *entity.SearchQuery,
 ) (*entity.SearchResponse, error) {

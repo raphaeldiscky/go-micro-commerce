@@ -43,13 +43,13 @@ type SearchService interface {
 
 // searchService implements the SearchService interface.
 type searchService struct {
-	searchRepo repository.SearchRepositoryInterface
+	searchRepo repository.SearchRepository
 	logger     logger.Logger
 }
 
 // NewSearchService creates a new search service.
 func NewSearchService(
-	searchRepo repository.SearchRepositoryInterface,
+	searchRepo repository.SearchRepository,
 	appLogger logger.Logger,
 ) SearchService {
 	return &searchService{

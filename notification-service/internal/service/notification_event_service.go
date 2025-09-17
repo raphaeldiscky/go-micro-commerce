@@ -18,7 +18,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
 )
 
 // NotificationRequestEvent is the envelope for notification request events.
@@ -46,28 +45,25 @@ type NotificationEventService interface {
 	ProcessEmailUserVerified(ctx context.Context, inboxEvent *entity.InboxEvent) error
 }
 
-// NotificationEventServiceImpl implements notification business logic.
-type NotificationEventServiceImpl struct {
-	dataStore    repository.DataStore
+// notificationEventService implements notification business logic.
+type notificationEventService struct {
 	emailService EmailService
 	logger       logger.Logger
 }
 
 // NewNotificationEventService creates a new notification service instance.
 func NewNotificationEventService(
-	dataStore repository.DataStore,
 	emailService EmailService,
 	appLogger logger.Logger,
 ) NotificationEventService {
-	return &NotificationEventServiceImpl{
-		dataStore:    dataStore,
+	return &notificationEventService{
 		emailService: emailService,
 		logger:       appLogger,
 	}
 }
 
 // ProcessNotificationRequest handles notification request events.
-func (s *NotificationEventServiceImpl) ProcessNotificationRequest(
+func (s *notificationEventService) ProcessNotificationRequest(
 	ctx context.Context,
 	inboxEvent *entity.InboxEvent,
 ) error {
@@ -98,7 +94,7 @@ func (s *NotificationEventServiceImpl) ProcessNotificationRequest(
 }
 
 // processEmailEvent is a generic helper for processing email events.
-func (s *NotificationEventServiceImpl) processEmailEvent(
+func (s *notificationEventService) processEmailEvent(
 	ctx context.Context,
 	inboxEvent *entity.InboxEvent,
 	eventType string,
@@ -135,7 +131,7 @@ func getSubjectForEventType(eventType string) string {
 }
 
 // ProcessEmailVerificationRequest handles email verification request events.
-func (s *NotificationEventServiceImpl) ProcessEmailVerificationRequest(
+func (s *notificationEventService) ProcessEmailVerificationRequest(
 	ctx context.Context,
 	inboxEvent *entity.InboxEvent,
 ) error {
@@ -162,7 +158,7 @@ func (s *NotificationEventServiceImpl) ProcessEmailVerificationRequest(
 }
 
 // ProcessEmailUserVerified handles user verified events.
-func (s *NotificationEventServiceImpl) ProcessEmailUserVerified(
+func (s *notificationEventService) ProcessEmailUserVerified(
 	ctx context.Context,
 	inboxEvent *entity.InboxEvent,
 ) error {
@@ -184,7 +180,7 @@ func (s *NotificationEventServiceImpl) ProcessEmailUserVerified(
 }
 
 // generateVerificationEmail creates an email verification email body.
-func (s *NotificationEventServiceImpl) generateVerificationEmail(
+func (s *notificationEventService) generateVerificationEmail(
 	payload *event.EmailVerificationRequestedPayload,
 ) (string, error) {
 	verificationURL := fmt.Sprintf("http://localhost:8080/auth/v1/verify?token=%s", payload.Token)
@@ -199,7 +195,7 @@ func (s *NotificationEventServiceImpl) generateVerificationEmail(
 }
 
 // generateWelcomeEmail creates a welcome email body.
-func (s *NotificationEventServiceImpl) generateWelcomeEmail(
+func (s *notificationEventService) generateWelcomeEmail(
 	payload *event.UserVerifiedPayload,
 ) (string, error) {
 	templateData := &dto.UserVerifiedTemplateData{
@@ -210,7 +206,7 @@ func (s *NotificationEventServiceImpl) generateWelcomeEmail(
 }
 
 // sendEmailNotification sends an email notification.
-func (s *NotificationEventServiceImpl) sendEmailNotification(
+func (s *notificationEventService) sendEmailNotification(
 	ctx context.Context,
 	payload *event.NotificationRequestPayload,
 ) error {
@@ -233,7 +229,7 @@ func (s *NotificationEventServiceImpl) sendEmailNotification(
 }
 
 // generateEmailBody generates the email body based on template ID and data.
-func (s *NotificationEventServiceImpl) generateEmailBody(
+func (s *notificationEventService) generateEmailBody(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	s.logger.Infof(
@@ -265,7 +261,7 @@ func (s *NotificationEventServiceImpl) generateEmailBody(
 }
 
 // generateOrderConfirmedEmail generates HTML email for order confirmation.
-func (s *NotificationEventServiceImpl) generateOrderConfirmedEmail(
+func (s *notificationEventService) generateOrderConfirmedEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
@@ -315,7 +311,7 @@ func (s *NotificationEventServiceImpl) generateOrderConfirmedEmail(
 }
 
 // generateOrderDeliveredEmail generates HTML email for order delivered notification.
-func (s *NotificationEventServiceImpl) generateOrderDeliveredEmail(
+func (s *notificationEventService) generateOrderDeliveredEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
@@ -366,7 +362,7 @@ func (s *NotificationEventServiceImpl) generateOrderDeliveredEmail(
 }
 
 // generateOrderShippedEmail generates HTML email for order shipped notification.
-func (s *NotificationEventServiceImpl) generateOrderShippedEmail(
+func (s *notificationEventService) generateOrderShippedEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	recipientName := payload.RecipientName
@@ -395,7 +391,7 @@ func (s *NotificationEventServiceImpl) generateOrderShippedEmail(
 }
 
 // generateOrderCancelledEmail generates HTML email for order cancellation.
-func (s *NotificationEventServiceImpl) generateOrderCancelledEmail(
+func (s *notificationEventService) generateOrderCancelledEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	recipientName := payload.RecipientName
@@ -416,7 +412,7 @@ func (s *NotificationEventServiceImpl) generateOrderCancelledEmail(
 }
 
 // generateOrderPaymentRequiredEmail generates HTML email for payment required notification.
-func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
+func (s *notificationEventService) generateOrderPaymentRequiredEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
@@ -486,7 +482,7 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentRequiredEmail(
 }
 
 // generateOrderPaymentReminderEmail generates HTML email for payment required notification.
-func (s *NotificationEventServiceImpl) generateOrderPaymentReminderEmail(
+func (s *notificationEventService) generateOrderPaymentReminderEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
@@ -551,7 +547,7 @@ func (s *NotificationEventServiceImpl) generateOrderPaymentReminderEmail(
 }
 
 // generateOrderPaymentExpiredEmail generates HTML email for order payment expired notification.
-func (s *NotificationEventServiceImpl) generateOrderPaymentExpiredEmail(
+func (s *notificationEventService) generateOrderPaymentExpiredEmail(
 	payload *event.NotificationRequestPayload,
 ) (string, error) {
 	recipientName := payload.RecipientName

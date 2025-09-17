@@ -27,14 +27,14 @@ type PaymentLifecycleEvent struct {
 type PaymentLifecycleConsumer struct {
 	logger        logger.Logger
 	datastore     repository.DataStore
-	paymentClient client.PaymentClientInterface
+	paymentClient client.PaymentClient
 }
 
 // NewPaymentLifecycleConsumer creates a new consumer for payment lifecycle events.
 func NewPaymentLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-	paymentClient client.PaymentClientInterface,
+	paymentClient client.PaymentClient,
 ) *PaymentLifecycleConsumer {
 	return &PaymentLifecycleConsumer{
 		logger:        appLogger,

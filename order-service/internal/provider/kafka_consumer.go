@@ -44,7 +44,6 @@ func SetupKafkaConsumers(
 			appLogger,
 			providers.DataStore,
 			providers.FulfillmentClient,
-			providers.NotificationRequestProducer,
 		).Handler,
 		appLogger,
 	)
@@ -58,5 +57,5 @@ func SetupKafkaConsumers(
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))
 
-	return worker.NewKafkaConsumer(cfg, appLogger, consumers)
+	return worker.NewKafkaConsumer(appLogger, consumers)
 }

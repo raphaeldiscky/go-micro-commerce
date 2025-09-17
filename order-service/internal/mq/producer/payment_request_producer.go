@@ -64,7 +64,7 @@ func (e *PaymentRequestEvent) GetMetadata() event.Metadata {
 }
 
 // NewPaymentRequestProducer creates a new instance of PaymentRequestProducer.
-func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &PaymentRequestProducer{
 		Producer: producer,
 		topic:    kafka.PaymentRequestTopic,

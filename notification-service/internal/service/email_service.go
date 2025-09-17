@@ -20,22 +20,22 @@ type EmailService interface {
 	SendEmail(ctx context.Context, to, subject, body string) error
 }
 
-// EmailServiceImpl handles loading and rendering email templates.
-type EmailServiceImpl struct {
+// emailService handles loading and rendering email templates.
+type emailService struct {
 	templatesPath string
 	mailer        smtputils.Mailer
 }
 
 // NewEmailService creates a new template service instance.
 func NewEmailService(templatesPath string, mailer smtputils.Mailer) EmailService {
-	return &EmailServiceImpl{
+	return &emailService{
 		templatesPath: templatesPath,
 		mailer:        mailer,
 	}
 }
 
 // LoadTemplate loads a template file and returns its content.
-func (ts *EmailServiceImpl) LoadTemplate(templateName string) (string, error) {
+func (ts *emailService) LoadTemplate(templateName string) (string, error) {
 	// Validate template name to prevent directory traversal
 	if filepath.Base(templateName) != templateName {
 		return "", fmt.Errorf("invalid template name: %s", templateName)
@@ -77,7 +77,7 @@ func (ts *EmailServiceImpl) LoadTemplate(templateName string) (string, error) {
 }
 
 // RenderTemplate renders a template with the provided data using html/template.
-func (ts *EmailServiceImpl) RenderTemplate(templateName string, data any) (string, error) {
+func (ts *emailService) RenderTemplate(templateName string, data any) (string, error) {
 	templateContent, err := ts.LoadTemplate(templateName)
 	if err != nil {
 		return "", fmt.Errorf("failed to load template %s: %w", templateName, err)
@@ -99,6 +99,6 @@ func (ts *EmailServiceImpl) RenderTemplate(templateName string, data any) (strin
 }
 
 // SendEmail sends an email using the configured mailer.
-func (ts *EmailServiceImpl) SendEmail(ctx context.Context, to, subject, body string) error {
+func (ts *emailService) SendEmail(ctx context.Context, to, subject, body string) error {
 	return ts.mailer.SendMail(ctx, to, subject, body)
 }

@@ -24,8 +24,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/repository"
 )
 
-// AuthServiceInterface defines the methods for the auth service.
-type AuthServiceInterface interface {
+// AuthService defines the methods for the auth service.
+type AuthService interface {
 	Register(
 		ctx context.Context,
 		req *dto.RegisterRequest,
@@ -52,28 +52,28 @@ type AuthServiceInterface interface {
 	GetActiveSessions(ctx context.Context, userID uuid.UUID) ([]*dto.SessionResponse, error)
 }
 
-// AuthService implements AuthServiceInterface.
-type AuthService struct {
+// authService implements AuthService.
+type authService struct {
 	dataStore                          repository.DataStore
-	jwtUtils                           jwtutils.JWTInterface
-	hasher                             encryptutils.HasherInterface
+	jwtUtils                           jwtutils.JWT
+	hasher                             encryptutils.Hasher
 	authConfig                         *config.AuthConfig
 	logger                             logger.Logger
-	emailVerificationRequestedProducer kafka.ProducerInterface
-	userVerifiedProducer               kafka.ProducerInterface
+	emailVerificationRequestedProducer kafka.Producer
+	userVerifiedProducer               kafka.Producer
 }
 
-// NewAuthService creates a new AuthService.
+// NewAuthService creates a new authService.
 func NewAuthService(
 	dataStore repository.DataStore,
-	jwtUtils jwtutils.JWTInterface,
-	hasher encryptutils.HasherInterface,
+	jwtUtils jwtutils.JWT,
+	hasher encryptutils.Hasher,
 	authConfig *config.AuthConfig,
 	appLogger logger.Logger,
-	emailVerificationRequestedProducer kafka.ProducerInterface,
-	userVerifiedProducer kafka.ProducerInterface,
-) AuthServiceInterface {
-	return &AuthService{
+	emailVerificationRequestedProducer kafka.Producer,
+	userVerifiedProducer kafka.Producer,
+) AuthService {
+	return &authService{
 		dataStore:                          dataStore,
 		jwtUtils:                           jwtUtils,
 		hasher:                             hasher,
@@ -85,7 +85,7 @@ func NewAuthService(
 }
 
 // Register creates a new user account and returns authentication tokens.
-func (s *AuthService) Register(
+func (s *authService) Register(
 	ctx context.Context,
 	req *dto.RegisterRequest,
 	clientIP, userAgent string,
@@ -217,7 +217,7 @@ func (s *AuthService) Register(
 }
 
 // Login authenticates a user and returns tokens.
-func (s *AuthService) Login(
+func (s *authService) Login(
 	ctx context.Context,
 	req *dto.LoginRequest,
 	clientIP, userAgent string,
@@ -319,7 +319,7 @@ func (s *AuthService) Login(
 }
 
 // RefreshToken refreshes an access token.
-func (s *AuthService) RefreshToken(
+func (s *authService) RefreshToken(
 	ctx context.Context,
 	req *dto.RefreshTokenRequest,
 ) (*dto.AuthResponse, error) {
@@ -391,7 +391,7 @@ func (s *AuthService) RefreshToken(
 }
 
 // GetUser gets user profile.
-func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
+func (s *authService) GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserResponse, error) {
 	userRepo := s.dataStore.UserRepository()
 
 	user, err := userRepo.GetByID(ctx, userID)
@@ -411,7 +411,7 @@ func (s *AuthService) GetUser(ctx context.Context, userID uuid.UUID) (*dto.UserR
 }
 
 // UpdateUser updates user profile.
-func (s *AuthService) UpdateUser(
+func (s *authService) UpdateUser(
 	ctx context.Context,
 	userID uuid.UUID,
 	req *dto.UpdateUserRequest,
@@ -479,7 +479,7 @@ func (s *AuthService) UpdateUser(
 }
 
 // DeleteUser deletes a user.
-func (s *AuthService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+func (s *authService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	userRepo := s.dataStore.UserRepository()
 	if err := userRepo.Delete(ctx, userID); err != nil {
 		s.logger.Error("Failed to delete user", "error", err)
@@ -498,7 +498,7 @@ func (s *AuthService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 }
 
 // ChangePassword changes user password.
-func (s *AuthService) ChangePassword(
+func (s *authService) ChangePassword(
 	ctx context.Context,
 	userID uuid.UUID,
 	req *dto.ChangePasswordRequest,
@@ -546,7 +546,7 @@ func (s *AuthService) ChangePassword(
 }
 
 // VerifyUser verifies user by email.
-func (s *AuthService) VerifyUser(ctx context.Context, req *dto.VerifyEmailRequest) error {
+func (s *authService) VerifyUser(ctx context.Context, req *dto.VerifyEmailRequest) error {
 	userRepo := s.dataStore.UserRepository()
 
 	// Get user by verification token
@@ -601,7 +601,7 @@ func (s *AuthService) VerifyUser(ctx context.Context, req *dto.VerifyEmailReques
 }
 
 // ResendVerification resends email verification.
-func (s *AuthService) ResendVerification(
+func (s *authService) ResendVerification(
 	ctx context.Context,
 	req *dto.ResendVerificationRequest,
 ) error {
@@ -662,7 +662,7 @@ const (
 )
 
 // generateVerificationToken generates a random verification token.
-func (s *AuthService) generateVerificationToken() (string, error) {
+func (s *authService) generateVerificationToken() (string, error) {
 	bytes := make([]byte, defaultTokenByteSize)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
@@ -672,7 +672,7 @@ func (s *AuthService) generateVerificationToken() (string, error) {
 }
 
 // GetActiveSessions returns all active sessions for a user.
-func (s *AuthService) GetActiveSessions(
+func (s *authService) GetActiveSessions(
 	ctx context.Context,
 	userID uuid.UUID,
 ) ([]*dto.SessionResponse, error) {
@@ -702,7 +702,7 @@ func (s *AuthService) GetActiveSessions(
 }
 
 // Logout deactivates a specific session.
-func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error {
+func (s *authService) Logout(ctx context.Context, req *dto.LogoutRequest) error {
 	sessionRepo := s.dataStore.SessionRepository()
 
 	if req.RefreshToken == "" {
@@ -733,7 +733,7 @@ func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error 
 }
 
 // LogoutAllSessions deactivates all sessions for a user.
-func (s *AuthService) LogoutAllSessions(ctx context.Context, userID uuid.UUID) error {
+func (s *authService) LogoutAllSessions(ctx context.Context, userID uuid.UUID) error {
 	sessionRepo := s.dataStore.SessionRepository()
 
 	err := sessionRepo.DeactivateAllUserSessions(ctx, userID)

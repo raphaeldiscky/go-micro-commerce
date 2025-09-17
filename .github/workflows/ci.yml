@@ -109,12 +109,6 @@ jobs:
             ${{ runner.os }}-go-${{ matrix.service }}-
             ${{ runner.os }}-go-
 
-      - name: Install Task runner
-        uses: arduino/setup-task@v2
-        with:
-          version: 3.x
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Install Tools
         run: |
           go install mvdan.cc/gofumpt@latest
@@ -124,18 +118,16 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Check deadcode for ${{ matrix.service }}
-        run: task deadcode SERVICE=${{ matrix.service }}
+        run: bash scripts/deadcode.sh ${{ matrix.service }}
 
       - name: Run Linter for ${{ matrix.service }}
-        run: task lint SERVICE=${{ matrix.service }}
+        run: bash scripts/lint.sh ${{ matrix.service }}
 
       - name: Run Security Vulnerability Scan for ${{ matrix.service }}
-        run: task security SERVICE=${{ matrix.service }}
+        run: bash scripts/security.sh ${{ matrix.service }}
 
       - name: Run Tests for ${{ matrix.service }}
-        run: |
-          cd ${{ matrix.service }}
-          task test SERVICE=${{ matrix.service }}
+        run: bash scripts/test.sh ${{ matrix.service }}
 
       - name: Upload test coverage to Codecov
         uses: codecov/codecov-action@v4

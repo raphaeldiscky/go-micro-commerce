@@ -42,7 +42,7 @@ type TestSuite struct {
 	tcSetup        *TestContainersSetup
 	httpServer     *server.HTTPServer
 	baseURL        string
-	productService service.ProductServiceInterface
+	productService service.ProductService
 	ctx            context.Context
 }
 
@@ -73,7 +73,6 @@ func (s *TestSuite) SetupSuite() {
 	mockProducer := &mockKafkaProducer{}
 	s.productService = service.NewProductService(
 		dataStore,
-		nil,
 		mockProducer,
 		mockProducer,
 		mockProducer,

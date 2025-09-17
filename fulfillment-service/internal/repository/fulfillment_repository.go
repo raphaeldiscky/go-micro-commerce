@@ -14,8 +14,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/entity"
 )
 
-// FulfillmentRepositoryInterface defines the interface for fulfillment data operations.
-type FulfillmentRepositoryInterface interface {
+// FulfillmentRepository defines the interface for fulfillment data operations.
+type FulfillmentRepository interface {
 	// Create creates a new fulfillment
 	Create(ctx context.Context, fulfillment *entity.Fulfillment) (*entity.Fulfillment, error)
 
@@ -35,20 +35,20 @@ type FulfillmentRepositoryInterface interface {
 	FindByTrackingNumber(ctx context.Context, trackingNumber string) (*entity.Fulfillment, error)
 }
 
-// FulfillmentRepositoryPostgres implements the FulfillmentRepository interface for PostgreSQL.
-type FulfillmentRepositoryPostgres struct {
+// fulfillmentRepository implements the FulfillmentRepository interface for PostgreSQL.
+type fulfillmentRepository struct {
 	db DBTX
 }
 
-// NewFulfillmentRepositoryPostgres creates a new instance of FulfillmentRepositoryPostgres.
-func NewFulfillmentRepositoryPostgres(db DBTX) FulfillmentRepositoryInterface {
-	return &FulfillmentRepositoryPostgres{
+// NewFulfillmentRepository creates a new instance of fulfillmentRepository.
+func NewFulfillmentRepository(db DBTX) FulfillmentRepository {
+	return &fulfillmentRepository{
 		db: db,
 	}
 }
 
 // Create creates a new fulfillment.
-func (r *FulfillmentRepositoryPostgres) Create(
+func (r *fulfillmentRepository) Create(
 	ctx context.Context,
 	fulfillment *entity.Fulfillment,
 ) (*entity.Fulfillment, error) {
@@ -107,7 +107,7 @@ func (r *FulfillmentRepositoryPostgres) Create(
 }
 
 // FindByID retrieves a fulfillment by its ID.
-func (r *FulfillmentRepositoryPostgres) FindByID(
+func (r *fulfillmentRepository) FindByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.Fulfillment, error) {
@@ -125,7 +125,7 @@ func (r *FulfillmentRepositoryPostgres) FindByID(
 }
 
 // FindByOrderID retrieves a fulfillment by its order ID.
-func (r *FulfillmentRepositoryPostgres) FindByOrderID(
+func (r *fulfillmentRepository) FindByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (*entity.Fulfillment, error) {
@@ -143,7 +143,7 @@ func (r *FulfillmentRepositoryPostgres) FindByOrderID(
 }
 
 // FindByTrackingNumber retrieves a fulfillment by its tracking number.
-func (r *FulfillmentRepositoryPostgres) FindByTrackingNumber(
+func (r *fulfillmentRepository) FindByTrackingNumber(
 	ctx context.Context,
 	trackingNumber string,
 ) (*entity.Fulfillment, error) {
@@ -161,7 +161,7 @@ func (r *FulfillmentRepositoryPostgres) FindByTrackingNumber(
 }
 
 // Update updates an existing fulfillment.
-func (r *FulfillmentRepositoryPostgres) Update(
+func (r *fulfillmentRepository) Update(
 	ctx context.Context,
 	fulfillment *entity.Fulfillment,
 ) (*entity.Fulfillment, error) {
@@ -230,7 +230,7 @@ func (r *FulfillmentRepositoryPostgres) Update(
 }
 
 // UpdateStatus updates only the status of a fulfillment.
-func (r *FulfillmentRepositoryPostgres) UpdateStatus(
+func (r *fulfillmentRepository) UpdateStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	status constant.FulfillmentStatus,
@@ -256,7 +256,7 @@ func (r *FulfillmentRepositoryPostgres) UpdateStatus(
 }
 
 // scanFulfillment scans a row into a Fulfillment entity.
-func (r *FulfillmentRepositoryPostgres) scanFulfillment(row pgx.Row) (*entity.Fulfillment, error) {
+func (r *fulfillmentRepository) scanFulfillment(row pgx.Row) (*entity.Fulfillment, error) {
 	var fulfillment entity.Fulfillment
 
 	var dimensionsJSON []byte

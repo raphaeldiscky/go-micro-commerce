@@ -24,14 +24,14 @@ import (
 type OutboxPublisher struct {
 	dataStore                   repository.DataStore
 	logger                      logger.Logger
-	orderLifecycleProducer      kafka.ProducerInterface
-	orderDLQProducer            kafka.ProducerInterface
-	paymentRequestProducer      kafka.ProducerInterface
-	paymentDLQProducer          kafka.ProducerInterface
-	fulfillmentRequestProducer  kafka.ProducerInterface
-	fulfillmentDLQProducer      kafka.ProducerInterface
-	notificationRequestProducer kafka.ProducerInterface
-	notificationDLQProducer     kafka.ProducerInterface
+	orderLifecycleProducer      kafka.Producer
+	orderDLQProducer            kafka.Producer
+	paymentRequestProducer      kafka.Producer
+	paymentDLQProducer          kafka.Producer
+	fulfillmentRequestProducer  kafka.Producer
+	fulfillmentDLQProducer      kafka.Producer
+	notificationRequestProducer kafka.Producer
+	notificationDLQProducer     kafka.Producer
 	config                      config.OutboxPublisherConfig
 	eventRegistry               *kafka.EventRegistry
 }
@@ -40,14 +40,14 @@ type OutboxPublisher struct {
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	orderLifecycleProducer kafka.ProducerInterface,
-	orderDLQProducer kafka.ProducerInterface,
-	paymentRequestProducer kafka.ProducerInterface,
-	paymentDLQProducer kafka.ProducerInterface,
-	fulfillmentRequestProducer kafka.ProducerInterface,
-	fulfillmentDLQProducer kafka.ProducerInterface,
-	notificationRequestProducer kafka.ProducerInterface,
-	notificationDLQProducer kafka.ProducerInterface,
+	orderLifecycleProducer kafka.Producer,
+	orderDLQProducer kafka.Producer,
+	paymentRequestProducer kafka.Producer,
+	paymentDLQProducer kafka.Producer,
+	fulfillmentRequestProducer kafka.Producer,
+	fulfillmentDLQProducer kafka.Producer,
+	notificationRequestProducer kafka.Producer,
+	notificationDLQProducer kafka.Producer,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
@@ -156,7 +156,7 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	}
 
 	// Route to the appropriate producer based on topic
-	var selectedProducer kafka.ProducerInterface
+	var selectedProducer kafka.Producer
 
 	switch outboxEvent.Topic {
 	case kafka.OrderLifecycleTopic:
@@ -233,7 +233,7 @@ func (p *OutboxPublisher) handleProcessingError(
 	}
 
 	// Move to DLQ - route to appropriate DLQ based on topic
-	var dlqProducer kafka.ProducerInterface
+	var dlqProducer kafka.Producer
 
 	var evt event.BaseEvent
 

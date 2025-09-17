@@ -11,8 +11,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 )
 
-// SessionRepositoryInterface defines the contract for session repository.
-type SessionRepositoryInterface interface {
+// SessionRepository defines the contract for session repository.
+type SessionRepository interface {
 	// Create creates a new session
 	Create(ctx context.Context, session *entity.Session) error
 
@@ -44,13 +44,13 @@ type SessionRepositoryInterface interface {
 	TouchSession(ctx context.Context, id uuid.UUID) error
 }
 
-// sessionRepository implements SessionRepositoryInterface using PostgreSQL.
+// sessionRepository implements SessionRepository using PostgreSQL.
 type sessionRepository struct {
 	db DBTX
 }
 
 // NewSessionRepository creates a new session repository.
-func NewSessionRepository(db DBTX) SessionRepositoryInterface {
+func NewSessionRepository(db DBTX) SessionRepository {
 	return &sessionRepository{db: db}
 }
 

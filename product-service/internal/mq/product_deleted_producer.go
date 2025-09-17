@@ -50,7 +50,7 @@ type ProductDeletedProducer struct {
 }
 
 // NewProductDeletedProducer creates a new instance of ProductDeletedProducer.
-func NewProductDeletedProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewProductDeletedProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &ProductDeletedProducer{
 		Producer: producer,
 		topic:    kafka.ProductLifecycleTopic,

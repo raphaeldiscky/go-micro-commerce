@@ -12,13 +12,13 @@ import (
 
 // PaymentReminderTaskHandler handles payment reminder background tasks.
 type PaymentReminderTaskHandler struct {
-	paymentReminderService service.PaymentReminderServiceInterface
+	paymentReminderService service.PaymentReminderService
 	logger                 logger.Logger
 }
 
 // NewPaymentReminderTaskHandler creates a new payment reminder task handler.
 func NewPaymentReminderTaskHandler(
-	paymentReminderService service.PaymentReminderServiceInterface,
+	paymentReminderService service.PaymentReminderService,
 	logger logger.Logger,
 ) *PaymentReminderTaskHandler {
 	return &PaymentReminderTaskHandler{

@@ -66,46 +66,37 @@ type OrderActivities interface {
 	CancelShipping(ctx context.Context, shippingID uuid.UUID) error
 }
 
-// OrderActivitiesImpl implements order saga activities for Temporal workflows.
-type OrderActivitiesImpl struct {
-	dataStore                  repository.DataStore
-	config                     *config.TemporalConfig
-	productClient              client.ProductClientInterface
-	paymentRequestProducer     kafka.ProducerInterface
-	orderLifecycleProducer     kafka.ProducerInterface
-	fulfillmentRequestProducer kafka.ProducerInterface
-	fulfillmentClient          client.FulfillmentClientInterface
-	paymentClient              client.PaymentClientInterface
-	paymentReminderScheduler   *PaymentReminderScheduler
+// orderActivities implements order saga activities for Temporal workflows.
+type orderActivities struct {
+	dataStore                repository.DataStore
+	config                   *config.TemporalConfig
+	productClient            client.ProductClient
+	fulfillmentClient        client.FulfillmentClient
+	paymentClient            client.PaymentClient
+	paymentReminderScheduler *PaymentReminderScheduler
 }
 
 // NewTemporalActivities creates a new OrderActivities instance.
 func NewTemporalActivities(
 	dataStore repository.DataStore,
 	config *config.TemporalConfig,
-	productClient client.ProductClientInterface,
-	paymentRequestProducer kafka.ProducerInterface,
-	orderLifecycleProducer kafka.ProducerInterface,
-	fulfillmentRequestProducer kafka.ProducerInterface,
-	fulfillmentClient client.FulfillmentClientInterface,
-	paymentClient client.PaymentClientInterface,
+	productClient client.ProductClient,
+	fulfillmentClient client.FulfillmentClient,
+	paymentClient client.PaymentClient,
 	paymentReminderScheduler *PaymentReminderScheduler,
 ) OrderActivities {
-	return &OrderActivitiesImpl{
-		dataStore:                  dataStore,
-		config:                     config,
-		productClient:              productClient,
-		paymentRequestProducer:     paymentRequestProducer,
-		orderLifecycleProducer:     orderLifecycleProducer,
-		fulfillmentRequestProducer: fulfillmentRequestProducer,
-		fulfillmentClient:          fulfillmentClient,
-		paymentClient:              paymentClient,
-		paymentReminderScheduler:   paymentReminderScheduler,
+	return &orderActivities{
+		dataStore:                dataStore,
+		config:                   config,
+		productClient:            productClient,
+		fulfillmentClient:        fulfillmentClient,
+		paymentClient:            paymentClient,
+		paymentReminderScheduler: paymentReminderScheduler,
 	}
 }
 
 // ReserveProducts reserves products for the order items and calculates order details.
-func (ta *OrderActivitiesImpl) ReserveProducts(
+func (ta *orderActivities) ReserveProducts(
 	ctx context.Context,
 	req dto.ReserveProductsRequest,
 ) (dto.ReserveProductsResponse, error) {
@@ -232,7 +223,7 @@ func (ta *OrderActivitiesImpl) ReserveProducts(
 }
 
 // GetShippingCost calculates shipping cost by calling fulfillment service without creating actual shipment.
-func (ta *OrderActivitiesImpl) GetShippingCost(
+func (ta *orderActivities) GetShippingCost(
 	ctx context.Context,
 	req dto.GetShippingCostRequest,
 ) (dto.GetShippingCostResponse, error) {
@@ -262,7 +253,7 @@ func (ta *OrderActivitiesImpl) GetShippingCost(
 }
 
 // CreatePayment create payment for the order.
-func (ta *OrderActivitiesImpl) CreatePayment(
+func (ta *orderActivities) CreatePayment(
 	ctx context.Context,
 	order *entity.Order,
 ) (uuid.UUID, error) {
@@ -343,7 +334,7 @@ func (ta *OrderActivitiesImpl) CreatePayment(
 }
 
 // SendPaymentRequiredNotification sends a payment required notification to the customer.
-func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
+func (ta *orderActivities) SendPaymentRequiredNotification(
 	ctx context.Context,
 	req dto.SendPaymentRequiredNotificationRequest,
 ) error {
@@ -431,7 +422,7 @@ func (ta *OrderActivitiesImpl) SendPaymentRequiredNotification(
 }
 
 // WaitForPaymentConfirmation waits for payment confirmation with timeout and manages payment reminders using Temporal schedules.
-func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
+func (ta *orderActivities) WaitForPaymentConfirmation(
 	ctx context.Context,
 	req dto.WaitForPaymentConfirmationRequest,
 ) (dto.WaitForPaymentConfirmationResponse, error) {
@@ -510,7 +501,7 @@ func (ta *OrderActivitiesImpl) WaitForPaymentConfirmation(
 }
 
 // ProcessFulfillment creates shipping/fulfillment arrangement for the order.
-func (ta *OrderActivitiesImpl) ProcessFulfillment(
+func (ta *orderActivities) ProcessFulfillment(
 	ctx context.Context,
 	order *entity.Order,
 	shipping *dto.Shipping,
@@ -593,7 +584,7 @@ func (ta *OrderActivitiesImpl) ProcessFulfillment(
 }
 
 // SetFinalOrderPrices updates the order with shipping cost and final prices in the database.
-func (ta *OrderActivitiesImpl) SetFinalOrderPrices(
+func (ta *orderActivities) SetFinalOrderPrices(
 	ctx context.Context,
 	req dto.SetFinalOrderPricesRequest,
 ) (dto.SetFinalOrderPricesResponse, error) {
@@ -638,7 +629,7 @@ func (ta *OrderActivitiesImpl) SetFinalOrderPrices(
 }
 
 // ConfirmProductsDeduction confirms stock deduction after successful payment.
-func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
+func (ta *orderActivities) ConfirmProductsDeduction(
 	ctx context.Context,
 	req *dto.ConfirmProductsDeductionRequest,
 ) error {
@@ -687,7 +678,7 @@ func (ta *OrderActivitiesImpl) ConfirmProductsDeduction(
 }
 
 // SendOrderConfirmedNotification sends order confirmation to customer.
-func (ta *OrderActivitiesImpl) SendOrderConfirmedNotification(
+func (ta *orderActivities) SendOrderConfirmedNotification(
 	ctx context.Context,
 	req dto.SendOrderConfirmedNotificationRequest,
 ) error {
@@ -757,7 +748,7 @@ func (ta *OrderActivitiesImpl) SendOrderConfirmedNotification(
 }
 
 // ReleaseProducts releases reserved products during compensation.
-func (ta *OrderActivitiesImpl) ReleaseProducts(
+func (ta *orderActivities) ReleaseProducts(
 	ctx context.Context,
 	req dto.ReleaseProductsRequest,
 ) error {
@@ -804,7 +795,7 @@ func (ta *OrderActivitiesImpl) ReleaseProducts(
 }
 
 // RefundPayment refunds payment during compensation.
-func (ta *OrderActivitiesImpl) RefundPayment(
+func (ta *orderActivities) RefundPayment(
 	ctx context.Context,
 	req dto.RefundPaymentGatewayRequest,
 ) error {
@@ -828,7 +819,7 @@ func (ta *OrderActivitiesImpl) RefundPayment(
 }
 
 // RestoreProducts restores deducted products during compensation.
-func (ta *OrderActivitiesImpl) RestoreProducts(
+func (ta *orderActivities) RestoreProducts(
 	ctx context.Context,
 	req dto.RestoreProductsRequest,
 ) error {
@@ -875,7 +866,7 @@ func (ta *OrderActivitiesImpl) RestoreProducts(
 }
 
 // CancelShipping cancels shipping during compensation.
-func (ta *OrderActivitiesImpl) CancelShipping(
+func (ta *orderActivities) CancelShipping(
 	ctx context.Context,
 	shippingID uuid.UUID,
 ) error {

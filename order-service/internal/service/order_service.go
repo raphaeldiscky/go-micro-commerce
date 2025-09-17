@@ -30,8 +30,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
 
-// OrderServiceInterface defines the interface for order business operations.
-type OrderServiceInterface interface {
+// OrderService defines the interface for order business operations.
+type OrderService interface {
 	CreateOrderWithSaga(
 		ctx context.Context,
 		req *dto.CreateOrderRequest,
@@ -73,30 +73,27 @@ type OrderServiceInterface interface {
 	) (*dto.OrderResponse, error)
 }
 
-// OrderService implements the OrderServiceInterface.
-type OrderService struct {
+// orderService implements the OrderService.
+type orderService struct {
 	dataStore              repository.DataStore
-	productClient          client.ProductClientInterface
 	logger                 logger.Logger
-	orderLifecycleProducer kafka.ProducerInterface
+	orderLifecycleProducer kafka.Producer
 	sagaOrchestrator       saga.Orchestrator
 	temporalClient         *client.TemporalClient
 	config                 *config.Config
 }
 
-// NewOrderService creates a new instance of OrderService.
+// NewOrderService creates a new instance of orderService.
 func NewOrderService(
 	cfg *config.Config,
 	dataStore repository.DataStore,
-	productClient client.ProductClientInterface,
 	appLogger logger.Logger,
-	orderLifecycleProducer kafka.ProducerInterface,
+	orderLifecycleProducer kafka.Producer,
 	sagaOrchestrator saga.Orchestrator,
 	temporalClient *client.TemporalClient,
-) OrderServiceInterface {
-	return &OrderService{
+) OrderService {
+	return &orderService{
 		dataStore:              dataStore,
-		productClient:          productClient,
 		logger:                 appLogger,
 		orderLifecycleProducer: orderLifecycleProducer,
 		sagaOrchestrator:       sagaOrchestrator,
@@ -106,7 +103,7 @@ func NewOrderService(
 }
 
 // CreateOrderWithTemporal handles POST /orders/temporal with Temporal processing.
-func (s *OrderService) CreateOrderWithTemporal(
+func (s *orderService) CreateOrderWithTemporal(
 	ctx context.Context,
 	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
@@ -226,7 +223,7 @@ func (s *OrderService) CreateOrderWithTemporal(
 }
 
 // GetOrder retrieves an order by ID.
-func (s *OrderService) GetOrder(
+func (s *orderService) GetOrder(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*dto.OrderResponse, error) {
@@ -245,7 +242,7 @@ func (s *OrderService) GetOrder(
 }
 
 // GetOrdersByCustomer retrieves orders for a specific customer with pagination.
-func (s *OrderService) GetOrdersByCustomer(
+func (s *orderService) GetOrdersByCustomer(
 	ctx context.Context,
 	customerID uuid.UUID,
 	req dto.GetOrdersRequest,
@@ -280,7 +277,7 @@ func (s *OrderService) GetOrdersByCustomer(
 }
 
 // GetOrders retrieves all orders with pagination.
-func (s *OrderService) GetOrders(
+func (s *orderService) GetOrders(
 	ctx context.Context,
 	req dto.GetOrdersRequest,
 ) ([]dto.OrderResponse, *pkgdto.PageMetaData, error) {
@@ -314,7 +311,7 @@ func (s *OrderService) GetOrders(
 }
 
 // UpdateOrderStatus updates only the status of an order.
-func (s *OrderService) UpdateOrderStatus(
+func (s *orderService) UpdateOrderStatus(
 	ctx context.Context,
 	id uuid.UUID,
 	status constant.OrderStatus,
@@ -369,7 +366,7 @@ func (s *OrderService) UpdateOrderStatus(
 }
 
 // CancelOrder cancels an order.
-func (s *OrderService) CancelOrder(
+func (s *orderService) CancelOrder(
 	ctx context.Context,
 	req *dto.CancelOrderRequest,
 ) error {
@@ -457,7 +454,7 @@ func (s *OrderService) CancelOrder(
 }
 
 // ExpireOrderPayment expires an order payment when payment timeout occurs.
-func (s *OrderService) ExpireOrderPayment(
+func (s *orderService) ExpireOrderPayment(
 	ctx context.Context,
 	req *dto.ExpireOrderPaymentRequest,
 ) (*entity.Order, error) {
@@ -551,7 +548,7 @@ func (s *OrderService) ExpireOrderPayment(
 }
 
 // RequestPaymentOrder initiates payment processing for an order by publishing a payment request producer.
-func (s *OrderService) RequestPaymentOrder(
+func (s *orderService) RequestPaymentOrder(
 	ctx context.Context,
 	req dto.PayOrderRequest,
 	id uuid.UUID,
@@ -664,7 +661,7 @@ func (s *OrderService) RequestPaymentOrder(
 }
 
 // NotifyOrderFailure updates the order status to failed and logs the reason.
-func (s *OrderService) NotifyOrderFailure(
+func (s *orderService) NotifyOrderFailure(
 	_ context.Context,
 	orderID uuid.UUID,
 	status constant.OrderStatus,

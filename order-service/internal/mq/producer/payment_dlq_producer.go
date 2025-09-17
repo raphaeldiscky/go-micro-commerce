@@ -65,7 +65,7 @@ func (e *PaymentDLQEvent) GetMetadata() event.Metadata { // Use the correct type
 }
 
 // NewPaymentDLQProducer creates a new instance of PaymentDLQProducer.
-func NewPaymentDLQProducer(producer *kafka.AsyncProducer) kafka.ProducerInterface {
+func NewPaymentDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 	return &PaymentDLQProducer{
 		Producer: producer,
 		topic:    kafka.PaymentDLQTopic,
