@@ -17,12 +17,11 @@ type AsynqWorker struct {
 
 // NewAsynqWorker creates a new asynq worker.
 func NewAsynqWorker(
-	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,
 ) (*AsynqWorker, error) {
-	asynqProvider, err := provider.SetupAsynq(ctx, cfg, providers, appLogger)
+	asynqProvider, err := provider.SetupAsynq(cfg, providers, appLogger)
 	if err != nil {
 		return nil, err
 	}

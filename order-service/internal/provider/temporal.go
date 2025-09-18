@@ -4,8 +4,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"go.temporal.io/sdk/activity"
 
-	pkgtemporal "github.com/raphaeldiscky/go-micro-commerce/pkg/temporal"
-
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -40,31 +38,17 @@ func SetupTemporal(
 		return nil
 	}
 
-	// Initialize reminder scheduler once
-	scheduleManager := pkgtemporal.NewTemporalScheduleManager(temporalClient.Client)
-	reminderScheduler := pkgtemporal.NewReminderScheduler(scheduleManager)
-	paymentReminderScheduler := temporal.NewPaymentReminderScheduler(reminderScheduler)
-
 	// Create temporal activities and register them
 	// Note: Temporal activities use simplified approach for event handling
 	activities := temporal.NewTemporalActivities(
 		providers.DataStore,
-		cfg.Temporal,
 		productClient,
 		providers.FulfillmentClient,
 		providers.PaymentClient,
-		paymentReminderScheduler,
 	)
 
 	// Register workflows
 	temporalClient.Worker.RegisterWorkflow(temporal.OrderSagaWorkflow)
-	temporalClient.Worker.RegisterWorkflow(temporal.PaymentReminderWorkflow)
-
-	// Create payment reminder activities
-	reminderActivities := temporal.NewPaymentReminderActivities(
-		providers.DataStore,
-		providers.PaymentReminderService,
-	)
 
 	// Register order saga activities
 	temporalClient.Worker.RegisterActivityWithOptions(
@@ -88,6 +72,10 @@ func SetupTemporal(
 		activity.RegisterOptions{Name: string(constant.SendPaymentRequiredNotificationStep)},
 	)
 	temporalClient.Worker.RegisterActivityWithOptions(
+		activities.SendPaymentReminderNotification,
+		activity.RegisterOptions{Name: string(constant.SendPaymentReminderNotificationStep)},
+	)
+	temporalClient.Worker.RegisterActivityWithOptions(
 		activities.WaitForPaymentConfirmation,
 		activity.RegisterOptions{Name: string(constant.WaitForPaymentConfirmationStep)},
 	)
@@ -102,20 +90,6 @@ func SetupTemporal(
 	temporalClient.Worker.RegisterActivityWithOptions(
 		activities.SendOrderConfirmedNotification,
 		activity.RegisterOptions{Name: string(constant.SendOrderConfirmedNotificationStep)},
-	)
-
-	// Register payment reminder activities
-	temporalClient.Worker.RegisterActivityWithOptions(
-		reminderActivities.SendPaymentReminderActivity,
-		activity.RegisterOptions{Name: string(constant.SendPaymentReminderActivity)},
-	)
-	temporalClient.Worker.RegisterActivityWithOptions(
-		reminderActivities.CheckPaymentStatusActivity,
-		activity.RegisterOptions{Name: string(constant.CheckPaymentStatusActivity)},
-	)
-	temporalClient.Worker.RegisterActivityWithOptions(
-		reminderActivities.ExpireOrderPaymentActivity,
-		activity.RegisterOptions{Name: string(constant.ExpireOrderPaymentActivity)},
 	)
 
 	// Compensations

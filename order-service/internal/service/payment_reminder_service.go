@@ -11,6 +11,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -23,24 +24,24 @@ type PaymentReminderService interface {
 
 // paymentReminderService implements PaymentReminderService.
 type paymentReminderService struct {
-	notificationProducer kafka.Producer
-	dataStore            repository.DataStore
-	orderService         OrderService
-	logger               logger.Logger
+	notificationProducer   kafka.Producer
+	orderLifecycleProducer kafka.Producer
+	dataStore              repository.DataStore
+	logger                 logger.Logger
 }
 
 // NewPaymentReminderService creates a new payment reminder task service.
 func NewPaymentReminderService(
 	notificationProducer kafka.Producer,
+	orderLifecycleProducer kafka.Producer,
 	dataStore repository.DataStore,
-	orderService OrderService,
 	logger logger.Logger,
 ) PaymentReminderService {
 	return &paymentReminderService{
-		notificationProducer: notificationProducer,
-		dataStore:            dataStore,
-		orderService:         orderService,
-		logger:               logger,
+		notificationProducer:   notificationProducer,
+		orderLifecycleProducer: orderLifecycleProducer,
+		dataStore:              dataStore,
+		logger:                 logger,
 	}
 }
 
@@ -55,79 +56,61 @@ func (s *paymentReminderService) ProcessPaymentReminder(
 		req.ReminderCount,
 	)
 
-	s.logger.Infof(
-		"====REMINDER 1====, payment reminder request: %+v",
-		req,
-	)
-	// Fetch order from database to get complete order information including items
-	orderRepo := s.dataStore.OrderRepository()
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		orderRepo := ds.OrderRepository()
 
-	s.logger.Infof(
-		"====REMINDER 2====, orderRepo: %+v",
-		orderRepo,
-	)
+		order, err := orderRepo.FindByID(ctx, req.OrderID)
+		if err != nil {
+			s.logger.Errorf("Failed to fetch order %s for payment reminder: %v", req.OrderID, err)
+			return fmt.Errorf("failed to fetch order: %w", err)
+		}
 
-	order, err := orderRepo.FindByID(ctx, req.OrderID)
+		// Determine template and subject based on reminder count
+		var (
+			templateID pkgconstant.TemplateIDType
+			subject    string
+		)
+
+		switch req.ReminderCount {
+		case constant.FirstReminderSequence:
+			templateID = pkgconstant.TemplateOrderPaymentReminder
+			subject = constant.FirstPaymentReminderEmailSubject
+		case constant.SecondReminderSequence:
+			templateID = pkgconstant.TemplateOrderPaymentReminder
+			subject = constant.SecondPaymentReminderEmailSubject
+		default:
+			s.logger.Warnf(
+				"Invalid reminder count %d for order %s",
+				req.ReminderCount,
+				req.OrderID,
+			)
+		}
+
+		// Create notification event using the existing producer function
+		notificationEvent := producer.NewNotificationRequestEvent(
+			order,
+			req.ReservedProducts,
+			req.CustomerEmail,
+			"Customer Name", // Customer name - could be retrieved from customer service if needed
+			nil,             // No tracking number for payment reminders
+			templateID,
+			subject,
+		)
+
+		// Send notification
+		if err = s.notificationProducer.Send(ctx, notificationEvent); err != nil {
+			s.logger.Errorf(
+				"Failed to send payment reminder notification for order %s: %v",
+				req.OrderID,
+				err,
+			)
+
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		s.logger.Errorf("Failed to fetch order %s for payment reminder: %v", req.OrderID, err)
-		return fmt.Errorf("failed to fetch order: %w", err)
-	}
-
-	s.logger.Infof(
-		"====REMINDER 3====, order: %+v",
-		order,
-	)
-
-	// Determine template and subject based on reminder count
-	var (
-		templateID pkgconstant.TemplateIDType
-		subject    string
-	)
-
-	s.logger.Infof(
-		"====REMINDER 4====, req.ReminderCount: %d, req.MaxReminders: %d",
-		req.ReminderCount,
-	)
-
-	switch req.ReminderCount {
-	case constant.FirstReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = constant.FirstPaymentReminderEmailSubject
-	case constant.SecondReminderSequence:
-		templateID = pkgconstant.TemplateOrderPaymentReminder
-		subject = constant.SecondPaymentReminderEmailSubject
-	default:
-		s.logger.Warnf(
-			"Invalid reminder count %d for order %s",
-			req.ReminderCount,
-			req.OrderID,
-		)
-	}
-
-	// Create notification event using the existing producer function
-	notificationEvent := producer.NewNotificationRequestEvent(
-		order,
-		req.ReservedProducts,
-		req.CustomerEmail,
-		"Customer Name", // Customer name - could be retrieved from customer service if needed
-		nil,             // No tracking number for payment reminders
-		templateID,
-		subject,
-	)
-
-	s.logger.Infof(
-		"====REMINDER 4====, notificationEvent: %+v",
-		notificationEvent,
-	)
-
-	// Send notification
-	if err = s.notificationProducer.Send(ctx, notificationEvent); err != nil {
-		s.logger.Errorf(
-			"Failed to send payment reminder notification for order %s: %v",
-			req.OrderID,
-			err,
-		)
-
 		return err
 	}
 
@@ -150,37 +133,83 @@ func (s *paymentReminderService) ProcessOrderExpirePayment(
 		req.OrderID,
 	)
 
-	// Update order status to canceled
-	order, err := s.orderService.ExpireOrderPayment(ctx, req)
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		// Get order repository
+		orderRepo := ds.OrderRepository()
+
+		// Fetch updated order for notification
+		order, err := orderRepo.FindByID(ctx, req.OrderID)
+		if err != nil {
+			s.logger.Errorf(
+				"Failed to fetch updated order %s for notification: %v",
+				req.OrderID,
+				err,
+			)
+
+			return fmt.Errorf("failed to fetch updated order: %w", err)
+		}
+
+		// Check if order can be expired (only pending or processing orders)
+		if !order.CanBeCancelled() {
+			s.logger.Infof(
+				"Order %s cannot be expired in current status: %s, skipping",
+				req.OrderID,
+				order.Status,
+			)
+
+			return nil
+		}
+
+		// Update status to canceled due to payment timeout
+		if err = order.UpdateStatus(constant.OrderStatusPaymentExpired); err != nil {
+			return httperror.NewBadRequestError("failed to expire order entity")
+		}
+
+		// Save updated order
+		updatedOrder, updateErr := orderRepo.Update(ctx, order)
+		if updateErr != nil {
+			return httperror.NewInternalServerError("failed to expire order")
+		}
+
+		// Publish domain event
+		evt := producer.NewOrderLifecycleEvent(
+			order.ID,
+			constant.OrderStatusPaymentExpired,
+			updatedOrder.CustomerID,
+			updatedOrder.TotalPrice,
+			updatedOrder.Items,
+		)
+		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {
+			return httperror.NewInternalServerError("failed to send order expired event")
+		}
+
+		s.logger.Infof("Successfully expired order %s due to payment timeout", req.OrderID)
+
+		// Create notification event for order Expire
+		notificationEvent := producer.NewNotificationRequestEvent(
+			order,
+			nil,
+			req.CustomerEmail, // Use customer email from cancel request
+			"Customer Name",   // Customer name - could be retrieved from customer service if needed
+			nil,               // No tracking number for expired orders
+			pkgconstant.TemplateOrderPaymentExpired,
+			constant.OrderPaymentExpiredEmailSubject,
+		)
+
+		// Send notification
+		if err = s.notificationProducer.Send(ctx, notificationEvent); err != nil {
+			s.logger.Errorf(
+				"Failed to send order Expire notification for order %s: %v",
+				req.OrderID,
+				err,
+			)
+
+			return err
+		}
+
+		return nil
+	})
 	if err != nil {
-		s.logger.Errorf(
-			"Failed to update order status to canceled for order %s: %v",
-			req.OrderID,
-			err,
-		)
-
-		return fmt.Errorf("failed to update order status: %w", err)
-	}
-
-	// Create notification event for order Expire
-	notificationEvent := producer.NewNotificationRequestEvent(
-		order,
-		nil,
-		req.CustomerEmail, // Use customer email from cancel request
-		"Customer Name",   // Customer name - could be retrieved from customer service if needed
-		nil,               // No tracking number for expired orders
-		pkgconstant.TemplateOrderPaymentExpired,
-		constant.OrderPaymentExpiredEmailSubject,
-	)
-
-	// Send notification
-	if err = s.notificationProducer.Send(ctx, notificationEvent); err != nil {
-		s.logger.Errorf(
-			"Failed to send order Expire notification for order %s: %v",
-			req.OrderID,
-			err,
-		)
-
 		return err
 	}
 

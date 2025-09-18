@@ -1,3 +1,4 @@
+// Package handler provides handlers for payment reminder background tasks.
 package handler
 
 import (

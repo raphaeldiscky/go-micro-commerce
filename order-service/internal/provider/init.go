@@ -26,6 +26,7 @@ type Providers struct {
 	FulfillmentClient           client.FulfillmentClient
 	PaymentClient               client.PaymentClient
 	NotificationRequestProducer kafka.Producer
+	OrderLifecycleProducer      kafka.Producer
 	OrderService                service.OrderService
 	PaymentReminderService      service.PaymentReminderService
 	AsynqClient                 asynq.Client
@@ -98,11 +99,10 @@ func SetupGlobal(
 	paymentClient := client.NewPaymentClient(appLogger)
 
 	return &Providers{
-		DataStore:                   dataStore,
-		KafkaAdmin:                  kafkaAdmin,
-		TemporalClient:              nil, // will be set up later in worker
-		FulfillmentClient:           fulfillmentClient,
-		PaymentClient:               paymentClient,
-		NotificationRequestProducer: nil,
+		DataStore:         dataStore,
+		KafkaAdmin:        kafkaAdmin,
+		TemporalClient:    nil, // will be set up later in worker
+		FulfillmentClient: fulfillmentClient,
+		PaymentClient:     paymentClient,
 	}, nil
 }

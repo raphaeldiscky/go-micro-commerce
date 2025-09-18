@@ -1,12 +1,9 @@
 package provider
 
 import (
-	"context"
 	"fmt"
 
-	"github.com/IBM/sarama"
 	"github.com/hibiken/asynq"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgAsynq "github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
@@ -14,7 +11,6 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/task"
 )
@@ -68,7 +64,6 @@ type AsynqProvider struct {
 
 // SetupAsynq initializes asynq client, server and task handlers.
 func SetupAsynq(
-	ctx context.Context,
 	cfg *config.Config,
 	providers *Providers,
 	logger logger.Logger,
@@ -107,35 +102,11 @@ func SetupAsynq(
 		return nil, err
 	}
 
-	// Initialize notification producer if not already set
-	if providers.NotificationRequestProducer == nil {
-		// Create async producer for notifications
-		asyncProducer, errProducer := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
-			Brokers:        cfg.Kafka.Brokers,
-			RetryMax:       cfg.Kafka.RetryMax,
-			RetryInterval:  cfg.Kafka.RetryInterval,
-			FlushFrequency: cfg.Kafka.FlushFrequency,
-			ReturnSuccess:  cfg.Kafka.ReturnSuccess,
-			ReturnErrors:   cfg.Kafka.ReturnErrors,
-			Acks:           sarama.WaitForAll,
-		}, logger)
-		if errProducer != nil {
-			return nil, fmt.Errorf(
-				"failed to create kafka async producer for notifications: %w",
-				errProducer,
-			)
-		}
-
-		providers.NotificationRequestProducer = producer.NewNotificationRequestProducer(
-			asyncProducer,
-		)
-	}
-
 	// Create payment reminder task service
 	paymentReminderService := service.NewPaymentReminderService(
 		providers.NotificationRequestProducer,
+		providers.OrderLifecycleProducer,
 		providers.DataStore,
-		providers.OrderService,
 		logger,
 	)
 

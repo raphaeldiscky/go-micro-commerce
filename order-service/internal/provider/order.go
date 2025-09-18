@@ -50,6 +50,9 @@ func SetupOrder(
 	}
 
 	orderLifecycleProducer := producer.NewOrderLifecycleProducer(asyncProducer)
+	notificationRequestProducer := producer.NewNotificationRequestProducer(asyncProducer)
+	providers.OrderLifecycleProducer = orderLifecycleProducer
+	providers.NotificationRequestProducer = notificationRequestProducer
 
 	productClient, err := client.NewProductClient(cfg)
 	if err != nil {

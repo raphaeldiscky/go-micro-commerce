@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// TemporalRetryInterval is the retry interval for Temporal tasks.
-	TemporalRetryInterval = 500 * time.Millisecond
+	TemporalRetryInterval = 1 * time.Second
 	// TemporalBackoffCoefficient is the backoff coefficient for Temporal tasks.
 	TemporalBackoffCoefficient = 2.0
 	// TemporalMaxAttempts is the maximum number of attempts for Temporal tasks.

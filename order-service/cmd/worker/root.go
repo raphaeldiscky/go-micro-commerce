@@ -72,7 +72,7 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	httpWorker := NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers)
 
 	// Initialize asynq worker after HTTP worker to ensure dependencies are available
-	asynqWorker, err := NewAsynqWorker(ctx, wm.cfg, wm.logger, wm.providers)
+	asynqWorker, err := NewAsynqWorker(wm.cfg, wm.logger, wm.providers)
 	if err != nil {
 		return fmt.Errorf("failed to create asynq worker: %w", err)
 	}

@@ -1,6 +1,7 @@
 package temporal
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,7 +15,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
 
-//nolint:funlen // executeSagaSteps executes all saga steps in order to match saga implementation.
+//nolint:funlen,gocyclo,cyclop // executeSagaSteps executes all saga steps in order to match saga implementation.
 func executeSagaSteps(
 	ctx workflow.Context,
 	order *entity.Order,
@@ -125,16 +126,120 @@ func executeSagaSteps(
 		state.CompletedSteps[constant.SendPaymentRequiredNotificationStep] = true
 	}
 
-	// Step 6: Wait for Payment Confirmation
-	logger.Info("Executing WaitForPaymentConfirmation", "orderID", order.ID)
-
-	waitPaymentRequest := dto.WaitForPaymentConfirmationRequest{
-		Order: order,
-	}
+	// Step 6: Wait for Payment Confirmation with embedded reminders
+	logger.Info("Waiting for payment confirmation with reminders", "orderID", order.ID)
 
 	var paymentConfirmationResult dto.WaitForPaymentConfirmationResponse
-	if err := workflow.ExecuteActivity(ctx, string(constant.WaitForPaymentConfirmationStep), waitPaymentRequest).Get(ctx, &paymentConfirmationResult); err != nil {
-		return err
+
+	paymentReceived := false
+
+	// Create timer channels for reminders
+	firstReminderTimer := workflow.NewTimer(ctx, constant.FirstPaymentReminderDelay)
+	secondReminderTimer := workflow.NewTimer(ctx, constant.SecondPaymentReminderDelay)
+	expireOrderTimer := workflow.NewTimer(ctx, constant.ExpireOrderReminderDelay)
+
+	selector := workflow.NewSelector(ctx)
+
+	// Add timer callbacks for reminders
+	selector.AddFuture(firstReminderTimer, func(_ workflow.Future) {
+		if !paymentReceived {
+			logger.Info("Sending first payment reminder", "orderID", order.ID)
+			reminderRequest := dto.SendPaymentReminderNotificationRequest{
+				Order:            order,
+				ReservedProducts: state.ReservedProducts,
+				CustomerEmail:    state.CustomerEmail,
+				ReminderSequence: constant.FirstReminderSequence,
+				Subject:          constant.FirstPaymentReminderEmailSubject,
+			}
+
+			err := workflow.ExecuteActivity(ctx, string(constant.SendPaymentReminderNotificationStep), reminderRequest).
+				Get(ctx, nil)
+			if err != nil {
+				logger.Warn(
+					"Failed to send first payment reminder",
+					"orderID",
+					order.ID,
+					"error",
+					err,
+				)
+			}
+		}
+	})
+
+	selector.AddFuture(secondReminderTimer, func(_ workflow.Future) {
+		if !paymentReceived {
+			logger.Info("Sending second payment reminder", "orderID", order.ID)
+			reminderRequest := dto.SendPaymentReminderNotificationRequest{
+				Order:            order,
+				ReservedProducts: state.ReservedProducts,
+				CustomerEmail:    state.CustomerEmail,
+				ReminderSequence: constant.SecondReminderSequence,
+				Subject:          constant.SecondPaymentReminderEmailSubject,
+			}
+
+			err := workflow.ExecuteActivity(ctx, string(constant.SendPaymentReminderNotificationStep), reminderRequest).
+				Get(ctx, nil)
+			if err != nil {
+				logger.Warn(
+					"Failed to send second payment reminder",
+					"orderID",
+					order.ID,
+					"error",
+					err,
+				)
+			}
+		}
+	})
+
+	selector.AddFuture(expireOrderTimer, func(_ workflow.Future) {
+		if !paymentReceived {
+			logger.Info("Payment timeout reached, failing saga", "orderID", order.ID)
+		}
+	})
+
+	// Start payment wait activity with no retries
+	paymentActivityOptions := workflow.ActivityOptions{
+		StartToCloseTimeout: constant.WaitForPaymentConfirmationStepTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
+	}
+	paymentCtx := workflow.WithActivityOptions(ctx, paymentActivityOptions)
+
+	paymentFuture := workflow.ExecuteActivity(
+		paymentCtx,
+		string(constant.WaitForPaymentConfirmationStep),
+		dto.WaitForPaymentConfirmationRequest{Order: order},
+	)
+
+	// Add payment confirmation callback
+	selector.AddFuture(paymentFuture, func(f workflow.Future) {
+		if err := f.Get(ctx, &paymentConfirmationResult); err == nil {
+			paymentReceived = true
+
+			logger.Info(
+				"Payment confirmation received",
+				"orderID",
+				order.ID,
+				"paymentID",
+				paymentConfirmationResult.PaymentID,
+			)
+		}
+	})
+
+	// Wait for either payment or final timeout
+	for !paymentReceived {
+		selector.Select(ctx)
+
+		// Check if order expired
+		if expireOrderTimer.IsReady() {
+			return fmt.Errorf("payment timeout reached for order %s", order.ID)
+		}
+
+		// If payment received, break the loop
+		if paymentReceived {
+			break
+		}
 	}
 
 	// Update payment ID from confirmation
