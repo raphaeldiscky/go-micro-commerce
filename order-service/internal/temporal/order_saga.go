@@ -197,9 +197,17 @@ func executeSagaSteps(
 		}
 	})
 
-	// Start payment wait activity
+	// Start payment wait activity with no retries
+	paymentActivityOptions := workflow.ActivityOptions{
+		StartToCloseTimeout: constant.WaitForPaymentConfirmationStepTimeout,
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
+	}
+	paymentCtx := workflow.WithActivityOptions(ctx, paymentActivityOptions)
+
 	paymentFuture := workflow.ExecuteActivity(
-		ctx,
+		paymentCtx,
 		string(constant.WaitForPaymentConfirmationStep),
 		dto.WaitForPaymentConfirmationRequest{Order: order},
 	)
