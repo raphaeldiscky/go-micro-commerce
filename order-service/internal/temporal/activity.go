@@ -16,7 +16,6 @@ import (
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -44,6 +43,10 @@ type OrderActivities interface {
 		ctx context.Context,
 		req dto.SendPaymentRequiredNotificationRequest,
 	) error
+	SendPaymentReminderNotification(
+		ctx context.Context,
+		req dto.SendPaymentReminderNotificationRequest,
+	) error
 	WaitForPaymentConfirmation(
 		ctx context.Context,
 		req dto.WaitForPaymentConfirmationRequest,
@@ -68,30 +71,24 @@ type OrderActivities interface {
 
 // orderActivities implements order saga activities for Temporal workflows.
 type orderActivities struct {
-	dataStore                repository.DataStore
-	config                   *config.TemporalConfig
-	productClient            client.ProductClient
-	fulfillmentClient        client.FulfillmentClient
-	paymentClient            client.PaymentClient
-	paymentReminderScheduler *PaymentReminderScheduler
+	dataStore         repository.DataStore
+	productClient     client.ProductClient
+	fulfillmentClient client.FulfillmentClient
+	paymentClient     client.PaymentClient
 }
 
 // NewTemporalActivities creates a new OrderActivities instance.
 func NewTemporalActivities(
 	dataStore repository.DataStore,
-	config *config.TemporalConfig,
 	productClient client.ProductClient,
 	fulfillmentClient client.FulfillmentClient,
 	paymentClient client.PaymentClient,
-	paymentReminderScheduler *PaymentReminderScheduler,
 ) OrderActivities {
 	return &orderActivities{
-		dataStore:                dataStore,
-		config:                   config,
-		productClient:            productClient,
-		fulfillmentClient:        fulfillmentClient,
-		paymentClient:            paymentClient,
-		paymentReminderScheduler: paymentReminderScheduler,
+		dataStore:         dataStore,
+		productClient:     productClient,
+		fulfillmentClient: fulfillmentClient,
+		paymentClient:     paymentClient,
 	}
 }
 
@@ -243,8 +240,6 @@ func (ta *orderActivities) GetShippingCost(
 	logger.Info(
 		"Successfully received shipping cost",
 		"orderID", req.Order.ID,
-		"shippingCost", shippingCost,
-		"currency", req.Order.Currency,
 	)
 
 	return dto.GetShippingCostResponse{
@@ -324,10 +319,6 @@ func (ta *orderActivities) CreatePayment(
 		"Successfully received payment response",
 		"orderID",
 		order.ID,
-		"paymentID",
-		response.PaymentID,
-		"status",
-		response.Status,
 	)
 
 	return response.PaymentID, nil
@@ -397,25 +388,74 @@ func (ta *orderActivities) SendPaymentRequiredNotification(
 		return fmt.Errorf("failed to create payment required notification: %w", err)
 	}
 
-	reminderRequest := dto.PaymentReminderWorkflowRequest{
-		OrderID:       req.Order.ID,
-		CustomerEmail: req.CustomerEmail,
-		PaymentID:     uuid.Nil, // Will be set when payment is created
-		TotalPrice:    req.Order.TotalPrice,
-		Currency:      req.Order.Currency,
-		TaskQueue:     ta.config.TaskQueue,
-	}
+	return nil
+}
 
-	_, err = ta.paymentReminderScheduler.CreatePaymentReminderSchedule(ctx, reminderRequest)
-	if err != nil {
-		// Log error but don't fail the saga - reminder is nice-to-have
-		logger.Warn(
-			"Failed to create payment reminder schedule",
+// SendPaymentReminderNotification sends a payment reminder notification to the customer.
+func (ta *orderActivities) SendPaymentReminderNotification(
+	ctx context.Context,
+	req dto.SendPaymentReminderNotificationRequest,
+) error {
+	logger := activity.GetLogger(ctx)
+	logger.Info("Executing SendPaymentReminderNotification",
+		"orderID", req.Order.ID,
+		"sequence", req.ReminderSequence,
+	)
+
+	err := ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
+
+		templateType := pkgconstant.TemplateOrderPaymentReminder
+
+		notificationEvent := producer.NewNotificationRequestEvent(
+			req.Order,
+			req.ReservedProducts,
+			req.CustomerEmail,
+			"Customer Name",
+			nil,
+			templateType,
+			req.Subject,
+		)
+
+		payload, err := json.Marshal(notificationEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal notification event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   req.Order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create payment reminder notification event: %w", err)
+		}
+
+		logger.Info("Successfully created payment reminder notification",
 			"orderID", req.Order.ID,
+			"sequence", req.ReminderSequence,
+		)
+
+		return nil
+	})
+	if err != nil {
+		logger.Error(
+			"Failed to create payment reminder notification",
+			"orderID", req.Order.ID,
+			"sequence", req.ReminderSequence,
 			"error", err,
 		)
-	} else {
-		logger.Info("Successfully created payment reminder schedule", "orderID", req.Order.ID)
+
+		return fmt.Errorf("failed to create payment reminder notification: %w", err)
 	}
 
 	return nil
@@ -428,32 +468,6 @@ func (ta *orderActivities) WaitForPaymentConfirmation(
 ) (dto.WaitForPaymentConfirmationResponse, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing WaitForPaymentConfirmation", "orderID", req.Order.ID)
-
-	// Schedule payment reminders using Temporal child workflows
-	// This will start a separate workflow to handle payment reminders
-	reminderWorkflowRequest := dto.PaymentReminderWorkflowRequest{
-		OrderID:       req.Order.ID,
-		CustomerEmail: "", // Will be set from state
-		PaymentID:     uuid.Nil,
-		TotalPrice:    req.Order.TotalPrice,
-		Currency:      req.Order.Currency,
-		TaskQueue:     ta.config.TaskQueue,
-	}
-
-	_, err := ta.paymentReminderScheduler.CreatePaymentReminderSchedule(
-		ctx,
-		reminderWorkflowRequest,
-	)
-	if err != nil {
-		// Log error but don't fail the saga - reminder is nice-to-have
-		logger.Warn(
-			"Failed to create payment reminder schedule",
-			"orderID", req.Order.ID,
-			"error", err,
-		)
-	} else {
-		logger.Info("Successfully created payment reminder schedule", "orderID", req.Order.ID)
-	}
 
 	// Wait for payment confirmation
 	response, err := ta.paymentClient.WaitForPaymentResponse(
@@ -480,24 +494,7 @@ func (ta *orderActivities) WaitForPaymentConfirmation(
 		"Successfully received payment confirmation",
 		"orderID", req.Order.ID,
 		"paymentID", response.PaymentID,
-		"status", response.Status,
 	)
-
-	err = ta.paymentReminderScheduler.CancelPaymentReminderSchedule(ctx, req.Order.ID)
-	if err != nil {
-		// Log error but don't fail the saga - cancellation failure is not critical
-		logger.Warn(
-			"Failed to cancel payment reminder schedule",
-			"orderID", req.Order.ID,
-			"error", err,
-		)
-	} else {
-		logger.Info("Successfully cancelled payment reminder schedule", "orderID", req.Order.ID)
-	}
-
-	// Note: We don't signal the workflow directly because schedule-created workflows
-	// have auto-generated IDs with timestamps. Instead, the payment reminder workflow
-	// will check payment status before each reminder and terminate if payment received.
 
 	return dto.WaitForPaymentConfirmationResponse{
 		PaymentID: response.PaymentID,
@@ -575,9 +572,6 @@ func (ta *orderActivities) ProcessFulfillment(
 	logger.Info(
 		"Successfully received fulfillment response",
 		"orderID", order.ID,
-		"fulfillmentID", response.FulfillmentID,
-		"shippingCost", response.ShippingCost,
-		"trackingNumber", response.TrackingNumber,
 	)
 
 	return dto.ProcessFulfillmentResponse{
@@ -611,14 +605,6 @@ func (ta *orderActivities) SetFinalOrderPrices(
 		if err != nil {
 			return fmt.Errorf("failed to update order prices: %w", err)
 		}
-
-		logger.Info(
-			"Successfully updated order with prices",
-			"orderID", updatedOrder.ID,
-			"totalPrice", updatedOrder.TotalPrice.String(),
-			"totalTax", updatedOrder.TotalTax.String(),
-			"totalDiscount", updatedOrder.TotalDiscount.String(),
-		)
 
 		// Set the response with the updated order
 		response.UpdatedOrder = updatedOrder
@@ -672,7 +658,6 @@ func (ta *orderActivities) ConfirmProductsDeduction(
 	_, err := ta.productClient.ConfirmProductsDeduction(ctx, deductionItems)
 	if err != nil {
 		logger.Error("Failed to confirm stock deduction", "orderID", req.Order.ID, "error", err)
-
 		return fmt.Errorf("stock confirmation failed: %w", err)
 	}
 
@@ -690,8 +675,6 @@ func (ta *orderActivities) SendOrderConfirmedNotification(
 	logger.Info(
 		"Executing SendOrderConfirmedNotification",
 		"orderID", req.Order.ID,
-		"trackingNumber", req.TrackingNumber,
-		"customerEmail", req.CustomerEmail,
 	)
 
 	// Create notification request event
@@ -738,7 +721,6 @@ func (ta *orderActivities) SendOrderConfirmedNotification(
 	})
 	if err != nil {
 		logger.Error("Failed to create notification request", "orderID", req.Order.ID, "error", err)
-
 		return fmt.Errorf("failed to send order confirmation: %w", err)
 	}
 
@@ -764,16 +746,6 @@ func (ta *orderActivities) ReleaseProducts(
 
 	if ta.productClient == nil {
 		return errors.New("product service is unavailable")
-	}
-
-	for i := range req.Order.Items {
-		item := &req.Order.Items[i]
-		logger.Info(
-			"Releasing reserved product",
-			"quantity", item.Quantity,
-			"productID", item.ProductID,
-			"orderID", req.Order.ID,
-		)
 	}
 
 	releaseItems := make([]dto.ProductReservationItem, len(req.Order.Items))
@@ -808,8 +780,6 @@ func (ta *orderActivities) RefundPayment(
 		"Executing RefundPayment compensation",
 		"orderID",
 		req.Order.ID,
-		"paymentID",
-		req.PaymentID,
 	)
 
 	// For now, just log the compensation - payment client doesn't have RefundPayment method
@@ -835,16 +805,6 @@ func (ta *orderActivities) RestoreProducts(
 
 	if ta.productClient == nil {
 		return errors.New("product service is unavailable")
-	}
-
-	for i := range req.Order.Items {
-		item := &req.Order.Items[i]
-		logger.Info(
-			"Restoring deducted product",
-			"quantity", item.Quantity,
-			"productID", item.ProductID,
-			"orderID", req.Order.ID,
-		)
 	}
 
 	restoreItems := make([]dto.ProductRestorationItem, len(req.Order.Items))

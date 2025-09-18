@@ -1,4 +1,4 @@
-// Package temporal provides utilities for scheduling Temporal workflows.
+// Package temporal provides utilities for workflows with temporal Schedules.
 package temporal
 
 import (
@@ -11,34 +11,34 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
-// ReminderScheduler provides specialized scheduling for reminder workflows with calendar.
-type ReminderScheduler struct {
+// WorkflowScheduler provides specialized scheduling for Workflow workflows with calendar.
+type WorkflowScheduler struct {
 	manager ScheduleManager
 }
 
-// NewReminderScheduler creates a new ReminderScheduler.
-func NewReminderScheduler(manager ScheduleManager) *ReminderScheduler {
-	return &ReminderScheduler{
+// NewWorkflowScheduler creates a new WorkflowScheduler.
+func NewWorkflowScheduler(manager ScheduleManager) *WorkflowScheduler {
+	return &WorkflowScheduler{
 		manager: manager,
 	}
 }
 
-// ReminderScheduleRequest contains parameters for creating a reminder schedule.
-type ReminderScheduleRequest struct {
+// WorkflowScheduleRequest contains parameters for creating a Workflow schedule.
+type WorkflowScheduleRequest struct {
 	ID           string
 	WorkflowType string
 	Input        any
-	Config       ReminderConfig
+	Config       WorkflowConfig
 	TaskQueue    string
 	Description  string
 	StartAt      time.Time
 	EndAt        time.Time
 }
 
-// CreateReminderSchedule creates a reminder schedule with the specified configuration.
-func (rs *ReminderScheduler) CreateReminderSchedule(
+// CreateWorkflowSchedule creates a Workflow schedule with the specified configuration.
+func (rs *WorkflowScheduler) CreateWorkflowSchedule(
 	ctx context.Context,
-	req ReminderScheduleRequest,
+	req WorkflowScheduleRequest,
 ) (client.ScheduleHandle, error) {
 	if req.ID == "" {
 		return nil, errors.New("schedule ID is required")
@@ -49,7 +49,7 @@ func (rs *ReminderScheduler) CreateReminderSchedule(
 	}
 
 	if len(req.Config.ExecutionTimes) == 0 {
-		return nil, errors.New("reminder times are required")
+		return nil, errors.New("workflow execution times are required")
 	}
 
 	// Calculate specific execution times based on intervals
@@ -89,40 +89,31 @@ func (rs *ReminderScheduler) CreateReminderSchedule(
 	return rs.manager.Create(ctx, options)
 }
 
-// CancelReminderSchedule cancels an active reminder schedule.
-func (rs *ReminderScheduler) CancelReminderSchedule(ctx context.Context, scheduleID string) error {
+// CancelWorkflowSchedule cancels an active Workflow schedule.
+func (rs *WorkflowScheduler) CancelWorkflowSchedule(ctx context.Context, scheduleID string) error {
 	return rs.manager.Delete(ctx, scheduleID)
 }
 
-// PauseReminderSchedule pauses a reminder schedule.
-func (rs *ReminderScheduler) PauseReminderSchedule(
+// PauseWorkflowSchedule pauses a Workflow schedule.
+func (rs *WorkflowScheduler) PauseWorkflowSchedule(
 	ctx context.Context,
 	scheduleID, reason string,
 ) error {
 	return rs.manager.Pause(ctx, scheduleID, reason)
 }
 
-// ResumeReminderSchedule resumes a paused reminder schedule.
-func (rs *ReminderScheduler) ResumeReminderSchedule(
+// ResumeWorkflowSchedule resumes a paused Workflow schedule.
+func (rs *WorkflowScheduler) ResumeWorkflowSchedule(
 	ctx context.Context,
 	scheduleID, reason string,
 ) error {
 	return rs.manager.Resume(ctx, scheduleID, reason)
 }
 
-// GetReminderScheduleInfo retrieves information about a reminder schedule.
-func (rs *ReminderScheduler) GetReminderScheduleInfo(
+// GetWorkflowScheduleInfo retrieves information about a Workflow schedule.
+func (rs *WorkflowScheduler) GetWorkflowScheduleInfo(
 	ctx context.Context,
 	scheduleID string,
 ) (*client.ScheduleDescription, error) {
 	return rs.manager.Describe(ctx, scheduleID)
-}
-
-// ListReminderSchedules lists reminder schedules by type.
-func (rs *ReminderScheduler) ListReminderSchedules(
-	ctx context.Context,
-	reminderType ReminderType,
-) (client.ScheduleListIterator, error) {
-	query := fmt.Sprintf("ReminderType = '%s'", string(reminderType))
-	return rs.manager.List(ctx, query)
 }

@@ -10,35 +10,6 @@ const (
 )
 
 const (
-	// PaymentReminderTimeout is the timeout for payment reminders.
-	PaymentReminderTimeout = 30 * time.Minute
-	// PaymentReminderInitialInterval is the initial interval for payment reminders.
-	PaymentReminderInitialInterval = 1 * time.Second
-	// PaymentReminderBackoffCoefficient is the backoff coefficient for payment reminders.
-	PaymentReminderBackoffCoefficient = 2.0
-	// PaymentReminderMaxInterval is the Max interval for payment reminders.
-	PaymentReminderMaxInterval = 5 * time.Second
-	// PaymentReminderMaxAttempts is the Max number of attempts for payment reminders.
-	PaymentReminderMaxAttempts = 0
-)
-
-const (
-	// SendPaymentReminderActivity is the activity name for sending payment reminders.
-	SendPaymentReminderActivity WorkflowStep = "SendPaymentReminderActivity"
-	// CheckPaymentStatusActivity is the activity name for checking payment status.
-	CheckPaymentStatusActivity WorkflowStep = "CheckPaymentStatusActivity"
-	// ExpireOrderPaymentActivity is the activity name for expiring order payment.
-	ExpireOrderPaymentActivity WorkflowStep = "ExpireOrderPaymentActivity"
-	// CancelPaymentReminderScheduleActivity is the activity name for canceling payment reminder schedule.
-	CancelPaymentReminderScheduleActivity WorkflowStep = "CancelPaymentReminderScheduleActivity"
-)
-
-const (
-	// PaymentReminderWorkflowType is the workflow type for payment reminders.
-	PaymentReminderWorkflowType = "PaymentReminderWorkflow"
-)
-
-const (
 	// FirstPaymentReminderDelay is the delay for first task scheduling.
 	FirstPaymentReminderDelay = 10 * time.Minute
 	// SecondPaymentReminderDelay is the delay for second task scheduling.
@@ -46,13 +17,6 @@ const (
 	// ExpireOrderReminderDelay is the delay for cancel task scheduling.
 	ExpireOrderReminderDelay = 30 * time.Minute
 )
-
-// GetPaymentReminderWorkflowExecutionTimes returns the execution times for payment reminders.
-func GetPaymentReminderWorkflowExecutionTimes() []time.Duration {
-	return []time.Duration{
-		1 * time.Second, // trigger workflow right away after 1s
-	}
-}
 
 const (
 	// FirstPaymentReminderEmailSubject is the subject for the first payment reminder.

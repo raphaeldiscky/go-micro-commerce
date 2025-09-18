@@ -144,3 +144,12 @@ type WaitForPaymentConfirmationResponse struct {
 	PaymentID uuid.UUID              `json:"payment_id"`
 	Status    constant.PaymentStatus `json:"status"` // "completed", "timeout", "failed"
 }
+
+// SendPaymentReminderNotificationRequest represents input for sending payment reminder notification.
+type SendPaymentReminderNotificationRequest struct {
+	Order            *entity.Order    `json:"order"`
+	ReservedProducts []entity.Product `json:"reserved_products"`
+	CustomerEmail    string           `json:"customer_email"`
+	ReminderSequence int              `json:"reminder_sequence"`
+	Subject          string           `json:"subject"`
+}

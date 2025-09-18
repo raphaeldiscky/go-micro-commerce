@@ -123,6 +123,14 @@ const (
 	SendPaymentRequiredNotificationStepRetryDelay = 5 * time.Second
 	// SendPaymentRequiredNotificationStepTimeout is the timeout for the SendPaymentRequiredNotificationStep.
 	SendPaymentRequiredNotificationStepTimeout = 60 * time.Second
+	// SendPaymentReminderNotificationStep sends a payment reminder notification.
+	SendPaymentReminderNotificationStep WorkflowStep = "SendPaymentReminderNotification"
+	// SendPaymentReminderNotificationStepMaxRetries is the maximum number of retries for the SendPaymentReminderNotificationStep.
+	SendPaymentReminderNotificationStepMaxRetries int = 3
+	// SendPaymentReminderNotificationStepRetryDelay is the delay between retries for the SendPaymentReminderNotificationStep.
+	SendPaymentReminderNotificationStepRetryDelay = 2 * time.Second
+	// SendPaymentReminderNotificationStepTimeout is the timeout for the SendPaymentReminderNotificationStep.
+	SendPaymentReminderNotificationStepTimeout = 30 * time.Second
 )
 
 // ====== Step 6 ======.
