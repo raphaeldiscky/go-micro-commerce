@@ -11,7 +11,7 @@ const (
 
 const (
 	// PaymentReminderTimeout is the timeout for payment reminders.
-	PaymentReminderTimeout = 5 * time.Minute
+	PaymentReminderTimeout = 30 * time.Minute
 	// PaymentReminderInitialInterval is the initial interval for payment reminders.
 	PaymentReminderInitialInterval = 1 * time.Second
 	// PaymentReminderBackoffCoefficient is the backoff coefficient for payment reminders.
@@ -40,17 +40,17 @@ const (
 
 const (
 	// FirstPaymentReminderDelay is the delay for first task scheduling.
-	FirstPaymentReminderDelay = 10 * time.Second
+	FirstPaymentReminderDelay = 10 * time.Minute
 	// SecondPaymentReminderDelay is the delay for second task scheduling.
-	SecondPaymentReminderDelay = 20 * time.Second
+	SecondPaymentReminderDelay = 20 * time.Minute
 	// ExpireOrderReminderDelay is the delay for cancel task scheduling.
-	ExpireOrderReminderDelay = 30 * time.Second
+	ExpireOrderReminderDelay = 30 * time.Minute
 )
 
 // GetPaymentReminderWorkflowExecutionTimes returns the execution times for payment reminders.
 func GetPaymentReminderWorkflowExecutionTimes() []time.Duration {
 	return []time.Duration{
-		FirstPaymentReminderDelay,
+		1 * time.Second, // trigger workflow right away after 1s
 	}
 }
 

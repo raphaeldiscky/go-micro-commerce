@@ -185,7 +185,7 @@ func (s *orderService) CreateOrderWithTemporal(
 			UserAuth: &userAuth,
 		}
 
-		workflowOptions := s.temporalClient.CreateWorkflowOptions(savedOrder.ID)
+		workflowOptions := s.temporalClient.CreateOrderWorkflowOptions(savedOrder.ID)
 
 		workflowRun, wfErr := s.temporalClient.Client.ExecuteWorkflow(
 			ctx,

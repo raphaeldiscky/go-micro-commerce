@@ -495,6 +495,10 @@ func (ta *orderActivities) WaitForPaymentConfirmation(
 		logger.Info("Successfully cancelled payment reminder schedule", "orderID", req.Order.ID)
 	}
 
+	// Note: We don't signal the workflow directly because schedule-created workflows
+	// have auto-generated IDs with timestamps. Instead, the payment reminder workflow
+	// will check payment status before each reminder and terminate if payment received.
+
 	return dto.WaitForPaymentConfirmationResponse{
 		PaymentID: response.PaymentID,
 	}, nil

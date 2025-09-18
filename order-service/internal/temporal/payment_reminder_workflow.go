@@ -47,24 +47,56 @@ func PaymentReminderWorkflow(
 	// Process first reminder
 	if !processReminderStage(ctx, logger, req.OrderID, firstReminderTimer, paymentCancelledSignal,
 		constant.SendPaymentReminderActivity, firstReminderRequest) {
-		return nil // Payment was cancelled
+		logger.Info(
+			"Payment reminder workflow cancelled - payment received",
+			"orderID",
+			req.OrderID,
+		)
+
+		return temporal.NewApplicationError(
+			"PaymentReceived",
+			"PAYMENT_RECEIVED",
+			"Payment was received, workflow cancelled early",
+		)
 	}
 
 	// Process second reminder
 	if !processReminderStage(ctx, logger, req.OrderID, secondReminderTimer, paymentCancelledSignal,
 		constant.SendPaymentReminderActivity, secondReminderRequest) {
-		return nil // Payment was cancelled
+		logger.Info(
+			"Payment reminder workflow cancelled - payment received",
+			"orderID",
+			req.OrderID,
+		)
+
+		return temporal.NewApplicationError(
+			"PaymentReceived",
+			"PAYMENT_RECEIVED",
+			"Payment was received, workflow cancelled early",
+		)
 	}
 
 	// Process order expiration
-	processExpirationStage(
+	if !processExpirationStage(
 		ctx,
 		logger,
 		req.OrderID,
 		orderExpirationTimer,
 		paymentCancelledSignal,
 		expirationRequest,
-	)
+	) {
+		logger.Info(
+			"Payment reminder workflow cancelled - payment received",
+			"orderID",
+			req.OrderID,
+		)
+
+		return temporal.NewApplicationError(
+			"PaymentReceived",
+			"PAYMENT_RECEIVED",
+			"Payment was received, workflow cancelled early",
+		)
+	}
 
 	logger.Info("Payment Reminder Workflow completed", "orderID", req.OrderID)
 
@@ -137,7 +169,7 @@ func processExpirationStage(
 	timer workflow.Future,
 	cancelSignal workflow.ReceiveChannel,
 	request dto.ExpireOrderPaymentRequest,
-) {
+) bool {
 	selector := workflow.NewSelector(ctx)
 
 	selector.AddFuture(timer, func(_ workflow.Future) {
@@ -150,6 +182,13 @@ func processExpirationStage(
 	})
 
 	selector.Select(ctx)
+
+	// Check if we should continue (false if cancelled)
+	var signalValue any
+
+	ok := cancelSignal.ReceiveAsync(&signalValue)
+
+	return !ok
 }
 
 func handleReminderTimer(

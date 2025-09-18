@@ -28,6 +28,8 @@ type ScheduleOptions struct {
 	Description string
 	Spec        client.ScheduleSpec
 	Action      client.ScheduleAction
+	StartAt     *time.Time
+	EndAt       *time.Time
 }
 
 // ReminderConfig contains configuration for reminder schedules.

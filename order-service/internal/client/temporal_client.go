@@ -47,8 +47,10 @@ func NewTemporalClient(
 	}, nil
 }
 
-// CreateWorkflowOptions returns the options to create a Temporal workflow.
-func (tc *TemporalClient) CreateWorkflowOptions(orderID uuid.UUID) client.StartWorkflowOptions {
+// CreateOrderWorkflowOptions returns the options to create a Temporal workflow.
+func (tc *TemporalClient) CreateOrderWorkflowOptions(
+	orderID uuid.UUID,
+) client.StartWorkflowOptions {
 	return client.StartWorkflowOptions{
 		TaskQueue: tc.config.TaskQueue,
 		ID:        sagautils.CreateOrderSagaID(orderID),

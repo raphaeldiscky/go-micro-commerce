@@ -40,6 +40,18 @@ func (b *ScheduleConfigBuilder) WithDescription(description string) *ScheduleCon
 	return b
 }
 
+// WithStartAt sets the schedule start time.
+func (b *ScheduleConfigBuilder) WithStartAt(startAt time.Time) *ScheduleConfigBuilder {
+	b.options.StartAt = &startAt
+	return b
+}
+
+// WithEndAt sets the schedule end time.
+func (b *ScheduleConfigBuilder) WithEndAt(endAt time.Time) *ScheduleConfigBuilder {
+	b.options.EndAt = &endAt
+	return b
+}
+
 // WithIntervalSpec sets an interval-based schedule specification.
 func (b *ScheduleConfigBuilder) WithIntervalSpec(
 	interval time.Duration,
@@ -50,7 +62,7 @@ func (b *ScheduleConfigBuilder) WithIntervalSpec(
 		return b
 	}
 
-	b.options.Spec = client.ScheduleSpec{
+	spec := client.ScheduleSpec{
 		Intervals: []client.ScheduleIntervalSpec{
 			{
 				Every:  interval,
@@ -58,6 +70,15 @@ func (b *ScheduleConfigBuilder) WithIntervalSpec(
 			},
 		},
 	}
+	if b.options.StartAt != nil {
+		spec.StartAt = *b.options.StartAt
+	}
+
+	if b.options.EndAt != nil {
+		spec.EndAt = *b.options.EndAt
+	}
+
+	b.options.Spec = spec
 
 	return b
 }
@@ -80,9 +101,18 @@ func (b *ScheduleConfigBuilder) WithCronSpec(
 		}
 	}
 
-	b.options.Spec = client.ScheduleSpec{
+	spec := client.ScheduleSpec{
 		CronExpressions: []string{cronExpr},
 	}
+	if b.options.StartAt != nil {
+		spec.StartAt = *b.options.StartAt
+	}
+
+	if b.options.EndAt != nil {
+		spec.EndAt = *b.options.EndAt
+	}
+
+	b.options.Spec = spec
 
 	return b
 }
@@ -110,9 +140,18 @@ func (b *ScheduleConfigBuilder) WithCalendarSpec(
 		}
 	}
 
-	b.options.Spec = client.ScheduleSpec{
+	spec := client.ScheduleSpec{
 		Calendars: calendars,
 	}
+	if b.options.StartAt != nil {
+		spec.StartAt = *b.options.StartAt
+	}
+
+	if b.options.EndAt != nil {
+		spec.EndAt = *b.options.EndAt
+	}
+
+	b.options.Spec = spec
 
 	return b
 }
@@ -120,7 +159,7 @@ func (b *ScheduleConfigBuilder) WithCalendarSpec(
 // WithWorkflowAction sets a workflow action for the schedule.
 func (b *ScheduleConfigBuilder) WithWorkflowAction(
 	workflowType string,
-	input interface{},
+	input any,
 	options *client.StartWorkflowOptions,
 ) *ScheduleConfigBuilder {
 	if workflowType == "" {
@@ -130,7 +169,7 @@ func (b *ScheduleConfigBuilder) WithWorkflowAction(
 
 	action := &client.ScheduleWorkflowAction{
 		Workflow: workflowType,
-		Args:     []interface{}{input},
+		Args:     []any{input},
 	}
 
 	if options != nil {
@@ -168,7 +207,7 @@ func (b *ScheduleConfigBuilder) Build() (ScheduleOptions, error) {
 }
 
 // HourlySchedule creates a schedule that runs every hour.
-func HourlySchedule(id, workflowType string, input interface{}) *ScheduleConfigBuilder {
+func HourlySchedule(id, workflowType string, input any) *ScheduleConfigBuilder {
 	return NewScheduleConfigBuilder().
 		WithID(id).
 		WithDescription("Hourly schedule").
@@ -177,7 +216,7 @@ func HourlySchedule(id, workflowType string, input interface{}) *ScheduleConfigB
 }
 
 // DailySchedule creates a schedule that runs daily at a specific hour.
-func DailySchedule(id, workflowType string, input interface{}, hour int) *ScheduleConfigBuilder {
+func DailySchedule(id, workflowType string, input any, hour int) *ScheduleConfigBuilder {
 	cronExpr := fmt.Sprintf("0 %d * * *", hour)
 
 	return NewScheduleConfigBuilder().
@@ -190,7 +229,7 @@ func DailySchedule(id, workflowType string, input interface{}, hour int) *Schedu
 // WeeklySchedule creates a schedule that runs weekly on a specific day and hour.
 func WeeklySchedule(
 	id, workflowType string,
-	input interface{},
+	input any,
 	dayOfWeek, hour int,
 ) *ScheduleConfigBuilder {
 	cronExpr := fmt.Sprintf("0 %d * * %d", hour, dayOfWeek)
@@ -205,7 +244,7 @@ func WeeklySchedule(
 // IntervalSchedule creates a schedule with custom intervals.
 func IntervalSchedule(
 	id, workflowType string,
-	input interface{},
+	input any,
 	interval time.Duration,
 ) *ScheduleConfigBuilder {
 	return NewScheduleConfigBuilder().

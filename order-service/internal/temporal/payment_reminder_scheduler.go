@@ -34,10 +34,8 @@ func (prs *PaymentReminderScheduler) CreatePaymentReminderSchedule(
 	ctx context.Context,
 	req dto.PaymentReminderWorkflowRequest,
 ) (client.ScheduleHandle, error) {
-	scheduleID := sagautils.CreatePaymentReminderID(req.OrderID)
-
 	reminderWorkflowRequest := pkgtemporal.ReminderScheduleRequest{
-		ID:           scheduleID,
+		ID:           sagautils.CreatePaymentReminderID(req.OrderID),
 		WorkflowType: constant.PaymentReminderWorkflowType,
 		Input:        req,
 		Config: pkgtemporal.ReminderConfig{
@@ -47,6 +45,9 @@ func (prs *PaymentReminderScheduler) CreatePaymentReminderSchedule(
 		},
 		TaskQueue:   req.TaskQueue,
 		Description: fmt.Sprintf("Payment reminder for order %s", req.OrderID),
+		StartAt:     time.Now().UTC().Add(0),
+		// https://community.temporal.io/t/what-exactly-happens-when-the-endat-time-is-reached-for-a-schedule/16747
+		EndAt: time.Now().UTC().Add(1 * time.Minute), // will deleted after 1 week if no future task
 	}
 
 	return prs.reminderScheduler.CreateReminderSchedule(ctx, reminderWorkflowRequest)

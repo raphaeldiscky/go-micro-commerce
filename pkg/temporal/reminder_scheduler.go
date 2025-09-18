@@ -31,6 +31,8 @@ type ReminderScheduleRequest struct {
 	Config       ReminderConfig
 	TaskQueue    string
 	Description  string
+	StartAt      time.Time
+	EndAt        time.Time
 }
 
 // CreateReminderSchedule creates a reminder schedule with the specified configuration.
@@ -63,17 +65,18 @@ func (rs *ReminderScheduler) CreateReminderSchedule(
 
 	builder := NewScheduleConfigBuilder().
 		WithID(req.ID).
+		WithStartAt(req.StartAt).
+		WithEndAt(req.EndAt).
 		WithDescription(req.Description).
 		WithCalendarSpec(executionTimes)
 
 	// Set workflow action with task queue if provided
 	workflowOptions := &client.StartWorkflowOptions{
+		ID: req.ID,
 		RetryPolicy: &temporal.RetryPolicy{
 			MaximumAttempts: 1,
 		},
-	}
-	if req.TaskQueue != "" {
-		workflowOptions.TaskQueue = req.TaskQueue
+		TaskQueue: req.TaskQueue,
 	}
 
 	builder = builder.WithWorkflowAction(req.WorkflowType, req.Input, workflowOptions)
