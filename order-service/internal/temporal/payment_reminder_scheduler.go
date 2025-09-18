@@ -36,20 +36,20 @@ func (prs *PaymentReminderScheduler) CreatePaymentReminderSchedule(
 ) (client.ScheduleHandle, error) {
 	scheduleID := sagautils.CreatePaymentReminderID(req.OrderID)
 
-	reminderRequest := pkgtemporal.ReminderScheduleRequest{
+	reminderWorkflowRequest := pkgtemporal.ReminderScheduleRequest{
 		ID:           scheduleID,
 		WorkflowType: constant.PaymentReminderWorkflowType,
 		Input:        req,
 		Config: pkgtemporal.ReminderConfig{
 			Type:           pkgtemporal.ReminderTypePayment,
-			ExecutionTimes: constant.GetPaymentReminderExecutionTimes(),
+			ExecutionTimes: constant.GetPaymentReminderWorkflowExecutionTimes(),
 			Timezone:       time.UTC,
 		},
 		TaskQueue:   req.TaskQueue,
 		Description: fmt.Sprintf("Payment reminder for order %s", req.OrderID),
 	}
 
-	return prs.reminderScheduler.CreateReminderSchedule(ctx, reminderRequest)
+	return prs.reminderScheduler.CreateReminderSchedule(ctx, reminderWorkflowRequest)
 }
 
 // CancelPaymentReminderSchedule cancels a payment reminder schedule for an order.

@@ -40,9 +40,9 @@ func PaymentReminderWorkflow(
 	expirationRequest := createExpirationRequest(req, firstReminderRequest.CorrelationID)
 
 	// Setup timers
-	firstReminderTimer := workflow.NewTimer(ctx, constant.FirstPaymentReminderMinutes)
-	secondReminderTimer := workflow.NewTimer(ctx, constant.SecondPaymentReminderMinutes)
-	orderExpirationTimer := workflow.NewTimer(ctx, constant.CancelOrderDelayMinutes)
+	firstReminderTimer := workflow.NewTimer(ctx, constant.FirstPaymentReminderDelay)
+	secondReminderTimer := workflow.NewTimer(ctx, constant.SecondPaymentReminderDelay)
+	orderExpirationTimer := workflow.NewTimer(ctx, constant.ExpireOrderReminderDelay)
 
 	// Process first reminder
 	if !processReminderStage(ctx, logger, req.OrderID, firstReminderTimer, paymentCancelledSignal,
@@ -123,7 +123,7 @@ func processReminderStage(
 	selector.Select(ctx)
 
 	// Check if we should continue (false if cancelled)
-	var signalValue interface{}
+	var signalValue any
 
 	ok := cancelSignal.ReceiveAsync(&signalValue)
 

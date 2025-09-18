@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 )
 
 // ReminderScheduler provides specialized scheduling for reminder workflows with calendar.
@@ -66,7 +67,11 @@ func (rs *ReminderScheduler) CreateReminderSchedule(
 		WithCalendarSpec(executionTimes)
 
 	// Set workflow action with task queue if provided
-	workflowOptions := &client.StartWorkflowOptions{}
+	workflowOptions := &client.StartWorkflowOptions{
+		RetryPolicy: &temporal.RetryPolicy{
+			MaximumAttempts: 1,
+		},
+	}
 	if req.TaskQueue != "" {
 		workflowOptions.TaskQueue = req.TaskQueue
 	}

@@ -29,6 +29,8 @@ const (
 	CheckPaymentStatusActivity WorkflowStep = "CheckPaymentStatusActivity"
 	// ExpireOrderPaymentActivity is the activity name for expiring order payment.
 	ExpireOrderPaymentActivity WorkflowStep = "ExpireOrderPaymentActivity"
+	// CancelPaymentReminderScheduleActivity is the activity name for canceling payment reminder schedule.
+	CancelPaymentReminderScheduleActivity WorkflowStep = "CancelPaymentReminderScheduleActivity"
 )
 
 const (
@@ -36,12 +38,19 @@ const (
 	PaymentReminderWorkflowType = "PaymentReminderWorkflow"
 )
 
-// GetPaymentReminderExecutionTimes returns the execution times for payment reminders.
-func GetPaymentReminderExecutionTimes() []time.Duration {
+const (
+	// FirstPaymentReminderDelay is the delay for first task scheduling.
+	FirstPaymentReminderDelay = 10 * time.Second
+	// SecondPaymentReminderDelay is the delay for second task scheduling.
+	SecondPaymentReminderDelay = 20 * time.Second
+	// ExpireOrderReminderDelay is the delay for cancel task scheduling.
+	ExpireOrderReminderDelay = 30 * time.Second
+)
+
+// GetPaymentReminderWorkflowExecutionTimes returns the execution times for payment reminders.
+func GetPaymentReminderWorkflowExecutionTimes() []time.Duration {
 	return []time.Duration{
-		10 * time.Minute,
-		20 * time.Minute,
-		30 * time.Minute,
+		FirstPaymentReminderDelay,
 	}
 }
 

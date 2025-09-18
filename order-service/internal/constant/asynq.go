@@ -25,13 +25,6 @@ const (
 	// DefaultDelayedTaskCheckInterval is the default delayed task check interval.
 	DefaultDelayedTaskCheckInterval = 5 * time.Second
 
-	// FirstPaymentReminderMinutes is the delay for first task scheduling.
-	FirstPaymentReminderMinutes = 10 * time.Minute
-	// SecondPaymentReminderMinutes is the delay for second task scheduling.
-	SecondPaymentReminderMinutes = 20 * time.Minute
-	// CancelOrderDelayMinutes is the delay for cancel task scheduling.
-	CancelOrderDelayMinutes = 30 * time.Minute
-
 	// TaskRetentionHours is the retention period for completed tasks.
 	TaskRetentionHours = 24 * time.Hour
 )

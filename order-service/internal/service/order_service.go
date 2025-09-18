@@ -56,10 +56,6 @@ type OrderService interface {
 		status constant.OrderStatus,
 	) (*dto.OrderResponse, error)
 	CancelOrder(ctx context.Context, req *dto.CancelOrderRequest) error
-	ExpireOrderPayment(
-		ctx context.Context,
-		req *dto.ExpireOrderPaymentRequest,
-	) (*entity.Order, error)
 	NotifyOrderFailure(
 		ctx context.Context,
 		orderID uuid.UUID,
@@ -451,100 +447,6 @@ func (s *orderService) CancelOrder(
 	}
 
 	return nil
-}
-
-// ExpireOrderPayment expires an order payment when payment timeout occurs.
-func (s *orderService) ExpireOrderPayment(
-	ctx context.Context,
-	req *dto.ExpireOrderPaymentRequest,
-) (*entity.Order, error) {
-	s.logger.Infof(
-		"Expiring order payment for order %s",
-		req.OrderID,
-	)
-
-	lockRepo := s.dataStore.LockRepository()
-	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
-	ttl := constant.CreateOrderTTL
-	opt := &redislock.Options{
-		RetryStrategy: redislock.LimitRetry(
-			redislock.LinearBackoff(constant.CreateOrderRetryInterval),
-			constant.CreateOrderRetryLimit,
-		),
-	}
-
-	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err = lockRepo.Release(ctx, lock); err != nil {
-			s.logger.Warnf("failed to release lock: %v", err)
-		}
-	}()
-
-	var result *entity.Order
-
-	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		orderRepo := ds.OrderRepository()
-
-		// Check if order exists
-		existingOrder, errExist := orderRepo.FindByID(ctx, req.OrderID)
-		if errExist != nil {
-			return httperror.NewInternalServerError("failed to get order")
-		}
-
-		if existingOrder == nil {
-			return httperror.NewOrderNotFoundError()
-		}
-
-		// Check if order can be expired (only pending or processing orders)
-		if !existingOrder.CanBeCancelled() {
-			s.logger.Infof(
-				"Order %s cannot be expired in current status: %s, skipping",
-				req.OrderID,
-				existingOrder.Status,
-			)
-			result = existingOrder
-
-			return nil
-		}
-
-		// Update status to canceled due to payment timeout
-		if err = existingOrder.UpdateStatus(constant.OrderStatusPaymentExpired); err != nil {
-			return httperror.NewBadRequestError("failed to expire order entity")
-		}
-
-		// Save updated order
-		updatedOrder, updateErr := orderRepo.Update(ctx, existingOrder)
-		if updateErr != nil {
-			return httperror.NewInternalServerError("failed to expire order")
-		}
-
-		// Publish domain event
-		evt := producer.NewOrderLifecycleEvent(
-			existingOrder.ID,
-			constant.OrderStatusPaymentExpired,
-			updatedOrder.CustomerID,
-			updatedOrder.TotalPrice,
-			updatedOrder.Items,
-		)
-		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {
-			return httperror.NewInternalServerError("failed to send order expired event")
-		}
-
-		s.logger.Infof("Successfully expired order %s due to payment timeout", req.OrderID)
-
-		result = updatedOrder
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return result, nil
 }
 
 // RequestPaymentOrder initiates payment processing for an order by publishing a payment request producer.

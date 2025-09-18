@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/worker"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -51,6 +52,11 @@ func (tc *TemporalClient) CreateWorkflowOptions(orderID uuid.UUID) client.StartW
 	return client.StartWorkflowOptions{
 		TaskQueue: tc.config.TaskQueue,
 		ID:        sagautils.CreateOrderSagaID(orderID),
+		RetryPolicy: &temporal.RetryPolicy{
+			BackoffCoefficient: tc.config.BackoffCoefficient,
+			MaximumInterval:    tc.config.MaxInterval,
+			MaximumAttempts:    tc.config.MaxAttempts,
+		},
 	}
 }
 

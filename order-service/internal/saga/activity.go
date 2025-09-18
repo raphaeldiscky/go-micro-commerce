@@ -494,7 +494,7 @@ func (a *orderActivities) schedulePaymentReminders(
 		return nil, fmt.Errorf("failed to create immediate reminder task: %w", err)
 	}
 
-	taskInfo, err := a.asynqClient.EnqueueIn(constant.FirstPaymentReminderMinutes, firstTask)
+	taskInfo, err := a.asynqClient.EnqueueIn(constant.FirstPaymentReminderDelay, firstTask)
 	if err != nil {
 		return nil, fmt.Errorf("failed to enqueue immediate reminder: %w", err)
 	}
@@ -517,7 +517,7 @@ func (a *orderActivities) schedulePaymentReminders(
 		return nil, fmt.Errorf("failed to create final reminder task: %w", err)
 	}
 
-	taskInfo2, err := a.asynqClient.EnqueueIn(constant.SecondPaymentReminderMinutes, secondTask)
+	taskInfo2, err := a.asynqClient.EnqueueIn(constant.SecondPaymentReminderDelay, secondTask)
 	if err != nil {
 		return nil, fmt.Errorf("failed to enqueue final reminder: %w", err)
 	}
@@ -538,15 +538,15 @@ func (a *orderActivities) schedulePaymentReminders(
 		return nil, fmt.Errorf("failed to create cancel order task: %w", err)
 	}
 
-	taskInfo3, err := a.asynqClient.EnqueueIn(constant.CancelOrderDelayMinutes, expireTask)
+	taskExpireInfo, err := a.asynqClient.EnqueueIn(constant.ExpireOrderReminderDelay, expireTask)
 	if err != nil {
-		return nil, fmt.Errorf("failed to enqueue order cancellation: %w", err)
+		return nil, fmt.Errorf("failed to enqueue order expiration: %w", err)
 	}
 
-	taskIDs = append(taskIDs, taskInfo3.ID)
+	taskIDs = append(taskIDs, taskExpireInfo.ID)
 
 	a.logger.Infof(
-		"Successfully scheduled payment reminders and cancellation for order: %s with task IDs: %v",
+		"Successfully scheduled payment reminders and expiration for order: %s with task IDs: %v",
 		order.ID,
 		taskIDs,
 	)

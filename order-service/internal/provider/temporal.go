@@ -9,6 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/temporal"
 )
 
@@ -60,10 +61,18 @@ func SetupTemporal(
 	temporalClient.Worker.RegisterWorkflow(temporal.OrderSagaWorkflow)
 	temporalClient.Worker.RegisterWorkflow(temporal.PaymentReminderWorkflow)
 
+	// Create payment reminder service for temporal activities
+	paymentReminderService := service.NewPaymentReminderService(
+		providers.NotificationRequestProducer,
+		providers.OrderLifecycleProducer,
+		providers.DataStore,
+		appLogger,
+	)
+
 	// Create payment reminder activities
 	reminderActivities := temporal.NewPaymentReminderActivities(
 		providers.DataStore,
-		providers.PaymentReminderService,
+		paymentReminderService,
 	)
 
 	// Register order saga activities
