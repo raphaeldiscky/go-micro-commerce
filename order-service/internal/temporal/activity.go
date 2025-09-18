@@ -643,15 +643,13 @@ func (ta *orderActivities) ConfirmProductsDeduction(
 		)
 	}
 
-	deductionItems := make([]dto.ProductReservationItem, len(req.Order.Items))
+	deductionItems := make([]dto.ProductRestorationItem, len(req.Order.Items))
 
 	for i := range req.Order.Items {
 		orderItem := &req.Order.Items[i]
-		product := &req.ReservedProducts[i]
-		deductionItems[i] = dto.ProductReservationItem{
-			ProductID:       orderItem.ProductID,
-			Quantity:        orderItem.Quantity,
-			ExpectedVersion: product.Version,
+		deductionItems[i] = dto.ProductRestorationItem{
+			ProductID: orderItem.ProductID,
+			Quantity:  orderItem.Quantity,
 		}
 	}
 
@@ -748,11 +746,11 @@ func (ta *orderActivities) ReleaseProducts(
 		return errors.New("product service is unavailable")
 	}
 
-	releaseItems := make([]dto.ProductReservationItem, len(req.Order.Items))
+	releaseItems := make([]dto.ProductRestorationItem, len(req.Order.Items))
 
 	for i := range req.Order.Items {
 		orderItem := &req.Order.Items[i]
-		releaseItems[i] = dto.ProductReservationItem{
+		releaseItems[i] = dto.ProductRestorationItem{
 			ProductID: orderItem.ProductID,
 			Quantity:  orderItem.Quantity,
 		}

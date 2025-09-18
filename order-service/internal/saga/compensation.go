@@ -35,11 +35,11 @@ func (a *orderActivities) ReleaseProducts(
 	}
 
 	// Prepare release items
-	releaseItems := make([]dto.ProductReservationItem, len(order.Items))
+	releaseItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		releaseItems[i] = dto.ProductReservationItem{
+		releaseItems[i] = dto.ProductRestorationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}

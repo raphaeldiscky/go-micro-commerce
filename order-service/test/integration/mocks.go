@@ -60,7 +60,7 @@ func (m *MockProductGRPCClient) ReserveProducts(
 // ReleaseProducts simulates successful product release.
 func (m *MockProductGRPCClient) ReleaseProducts(
 	_ context.Context,
-	_ []dto.ProductReservationItem,
+	_ []dto.ProductRestorationItem,
 ) error {
 	return nil
 }
@@ -68,7 +68,7 @@ func (m *MockProductGRPCClient) ReleaseProducts(
 // ConfirmProductsDeduction simulates successful product deduction confirmation.
 func (m *MockProductGRPCClient) ConfirmProductsDeduction(
 	_ context.Context,
-	_ []dto.ProductReservationItem,
+	_ []dto.ProductRestorationItem,
 ) ([]entity.Product, error) {
 	return []entity.Product{}, nil
 }

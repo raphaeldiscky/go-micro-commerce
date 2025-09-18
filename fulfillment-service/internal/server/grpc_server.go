@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	grpcauth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
 
@@ -55,7 +54,7 @@ func (s *GRPCServer) GetShippingCost(
 
 // Health returns the health status of the product service.
 func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
-	return &pb.HealthResponse{Status: pkgconstant.GRPCHealthServing}, nil
+	return &pb.HealthResponse{Status: pb.HealthStatus_SERVING}, nil
 }
 
 // Start runs the gRPC server.

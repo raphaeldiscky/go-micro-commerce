@@ -50,16 +50,16 @@ type ProductRepository interface {
 		reservations []entity.ProductReservation,
 	) ([]*entity.Product, error)
 
-	// ReleaseProducts releases reserved stock for products atomically with optimistic locking
+	// ReleaseProducts releases reserved stock for products atomically without version checking
 	ReleaseProducts(
 		ctx context.Context,
-		reservations []entity.ProductReservation,
+		releases []entity.ProductRestoration,
 	) ([]*entity.Product, error)
 
-	// ConfirmProductsDeduction confirms stock deduction for products atomically with optimistic locking
+	// ConfirmProductsDeduction confirms stock deduction for products atomically without version checking
 	ConfirmProductsDeduction(
 		ctx context.Context,
-		reservations []entity.ProductReservation,
+		confirmations []entity.ProductRestoration,
 	) ([]*entity.Product, error)
 
 	// Delete removes a product by ID
@@ -568,7 +568,7 @@ func (r *productRepository) ReserveProducts(
 // ReleaseProducts releases reserved stock atomically.
 func (r *productRepository) ReleaseProducts(
 	ctx context.Context,
-	releases []entity.ProductReservation,
+	releases []entity.ProductRestoration,
 ) ([]*entity.Product, error) {
 	var updatedProducts []*entity.Product
 
@@ -576,18 +576,17 @@ func (r *productRepository) ReleaseProducts(
 
 	for _, release := range releases {
 		query := `
-            UPDATE products 
+            UPDATE products
             SET quantity = quantity + $2,
-                reserved_quantity = reserved_quantity - $2, 
-                version = version + 1, 
+                reserved_quantity = reserved_quantity - $2,
+                version = version + 1,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1 
-              AND version = $3 
+            WHERE id = $1
               AND reserved_quantity >= $2
             RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
         `
 
-		batch.Queue(query, release.ProductID, release.Quantity, release.ExpectedVersion)
+		batch.Queue(query, release.ProductID, release.Quantity)
 	}
 
 	results := r.db.SendBatch(ctx, batch)
@@ -633,7 +632,7 @@ func (r *productRepository) ReleaseProducts(
 // ConfirmProductsDeduction confirms stock deduction.
 func (r *productRepository) ConfirmProductsDeduction(
 	ctx context.Context,
-	confirmations []entity.ProductReservation,
+	confirmations []entity.ProductRestoration,
 ) ([]*entity.Product, error) {
 	var updatedProducts []*entity.Product
 
@@ -641,12 +640,11 @@ func (r *productRepository) ConfirmProductsDeduction(
 
 	for _, confirmation := range confirmations {
 		query := `
-            UPDATE products 
-            SET reserved_quantity = reserved_quantity - $2, 
-                version = version + 1, 
+            UPDATE products
+            SET reserved_quantity = reserved_quantity - $2,
+                version = version + 1,
                 updated_at = CURRENT_TIMESTAMP
-            WHERE id = $1 
-              AND version = $3 
+            WHERE id = $1
               AND reserved_quantity >= $2
             RETURNING id, name, price, quantity, version, reserved_quantity, created_at, updated_at
         `
@@ -655,7 +653,6 @@ func (r *productRepository) ConfirmProductsDeduction(
 			query,
 			confirmation.ProductID,
 			confirmation.Quantity,
-			confirmation.ExpectedVersion,
 		)
 	}
 

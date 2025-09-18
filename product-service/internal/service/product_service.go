@@ -430,16 +430,15 @@ func (s *productService) ReleaseProducts(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		productRepo := ds.ProductRepository()
 
-		reservations := make([]entity.ProductReservation, len(req.Items))
+		restorations := make([]entity.ProductRestoration, len(req.Items))
 		for i, item := range req.Items {
-			reservations[i] = entity.ProductReservation{
-				ProductID:       item.ProductID,
-				Quantity:        item.Quantity,
-				ExpectedVersion: item.ExpectedVersion,
+			restorations[i] = entity.ProductRestoration{
+				ProductID: item.ProductID,
+				Quantity:  item.Quantity,
 			}
 		}
 
-		_, err := productRepo.ReleaseProducts(ctx, reservations)
+		_, err := productRepo.ReleaseProducts(ctx, restorations)
 		if err != nil {
 			return fmt.Errorf("failed to release products: %w", err)
 		}
@@ -477,18 +476,17 @@ func (s *productService) ConfirmProductsDeduction(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		productRepo := ds.ProductRepository()
 
-		reservations := make([]entity.ProductReservation, len(req.Items))
+		restorations := make([]entity.ProductRestoration, len(req.Items))
 		for i, item := range req.Items {
-			reservations[i] = entity.ProductReservation{
-				ProductID:       item.ProductID,
-				Quantity:        item.Quantity,
-				ExpectedVersion: item.ExpectedVersion,
+			restorations[i] = entity.ProductRestoration{
+				ProductID: item.ProductID,
+				Quantity:  item.Quantity,
 			}
 		}
 
 		var err error
 
-		updatedProducts, err = productRepo.ConfirmProductsDeduction(ctx, reservations)
+		updatedProducts, err = productRepo.ConfirmProductsDeduction(ctx, restorations)
 		if err != nil {
 			return err
 		}

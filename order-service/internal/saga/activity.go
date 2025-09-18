@@ -558,7 +558,7 @@ func (a *orderActivities) schedulePaymentReminders(
 func (a *orderActivities) ConfirmProductsDeduction(
 	ctx context.Context,
 	order *entity.Order,
-	reservedProducts []entity.Product,
+	_ []entity.Product,
 ) error {
 	a.logger.Infof(
 		"Confirming inventory deduction for order: %s",
@@ -583,15 +583,13 @@ func (a *orderActivities) ConfirmProductsDeduction(
 		)
 	}
 
-	deductionItems := make([]dto.ProductReservationItem, len(order.Items))
+	deductionItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
 		orderItem := &order.Items[i]
-		product := &reservedProducts[i]
-		deductionItems[i] = dto.ProductReservationItem{
-			ProductID:       orderItem.ProductID,
-			Quantity:        orderItem.Quantity,
-			ExpectedVersion: product.Version,
+		deductionItems[i] = dto.ProductRestorationItem{
+			ProductID: orderItem.ProductID,
+			Quantity:  orderItem.Quantity,
 		}
 	}
 

@@ -1,6 +1,8 @@
 package temporal
 
 import (
+	"fmt"
+
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
@@ -48,13 +50,41 @@ func OrderSagaWorkflow(
 		)
 
 		// Execute compensation in reverse order
-		executeCompensation(ctx, req.Order, state, *req.UserAuth)
+		compensationErr := executeCompensation(ctx, req.Order, state, *req.UserAuth)
+		if compensationErr != nil {
+			logger.Error(
+				"Compensation failed, workflow marked as failed",
+				"compensationError", compensationErr,
+				"originalError", err,
+				"orderID", req.Order.ID,
+			)
+
+			return &dto.TemporalOrderSagaResponse{
+				Success: false,
+				OrderID: req.Order.ID,
+				Error: fmt.Sprintf(
+					"saga failed and compensation failed: %v (original error: %v)",
+					compensationErr,
+					err,
+				),
+			}, compensationErr
+		}
+
+		logger.Info(
+			"Saga failed but compensation completed successfully, workflow marked as completed",
+			"originalError", err,
+			"orderID", req.Order.ID,
+		)
 
 		return &dto.TemporalOrderSagaResponse{
-			Success: false,
-			OrderID: req.Order.ID,
-			Error:   err.Error(),
-		}, err
+			Success:     true, // Successful compensation means the workflow completed successfully
+			OrderID:     req.Order.ID,
+			Compensated: true,
+			Error: fmt.Sprintf(
+				"order processing failed but was compensated successfully: %v",
+				err,
+			),
+		}, nil
 	}
 
 	logger.Info("Order Saga Workflow completed successfully", "orderID", req.Order.ID)

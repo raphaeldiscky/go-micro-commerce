@@ -47,6 +47,7 @@ type TemporalOrderSagaResponse struct {
 	TotalPrice     decimal.Decimal `json:"total_price,omitempty"`
 	TotalDiscount  decimal.Decimal `json:"total_discount,omitempty"`
 	TotalTax       decimal.Decimal `json:"total_tax,omitempty"`
+	Compensated    bool            `json:"compensated,omitempty"`
 	Error          string          `json:"error,omitempty"`
 }
 

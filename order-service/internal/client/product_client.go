@@ -30,11 +30,11 @@ type ProductClient interface {
 	) (reservedProducts []entity.Product, err error)
 	ReleaseProducts(
 		ctx context.Context,
-		items []dto.ProductReservationItem,
+		items []dto.ProductRestorationItem,
 	) error
 	ConfirmProductsDeduction(
 		ctx context.Context,
-		items []dto.ProductReservationItem,
+		items []dto.ProductRestorationItem,
 	) (products []entity.Product, err error)
 	RestoreProducts(
 		ctx context.Context,
@@ -116,9 +116,9 @@ func (pc *productClient) ReserveProducts(
 	items []dto.ProductReservationItem,
 ) ([]entity.Product, error) {
 	// Convert to protobuf format
-	pbItems := make([]*pb.ProductQuantity, len(items))
+	pbItems := make([]*pb.ProductQuantityWithVersion, len(items))
 	for i, item := range items {
-		pbItems[i] = &pb.ProductQuantity{
+		pbItems[i] = &pb.ProductQuantityWithVersion{
 			ProductId: item.ProductID.String(),
 			Quantity:  item.Quantity,
 			Version:   item.ExpectedVersion,
@@ -161,7 +161,7 @@ func (pc *productClient) ReserveProducts(
 // ReleaseProducts releases reserved stock for products.
 func (pc *productClient) ReleaseProducts(
 	ctx context.Context,
-	items []dto.ProductReservationItem,
+	items []dto.ProductRestorationItem,
 ) error {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))
@@ -192,7 +192,7 @@ func (pc *productClient) ReleaseProducts(
 // ConfirmProductsDeduction confirms the reserved stock and removes reserved quantity.
 func (pc *productClient) ConfirmProductsDeduction(
 	ctx context.Context,
-	items []dto.ProductReservationItem,
+	items []dto.ProductRestorationItem,
 ) ([]entity.Product, error) {
 	// Convert to protobuf format
 	pbItems := make([]*pb.ProductQuantity, len(items))
@@ -200,7 +200,6 @@ func (pc *productClient) ConfirmProductsDeduction(
 		pbItems[i] = &pb.ProductQuantity{
 			ProductId: item.ProductID.String(),
 			Quantity:  item.Quantity,
-			Version:   item.ExpectedVersion,
 		}
 	}
 
@@ -286,7 +285,7 @@ func (pc *productClient) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if resp.GetStatus() != pkgconstant.GRPCHealthServing {
+	if resp.GetStatus() != pb.HealthStatus_SERVING {
 		return fmt.Errorf("service unhealthy: %s", resp.GetStatus())
 	}
 
