@@ -12,6 +12,28 @@ import (
 )
 
 // OrderSagaWorkflow implements the order processing saga using Temporal.
+//
+// This workflow orchestrates the complete order processing flow:
+// 1. Product reservation and order calculation
+// 2. Shipping cost calculation
+// 3. Final price setting with shipping
+// 4. Payment creation and processing
+// 5. Payment confirmation with reminders
+// 6. Fulfillment processing
+// 7. Product deduction confirmation
+// 8. Order confirmation notification
+//
+// The workflow supports automatic compensation (rollback) if any critical step fails.
+// Non-critical steps (like notifications) can fail without triggering compensation.
+//
+// Parameters:
+//   - ctx: Temporal workflow context for activity execution
+//   - req: Order saga request containing order, shipping, and user authentication
+//   - config: Temporal configuration for timeouts and retry policies
+//
+// Returns:
+//   - TemporalOrderSagaResponse: Result containing success status, order details, and any errors
+//   - error: Non-nil if the workflow fails catastrophically
 func OrderSagaWorkflow(
 	ctx workflow.Context,
 	req dto.TemporalOrderSagaRequest,
