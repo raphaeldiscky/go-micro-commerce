@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"go.temporal.io/sdk/activity"
@@ -110,9 +111,12 @@ func (ta *orderActivities) ReserveProducts(
 		return dto.ReserveProductsResponse{}, errors.New("product service is unavailable")
 	}
 
-	productIDs := make([]uuid.UUID, len(order.Items))
+	// Pre-allocate slices with known capacity
+	itemCount := len(order.Items)
+
+	productIDs := make([]uuid.UUID, 0, itemCount)
 	for i := range order.Items {
-		productIDs[i] = order.Items[i].ProductID
+		productIDs = append(productIDs, order.Items[i].ProductID)
 	}
 
 	products, err := ta.productClient.GetProducts(ctx, productIDs)
@@ -125,25 +129,25 @@ func (ta *orderActivities) ReserveProducts(
 			err,
 		)
 
-		return dto.ReserveProductsResponse{}, err
+		return dto.ReserveProductsResponse{}, fmt.Errorf("product service error: %w", err)
 	}
 
 	if len(products) != len(productIDs) {
 		return dto.ReserveProductsResponse{}, fmt.Errorf(
-			"not all products found: requested %d, found %d",
+			"product availability error: requested %d, found %d",
 			len(productIDs),
 			len(products),
 		)
 	}
 
-	// Create product map for quick lookup
-	productMap := make(map[uuid.UUID]*entity.Product)
-	for i, product := range products {
-		productMap[product.ID] = &products[i]
+	// Create product map for O(1) lookup
+	productMap := make(map[uuid.UUID]*entity.Product, len(products))
+	for i := range products {
+		productMap[products[i].ID] = &products[i]
 	}
 
-	// Prepare reservation items
-	reservations := make([]dto.ProductReservationItem, len(order.Items))
+	// Pre-allocate reservation items slice
+	reservations := make([]dto.ProductReservationItem, 0, itemCount)
 
 	for i := range order.Items {
 		item := &order.Items[i]
@@ -151,16 +155,16 @@ func (ta *orderActivities) ReserveProducts(
 
 		if !exists {
 			return dto.ReserveProductsResponse{}, fmt.Errorf(
-				"product %s not found",
+				"product validation error: product %s not found in catalog",
 				item.ProductID,
 			)
 		}
 
-		reservations[i] = dto.ProductReservationItem{
+		reservations = append(reservations, dto.ProductReservationItem{
 			ProductID:       item.ProductID,
 			Quantity:        item.Quantity,
 			ExpectedVersion: product.Version,
-		}
+		})
 	}
 
 	// Reserve products using product service
@@ -178,7 +182,8 @@ func (ta *orderActivities) ReserveProducts(
 		)
 	}
 
-	var orderItems []entity.OrderItem
+	// Pre-allocate order items slice
+	orderItems := make([]entity.OrderItem, 0, len(reservedProducts))
 
 	for i, product := range reservedProducts {
 		orderItem, rowErr := entity.NewOrderItem(
@@ -187,7 +192,10 @@ func (ta *orderActivities) ReserveProducts(
 			product.UnitPrice,
 		)
 		if rowErr != nil {
-			return dto.ReserveProductsResponse{}, rowErr
+			return dto.ReserveProductsResponse{}, fmt.Errorf(
+				"order item creation failed: %w",
+				rowErr,
+			)
 		}
 
 		orderItems = append(orderItems, *orderItem)
@@ -633,6 +641,9 @@ func (ta *orderActivities) ConfirmProductsDeduction(
 		return errors.New("product service is unavailable")
 	}
 
+	itemCount := len(req.Order.Items)
+
+	// Log items being confirmed
 	for i := range req.Order.Items {
 		item := &req.Order.Items[i]
 		logger.Info(
@@ -643,14 +654,15 @@ func (ta *orderActivities) ConfirmProductsDeduction(
 		)
 	}
 
-	deductionItems := make([]dto.ProductRestorationItem, len(req.Order.Items))
+	// Pre-allocate deduction items slice
+	deductionItems := make([]dto.ProductRestorationItem, 0, itemCount)
 
 	for i := range req.Order.Items {
 		orderItem := &req.Order.Items[i]
-		deductionItems[i] = dto.ProductRestorationItem{
+		deductionItems = append(deductionItems, dto.ProductRestorationItem{
 			ProductID: orderItem.ProductID,
 			Quantity:  orderItem.Quantity,
-		}
+		})
 	}
 
 	_, err := ta.productClient.ConfirmProductsDeduction(ctx, deductionItems)
@@ -746,14 +758,16 @@ func (ta *orderActivities) ReleaseProducts(
 		return errors.New("product service is unavailable")
 	}
 
-	releaseItems := make([]dto.ProductRestorationItem, len(req.Order.Items))
+	// Pre-allocate release items slice
+	itemCount := len(req.Order.Items)
+	releaseItems := make([]dto.ProductRestorationItem, 0, itemCount)
 
 	for i := range req.Order.Items {
 		orderItem := &req.Order.Items[i]
-		releaseItems[i] = dto.ProductRestorationItem{
+		releaseItems = append(releaseItems, dto.ProductRestorationItem{
 			ProductID: orderItem.ProductID,
 			Quantity:  orderItem.Quantity,
-		}
+		})
 	}
 
 	err := ta.productClient.ReleaseProducts(ctx, releaseItems)
@@ -778,16 +792,65 @@ func (ta *orderActivities) RefundPayment(
 		"Executing RefundPayment compensation",
 		"orderID",
 		req.Order.ID,
+		"paymentID",
+		req.PaymentID,
 	)
 
-	// For now, just log the compensation - payment client doesn't have RefundPayment method
-	// TODO: Implement actual payment refund when PaymentClient supports it
-	logger.Info("Payment refund compensation logged",
-		"orderID", req.Order.ID,
-		"paymentID", req.PaymentID,
-	)
+	return ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
 
-	return nil
+		// Create refund request event using proper structure (similar to saga implementation)
+		refundEvent := &producer.PaymentRefundEvent{
+			Metadata: event.Metadata{
+				EventID:     uuid.New(),
+				EventType:   kafka.PaymentRefundedEventType,
+				AggregateID: req.Order.ID,
+				OccurredAt:  time.Now().UTC(),
+				Source:      pkgconstant.OrderServiceName,
+			},
+			Payload: event.PaymentRefundPayload{
+				OrderID:    req.Order.ID,
+				CustomerID: req.Order.CustomerID,
+				Amount:     req.Order.TotalPrice,
+				Currency:   req.Order.Currency,
+				Reason:     "order_canceled",
+				Timestamp:  time.Now().UTC().Format(time.RFC3339),
+			},
+		}
+
+		payload, err := json.Marshal(refundEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal refund request event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "payment",
+			AggregateID:   req.Order.ID,
+			EventType:     kafka.PaymentRefundedEventType,
+			Topic:         kafka.PaymentRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create refund request event: %w", err)
+		}
+
+		logger.Info(
+			"Successfully created refund request for order",
+			"orderID",
+			req.Order.ID,
+			"paymentID",
+			req.PaymentID,
+		)
+
+		return nil
+	})
 }
 
 // RestoreProducts restores deducted products during compensation.
@@ -805,14 +868,16 @@ func (ta *orderActivities) RestoreProducts(
 		return errors.New("product service is unavailable")
 	}
 
-	restoreItems := make([]dto.ProductRestorationItem, len(req.Order.Items))
+	// Pre-allocate restore items slice
+	itemCount := len(req.Order.Items)
+	restoreItems := make([]dto.ProductRestorationItem, 0, itemCount)
 
 	for i := range req.Order.Items {
 		orderItem := &req.Order.Items[i]
-		restoreItems[i] = dto.ProductRestorationItem{
+		restoreItems = append(restoreItems, dto.ProductRestorationItem{
 			ProductID: orderItem.ProductID,
 			Quantity:  orderItem.Quantity,
-		}
+		})
 	}
 
 	_, err := ta.productClient.RestoreProducts(ctx, restoreItems)
@@ -835,11 +900,55 @@ func (ta *orderActivities) CancelShipping(
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing CancelShipping compensation", "shippingID", shippingID)
 
-	// For now, just log the compensation - fulfillment client doesn't have CancelShipping method
-	// TODO: Implement actual shipping cancellation when FulfillmentClient supports it
-	logger.Info("Shipping cancellation compensation logged",
-		"shippingID", shippingID,
-	)
+	if ta.fulfillmentClient == nil {
+		logger.Warn(
+			"Fulfillment client unavailable, skipping shipping cancellation",
+			"shippingID",
+			shippingID,
+		)
 
-	return nil
+		return nil
+	}
+
+	// TODO: Implement actual shipping cancellation when FulfillmentClient supports CancelShipping method
+	// For now, create an outbox event for shipping cancellation request
+	return ta.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		outboxRepo := ds.OutboxRepository()
+
+		// Create shipping cancellation event
+		cancellationEvent := map[string]any{
+			"shipping_id":  shippingID,
+			"action":       "cancel",
+			"reason":       "order_canceled",
+			"timestamp":    time.Now().UTC(),
+			"requested_by": pkgconstant.OrderServiceName,
+		}
+
+		payload, err := json.Marshal(cancellationEvent)
+		if err != nil {
+			return fmt.Errorf("failed to marshal shipping cancellation event: %w", err)
+		}
+
+		// Create outbox event for reliable delivery
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "fulfillment",
+			AggregateID:   shippingID,
+			EventType:     "ShippingCancelled", // Define this in kafka constants if needed
+			Topic:         kafka.FulfillmentRequestTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return fmt.Errorf("failed to create shipping cancellation event: %w", err)
+		}
+
+		logger.Info("Successfully created shipping cancellation request", "shippingID", shippingID)
+
+		return nil
+	})
 }

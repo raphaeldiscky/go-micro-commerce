@@ -15,6 +15,16 @@ type PaymentRequestPayload struct {
 	PaymentMethod string          `json:"payment_method"`
 }
 
+// PaymentRefundPayload holds the data for payment refund events.
+type PaymentRefundPayload struct {
+	OrderID    uuid.UUID       `json:"order_id"`
+	CustomerID uuid.UUID       `json:"customer_id"`
+	Amount     decimal.Decimal `json:"amount"`
+	Currency   string          `json:"currency"`
+	Reason     string          `json:"reason"`
+	Timestamp  string          `json:"timestamp"`
+}
+
 // PaymentLifecyclePayload holds the data for the Payment Lifecycle event.
 type PaymentLifecyclePayload struct {
 	PaymentID  uuid.UUID       `json:"payment_id"`

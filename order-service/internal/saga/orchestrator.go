@@ -3,7 +3,9 @@ package saga
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,6 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
@@ -19,6 +22,13 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+)
+
+// contextKey is a type for context keys to avoid collisions.
+type contextKey string
+
+const (
+	cancelFuncKey contextKey = "cancel_func"
 )
 
 // Orchestrator defines the interface for saga orchestration.
@@ -72,7 +82,7 @@ func NewSagaOrchestrator(
 		executor:         executor,
 		dataStore:        dataStore,
 		logger:           appLogger,
-		executionTimeout: cfg.Saga.DefaultExecutionTimeout,
+		executionTimeout: cfg.Saga.ExecutionTimeout,
 	}
 }
 
@@ -86,24 +96,17 @@ func (o *orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) e
 	sagaState, stateErr := sagaRepo.FindByOrderID(ctx, payload.Order.ID)
 	isCompensating := stateErr == nil && sagaState.Status == constant.SagaStatusCompensating
 
-	// Create a context with timeout for saga execution
-	sagaCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
-	defer cancel()
-
-	// Only extract and set user auth from context if this is a new saga execution
-	// For compensation, auth will be retrieved from stored saga metadata
-	if !isCompensating {
-		userAuth, err := echoutils.GetUserAuthContexts(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get user auth: %w", err)
-		}
-
-		// Add user auth to context for the first step to pick up
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxEmail, userAuth.Email)
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxRoles, userAuth.Roles)
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+	// Create execution context with auth if needed
+	sagaCtx, err := o.createSagaExecutionContext(ctx, !isCompensating)
+	if err != nil {
+		return fmt.Errorf("failed to create saga context: %w", err)
 	}
+
+	defer func() {
+		if cancel, ok := sagaCtx.Value(cancelFuncKey).(context.CancelFunc); ok {
+			cancel()
+		}
+	}()
 
 	// Execute the saga
 	if execErr := o.executor.Execute(sagaCtx, payload); execErr != nil {
@@ -122,39 +125,33 @@ func (o *orchestrator) ExecuteOrderSagaAsync(
 	ctx context.Context,
 	payload *Payload,
 ) {
-	// Create a derived context with user authentication for async saga execution
-	sagaCtx := echoutils.PropagateUserContextToBackground(ctx)
-	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, payload.Order.ID)
-	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
-
-	// Add timeout
-	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.executionTimeout)
-
 	go func() {
-		defer cancel()
-
 		o.logger.Infof("Starting async saga execution for order: %s", payload.Order.ID)
 
-		// Extract user auth from original context for async execution
-		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		// Create async execution context
+		sagaCtx, err := o.createAsyncSagaExecutionContext(ctx, payload.Order.ID)
 		if err != nil {
-			o.logger.Errorf("Failed to get user auth for async saga: %v", err)
+			o.logger.Errorf(
+				"Failed to create async saga context for order %s: %v",
+				payload.Order.ID,
+				err,
+			)
+
 			return
 		}
 
-		// Add user auth to saga context for the first step to pick up
-		authCtx := context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
-		authCtx = context.WithValue(authCtx, pkgconstant.CtxEmail, userAuth.Email)
-		authCtx = context.WithValue(authCtx, pkgconstant.CtxRoles, userAuth.Roles)
-		authCtx = context.WithValue(authCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+		defer func() {
+			if cancel, ok := sagaCtx.Value(cancelFuncKey).(context.CancelFunc); ok {
+				cancel()
+			}
+		}()
 
-		if execErr := o.executor.Execute(authCtx, payload); execErr != nil {
+		if execErr := o.executor.Execute(sagaCtx, payload); execErr != nil {
 			o.logger.Errorf(
 				"Async saga execution failed for order %s: %v",
 				payload.Order.ID,
 				execErr,
 			)
-
 			// Update order status to failed
 			// Note: In production, this should be done through proper event handling
 			o.handleSagaFailure(payload.Order.ID, execErr)
@@ -164,10 +161,11 @@ func (o *orchestrator) ExecuteOrderSagaAsync(
 	}()
 }
 
-// RecoverFailedSagas recovers and retries failed sagas.
+// RecoverFailedSagas recovers and retries failed sagas with controlled concurrency.
 func (o *orchestrator) RecoverFailedSagas(ctx context.Context) error {
 	o.logger.Info("Starting recovery of failed sagas")
 	stateRepo := o.dataStore.SagaStateRepository()
+
 	// Find failed or pending sagas
 	failedSagas, err := stateRepo.FindPendingOrFailed(ctx, pkgconstant.DefaultMaxLimit)
 	if err != nil {
@@ -176,85 +174,170 @@ func (o *orchestrator) RecoverFailedSagas(ctx context.Context) error {
 
 	o.logger.Infof("Found %d sagas to recover", len(failedSagas))
 
+	if len(failedSagas) == 0 {
+		return nil
+	}
+
+	// Use semaphore pattern to limit concurrent recoveries
+	semaphore := make(chan struct{}, o.executor.config.Saga.RecoveryBatchSize)
+
+	var wg sync.WaitGroup
+
+	orderRepo := o.dataStore.OrderRepository()
+
 	for _, sagaState := range failedSagas {
-		o.logger.Infof("Recovering saga %s for order %s", sagaState.ID, sagaState.OrderID)
+		wg.Add(1)
 
-		orderRepo := o.dataStore.OrderRepository()
+		go func(sagaState *entity.SagaState) {
+			defer wg.Done()
 
-		order, rowErr := orderRepo.FindByID(ctx, sagaState.OrderID)
-		if rowErr != nil {
-			if rowErr.Error() == constant.OrderNotFoundErrorMessage {
-				o.logger.Errorf("Order not found for saga recovery: %s", sagaState.OrderID)
-			} else {
-				o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, rowErr)
+			// Acquire semaphore
+			semaphore <- struct{}{}
+
+			defer func() { <-semaphore }()
+
+			o.logger.Infof("Recovering saga %s for order %s", sagaState.ID, sagaState.OrderID)
+
+			order, rowErr := orderRepo.FindByID(ctx, sagaState.OrderID)
+			if rowErr != nil {
+				if rowErr.Error() == constant.OrderNotFoundErrorMessage {
+					o.logger.Errorf("Order not found for saga recovery: %s", sagaState.OrderID)
+				} else {
+					o.logger.Errorf("Failed to retrieve order %s: %v", sagaState.OrderID, rowErr)
+				}
+
+				return
 			}
 
-			continue
-		}
-
-		// Retry the saga execution
-		go func(order *entity.Order, sagaState *entity.SagaState) {
-			// Use parent context instead of background context to preserve any available context values
-			// The executor will retrieve user auth from stored saga metadata
-			recoveryCtx, cancel := context.WithTimeout(
-				ctx,
-				o.executionTimeout,
-			)
+			// Create recovery context with timeout
+			recoveryCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
 			defer cancel()
 
-			// Extract shipping data from saga state if available
-			var shipping dto.Shipping
-
-			if shippingData, exists := sagaState.Data["shipping"]; exists {
-				if shippingMap, ok := shippingData.(map[string]any); ok {
-					// Convert map to ShippingRequest - this is a simplified approach
-					// In production, you might want to use JSON marshal/unmarshal for type safety
-					o.logger.Infof("Recovered shipping data from saga state for order %s", order.ID)
-
-					shipping = convertMapToShippingRequest(shippingMap)
-				}
-			} else {
-				// If no shipping data in saga state, we'll proceed with empty shipping
-				// This handles cases where saga failed before Step 1 completed
-				o.logger.Warnf("No shipping data found in saga state for order %s during recovery", order.ID)
-			}
+			// Extract shipping data from saga state using JSON serialization
+			shipping := o.extractShippingFromSagaState(sagaState)
 
 			payload := &Payload{
 				Order:    order,
 				Shipping: shipping,
 			}
 
-			if err = o.executor.Execute(recoveryCtx, payload); err != nil {
-				o.logger.Errorf("Failed to recover saga for order %s: %v", payload.Order.ID, err)
+			if execErr := o.executor.Execute(recoveryCtx, payload); execErr != nil {
+				o.logger.Errorf(
+					"Failed to recover saga for order %s: %v",
+					payload.Order.ID,
+					execErr,
+				)
 			} else {
 				o.logger.Infof("Successfully recovered saga for order %s", payload.Order.ID)
 			}
-		}(order, sagaState)
+		}(sagaState)
 	}
+
+	// Wait for all recoveries to complete
+	wg.Wait()
 
 	return nil
 }
 
 // handleSagaFailure handles saga failure by updating order status.
 func (o *orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
-	// This should be implemented based on your order service interface
+	// TODO: Implement order status update through proper event handling
 	o.logger.Errorf("Handling saga failure for order %s: %v", orderID, err)
-	// Update order status to failed/canceled
 }
 
-// convertMapToShippingRequest converts a map from saga state back to ShippingRequest.
-// This is a simplified implementation - in production consider using JSON marshal/unmarshal.
-func convertMapToShippingRequest(data map[string]any) dto.Shipping {
+// extractShippingFromSagaState extracts shipping data from saga state using JSON serialization.
+func (o *orchestrator) extractShippingFromSagaState(sagaState *entity.SagaState) dto.Shipping {
 	var shipping dto.Shipping
 
-	if carrierID, ok := data["carrier_id"].(string); ok {
-		shipping.CarrierID = carrierID
+	if shippingData, ok := sagaState.Data["shipping"]; ok {
+		shippingBytes, err := json.Marshal(shippingData)
+		if err != nil {
+			o.logger.Warnf("Failed to marshal shipping data for saga %s: %v", sagaState.ID, err)
+			return shipping
+		}
+
+		if unmarshalErr := json.Unmarshal(shippingBytes, &shipping); unmarshalErr != nil {
+			o.logger.Warnf(
+				"Failed to unmarshal shipping data for saga %s: %v",
+				sagaState.ID,
+				unmarshalErr,
+			)
+
+			return shipping
+		}
+
+		o.logger.Infof("Successfully extracted shipping data for saga %s", sagaState.ID)
+	} else {
+		o.logger.Warnf("No shipping data found in saga state %s", sagaState.ID)
 	}
 
-	// Add more field conversions as needed based on your ShippingRequest structure
-	// This is a basic implementation - you might want to use JSON marshal/unmarshal for robustness
-
 	return shipping
+}
+
+// addUserAuthToSagaContext adds user authentication to context.
+func (o *orchestrator) addUserAuthToSagaContext(
+	ctx context.Context,
+	userAuth pkgdto.UserAuthInfo,
+) context.Context {
+	ctx = context.WithValue(ctx, pkgconstant.CtxUserID, userAuth.UserID)
+	ctx = context.WithValue(ctx, pkgconstant.CtxEmail, userAuth.Email)
+	ctx = context.WithValue(ctx, pkgconstant.CtxRoles, userAuth.Roles)
+	ctx = context.WithValue(ctx, pkgconstant.CtxIsActive, userAuth.IsActive)
+
+	return ctx
+}
+
+// createSagaExecutionContext creates a context for saga execution with timeout and optional auth.
+func (o *orchestrator) createSagaExecutionContext(
+	ctx context.Context,
+	includeAuth bool,
+) (context.Context, error) {
+	// Create a context with timeout for saga execution
+	sagaCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
+
+	// Store cancel function in context for cleanup
+	sagaCtx = context.WithValue(sagaCtx, cancelFuncKey, cancel)
+
+	// Only extract and set user auth from context if requested
+	if includeAuth {
+		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("failed to get user auth: %w", err)
+		}
+
+		sagaCtx = o.addUserAuthToSagaContext(sagaCtx, userAuth)
+	}
+
+	return sagaCtx, nil
+}
+
+// createAsyncSagaExecutionContext creates a context for async saga execution.
+func (o *orchestrator) createAsyncSagaExecutionContext(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (context.Context, error) {
+	// Create a derived context with user authentication for async saga execution
+	sagaCtx := echoutils.PropagateUserContextToBackground(ctx)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, orderID)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
+
+	// Add timeout
+	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.executionTimeout)
+
+	// Store cancel function in context for cleanup
+	sagaCtx = context.WithValue(sagaCtx, cancelFuncKey, cancel)
+
+	// Extract user auth from original context for async execution
+	userAuth, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		cancel()
+		return nil, fmt.Errorf("failed to get user auth for async saga: %w", err)
+	}
+
+	sagaCtx = o.addUserAuthToSagaContext(sagaCtx, userAuth)
+
+	return sagaCtx, nil
 }
 
 // TriggerSagaCompensation triggers immediate compensation for the saga associated with the given order.

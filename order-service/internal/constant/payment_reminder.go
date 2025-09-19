@@ -11,11 +11,11 @@ const (
 
 const (
 	// FirstPaymentReminderDelay is the delay for first task scheduling.
-	FirstPaymentReminderDelay = 10 * time.Second
+	FirstPaymentReminderDelay = 10 * time.Minute
 	// SecondPaymentReminderDelay is the delay for second task scheduling.
-	SecondPaymentReminderDelay = 20 * time.Second
+	SecondPaymentReminderDelay = 20 * time.Minute
 	// ExpireOrderReminderDelay is the delay for cancel task scheduling.
-	ExpireOrderReminderDelay = 30 * time.Second
+	ExpireOrderReminderDelay = 25 * time.Minute
 )
 
 const (

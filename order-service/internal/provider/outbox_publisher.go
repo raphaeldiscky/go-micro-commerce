@@ -110,6 +110,7 @@ func SetupOutboxPublisher(
 	registry.Register(kafka.OrderCreatedEventType, &producer.OrderLifecycleEvent{})
 	registry.Register(kafka.OrderCanceledEventType, &producer.OrderLifecycleEvent{})
 	registry.Register(kafka.PaymentRequestedEventType, &producer.PaymentRequestEvent{})
+	registry.Register(kafka.PaymentRefundedEventType, &producer.PaymentRefundEvent{})
 	registry.Register(kafka.FulfillmentRequestedEventType, &producer.FulfillmentRequestEvent{})
 	registry.Register(kafka.NotificationRequestedEventType, &producer.NotificationRequestEvent{})
 

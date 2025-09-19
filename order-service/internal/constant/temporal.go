@@ -1,84 +1,43 @@
+// Package constant provides Temporal workflow configuration constants.
 package constant
 
 import "time"
 
+// Temporal Workflow Configuration
+// These constants define timeouts, retry policies, and other configuration
+// parameters for Temporal workflows and activities in the order processing saga.
 const (
-	// TemporalRetryInterval is the retry interval for Temporal tasks.
+	// TemporalRetryInterval is the base retry interval for Temporal activities.
+	// Used in config defaults and retry policies for failed activity executions.
 	TemporalRetryInterval = 1 * time.Second
-	// TemporalBackoffCoefficient is the backoff coefficient for Temporal tasks.
+
+	// TemporalBackoffCoefficient controls exponential backoff for activity retries.
+	// A value of 2.0 means each retry delay is doubled from the previous attempt.
 	TemporalBackoffCoefficient = 2.0
-	// TemporalMaxAttempts is the maximum number of attempts for Temporal tasks.
+
+	// TemporalMaxAttempts is the default maximum retry attempts for Temporal activities.
+	// Set to 1 to disable retries by default (can be overridden per activity).
 	TemporalMaxAttempts = 1
-	// TemporalMaxInterval is the maximum interval for Temporal tasks.
+
+	// TemporalMaxInterval is the maximum delay between retry attempts.
+	// Prevents exponential backoff from creating excessively long delays.
 	TemporalMaxInterval = 1 * time.Minute
-	// TemporalWorkflowTimeout is the start-to-close timeout for Temporal tasks.
-	TemporalWorkflowTimeout = 30 * time.Minute
-	// TemporalCompensationWorkflowTimeout is the start-to-close timeout for compensation Temporal tasks.
+
+	// TemporalWorkflowTimeout is the maximum execution time for the entire order saga workflow.
+	// This timeout covers all steps from product reservation to order confirmation.
+	TemporalWorkflowTimeout = 60 * time.Minute
+
+	// TemporalCompensationWorkflowTimeout is the maximum time allowed for compensation activities.
+	// Compensation includes refunds, product releases, and shipping cancellations.
+	// Shorter than main workflow timeout since compensation should be faster.
 	TemporalCompensationWorkflowTimeout = 15 * time.Minute
 )
 
-// Temporal Activity Timeouts and Retry Policies (matching saga step constants).
+// Activity Timeout Aliases
+// These constants provide convenient aliases to saga step timeouts for Temporal activities.
+// They ensure consistency between saga and Temporal implementations.
 const (
-	// ReserveProductsActivityTimeout is the timeout for ReserveProducts activity.
-	ReserveProductsActivityTimeout = ReserveProductsStepTimeout
-	// ReserveProductsActivityMaxRetries is the maximum number of retries for ReserveProducts activity.
-	ReserveProductsActivityMaxRetries = ReserveProductsStepMaxRetries
-	// ReserveProductsActivityRetryInterval is the retry interval for ReserveProducts activity.
-	ReserveProductsActivityRetryInterval = ReserveProductsStepRetryDelay
-
-	// GetShippingCostActivityTimeout is the timeout for GetShippingCost activity.
-	GetShippingCostActivityTimeout = GetShippingCostStepTimeout
-	// GetShippingCostActivityMaxRetries is the maximum number of retries for GetShippingCost activity.
-	GetShippingCostActivityMaxRetries = GetShippingCostStepMaxRetries
-	// GetShippingCostActivityRetryInterval is the retry interval for GetShippingCost activity.
-	GetShippingCostActivityRetryInterval = GetShippingCostStepRetryDelay
-
-	// SetFinalPricesActivityTimeout is the timeout for SetFinalPrices activity.
-	SetFinalPricesActivityTimeout = SetFinalPricesStepTimeout
-	// SetFinalPricesActivityMaxRetries is the maximum number of retries for SetFinalPrices activity.
-	SetFinalPricesActivityMaxRetries = SetFinalPricesStepMaxRetries
-	// SetFinalPricesActivityRetryInterval is the retry interval for SetFinalPrices activity.
-	SetFinalPricesActivityRetryInterval = SetFinalPricesStepRetryDelay
-
-	// CreatePaymentActivityTimeout is the timeout for CreatePayment activity.
-	CreatePaymentActivityTimeout = CreatePaymentStepTimeout
-	// CreatePaymentActivityMaxRetries is the maximum number of retries for CreatePayment activity.
-	CreatePaymentActivityMaxRetries = CreatePaymentStepMaxRetries
-	// CreatePaymentActivityRetryInterval is the retry interval for CreatePayment activity.
-	CreatePaymentActivityRetryInterval = CreatePaymentStepRetryDelay
-
-	// SendPaymentRequiredNotificationActivityTimeout is the timeout for SendPaymentRequiredNotification activity.
-	SendPaymentRequiredNotificationActivityTimeout = SendPaymentRequiredNotificationStepTimeout
-	// SendPaymentRequiredNotificationActivityMaxRetries is the maximum number of retries for SendPaymentRequiredNotification activity.
-	SendPaymentRequiredNotificationActivityMaxRetries = SendPaymentRequiredNotificationStepMaxRetries
-	// SendPaymentRequiredNotificationActivityRetryInterval is the retry interval for SendPaymentRequiredNotification activity.
-	SendPaymentRequiredNotificationActivityRetryInterval = SendPaymentRequiredNotificationStepRetryDelay
-
-	// WaitForPaymentConfirmationActivityTimeout is the timeout for WaitForPaymentConfirmation activity.
+	// WaitForPaymentConfirmationActivityTimeout is the timeout for payment confirmation activity.
+	// Matches the saga step timeout to maintain consistent behavior across implementations.
 	WaitForPaymentConfirmationActivityTimeout = WaitForPaymentConfirmationStepTimeout
-	// WaitForPaymentConfirmationActivityMaxRetries is the maximum number of retries for WaitForPaymentConfirmation activity.
-	WaitForPaymentConfirmationActivityMaxRetries = WaitForPaymentConfirmationStepMaxRetries
-	// WaitForPaymentConfirmationActivityRetryInterval is the retry interval for WaitForPaymentConfirmation activity.
-	WaitForPaymentConfirmationActivityRetryInterval = WaitForPaymentConfirmationStepRetryDelay
-
-	// ProcessFulfillmentActivityTimeout is the timeout for ProcessFulfillment activity.
-	ProcessFulfillmentActivityTimeout = ProcessFulfillmentStepTimeout
-	// ProcessFulfillmentActivityMaxRetries is the maximum number of retries for ProcessFulfillment activity.
-	ProcessFulfillmentActivityMaxRetries = ProcessFulfillmentStepMaxRetries
-	// ProcessFulfillmentActivityRetryInterval is the retry interval for ProcessFulfillment activity.
-	ProcessFulfillmentActivityRetryInterval = ProcessFulfillmentStepRetryDelay
-
-	// ConfirmProductsDeductionActivityTimeout is the timeout for ConfirmProductsDeduction activity.
-	ConfirmProductsDeductionActivityTimeout = ConfirmProductsDeductionStepTimeout
-	// ConfirmProductsDeductionActivityMaxRetries is the maximum number of retries for ConfirmProductsDeduction activity.
-	ConfirmProductsDeductionActivityMaxRetries = ConfirmProductsDeductionStepMaxRetries
-	// ConfirmProductsDeductionActivityRetryInterval is the retry interval for ConfirmProductsDeduction activity.
-	ConfirmProductsDeductionActivityRetryInterval = ConfirmProductsDeductionStepRetryDelay
-
-	// SendOrderConfirmedNotificationActivityTimeout is the timeout for SendOrderConfirmedNotification activity.
-	SendOrderConfirmedNotificationActivityTimeout = SendOrderConfirmedNotificationStepTimeout
-	// SendOrderConfirmedNotificationActivityMaxRetries is the maximum number of retries for SendOrderConfirmedNotification activity.
-	SendOrderConfirmedNotificationActivityMaxRetries = SendOrderConfirmedNotificationStepMaxRetries
-	// SendOrderConfirmedNotificationActivityRetryInterval is the retry interval for SendOrderConfirmedNotification activity.
-	SendOrderConfirmedNotificationActivityRetryInterval = SendOrderConfirmedNotificationStepRetryDelay
 )
