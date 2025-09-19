@@ -65,3 +65,18 @@ func (wc *WorkflowContext) GetXEmail() (string, error) {
 
 	return email, nil
 }
+
+// addUserAuthToContext is a centralized utility function for adding user auth to context for gRPC calls.
+func addUserAuthToContext(
+	ctx context.Context,
+	logger logger.Logger,
+	orderID uuid.UUID,
+) context.Context {
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		logger.Warnf("Failed to get user auth from context for order %s: %v", orderID, authErr)
+		return ctx
+	}
+
+	return echoutils.AddUserAuthToContexts(ctx, userAuth)
+}

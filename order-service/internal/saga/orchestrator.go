@@ -86,24 +86,17 @@ func (o *orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) e
 	sagaState, stateErr := sagaRepo.FindByOrderID(ctx, payload.Order.ID)
 	isCompensating := stateErr == nil && sagaState.Status == constant.SagaStatusCompensating
 
-	// Create a context with timeout for saga execution
-	sagaCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
-	defer cancel()
-
-	// Only extract and set user auth from context if this is a new saga execution
-	// For compensation, auth will be retrieved from stored saga metadata
-	if !isCompensating {
-		userAuth, err := echoutils.GetUserAuthContexts(ctx)
-		if err != nil {
-			return fmt.Errorf("failed to get user auth: %w", err)
-		}
-
-		// Add user auth to context for the first step to pick up
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxEmail, userAuth.Email)
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxRoles, userAuth.Roles)
-		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+	// Create execution context with auth if needed
+	sagaCtx, err := o.createSagaExecutionContext(ctx, !isCompensating)
+	if err != nil {
+		return fmt.Errorf("failed to create saga context: %w", err)
 	}
+
+	defer func() {
+		if cancel, ok := sagaCtx.Value("cancel").(context.CancelFunc); ok {
+			cancel()
+		}
+	}()
 
 	// Execute the saga
 	if execErr := o.executor.Execute(sagaCtx, payload); execErr != nil {
@@ -122,33 +115,28 @@ func (o *orchestrator) ExecuteOrderSagaAsync(
 	ctx context.Context,
 	payload *Payload,
 ) {
-	// Create a derived context with user authentication for async saga execution
-	sagaCtx := echoutils.PropagateUserContextToBackground(ctx)
-	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, payload.Order.ID)
-	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
-
-	// Add timeout
-	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.executionTimeout)
-
 	go func() {
-		defer cancel()
-
 		o.logger.Infof("Starting async saga execution for order: %s", payload.Order.ID)
 
-		// Extract user auth from original context for async execution
-		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		// Create async execution context
+		sagaCtx, err := o.createAsyncSagaExecutionContext(ctx, payload.Order.ID)
 		if err != nil {
-			o.logger.Errorf("Failed to get user auth for async saga: %v", err)
+			o.logger.Errorf(
+				"Failed to create async saga context for order %s: %v",
+				payload.Order.ID,
+				err,
+			)
+
 			return
 		}
 
-		// Add user auth to saga context for the first step to pick up
-		authCtx := context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
-		authCtx = context.WithValue(authCtx, pkgconstant.CtxEmail, userAuth.Email)
-		authCtx = context.WithValue(authCtx, pkgconstant.CtxRoles, userAuth.Roles)
-		authCtx = context.WithValue(authCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+		defer func() {
+			if cancel, ok := sagaCtx.Value("cancel").(context.CancelFunc); ok {
+				cancel()
+			}
+		}()
 
-		if execErr := o.executor.Execute(authCtx, payload); execErr != nil {
+		if execErr := o.executor.Execute(sagaCtx, payload); execErr != nil {
 			o.logger.Errorf(
 				"Async saga execution failed for order %s: %v",
 				payload.Order.ID,
@@ -255,6 +243,67 @@ func convertMapToShippingRequest(data map[string]any) dto.Shipping {
 	// This is a basic implementation - you might want to use JSON marshal/unmarshal for robustness
 
 	return shipping
+}
+
+// createSagaExecutionContext creates a context for saga execution with timeout and optional auth.
+func (o *orchestrator) createSagaExecutionContext(
+	ctx context.Context,
+	includeAuth bool,
+) (context.Context, error) {
+	// Create a context with timeout for saga execution
+	sagaCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
+
+	// Store cancel function in context for cleanup
+	sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxCancel, cancel)
+
+	// Only extract and set user auth from context if requested
+	if includeAuth {
+		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		if err != nil {
+			cancel()
+			return nil, fmt.Errorf("failed to get user auth: %w", err)
+		}
+
+		// Add user auth to context for the first step to pick up
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxEmail, userAuth.Email)
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxRoles, userAuth.Roles)
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+	}
+
+	return sagaCtx, nil
+}
+
+// createAsyncSagaExecutionContext creates a context for async saga execution.
+func (o *orchestrator) createAsyncSagaExecutionContext(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (context.Context, error) {
+	// Create a derived context with user authentication for async saga execution
+	sagaCtx := echoutils.PropagateUserContextToBackground(ctx)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxOrderIDKey, orderID)
+	sagaCtx = context.WithValue(sagaCtx, constant.CtxTraceIDKey, ctx.Value(constant.CtxTraceIDKey))
+
+	// Add timeout
+	sagaCtx, cancel := context.WithTimeout(sagaCtx, o.executionTimeout)
+
+	// Store cancel function in context for cleanup
+	sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxCancel, cancel)
+
+	// Extract user auth from original context for async execution
+	userAuth, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		cancel()
+		return nil, fmt.Errorf("failed to get user auth for async saga: %w", err)
+	}
+
+	// Add user auth to saga context for the first step to pick up
+	sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
+	sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxEmail, userAuth.Email)
+	sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxRoles, userAuth.Roles)
+	sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+
+	return sagaCtx, nil
 }
 
 // TriggerSagaCompensation triggers immediate compensation for the saga associated with the given order.

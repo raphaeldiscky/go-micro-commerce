@@ -607,81 +607,33 @@ func (e *Executor) isStepCompensated(state *entity.SagaState, stepName constant.
 	return false
 }
 
-// ToMap converts Metadata struct to map for persistence.
+// ToMap converts Metadata struct to map for persistence using JSON serialization.
 func (m *Metadata) ToMap() map[string]any {
-	result := make(map[string]any)
-
-	if len(m.ReservedProducts) > 0 {
-		result["reserved_products"] = m.ReservedProducts
+	data, err := json.Marshal(m)
+	if err != nil {
+		// Fallback to empty map on error
+		return make(map[string]any)
 	}
 
-	if m.CustomerEmail != "" {
-		result["customer_email"] = m.CustomerEmail
-	}
-
-	if m.Shipping != nil {
-		result["shipping"] = m.Shipping
-	}
-
-	if m.ShippingCost != nil {
-		result["shipping_cost"] = *m.ShippingCost
-	}
-
-	if m.FulfillmentID != nil {
-		result["fulfillment_id"] = *m.FulfillmentID
-	}
-
-	if m.TrackingNumber != nil {
-		result["tracking_number"] = *m.TrackingNumber
-	}
-
-	if m.PaymentID != nil {
-		result["payment_id"] = *m.PaymentID
-	}
-
-	if m.UserAuth != nil {
-		if authJSON, err := json.Marshal(m.UserAuth); err == nil {
-			result["user_auth"] = string(authJSON)
-		}
+	var result map[string]any
+	if err = json.Unmarshal(data, &result); err != nil {
+		// Fallback to empty map on error
+		return make(map[string]any)
 	}
 
 	return result
 }
 
-// FromMap converts map from persistence to Metadata struct.
+// FromMap converts map from persistence to Metadata struct using JSON serialization.
 func (m *Metadata) FromMap(data map[string]any) {
-	if val, ok := data["reserved_products"].([]entity.Product); ok {
-		m.ReservedProducts = val
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return // Silently ignore conversion errors
 	}
 
-	if val, ok := data["customer_email"].(string); ok {
-		m.CustomerEmail = val
-	}
-
-	if val, ok := data["shipping"].(*dto.Shipping); ok {
-		m.Shipping = val
-	}
-
-	if val, ok := data["shipping_cost"].(decimal.Decimal); ok {
-		m.ShippingCost = &val
-	}
-
-	if val, ok := data["fulfillment_id"].(uuid.UUID); ok {
-		m.FulfillmentID = &val
-	}
-
-	if val, ok := data["tracking_number"].(string); ok {
-		m.TrackingNumber = &val
-	}
-
-	if val, ok := data["payment_id"].(uuid.UUID); ok {
-		m.PaymentID = &val
-	}
-
-	if authStr, ok := data["user_auth"].(string); ok {
-		var userAuth pkgdto.UserAuthInfo
-		if err := json.Unmarshal([]byte(authStr), &userAuth); err == nil {
-			m.UserAuth = &userAuth
-		}
+	// Ignore errors to maintain backwards compatibility
+	err = json.Unmarshal(jsonData, m)
+	if err != nil {
+		return
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 // AuthInterceptor provides authentication interceptor for gRPC services.
@@ -56,16 +57,10 @@ func (a *AuthInterceptor) ServiceToServiceAuth() grpc.UnaryServerInterceptor {
 	}
 }
 
-// UserInfo holds user information extracted from metadata.
-type UserInfo struct {
-	UserID   uuid.UUID
-	Email    string
-	Roles    []string
-	IsActive bool
-}
-
 // extractUserInfoFromMetadata extracts user information from gRPC metadata.
-func (a *AuthInterceptor) extractUserInfoFromMetadata(ctx context.Context) (*UserInfo, error) {
+func (a *AuthInterceptor) extractUserInfoFromMetadata(
+	ctx context.Context,
+) (*dto.UserAuthInfo, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, constant.MissingMetadataErrorMessage)
@@ -109,7 +104,7 @@ func (a *AuthInterceptor) extractUserInfoFromMetadata(ctx context.Context) (*Use
 		return nil, status.Error(codes.Unauthenticated, constant.InvalidXIsActiveFormatErrorMessage)
 	}
 
-	return &UserInfo{
+	return &dto.UserAuthInfo{
 		UserID:   userID,
 		Email:    email,
 		Roles:    roles,

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
@@ -21,8 +20,6 @@ const (
 	ErrorTypeTimeout ErrorType = "timeout"
 	// ErrorTypeCancellation indicates a cancellation error.
 	ErrorTypeCancellation ErrorType = "cancellation"
-	// ErrorTypeBusinessRule indicates a business rule violation.
-	ErrorTypeBusinessRule ErrorType = "business_rule"
 )
 
 // Error represents a structured error in saga execution.
@@ -121,33 +118,4 @@ func CategorizeError(step constant.WorkflowStep, err error) *Error {
 		Cause:   err,
 		Step:    step,
 	}
-}
-
-// isTemporaryError checks if an error is temporary and can be retried.
-func isTemporaryError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	// Check for common temporary error patterns
-	errMsg := err.Error()
-
-	// Database connection errors
-	if strings.Contains(errMsg, "connection refused") ||
-		strings.Contains(errMsg, "timeout") ||
-		strings.Contains(errMsg, "temporary failure") ||
-		strings.Contains(errMsg, "service unavailable") ||
-		strings.Contains(errMsg, "rate limit") {
-		return true
-	}
-
-	// HTTP status code errors (5xx are temporary)
-	if strings.Contains(errMsg, "500") ||
-		strings.Contains(errMsg, "502") ||
-		strings.Contains(errMsg, "503") ||
-		strings.Contains(errMsg, "504") {
-		return true
-	}
-
-	return false
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -122,12 +121,7 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 	}
 
 	// Add user authentication info to context for gRPC calls
-	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
-	if authErr != nil {
-		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
-	} else {
-		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
-	}
+	ctx = addUserAuthToContext(ctx, a.logger, order.ID)
 
 	products, err := a.productClient.GetProducts(ctx, productIDs)
 	if err != nil {
@@ -180,19 +174,9 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 		a.logger.Errorf("Failed to reserve stock for order key %s: %v", order.IdempotencyKey, err)
 
 		// Categorize error based on type
-		if isTemporaryError(err) {
-			return nil, nil, NewRetriableError(
-				constant.ReserveProductsStep,
-				"temporary service error",
-				err,
-			)
-		}
+		sagaErr := CategorizeError(constant.ReserveProductsStep, err)
 
-		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsStep,
-			"stock reservation failed",
-			err,
-		)
+		return nil, nil, sagaErr
 	}
 
 	var orderItems []entity.OrderItem
@@ -238,12 +222,7 @@ func (a *orderActivities) GetShippingCost(
 	)
 
 	// Add user authentication info to context for gRPC calls
-	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
-	if authErr != nil {
-		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
-	} else {
-		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
-	}
+	ctx = addUserAuthToContext(ctx, a.logger, order.ID)
 
 	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order, shipping)
 	if err != nil {
@@ -595,22 +574,15 @@ func (a *orderActivities) ConfirmProductsDeduction(
 	}
 
 	// Add user authentication info to context for gRPC calls
-	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
-	if authErr != nil {
-		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
-	} else {
-		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
-	}
+	ctx = addUserAuthToContext(ctx, a.logger, order.ID)
 
 	_, err := a.productClient.ConfirmProductsDeduction(ctx, deductionItems)
 	if err != nil {
 		a.logger.Errorf("Failed to confirm stock deduction for order %s: %v", order.ID, err)
 
-		if isTemporaryError(err) {
-			return NewRetriableError("ConfirmStockDeduction", "temporary service error", err)
-		}
+		sagaErr := CategorizeError(constant.ConfirmProductsDeductionStep, err)
 
-		return NewNonRetriableError("ConfirmStockDeduction", "stock confirmation failed", err)
+		return sagaErr
 	}
 
 	a.logger.Infof("Successfully confirmed stock deduction for order: %s", order.ID)

@@ -105,11 +105,10 @@ func (a *orderActivities) RefundPayment(
 func (a *orderActivities) CancelShipping(_ context.Context, shippingID uuid.UUID) error {
 	a.logger.Infof("Canceling shipping: %s", shippingID)
 
-	// In a real implementation, you would call a shipping service API
-	// to cancel the shipping arrangement
+	// TODO: Implement proper shipping cancellation through fulfillment service
+	// This should call the fulfillment client to cancel the shipping arrangement
 
-	// For now, just log the cancellation
-	a.logger.Infof("Shipping %s canceled (mock implementation)", shippingID)
+	a.logger.Infof("Shipping %s canceled", shippingID)
 
 	return nil
 }
