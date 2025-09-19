@@ -14,6 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/job"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
@@ -31,6 +32,7 @@ type Providers struct {
 	PaymentReminderService      service.PaymentReminderService
 	AsynqClient                 asynq.Client
 	AsynqInspector              asynq.Inspector
+	SagaOrchestrator            saga.Orchestrator
 }
 
 // SetupGlobal initializes all providers.

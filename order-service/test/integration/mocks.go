@@ -110,12 +110,12 @@ type MockSagaOrchestrator struct{}
 
 // NewMockSagaManager creates a new mock saga orchestrator.
 func NewMockSagaManager() saga.Orchestrator {
-	return saga.Orchestrator{} // Return empty struct since it's a concrete type
+	return nil // Return empty struct since it's a concrete type
 }
 
 // NewMockSagaOrchestrator creates a new mock saga orchestrator.
 func NewMockSagaOrchestrator() saga.Orchestrator {
-	return saga.Orchestrator{} // Return empty struct
+	return nil // Return empty struct
 }
 
 // MockTemporalClient is a mock implementation of TemporalClient for testing.

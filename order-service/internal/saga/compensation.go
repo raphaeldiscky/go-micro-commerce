@@ -17,11 +17,11 @@ import (
 
 // ReleaseProducts releases reserved products.
 func (a *orderActivities) ReleaseProducts(
-	_ context.Context,
+	ctx context.Context,
 	order *entity.Order,
 ) error {
 	a.logger.Infof(
-		"Releasing inventory reservation for order: %s, reservation ID: %s",
+		"Releasing inventory reservation for order: %s",
 		order.ID,
 	)
 
@@ -45,8 +45,9 @@ func (a *orderActivities) ReleaseProducts(
 		}
 	}
 
-	// Release reserved products using product service
-	err := a.productClient.ReleaseProducts(context.Background(), releaseItems)
+	// Use the context as-is since it should already contain authentication info
+	// The WorkflowContext.AuthenticatedContext() method handles auth injection
+	err := a.productClient.ReleaseProducts(ctx, releaseItems)
 	if err != nil {
 		a.logger.Warnf(
 			"Failed to release reservation for order %s: %v (compensation may be incomplete)",
@@ -148,7 +149,8 @@ func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Ord
 		}
 	}
 
-	// Restore products stock using product service
+	// Use the context as-is since it should already contain authentication info
+	// The WorkflowContext.AuthenticatedContext() method handles auth injection
 	_, err := a.productClient.RestoreProducts(ctx, restorationItems)
 	if err != nil {
 		a.logger.Warnf(

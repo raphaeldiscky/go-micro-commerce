@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -128,6 +129,14 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 		productIDs[i] = order.Items[i].ProductID
 	}
 
+	// Add user authentication info to context for gRPC calls
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
+	} else {
+		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
+	}
+
 	products, err := a.productClient.GetProducts(ctx, productIDs)
 	if err != nil {
 		return nil, nil, err
@@ -235,6 +244,14 @@ func (a *orderActivities) GetShippingCost(
 		"Getting shipping cost from fulfillment service for order: %s with shipping details",
 		order.ID,
 	)
+
+	// Add user authentication info to context for gRPC calls
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
+	} else {
+		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
+	}
 
 	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order, shipping)
 	if err != nil {
@@ -591,6 +608,14 @@ func (a *orderActivities) ConfirmProductsDeduction(
 			ProductID: orderItem.ProductID,
 			Quantity:  orderItem.Quantity,
 		}
+	}
+
+	// Add user authentication info to context for gRPC calls
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
+	} else {
+		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
 	}
 
 	_, err := a.productClient.ConfirmProductsDeduction(ctx, deductionItems)
