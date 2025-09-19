@@ -116,14 +116,6 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 ) (*entity.Order, []entity.Product, error) {
 	a.logger.Infof("Get and Reserving products for order: %s", order.ID)
 
-	if a.productClient == nil {
-		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsStep,
-			"product service is unavailable",
-			nil,
-		)
-	}
-
 	productIDs := make([]uuid.UUID, len(order.Items))
 	for i := range order.Items {
 		productIDs[i] = order.Items[i].ProductID
@@ -581,14 +573,6 @@ func (a *orderActivities) ConfirmProductsDeduction(
 		"Confirming inventory deduction for order: %s",
 		order.ID,
 	)
-
-	if a.productClient == nil {
-		return NewNonRetriableError(
-			"ConfirmInventoryDeduction",
-			"product service is unavailable",
-			nil,
-		)
-	}
 
 	for i := range order.Items {
 		item := &order.Items[i]

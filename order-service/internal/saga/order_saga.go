@@ -35,7 +35,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
 			newOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
-				ctx.AuthenticatedContext(),
+				ctx.Context(),
 				payload.Order,
 			)
 			if err != nil {
@@ -67,7 +67,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			}, nil
 		},
 		Compensate: func(ctx *WorkflowContext, payload *Payload, data *Metadata) error {
-			return s.activities.ReleaseProducts(ctx.AuthenticatedContext(), payload.Order)
+			return s.activities.ReleaseProducts(ctx.Context(), payload.Order)
 		},
 	})
 
@@ -86,7 +86,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			}
 
 			shippingCost, err := s.activities.GetShippingCost(
-				ctx.AuthenticatedContext(),
+				ctx.Context(),
 				payload.Order,
 				data.Shipping,
 			)
@@ -123,7 +123,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
-			if err = s.activities.SetFinalOrderPrices(ctx.AuthenticatedContext(), payload.Order); err != nil {
+			if err = s.activities.SetFinalOrderPrices(ctx.Context(), payload.Order); err != nil {
 				return nil, err
 			}
 
@@ -144,7 +144,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
-			paymentID, err := s.activities.CreatePayment(ctx.AuthenticatedContext(), payload.Order)
+			paymentID, err := s.activities.CreatePayment(ctx.Context(), payload.Order)
 			if err != nil {
 				return nil, err
 			}
@@ -167,7 +167,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			}
 
 			return s.activities.RefundPayment(
-				ctx.AuthenticatedContext(),
+				ctx.Context(),
 				payload.Order,
 				*data.PaymentID,
 			)
@@ -194,7 +194,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			}
 
 			err := s.activities.SendPaymentRequiredNotification(
-				ctx.AuthenticatedContext(),
+				ctx.Context(),
 				payload.Order,
 				data.ReservedProducts,
 				data.CustomerEmail,
@@ -228,7 +228,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, errors.New("no customer email found")
 			}
 			paymentID, err := s.activities.WaitForPaymentConfirmation(
-				ctx.AuthenticatedContext(),
+				ctx.Context(),
 				payload.Order,
 				data.CustomerEmail,
 			)
@@ -259,7 +259,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			fulfillmentID, shippingCost, trackingNumber, err := s.activities.ProcessFulfillment(
-				ctx.AuthenticatedContext(),
+				ctx.Context(),
 				payload,
 			)
 			if err != nil {
@@ -279,8 +279,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if data.FulfillmentID == nil {
 				return nil
 			}
-
-			return s.activities.CancelShipping(ctx.AuthenticatedContext(), *data.FulfillmentID)
+			return s.activities.CancelShipping(ctx.Context(), *data.FulfillmentID)
 		},
 	})
 
@@ -298,14 +297,14 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, errors.New("no reserved products found")
 			}
 
-			if err := s.activities.ConfirmProductsDeduction(ctx.AuthenticatedContext(), payload.Order, data.ReservedProducts); err != nil {
+			if err := s.activities.ConfirmProductsDeduction(ctx.Context(), payload.Order, data.ReservedProducts); err != nil {
 				return nil, err
 			}
 
 			return &StepResult{Success: true}, nil
 		},
 		Compensate: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) error {
-			return s.activities.RestoreProducts(ctx.AuthenticatedContext(), payload.Order)
+			return s.activities.RestoreProducts(ctx.Context(), payload.Order)
 		},
 	})
 
@@ -337,7 +336,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, errors.New("no customer email found")
 			}
 
-			if err := s.activities.SendOrderConfirmedNotification(ctx.AuthenticatedContext(), payload.Order, data.ReservedProducts, data.TrackingNumber, data.CustomerEmail); err != nil {
+			if err := s.activities.SendOrderConfirmedNotification(ctx.Context(), payload.Order, data.ReservedProducts, data.TrackingNumber, data.CustomerEmail); err != nil {
 				// Non-critical step, log but don't fail the saga
 				ctx.logger.Warnf("Failed to send notification: %v", err)
 			}

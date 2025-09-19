@@ -2,6 +2,7 @@ package saga
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -42,41 +43,6 @@ type Metadata struct {
 	TrackingNumber   *string              `json:"tracking_number"`
 	PaymentID        *uuid.UUID           `json:"payment_id"`
 	UserAuth         *pkgdto.UserAuthInfo `json:"user_auth"`
-}
-
-// Merge adds data from another Metadata struct.
-func (m *Metadata) Merge(other *Metadata) {
-	if len(other.ReservedProducts) > 0 {
-		m.ReservedProducts = other.ReservedProducts
-	}
-
-	if other.CustomerEmail != "" {
-		m.CustomerEmail = other.CustomerEmail
-	}
-
-	if other.Shipping != nil {
-		m.Shipping = other.Shipping
-	}
-
-	if other.ShippingCost != nil {
-		m.ShippingCost = other.ShippingCost
-	}
-
-	if other.FulfillmentID != nil {
-		m.FulfillmentID = other.FulfillmentID
-	}
-
-	if other.TrackingNumber != nil {
-		m.TrackingNumber = other.TrackingNumber
-	}
-
-	if other.PaymentID != nil {
-		m.PaymentID = other.PaymentID
-	}
-
-	if other.UserAuth != nil {
-		m.UserAuth = other.UserAuth
-	}
 }
 
 // Step represents an enhanced saga step with retry logic.
@@ -465,7 +431,7 @@ func (e *Executor) compensateFromState(
 		}
 
 		if step.Compensate == nil {
-			e.logger.Warnf("No compensation function for step: %s", stepName)
+			e.logger.Infof("No compensation function for step: %s", stepName)
 
 			continue
 		}
@@ -674,7 +640,9 @@ func (m *Metadata) ToMap() map[string]any {
 	}
 
 	if m.UserAuth != nil {
-		result["user_auth"] = *m.UserAuth
+		if authJSON, err := json.Marshal(m.UserAuth); err == nil {
+			result["user_auth"] = string(authJSON)
+		}
 	}
 
 	return result
@@ -710,38 +678,10 @@ func (m *Metadata) FromMap(data map[string]any) {
 		m.PaymentID = &val
 	}
 
-	if val, exists := data["user_auth"]; exists {
-		m.UserAuth = convertToUserAuth(val)
-	}
-}
-
-// convertToUserAuth converts various types to UserAuthInfo for saga metadata deserialization.
-func convertToUserAuth(val any) *pkgdto.UserAuthInfo {
-	if userAuth, ok := val.(pkgdto.UserAuthInfo); ok {
-		return &userAuth
-	}
-
-	if authMap, isMap := val.(map[string]interface{}); isMap {
-		if userIDStr, hasUserID := authMap["user_id"].(string); hasUserID {
-			if userID, err := uuid.Parse(userIDStr); err == nil {
-				userAuth := &pkgdto.UserAuthInfo{UserID: userID}
-
-				if email, hasEmail := authMap["email"].(string); hasEmail {
-					userAuth.Email = email
-				}
-
-				if roles, hasRoles := authMap["roles"].([]string); hasRoles {
-					userAuth.Roles = roles
-				}
-
-				if isActive, hasActive := authMap["is_active"].(bool); hasActive {
-					userAuth.IsActive = isActive
-				}
-
-				return userAuth
-			}
+	if authStr, ok := data["user_auth"].(string); ok {
+		var userAuth pkgdto.UserAuthInfo
+		if err := json.Unmarshal([]byte(authStr), &userAuth); err == nil {
+			m.UserAuth = &userAuth
 		}
 	}
-
-	return nil
 }

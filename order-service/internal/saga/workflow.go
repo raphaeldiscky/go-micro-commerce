@@ -35,8 +35,19 @@ func NewWorkflowContext(
 	}
 }
 
-// Context returns the underlying context.
+// Context returns a context with proper gRPC authentication headers for external service calls.
 func (wc *WorkflowContext) Context() context.Context {
+	// First try to use the stored userAuth
+	if wc.userAuth != nil {
+		return echoutils.AddUserAuthToContexts(wc.ctx, *wc.userAuth)
+	}
+
+	// Fallback: try to extract user auth from context values (for compensation scenarios)
+	userAuth, err := echoutils.GetUserAuthContexts(wc.ctx)
+	if err == nil {
+		return echoutils.AddUserAuthToContexts(wc.ctx, userAuth)
+	}
+
 	return wc.ctx
 }
 
@@ -53,25 +64,4 @@ func (wc *WorkflowContext) GetXEmail() (string, error) {
 	}
 
 	return email, nil
-}
-
-// GetUserAuth returns the user authentication info.
-func (wc *WorkflowContext) GetUserAuth() *pkgdto.UserAuthInfo {
-	return wc.userAuth
-}
-
-// AuthenticatedContext returns a context with proper gRPC authentication headers for external service calls.
-func (wc *WorkflowContext) AuthenticatedContext() context.Context {
-	// First try to use the stored userAuth
-	if wc.userAuth != nil {
-		return echoutils.AddUserAuthToContexts(wc.ctx, *wc.userAuth)
-	}
-
-	// Fallback: try to extract user auth from context values (for compensation scenarios)
-	userAuth, err := echoutils.GetUserAuthContexts(wc.ctx)
-	if err == nil {
-		return echoutils.AddUserAuthToContexts(wc.ctx, userAuth)
-	}
-
-	return wc.ctx
 }

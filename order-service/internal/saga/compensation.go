@@ -25,15 +25,6 @@ func (a *orderActivities) ReleaseProducts(
 		order.ID,
 	)
 
-	if a.productClient == nil {
-		a.logger.Warnf(
-			"Product service unavailable, cannot release reservation for order: %s",
-			order.ID,
-		)
-
-		return nil // Don't fail compensation if service is down
-	}
-
 	// Prepare release items
 	releaseItems := make([]dto.ProductRestorationItem, len(order.Items))
 
@@ -45,8 +36,6 @@ func (a *orderActivities) ReleaseProducts(
 		}
 	}
 
-	// Use the context as-is since it should already contain authentication info
-	// The WorkflowContext.AuthenticatedContext() method handles auth injection
 	err := a.productClient.ReleaseProducts(ctx, releaseItems)
 	if err != nil {
 		a.logger.Warnf(
@@ -129,15 +118,6 @@ func (a *orderActivities) CancelShipping(_ context.Context, shippingID uuid.UUID
 func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Restoring products for order: %s", order.ID)
 
-	if a.productClient == nil {
-		a.logger.Warnf(
-			"Product service unavailable, cannot restore stock for order: %s",
-			order.ID,
-		)
-
-		return nil // Don't fail compensation if service is down
-	}
-
 	// Prepare restoration items
 	restorationItems := make([]dto.ProductRestorationItem, len(order.Items))
 
@@ -149,8 +129,6 @@ func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Ord
 		}
 	}
 
-	// Use the context as-is since it should already contain authentication info
-	// The WorkflowContext.AuthenticatedContext() method handles auth injection
 	_, err := a.productClient.RestoreProducts(ctx, restorationItems)
 	if err != nil {
 		a.logger.Warnf(
