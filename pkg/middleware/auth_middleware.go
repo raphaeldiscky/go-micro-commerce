@@ -40,7 +40,7 @@ func (m *AuthMiddleware) Authorization() echo.MiddlewareFunc {
 
 			claims, err := m.jwtUtils.ValidateAccessToken(accessToken)
 			if err != nil {
-				return err
+				return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
 			}
 
 			// Additional validation

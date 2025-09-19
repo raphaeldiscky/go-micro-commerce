@@ -11,7 +11,6 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	grpcauth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
 
@@ -141,7 +140,7 @@ func (s *GRPCServer) ConfirmProductsDeduction(
 ) (*pb.ConfirmProductsDeductionResponse, error) {
 	// Convert protobuf request to service DTO
 	deductReq := dto.ConfirmProductsDeductionRequest{
-		Items: make([]dto.ProductReservationItem, len(req.GetItems())),
+		Items: make([]dto.ProductRestorationItem, len(req.GetItems())),
 	}
 
 	for i, item := range req.GetItems() {
@@ -153,10 +152,9 @@ func (s *GRPCServer) ConfirmProductsDeduction(
 			}, err
 		}
 
-		deductReq.Items[i] = dto.ProductReservationItem{
-			ProductID:       productID,
-			Quantity:        item.GetQuantity(),
-			ExpectedVersion: item.GetVersion(),
+		deductReq.Items[i] = dto.ProductRestorationItem{
+			ProductID: productID,
+			Quantity:  item.GetQuantity(),
 		}
 	}
 
@@ -197,7 +195,7 @@ func (s *GRPCServer) ReleaseProducts(
 ) (*pb.ReleaseProductsResponse, error) {
 	// Convert protobuf request to service DTO
 	releaseReq := dto.ReleaseProductsRequest{
-		Items: make([]dto.ProductReservationItem, len(req.GetItems())),
+		Items: make([]dto.ProductRestorationItem, len(req.GetItems())),
 	}
 
 	for i, item := range req.GetItems() {
@@ -209,10 +207,9 @@ func (s *GRPCServer) ReleaseProducts(
 			}, err
 		}
 
-		releaseReq.Items[i] = dto.ProductReservationItem{
-			ProductID:       productID,
-			Quantity:        item.GetQuantity(),
-			ExpectedVersion: item.GetVersion(),
+		releaseReq.Items[i] = dto.ProductRestorationItem{
+			ProductID: productID,
+			Quantity:  item.GetQuantity(),
 		}
 	}
 
@@ -286,7 +283,7 @@ func (s *GRPCServer) RestoreProducts(
 
 // Health returns the health status of the product service.
 func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
-	return &pb.HealthResponse{Status: pkgconstant.GRPCHealthServing}, nil
+	return &pb.HealthResponse{Status: pb.HealthStatus_SERVING}, nil
 }
 
 // Start runs the gRPC server.

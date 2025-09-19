@@ -17,12 +17,12 @@ type ProductReservationItem struct {
 
 // ReleaseProductsRequest represents the request to release reserved products.
 type ReleaseProductsRequest struct {
-	Items []ProductReservationItem `json:"items" validate:"required,dive"`
+	Items []ProductRestorationItem `json:"items" validate:"required,dive"`
 }
 
 // ConfirmProductsDeductionRequest represents the request to confirm product deduction.
 type ConfirmProductsDeductionRequest struct {
-	Items []ProductReservationItem `json:"items" validate:"required,dive"`
+	Items []ProductRestorationItem `json:"items" validate:"required,dive"`
 }
 
 // RestoreProductsRequest represents the request to restore products.

@@ -142,7 +142,7 @@ const (
 	// WaitForPaymentConfirmationStepRetryDelay is the delay between retries for the WaitForPaymentConfirmationStep.
 	WaitForPaymentConfirmationStepRetryDelay = 5 * time.Second
 	// WaitForPaymentConfirmationStepTimeout is the timeout for the WaitForPaymentConfirmationStep.
-	WaitForPaymentConfirmationStepTimeout = 30 * time.Minute
+	WaitForPaymentConfirmationStepTimeout = 10 * time.Minute
 )
 
 // ====== Step 7 ======.

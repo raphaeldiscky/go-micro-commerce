@@ -78,6 +78,7 @@ func SetupOrder(
 		appLogger,
 		cfg,
 	)
+	providers.SagaOrchestrator = sagaOrchestrator
 
 	// Setup Temporal client
 	temporalClient := SetupTemporal(cfg, appLogger, providers)

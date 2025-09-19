@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -115,17 +116,17 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 ) (*entity.Order, []entity.Product, error) {
 	a.logger.Infof("Get and Reserving products for order: %s", order.ID)
 
-	if a.productClient == nil {
-		return nil, nil, NewNonRetriableError(
-			constant.ReserveProductsStep,
-			"product service is unavailable",
-			nil,
-		)
-	}
-
 	productIDs := make([]uuid.UUID, len(order.Items))
 	for i := range order.Items {
 		productIDs[i] = order.Items[i].ProductID
+	}
+
+	// Add user authentication info to context for gRPC calls
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
+	} else {
+		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
 	}
 
 	products, err := a.productClient.GetProducts(ctx, productIDs)
@@ -235,6 +236,14 @@ func (a *orderActivities) GetShippingCost(
 		"Getting shipping cost from fulfillment service for order: %s with shipping details",
 		order.ID,
 	)
+
+	// Add user authentication info to context for gRPC calls
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
+	} else {
+		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
+	}
 
 	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order, shipping)
 	if err != nil {
@@ -558,20 +567,12 @@ func (a *orderActivities) schedulePaymentReminders(
 func (a *orderActivities) ConfirmProductsDeduction(
 	ctx context.Context,
 	order *entity.Order,
-	reservedProducts []entity.Product,
+	_ []entity.Product,
 ) error {
 	a.logger.Infof(
 		"Confirming inventory deduction for order: %s",
 		order.ID,
 	)
-
-	if a.productClient == nil {
-		return NewNonRetriableError(
-			"ConfirmInventoryDeduction",
-			"product service is unavailable",
-			nil,
-		)
-	}
 
 	for i := range order.Items {
 		item := &order.Items[i]
@@ -583,16 +584,22 @@ func (a *orderActivities) ConfirmProductsDeduction(
 		)
 	}
 
-	deductionItems := make([]dto.ProductReservationItem, len(order.Items))
+	deductionItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
 		orderItem := &order.Items[i]
-		product := &reservedProducts[i]
-		deductionItems[i] = dto.ProductReservationItem{
-			ProductID:       orderItem.ProductID,
-			Quantity:        orderItem.Quantity,
-			ExpectedVersion: product.Version,
+		deductionItems[i] = dto.ProductRestorationItem{
+			ProductID: orderItem.ProductID,
+			Quantity:  orderItem.Quantity,
 		}
+	}
+
+	// Add user authentication info to context for gRPC calls
+	userAuth, authErr := echoutils.GetUserAuthContexts(ctx)
+	if authErr != nil {
+		a.logger.Warnf("Failed to get user auth from context for order %s: %v", order.ID, authErr)
+	} else {
+		ctx = echoutils.AddUserAuthToContexts(ctx, userAuth)
 	}
 
 	_, err := a.productClient.ConfirmProductsDeduction(ctx, deductionItems)

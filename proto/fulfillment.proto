@@ -13,7 +13,7 @@ service FulfillmentService {
 
 message GetShippingCostRequest {
   string currency = 1;
-  Shipping shipping = 3;
+  Shipping shipping = 2;
 }
 
 message GetShippingCostResponse {
@@ -55,7 +55,7 @@ message FromAddress {
 }
 
 message HealthResponse {
-  string status = 1; // e.g., "SERVING"
+  HealthStatus status = 1; // e.g., "SERVING"
 }
 
 enum HealthStatus {

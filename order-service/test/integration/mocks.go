@@ -60,7 +60,7 @@ func (m *MockProductGRPCClient) ReserveProducts(
 // ReleaseProducts simulates successful product release.
 func (m *MockProductGRPCClient) ReleaseProducts(
 	_ context.Context,
-	_ []dto.ProductReservationItem,
+	_ []dto.ProductRestorationItem,
 ) error {
 	return nil
 }
@@ -68,7 +68,7 @@ func (m *MockProductGRPCClient) ReleaseProducts(
 // ConfirmProductsDeduction simulates successful product deduction confirmation.
 func (m *MockProductGRPCClient) ConfirmProductsDeduction(
 	_ context.Context,
-	_ []dto.ProductReservationItem,
+	_ []dto.ProductRestorationItem,
 ) ([]entity.Product, error) {
 	return []entity.Product{}, nil
 }
@@ -110,12 +110,12 @@ type MockSagaOrchestrator struct{}
 
 // NewMockSagaManager creates a new mock saga orchestrator.
 func NewMockSagaManager() saga.Orchestrator {
-	return saga.Orchestrator{} // Return empty struct since it's a concrete type
+	return nil // Return empty struct since it's a concrete type
 }
 
 // NewMockSagaOrchestrator creates a new mock saga orchestrator.
 func NewMockSagaOrchestrator() saga.Orchestrator {
-	return saga.Orchestrator{} // Return empty struct
+	return nil // Return empty struct
 }
 
 // MockTemporalClient is a mock implementation of TemporalClient for testing.

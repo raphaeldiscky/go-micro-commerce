@@ -14,6 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 )
 
 // PaymentReminderService handles payment reminder task processing.
@@ -27,6 +28,7 @@ type paymentReminderService struct {
 	notificationProducer   kafka.Producer
 	orderLifecycleProducer kafka.Producer
 	dataStore              repository.DataStore
+	sagaOrchestrator       saga.Orchestrator
 	logger                 logger.Logger
 }
 
@@ -35,12 +37,14 @@ func NewPaymentReminderService(
 	notificationProducer kafka.Producer,
 	orderLifecycleProducer kafka.Producer,
 	dataStore repository.DataStore,
+	sagaOrchestrator saga.Orchestrator,
 	logger logger.Logger,
 ) PaymentReminderService {
 	return &paymentReminderService{
 		notificationProducer:   notificationProducer,
 		orderLifecycleProducer: orderLifecycleProducer,
 		dataStore:              dataStore,
+		sagaOrchestrator:       sagaOrchestrator,
 		logger:                 logger,
 	}
 }
@@ -205,6 +209,16 @@ func (s *paymentReminderService) ProcessOrderExpirePayment(
 			)
 
 			return err
+		}
+
+		// Trigger saga compensation to release reserved products
+		if err = s.sagaOrchestrator.TriggerSagaCompensation(ctx, req.OrderID); err != nil {
+			s.logger.Errorf(
+				"Failed to trigger saga compensation for order %s: %v",
+				req.OrderID,
+				err,
+			)
+			// Log error but don't fail the entire operation since order is already expired
 		}
 
 		return nil

@@ -312,9 +312,14 @@ func executeCompensation(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
-) {
+) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Starting compensation", "orderID", order.ID)
+
+	var (
+		compensationErrors []string
+		criticalError      error
+	)
 
 	// Configure compensation activity options with shorter timeout
 	compensationOptions := workflow.ActivityOptions{
@@ -343,6 +348,7 @@ func executeCompensation(
 
 		if err := workflow.ExecuteActivity(compensationCtx, string(constant.CancelShippingStep), *state.ShippingID).Get(compensationCtx, nil); err != nil {
 			logger.Error("CancelShipping compensation failed", "error", err, "orderID", order.ID)
+			compensationErrors = append(compensationErrors, "CancelShipping: "+err.Error())
 		}
 	}
 
@@ -356,6 +362,7 @@ func executeCompensation(
 		}
 		if err := workflow.ExecuteActivity(compensationCtx, string(constant.RestoreProductsStep), restoreReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("RestoreProducts compensation failed", "error", err, "orderID", order.ID)
+			compensationErrors = append(compensationErrors, "RestoreProducts: "+err.Error())
 		}
 	}
 
@@ -376,6 +383,9 @@ func executeCompensation(
 		}
 		if err := workflow.ExecuteActivity(compensationCtx, string(constant.RefundPaymentStep), refundInput).Get(compensationCtx, nil); err != nil {
 			logger.Error("RefundPayment compensation failed", "error", err, "orderID", order.ID)
+			compensationErrors = append(compensationErrors, "RefundPayment: "+err.Error())
+			// Payment refund failure is critical - we need to track this for manual intervention
+			criticalError = err
 		}
 	}
 
@@ -389,8 +399,29 @@ func executeCompensation(
 		}
 		if err := workflow.ExecuteActivity(compensationCtx, string(constant.ReleaseProductsStep), releaseReq).Get(compensationCtx, nil); err != nil {
 			logger.Error("ReleaseProducts compensation failed", "error", err, "orderID", order.ID)
+			compensationErrors = append(compensationErrors, "ReleaseProducts: "+err.Error())
 		}
 	}
 
-	logger.Info("Compensation completed", "orderID", order.ID)
+	if len(compensationErrors) > 0 {
+		logger.Warn("Compensation completed with errors",
+			"orderID", order.ID,
+			"errorCount", len(compensationErrors),
+			"errors", compensationErrors)
+
+		// Return critical error if payment refund failed, otherwise return first error
+		if criticalError != nil {
+			return fmt.Errorf("critical compensation failure: %w", criticalError)
+		}
+
+		return fmt.Errorf(
+			"compensation completed with %d errors: %v",
+			len(compensationErrors),
+			compensationErrors,
+		)
+	}
+
+	logger.Info("Compensation completed successfully", "orderID", order.ID)
+
+	return nil
 }

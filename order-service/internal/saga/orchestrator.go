@@ -21,15 +21,23 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
-// Orchestrator manages saga workflow execution with state persistence.
-type Orchestrator struct {
+// Orchestrator defines the interface for saga orchestration.
+type Orchestrator interface {
+	ExecuteOrderSaga(ctx context.Context, payload *Payload) error
+	ExecuteOrderSagaAsync(ctx context.Context, payload *Payload)
+	RecoverFailedSagas(ctx context.Context) error
+	TriggerSagaCompensation(ctx context.Context, orderID uuid.UUID) error
+}
+
+// orchestrator manages saga workflow execution with state persistence.
+type orchestrator struct {
 	executor         *Executor
 	dataStore        repository.DataStore
 	logger           logger.Logger
 	executionTimeout time.Duration
 }
 
-// NewSagaOrchestrator creates a new  orchestrator.
+// NewSagaOrchestrator creates a new orchestrator.
 func NewSagaOrchestrator(
 	dataStore repository.DataStore,
 	productClient client.ProductClient,
@@ -60,7 +68,7 @@ func NewSagaOrchestrator(
 	// Configure saga steps in executor
 	orderSaga.ConfigureSteps(executor)
 
-	return Orchestrator{
+	return &orchestrator{
 		executor:         executor,
 		dataStore:        dataStore,
 		logger:           appLogger,
@@ -69,18 +77,39 @@ func NewSagaOrchestrator(
 }
 
 // ExecuteOrderSaga executes the order processing saga with proper async handling.
-func (o *Orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) error {
+func (o *orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) error {
 	o.logger.Infof("Starting order saga execution for order: %s", payload.Order.ID)
 
-	// Create a context with timeout for async execution
+	// Check if saga is already in compensating state - if so, don't try to extract auth from context
+	// since compensation uses auth stored in saga metadata
+	sagaRepo := o.dataStore.SagaStateRepository()
+	sagaState, stateErr := sagaRepo.FindByOrderID(ctx, payload.Order.ID)
+	isCompensating := stateErr == nil && sagaState.Status == constant.SagaStatusCompensating
+
+	// Create a context with timeout for saga execution
 	sagaCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
 	defer cancel()
 
-	// Execute the saga
-	if err := o.executor.Execute(sagaCtx, payload); err != nil {
-		o.logger.Errorf("Order saga failed for order %s: %v", payload.Order.ID, err)
+	// Only extract and set user auth from context if this is a new saga execution
+	// For compensation, auth will be retrieved from stored saga metadata
+	if !isCompensating {
+		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get user auth: %w", err)
+		}
 
-		return fmt.Errorf("saga execution failed: %w", err)
+		// Add user auth to context for the first step to pick up
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxEmail, userAuth.Email)
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxRoles, userAuth.Roles)
+		sagaCtx = context.WithValue(sagaCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+	}
+
+	// Execute the saga
+	if execErr := o.executor.Execute(sagaCtx, payload); execErr != nil {
+		o.logger.Errorf("Order saga failed for order %s: %v", payload.Order.ID, execErr)
+
+		return fmt.Errorf("saga execution failed: %w", execErr)
 	}
 
 	o.logger.Infof("Order saga completed successfully for order: %s", payload.Order.ID)
@@ -89,7 +118,7 @@ func (o *Orchestrator) ExecuteOrderSaga(ctx context.Context, payload *Payload) e
 }
 
 // ExecuteOrderSagaAsync executes the saga asynchronously with proper tracking.
-func (o *Orchestrator) ExecuteOrderSagaAsync(
+func (o *orchestrator) ExecuteOrderSagaAsync(
 	ctx context.Context,
 	payload *Payload,
 ) {
@@ -106,12 +135,29 @@ func (o *Orchestrator) ExecuteOrderSagaAsync(
 
 		o.logger.Infof("Starting async saga execution for order: %s", payload.Order.ID)
 
-		if err := o.executor.Execute(sagaCtx, payload); err != nil {
-			o.logger.Errorf("Async saga execution failed for order %s: %v", payload.Order.ID, err)
+		// Extract user auth from original context for async execution
+		userAuth, err := echoutils.GetUserAuthContexts(ctx)
+		if err != nil {
+			o.logger.Errorf("Failed to get user auth for async saga: %v", err)
+			return
+		}
+
+		// Add user auth to saga context for the first step to pick up
+		authCtx := context.WithValue(sagaCtx, pkgconstant.CtxUserID, userAuth.UserID)
+		authCtx = context.WithValue(authCtx, pkgconstant.CtxEmail, userAuth.Email)
+		authCtx = context.WithValue(authCtx, pkgconstant.CtxRoles, userAuth.Roles)
+		authCtx = context.WithValue(authCtx, pkgconstant.CtxIsActive, userAuth.IsActive)
+
+		if execErr := o.executor.Execute(authCtx, payload); execErr != nil {
+			o.logger.Errorf(
+				"Async saga execution failed for order %s: %v",
+				payload.Order.ID,
+				execErr,
+			)
 
 			// Update order status to failed
 			// Note: In production, this should be done through proper event handling
-			o.handleSagaFailure(payload.Order.ID, err)
+			o.handleSagaFailure(payload.Order.ID, execErr)
 		} else {
 			o.logger.Infof("Async saga execution completed for order: %s", payload.Order.ID)
 		}
@@ -119,7 +165,7 @@ func (o *Orchestrator) ExecuteOrderSagaAsync(
 }
 
 // RecoverFailedSagas recovers and retries failed sagas.
-func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
+func (o *orchestrator) RecoverFailedSagas(ctx context.Context) error {
 	o.logger.Info("Starting recovery of failed sagas")
 	stateRepo := o.dataStore.SagaStateRepository()
 	// Find failed or pending sagas
@@ -148,8 +194,10 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 
 		// Retry the saga execution
 		go func(order *entity.Order, sagaState *entity.SagaState) {
+			// Use parent context instead of background context to preserve any available context values
+			// The executor will retrieve user auth from stored saga metadata
 			recoveryCtx, cancel := context.WithTimeout(
-				context.Background(),
+				ctx,
 				o.executionTimeout,
 			)
 			defer cancel()
@@ -188,7 +236,7 @@ func (o *Orchestrator) RecoverFailedSagas(ctx context.Context) error {
 }
 
 // handleSagaFailure handles saga failure by updating order status.
-func (o *Orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
+func (o *orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
 	// This should be implemented based on your order service interface
 	o.logger.Errorf("Handling saga failure for order %s: %v", orderID, err)
 	// Update order status to failed/canceled
@@ -207,4 +255,107 @@ func convertMapToShippingRequest(data map[string]any) dto.Shipping {
 	// This is a basic implementation - you might want to use JSON marshal/unmarshal for robustness
 
 	return shipping
+}
+
+// TriggerSagaCompensation triggers immediate compensation for the saga associated with the given order.
+func (o *orchestrator) TriggerSagaCompensation(
+	ctx context.Context,
+	orderID uuid.UUID,
+) error {
+	sagaRepo := o.dataStore.SagaStateRepository()
+	orderRepo := o.dataStore.OrderRepository()
+
+	// Find the saga state for this order
+	sagaState, err := sagaRepo.FindByOrderID(ctx, orderID)
+	if err != nil {
+		if err.Error() == constant.SagaStateNotFoundErrorMessage {
+			o.logger.Warnf("No saga state found for order %s, skipping compensation", orderID)
+			return nil // Not an error - order might not have been processed through saga
+		}
+
+		return fmt.Errorf("failed to find saga state for order %s: %w", orderID, err)
+	}
+
+	// Check if saga is in a state that can be compensated
+	switch sagaState.Status {
+	case constant.SagaStatusCompleted:
+		o.logger.Infof("Order %s saga already completed, no compensation needed", orderID)
+		return nil
+	case constant.SagaStatusCompensated:
+		o.logger.Infof("Order %s saga already compensated", orderID)
+		return nil
+	case constant.SagaStatusFailed:
+		o.logger.Infof("Order %s saga already failed", orderID)
+		return nil
+	case constant.SagaStatusCompensating:
+		o.logger.Infof("Order %s saga already compensating", orderID)
+		return nil
+	case constant.SagaStatusPending, constant.SagaStatusExecuting:
+		// These are the states where we can trigger compensation
+		o.logger.Infof(
+			"Order %s saga is in %s state, triggering immediate compensation",
+			orderID,
+			sagaState.Status,
+		)
+	}
+
+	// Get the order for saga payload
+	order, err := orderRepo.FindByID(ctx, orderID)
+	if err != nil {
+		return fmt.Errorf("failed to find order for compensation: %w", err)
+	}
+
+	// Create saga payload for compensation
+	payload := &Payload{
+		Order: order,
+		// Note: We don't have shipping data in this context, but compensation doesn't need it
+		Shipping: dto.Shipping{},
+	}
+
+	// Mark saga as compensating first
+	err = sagaRepo.MarkAsCompensating(ctx, sagaState.ID)
+	if err != nil {
+		return fmt.Errorf("failed to mark saga as compensating for order %s: %w", orderID, err)
+	}
+
+	// Execute compensation immediately using async context with auth
+	go func() {
+		// Start with the incoming context to preserve auth information
+		compensationCtx := echoutils.PropagateUserContextToBackground(ctx)
+		// Add timeout
+		compensationCtx, cancel := context.WithTimeout(compensationCtx, o.executionTimeout)
+		defer cancel()
+
+		// Ensure important context values are propagated
+		compensationCtx = context.WithValue(compensationCtx, constant.CtxOrderIDKey, orderID)
+		if traceID := ctx.Value(constant.CtxTraceIDKey); traceID != nil {
+			compensationCtx = context.WithValue(compensationCtx, constant.CtxTraceIDKey, traceID)
+		}
+
+		o.logger.Infof(
+			"Starting immediate compensation for order %s (saga ID: %s)",
+			orderID,
+			sagaState.ID,
+		)
+
+		// Use the orchestrator's existing saga execution which will handle compensation
+		// since the saga is already marked as compensating
+		if compensationErr := o.ExecuteOrderSaga(compensationCtx, payload); compensationErr != nil {
+			o.logger.Errorf(
+				"Failed to execute saga compensation for order %s: %v",
+				orderID,
+				compensationErr,
+			)
+		} else {
+			o.logger.Infof("Successfully completed saga compensation for order %s", orderID)
+		}
+	}()
+
+	o.logger.Infof(
+		"Successfully triggered immediate saga compensation for order %s (saga ID: %s)",
+		orderID,
+		sagaState.ID,
+	)
+
+	return nil
 }

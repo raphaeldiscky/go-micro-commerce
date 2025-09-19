@@ -17,36 +17,26 @@ import (
 
 // ReleaseProducts releases reserved products.
 func (a *orderActivities) ReleaseProducts(
-	_ context.Context,
+	ctx context.Context,
 	order *entity.Order,
 ) error {
 	a.logger.Infof(
-		"Releasing inventory reservation for order: %s, reservation ID: %s",
+		"Releasing inventory reservation for order: %s",
 		order.ID,
 	)
 
-	if a.productClient == nil {
-		a.logger.Warnf(
-			"Product service unavailable, cannot release reservation for order: %s",
-			order.ID,
-		)
-
-		return nil // Don't fail compensation if service is down
-	}
-
 	// Prepare release items
-	releaseItems := make([]dto.ProductReservationItem, len(order.Items))
+	releaseItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
 		item := &order.Items[i]
-		releaseItems[i] = dto.ProductReservationItem{
+		releaseItems[i] = dto.ProductRestorationItem{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}
 	}
 
-	// Release reserved products using product service
-	err := a.productClient.ReleaseProducts(context.Background(), releaseItems)
+	err := a.productClient.ReleaseProducts(ctx, releaseItems)
 	if err != nil {
 		a.logger.Warnf(
 			"Failed to release reservation for order %s: %v (compensation may be incomplete)",
@@ -128,15 +118,6 @@ func (a *orderActivities) CancelShipping(_ context.Context, shippingID uuid.UUID
 func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Order) error {
 	a.logger.Infof("Restoring products for order: %s", order.ID)
 
-	if a.productClient == nil {
-		a.logger.Warnf(
-			"Product service unavailable, cannot restore stock for order: %s",
-			order.ID,
-		)
-
-		return nil // Don't fail compensation if service is down
-	}
-
 	// Prepare restoration items
 	restorationItems := make([]dto.ProductRestorationItem, len(order.Items))
 
@@ -148,7 +129,6 @@ func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Ord
 		}
 	}
 
-	// Restore products stock using product service
 	_, err := a.productClient.RestoreProducts(ctx, restorationItems)
 	if err != nil {
 		a.logger.Warnf(

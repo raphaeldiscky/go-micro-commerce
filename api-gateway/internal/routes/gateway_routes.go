@@ -17,12 +17,12 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	e.GET("/debug/services", gw.DebugServices())
 	// Public routes
 	public := e.Group("")
-	public.GET("/auth/health", gw.ProxyToService("auth-service", "/health"))
-	public.GET("/product/health", gw.ProxyToService("product-service", "/health"))
-	public.GET("/order/health", gw.ProxyToService("order-service", "/health"))
-	public.GET("/notification/health", gw.ProxyToService("notification-service", "/health"))
-	public.GET("/fulfillment/health", gw.ProxyToService("fulfillment-service", "/health"))
-	public.GET("/payment/health", gw.ProxyToService("payment-service", "/health"))
+	public.GET("/auths/health", gw.ProxyToService("auth-service", "/health"))
+	public.GET("/products/health", gw.ProxyToService("product-service", "/health"))
+	public.GET("/orders/health", gw.ProxyToService("order-service", "/health"))
+	public.GET("/notifications/health", gw.ProxyToService("notification-service", "/health"))
+	public.GET("/fulfillments/health", gw.ProxyToService("fulfillment-service", "/health"))
+	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))
 	public.POST("/auth/v1/register", gw.ProxyToService("auth-service", "/v1/register"))

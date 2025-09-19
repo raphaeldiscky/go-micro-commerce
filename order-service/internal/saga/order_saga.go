@@ -3,6 +3,9 @@ package saga
 
 import (
 	"errors"
+	"fmt"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
@@ -47,12 +50,19 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				return nil, err
 			}
 
+			// Get user auth from context using echoutils
+			userAuth, authErr := echoutils.GetUserAuthContexts(ctx.Context())
+			if authErr != nil {
+				return nil, fmt.Errorf("failed to get user auth: %w", authErr)
+			}
+
 			return &StepResult{
 				Success: true,
 				Data: &Metadata{
 					ReservedProducts: reservedProducts,
 					CustomerEmail:    email,
 					Shipping:         &payload.Shipping, // Store shipping data for recovery and later steps
+					UserAuth:         &userAuth,         // Store user auth for all subsequent steps
 				},
 			}, nil
 		},
@@ -148,10 +158,19 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		},
 		Compensate: func(ctx *WorkflowContext, payload *Payload, data *Metadata) error {
 			if data.PaymentID == nil {
-				return errors.New("no payment ID found for refund")
+				// No payment was created, so no refund needed - this is normal for expired orders
+				ctx.logger.Infof(
+					"No payment ID found for order %s, skipping refund compensation",
+					payload.Order.ID,
+				)
+				return nil
 			}
 
-			return s.activities.RefundPayment(ctx.Context(), payload.Order, *data.PaymentID)
+			return s.activities.RefundPayment(
+				ctx.Context(),
+				payload.Order,
+				*data.PaymentID,
+			)
 		},
 	})
 
@@ -260,7 +279,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			if data.FulfillmentID == nil {
 				return nil
 			}
-
 			return s.activities.CancelShipping(ctx.Context(), *data.FulfillmentID)
 		},
 	})

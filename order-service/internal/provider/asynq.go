@@ -107,6 +107,7 @@ func SetupAsynq(
 		providers.NotificationRequestProducer,
 		providers.OrderLifecycleProducer,
 		providers.DataStore,
+		providers.SagaOrchestrator,
 		logger,
 	)
 

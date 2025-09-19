@@ -31,13 +31,18 @@ message GetProductsResponse {
 
 message ReserveProductsRequest {
   string idempotency_key = 1;
-  repeated ProductQuantity items = 2;
+  repeated ProductQuantityWithVersion items = 2;
+}
+
+message ProductQuantityWithVersion {
+  string product_id = 1;
+  int64 quantity = 2;
+  int64 version = 3; // for optimistic locking
 }
 
 message ProductQuantity {
   string product_id = 1;
   int64 quantity = 2;
-  int64 version = 3; // for optimistic locking
 }
 
 message ReserveProductsResponse {
@@ -58,7 +63,7 @@ message Product {
 }
 
 message ReleaseProductsRequest {
-  repeated ProductQuantity items = 2;
+  repeated ProductQuantity items = 1;
 }
 
 message ReleaseProductsResponse {
@@ -67,7 +72,7 @@ message ReleaseProductsResponse {
 }
 
 message ConfirmProductsDeductionRequest {
-  repeated ProductQuantity items = 2;
+  repeated ProductQuantity items = 1;
 }
 
 message ConfirmProductsDeductionResponse {
@@ -88,7 +93,7 @@ message RestoreProductsResponse {
 }
 
 message HealthResponse {
-  string status = 1; // e.g., "SERVING"
+  HealthStatus status = 1; // e.g., "SERVING"
 }
 
 enum HealthStatus {

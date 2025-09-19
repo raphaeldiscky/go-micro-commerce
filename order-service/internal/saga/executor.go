@@ -2,12 +2,16 @@ package saga
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -31,44 +35,14 @@ type Payload struct {
 
 // Metadata represents the metadata for a saga execution.
 type Metadata struct {
-	ReservedProducts []entity.Product `json:"reserved_products"`
-	CustomerEmail    string           `json:"customer_email"`
-	Shipping         *dto.Shipping    `json:"shipping"`
-	ShippingCost     *decimal.Decimal `json:"shipping_cost"`
-	FulfillmentID    *uuid.UUID       `json:"fulfillment_id"`
-	TrackingNumber   *string          `json:"tracking_number"`
-	PaymentID        *uuid.UUID       `json:"payment_id"`
-}
-
-// Merge adds data from another Metadata struct.
-func (m *Metadata) Merge(other *Metadata) {
-	if len(other.ReservedProducts) > 0 {
-		m.ReservedProducts = other.ReservedProducts
-	}
-
-	if other.CustomerEmail != "" {
-		m.CustomerEmail = other.CustomerEmail
-	}
-
-	if other.Shipping != nil {
-		m.Shipping = other.Shipping
-	}
-
-	if other.ShippingCost != nil {
-		m.ShippingCost = other.ShippingCost
-	}
-
-	if other.FulfillmentID != nil {
-		m.FulfillmentID = other.FulfillmentID
-	}
-
-	if other.TrackingNumber != nil {
-		m.TrackingNumber = other.TrackingNumber
-	}
-
-	if other.PaymentID != nil {
-		m.PaymentID = other.PaymentID
-	}
+	ReservedProducts []entity.Product     `json:"reserved_products"`
+	CustomerEmail    string               `json:"customer_email"`
+	Shipping         *dto.Shipping        `json:"shipping"`
+	ShippingCost     *decimal.Decimal     `json:"shipping_cost"`
+	FulfillmentID    *uuid.UUID           `json:"fulfillment_id"`
+	TrackingNumber   *string              `json:"tracking_number"`
+	PaymentID        *uuid.UUID           `json:"payment_id"`
+	UserAuth         *pkgdto.UserAuthInfo `json:"user_auth"`
 }
 
 // Step represents an enhanced saga step with retry logic.
@@ -358,11 +332,32 @@ func (e *Executor) executeStepWithRetry(
 				defer cancel()
 			}
 
-			workflowCtx := NewWorkflowContext(stepCtx, payload.Order.ID, e.logger)
-
 			// Convert map data to Metadata struct
 			metadata := &Metadata{}
 			metadata.FromMap(state.Data)
+
+			// Add user authentication to context for external service calls
+			if metadata.UserAuth != nil {
+				stepCtx = context.WithValue(
+					stepCtx,
+					pkgconstant.CtxUserID,
+					metadata.UserAuth.UserID,
+				)
+				stepCtx = context.WithValue(stepCtx, pkgconstant.CtxEmail, metadata.UserAuth.Email)
+				stepCtx = context.WithValue(stepCtx, pkgconstant.CtxRoles, metadata.UserAuth.Roles)
+				stepCtx = context.WithValue(
+					stepCtx,
+					pkgconstant.CtxIsActive,
+					metadata.UserAuth.IsActive,
+				)
+			}
+
+			workflowCtx := NewWorkflowContext(
+				stepCtx,
+				payload.Order.ID,
+				e.logger,
+				metadata.UserAuth,
+			)
 
 			return step.Execute(workflowCtx, payload, metadata)
 		}()
@@ -436,7 +431,7 @@ func (e *Executor) compensateFromState(
 		}
 
 		if step.Compensate == nil {
-			e.logger.Warnf("No compensation function for step: %s", stepName)
+			e.logger.Infof("No compensation function for step: %s", stepName)
 
 			continue
 		}
@@ -491,7 +486,41 @@ func (e *Executor) compensateStepWithRetry(
 	step *Step,
 	state *entity.SagaState,
 ) error {
-	workflowCtx := NewWorkflowContext(ctx, payload.Order.ID, e.logger)
+	// Convert map data to Metadata struct for compensation
+	metadata := &Metadata{}
+	metadata.FromMap(state.Data)
+
+	// Add user authentication to context for external service calls
+	compensationCtx := ctx
+	if metadata.UserAuth != nil {
+		compensationCtx = context.WithValue(
+			compensationCtx,
+			pkgconstant.CtxUserID,
+			metadata.UserAuth.UserID,
+		)
+		compensationCtx = context.WithValue(
+			compensationCtx,
+			pkgconstant.CtxEmail,
+			metadata.UserAuth.Email,
+		)
+		compensationCtx = context.WithValue(
+			compensationCtx,
+			pkgconstant.CtxRoles,
+			metadata.UserAuth.Roles,
+		)
+		compensationCtx = context.WithValue(
+			compensationCtx,
+			pkgconstant.CtxIsActive,
+			metadata.UserAuth.IsActive,
+		)
+	}
+
+	workflowCtx := NewWorkflowContext(
+		compensationCtx,
+		payload.Order.ID,
+		e.logger,
+		metadata.UserAuth,
+	)
 
 	var lastErr error
 
@@ -501,10 +530,6 @@ func (e *Executor) compensateStepWithRetry(
 				payload.Order.ID, step.Name, attempt, step.MaxRetries)
 			time.Sleep(step.RetryDelay * time.Duration(attempt))
 		}
-
-		// Convert map data to Metadata struct for compensation
-		metadata := &Metadata{}
-		metadata.FromMap(state.Data)
 
 		err := step.Compensate(workflowCtx, payload, metadata)
 		if err == nil {
@@ -614,6 +639,12 @@ func (m *Metadata) ToMap() map[string]any {
 		result["payment_id"] = *m.PaymentID
 	}
 
+	if m.UserAuth != nil {
+		if authJSON, err := json.Marshal(m.UserAuth); err == nil {
+			result["user_auth"] = string(authJSON)
+		}
+	}
+
 	return result
 }
 
@@ -645,5 +676,12 @@ func (m *Metadata) FromMap(data map[string]any) {
 
 	if val, ok := data["payment_id"].(uuid.UUID); ok {
 		m.PaymentID = &val
+	}
+
+	if authStr, ok := data["user_auth"].(string); ok {
+		var userAuth pkgdto.UserAuthInfo
+		if err := json.Unmarshal([]byte(authStr), &userAuth); err == nil {
+			m.UserAuth = &userAuth
+		}
 	}
 }
