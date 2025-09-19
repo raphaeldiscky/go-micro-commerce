@@ -97,7 +97,11 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			return &StepResult{
 				Success: true,
 				Data: &Metadata{
-					ShippingCost: &shippingCost,
+					ReservedProducts: data.ReservedProducts,
+					CustomerEmail:    data.CustomerEmail,
+					Shipping:         data.Shipping,
+					UserAuth:         data.UserAuth,
+					ShippingCost:     &shippingCost,
 				},
 			}, nil
 		},
@@ -143,7 +147,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Timeout:     constant.CreatePaymentStepTimeout,
 		Idempotent:  true,
 		Critical:    true,
-		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
+		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
 			paymentID, err := s.activities.CreatePayment(ctx.Context(), payload.Order)
 			if err != nil {
 				return nil, err
@@ -152,7 +156,12 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			return &StepResult{
 				Success: true,
 				Data: &Metadata{
-					PaymentID: &paymentID,
+					ReservedProducts: data.ReservedProducts,
+					CustomerEmail:    data.CustomerEmail,
+					Shipping:         data.Shipping,
+					ShippingCost:     data.ShippingCost,
+					UserAuth:         data.UserAuth,
+					PaymentID:        &paymentID,
 				},
 			}, nil
 		},
@@ -239,7 +248,12 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			return &StepResult{
 				Success: true,
 				Data: &Metadata{
-					PaymentID: &paymentID,
+					ReservedProducts: data.ReservedProducts,
+					CustomerEmail:    data.CustomerEmail,
+					Shipping:         data.Shipping,
+					ShippingCost:     data.ShippingCost,
+					UserAuth:         data.UserAuth,
+					PaymentID:        &paymentID,
 				},
 			}, nil
 		},
@@ -269,9 +283,14 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			return &StepResult{
 				Success: true,
 				Data: &Metadata{
-					FulfillmentID:  &fulfillmentID,
-					TrackingNumber: &trackingNumber,
-					ShippingCost:   &shippingCost,
+					ReservedProducts: data.ReservedProducts,
+					CustomerEmail:    data.CustomerEmail,
+					Shipping:         data.Shipping,
+					UserAuth:         data.UserAuth,
+					PaymentID:        data.PaymentID,
+					FulfillmentID:    &fulfillmentID,
+					TrackingNumber:   &trackingNumber,
+					ShippingCost:     &shippingCost,
 				},
 			}, nil
 		},
@@ -337,7 +356,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 			}
 
 			if err := s.activities.SendOrderConfirmedNotification(ctx.Context(), payload.Order, data.ReservedProducts, data.TrackingNumber, data.CustomerEmail); err != nil {
-				// Non-critical step, log but don't fail the saga
 				ctx.logger.Warnf("Failed to send notification: %v", err)
 			}
 

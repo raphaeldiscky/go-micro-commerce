@@ -12,6 +12,4 @@ const (
 	CtxRoles ContextKey = "roles"
 	// CtxIsActive is the context key for the user active status.
 	CtxIsActive ContextKey = "is_active"
-	// CtxCancel is the context key for the cancel function.
-	CtxCancel ContextKey = "cancel"
 )

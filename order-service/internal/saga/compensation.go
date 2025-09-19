@@ -12,6 +12,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
 
@@ -29,10 +30,9 @@ func (a *orderActivities) ReleaseProducts(
 	releaseItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
-		item := &order.Items[i]
 		releaseItems[i] = dto.ProductRestorationItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+			ProductID: order.Items[i].ProductID,
+			Quantity:  order.Items[i].Quantity,
 		}
 	}
 
@@ -62,15 +62,13 @@ func (a *orderActivities) RefundPayment(
 	return a.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		outboxRepo := ds.OutboxRepository()
 
-		// Create refund request event
-		refundEvent := map[string]any{
-			"order_id":    order.ID,
-			"customer_id": order.CustomerID,
-			"amount":      order.TotalPrice,
-			"currency":    order.Currency,
-			"reason":      "order_canceled",
-			"timestamp":   time.Now().UTC(),
-		}
+		// Create refund request event using proper structure
+		refundEvent := producer.NewPaymentRefundEvent(
+			order.ID,
+			paymentID,
+			order.TotalPrice,
+			order.Currency,
+		)
 
 		payload, err := json.Marshal(refundEvent)
 		if err != nil {
@@ -121,10 +119,9 @@ func (a *orderActivities) RestoreProducts(ctx context.Context, order *entity.Ord
 	restorationItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
-		item := &order.Items[i]
 		restorationItems[i] = dto.ProductRestorationItem{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
+			ProductID: order.Items[i].ProductID,
+			Quantity:  order.Items[i].Quantity,
 		}
 	}
 

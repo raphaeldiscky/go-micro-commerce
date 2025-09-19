@@ -172,14 +172,13 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 	)
 	if err != nil {
 		a.logger.Errorf("Failed to reserve stock for order key %s: %v", order.IdempotencyKey, err)
-
 		// Categorize error based on type
 		sagaErr := CategorizeError(constant.ReserveProductsStep, err)
 
 		return nil, nil, sagaErr
 	}
 
-	var orderItems []entity.OrderItem
+	orderItems := make([]entity.OrderItem, 0, len(reservedProducts))
 
 	for i, product := range reservedProducts {
 		orderItem, rowErr := entity.NewOrderItem(
@@ -210,7 +209,7 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 	return newOrder, reservedProducts, nil
 }
 
-// GetShippingCost calculates shipping cost by calling fulfillment service without creating actual shipment.
+// GetShippingCost calculates shipping cost from fulfillment service without creating actual shipment.
 func (a *orderActivities) GetShippingCost(
 	ctx context.Context,
 	order *entity.Order,
@@ -227,7 +226,6 @@ func (a *orderActivities) GetShippingCost(
 	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order, shipping)
 	if err != nil {
 		a.logger.Errorf("Failed to get shipping cost for order %s: %v", order.ID, err)
-
 		return decimal.Zero, fmt.Errorf("failed to get shipping cost: %w", err)
 	}
 
@@ -262,7 +260,7 @@ func (a *orderActivities) SetFinalOrderPrices(ctx context.Context, order *entity
 	})
 }
 
-// CreatePayment create payment for the order.
+// CreatePayment creates a payment record for the order.
 func (a *orderActivities) CreatePayment(
 	ctx context.Context,
 	order *entity.Order,
@@ -451,6 +449,43 @@ func (a *orderActivities) WaitForPaymentConfirmation(
 	return response.PaymentID, nil
 }
 
+// createPaymentReminderRequest creates a payment reminder request.
+func (a *orderActivities) createPaymentReminderRequest(
+	order *entity.Order,
+	customerEmail string,
+	correlationID uuid.UUID,
+	reminderCount int,
+) *dto.PaymentReminderRequest {
+	return &dto.PaymentReminderRequest{
+		OrderID:       order.ID,
+		CorrelationID: correlationID,
+		CustomerEmail: customerEmail,
+		PaymentID:     uuid.Nil, // Will be set by payment service
+		TotalPrice:    order.TotalPrice,
+		Currency:      order.Currency,
+		ReminderCount: reminderCount,
+	}
+}
+
+// schedulePaymentTask schedules a payment reminder task and returns the task ID.
+func (a *orderActivities) schedulePaymentTask(
+	req *dto.PaymentReminderRequest,
+	delay time.Duration,
+	taskType string,
+) (string, error) {
+	reminderTask, err := task.NewPaymentReminderTask(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to create %s reminder task: %w", taskType, err)
+	}
+
+	taskInfo, err := a.asynqClient.EnqueueIn(delay, reminderTask)
+	if err != nil {
+		return "", fmt.Errorf("failed to enqueue %s reminder: %w", taskType, err)
+	}
+
+	return taskInfo.ID, nil
+}
+
 // schedulePaymentReminders schedules payment reminder tasks using asynq.
 func (a *orderActivities) schedulePaymentReminders(
 	_ context.Context,
@@ -459,79 +494,61 @@ func (a *orderActivities) schedulePaymentReminders(
 ) ([]string, error) {
 	a.logger.Infof("Scheduling payment reminders for order: %s", order.ID)
 
-	// Get reserved products for reminder notifications
-	var (
-		taskIDs []string
+	correlationID := uuid.New()
+	taskIDs := make([]string, 0)
+
+	// Schedule first reminder
+	firstReq := a.createPaymentReminderRequest(
+		order,
+		customerEmail,
+		correlationID,
+		constant.FirstReminderSequence,
 	)
 
-	correlationID := uuid.New()
-
-	// Schedule immediate reminder (10 minutes later)
-	req := &dto.PaymentReminderRequest{
-		OrderID:       order.ID,
-		CorrelationID: correlationID,
-		CustomerEmail: customerEmail,
-		PaymentID:     uuid.Nil, // Will be set by payment service
-		TotalPrice:    order.TotalPrice,
-		Currency:      order.Currency,
-		ReminderCount: constant.FirstReminderSequence,
-	}
-
-	firstTask, err := task.NewPaymentReminderTask(req)
+	firstTaskID, err := a.schedulePaymentTask(firstReq, constant.FirstPaymentReminderDelay, "first")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create immediate reminder task: %w", err)
+		return nil, err
 	}
 
-	taskInfo, err := a.asynqClient.EnqueueIn(constant.FirstPaymentReminderDelay, firstTask)
+	taskIDs = append(taskIDs, firstTaskID)
+
+	// Schedule second reminder
+	secondReq := a.createPaymentReminderRequest(
+		order,
+		customerEmail,
+		correlationID,
+		constant.SecondReminderSequence,
+	)
+
+	secondTaskID, err := a.schedulePaymentTask(
+		secondReq,
+		constant.SecondPaymentReminderDelay,
+		"second",
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to enqueue immediate reminder: %w", err)
+		return nil, err
 	}
 
-	taskIDs = append(taskIDs, taskInfo.ID)
+	taskIDs = append(taskIDs, secondTaskID)
 
-	// Schedule final reminder (20 minutes later)
-	finalReq := &dto.PaymentReminderRequest{
-		OrderID:       order.ID,
-		CorrelationID: correlationID,
-		CustomerEmail: customerEmail,
-		PaymentID:     uuid.Nil, // Will be set by payment service
-		TotalPrice:    order.TotalPrice,
-		Currency:      order.Currency,
-		ReminderCount: constant.SecondReminderSequence,
-	}
-
-	secondTask, err := task.NewPaymentReminderTask(finalReq)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create final reminder task: %w", err)
-	}
-
-	taskInfo2, err := a.asynqClient.EnqueueIn(constant.SecondPaymentReminderDelay, secondTask)
-	if err != nil {
-		return nil, fmt.Errorf("failed to enqueue final reminder: %w", err)
-	}
-
-	taskIDs = append(taskIDs, taskInfo2.ID)
-
-	// Schedule order cancellation (30 minutes later)
-	expirePayload := dto.ExpireOrderPaymentRequest{
+	// Schedule order expiration
+	expireTask, err := task.NewExpireOrderPaymentTask(dto.ExpireOrderPaymentRequest{
 		CustomerID:     order.CustomerID,
 		CustomerEmail:  customerEmail,
 		OrderID:        order.ID,
 		CorrelationID:  correlationID,
 		IdempotencyKey: uuid.New(),
-	}
-
-	expireTask, err := task.NewExpireOrderPaymentTask(expirePayload)
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cancel order task: %w", err)
+		return nil, fmt.Errorf("failed to create expiration task: %w", err)
 	}
 
-	taskExpireInfo, err := a.asynqClient.EnqueueIn(constant.ExpireOrderReminderDelay, expireTask)
+	expireTaskInfo, err := a.asynqClient.EnqueueIn(constant.ExpireOrderReminderDelay, expireTask)
 	if err != nil {
 		return nil, fmt.Errorf("failed to enqueue order expiration: %w", err)
 	}
 
-	taskIDs = append(taskIDs, taskExpireInfo.ID)
+	taskIDs = append(taskIDs, expireTaskInfo.ID)
 
 	a.logger.Infof(
 		"Successfully scheduled payment reminders and expiration for order: %s with task IDs: %v",
@@ -553,23 +570,19 @@ func (a *orderActivities) ConfirmProductsDeduction(
 		order.ID,
 	)
 
+	// Log deduction details for each item
 	for i := range order.Items {
 		item := &order.Items[i]
-		a.logger.Infof(
-			"Confirming deduction of %d units of product %s for order %s",
-			item.Quantity,
-			item.ProductID,
-			order.ID,
-		)
+		a.logger.Infof("Confirming deduction of %d units of product %s for order %s",
+			item.Quantity, item.ProductID, order.ID)
 	}
 
 	deductionItems := make([]dto.ProductRestorationItem, len(order.Items))
 
 	for i := range order.Items {
-		orderItem := &order.Items[i]
 		deductionItems[i] = dto.ProductRestorationItem{
-			ProductID: orderItem.ProductID,
-			Quantity:  orderItem.Quantity,
+			ProductID: order.Items[i].ProductID,
+			Quantity:  order.Items[i].Quantity,
 		}
 	}
 
@@ -579,7 +592,6 @@ func (a *orderActivities) ConfirmProductsDeduction(
 	_, err := a.productClient.ConfirmProductsDeduction(ctx, deductionItems)
 	if err != nil {
 		a.logger.Errorf("Failed to confirm stock deduction for order %s: %v", order.ID, err)
-
 		sagaErr := CategorizeError(constant.ConfirmProductsDeductionStep, err)
 
 		return sagaErr

@@ -11,9 +11,9 @@ import (
 // SagaConfig holds saga configuration.
 type SagaConfig struct {
 	// Execution settings
-	ExecutionMode           string        `mapstructure:"SAGA_EXECUTION_MODE"` // async or sync
-	DefaultExecutionTimeout time.Duration `mapstructure:"SAGA_DEFAULT_EXECUTION_TIMEOUT"`
-	MaxConcurrentSagas      int           `mapstructure:"SAGA_MAX_CONCURRENT"`
+	ExecutionMode      string        `mapstructure:"SAGA_EXECUTION_MODE"`    // async or sync
+	ExecutionTimeout   time.Duration `mapstructure:"SAGA_EXECUTION_TIMEOUT"` // full workflow execution timeout
+	MaxConcurrentSagas int           `mapstructure:"SAGA_MAX_CONCURRENT"`
 
 	// Retry settings
 	DefaultMaxRetries  int           `mapstructure:"SAGA_DEFAULT_MAX_RETRIES"`
@@ -25,7 +25,7 @@ type SagaConfig struct {
 	RecoveryEnabled   bool          `mapstructure:"SAGA_RECOVERY_ENABLED"`
 	RecoveryInterval  time.Duration `mapstructure:"SAGA_RECOVERY_INTERVAL"`
 	RecoveryBatchSize int           `mapstructure:"SAGA_RECOVERY_BATCH_SIZE"`
-	MaxRecoveryAge    time.Duration `mapstructure:"SAGA_MAX_RECOVERY_AGE"`
+	RecoveryMaxAge    time.Duration `mapstructure:"SAGA_RECOVERY_MAX_AGE"`
 
 	// Persistence settings
 	StateRetentionPeriod time.Duration `mapstructure:"SAGA_STATE_RETENTION"`
@@ -36,7 +36,7 @@ type SagaConfig struct {
 // initSagaConfig initializes the saga configuration from environment variables.
 func initSagaConfig() *SagaConfig {
 	viper.SetDefault("SAGA_EXECUTION_MODE", "async")
-	viper.SetDefault("SAGA_DEFAULT_EXECUTION_TIMEOUT", constant.SagaDefaultExecutionTimeout)
+	viper.SetDefault("SAGA_EXECUTION_TIMEOUT", constant.SagaExecutionTimeout)
 	viper.SetDefault("SAGA_MAX_CONCURRENT", constant.SagaMaxConcurrent)
 	viper.SetDefault("SAGA_DEFAULT_MAX_RETRIES", constant.SagaDefaultMaxRetries)
 	viper.SetDefault("SAGA_DEFAULT_RETRY_DELAY", constant.SagaDefaultRetryDelay)
@@ -45,7 +45,7 @@ func initSagaConfig() *SagaConfig {
 	viper.SetDefault("SAGA_RECOVERY_ENABLED", true)
 	viper.SetDefault("SAGA_RECOVERY_INTERVAL", constant.SagaRecoveryInterval)
 	viper.SetDefault("SAGA_RECOVERY_BATCH_SIZE", constant.SagaRecoveryBatchSize)
-	viper.SetDefault("SAGA_MAX_RECOVERY_AGE", constant.SagaMaxRecoveryAge)
+	viper.SetDefault("SAGA_RECOVERY_MAX_AGE", constant.SagaRecoveryMaxAge)
 	viper.SetDefault("SAGA_STATE_RETENTION", constant.SagaStateRetention)
 	viper.SetDefault("SAGA_PURGE_COMPLETED", true)
 	viper.SetDefault("SAGA_PURGE_INTERVAL", constant.SagaPurgeInterval)
