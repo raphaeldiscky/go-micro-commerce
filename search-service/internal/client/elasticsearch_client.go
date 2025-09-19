@@ -16,23 +16,23 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/config"
 )
 
-// ElasticsearchClient defines the interface for Elasticsearch operations.
-type ElasticsearchClient interface {
+// ElasticSearchClient defines the interface for Elasticsearch operations.
+type ElasticSearchClient interface {
 	GetClient() *elasticsearch.TypedClient
 	DeleteIndex(ctx context.Context, indexName string) error
 }
 
-// elasticsearchClient wraps the Elasticsearch client with additional functionality.
-type elasticsearchClient struct {
+// elasticSearchClient wraps the Elasticsearch client with additional functionality.
+type elasticSearchClient struct {
 	client *elasticsearch.TypedClient
 	logger logger.Logger
 }
 
-// NewElasticsearchClient creates a new Elasticsearch client instance.
-func NewElasticsearchClient(
-	cfg *config.ElasticsearchConfig,
+// NewElasticSearchClient creates a new Elasticsearch client instance.
+func NewElasticSearchClient(
+	cfg *config.ESConfig,
 	appLogger logger.Logger,
-) (ElasticsearchClient, error) {
+) (ElasticSearchClient, error) {
 	// Configure HTTP transport for ES v9
 	transport, ok := http.DefaultTransport.(*http.Transport)
 	if !ok {
@@ -45,23 +45,17 @@ func NewElasticsearchClient(
 	transport.IdleConnTimeout = cfg.MaxIdleTime
 
 	// Configure TLS settings
-	if !cfg.EnableSSL {
-		// Only disable TLS verification in development environments
-		// Consider using proper certificates in production
+	if cfg.EnableSSL {
+		// Enable TLS with configurable verification
 		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: true, // #nosec G402 - Only for development environments
-		}
-	} else {
-		// Enable TLS with proper verification for production
-		transport.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: false,
+			InsecureSkipVerify: cfg.SkipTLSVerify, //nolint:gosec // false positive
 			MinVersion:         tls.VersionTLS12,
 		}
 	}
 
 	// ES v9 client configuration
 	esConfig := elasticsearch.Config{
-		Addresses: []string{cfg.GetElasticsearchURL()},
+		Addresses: []string{cfg.GetESURL()},
 		Transport: transport,
 	}
 
@@ -88,7 +82,7 @@ func NewElasticsearchClient(
 		return nil, fmt.Errorf("failed to create Elasticsearch TypedClient: %w", err)
 	}
 
-	esClient := &elasticsearchClient{
+	esClient := &elasticSearchClient{
 		client: typedClient,
 		logger: appLogger,
 	}
@@ -104,12 +98,12 @@ func NewElasticsearchClient(
 }
 
 // GetClient returns the underlying Elasticsearch client.
-func (c *elasticsearchClient) GetClient() *elasticsearch.TypedClient {
+func (c *elasticSearchClient) GetClient() *elasticsearch.TypedClient {
 	return c.client
 }
 
 // DeleteIndex deletes an index.
-func (c *elasticsearchClient) DeleteIndex(ctx context.Context, indexName string) error {
+func (c *elasticSearchClient) DeleteIndex(ctx context.Context, indexName string) error {
 	_, err := c.client.Indices.Delete(indexName).Do(ctx)
 	if err != nil {
 		// Ignore "index not found" errors

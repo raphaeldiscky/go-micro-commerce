@@ -23,6 +23,7 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/notifications/health", gw.ProxyToService("notification-service", "/health"))
 	public.GET("/fulfillments/health", gw.ProxyToService("fulfillment-service", "/health"))
 	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
+	public.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))
 	public.POST("/auth/v1/register", gw.ProxyToService("auth-service", "/v1/register"))

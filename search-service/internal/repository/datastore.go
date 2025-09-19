@@ -28,23 +28,23 @@ type DataStore interface {
 
 // dataStore is a struct that implements the DataStore interface.
 type dataStore struct {
-	pool          *pgxpool.Pool
-	db            DBTX
-	elasticClient client.ElasticsearchClient
-	logger        logger.Logger
+	pool     *pgxpool.Pool
+	db       DBTX
+	esClient client.ElasticSearchClient
+	logger   logger.Logger
 }
 
 // NewDataStore creates a new DataStore.
 func NewDataStore(
 	pool *pgxpool.Pool,
-	elasticClient client.ElasticsearchClient,
+	esClient client.ElasticSearchClient,
 	appLogger logger.Logger,
 ) DataStore {
 	return &dataStore{
-		pool:          pool,
-		db:            pool,
-		elasticClient: elasticClient,
-		logger:        appLogger,
+		pool:     pool,
+		db:       pool,
+		esClient: esClient,
+		logger:   appLogger,
 	}
 }
 
@@ -74,5 +74,5 @@ func (s *dataStore) InboxRepository() InboxRepository {
 
 // SearchRepository returns a new SearchRepository.
 func (s *dataStore) SearchRepository() SearchRepository {
-	return NewSearchRepository(s.elasticClient, s.logger)
+	return NewSearchRepository(s.esClient, s.logger)
 }

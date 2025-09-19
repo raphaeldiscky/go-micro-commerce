@@ -17,7 +17,7 @@ import (
 type Providers struct {
 	DataStore     repository.DataStore
 	KafkaAdmin    *kafka.Admin
-	ElasticClient client.ElasticsearchClient
+	ElasticClient client.ElasticSearchClient
 	SearchRepo    repository.SearchRepository
 	SearchService service.SearchService
 }
@@ -44,7 +44,7 @@ func SetupGlobal(
 	}
 
 	// Setup Elasticsearch client
-	elasticClient, err := client.NewElasticsearchClient(cfg.Elasticsearch, appLogger)
+	elasticClient, err := client.NewElasticSearchClient(cfg.ElasticSearch, appLogger)
 	if err != nil {
 		return nil, err
 	}

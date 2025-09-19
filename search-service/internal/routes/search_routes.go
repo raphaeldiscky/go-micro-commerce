@@ -22,7 +22,7 @@ func SetupSearchRoutes(e *echo.Echo, searchHandler *handler.SearchHandler) {
 
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
-	admin := protected.Group("/admin")
+	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)
 	admin.POST("/init-indices", searchHandler.InitializeIndices)
 	admin.POST("/refresh-indices", searchHandler.RefreshIndices)

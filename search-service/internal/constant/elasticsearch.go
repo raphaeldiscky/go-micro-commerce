@@ -1,6 +1,8 @@
 package constant
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	// ElasticPort is the port for the ElasticSearch server.
@@ -25,3 +27,23 @@ const (
 	// SortOrderDesc for descending order.
 	SortOrderDesc = "desc"
 )
+
+// DocumentType represents a document type.
+type DocumentType string
+
+const (
+	// Product document type.
+	Product DocumentType = "product"
+)
+
+// GetValidDocumentTypesString returns a comma-separated string of valid document types.
+func GetValidDocumentTypesString() []string {
+	documentTypes := []DocumentType{Product}
+
+	types := make([]string, len(documentTypes))
+	for i, docType := range documentTypes {
+		types[i] = string(docType)
+	}
+
+	return types
+}

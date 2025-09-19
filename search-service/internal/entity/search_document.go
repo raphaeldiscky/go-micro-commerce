@@ -43,12 +43,9 @@ func (p *ProductDocument) GetIndexName() string {
 	return "products"
 }
 
-// OrderDocument, OrderItemDocument, and CustomerDocument - removed for now, only handling products
-
 // SuggestField represents the suggest field for autocomplete functionality.
 type SuggestField struct {
-	Input  []string `json:"input"`
-	Weight int      `json:"weight"`
+	Input []string `json:"input"`
 }
 
 // SearchResult represents a generic search result.
@@ -97,7 +94,6 @@ type HighlightConfig struct {
 
 // SuggestionResult represents an autocomplete suggestion.
 type SuggestionResult struct {
-	Text   string `json:"text"`
-	Score  int    `json:"score"`
-	Weight int    `json:"weight"`
+	Text  string  `json:"text"`
+	Score float64 `json:"score"`
 }

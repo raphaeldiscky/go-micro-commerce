@@ -1,7 +1,10 @@
 package handler
 
 import (
+	"fmt"
+	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -60,10 +63,18 @@ func (h *SearchHandler) AutoComplete(c echo.Context) error {
 	docType := c.QueryParam("type")
 
 	if !isValidDocumentType(docType) {
-		return httperror.NewBadRequestError("Invalid document type. Valid types: product")
+		valids := strings.Join(constant.GetValidDocumentTypesString(), ", ")
+
+		return httperror.NewBadRequestError(
+			fmt.Sprintf("Invalid document type. Valid types: %s", valids),
+		)
 	}
 
-	suggestions, err := h.searchService.AutoComplete(c.Request().Context(), query, docType)
+	suggestions, err := h.searchService.AutoComplete(
+		c.Request().Context(),
+		query,
+		constant.DocumentType(docType),
+	)
 	if err != nil {
 		h.logger.Errorf("Failed to get autocomplete suggestions: %v", err)
 
@@ -79,10 +90,18 @@ func (h *SearchHandler) GetSuggestions(c echo.Context) error {
 	docType := c.QueryParam("type")
 
 	if !isValidDocumentType(docType) {
-		return httperror.NewBadRequestError("Invalid document type. Valid types: product")
+		valids := strings.Join(constant.GetValidDocumentTypesString(), ", ")
+
+		return httperror.NewBadRequestError(
+			fmt.Sprintf("Invalid document type. Valid types: %s", valids),
+		)
 	}
 
-	suggestions, err := h.searchService.GetSuggestions(c.Request().Context(), query, docType)
+	suggestions, err := h.searchService.GetSuggestions(
+		c.Request().Context(),
+		query,
+		constant.DocumentType(docType),
+	)
 	if err != nil {
 		h.logger.Errorf("Failed to get suggestions: %v", err)
 
@@ -268,23 +287,6 @@ func (h *SearchHandler) parseSearchQuery(c echo.Context) *entity.SearchQuery {
 
 // parseFilters parses filter parameters based on query params.
 func (h *SearchHandler) parseFilters(c echo.Context, query *entity.SearchQuery) {
-	// Common filters
-	if category := c.QueryParam("category"); category != "" {
-		query.Filters["category"] = category
-	}
-
-	if brand := c.QueryParam("brand"); brand != "" {
-		query.Filters["brand"] = brand
-	}
-
-	if status := c.QueryParam("status"); status != "" {
-		query.Filters["status"] = status
-	}
-
-	if customerID := c.QueryParam("customer_id"); customerID != "" {
-		query.Filters["customer_id"] = customerID
-	}
-
 	// Boolean filters
 	if inStockStr := c.QueryParam("in_stock"); inStockStr != "" {
 		if inStock, err := strconv.ParseBool(inStockStr); err == nil {
@@ -292,7 +294,7 @@ func (h *SearchHandler) parseFilters(c echo.Context, query *entity.SearchQuery) 
 		}
 	}
 
-	// Range filters (price, amount, etc.)
+	// Range filters (price, quantity, etc.)
 	h.parseRangeFilters(c, query)
 }
 
@@ -302,9 +304,9 @@ func (h *SearchHandler) parseRangeFilters(c echo.Context, query *entity.SearchQu
 	h.parseRangeParam(c, query, "min_price", "price", "gte")
 	h.parseRangeParam(c, query, "max_price", "price", "lte")
 
-	// Amount range
-	h.parseRangeParam(c, query, "min_amount", "total_amount", "gte")
-	h.parseRangeParam(c, query, "max_amount", "total_amount", "lte")
+	// Quantity range
+	h.parseRangeParam(c, query, "min_quantity", "quantity", "gte")
+	h.parseRangeParam(c, query, "max_quantity", "quantity", "lte")
 }
 
 // parseRangeParam parses a single range parameter.
@@ -334,10 +336,5 @@ func (h *SearchHandler) parseRangeParam(
 
 // isValidDocumentType checks if the document type is valid.
 func isValidDocumentType(docType string) bool {
-	validTypes := map[string]bool{
-		"product": true,
-		// "order" and "customer": removed for now, only handling products
-	}
-
-	return validTypes[docType]
+	return slices.Contains(constant.GetValidDocumentTypesString(), docType)
 }
