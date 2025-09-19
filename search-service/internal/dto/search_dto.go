@@ -41,7 +41,6 @@ func (r *ProductIndexRequest) Validate() error {
 // BulkIndexRequest represents a bulk indexing request.
 type BulkIndexRequest struct {
 	Products []ProductIndexRequest `json:"products,omitempty"`
-	// Orders - removed for now, only handling products
 }
 
 // SearchQueryRequest represents a search request with advanced options.

@@ -9,40 +9,42 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 )
 
-// ElasticsearchConfig holds the configuration for Elasticsearch connection.
-type ElasticsearchConfig struct {
-	Host                  string        `mapstructure:"ELASTICSEARCH_HOST"`
-	Port                  int           `mapstructure:"ELASTICSEARCH_PORT"`
-	Username              string        `mapstructure:"ELASTICSEARCH_USERNAME"`
-	Password              string        `mapstructure:"ELASTICSEARCH_PASSWORD"`
-	EnableSecurity        bool          `mapstructure:"ELASTICSEARCH_ENABLE_SECURITY"`
-	EnableSSL             bool          `mapstructure:"ELASTICSEARCH_ENABLE_SSL"`
-	MaxRetries            int           `mapstructure:"ELASTICSEARCH_MAX_RETRIES"`
-	MaxIdleConns          int           `mapstructure:"ELASTICSEARCH_MAX_IDLE_CONNS"`
-	MaxIdleTime           time.Duration `mapstructure:"ELASTICSEARCH_MAX_IDLE_TIME"`
-	RequestTimeout        time.Duration `mapstructure:"ELASTICSEARCH_REQUEST_TIMEOUT"`
-	DiscoverNodesInterval time.Duration `mapstructure:"ELASTICSEARCH_DISCOVER_NODES_INTERVAL"`
-	SnifferEnabled        bool          `mapstructure:"ELASTICSEARCH_SNIFFER_ENABLED"`
-	HealthcheckURL        string        `mapstructure:"ELASTICSEARCH_HEALTHCHECK_URL"`
+// ESConfig holds the configuration for ES connection.
+type ESConfig struct {
+	Host                  string        `mapstructure:"ES_HOST"`
+	Port                  int           `mapstructure:"ES_PORT"`
+	Username              string        `mapstructure:"ES_USERNAME"`
+	Password              string        `mapstructure:"ES_PASSWORD"`
+	EnableSecurity        bool          `mapstructure:"ES_ENABLE_SECURITY"`
+	EnableSSL             bool          `mapstructure:"ES_ENABLE_SSL"`
+	SkipTLSVerify         bool          `mapstructure:"ES_SKIP_TLS_VERIFY"`
+	MaxRetries            int           `mapstructure:"ES_MAX_RETRIES"`
+	MaxIdleConns          int           `mapstructure:"ES_MAX_IDLE_CONNS"`
+	MaxIdleTime           time.Duration `mapstructure:"ES_MAX_IDLE_TIME"`
+	RequestTimeout        time.Duration `mapstructure:"ES_REQUEST_TIMEOUT"`
+	DiscoverNodesInterval time.Duration `mapstructure:"ES_DISCOVER_NODES_INTERVAL"`
+	SnifferEnabled        bool          `mapstructure:"ES_SNIFFER_ENABLED"`
+	HealthcheckURL        string        `mapstructure:"ES_HEALTHCHECK_URL"`
 }
 
-// initElasticsearchConfig initializes Elasticsearch configuration with defaults.
-func initElasticsearchConfig() *ElasticsearchConfig {
-	viper.SetDefault("ELASTICSEARCH_HOST", "localhost")
-	viper.SetDefault("ELASTICSEARCH_PORT", constant.ElasticPort)
-	viper.SetDefault("ELASTICSEARCH_USERNAME", "elastic")
-	viper.SetDefault("ELASTICSEARCH_PASSWORD", "elasticsearch")
-	viper.SetDefault("ELASTICSEARCH_ENABLE_SECURITY", true)
-	viper.SetDefault("ELASTICSEARCH_ENABLE_SSL", false)
-	viper.SetDefault("ELASTICSEARCH_MAX_RETRIES", constant.ElasticMaxRetries)
-	viper.SetDefault("ELASTICSEARCH_MAX_IDLE_CONNS", constant.ElasticMaxIdleConns)
-	viper.SetDefault("ELASTICSEARCH_MAX_IDLE_TIME", constant.ElasticMaxIdleTime)
-	viper.SetDefault("ELASTICSEARCH_REQUEST_TIMEOUT", constant.ElasticRequestTimeout)
-	viper.SetDefault("ELASTICSEARCH_DISCOVER_NODES_INTERVAL", constant.ElasticDiscoverNodesInterval)
-	viper.SetDefault("ELASTICSEARCH_SNIFFER_ENABLED", false)
-	viper.SetDefault("ELASTICSEARCH_HEALTHCHECK_URL", "/_cluster/health")
+// initESConfig initializes ES configuration with defaults.
+func initESConfig() *ESConfig {
+	viper.SetDefault("ES_HOST", "localhost")
+	viper.SetDefault("ES_PORT", constant.ElasticPort)
+	viper.SetDefault("ES_USERNAME", "elastic")
+	viper.SetDefault("ES_PASSWORD", "elastic")
+	viper.SetDefault("ES_ENABLE_SECURITY", true)
+	viper.SetDefault("ES_ENABLE_SSL", true)
+	viper.SetDefault("ES_SKIP_TLS_VERIFY", false)
+	viper.SetDefault("ES_MAX_RETRIES", constant.ElasticMaxRetries)
+	viper.SetDefault("ES_MAX_IDLE_CONNS", constant.ElasticMaxIdleConns)
+	viper.SetDefault("ES_MAX_IDLE_TIME", constant.ElasticMaxIdleTime)
+	viper.SetDefault("ES_REQUEST_TIMEOUT", constant.ElasticRequestTimeout)
+	viper.SetDefault("ES_DISCOVER_NODES_INTERVAL", constant.ElasticDiscoverNodesInterval)
+	viper.SetDefault("ES_SNIFFER_ENABLED", false)
+	viper.SetDefault("ES_HEALTHCHECK_URL", "/_cluster/health")
 
-	esConfig := &ElasticsearchConfig{}
+	esConfig := &ESConfig{}
 	if err := viper.Unmarshal(esConfig); err != nil {
 		panic(err)
 	}
@@ -50,8 +52,8 @@ func initElasticsearchConfig() *ElasticsearchConfig {
 	return esConfig
 }
 
-// GetElasticsearchURL returns the full Elasticsearch URL.
-func (c *ElasticsearchConfig) GetElasticsearchURL() string {
+// GetESURL returns the full ES URL.
+func (c *ESConfig) GetESURL() string {
 	protocol := "http"
 	if c.EnableSSL {
 		protocol = "https"

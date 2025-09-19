@@ -13,6 +13,7 @@ import (
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/repository"
 )
@@ -30,11 +31,15 @@ type SearchService interface {
 	BulkIndexProducts(ctx context.Context, products []entity.ProductDocument) error
 	InitializeIndices(ctx context.Context) error
 	RefreshIndices(ctx context.Context) error
-	AutoComplete(ctx context.Context, query string, documentType string) ([]string, error)
+	AutoComplete(
+		ctx context.Context,
+		query string,
+		documentType constant.DocumentType,
+	) ([]string, error)
 	GetSuggestions(
 		ctx context.Context,
 		query string,
-		documentType string,
+		documentType constant.DocumentType,
 	) ([]entity.SuggestionResult, error)
 	ProcessProductCreated(ctx context.Context, inboxEvent *entity.InboxEvent) error
 	ProcessProductUpdated(ctx context.Context, inboxEvent *entity.InboxEvent) error
@@ -209,7 +214,7 @@ func (s *searchService) RefreshIndices(ctx context.Context) error {
 func (s *searchService) AutoComplete(
 	ctx context.Context,
 	query string,
-	documentType string,
+	documentType constant.DocumentType,
 ) ([]string, error) {
 	s.logger.Infof("Auto-completing query '%s' for type '%s'", query, documentType)
 
@@ -227,7 +232,7 @@ func (s *searchService) AutoComplete(
 func (s *searchService) GetSuggestions(
 	ctx context.Context,
 	query string,
-	documentType string,
+	documentType constant.DocumentType,
 ) ([]entity.SuggestionResult, error) {
 	s.logger.Infof("Getting suggestions for query '%s' and type '%s'", query, documentType)
 
@@ -248,10 +253,16 @@ func (s *searchService) ProcessProductCreated(
 ) error {
 	s.logger.Infof("Processing product created event from inbox: %s", inboxEvent.ID)
 
-	var payload event.ProductCreatedPayload
-	if err := json.Unmarshal(inboxEvent.Payload, &payload); err != nil {
-		return fmt.Errorf("failed to unmarshal product created payload: %w", err)
+	// Parse the full event envelope
+	var eventEnvelope struct {
+		Metadata event.Metadata              `json:"metadata"`
+		Payload  event.ProductCreatedPayload `json:"payload"`
 	}
+	if err := json.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
+		return fmt.Errorf("failed to unmarshal product created event envelope: %w", err)
+	}
+
+	payload := eventEnvelope.Payload
 
 	// Convert event payload to search document
 	productDoc := &entity.ProductDocument{
@@ -281,10 +292,16 @@ func (s *searchService) ProcessProductUpdated(
 ) error {
 	s.logger.Infof("Processing product updated event from inbox: %s", inboxEvent.ID)
 
-	var payload event.ProductUpdatedPayload
-	if err := json.Unmarshal(inboxEvent.Payload, &payload); err != nil {
-		return fmt.Errorf("failed to unmarshal product updated payload: %w", err)
+	// Parse the full event envelope
+	var eventEnvelope struct {
+		Metadata event.Metadata              `json:"metadata"`
+		Payload  event.ProductUpdatedPayload `json:"payload"`
 	}
+	if err := json.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
+		return fmt.Errorf("failed to unmarshal product updated event envelope: %w", err)
+	}
+
+	payload := eventEnvelope.Payload
 
 	// Convert event payload to search document
 	productDoc := &entity.ProductDocument{
@@ -336,26 +353,6 @@ func (s *searchService) buildProductSuggest(product *entity.ProductDocument) {
 	inputs := []string{product.Name}
 
 	product.Suggest = entity.SuggestField{
-		Input:  inputs,
-		Weight: s.calculateProductWeight(product),
+		Input: inputs,
 	}
-}
-
-const (
-	defaultLimitProductWeight = 10
-)
-
-// calculateProductWeight calculates weight for product suggestions.
-func (s *searchService) calculateProductWeight(product *entity.ProductDocument) int {
-	weight := 1
-
-	if product.Quantity > 0 {
-		weight += 2
-	}
-
-	if product.Quantity > defaultLimitProductWeight {
-		weight++
-	}
-
-	return weight
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/client"
+	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
 )
 
@@ -36,23 +37,27 @@ type SearchRepository interface {
 	RefreshIndices(ctx context.Context) error
 
 	// Autocomplete and suggestions
-	AutoComplete(ctx context.Context, query string, documentType string) ([]string, error)
+	AutoComplete(
+		ctx context.Context,
+		query string,
+		documentType constant.DocumentType,
+	) ([]string, error)
 	GetSuggestions(
 		ctx context.Context,
 		query string,
-		documentType string,
+		documentType constant.DocumentType,
 	) ([]entity.SuggestionResult, error)
 }
 
 // searchRepository implements searchRepository using Elasticsearch.
 type searchRepository struct {
-	client client.ElasticsearchClient
+	client client.ElasticSearchClient
 	logger logger.Logger
 }
 
 // NewSearchRepository creates a new Elasticsearch repository.
 func NewSearchRepository(
-	clt client.ElasticsearchClient,
+	clt client.ElasticSearchClient,
 	appLogger logger.Logger,
 ) SearchRepository {
 	return &searchRepository{
@@ -142,20 +147,36 @@ func (r *searchRepository) SearchProducts(
 	// Build the search request using typed queries
 	from := query.From
 	size := query.Size
+
+	// Build bool query
+	boolQuery := &types.BoolQuery{
+		Must:   []types.Query{},
+		Filter: []types.Query{},
+	}
+
+	// Add text search if query is provided
+	if query.Query != "" {
+		boolQuery.Must = append(boolQuery.Must, types.Query{
+			MultiMatch: &types.MultiMatchQuery{
+				Query:     query.Query,
+				Fields:    []string{"name^2", "description"},
+				Type:      &textquerytype.Bestfields,
+				Fuzziness: types.Fuzziness("AUTO"),
+			},
+		})
+	} else {
+		// If no query, match all documents
+		boolQuery.Must = append(boolQuery.Must, types.Query{
+			MatchAll: &types.MatchAllQuery{},
+		})
+	}
+
+	// Add filters
+	r.addFilters(boolQuery, query.Filters)
+
 	searchRequest := &search.Request{
 		Query: &types.Query{
-			Bool: &types.BoolQuery{
-				Must: []types.Query{
-					{
-						MultiMatch: &types.MultiMatchQuery{
-							Query:     query.Query,
-							Fields:    []string{"name^2", "description"},
-							Type:      &textquerytype.Bestfields,
-							Fuzziness: types.Fuzziness("AUTO"),
-						},
-					},
-				},
-			},
+			Bool: boolQuery,
 		},
 		From: &from,
 		Size: &size,
@@ -190,6 +211,68 @@ func (r *searchRepository) SearchProducts(
 	}
 
 	return r.parseTypedSearchResponse(resp, query)
+}
+
+// addFilters adds filters to the bool query based on the provided filter map.
+func (r *searchRepository) addFilters(boolQuery *types.BoolQuery, filters map[string]any) {
+	for field, value := range filters {
+		switch field {
+		case "price", "quantity":
+			r.addRangeFilter(boolQuery, field, value)
+		}
+	}
+}
+
+// addRangeFilter adds a range filter for numeric fields.
+func (r *searchRepository) addRangeFilter(boolQuery *types.BoolQuery, field string, value any) {
+	rangeMap, isMapType := value.(map[string]any)
+	if !isMapType {
+		return
+	}
+
+	rangeQuery := types.NumberRangeQuery{}
+
+	if gte, exists := rangeMap["gte"]; exists {
+		if gteFloat, isFloat := gte.(float64); isFloat {
+			gteValue := types.Float64(gteFloat)
+			rangeQuery.Gte = &gteValue
+		}
+	}
+
+	if lte, exists := rangeMap["lte"]; exists {
+		if lteFloat, isFloat := lte.(float64); isFloat {
+			lteValue := types.Float64(lteFloat)
+			rangeQuery.Lte = &lteValue
+		}
+	}
+
+	if gt, exists := rangeMap["gt"]; exists {
+		if gtFloat, isFloat := gt.(float64); isFloat {
+			gtValue := types.Float64(gtFloat)
+			rangeQuery.Gt = &gtValue
+		}
+	}
+
+	if lt, exists := rangeMap["lt"]; exists {
+		if ltFloat, isFloat := lt.(float64); isFloat {
+			ltValue := types.Float64(ltFloat)
+			rangeQuery.Lt = &ltValue
+		}
+	}
+
+	if r.hasRangeValues(&rangeQuery) {
+		boolQuery.Filter = append(boolQuery.Filter, types.Query{
+			Range: map[string]types.RangeQuery{
+				field: &rangeQuery,
+			},
+		})
+	}
+}
+
+// hasRangeValues checks if the range query has any values set.
+func (r *searchRepository) hasRangeValues(rangeQuery *types.NumberRangeQuery) bool {
+	return rangeQuery.Gte != nil || rangeQuery.Lte != nil || rangeQuery.Gt != nil ||
+		rangeQuery.Lt != nil
 }
 
 // BulkIndex performs bulk indexing using individual index operations.
@@ -340,7 +423,7 @@ func (r *searchRepository) RefreshIndices(ctx context.Context) error {
 func (r *searchRepository) AutoComplete(
 	ctx context.Context,
 	query string,
-	documentType string,
+	documentType constant.DocumentType,
 ) ([]string, error) {
 	indexName := r.getIndexNameByType(documentType)
 	if indexName == "" {
@@ -392,7 +475,7 @@ func (r *searchRepository) AutoComplete(
 func (r *searchRepository) GetSuggestions(
 	ctx context.Context,
 	query string,
-	documentType string,
+	documentType constant.DocumentType,
 ) ([]entity.SuggestionResult, error) {
 	indexName := r.getIndexNameByType(documentType)
 	if indexName == "" {
@@ -434,15 +517,14 @@ func (r *searchRepository) GetSuggestions(
 		}
 
 		if name, ok := source["name"].(string); ok {
-			score := 0
+			score := float64(0)
 			if hit.Score_ != nil {
-				score = int(*hit.Score_)
+				score = float64(*hit.Score_)
 			}
 
 			suggestions = append(suggestions, entity.SuggestionResult{
-				Text:   name,
-				Score:  score,
-				Weight: 0,
+				Text:  name,
+				Score: score,
 			})
 		}
 	}
@@ -451,9 +533,9 @@ func (r *searchRepository) GetSuggestions(
 }
 
 // getIndexNameByType returns index name for document type.
-func (r *searchRepository) getIndexNameByType(documentType string) string {
+func (r *searchRepository) getIndexNameByType(documentType constant.DocumentType) string {
 	switch documentType {
-	case "product":
+	case constant.Product:
 		return "products"
 	default:
 		return ""

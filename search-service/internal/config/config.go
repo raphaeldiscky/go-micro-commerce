@@ -12,7 +12,7 @@ type Config struct {
 	Postgres       *PostgresConfig
 	Consul         *ConsulConfig
 	InboxProcessor *InboxProcessorConfig
-	Elasticsearch  *ElasticsearchConfig
+	ElasticSearch  *ESConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -33,7 +33,7 @@ func LoadConfig() (*Config, error) {
 		Kafka:          initKafkaConfig(),
 		Consul:         initConsulConfig(),
 		InboxProcessor: initInboxProcessorConfig(),
-		Elasticsearch:  initElasticsearchConfig(),
+		ElasticSearch:  initESConfig(),
 	}
 
 	return cfg, nil
