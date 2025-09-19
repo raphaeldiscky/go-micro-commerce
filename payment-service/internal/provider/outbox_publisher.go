@@ -53,9 +53,11 @@ func SetupOutboxPublisher(
 		appLogger.Fatalf("failed to create outbox Kafka producer: %v", err)
 	}
 
+	// Register outbox events
 	registry.Register(kafka.PaymentCreatedEventType, &producer.PaymentLifecycleEvent{})
 	registry.Register(kafka.PaymentFailedEventType, &producer.PaymentLifecycleEvent{})
 	registry.Register(kafka.PaymentCompletedEventType, &producer.PaymentLifecycleEvent{})
+	registry.Register(kafka.PaymentTimeoutEventType, &producer.PaymentLifecycleEvent{})
 
 	orderLifecycleProducer := producer.NewPaymentLifecycleProducer(asyncProducer)
 	orderDLQProducer := producer.NewPaymentDLQProducer(asyncProducer)
