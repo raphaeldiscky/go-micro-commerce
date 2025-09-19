@@ -1257,7 +1257,7 @@
 										"header": [],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n  \"name\": \"Wireless Bluetooth Earbuds Pro\",\n  \"description\": \"Compact and lightweight earbuds with noise cancellation, long-lasting battery life, and a comfortable fit. Perfect for music, calls, and workouts.\",\n  \"price\": 4000,\n  \"quantity\": 100\n}",
+											"raw": "{\n  \"name\": \"Moniker Bluetooth Earbuds Pro\",\n  \"description\": \"Compact and lightweight earbuds with noise cancellation, long-lasting battery life, and a comfortable fit. Perfect for music, calls, and workouts.\",\n  \"price\": 3000,\n  \"quantity\": 100\n}",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -1933,7 +1933,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"idempotency_key\": \"dde49d1d-8e96-4af8-93c1-5789a88eb1d4\",\n    \"items\": [\n        {\n            \"product_id\": \"daa044ee-8dc6-457a-91cb-7073bbd4dc5b\",\n            \"quantity\": 2\n        }\n    ],\n    \"currency\": \"IDR\",\n    \"shipping\": {\n        \"from_address\": {\n            \"city\": \"Magelang\",\n            \"state\": \"Central Java\",\n            \"postal_code\": \"10001\",\n            \"country\": \"Indonesia\"\n        },\n        \"to_address\": {\n            \"city\": \"New York\",\n            \"state\": \"NY\",\n            \"postal_code\": \"10001\",\n            \"country\": \"US\"\n        },\n        \"dimensions\": {\n            \"width\": 121,\n            \"height\": 52,\n            \"length\": 25,\n            \"unit\": \"cm\"\n        },\n        \"weight_kg\": 1.241,\n        \"carrier_id\": \"jne\"\n    }\n}",
+									"raw": "{\n    \"idempotency_key\": \"ade49d1e-8d54-4bf3-54d1-5544a55ed3d5\",\n    \"items\": [\n        {\n            \"product_id\": \"b40f2df7-29e5-4149-bfd3-0635b56b438d\",\n            \"quantity\": 2\n        }\n    ],\n    \"currency\": \"IDR\",\n    \"shipping\": {\n        \"from_address\": {\n            \"city\": \"Magelang\",\n            \"state\": \"Central Java\",\n            \"postal_code\": \"10001\",\n            \"country\": \"Indonesia\"\n        },\n        \"to_address\": {\n            \"city\": \"New York\",\n            \"state\": \"NY\",\n            \"postal_code\": \"10001\",\n            \"country\": \"US\"\n        },\n        \"dimensions\": {\n            \"width\": 121,\n            \"height\": 52,\n            \"length\": 25,\n            \"unit\": \"cm\"\n        },\n        \"weight_kg\": 1.241,\n        \"carrier_id\": \"jne\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2032,7 +2032,7 @@
 							]
 						},
 						{
-							"name": "Create Order with Temporal Workflows",
+							"name": "Create Order with Temporal",
 							"request": {
 								"method": "POST",
 								"header": [
@@ -2044,7 +2044,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"idempotency_key\": \"51420aa5-7c19-42b2-b645-b4e7b3b3dede\",\n    \"items\": [\n        {\n            \"product_id\": \"daa044ee-8dc6-457a-91cb-7073bbd4dc5b\",\n            \"quantity\": 3\n        }\n    ],\n    \"currency\": \"IDR\",\n    \"shipping\": {\n        \"from_address\": {\n            \"city\": \"Magelang\",\n            \"state\": \"Central Java\",\n            \"postal_code\": \"10001\",\n            \"country\": \"Indonesia\"\n        },\n        \"to_address\": {\n            \"city\": \"New York\",\n            \"state\": \"NY\",\n            \"postal_code\": \"10001\",\n            \"country\": \"US\"\n        },\n        \"dimensions\": {\n            \"width\": 121,\n            \"height\": 52,\n            \"length\": 25,\n            \"unit\": \"cm\"\n        },\n        \"weight_kg\": 1.241,\n        \"carrier_id\": \"jne\"\n    }\n}",
+									"raw": "{\n    \"idempotency_key\": \"ade49d1e-8d64-4bf4-53d1-5734a68ee2d4\",\n    \"items\": [\n        {\n            \"product_id\": \"b40f2df7-29e5-4149-bfd3-0635b56b438d\",\n            \"quantity\": 2\n        }\n    ],\n    \"currency\": \"IDR\",\n    \"shipping\": {\n        \"from_address\": {\n            \"city\": \"Magelang\",\n            \"state\": \"Central Java\",\n            \"postal_code\": \"10001\",\n            \"country\": \"Indonesia\"\n        },\n        \"to_address\": {\n            \"city\": \"New York\",\n            \"state\": \"NY\",\n            \"postal_code\": \"10001\",\n            \"country\": \"US\"\n        },\n        \"dimensions\": {\n            \"width\": 121,\n            \"height\": 52,\n            \"length\": 25,\n            \"unit\": \"cm\"\n        },\n        \"weight_kg\": 1.241,\n        \"carrier_id\": \"jne\"\n    }\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2750,7 +2750,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"idempotency_key\": \"12313678-1534-5578-9112-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
+									"raw": "{\n    \"idempotency_key\": \"12313678-1834-5578-9112-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -2758,7 +2758,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{api_gateway_url}}/payments/v1/order/6919ad0b-577b-49c3-8134-586decdede3a/process",
+									"raw": "{{api_gateway_url}}/payments/v1/order/628de7b5-6fc0-460d-9494-c2b8553863a2/process",
 									"host": [
 										"{{api_gateway_url}}"
 									],
@@ -2766,7 +2766,7 @@
 										"payments",
 										"v1",
 										"order",
-										"6919ad0b-577b-49c3-8134-586decdede3a",
+										"628de7b5-6fc0-460d-9494-c2b8553863a2",
 										"process"
 									]
 								}
@@ -2862,11 +2862,8 @@
 							"item": [
 								{
 									"name": "Initialize Indices",
-									"protocolProfileBehavior": {
-										"disableBodyPruning": true
-									},
 									"request": {
-										"method": "GET",
+										"method": "POST",
 										"header": [
 											{
 												"key": "Idempotency-Key",
@@ -2876,7 +2873,7 @@
 										],
 										"body": {
 											"mode": "raw",
-											"raw": "{\n    \"idempotency_key\": \"12345678-1534-5578-9012-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
+											"raw": "",
 											"options": {
 												"raw": {
 													"language": "json"
@@ -2899,11 +2896,8 @@
 								},
 								{
 									"name": "Refresh Indices",
-									"protocolProfileBehavior": {
-										"disableBodyPruning": true
-									},
 									"request": {
-										"method": "GET",
+										"method": "POST",
 										"header": [
 											{
 												"key": "Idempotency-Key",
@@ -2911,15 +2905,6 @@
 												"type": "text"
 											}
 										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"idempotency_key\": \"12345678-1534-5578-9012-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
 										"url": {
 											"raw": "{{api_gateway_url}}/searchs/v1/refresh-indices",
 											"host": [
@@ -3027,9 +3012,6 @@
 						},
 						{
 							"name": "Products Full Text Search",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
 							"request": {
 								"method": "GET",
 								"header": [
@@ -3039,17 +3021,8 @@
 										"type": "text"
 									}
 								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"idempotency_key\": \"12345678-1534-5578-9012-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
 								"url": {
-									"raw": "{{api_gateway_url}}/searchs/v1/products",
+									"raw": "{{api_gateway_url}}/searchs/v1/products?q=Bluetooth&min_price=2000&max_price=9000",
 									"host": [
 										"{{api_gateway_url}}"
 									],
@@ -3057,16 +3030,109 @@
 										"searchs",
 										"v1",
 										"products"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "Bluetooth"
+										},
+										{
+											"key": "min_price",
+											"value": "2000"
+										},
+										{
+											"key": "max_price",
+											"value": "9000"
+										}
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "Price Range Filter",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Idempotency-Key",
+												"value": "",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{api_gateway_url}}/searchs/v1/products?q=Bluetooth&min_price=2000&max_price=9000",
+											"host": [
+												"{{api_gateway_url}}"
+											],
+											"path": [
+												"searchs",
+												"v1",
+												"products"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "Bluetooth"
+												},
+												{
+													"key": "min_price",
+													"value": "2000"
+												},
+												{
+													"key": "max_price",
+													"value": "9000"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Content-Length",
+											"value": "899"
+										},
+										{
+											"key": "Content-Security-Policy",
+											"value": "default-src 'self'"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 19 Sep 2025 13:33:07 GMT"
+										},
+										{
+											"key": "Vary",
+											"value": "Origin"
+										},
+										{
+											"key": "X-Content-Type-Options",
+											"value": "nosniff"
+										},
+										{
+											"key": "X-Frame-Options",
+											"value": "DENY"
+										},
+										{
+											"key": "X-Request-Id",
+											"value": "4b808b9f-7f8d-4220-beff-a29f4fc3320d"
+										},
+										{
+											"key": "X-Xss-Protection",
+											"value": "1; mode=block"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"success\",\n    \"data\": [\n        {\n            \"id\": \"b0f9f120-ba4d-416b-98ce-6b1400d3d034\",\n            \"type\": \"\",\n            \"score\": 0.5753642,\n            \"source\": {\n                \"created_at\": \"2025-09-19T20:14:32.883889301+07:00\",\n                \"id\": \"b0f9f120-ba4d-416b-98ce-6b1400d3d034\",\n                \"name\": \"Wireless Bluetooth Earbuds Pro\",\n                \"price\": \"4000\",\n                \"quantity\": 100,\n                \"reserved_quantity\": 0,\n                \"suggest\": {\n                    \"input\": [\n                        \"Wireless Bluetooth Earbuds Pro\"\n                    ],\n                    \"weight\": 4\n                },\n                \"updated_at\": \"2025-09-19T20:14:32.883889301+07:00\",\n                \"version\": 0\n            }\n        }\n    ],\n    \"pagination\": {\n        \"page\": 1,\n        \"size\": 10,\n        \"total_item\": 1,\n        \"total_page\": 1,\n        \"links\": {\n            \"self\": \"http://192.168.0.107:8087/v1/products?max_price=9000&min_price=2000&page=1&q=Bluetooth&size=10\",\n            \"first\": \"http://192.168.0.107:8087/v1/products?max_price=9000&min_price=2000&page=1&q=Bluetooth&size=10\",\n            \"prev\": \"\",\n            \"next\": \"\",\n            \"last\": \"http://192.168.0.107:8087/v1/products?max_price=9000&min_price=2000&page=1&q=Bluetooth&size=10\"\n        }\n    }\n}"
+								}
+							]
 						},
 						{
 							"name": "Suggestion Search",
-							"protocolProfileBehavior": {
-								"disableBodyPruning": true
-							},
 							"request": {
 								"method": "GET",
 								"header": [
@@ -3076,28 +3142,184 @@
 										"type": "text"
 									}
 								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"idempotency_key\": \"12345678-1534-5578-9012-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
 								"url": {
-									"raw": "{{api_gateway_url}}/searchs/v1/suggestion",
+									"raw": "{{api_gateway_url}}/searchs/v1/suggestions?q=bluetooth&type=product",
 									"host": [
 										"{{api_gateway_url}}"
 									],
 									"path": [
 										"searchs",
 										"v1",
-										"suggestion"
+										"suggestions"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "bluetooth"
+										},
+										{
+											"key": "type",
+											"value": "product"
+										}
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "Success",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Idempotency-Key",
+												"value": "",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{api_gateway_url}}/searchs/v1/suggestions?q=bluetooth&type=product",
+											"host": [
+												"{{api_gateway_url}}"
+											],
+											"path": [
+												"searchs",
+												"v1",
+												"suggestions"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "bluetooth"
+												},
+												{
+													"key": "type",
+													"value": "product"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Content-Length",
+											"value": "91"
+										},
+										{
+											"key": "Content-Security-Policy",
+											"value": "default-src 'self'"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 19 Sep 2025 13:55:12 GMT"
+										},
+										{
+											"key": "Vary",
+											"value": "Origin"
+										},
+										{
+											"key": "X-Content-Type-Options",
+											"value": "nosniff"
+										},
+										{
+											"key": "X-Frame-Options",
+											"value": "DENY"
+										},
+										{
+											"key": "X-Request-Id",
+											"value": "aa16f7eb-43dc-4982-8a02-bde7f9cd43cc"
+										},
+										{
+											"key": "X-Xss-Protection",
+											"value": "1; mode=block"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"success\",\n    \"data\": [\n        {\n            \"text\": \"Wireless Bluetooth Earbuds Pro\",\n            \"score\": 0.2876821\n        }\n    ]\n}"
+								},
+								{
+									"name": "Failed",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Idempotency-Key",
+												"value": "",
+												"type": "text"
+											}
+										],
+										"url": {
+											"raw": "{{api_gateway_url}}/searchs/v1/suggestions?q=bluetooth&type=products",
+											"host": [
+												"{{api_gateway_url}}"
+											],
+											"path": [
+												"searchs",
+												"v1",
+												"suggestions"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "bluetooth"
+												},
+												{
+													"key": "type",
+													"value": "products"
+												}
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Content-Length",
+											"value": "58"
+										},
+										{
+											"key": "Content-Security-Policy",
+											"value": "default-src 'self'"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 19 Sep 2025 13:58:15 GMT"
+										},
+										{
+											"key": "Vary",
+											"value": "Origin"
+										},
+										{
+											"key": "X-Content-Type-Options",
+											"value": "nosniff"
+										},
+										{
+											"key": "X-Frame-Options",
+											"value": "DENY"
+										},
+										{
+											"key": "X-Request-Id",
+											"value": "df31849a-15f7-4ccf-8b33-92996d97ef00"
+										},
+										{
+											"key": "X-Xss-Protection",
+											"value": "1; mode=block"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"Invalid document type. Valid types: product\"\n}"
+								}
+							]
 						},
 						{
 							"name": "Autocomplete Search",
@@ -3115,7 +3337,7 @@
 								],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"idempotency_key\": \"12345678-1534-5578-9012-123456759aba\",\n    \"payment_method\": \"credit_card\"\n}",
+									"raw": "",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -3123,7 +3345,7 @@
 									}
 								},
 								"url": {
-									"raw": "{{api_gateway_url}}/searchs/v1/autocomplete",
+									"raw": "{{api_gateway_url}}/searchs/v1/autocomplete?q=blue&type=product",
 									"host": [
 										"{{api_gateway_url}}"
 									],
@@ -3131,10 +3353,193 @@
 										"searchs",
 										"v1",
 										"autocomplete"
+									],
+									"query": [
+										{
+											"key": "q",
+											"value": "blue"
+										},
+										{
+											"key": "type",
+											"value": "product"
+										}
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "Successs",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Idempotency-Key",
+												"value": "",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{api_gateway_url}}/searchs/v1/autocomplete?q=blue&type=product",
+											"host": [
+												"{{api_gateway_url}}"
+											],
+											"path": [
+												"searchs",
+												"v1",
+												"autocomplete"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "blue"
+												},
+												{
+													"key": "type",
+													"value": "product"
+												}
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Content-Length",
+											"value": "64"
+										},
+										{
+											"key": "Content-Security-Policy",
+											"value": "default-src 'self'"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 19 Sep 2025 13:44:40 GMT"
+										},
+										{
+											"key": "Vary",
+											"value": "Origin"
+										},
+										{
+											"key": "X-Content-Type-Options",
+											"value": "nosniff"
+										},
+										{
+											"key": "X-Frame-Options",
+											"value": "DENY"
+										},
+										{
+											"key": "X-Request-Id",
+											"value": "d21233f8-e0d7-4690-9533-801fc9ea9513"
+										},
+										{
+											"key": "X-Xss-Protection",
+											"value": "1; mode=block"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"success\",\n    \"data\": [\n        \"Wireless Bluetooth Earbuds Pro\"\n    ]\n}"
+								},
+								{
+									"name": "Failed",
+									"originalRequest": {
+										"method": "GET",
+										"header": [
+											{
+												"key": "Idempotency-Key",
+												"value": "",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{api_gateway_url}}/searchs/v1/autocomplete?q=blue&type=products",
+											"host": [
+												"{{api_gateway_url}}"
+											],
+											"path": [
+												"searchs",
+												"v1",
+												"autocomplete"
+											],
+											"query": [
+												{
+													"key": "q",
+													"value": "blue"
+												},
+												{
+													"key": "type",
+													"value": "products"
+												}
+											]
+										}
+									},
+									"status": "Bad Request",
+									"code": 400,
+									"_postman_previewlanguage": null,
+									"header": [
+										{
+											"key": "Content-Length",
+											"value": "58"
+										},
+										{
+											"key": "Content-Security-Policy",
+											"value": "default-src 'self'"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 19 Sep 2025 13:58:30 GMT"
+										},
+										{
+											"key": "Vary",
+											"value": "Origin"
+										},
+										{
+											"key": "X-Content-Type-Options",
+											"value": "nosniff"
+										},
+										{
+											"key": "X-Frame-Options",
+											"value": "DENY"
+										},
+										{
+											"key": "X-Request-Id",
+											"value": "4744331d-2295-4a41-9876-e5607a72cca6"
+										},
+										{
+											"key": "X-Xss-Protection",
+											"value": "1; mode=block"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"message\": \"Invalid document type. Valid types: product\"\n}"
+								}
+							]
 						}
 					]
 				},
@@ -3224,6 +3629,121 @@
 											],
 											"cookie": [],
 											"body": "{\n    \"message\": \"success\",\n    \"data\": {\n        \"id\": \"7ef26d71-ce37-4a2c-b349-43d25df828cf\",\n        \"order_id\": \"b2da08ae-47fd-46eb-868a-c88c8b4b5feb\",\n        \"status\": \"pending\",\n        \"tracking_number\": \"jne-598600692\",\n        \"shipping_cost\": \"25000\",\n        \"currency\": \"\",\n        \"weight_kg\": \"1.24\",\n        \"dimensions\": {\n            \"width\": \"0\",\n            \"height\": \"0\",\n            \"length\": \"0\",\n            \"unit\": \"\"\n        },\n        \"estimated_delivery_at\": \"2025-09-17T22:47:08.750493+07:00\",\n        \"created_at\": \"2025-09-14T22:47:08.850634+07:00\",\n        \"updated_at\": \"2025-09-14T22:47:08.850634+07:00\"\n    }\n}"
+										}
+									]
+								},
+								{
+									"name": "Set Fulfillment Status by Order ID",
+									"request": {
+										"method": "PATCH",
+										"header": [
+											{
+												"key": "Idempotency-Key",
+												"value": "",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "raw",
+											"raw": "{\n    \"status\": \"delivered\"\n}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{api_gateway_url}}/fulfillments/v1/order/6919ad0b-577b-49c3-8134-586decdede3a/status",
+											"host": [
+												"{{api_gateway_url}}"
+											],
+											"path": [
+												"fulfillments",
+												"v1",
+												"order",
+												"6919ad0b-577b-49c3-8134-586decdede3a",
+												"status"
+											]
+										}
+									},
+									"response": [
+										{
+											"name": "Success",
+											"originalRequest": {
+												"method": "PATCH",
+												"header": [
+													{
+														"key": "Idempotency-Key",
+														"value": "",
+														"type": "text"
+													}
+												],
+												"body": {
+													"mode": "raw",
+													"raw": "{\n    \"status\": \"delivered\"\n}",
+													"options": {
+														"raw": {
+															"language": "json"
+														}
+													}
+												},
+												"url": {
+													"raw": "{{api_gateway_url}}/fulfillments/v1/order/b2da08ae-47fd-46eb-868a-c88c8b4b5feb/status",
+													"host": [
+														"{{api_gateway_url}}"
+													],
+													"path": [
+														"fulfillments",
+														"v1",
+														"order",
+														"b2da08ae-47fd-46eb-868a-c88c8b4b5feb",
+														"status"
+													]
+												}
+											},
+											"status": "OK",
+											"code": 200,
+											"_postman_previewlanguage": null,
+											"header": [
+												{
+													"key": "Content-Length",
+													"value": "511"
+												},
+												{
+													"key": "Content-Security-Policy",
+													"value": "default-src 'self'"
+												},
+												{
+													"key": "Content-Type",
+													"value": "application/json"
+												},
+												{
+													"key": "Date",
+													"value": "Sun, 14 Sep 2025 15:53:56 GMT"
+												},
+												{
+													"key": "Vary",
+													"value": "Origin"
+												},
+												{
+													"key": "X-Content-Type-Options",
+													"value": "nosniff"
+												},
+												{
+													"key": "X-Frame-Options",
+													"value": "DENY"
+												},
+												{
+													"key": "X-Request-Id",
+													"value": "8474d51a-a142-4a7b-9d6b-41d1e805e45c"
+												},
+												{
+													"key": "X-Xss-Protection",
+													"value": "1; mode=block"
+												}
+											],
+											"cookie": [],
+											"body": "{\n    \"message\": \"success\",\n    \"data\": {\n        \"id\": \"7ef26d71-ce37-4a2c-b349-43d25df828cf\",\n        \"order_id\": \"b2da08ae-47fd-46eb-868a-c88c8b4b5feb\",\n        \"status\": \"delivered\",\n        \"tracking_number\": \"jne-598600692\",\n        \"shipping_cost\": \"25000\",\n        \"currency\": \"\",\n        \"weight_kg\": \"1.24\",\n        \"dimensions\": {\n            \"width\": \"0\",\n            \"height\": \"0\",\n            \"length\": \"0\",\n            \"unit\": \"\"\n        },\n        \"estimated_delivery_at\": \"2025-09-17T22:47:08.750493+07:00\",\n        \"actual_delivery_at\": \"2025-09-14T22:53:56.484874+07:00\",\n        \"created_at\": \"2025-09-14T22:47:08.850634+07:00\",\n        \"updated_at\": \"2025-09-14T22:53:56.484874+07:00\"\n    }\n}"
 										}
 									]
 								}
@@ -3414,121 +3934,6 @@
 									],
 									"cookie": [],
 									"body": "{\n    \"message\": \"success\",\n    \"data\": [\n        {\n            \"carrier_id\": \"jne\",\n            \"service\": \"JNE Regular\",\n            \"shipping_cost\": \"25000\",\n            \"currency\": \"IDR\",\n            \"estimated_delivery\": \"2025-09-17T22:57:45.248401151+07:00\",\n            \"transit_days\": 2\n        },\n        {\n            \"carrier_id\": \"jt\",\n            \"service\": \"J&T Express\",\n            \"shipping_cost\": \"25000\",\n            \"currency\": \"IDR\",\n            \"estimated_delivery\": \"2025-09-18T22:57:45.248401151+07:00\",\n            \"transit_days\": 2\n        },\n        {\n            \"carrier_id\": \"sicepat\",\n            \"service\": \"SiCepat REG\",\n            \"shipping_cost\": \"25000\",\n            \"currency\": \"IDR\",\n            \"estimated_delivery\": \"2025-09-19T22:57:45.248401151+07:00\",\n            \"transit_days\": 2\n        }\n    ]\n}"
-								}
-							]
-						},
-						{
-							"name": "Set Fulfillment Status by Order ID",
-							"request": {
-								"method": "PATCH",
-								"header": [
-									{
-										"key": "Idempotency-Key",
-										"value": "",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "raw",
-									"raw": "{\n    \"status\": \"delivered\"\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{api_gateway_url}}/fulfillments/v1/order/6919ad0b-577b-49c3-8134-586decdede3a/status",
-									"host": [
-										"{{api_gateway_url}}"
-									],
-									"path": [
-										"fulfillments",
-										"v1",
-										"order",
-										"6919ad0b-577b-49c3-8134-586decdede3a",
-										"status"
-									]
-								}
-							},
-							"response": [
-								{
-									"name": "Success",
-									"originalRequest": {
-										"method": "PATCH",
-										"header": [
-											{
-												"key": "Idempotency-Key",
-												"value": "",
-												"type": "text"
-											}
-										],
-										"body": {
-											"mode": "raw",
-											"raw": "{\n    \"status\": \"delivered\"\n}",
-											"options": {
-												"raw": {
-													"language": "json"
-												}
-											}
-										},
-										"url": {
-											"raw": "{{api_gateway_url}}/fulfillments/v1/order/b2da08ae-47fd-46eb-868a-c88c8b4b5feb/status",
-											"host": [
-												"{{api_gateway_url}}"
-											],
-											"path": [
-												"fulfillments",
-												"v1",
-												"order",
-												"b2da08ae-47fd-46eb-868a-c88c8b4b5feb",
-												"status"
-											]
-										}
-									},
-									"status": "OK",
-									"code": 200,
-									"_postman_previewlanguage": null,
-									"header": [
-										{
-											"key": "Content-Length",
-											"value": "511"
-										},
-										{
-											"key": "Content-Security-Policy",
-											"value": "default-src 'self'"
-										},
-										{
-											"key": "Content-Type",
-											"value": "application/json"
-										},
-										{
-											"key": "Date",
-											"value": "Sun, 14 Sep 2025 15:53:56 GMT"
-										},
-										{
-											"key": "Vary",
-											"value": "Origin"
-										},
-										{
-											"key": "X-Content-Type-Options",
-											"value": "nosniff"
-										},
-										{
-											"key": "X-Frame-Options",
-											"value": "DENY"
-										},
-										{
-											"key": "X-Request-Id",
-											"value": "8474d51a-a142-4a7b-9d6b-41d1e805e45c"
-										},
-										{
-											"key": "X-Xss-Protection",
-											"value": "1; mode=block"
-										}
-									],
-									"cookie": [],
-									"body": "{\n    \"message\": \"success\",\n    \"data\": {\n        \"id\": \"7ef26d71-ce37-4a2c-b349-43d25df828cf\",\n        \"order_id\": \"b2da08ae-47fd-46eb-868a-c88c8b4b5feb\",\n        \"status\": \"delivered\",\n        \"tracking_number\": \"jne-598600692\",\n        \"shipping_cost\": \"25000\",\n        \"currency\": \"\",\n        \"weight_kg\": \"1.24\",\n        \"dimensions\": {\n            \"width\": \"0\",\n            \"height\": \"0\",\n            \"length\": \"0\",\n            \"unit\": \"\"\n        },\n        \"estimated_delivery_at\": \"2025-09-17T22:47:08.750493+07:00\",\n        \"actual_delivery_at\": \"2025-09-14T22:53:56.484874+07:00\",\n        \"created_at\": \"2025-09-14T22:47:08.850634+07:00\",\n        \"updated_at\": \"2025-09-14T22:53:56.484874+07:00\"\n    }\n}"
 								}
 							]
 						}
