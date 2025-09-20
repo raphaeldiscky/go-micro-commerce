@@ -25,7 +25,7 @@ const (
 
 	// TemporalWorkflowTimeout is the maximum execution time for the entire order saga workflow.
 	// This timeout covers all steps from product reservation to order confirmation.
-	TemporalWorkflowTimeout = 60 * time.Minute
+	TemporalWorkflowTimeout = 25 * time.Hour // enough for all steps
 
 	// TemporalCompensationWorkflowTimeout is the maximum time allowed for compensation activities.
 	// Compensation includes refunds, product releases, and shipping cancellations.
