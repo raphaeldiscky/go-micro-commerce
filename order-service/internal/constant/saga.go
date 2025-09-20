@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// SagaExecutionTimeout is the default execution timeout for full workflow sagas.
-	SagaExecutionTimeout = 60 * time.Minute
+	SagaExecutionTimeout = 25 * time.Hour // enough for all steps
 	// SagaMaxConcurrent is the maximum number of concurrent sagas.
 	SagaMaxConcurrent = 100
 	// SagaDefaultMaxRetries is the default maximum number of retries for sagas.
@@ -142,7 +142,7 @@ const (
 	// WaitForPaymentConfirmationStepRetryDelay is the delay between retries for the WaitForPaymentConfirmationStep.
 	WaitForPaymentConfirmationStepRetryDelay = 5 * time.Second
 	// WaitForPaymentConfirmationStepTimeout is the timeout for the WaitForPaymentConfirmationStep.
-	WaitForPaymentConfirmationStepTimeout = 30 * time.Minute
+	WaitForPaymentConfirmationStepTimeout = 24 * time.Hour
 )
 
 // ====== Step 7 ======.

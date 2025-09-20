@@ -47,7 +47,7 @@ type OrderActivities interface {
 		ctx context.Context,
 		order *entity.Order,
 		customerEmail string,
-	) (paymentID uuid.UUID, err error) // 20-min timeout
+	) (paymentID uuid.UUID, err error) // 24h timeout
 	ProcessFulfillment(
 		ctx context.Context,
 		payload *Payload,
@@ -404,7 +404,7 @@ func (a *orderActivities) SendPaymentRequiredNotification(
 	return nil
 }
 
-// WaitForPaymentConfirmation waits for payment confirmation with 30-minute timeout, with payment reminder notification, no retry and auto-cancel.
+// WaitForPaymentConfirmation waits for payment confirmation with 24h timeout, with payment reminder notification, no retry and auto-cancel.
 func (a *orderActivities) WaitForPaymentConfirmation(
 	ctx context.Context,
 	order *entity.Order,
@@ -426,7 +426,7 @@ func (a *orderActivities) WaitForPaymentConfirmation(
 	response, err := a.paymentClient.WaitForPaymentResponse(
 		ctx,
 		order.ID,
-		constant.WaitForPaymentConfirmationStepTimeout, // 30-min total timeout for user payment confirmation
+		constant.WaitForPaymentConfirmationStepTimeout, // 24h total timeout for user payment confirmation
 	)
 	// Cancel payment reminders after payment completion or timeout
 	if len(taskIDs) > 0 {
