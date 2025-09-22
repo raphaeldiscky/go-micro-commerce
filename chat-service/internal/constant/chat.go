@@ -62,22 +62,18 @@ const (
 	PriorityUrgent = 4
 )
 
-// WebSocketMessageType represents the type of WebSocket message.
-type WebSocketMessageType string
+// PresenceStatus represents user presence status.
+type PresenceStatus string
 
 const (
-	// WebSocketMessageTypeChat represents a chat message.
-	WebSocketMessageTypeChat WebSocketMessageType = "chat"
-	// WebSocketMessageTypeTyping represents a typing indicator.
-	WebSocketMessageTypeTyping WebSocketMessageType = "typing"
-	// WebSocketMessageTypePresence represents a presence update.
-	WebSocketMessageTypePresence WebSocketMessageType = "presence"
-	// WebSocketMessageTypeSystem represents a system message.
-	WebSocketMessageTypeSystem WebSocketMessageType = "system"
-	// WebSocketMessageTypeHeartbeat represents a heartbeat/ping message.
-	WebSocketMessageTypeHeartbeat WebSocketMessageType = "heartbeat"
-	// WebSocketMessageTypeError represents an error message.
-	WebSocketMessageTypeError WebSocketMessageType = "error"
+	// PresenceStatusOnline represents an online user.
+	PresenceStatusOnline PresenceStatus = "online"
+	// PresenceStatusOffline represents an offline user.
+	PresenceStatusOffline PresenceStatus = "offline"
+	// PresenceStatusAway represents an away user.
+	PresenceStatusAway PresenceStatus = "away"
+	// PresenceStatusBusy represents a busy user.
+	PresenceStatusBusy PresenceStatus = "busy"
 )
 
 // WebSocketEventType represents the type of WebSocket event.

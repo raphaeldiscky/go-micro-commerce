@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
@@ -42,6 +41,17 @@ type ConnectionHandler interface {
 	OnError(conn Connection, err error)
 }
 
+// ConnectionConfig holds configuration for WebSocket connections.
+type ConnectionConfig struct {
+	ReadBufferSize  int           // Size of the read buffer
+	WriteBufferSize int           // Size of the write buffer
+	MaxMessageSize  int64         // Maximum message size in bytes
+	PongWait        time.Duration // Time allowed to read the next pong message
+	PingPeriod      time.Duration // Send pings to peer with this period
+	WriteWait       time.Duration // Time allowed to write a message
+	SendBufferSize  int           // Size of the send channel buffer
+}
+
 // BaseConnection provides a base implementation of the Connection interface.
 type BaseConnection struct {
 	id            uuid.UUID
@@ -54,7 +64,7 @@ type BaseConnection struct {
 	isActive      bool
 	lastHeartbeat time.Time
 	logger        logger.Logger
-	config        *config.WebsocketServerConfig
+	config        *ConnectionConfig
 }
 
 // NewBaseConnection creates a new base WebSocket connection.
@@ -63,7 +73,7 @@ func NewBaseConnection(
 	conn *websocket.Conn,
 	hub Hub,
 	handler ConnectionHandler,
-	config *config.WebsocketServerConfig,
+	config *ConnectionConfig,
 	logger logger.Logger,
 ) *BaseConnection {
 	return &BaseConnection{

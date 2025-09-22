@@ -7,12 +7,11 @@ import (
 
 // Config holds all configuration for the application.
 type Config struct {
-	JWT             *JWTConfig
-	SMTP            *SMTPConfig
-	GRPCClient      *GRPCClientConfig
-	Kafka           *KafkaConfig
-	Asynq           *AsynqConfig
-	WebsocketServer *WebsocketServerConfig
+	JWT        *JWTConfig
+	SMTP       *SMTPConfig
+	GRPCClient *GRPCClientConfig
+	Kafka      *KafkaConfig
+	Asynq      *AsynqConfig
 }
 
 // NewConfig creates a new configuration instance by loading environment variables.
@@ -27,11 +26,10 @@ func NewConfig() (*Config, error) {
 	}
 
 	return &Config{
-		JWT:             initJWTConfig(),
-		SMTP:            initSMTPConfig(),
-		GRPCClient:      initGRPCClientConfig("api"),
-		Kafka:           initKafkaConfig(),
-		Asynq:           initAsynqConfig(),
-		WebsocketServer: initWebsocketServerConfig(),
+		JWT:        initJWTConfig(),
+		SMTP:       initSMTPConfig(),
+		GRPCClient: initGRPCClientConfig("api"),
+		Kafka:      initKafkaConfig(),
+		Asynq:      initAsynqConfig(),
 	}, nil
 }

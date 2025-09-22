@@ -16,7 +16,6 @@ const (
 	MessageTypeHeartbeat MessageType = "heartbeat"
 	MessageTypeError     MessageType = "error"
 	MessageTypeSystem    MessageType = "system"
-	MessageTypeCustom    MessageType = "custom"
 )
 
 // Message represents a universal WebSocket message envelope.

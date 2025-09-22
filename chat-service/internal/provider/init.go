@@ -20,6 +20,8 @@ type Providers struct {
 	ConnectionRepository repository.ConnectionRepository
 	ChatService          service.ChatService
 	WebSocketHub         *websocket.ChatHub
+	RedisPublisher       redis.Publisher
+	RedisSubscriber      redis.Subscriber
 }
 
 // SetupGlobal initializes all providers.
@@ -61,10 +63,17 @@ func SetupGlobal(
 	lockClient := redislock.New(redisClusterClient)
 	dataStore := repository.NewDataStore(pgPool, lockClient, appLogger)
 
+	// Create Redis pub/sub clients for chat service
+	pubSubConfig := redis.DefaultPubSubConfig()
+	redisPublisher := redis.NewPublisher(redisClusterClient, pubSubConfig)
+	redisSubscriber := redis.NewSubscriber(redisClusterClient, pubSubConfig, appLogger)
+
 	return &Providers{
 		DataStore:            dataStore,
 		ConnectionRepository: dataStore.ConnectionRepository(),
 		ChatService:          nil, // Will be set in SetupChat
 		WebSocketHub:         nil, // Will be set in SetupChat
+		RedisPublisher:       redisPublisher,
+		RedisSubscriber:      redisSubscriber,
 	}, nil
 }

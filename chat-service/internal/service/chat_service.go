@@ -89,9 +89,10 @@ type ChatService interface {
 
 // chatService implements the ChatService interface.
 type chatService struct {
-	dataStore repository.DataStore
-	logger    logger.Logger
-	hub       *websocket.ChatHub
+	dataStore          repository.DataStore
+	logger             logger.Logger
+	hub                *websocket.ChatHub
+	conversationAccess ConversationAccess
 }
 
 // NewChatService creates a new instance of chatService.
@@ -100,10 +101,13 @@ func NewChatService(
 	appLogger logger.Logger,
 	hub *websocket.ChatHub,
 ) ChatService {
+	conversationAccess := NewConversationAccess(dataStore)
+
 	return &chatService{
-		dataStore: dataStore,
-		logger:    appLogger,
-		hub:       hub,
+		dataStore:          dataStore,
+		logger:             appLogger,
+		hub:                hub,
+		conversationAccess: conversationAccess,
 	}
 }
 
@@ -172,25 +176,10 @@ func (s *chatService) GetConversation(
 	userID uuid.UUID,
 ) (*dto.ConversationResponse, error) {
 	conversationRepo := s.dataStore.ConversationRepository()
-	participantRepo := s.dataStore.ParticipantRepository()
 
 	// Check if user is participant
-	participants, err := participantRepo.FindByConversationID(ctx, conversationID)
-	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to check conversation access")
-	}
-
-	hasAccess := false
-
-	for _, p := range participants {
-		if p.UserID == userID && p.IsActive {
-			hasAccess = true
-			break
-		}
-	}
-
-	if !hasAccess {
-		return nil, httperror.NewBadRequestError("access denied to conversation")
+	if err := s.conversationAccess.VerifyActiveUserAccess(ctx, conversationID, userID); err != nil {
+		return nil, err
 	}
 
 	// Get conversation
@@ -329,25 +318,10 @@ func (s *chatService) SendMessage(
 
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		messageRepo := ds.MessageRepository()
-		participantRepo := ds.ParticipantRepository()
 
 		// Verify sender is participant
-		participants, err := participantRepo.FindActiveByConversationID(ctx, req.ConversationID)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to check conversation access")
-		}
-
-		hasAccess := false
-
-		for _, p := range participants {
-			if p.UserID == senderID && p.IsActive {
-				hasAccess = true
-				break
-			}
-		}
-
-		if !hasAccess {
-			return httperror.NewBadRequestError("access denied to conversation")
+		if err := s.conversationAccess.VerifyActiveUserAccess(ctx, req.ConversationID, senderID); err != nil {
+			return err
 		}
 
 		// Create message entity
@@ -395,26 +369,11 @@ func (s *chatService) GetConversationMessages(
 	userID uuid.UUID,
 	limit, offset int,
 ) (*dto.MessageListResponse, error) {
-	participantRepo := s.dataStore.ParticipantRepository()
 	messageRepo := s.dataStore.MessageRepository()
 
 	// Verify user is participant
-	participants, err := participantRepo.FindByConversationID(ctx, conversationID)
-	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to check conversation access")
-	}
-
-	hasAccess := false
-
-	for _, p := range participants {
-		if p.UserID == userID {
-			hasAccess = true
-			break
-		}
-	}
-
-	if !hasAccess {
-		return nil, httperror.NewBadRequestError("access denied to conversation")
+	if err := s.conversationAccess.VerifyUserAccess(ctx, conversationID, userID); err != nil {
+		return nil, err
 	}
 
 	// Get messages

@@ -9,7 +9,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -31,16 +30,19 @@ type ChatConnection struct {
 type ChatConnectionHandler struct {
 	connectionRepo repository.ConnectionRepository
 	logger         logger.Logger
+	hub            *ChatHub
 }
 
 // NewChatConnectionHandler creates a new chat connection handler.
 func NewChatConnectionHandler(
 	connectionRepo repository.ConnectionRepository,
 	logger logger.Logger,
+	hub *ChatHub,
 ) *ChatConnectionHandler {
 	return &ChatConnectionHandler{
 		connectionRepo: connectionRepo,
 		logger:         logger,
+		hub:            hub,
 	}
 }
 
@@ -53,8 +55,8 @@ func NewChatConnection(
 	connectionRepo repository.ConnectionRepository,
 	logger logger.Logger,
 ) *ChatConnection {
-	handler := NewChatConnectionHandler(connectionRepo, logger)
-	config := &pkgconfig.WebsocketServerConfig{
+	handler := NewChatConnectionHandler(connectionRepo, logger, hub)
+	config := &pkgwebsocket.ConnectionConfig{
 		ReadBufferSize:  constant.WebSocketReadBufferSize,
 		WriteBufferSize: constant.WebSocketWriteBufferSize,
 		MaxMessageSize:  constant.WebSocketMaxMessageSize,
@@ -157,9 +159,21 @@ func (h *ChatConnectionHandler) OnMessage(
 	case pkgwebsocket.MessageTypeHeartbeat:
 		// Heartbeat messages are handled automatically
 		return nil
-	case pkgwebsocket.MessageTypeCustom:
-		// Handle chat-specific messages
+	case ChatMessageTypeChat:
+		// Handle chat messages
 		return h.handleChatMessage(conn, message)
+	case ChatMessageTypeTyping:
+		// Handle typing indicators
+		return h.handleTypingMessage(conn, message)
+	case ChatMessageTypePresence:
+		// Handle presence updates
+		return h.handlePresenceMessage(conn, message)
+	case ChatMessageTypeDeliveryReceipt:
+		// Handle delivery receipts
+		return h.handleDeliveryReceiptMessage(conn, message)
+	case ChatMessageTypeReadReceipt:
+		// Handle read receipts
+		return h.handleReadReceiptMessage(conn, message)
 	case pkgwebsocket.MessageTypeError:
 		// Handle error messages
 		h.logger.Error("Received error message", "type", message.Type)
@@ -168,6 +182,7 @@ func (h *ChatConnectionHandler) OnMessage(
 		// Handle system messages
 		h.logger.Info("Received system message", "type", message.Type)
 		return nil
+
 	default:
 		h.logger.Warn("Unknown message type", "type", message.Type)
 		return pkgwebsocket.ErrInvalidMessage
@@ -187,11 +202,134 @@ func (h *ChatConnectionHandler) handleChatMessage(
 	conn pkgwebsocket.Connection,
 	message *pkgwebsocket.Message,
 ) error {
-	// This would handle chat messages, typing indicators, etc.
-	// For now, just log the message
+	// Parse chat content
+	var content ChatContent
+	if err := message.ParseContent(&content); err != nil {
+		h.logger.Error("Failed to parse chat message", "error", err)
+		return err
+	}
+
 	h.logger.Debug("Chat message received",
 		"connection_id", conn.ID(),
-		"message_id", message.ID)
+		"message_id", message.ID,
+		"text", content.Text,
+		"message_type", content.MessageType)
+
+	// Here you would typically:
+	// 1. Validate the message
+	// 2. Store it in the database
+	// 3. Broadcast to conversation participants
+	// 4. Send delivery receipts
+
+	return nil
+}
+
+// handleTypingMessage handles typing indicator messages.
+func (h *ChatConnectionHandler) handleTypingMessage(
+	conn pkgwebsocket.Connection,
+	message *pkgwebsocket.Message,
+) error {
+	var content TypingContent
+	if err := message.ParseContent(&content); err != nil {
+		h.logger.Error("Failed to parse typing message", "error", err)
+		return err
+	}
+
+	h.logger.Debug("Typing indicator received",
+		"connection_id", conn.ID(),
+		"message_id", message.ID,
+		"is_typing", content.IsTyping)
+
+	// Broadcast typing indicator to conversation participants
+	// (excluding the sender)
+	if chatConn, ok := conn.(*ChatConnection); ok && chatConn.ConversationID() != nil {
+		err := h.hub.BroadcastToConversation(*chatConn.ConversationID(), message, conn.ID())
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// handlePresenceMessage handles presence update messages.
+func (h *ChatConnectionHandler) handlePresenceMessage(
+	conn pkgwebsocket.Connection,
+	message *pkgwebsocket.Message,
+) error {
+	var content PresenceContent
+	if err := message.ParseContent(&content); err != nil {
+		h.logger.Error("Failed to parse presence message", "error", err)
+		return err
+	}
+
+	h.logger.Debug("Presence update received",
+		"connection_id", conn.ID(),
+		"message_id", message.ID,
+		"user_id", content.UserID,
+		"status", content.Status,
+		"event", content.Event)
+
+	// Broadcast presence update to all relevant connections
+	// This could be to conversation participants or globally depending on requirements
+	err := h.hub.Broadcast(message, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handleDeliveryReceiptMessage handles delivery receipt messages.
+func (h *ChatConnectionHandler) handleDeliveryReceiptMessage(
+	conn pkgwebsocket.Connection,
+	message *pkgwebsocket.Message,
+) error {
+	var content DeliveryReceiptContent
+	if err := message.ParseContent(&content); err != nil {
+		h.logger.Error("Failed to parse delivery receipt message", "error", err)
+		return err
+	}
+
+	h.logger.Debug("Delivery receipt received",
+		"connection_id", conn.ID(),
+		"message_id", message.ID,
+		"original_message_id", content.MessageID,
+		"conversation_id", content.ConversationID,
+		"recipient_id", content.RecipientID)
+
+	// Send delivery receipt back to the original sender
+	err := h.hub.BroadcastToConversation(content.ConversationID, message, conn.ID())
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// handleReadReceiptMessage handles read receipt messages.
+func (h *ChatConnectionHandler) handleReadReceiptMessage(
+	conn pkgwebsocket.Connection,
+	message *pkgwebsocket.Message,
+) error {
+	var content ReadReceiptContent
+	if err := message.ParseContent(&content); err != nil {
+		h.logger.Error("Failed to parse read receipt message", "error", err)
+		return err
+	}
+
+	h.logger.Debug("Read receipt received",
+		"connection_id", conn.ID(),
+		"message_id", message.ID,
+		"original_message_id", content.MessageID,
+		"conversation_id", content.ConversationID,
+		"reader_id", content.ReaderID)
+
+	// Send read receipt back to the original sender
+	err := h.hub.BroadcastToConversation(content.ConversationID, message, conn.ID())
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

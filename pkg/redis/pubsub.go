@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
 // Publisher defines the interface for publishing messages to Redis channels.
@@ -32,6 +33,13 @@ type Subscriber interface {
 
 // MessageHandler is a function type for handling received messages.
 type MessageHandler func(ctx context.Context, message *Message) error
+
+// PubSubClient defines the common interface for both redis.Client and redis.ClusterClient.
+type PubSubClient interface {
+	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
+	Subscribe(ctx context.Context, channels ...string) *redis.PubSub
+	PSubscribe(ctx context.Context, patterns ...string) *redis.PubSub
+}
 
 // PubSubConfig holds configuration for Redis pub/sub.
 type PubSubConfig struct {

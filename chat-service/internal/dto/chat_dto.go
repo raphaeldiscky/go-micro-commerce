@@ -115,3 +115,13 @@ type ChatStatsResponse struct {
 	OnlineUsers          int64 `json:"online_users"`
 	OnlineAdmins         int64 `json:"online_admins"`
 }
+
+// UpdatePresenceRequest represents the request to update user presence.
+type UpdatePresenceRequest struct {
+	Status constant.PresenceStatus `json:"status" validate:"required"`
+}
+
+// TypingIndicatorRequest represents the request to send typing indicator.
+type TypingIndicatorRequest struct {
+	IsTyping bool `json:"is_typing"`
+}

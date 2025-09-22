@@ -17,12 +17,14 @@ import (
 // ChatHandler handles chat-related HTTP requests.
 type ChatHandler struct {
 	chatService service.ChatService
+	hub         *websocket.ChatHub
 }
 
 // NewChatHandler creates a new ChatHandler instance.
-func NewChatHandler(chatService service.ChatService, _ *websocket.ChatHub) *ChatHandler {
+func NewChatHandler(chatService service.ChatService, hub *websocket.ChatHub) *ChatHandler {
 	return &ChatHandler{
 		chatService: chatService,
+		hub:         hub,
 	}
 }
 
@@ -224,4 +226,105 @@ func (h *ChatHandler) UpdateConversationStatus(c echo.Context) error {
 	}
 
 	return echoutils.ResponseOK(c, result)
+}
+
+// UpdatePresence updates a user's presence status.
+func (h *ChatHandler) UpdatePresence(c echo.Context) error {
+	var req chatDto.UpdatePresenceRequest
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
+
+	userID, _ := h.getUserInfo(c)
+
+	// Create and broadcast presence message
+	presenceMsg, err := websocket.NewPresenceMessage(
+		userID,
+		req.Status,
+		constant.WebSocketEventTypeConnect,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to all connections
+	err = h.hub.Broadcast(presenceMsg, nil)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, map[string]interface{}{
+		"user_id": userID,
+		"status":  req.Status,
+		"message": "Presence updated successfully",
+	})
+}
+
+// SendTypingIndicator sends a typing indicator for a conversation.
+func (h *ChatHandler) SendTypingIndicator(c echo.Context) error {
+	conversationIDStr := c.Param("conversationID")
+
+	conversationID, err := uuid.Parse(conversationIDStr)
+	if err != nil {
+		return err
+	}
+
+	var req chatDto.TypingIndicatorRequest
+	if err = c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err = c.Validate(&req); err != nil {
+		return err
+	}
+
+	userID, _ := h.getUserInfo(c)
+
+	// Create and broadcast typing message
+	typingMsg, err := websocket.NewTypingMessage(
+		conversationID,
+		userID,
+		req.IsTyping,
+	)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to conversation participants (excluding sender)
+	err = h.hub.BroadcastToConversation(conversationID, typingMsg, userID)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, map[string]interface{}{
+		"conversation_id": conversationID,
+		"user_id":         userID,
+		"is_typing":       req.IsTyping,
+		"message":         "Typing indicator sent successfully",
+	})
+}
+
+// GetOnlineUsers retrieves a list of currently online users.
+func (h *ChatHandler) GetOnlineUsers(c echo.Context) error {
+	userID, _ := h.getUserInfo(c)
+
+	// Get all active connections from the hub
+	onlineUsers := h.hub.GetOnlineUsers()
+
+	// Filter out the current user if needed
+	filteredUsers := make([]uuid.UUID, 0, len(onlineUsers))
+	for _, id := range onlineUsers {
+		if id != userID {
+			filteredUsers = append(filteredUsers, id)
+		}
+	}
+
+	return echoutils.ResponseOK(c, map[string]interface{}{
+		"online_users": filteredUsers,
+		"count":        len(filteredUsers),
+	})
 }

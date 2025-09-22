@@ -13,7 +13,7 @@ import (
 
 // subscriber implements the Subscriber interface.
 type subscriber struct {
-	client  *redis.Client
+	client  PubSubClient
 	config  PubSubConfig
 	logger  logger.Logger
 	pubsub  *redis.PubSub
@@ -22,7 +22,7 @@ type subscriber struct {
 }
 
 // NewSubscriber creates a new Redis subscriber.
-func NewSubscriber(client *redis.Client, config PubSubConfig, logger logger.Logger) Subscriber {
+func NewSubscriber(client PubSubClient, config PubSubConfig, logger logger.Logger) Subscriber {
 	return &subscriber{
 		client: client,
 		config: config,

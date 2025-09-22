@@ -1,14 +1,12 @@
 package redis
 
 import (
-	"github.com/redis/go-redis/v9"
-
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // PubSubManager manages both publisher and subscriber instances using an existing Redis client.
 type PubSubManager struct {
-	client    *redis.Client
+	client    PubSubClient
 	config    PubSubConfig
 	logger    logger.Logger
 	publisher Publisher
@@ -16,7 +14,7 @@ type PubSubManager struct {
 
 // NewPubSubManager creates a new pub/sub manager with an existing Redis client.
 func NewPubSubManager(
-	client *redis.Client,
+	client PubSubClient,
 	config PubSubConfig,
 	logger logger.Logger,
 ) *PubSubManager {
@@ -39,7 +37,7 @@ func (m *PubSubManager) CreateSubscriber() Subscriber {
 }
 
 // GetClient returns the underlying Redis client.
-func (m *PubSubManager) GetClient() *redis.Client {
+func (m *PubSubManager) GetClient() PubSubClient {
 	return m.client
 }
 

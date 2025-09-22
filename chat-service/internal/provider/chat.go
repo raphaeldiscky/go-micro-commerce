@@ -8,6 +8,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/pubsub"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
@@ -21,8 +22,15 @@ func SetupChat(
 	appLogger logger.Logger,
 	providers *Providers,
 ) {
-	// Create WebSocket hub
-	hub := websocket.NewChatHub(providers.ConnectionRepository, appLogger)
+	// Create chat pub/sub service
+	chatPubSub := pubsub.NewChatPubSub(
+		providers.RedisPublisher,
+		providers.RedisSubscriber,
+		appLogger,
+	)
+
+	// Create WebSocket hub with Redis pub/sub integration
+	hub := websocket.NewChatHub(providers.ConnectionRepository, appLogger, chatPubSub)
 	providers.WebSocketHub = hub
 
 	// Create chat service

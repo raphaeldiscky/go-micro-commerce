@@ -4,18 +4,16 @@ import (
 	"context"
 	"fmt"
 	"time"
-
-	"github.com/redis/go-redis/v9"
 )
 
 // publisher implements the Publisher interface.
 type publisher struct {
-	client *redis.Client
+	client PubSubClient
 	config PubSubConfig
 }
 
 // NewPublisher creates a new Redis publisher.
-func NewPublisher(client *redis.Client, config PubSubConfig) Publisher {
+func NewPublisher(client PubSubClient, config PubSubConfig) Publisher {
 	return &publisher{
 		client: client,
 		config: config,
