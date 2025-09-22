@@ -51,6 +51,7 @@ get_service_port() {
     "fulfillment-service") echo "15435" ;;
     "notification-service") echo "15436" ;;
     "search-service") echo "15437" ;;
+    "chat-service" ) echo "15438" ;;
     *) echo "" ;;
   esac
 }
@@ -64,6 +65,7 @@ get_service_db_name() {
     "fulfillment-service") echo "fulfillment_db" ;;
     "notification-service") echo "notification_db" ;;
     "search-service") echo "search_db" ;;
+    "chat-service" ) echo "chat_db" ;;
     *) echo "" ;;
   esac
 }

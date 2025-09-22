@@ -1,0 +1,85 @@
+package redis
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+// publisher implements the Publisher interface.
+type publisher struct {
+	client *redis.Client
+	config PubSubConfig
+}
+
+// NewPublisher creates a new Redis publisher.
+func NewPublisher(client *redis.Client, config PubSubConfig) Publisher {
+	return &publisher{
+		client: client,
+		config: config,
+	}
+}
+
+// Publish publishes a message to the specified channel.
+func (p *publisher) Publish(ctx context.Context, channel string, message *Message) error {
+	data, err := message.ToJSON()
+	if err != nil {
+		return fmt.Errorf("failed to serialize message: %w", err)
+	}
+
+	err = p.client.Publish(ctx, channel, data).Err()
+	if err != nil {
+		return fmt.Errorf("failed to publish message to channel %s: %w", channel, err)
+	}
+
+	return nil
+}
+
+// PublishWithRetry publishes a message with retry logic.
+func (p *publisher) PublishWithRetry(
+	ctx context.Context,
+	channel string,
+	message *Message,
+	maxRetries int,
+) error {
+	var lastErr error
+
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			// Calculate exponential backoff delay
+			delay := time.Duration(attempt) * p.config.RetryDelay
+			if delay > p.config.MaxRetryDelay {
+				delay = p.config.MaxRetryDelay
+			}
+
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(delay):
+			}
+		}
+
+		err := p.Publish(ctx, channel, message)
+		if err == nil {
+			return nil
+		}
+
+		lastErr = err
+
+		// Don't retry on context cancellation
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+	}
+
+	return fmt.Errorf("failed to publish after %d attempts: %w", maxRetries+1, lastErr)
+}
+
+// Close closes the publisher and releases resources.
+func (p *publisher) Close() error {
+	// Redis client is shared, so we don't close it here
+	// The application should manage the Redis client lifecycle
+	return nil
+}

@@ -16,6 +16,7 @@ SERVICES=(
   "pkg"
   "proto"
   "search-service"
+  "chat-service"
 )
 
 run_tests() {

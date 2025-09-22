@@ -13,6 +13,7 @@ SERVICES=(
   "payment-service"
   "fulfillment-service"
   "search-service"
+  "chat-service"
 )
 
 format_service() {

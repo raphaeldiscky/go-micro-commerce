@@ -14,6 +14,7 @@ SERVICES=(
   "payment-service"
   "fulfillment-service"
   "search-service"
+  "chat-service"
 )
 
 install_deps() {
