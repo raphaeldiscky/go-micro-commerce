@@ -56,7 +56,6 @@ type ChatService interface {
 		ctx context.Context,
 		req *dto.CreateMessageRequest,
 		senderID uuid.UUID,
-		senderType constant.UserType,
 	) (*dto.MessageResponse, error)
 	GetConversationMessages(
 		ctx context.Context,
@@ -225,9 +224,14 @@ func (s *chatService) GetUserConversations(
 	var conversations []dto.ConversationResponse
 
 	for _, participant := range participants {
-		conversation, err := conversationRepo.FindByID(ctx, participant.ConversationID)
-		if err != nil {
-			s.logger.Errorf("Failed to get conversation %s: %v", participant.ConversationID, err)
+		conversation, errFind := conversationRepo.FindByID(ctx, participant.ConversationID)
+		if errFind != nil {
+			s.logger.Errorf(
+				"Failed to get conversation %s: %v",
+				participant.ConversationID,
+				errFind,
+			)
+
 			continue
 		}
 
@@ -257,7 +261,7 @@ func (s *chatService) UpdateConversationStatus(
 	}
 
 	// Update status
-	if err := conversation.UpdateStatus(req.Status); err != nil {
+	if err = conversation.UpdateStatus(req.Status); err != nil {
 		return nil, httperror.NewBadRequestError(fmt.Sprintf("failed to update status: %v", err))
 	}
 
@@ -269,7 +273,6 @@ func (s *chatService) UpdateConversationStatus(
 
 	// Broadcast status update to participants
 	s.broadcastSystemMessage(
-		ctx,
 		conversationID,
 		fmt.Sprintf("Conversation status updated to %s", req.Status),
 	)
@@ -321,7 +324,6 @@ func (s *chatService) SendMessage(
 	ctx context.Context,
 	req *dto.CreateMessageRequest,
 	senderID uuid.UUID,
-	senderType constant.UserType,
 ) (*dto.MessageResponse, error) {
 	var result *dto.MessageResponse
 
@@ -379,7 +381,7 @@ func (s *chatService) SendMessage(
 	}
 
 	// Broadcast message to conversation participants via WebSocket
-	s.broadcastMessage(ctx, req.ConversationID, result)
+	s.broadcastMessage(req.ConversationID, result)
 
 	s.logger.Infof("Message sent by user %s to conversation %s", senderID, req.ConversationID)
 
@@ -482,7 +484,7 @@ func (s *chatService) JoinConversation(
 	}
 
 	// Broadcast join event
-	s.broadcastSystemMessage(ctx, conversationID, "User joined the conversation")
+	s.broadcastSystemMessage(conversationID, "User joined the conversation")
 
 	s.logger.Infof("User %s joined conversation %s", userID, conversationID)
 
@@ -521,12 +523,12 @@ func (s *chatService) LeaveConversation(
 	}
 
 	// Mark as left
-	if err := participantRepo.MarkAsLeft(ctx, participantID); err != nil {
+	if err = participantRepo.MarkAsLeft(ctx, participantID); err != nil {
 		return httperror.NewInternalServerError("failed to leave conversation")
 	}
 
 	// Broadcast leave event
-	s.broadcastSystemMessage(ctx, conversationID, "User left the conversation")
+	s.broadcastSystemMessage(conversationID, "User left the conversation")
 
 	s.logger.Infof("User %s left conversation %s", userID, conversationID)
 
@@ -559,30 +561,25 @@ func (s *chatService) AssignConversationToAdmin(
 	conversationID uuid.UUID,
 	adminID uuid.UUID,
 ) (*dto.ConversationResponse, error) {
-	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		// Join admin to conversation
-		_, err := s.JoinConversation(
-			ctx,
-			conversationID,
-			adminID,
-			constant.UserTypeAdmin,
-			constant.ParticipantRoleModerator,
-		)
-		if err != nil {
-			return err
-		}
+	_, err := s.JoinConversation(
+		ctx,
+		conversationID,
+		adminID,
+		constant.UserTypeAdmin,
+		constant.ParticipantRoleModerator,
+	)
+	if err != nil {
+		return nil, err
+	}
 
-		// Update conversation status to active
-		_, err = s.UpdateConversationStatus(
-			ctx,
-			conversationID,
-			&dto.UpdateConversationStatusRequest{
-				Status: constant.ConversationStatusActive,
-			},
-		)
-
-		return err
-	})
+	// Update conversation status to active
+	_, err = s.UpdateConversationStatus(
+		ctx,
+		conversationID,
+		&dto.UpdateConversationStatusRequest{
+			Status: constant.ConversationStatusActive,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -618,7 +615,6 @@ func (s *chatService) GetWaitingConversations(
 
 // broadcastMessage broadcasts a message to conversation participants via WebSocket.
 func (s *chatService) broadcastMessage(
-	ctx context.Context,
 	conversationID uuid.UUID,
 	message *dto.MessageResponse,
 ) {
@@ -630,19 +626,22 @@ func (s *chatService) broadcastMessage(
 		conversationID,
 		*message.SenderID,
 		message.Content,
-		constant.MessageType(message.MessageType),
+		message.MessageType,
 	)
 	if err != nil {
 		s.logger.Errorf("Failed to create WebSocket message: %v", err)
 		return
 	}
 
-	_ = s.hub.BroadcastToConversation(conversationID, wsMessage)
+	err = s.hub.BroadcastToConversation(conversationID, wsMessage)
+	if err != nil {
+		s.logger.Errorf("Failed to broadcast message: %v", err)
+		return
+	}
 }
 
 // broadcastSystemMessage broadcasts a system message to conversation participants.
 func (s *chatService) broadcastSystemMessage(
-	ctx context.Context,
 	conversationID uuid.UUID,
 	content string,
 ) {
@@ -650,11 +649,15 @@ func (s *chatService) broadcastSystemMessage(
 		return
 	}
 
-	wsMessage, err := websocket.NewSystemMessage(content, "conversation_update", nil)
+	wsMessage, err := websocket.NewSystemMessage(content, nil)
 	if err != nil {
 		s.logger.Errorf("Failed to create system message: %v", err)
 		return
 	}
 
-	_ = s.hub.BroadcastToConversation(conversationID, wsMessage)
+	err = s.hub.BroadcastToConversation(conversationID, wsMessage)
+	if err != nil {
+		s.logger.Errorf("Failed to broadcast system message: %v", err)
+		return
+	}
 }

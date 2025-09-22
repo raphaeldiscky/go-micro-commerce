@@ -33,7 +33,7 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication failed")
 	}
 
-	if err := middleware.RequireActiveUser()(auth); err != nil {
+	if err = middleware.RequireActiveUser()(auth); err != nil {
 		h.logger.Error("WebSocket authorization failed", "error", err)
 		return echo.NewHTTPError(http.StatusForbidden, "authorization failed")
 	}
@@ -77,12 +77,12 @@ func (h *WebSocketHandler) HandleAdminWebSocket(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized, "authentication failed")
 	}
 
-	if err := middleware.RequireActiveUser()(auth); err != nil {
+	if err = middleware.RequireActiveUser()(auth); err != nil {
 		h.logger.Error("WebSocket authorization failed", "error", err)
 		return echo.NewHTTPError(http.StatusForbidden, "authorization failed")
 	}
 
-	if err := middleware.RequireUserType("admin")(auth); err != nil {
+	if err = middleware.RequireUserType("admin")(auth); err != nil {
 		h.logger.Error("WebSocket admin authorization failed", "error", err)
 		return echo.NewHTTPError(http.StatusForbidden, "admin access required")
 	}

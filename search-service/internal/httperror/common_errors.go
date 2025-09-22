@@ -14,10 +14,3 @@ func NewBadRequestError(message string) *httperror.ResponseError {
 
 	return httperror.NewResponseError(err, http.StatusBadRequest, message)
 }
-
-// NewInternalServerError is return when email or password wrong.
-func NewInternalServerError(message string) *httperror.ResponseError {
-	err := errors.New(message)
-
-	return httperror.NewResponseError(err, http.StatusInternalServerError, message)
-}

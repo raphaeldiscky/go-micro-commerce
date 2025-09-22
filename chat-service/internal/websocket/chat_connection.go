@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -53,7 +54,7 @@ func NewChatConnection(
 	logger logger.Logger,
 ) *ChatConnection {
 	handler := NewChatConnectionHandler(connectionRepo, logger)
-	config := &pkgwebsocket.ConnectionConfig{
+	config := &pkgconfig.WebsocketServerConfig{
 		ReadBufferSize:  constant.WebSocketReadBufferSize,
 		WriteBufferSize: constant.WebSocketWriteBufferSize,
 		MaxMessageSize:  constant.WebSocketMaxMessageSize,
@@ -112,18 +113,7 @@ func (c *ChatConnection) Start(ctx context.Context) {
 		c.logger.Error("Failed to create connection record", "error", err)
 	}
 
-	// Start the base connection
-	config := &pkgwebsocket.ConnectionConfig{
-		ReadBufferSize:  constant.WebSocketReadBufferSize,
-		WriteBufferSize: constant.WebSocketWriteBufferSize,
-		MaxMessageSize:  constant.WebSocketMaxMessageSize,
-		PongWait:        constant.WebSocketPongWait * time.Second,
-		PingPeriod:      constant.WebSocketPingPeriod * time.Second,
-		WriteWait:       constant.WebSocketWriteWait * time.Second,
-		SendBufferSize:  constant.WebSocketSendBufferSize,
-	}
-
-	c.BaseConnection.Start(ctx, config)
+	c.BaseConnection.Start(ctx)
 }
 
 // OnConnect handles connection establishment.

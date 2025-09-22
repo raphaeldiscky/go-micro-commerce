@@ -65,7 +65,7 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	// Initialize all workers
 	workers := []Worker{
 		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers),
-		NewWebSocketWorker(ctx, wm.cfg, wm.logger, wm.providers),
+		NewWebSocketWorker(wm.cfg, wm.logger, wm.providers),
 	}
 
 	return wm.runWorkers(ctx, workers)

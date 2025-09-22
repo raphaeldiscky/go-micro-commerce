@@ -60,7 +60,6 @@ func NewChatMessage(
 // NewSystemMessage creates a new system message.
 func NewSystemMessage(
 	content string,
-	messageType string,
 	metadata map[string]any,
 ) (*pkgwebsocket.Message, error) {
 	systemContent := ChatContent{

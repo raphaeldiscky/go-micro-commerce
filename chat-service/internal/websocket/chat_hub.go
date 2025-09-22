@@ -13,6 +13,8 @@ import (
 // ChatHub extends the universal BaseHub with chat-specific functionality.
 type ChatHub struct {
 	*pkgwebsocket.BaseHub
+
+	logger         logger.Logger
 	ConnectionRepo repository.ConnectionRepository
 }
 
@@ -23,6 +25,7 @@ func NewChatHub(connectionRepo repository.ConnectionRepository, logger logger.Lo
 	return &ChatHub{
 		BaseHub:        baseHub,
 		ConnectionRepo: connectionRepo,
+		logger:         logger,
 	}
 }
 
@@ -85,13 +88,16 @@ func (h *ChatHub) GetUserTypeConnections(userType constant.UserType) []*ChatConn
 	connections := make([]*ChatConnection, 0)
 
 	// Get all user connections and filter by type
-	_ = h.BaseHub.Broadcast(&pkgwebsocket.Message{}, func(conn pkgwebsocket.Connection) bool {
+	err := h.BaseHub.Broadcast(&pkgwebsocket.Message{}, func(conn pkgwebsocket.Connection) bool {
 		if chatConn, ok := conn.(*ChatConnection); ok && chatConn.UserType() == userType {
 			connections = append(connections, chatConn)
 		}
 
 		return false // Don't actually send the message, just collect connections
 	})
+	if err != nil {
+		h.logger.Error("Failed to broadcast message", "error", err)
+	}
 
 	return connections
 }

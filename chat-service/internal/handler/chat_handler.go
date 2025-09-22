@@ -101,23 +101,22 @@ func (h *ChatHandler) SendMessage(c echo.Context) error {
 	}
 
 	var req chatDto.CreateMessageRequest
-	if err := c.Bind(&req); err != nil {
+	if err = c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err = c.Validate(&req); err != nil {
 		return err
 	}
 
 	req.ConversationID = conversationID
 
-	userID, userType := h.getUserInfo(c)
+	userID, _ := h.getUserInfo(c)
 
 	result, err := h.chatService.SendMessage(
 		c.Request().Context(),
 		&req,
 		userID,
-		userType,
 	)
 	if err != nil {
 		return err
@@ -207,11 +206,11 @@ func (h *ChatHandler) UpdateConversationStatus(c echo.Context) error {
 	}
 
 	var req chatDto.UpdateConversationStatusRequest
-	if err := c.Bind(&req); err != nil {
+	if err = c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err := c.Validate(&req); err != nil {
+	if err = c.Validate(&req); err != nil {
 		return err
 	}
 

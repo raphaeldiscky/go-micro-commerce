@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
@@ -53,30 +54,7 @@ type BaseConnection struct {
 	isActive      bool
 	lastHeartbeat time.Time
 	logger        logger.Logger
-}
-
-// ConnectionConfig holds configuration for WebSocket connections.
-type ConnectionConfig struct {
-	ReadBufferSize  int           // Size of the read buffer
-	WriteBufferSize int           // Size of the write buffer
-	MaxMessageSize  int64         // Maximum message size in bytes
-	PongWait        time.Duration // Time allowed to read the next pong message
-	PingPeriod      time.Duration // Send pings to peer with this period
-	WriteWait       time.Duration // Time allowed to write a message
-	SendBufferSize  int           // Size of the send channel buffer
-}
-
-// DefaultConnectionConfig returns default connection configuration.
-func DefaultConnectionConfig() *ConnectionConfig {
-	return &ConnectionConfig{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		MaxMessageSize:  512,
-		PongWait:        60 * time.Second,
-		PingPeriod:      54 * time.Second,
-		WriteWait:       10 * time.Second,
-		SendBufferSize:  256,
-	}
+	config        *config.WebsocketServerConfig
 }
 
 // NewBaseConnection creates a new base WebSocket connection.
@@ -85,13 +63,9 @@ func NewBaseConnection(
 	conn *websocket.Conn,
 	hub Hub,
 	handler ConnectionHandler,
-	config *ConnectionConfig,
+	config *config.WebsocketServerConfig,
 	logger logger.Logger,
 ) *BaseConnection {
-	if config == nil {
-		config = DefaultConnectionConfig()
-	}
-
 	return &BaseConnection{
 		id:            uuid.New(),
 		userID:        userID,
@@ -157,7 +131,7 @@ func (c *BaseConnection) Close() error {
 	close(c.send)
 
 	// Set close handler
-	err := c.conn.SetWriteDeadline(time.Now().Add(DefaultConnectionConfig().WriteWait))
+	err := c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteWait))
 	if err != nil {
 		return err
 	}
@@ -192,11 +166,7 @@ func (c *BaseConnection) GetLastHeartbeat() time.Time {
 }
 
 // Start starts the connection's read and write pumps.
-func (c *BaseConnection) Start(ctx context.Context, config *ConnectionConfig) {
-	if config == nil {
-		config = DefaultConnectionConfig()
-	}
-
+func (c *BaseConnection) Start(ctx context.Context) {
 	// Notify handler of connection
 	if err := c.handler.OnConnect(c); err != nil {
 		c.logger.Error("Connection handler failed", "error", err)
@@ -210,12 +180,12 @@ func (c *BaseConnection) Start(ctx context.Context, config *ConnectionConfig) {
 	}
 
 	// Start read and write pumps
-	go c.writePump(ctx, config)
-	go c.readPump(ctx, config)
+	go c.writePump(ctx)
+	go c.readPump(ctx)
 }
 
 // readPump pumps messages from the WebSocket connection to the hub.
-func (c *BaseConnection) readPump(ctx context.Context, config *ConnectionConfig) {
+func (c *BaseConnection) readPump(ctx context.Context) {
 	defer func() {
 		c.hub.Unregister(c)
 
@@ -227,9 +197,9 @@ func (c *BaseConnection) readPump(ctx context.Context, config *ConnectionConfig)
 		c.handler.OnDisconnect(c)
 	}()
 
-	c.conn.SetReadLimit(config.MaxMessageSize)
+	c.conn.SetReadLimit(c.config.MaxMessageSize)
 
-	err := c.conn.SetReadDeadline(time.Now().Add(config.PongWait))
+	err := c.conn.SetReadDeadline(time.Now().Add(c.config.PongWait))
 	if err != nil {
 		return
 	}
@@ -237,7 +207,7 @@ func (c *BaseConnection) readPump(ctx context.Context, config *ConnectionConfig)
 	c.conn.SetPongHandler(func(string) error {
 		c.UpdateHeartbeat()
 
-		err = c.conn.SetReadDeadline(time.Now().Add(config.PongWait))
+		err = c.conn.SetReadDeadline(time.Now().Add(c.config.PongWait))
 		if err != nil {
 			return err
 		}
@@ -275,8 +245,8 @@ func (c *BaseConnection) readPump(ctx context.Context, config *ConnectionConfig)
 }
 
 // writePump pumps messages from the hub to the WebSocket connection.
-func (c *BaseConnection) writePump(ctx context.Context, config *ConnectionConfig) {
-	ticker := time.NewTicker(config.PingPeriod)
+func (c *BaseConnection) writePump(ctx context.Context) {
+	ticker := time.NewTicker(c.config.PingPeriod)
 
 	defer func() {
 		ticker.Stop()
@@ -293,7 +263,7 @@ func (c *BaseConnection) writePump(ctx context.Context, config *ConnectionConfig
 		case <-ctx.Done():
 			return
 		case message, ok := <-c.send:
-			err := c.conn.SetWriteDeadline(time.Now().Add(config.WriteWait))
+			err := c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteWait))
 			if err != nil {
 				return
 			}
@@ -314,7 +284,7 @@ func (c *BaseConnection) writePump(ctx context.Context, config *ConnectionConfig
 			}
 
 		case <-ticker.C:
-			err := c.conn.SetWriteDeadline(time.Now().Add(config.WriteWait))
+			err := c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteWait))
 			if err != nil {
 				return
 			}

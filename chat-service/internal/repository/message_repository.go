@@ -36,9 +36,6 @@ type MessageRepository interface {
 
 	// CountByConversationID counts messages in a conversation
 	CountByConversationID(ctx context.Context, conversationID uuid.UUID) (int64, error)
-
-	// Delete soft deletes a message (not actually implemented for audit purposes)
-	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 // messageRepository implements the MessageRepository interface for PostgreSQL.
@@ -178,12 +175,6 @@ func (r *messageRepository) CountByConversationID(
 	}
 
 	return count, nil
-}
-
-// Delete is a no-op for messages as they should not be deleted for audit purposes.
-func (r *messageRepository) Delete(ctx context.Context, id uuid.UUID) error {
-	// Messages are kept for audit purposes and are not actually deleted
-	return errors.New("messages cannot be deleted for audit purposes")
 }
 
 // scanMessage scans a row into a Message entity.

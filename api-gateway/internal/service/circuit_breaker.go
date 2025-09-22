@@ -1,3 +1,4 @@
+// Package service provides circuit breaker management for different services.
 package service
 
 import (

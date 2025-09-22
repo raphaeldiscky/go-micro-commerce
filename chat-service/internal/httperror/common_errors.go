@@ -1,3 +1,4 @@
+// Package httperror is a custom error package for handling HTTP errors.
 package httperror
 
 import (

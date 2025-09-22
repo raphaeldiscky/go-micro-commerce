@@ -1,3 +1,4 @@
+// Package repository defines the interface for connection data operations.
 package repository
 
 import (
@@ -9,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/entity"
 )
 
@@ -28,14 +28,12 @@ type ConnectionRepository interface {
 	FindByUserID(
 		ctx context.Context,
 		userID uuid.UUID,
-		userType constant.UserType,
 	) ([]*entity.Connection, error)
 
 	// FindActiveByUserID retrieves active connections for a user
 	FindActiveByUserID(
 		ctx context.Context,
 		userID uuid.UUID,
-		userType constant.UserType,
 	) ([]*entity.Connection, error)
 
 	// FindAllActive retrieves all active connections
@@ -135,7 +133,6 @@ func (r *connectionRepository) FindByConnectionID(
 func (r *connectionRepository) FindByUserID(
 	ctx context.Context,
 	userID uuid.UUID,
-	userType constant.UserType,
 ) ([]*entity.Connection, error) {
 	query := `
 		SELECT id, user_id, connection_id, socket_id,
@@ -158,7 +155,6 @@ func (r *connectionRepository) FindByUserID(
 func (r *connectionRepository) FindActiveByUserID(
 	ctx context.Context,
 	userID uuid.UUID,
-	userType constant.UserType,
 ) ([]*entity.Connection, error) {
 	query := `
 		SELECT id, user_id, connection_id, socket_id,

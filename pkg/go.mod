@@ -15,6 +15,7 @@ require (
 	go.temporal.io/sdk v1.36.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.39.0
+	golang.org/x/time v0.11.0
 	google.golang.org/grpc v1.75.0
 )
 
@@ -72,7 +73,6 @@ require (
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
 	golang.org/x/net v0.41.0 // indirect
 	golang.org/x/sync v0.16.0 // indirect
-	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect

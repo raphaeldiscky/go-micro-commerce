@@ -14,25 +14,8 @@ type UpgraderConfig struct {
 	Subprotocols    []string
 }
 
-// DefaultUpgraderConfig returns default upgrader configuration.
-func DefaultUpgraderConfig() *UpgraderConfig {
-	return &UpgraderConfig{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		CheckOrigin: func(r *http.Request) bool {
-			// Allow all origins in default config - should be customized for production
-			return true
-		},
-		Subprotocols: []string{},
-	}
-}
-
 // NewUpgrader creates a new WebSocket upgrader with the given configuration.
 func NewUpgrader(config *UpgraderConfig) *websocket.Upgrader {
-	if config == nil {
-		config = DefaultUpgraderConfig()
-	}
-
 	return &websocket.Upgrader{
 		ReadBufferSize:  config.ReadBufferSize,
 		WriteBufferSize: config.WriteBufferSize,

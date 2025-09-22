@@ -20,7 +20,6 @@ type WebSocketWorker struct {
 
 // NewWebSocketWorker creates a new WebSocket worker instance.
 func NewWebSocketWorker(
-	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,

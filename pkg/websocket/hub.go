@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
@@ -173,7 +174,7 @@ func (h *BaseHub) GetChannelConnections(channel string) []Connection {
 
 // Run starts the hub and processes connection events.
 func (h *BaseHub) Run(ctx context.Context) {
-	cleanupTicker := time.NewTicker(30 * time.Second)
+	cleanupTicker := time.NewTicker(constant.WsCleaupTicker)
 	defer cleanupTicker.Stop()
 
 	for {
@@ -205,7 +206,7 @@ func (h *BaseHub) Shutdown(ctx context.Context) error {
 	close(h.done)
 
 	// Close all connections
-	shutdownCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(ctx, constant.WsShutdownTimeout)
 	defer cancel()
 
 	done := make(chan struct{})
