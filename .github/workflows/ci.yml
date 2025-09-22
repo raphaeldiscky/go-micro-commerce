@@ -74,6 +74,12 @@ jobs:
               - 'proto/**'
               - 'go.mod'
               - 'go.sum'
+            chat-service:
+              - 'chat-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
 
   # This job runs for each service that was detected in the previous job.
   build-and-push:

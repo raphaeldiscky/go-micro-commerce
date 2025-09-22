@@ -30,16 +30,6 @@ type Error struct {
 	Step    constant.WorkflowStep
 }
 
-// NewRetriableError creates a new retriable error.
-func NewRetriableError(step constant.WorkflowStep, message string, cause error) *Error {
-	return &Error{
-		Type:    ErrorTypeRetriable,
-		Message: message,
-		Cause:   cause,
-		Step:    step,
-	}
-}
-
 // NewNonRetriableError creates a new non-retriable error.
 func NewNonRetriableError(step constant.WorkflowStep, message string, cause error) *Error {
 	return &Error{

@@ -11,6 +11,7 @@ SERVICES=(
   "api-gateway"
   "notification-service"
   "search-service"
+  "chat-service"
 )
 
 # Configuration

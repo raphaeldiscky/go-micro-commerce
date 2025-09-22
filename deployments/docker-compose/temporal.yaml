@@ -32,7 +32,7 @@ services:
     container_name: temporal-ui
     image: temporalio/ui:latest
     ports:
-      - "8088:8080"
+      - "7234:8080"
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
@@ -51,7 +51,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: temporal_db
     ports:
-      - "15438:5432"
+      - "15439:5432"
     volumes:
       - postgres_temporal_data:/var/lib/postgresql/data
     healthcheck:

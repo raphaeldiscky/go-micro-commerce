@@ -33,6 +33,10 @@
       "path": "/home/rdisckyzp/repos/go-micro-commerce/search-service"
     },
     {
+      "name": "chat-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/chat-service"
+    },
+    {
       "name": "pkg",
       "path": "/home/rdisckyzp/repos/go-micro-commerce/pkg"
     },
