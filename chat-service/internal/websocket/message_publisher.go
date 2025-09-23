@@ -2,6 +2,9 @@ package websocket
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -9,6 +12,22 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/pubsub"
 )
+
+// Publisher errors.
+var (
+	ErrInvalidMessage = errors.New("invalid message")
+	ErrNilPubSub      = errors.New("pubsub client is nil")
+)
+
+// CrossInstancePayload represents a type-safe payload for cross-instance messages.
+type CrossInstancePayload struct {
+	ID        uuid.UUID                `json:"id"`
+	Type      pkgwebsocket.MessageType `json:"type"`
+	Channel   *string                  `json:"channel,omitempty"`
+	SenderID  *uuid.UUID               `json:"sender_id,omitempty"`
+	Content   json.RawMessage          `json:"content"`
+	Timestamp time.Time                `json:"timestamp"`
+}
 
 // MessagePublisher handles publishing different types of chat messages to Redis.
 type MessagePublisher interface {
@@ -26,6 +45,10 @@ type messagePublisher struct {
 
 // NewMessagePublisher creates a new message publisher.
 func NewMessagePublisher(pubSub *pubsub.ChatPubSub) MessagePublisher {
+	if pubSub == nil {
+		return &messagePublisher{pubSub: nil} // Return a no-op publisher
+	}
+
 	return &messagePublisher{
 		pubSub: pubSub,
 	}
@@ -38,12 +61,21 @@ func (mp *messagePublisher) PublishMessage(
 	message *pkgwebsocket.Message,
 	excludeUserID *uuid.UUID,
 ) error {
+	// Return early if pubSub is not available (no-op publisher)
+	if mp.pubSub == nil {
+		return nil
+	}
+
 	// Skip messages that don't need cross-instance broadcasting
 	if mp.shouldSkipMessage(message.Type) {
 		return nil
 	}
 
-	payload := mp.createPayload(message)
+	payload, err := mp.createPayload(message)
+	if err != nil {
+		return err
+	}
+
 	crossMsgType := mp.mapMessageType(message.Type)
 
 	return mp.publishByType(ctx, crossMsgType, conversationID, message, payload, excludeUserID)
@@ -61,16 +93,22 @@ func (mp *messagePublisher) shouldSkipMessage(msgType pkgwebsocket.MessageType) 
 	}
 }
 
-// createPayload creates the payload for cross-instance messages.
-func (mp *messagePublisher) createPayload(message *pkgwebsocket.Message) map[string]interface{} {
-	return map[string]interface{}{
-		"id":        message.ID,
-		"type":      message.Type,
-		"channel":   message.Channel,
-		"sender_id": message.SenderID,
-		"content":   message.Content,
-		"timestamp": message.Timestamp,
+// createPayload creates a type-safe payload for cross-instance messages.
+func (mp *messagePublisher) createPayload(
+	message *pkgwebsocket.Message,
+) (*CrossInstancePayload, error) {
+	if message == nil {
+		return nil, ErrInvalidMessage
 	}
+
+	return &CrossInstancePayload{
+		ID:        message.ID,
+		Type:      message.Type,
+		Channel:   message.Channel,
+		SenderID:  message.SenderID,
+		Content:   message.Content,
+		Timestamp: message.Timestamp,
+	}, nil
 }
 
 // mapMessageType maps WebSocket message types to cross-instance message types.
@@ -102,7 +140,7 @@ func (mp *messagePublisher) publishByType(
 	crossMsgType pubsub.CrossInstanceMessageType,
 	conversationID uuid.UUID,
 	message *pkgwebsocket.Message,
-	payload map[string]interface{},
+	payload *CrossInstancePayload,
 	excludeUserID *uuid.UUID,
 ) error {
 	switch crossMsgType {
@@ -125,11 +163,12 @@ func (mp *messagePublisher) publishByType(
 func (mp *messagePublisher) publishPresenceMessage(
 	ctx context.Context,
 	message *pkgwebsocket.Message,
-	payload map[string]interface{},
+	payload *CrossInstancePayload,
 ) error {
 	if message.SenderID != nil {
 		return mp.pubSub.PublishPresenceUpdate(ctx, *message.SenderID, payload)
 	}
 
-	return nil
+	// Return error if no sender ID for presence message
+	return ErrInvalidMessage
 }

@@ -123,3 +123,38 @@ type UpdatePresenceRequest struct {
 type TypingIndicatorRequest struct {
 	IsTyping bool `json:"is_typing"`
 }
+
+// WebSocket Response DTOs
+
+// ConnectionStatsResponse represents WebSocket connection statistics.
+type ConnectionStatsResponse struct {
+	TotalConnections int `json:"total_connections"`
+	UniqueUsers      int `json:"unique_users"`
+}
+
+// HealthStatusResponse represents the health status response.
+type HealthStatusResponse struct {
+	Status  string `json:"status"`
+	Service string `json:"service"`
+}
+
+// PresenceUpdateResponse represents a presence update response.
+type PresenceUpdateResponse struct {
+	UserID  uuid.UUID               `json:"user_id"`
+	Status  constant.PresenceStatus `json:"status"`
+	Message string                  `json:"message"`
+}
+
+// TypingIndicatorResponse represents a typing indicator response.
+type TypingIndicatorResponse struct {
+	ConversationID uuid.UUID `json:"conversation_id"`
+	UserID         uuid.UUID `json:"user_id"`
+	IsTyping       bool      `json:"is_typing"`
+	Message        string    `json:"message"`
+}
+
+// OnlineUsersResponse represents an online users response.
+type OnlineUsersResponse struct {
+	OnlineUsers []uuid.UUID `json:"online_users"`
+	Count       int         `json:"count"`
+}

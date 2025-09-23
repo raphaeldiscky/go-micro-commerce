@@ -240,13 +240,9 @@ func (h *ChatConnectionHandler) handleTypingMessage(
 		"message_id", message.ID,
 		"is_typing", content.IsTyping)
 
-	// Broadcast typing indicator to conversation participants
-	// (excluding the sender)
+	// Broadcast typing indicator to conversation participants (excluding the sender)
 	if chatConn, ok := conn.(*ChatConnection); ok && chatConn.ConversationID() != nil {
-		err := h.hub.BroadcastToConversation(*chatConn.ConversationID(), message, conn.ID())
-		if err != nil {
-			return err
-		}
+		return h.hub.BroadcastToConversation(*chatConn.ConversationID(), message, conn.UserID())
 	}
 
 	return nil
@@ -299,12 +295,7 @@ func (h *ChatConnectionHandler) handleDeliveryReceiptMessage(
 		"recipient_id", content.RecipientID)
 
 	// Send delivery receipt back to the original sender
-	err := h.hub.BroadcastToConversation(content.ConversationID, message, conn.ID())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return h.hub.BroadcastToConversation(content.ConversationID, message, conn.UserID())
 }
 
 // handleReadReceiptMessage handles read receipt messages.
@@ -326,10 +317,5 @@ func (h *ChatConnectionHandler) handleReadReceiptMessage(
 		"reader_id", content.ReaderID)
 
 	// Send read receipt back to the original sender
-	err := h.hub.BroadcastToConversation(content.ConversationID, message, conn.ID())
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return h.hub.BroadcastToConversation(content.ConversationID, message, conn.UserID())
 }

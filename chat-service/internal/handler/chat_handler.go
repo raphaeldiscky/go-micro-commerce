@@ -246,11 +246,13 @@ func (h *ChatHandler) UpdatePresence(c echo.Context) error {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, map[string]interface{}{
-		"user_id": userID,
-		"status":  req.Status,
-		"message": "Presence updated successfully",
-	})
+	response := chatDto.PresenceUpdateResponse{
+		UserID:  userID,
+		Status:  req.Status,
+		Message: "Presence updated successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
 }
 
 // SendTypingIndicator sends a typing indicator for a conversation.
@@ -289,12 +291,14 @@ func (h *ChatHandler) SendTypingIndicator(c echo.Context) error {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, map[string]interface{}{
-		"conversation_id": conversationID,
-		"user_id":         userID,
-		"is_typing":       req.IsTyping,
-		"message":         "Typing indicator sent successfully",
-	})
+	response := chatDto.TypingIndicatorResponse{
+		ConversationID: conversationID,
+		UserID:         userID,
+		IsTyping:       req.IsTyping,
+		Message:        "Typing indicator sent successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
 }
 
 // GetOnlineUsers retrieves a list of currently online users.
@@ -312,10 +316,12 @@ func (h *ChatHandler) GetOnlineUsers(c echo.Context) error {
 		}
 	}
 
-	return echoutils.ResponseOK(c, map[string]interface{}{
-		"online_users": filteredUsers,
-		"count":        len(filteredUsers),
-	})
+	response := chatDto.OnlineUsersResponse{
+		OnlineUsers: filteredUsers,
+		Count:       len(filteredUsers),
+	}
+
+	return echoutils.ResponseOK(c, response)
 }
 
 // getUserInfo extracts user information from Echo context.
