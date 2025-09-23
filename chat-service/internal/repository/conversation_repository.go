@@ -68,8 +68,8 @@ func (r *conversationRepository) Create(
 
 	query := `
 		INSERT INTO conversations (
-			id, status, subject, priority, metadata, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7)
+			id, status, subject, priority, metadata, created_at, updated_at, ended_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id, status, subject, priority, metadata, created_at, updated_at, ended_at
 	`
 
@@ -83,6 +83,7 @@ func (r *conversationRepository) Create(
 		metadataJSON,
 		conversation.CreatedAt,
 		conversation.UpdatedAt,
+		conversation.EndedAt,
 	)
 
 	return r.scanConversation(row)

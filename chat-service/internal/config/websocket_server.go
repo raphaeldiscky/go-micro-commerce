@@ -9,8 +9,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
-// WebsocketServerConfig holds the configuration for the Websocket server.
-type WebsocketServerConfig struct {
+// WebSocketServerConfig holds the configuration for the WebSocket server.
+type WebSocketServerConfig struct {
+	ServiceName          string        `mapstructure:"WS_SERVER_SERVICE_NAME"`
 	Host                 string        `mapstructure:"WS_SERVER_HOST"`
 	Port                 int           `mapstructure:"WS_SERVER_PORT"`
 	GracePeriod          time.Duration `mapstructure:"WS_SERVER_GRACE_PERIOD"`
@@ -24,9 +25,10 @@ type WebsocketServerConfig struct {
 	RateLimiter          rate.Limit    `mapstructure:"WS_SERVER_RATE_LIMITER"`
 }
 
-// initWebsocketServerConfig initializes the Websocket server configuration from environment variables.
-func initWebsocketServerConfig() *WebsocketServerConfig {
+// initWebSocketServerConfig initializes the WebSocket server configuration from environment variables.
+func initWebSocketServerConfig() *WebSocketServerConfig {
 	// Set defaults
+	viper.SetDefault("WS_SERVER_SERVICE_NAME", "chat-service-websocket")
 	viper.SetDefault("WS_SERVER_HOST", "localhost")
 	viper.SetDefault("WS_SERVER_PORT", constant.WsServerPort)
 	viper.SetDefault("WS_SERVER_GRACE_PERIOD", constant.WsServerGracePeriod)
@@ -45,10 +47,10 @@ func initWebsocketServerConfig() *WebsocketServerConfig {
 	viper.SetDefault("WS_SERVER_HSTS_MAX_AGE", constant.WsServerHSTSMaxAge)
 	viper.SetDefault("WS_SERVER_RATE_LIMITER", constant.WsServerRateLimiter)
 
-	websocketServerConfig := &WebsocketServerConfig{}
-	if err := viper.Unmarshal(websocketServerConfig); err != nil {
+	webSocketServerConfig := &WebSocketServerConfig{}
+	if err := viper.Unmarshal(webSocketServerConfig); err != nil {
 		panic(err)
 	}
 
-	return websocketServerConfig
+	return webSocketServerConfig
 }

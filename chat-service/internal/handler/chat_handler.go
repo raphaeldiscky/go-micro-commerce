@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
@@ -18,13 +19,19 @@ import (
 type ChatHandler struct {
 	chatService service.ChatService
 	hub         *websocket.ChatHub
+	logger      logger.Logger
 }
 
 // NewChatHandler creates a new ChatHandler instance.
-func NewChatHandler(chatService service.ChatService, hub *websocket.ChatHub) *ChatHandler {
+func NewChatHandler(
+	chatService service.ChatService,
+	hub *websocket.ChatHub,
+	appLogger logger.Logger,
+) *ChatHandler {
 	return &ChatHandler{
 		chatService: chatService,
 		hub:         hub,
+		logger:      appLogger,
 	}
 }
 
@@ -51,11 +58,14 @@ func (h *ChatHandler) getUserInfo(c echo.Context) (uuid.UUID, constant.UserType)
 // CreateConversation creates a new conversation.
 func (h *ChatHandler) CreateConversation(c echo.Context) error {
 	var req chatDto.CreateConversationRequest
+
 	if err := c.Bind(&req); err != nil {
+		h.logger.Info("Failed to bind request", "error", err)
 		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
+		h.logger.Info("Failed to validate request", "error", err)
 		return err
 	}
 

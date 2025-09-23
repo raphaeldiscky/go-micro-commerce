@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
@@ -36,22 +37,12 @@ func NewWebSocketServer(
 	e.Use(middleware.CORS())
 
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: cfg.WebsocketServer.ReadTimeout,
+		Timeout: cfg.WebSocketServer.ReadTimeout,
 	}))
 
 	wsHandler := handler.NewWebSocketHandler(hub, appLogger)
 
-	api := e.Group("/api/v1")
-	api.GET("/ws", wsHandler.HandleWebSocket)
-	api.GET("/ws/admin", wsHandler.HandleAdminWebSocket)
-	api.GET("/ws/stats", wsHandler.GetConnectionStats)
-
-	e.GET("/health", func(c echo.Context) error {
-		return c.JSON(http.StatusOK, map[string]string{
-			"status":  "healthy",
-			"service": "chat-websocket",
-		})
-	})
+	routes.SetupWebSocketRoutes(e, wsHandler)
 
 	return &WebSocketServer{
 		echo:   e,
@@ -67,15 +58,15 @@ func (s *WebSocketServer) Start(ctx context.Context) error {
 		s.hub.Run(ctx)
 	}()
 
-	address := fmt.Sprintf(":%d", s.config.WebsocketServer.Port)
+	address := fmt.Sprintf(":%d", s.config.WebSocketServer.Port)
 	s.logger.Info("Starting WebSocket server", "address", address)
 
 	server := &http.Server{
 		Addr:         address,
 		Handler:      s.echo,
-		ReadTimeout:  s.config.WebsocketServer.ReadTimeout,
-		WriteTimeout: s.config.WebsocketServer.WriteTimeout,
-		IdleTimeout:  s.config.WebsocketServer.IdleTimeout,
+		ReadTimeout:  s.config.WebSocketServer.ReadTimeout,
+		WriteTimeout: s.config.WebSocketServer.WriteTimeout,
+		IdleTimeout:  s.config.WebSocketServer.IdleTimeout,
 	}
 
 	go func() {

@@ -26,7 +26,7 @@ func initPostgresConfig() *PostgresConfig {
 	// Set defaults
 	viper.SetDefault("POSTGRES_HOST", "localhost")
 	viper.SetDefault("POSTGRES_PORT", constant.PostgresPort)
-	viper.SetDefault("POSTGRES_DB", "fulfillment_db")
+	viper.SetDefault("POSTGRES_DB", "chat_db")
 	viper.SetDefault("POSTGRES_USER", "postgres")
 	viper.SetDefault("POSTGRES_PASSWORD", "postgres")
 	viper.SetDefault("POSTGRES_SSL_MODE", "disable")

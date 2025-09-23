@@ -8,7 +8,7 @@ import (
 
 // WebSocket server constants.
 const (
-	WsServerPort                            = 8081
+	WsServerPort                            = 9098
 	WsServerGracePeriod                     = 30 * time.Second
 	WsServerRequestTimeoutPeriod            = 30 * time.Second
 	WsServerReadTimeout                     = 10 * time.Second

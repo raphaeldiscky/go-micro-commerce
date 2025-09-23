@@ -42,7 +42,7 @@ func SetupChat(
 	providers.ChatService = chatService
 
 	// Create chat handler with WebSocket hub integration
-	chatHandler := handler.NewChatHandler(chatService, hub)
+	chatHandler := handler.NewChatHandler(chatService, hub, appLogger)
 
 	// Setup routes
 	routes.SetupChatRoutes(e, chatHandler)

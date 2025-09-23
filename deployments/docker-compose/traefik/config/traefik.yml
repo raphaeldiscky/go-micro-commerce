@@ -74,6 +74,15 @@ http:
       middlewares:
         - rate-limit
 
+    # Direct access to Chat Service (for testing/admin)
+    chat-service:
+      rule: "Host(`chats.localhost`)"
+      service: chat-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
   services:
     api-gateway:
       loadBalancer:
@@ -162,6 +171,18 @@ http:
           timeout: 10s
           headers:
             Host: search-service
+
+    chat-service:
+      loadBalancer:
+        servers:
+          - url: "http://chat-service:8088"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: chat-service
+
   middlewares:
     rate-limit:
       rateLimit:

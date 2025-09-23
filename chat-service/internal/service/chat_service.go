@@ -132,9 +132,11 @@ func (s *chatService) CreateConversation(
 			)
 		}
 
+		s.logger.Infof("Creating conversation for user %s: %v", userID, conversation)
 		// Save conversation
 		savedConversation, err := conversationRepo.Create(ctx, conversation)
 		if err != nil {
+			s.logger.Errorf("Failed to save conversation: %v", err)
 			return httperror.NewInternalServerError("failed to save conversation")
 		}
 
@@ -153,6 +155,7 @@ func (s *chatService) CreateConversation(
 
 		_, err = participantRepo.Create(ctx, participant)
 		if err != nil {
+			s.logger.Errorf("Failed to add participant: %v", err)
 			return httperror.NewInternalServerError("failed to add participant")
 		}
 

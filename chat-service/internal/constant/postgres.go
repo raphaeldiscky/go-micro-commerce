@@ -4,7 +4,7 @@ import "time"
 
 const (
 	// PostgresPort is the port for the PostgreSQL database.
-	PostgresPort = 15435
+	PostgresPort = 15438
 	// PostgresMaxIdleConns is the maximum number of idle connections in the connection pool.
 	PostgresMaxIdleConns = 10
 	// PostgresMaxOpenConns is the maximum number of open connections to the database.

@@ -15,10 +15,10 @@ func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler) {
 	protected.Use(middleware.AuthMiddleware)
 
 	// Chat conversation routes
-	protected.POST("/conversations", h.CreateConversation)
-	protected.GET("/conversations/:conversationID", h.GetConversation)
-	protected.POST("/conversations/:conversationID/messages", h.SendMessage)
-	protected.GET("/conversations/:conversationID/messages", h.GetMessages)
-	protected.POST("/conversations/:conversationID/join", h.JoinConversation)
-	protected.PATCH("/conversations/:conversationID/status", h.UpdateConversationStatus)
+	protected.POST("/", h.CreateConversation)
+	protected.GET("/:conversationID", h.GetConversation)
+	protected.POST("/:conversationID/messages", h.SendMessage)
+	protected.GET("/:conversationID/messages", h.GetMessages)
+	protected.POST("/:conversationID/join", h.JoinConversation)
+	protected.PATCH("/:conversationID/status", h.UpdateConversationStatus)
 }
