@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/entity"
@@ -36,16 +38,6 @@ type ChatService interface {
 		userID uuid.UUID,
 		userType constant.UserType,
 	) ([]dto.ConversationResponse, error)
-	UpdateConversationStatus(
-		ctx context.Context,
-		conversationID uuid.UUID,
-		req *dto.UpdateConversationStatusRequest,
-	) (*dto.ConversationResponse, error)
-	SetConversationSubject(
-		ctx context.Context,
-		conversationID uuid.UUID,
-		req *dto.SetConversationSubjectRequest,
-	) (*dto.ConversationResponse, error)
 	EndConversation(
 		ctx context.Context,
 		conversationID uuid.UUID,
@@ -55,6 +47,7 @@ type ChatService interface {
 	SendMessage(
 		ctx context.Context,
 		req *dto.CreateMessageRequest,
+		conversationID uuid.UUID,
 		senderID uuid.UUID,
 	) (*dto.MessageResponse, error)
 	GetConversationMessages(
@@ -62,7 +55,7 @@ type ChatService interface {
 		conversationID uuid.UUID,
 		userID uuid.UUID,
 		limit, offset int,
-	) (*dto.MessageListResponse, error)
+	) ([]dto.MessageResponse, *pkgdto.PageMetaData, error)
 
 	// Participant management
 	JoinConversation(
@@ -272,35 +265,6 @@ func (s *chatService) UpdateConversationStatus(
 	return mapper.MapToConversationResponse(updatedConversation), nil
 }
 
-// SetConversationSubject sets the subject of a conversation.
-func (s *chatService) SetConversationSubject(
-	ctx context.Context,
-	conversationID uuid.UUID,
-	req *dto.SetConversationSubjectRequest,
-) (*dto.ConversationResponse, error) {
-	conversationRepo := s.dataStore.ConversationRepository()
-
-	conversation, err := conversationRepo.FindByID(ctx, conversationID)
-	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to get conversation")
-	}
-
-	if conversation == nil {
-		return nil, httperror.NewBadRequestError("conversation not found")
-	}
-
-	// Update subject
-	conversation.SetSubject(req.Subject)
-
-	// Save updated conversation
-	updatedConversation, err := conversationRepo.Update(ctx, conversation)
-	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to update conversation")
-	}
-
-	return mapper.MapToConversationResponse(updatedConversation), nil
-}
-
 // EndConversation ends a conversation.
 func (s *chatService) EndConversation(
 	ctx context.Context,
@@ -316,6 +280,7 @@ func (s *chatService) SendMessage(
 	ctx context.Context,
 	req *dto.CreateMessageRequest,
 	senderID uuid.UUID,
+	conversationID uuid.UUID,
 ) (*dto.MessageResponse, error) {
 	var result *dto.MessageResponse
 
@@ -323,13 +288,13 @@ func (s *chatService) SendMessage(
 		messageRepo := ds.MessageRepository()
 
 		// Verify sender is participant
-		if err := s.conversationAccess.VerifyActiveUserAccess(ctx, req.ConversationID, senderID); err != nil {
+		if err := s.conversationAccess.VerifyActiveUserAccess(ctx, conversationID, senderID); err != nil {
 			return err
 		}
 
 		// Create message entity
 		message, err := entity.NewMessage(
-			req.ConversationID,
+			conversationID,
 			senderID,
 			req.Content,
 			req.MessageType,
@@ -358,9 +323,9 @@ func (s *chatService) SendMessage(
 	}
 
 	// Broadcast message to conversation participants via WebSocket
-	s.broadcastMessage(req.ConversationID, result)
+	s.broadcastMessage(conversationID, result)
 
-	s.logger.Infof("Message sent by user %s to conversation %s", senderID, req.ConversationID)
+	s.logger.Infof("Message sent by user %s to conversation %s", senderID, conversationID)
 
 	return result, nil
 }
@@ -371,24 +336,24 @@ func (s *chatService) GetConversationMessages(
 	conversationID uuid.UUID,
 	userID uuid.UUID,
 	limit, offset int,
-) (*dto.MessageListResponse, error) {
+) ([]dto.MessageResponse, *pkgdto.PageMetaData, error) {
 	messageRepo := s.dataStore.MessageRepository()
 
 	// Verify user is participant
 	if err := s.conversationAccess.VerifyUserAccess(ctx, conversationID, userID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Get messages
 	messages, err := messageRepo.FindByConversationID(ctx, conversationID, limit, offset)
 	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to get messages")
+		return nil, nil, httperror.NewInternalServerError("failed to get messages")
 	}
 
 	// Get total count
 	totalCount, err := messageRepo.CountByConversationID(ctx, conversationID)
 	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to count messages")
+		return nil, nil, httperror.NewInternalServerError("failed to count messages")
 	}
 
 	// Map to response
@@ -397,16 +362,18 @@ func (s *chatService) GetConversationMessages(
 		messageResponses = append(messageResponses, *mapper.MapToMessageResponse(msg))
 	}
 
-	totalPages := int((totalCount + int64(limit) - 1) / int64(limit))
-	page := (offset / limit) + 1
+	totalPages := (totalCount + int64(limit) - 1) / int64(limit)
+	page := int64((offset / limit) + 1)
 
-	return &dto.MessageListResponse{
-		Messages:   messageResponses,
-		Total:      totalCount,
-		Page:       page,
-		PerPage:    limit,
-		TotalPages: totalPages,
-	}, nil
+	paging := &pkgdto.PageMetaData{
+		Page:      page,
+		Size:      int64(limit),
+		TotalItem: totalCount,
+		TotalPage: totalPages,
+		Links:     nil, // Links will be set in handler
+	}
+
+	return messageResponses, paging, nil
 }
 
 // JoinConversation adds a participant to a conversation.

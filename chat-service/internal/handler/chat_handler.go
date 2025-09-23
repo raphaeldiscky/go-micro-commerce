@@ -35,26 +35,6 @@ func NewChatHandler(
 	}
 }
 
-// getUserInfo extracts user information from Echo context.
-func (h *ChatHandler) getUserInfo(c echo.Context) (uuid.UUID, constant.UserType) {
-	userID := echoutils.GetUserIDFromContext(c)
-	roles := echoutils.GetRolesFromContext(c)
-
-	// Determine user type based on roles
-	userType := constant.UserTypeUser
-
-	if len(roles) > 0 {
-		for _, role := range roles {
-			if role == pkgconstant.RoleAdmin {
-				userType = constant.UserTypeAdmin
-				break
-			}
-		}
-	}
-
-	return userID, userType
-}
-
 // CreateConversation creates a new conversation.
 func (h *ChatHandler) CreateConversation(c echo.Context) error {
 	var req chatDto.CreateConversationRequest
@@ -121,14 +101,13 @@ func (h *ChatHandler) SendMessage(c echo.Context) error {
 		return err
 	}
 
-	req.ConversationID = conversationID
-
 	userID, _ := h.getUserInfo(c)
 
 	result, err := h.chatService.SendMessage(
 		c.Request().Context(),
 		&req,
 		userID,
+		conversationID,
 	)
 	if err != nil {
 		return err
@@ -156,15 +135,18 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	))
 
-	offset := int(pageutils.ParseQueryInt64(
+	page := int(pageutils.ParseQueryInt64(
 		c,
-		"offset",
-		0,
-		0,
-		constant.DefaultConversationLimit,
+		"page",
+		pkgconstant.DefaultPage,
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
 	))
 
-	result, err := h.chatService.GetConversationMessages(
+	// Convert page to offset
+	offset := (page - 1) * limit
+
+	messages, paging, err := h.chatService.GetConversationMessages(
 		c.Request().Context(),
 		conversationID,
 		userID,
@@ -175,7 +157,14 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, result)
+	paging.Links = pageutils.NewLinks(
+		c.Request(),
+		paging.Page,
+		paging.Size,
+		paging.TotalPage,
+	)
+
+	return echoutils.ResponseOKPagination(c, messages, paging)
 }
 
 // JoinConversation adds a participant to a conversation.
@@ -208,8 +197,8 @@ func (h *ChatHandler) JoinConversation(c echo.Context) error {
 	return echoutils.ResponseOK(c, result)
 }
 
-// UpdateConversationStatus updates the status of a conversation.
-func (h *ChatHandler) UpdateConversationStatus(c echo.Context) error {
+// GetParticipants retrieves participants in a conversation.
+func (h *ChatHandler) GetParticipants(c echo.Context) error {
 	conversationIDStr := c.Param("conversationID")
 
 	conversationID, err := uuid.Parse(conversationIDStr)
@@ -217,19 +206,9 @@ func (h *ChatHandler) UpdateConversationStatus(c echo.Context) error {
 		return err
 	}
 
-	var req chatDto.UpdateConversationStatusRequest
-	if err = c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err = c.Validate(&req); err != nil {
-		return err
-	}
-
-	result, err := h.chatService.UpdateConversationStatus(
+	result, err := h.chatService.GetConversationParticipants(
 		c.Request().Context(),
 		conversationID,
-		&req,
 	)
 	if err != nil {
 		return err
@@ -337,4 +316,24 @@ func (h *ChatHandler) GetOnlineUsers(c echo.Context) error {
 		"online_users": filteredUsers,
 		"count":        len(filteredUsers),
 	})
+}
+
+// getUserInfo extracts user information from Echo context.
+func (h *ChatHandler) getUserInfo(c echo.Context) (uuid.UUID, constant.UserType) {
+	userID := echoutils.GetUserIDFromContext(c)
+	roles := echoutils.GetRolesFromContext(c)
+
+	// Determine user type based on roles
+	userType := constant.UserTypeUser
+
+	if len(roles) > 0 {
+		for _, role := range roles {
+			if role == pkgconstant.RoleAdmin {
+				userType = constant.UserTypeAdmin
+				break
+			}
+		}
+	}
+
+	return userID, userType
 }

@@ -27,7 +27,7 @@ func NewProductCreatedEvent(
 	quantity int64,
 ) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
-		Metadata: event.Metadata{ // Use the correct type from mq package
+		Metadata: event.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.ProductCreatedEventType,
 			AggregateID: productID,

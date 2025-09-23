@@ -20,5 +20,5 @@ func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler) {
 	protected.POST("/:conversationID/messages", h.SendMessage)
 	protected.GET("/:conversationID/messages", h.GetMessages)
 	protected.POST("/:conversationID/join", h.JoinConversation)
-	protected.PATCH("/:conversationID/status", h.UpdateConversationStatus)
+	protected.GET("/:conversationID/participants", h.GetParticipants)
 }

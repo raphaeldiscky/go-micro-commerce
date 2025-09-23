@@ -6,9 +6,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+
+	custommiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -32,13 +35,8 @@ func NewWebSocketServer(
 	appLogger logger.Logger,
 ) *WebSocketServer {
 	e := echo.New()
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.CORS())
 
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: cfg.WebSocketServer.ReadTimeout,
-	}))
+	registerWebSocketMiddlewares(e, cfg)
 
 	wsHandler := handler.NewWebSocketHandler(hub, appLogger)
 
@@ -93,6 +91,52 @@ func (s *WebSocketServer) Start(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// registerWebSocketMiddlewares registers custom websocket middleware for the HTTP server.
+func registerWebSocketMiddlewares(e *echo.Echo, cfg *config.Config) {
+	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
+		Generator: func() string {
+			return uuid.New().String()
+		},
+	}))
+	e.Use(middleware.LoggerWithConfig(
+		middleware.LoggerConfig{
+			Format: "[${time_rfc3339}] ${method} ${uri} ${status} ${latency_human}\n",
+		},
+	))
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins: []string{"*"}, // Configure this properly for production
+		AllowMethods: []string{
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodDelete,
+			http.MethodOptions,
+		},
+		AllowHeaders: []string{
+			echo.HeaderOrigin,
+			echo.HeaderContentType,
+			echo.HeaderAccept,
+			echo.HeaderAuthorization,
+		},
+	}))
+
+	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
+		XSSProtection:         "1; mode=block",
+		ContentTypeNosniff:    "nosniff",
+		XFrameOptions:         "DENY",
+		HSTSMaxAge:            cfg.WebSocketServer.HSTSMaxAge,
+		ContentSecurityPolicy: "default-src 'self'",
+	}))
+	e.Use(
+		middleware.RateLimiter(
+			middleware.NewRateLimiterMemoryStore(cfg.WebSocketServer.RateLimiter),
+		),
+	) // 1000 req/sec
+	e.Use(middleware.BodyLimit("10M"))
+	e.Use(custommiddleware.ErrorHandler())
 }
 
 // GetHub returns the WebSocket hub instance.

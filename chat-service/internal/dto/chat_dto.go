@@ -27,16 +27,14 @@ type SetConversationSubjectRequest struct {
 
 // CreateMessageRequest represents the request to create a new message.
 type CreateMessageRequest struct {
-	ConversationID uuid.UUID            `json:"conversation_id"    validate:"required"`
-	Content        string               `json:"content"            validate:"required,max=1000"`
-	MessageType    constant.MessageType `json:"message_type"       validate:"required"`
-	Metadata       map[string]any       `json:"metadata,omitempty"`
+	Content     string               `json:"content"            validate:"required,max=1000"`
+	MessageType constant.MessageType `json:"message_type"       validate:"required"`
+	Metadata    map[string]any       `json:"metadata,omitempty"`
 }
 
 // JoinConversationRequest represents the request to join a conversation.
 type JoinConversationRequest struct {
-	ConversationID uuid.UUID                `json:"conversation_id" validate:"required"`
-	Role           constant.ParticipantRole `json:"role"            validate:"required"`
+	Role constant.ParticipantRole `json:"role" validate:"required"`
 }
 
 // ConversationResponse represents the response for conversation operations.
