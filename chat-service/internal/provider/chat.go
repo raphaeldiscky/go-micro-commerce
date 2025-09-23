@@ -15,7 +15,7 @@ import (
 // SetupChat initializes the chat-related routes and services.
 func SetupChat(
 	_ context.Context,
-	_ *config.Config,
+	cfg *config.Config,
 	e *echo.Echo,
 	appLogger logger.Logger,
 	providers *Providers,
@@ -34,9 +34,25 @@ func SetupChat(
 	)
 	providers.ChatService = chatService
 
-	// Create chat handler with WebSocket hub integration
+	// Create connection service
+	nodeConfig := &service.NodeConfig{
+		DefaultNodeAddress: cfg.Connection.DefaultNodeAddress,
+		TicketExpiration:   cfg.Connection.TicketExpiration,
+		MaxConnections:     cfg.Connection.MaxConnections,
+		ConsulAddress:      cfg.Connection.ConsulAddress,
+		ChatServiceName:    cfg.Connection.ChatServiceName,
+	}
+	connectionService := service.NewConnectionService(
+		appLogger,
+		cfg.Connection.JWTSecret,
+		nodeConfig,
+	)
+	providers.ConnectionService = connectionService
+
+	// Create handlers
 	chatHandler := handler.NewChatHandler(chatService, hub, appLogger)
+	connectionHandler := handler.NewConnectionHandler(connectionService, appLogger)
 
 	// Setup routes
-	routes.SetupChatRoutes(e, chatHandler)
+	routes.SetupChatRoutes(e, chatHandler, connectionHandler)
 }

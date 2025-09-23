@@ -12,6 +12,7 @@ type Config struct {
 	Redis           *RedisConfig
 	Consul          *ConsulConfig
 	WebSocketServer *WebSocketServerConfig
+	Connection      *ConnectionConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -32,6 +33,7 @@ func LoadConfig() (*Config, error) {
 		Redis:           initRedisConfig(),
 		Consul:          initConsulConfig(),
 		WebSocketServer: initWebSocketServerConfig(),
+		Connection:      initConnectionConfig(),
 	}
 
 	return cfg, nil

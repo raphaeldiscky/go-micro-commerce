@@ -20,6 +20,7 @@ type Providers struct {
 	DataStore            repository.DataStore
 	ConnectionRepository repository.ConnectionRepository
 	ChatService          service.ChatService
+	ConnectionService    service.ConnectionService
 	WebSocketHub         *websocket.ChatHub
 	RedisPublisher       redis.Publisher
 	RedisSubscriber      redis.Subscriber
@@ -77,6 +78,7 @@ func SetupGlobal(
 		DataStore:            dataStore,
 		ConnectionRepository: dataStore.ConnectionRepository(),
 		ChatService:          nil, // Will be set in SetupChat
+		ConnectionService:    nil, // Will be set in SetupChat
 		WebSocketHub:         webSocketHub,
 		RedisPublisher:       redisPublisher,
 		RedisSubscriber:      redisSubscriber,

@@ -56,5 +56,13 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
 	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
 	protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
-	protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
+
+	// Chat service routes (excluding WebSocket which is handled separately)
+	protected.Any("/chats/v1/connect", gw.ProxyToService("chat-service", "/v1/connect"))
+	protected.Any("/chats/v1/nodes/health", gw.ProxyToService("chat-service", "/v1/nodes/health"))
+	protected.Any(
+		"/chats/v1/validate-token",
+		gw.ProxyToService("chat-service", "/v1/validate-token"),
+	)
+	protected.Any("/chats/v1/*", gw.ProxyToService("chat-service", ""))
 }

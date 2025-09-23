@@ -29,7 +29,12 @@ func NewWebSocketWorker(
 		appLogger.Fatal("WebSocket hub is nil during worker creation")
 	}
 
-	wsServer := server.NewWebSocketServer(hub, cfg, appLogger)
+	connectionService := providers.ConnectionService
+	if connectionService == nil {
+		appLogger.Fatal("Connection service is nil during worker creation")
+	}
+
+	wsServer := server.NewWebSocketServer(hub, cfg, appLogger, connectionService)
 
 	return &WebSocketWorker{
 		server: wsServer,

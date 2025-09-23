@@ -221,7 +221,8 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 }
 
 // ProxyToServiceWebSocket creates a handler that proxies WebSocket requests to a service.
-// This differs from ProxyToService by allowing WebSocket-specific headers like "Upgrade".
+// This differs from ProxyToService by allowing WebSocket-specific headers like "Upgrade"
+// and bypassing the circuit breaker since WebSocket connections are long-lived.
 func (gw *Gateway) ProxyToServiceWebSocket(serviceName, path string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		start := time.Now()
@@ -233,38 +234,35 @@ func (gw *Gateway) ProxyToServiceWebSocket(serviceName, path string) echo.Handle
 				"service", serviceName,
 				"error", err)
 
-			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
-		}
-
-		// Execute request through circuit breaker
-		result, err := gw.circuitBreaker.Execute(serviceName, func() (any, error) {
-			return gw.proxyWebSocketRequest(c, endpoint, path)
-		})
-
-		duration := time.Since(start)
-
-		if err != nil {
-			gw.logger.Error("Circuit breaker rejected request",
-				"service", serviceName,
-				"error", err)
-
-			// Record metrics
 			gw.metrics.RecordGatewayRequest(
 				serviceName,
 				c.Request().Method,
 				http.StatusServiceUnavailable,
+				time.Since(start),
+			)
+
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
+		}
+
+		// Bypass circuit breaker for WebSocket connections since they are long-lived
+		// and don't fit the request-response pattern that circuit breakers expect
+		response, err := gw.proxyWebSocketRequest(c, endpoint, path)
+
+		duration := time.Since(start)
+
+		if err != nil {
+			gw.logger.Error("Failed to proxy WebSocket request",
+				"service", serviceName,
+				"error", err)
+
+			gw.metrics.RecordGatewayRequest(
+				serviceName,
+				c.Request().Method,
+				http.StatusInternalServerError,
 				duration,
 			)
 
-			return echo.NewHTTPError(http.StatusServiceUnavailable, "service circuit breaker open")
-		}
-
-		response, ok := result.(*ProxyResponse)
-		if !ok {
-			gw.logger.Error("Invalid response type from circuit breaker",
-				"service", serviceName)
-
-			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to proxy request")
 		}
 
 		// Record metrics

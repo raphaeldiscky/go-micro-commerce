@@ -8,11 +8,16 @@ import (
 )
 
 // SetupChatRoutes sets up all chat routes.
-func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler) {
+func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler, connHandler *handler.ConnectionHandler) {
 	v1 := e.Group("/v1")
 
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
+
+	// Connection management routes
+	protected.POST("/connect", connHandler.RequestConnection)
+	protected.GET("/nodes/health", connHandler.GetNodeHealth)
+	protected.POST("/validate-ticket", connHandler.ValidateTicket)
 
 	// Chat conversation routes
 	protected.POST("/", h.CreateConversation)

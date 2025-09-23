@@ -4,22 +4,26 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
+
+	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	chatwebsocket "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
 // WebSocketHandler handles WebSocket connections for the chat service.
 type WebSocketHandler struct {
-	hub    *chatwebsocket.ChatHub
-	logger logger.Logger
-	config *config.WebSocketServerConfig
+	hub               *chatwebsocket.ChatHub
+	logger            logger.Logger
+	config            *config.WebSocketServerConfig
+	connectionService service.ConnectionService
 }
 
 // NewWebSocketHandler creates a new WebSocket handler.
@@ -27,11 +31,13 @@ func NewWebSocketHandler(
 	hub *chatwebsocket.ChatHub,
 	logger logger.Logger,
 	config *config.WebSocketServerConfig,
+	connectionService service.ConnectionService,
 ) *WebSocketHandler {
 	return &WebSocketHandler{
-		hub:    hub,
-		logger: logger,
-		config: config,
+		hub:               hub,
+		logger:            logger,
+		config:            config,
+		connectionService: connectionService,
 	}
 }
 
@@ -39,7 +45,7 @@ func NewWebSocketHandler(
 func (h *WebSocketHandler) createChatConnection(
 	c echo.Context,
 ) (*chatwebsocket.ChatConnection, error) {
-	conn, err := websocket.Upgrade(c.Response(), c.Request(), websocket.UpgraderConfig{
+	conn, err := pkgwebsocket.Upgrade(c.Response(), c.Request(), pkgwebsocket.UpgraderConfig{
 		ReadBufferSize:  h.config.ReadBufferSize,
 		WriteBufferSize: h.config.WriteBufferSize,
 		CheckOrigin: func(_ *http.Request) bool {
@@ -52,19 +58,78 @@ func (h *WebSocketHandler) createChatConnection(
 		return nil, err
 	}
 
+	// Try ticket-based authentication first (for direct connections)
+	ticket := c.QueryParam("ticket")
+	if ticket != "" {
+		return h.createConnectionFromTicket(ticket, conn)
+	}
+
+	// Fall back to JWT-based authentication (for gateway connections)
+	return h.createConnectionFromJWT(c, conn)
+}
+
+// createConnectionFromTicket creates a connection using a connection ticket.
+func (h *WebSocketHandler) createConnectionFromTicket(
+	ticket string,
+	conn *websocket.Conn,
+) (*chatwebsocket.ChatConnection, error) {
+	claims, err := h.connectionService.ValidateConnectionTicket(context.Background(), ticket)
+	if err != nil {
+		h.logger.Error("Failed to validate connection ticket", "error", err)
+
+		if closeErr := conn.Close(); closeErr != nil {
+			h.logger.Error("Failed to close connection", "error", closeErr)
+		}
+
+		return nil, err
+	}
+
+	h.logger.Info("Creating connection from ticket",
+		"user_id", claims.UserID,
+		"user_type", claims.UserType)
+
+	return chatwebsocket.NewChatConnection(
+		claims.UserID,
+		claims.UserType,
+		conn,
+		h.hub,
+		h.hub.ConnectionRepo,
+		h.logger,
+	), nil
+}
+
+// createConnectionFromJWT creates a connection using JWT from context.
+func (h *WebSocketHandler) createConnectionFromJWT(
+	c echo.Context,
+	conn *websocket.Conn,
+) (*chatwebsocket.ChatConnection, error) {
 	roles := echoutils.GetRolesFromContext(c)
 	userID := echoutils.GetUserIDFromContext(c)
 
 	if len(roles) == 0 {
 		h.logger.Error("No roles found in context")
-		return nil, err
+
+		if closeErr := conn.Close(); closeErr != nil {
+			h.logger.Error("Failed to close connection", "error", closeErr)
+		}
+
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "no roles found")
 	}
 
 	userType := constant.UserType(roles[0])
 	if userType != constant.UserTypeUser && userType != constant.UserTypeAdmin {
 		h.logger.Error("Invalid user type", "type", userType)
-		return nil, err
+
+		if closeErr := conn.Close(); closeErr != nil {
+			h.logger.Error("Failed to close connection", "error", closeErr)
+		}
+
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "invalid user type")
 	}
+
+	h.logger.Info("Creating connection from JWT",
+		"user_id", userID,
+		"user_type", userType)
 
 	return chatwebsocket.NewChatConnection(
 		userID,
