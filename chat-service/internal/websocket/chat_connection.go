@@ -98,7 +98,10 @@ func (c *ChatConnection) LeaveConversation() {
 
 // Start starts the chat connection with database persistence.
 func (c *ChatConnection) Start(ctx context.Context) {
-	// Create database connection record
+	// Create database connection record using background context
+	// since the WebSocket connection is long-lived but the HTTP request context is short-lived
+	dbCtx := context.Background()
+
 	connEntity := &entity.Connection{
 		ID:            c.ID(),
 		UserID:        c.UserID(),
@@ -111,7 +114,7 @@ func (c *ChatConnection) Start(ctx context.Context) {
 		IsActive:      true,
 	}
 
-	if _, err := c.connectionRepo.Create(ctx, connEntity); err != nil {
+	if _, err := c.connectionRepo.Create(dbCtx, connEntity); err != nil {
 		c.logger.Error("Failed to create connection record", "error", err)
 	}
 
@@ -124,6 +127,8 @@ func (h *ChatConnectionHandler) OnConnect(conn pkgwebsocket.Connection) error {
 		"connection_id", conn.ID(),
 		"user_id", conn.UserID())
 
+	// No need to send welcome message - WebSocket upgrade response itself
+	// signals successful connection to the client
 	return nil
 }
 

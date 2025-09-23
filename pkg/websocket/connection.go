@@ -76,6 +76,10 @@ func NewBaseConnection(
 	config *ConnectionConfig,
 	logger logger.Logger,
 ) *BaseConnection {
+	if config == nil {
+		panic("websocket config is nil")
+	}
+
 	return &BaseConnection{
 		id:            uuid.New(),
 		userID:        userID,
@@ -86,6 +90,7 @@ func NewBaseConnection(
 		isActive:      true,
 		lastHeartbeat: time.Now(),
 		logger:        logger,
+		config:        config,
 	}
 }
 
@@ -256,6 +261,11 @@ func (c *BaseConnection) readPump(ctx context.Context) {
 
 // writePump pumps messages from the hub to the WebSocket connection.
 func (c *BaseConnection) writePump(ctx context.Context) {
+	if c.config == nil {
+		c.logger.Error("Configuration is nil in writePump - connection cannot function")
+		return
+	}
+
 	ticker := time.NewTicker(c.config.PingPeriod)
 
 	defer func() {

@@ -1,11 +1,15 @@
 package handler
 
 import (
+	"context"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	chatwebsocket "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
@@ -15,13 +19,19 @@ import (
 type WebSocketHandler struct {
 	hub    *chatwebsocket.ChatHub
 	logger logger.Logger
+	config *config.WebSocketServerConfig
 }
 
 // NewWebSocketHandler creates a new WebSocket handler.
-func NewWebSocketHandler(hub *chatwebsocket.ChatHub, logger logger.Logger) *WebSocketHandler {
+func NewWebSocketHandler(
+	hub *chatwebsocket.ChatHub,
+	logger logger.Logger,
+	config *config.WebSocketServerConfig,
+) *WebSocketHandler {
 	return &WebSocketHandler{
 		hub:    hub,
 		logger: logger,
+		config: config,
 	}
 }
 
@@ -29,7 +39,14 @@ func NewWebSocketHandler(hub *chatwebsocket.ChatHub, logger logger.Logger) *WebS
 func (h *WebSocketHandler) createChatConnection(
 	c echo.Context,
 ) (*chatwebsocket.ChatConnection, error) {
-	conn, err := websocket.Upgrade(c.Response(), c.Request(), nil)
+	conn, err := websocket.Upgrade(c.Response(), c.Request(), websocket.UpgraderConfig{
+		ReadBufferSize:  h.config.ReadBufferSize,
+		WriteBufferSize: h.config.WriteBufferSize,
+		CheckOrigin: func(_ *http.Request) bool {
+			return true // Allow all origins for development
+		},
+		Subprotocols: nil,
+	})
 	if err != nil {
 		h.logger.Error("Failed to upgrade WebSocket connection", "error", err)
 		return nil, err
@@ -38,9 +55,20 @@ func (h *WebSocketHandler) createChatConnection(
 	roles := echoutils.GetRolesFromContext(c)
 	userID := echoutils.GetUserIDFromContext(c)
 
+	if len(roles) == 0 {
+		h.logger.Error("No roles found in context")
+		return nil, err
+	}
+
+	userType := constant.UserType(roles[0])
+	if userType != constant.UserTypeUser && userType != constant.UserTypeAdmin {
+		h.logger.Error("Invalid user type", "type", userType)
+		return nil, err
+	}
+
 	return chatwebsocket.NewChatConnection(
 		userID,
-		constant.UserType(roles[0]),
+		userType,
 		conn,
 		h.hub,
 		h.hub.ConnectionRepo,
@@ -58,11 +86,18 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
 	// Register with hub and start connection handling
 	h.hub.Register(wsConn)
 
-	go wsConn.Start(c.Request().Context())
-
 	h.logger.Info("WebSocket connection established",
 		"user_id", wsConn.UserID(),
 		"user_type", wsConn.UserType(),
+		"connection_id", wsConn.ID())
+
+	// Start connection handling - this blocks until connection closes
+	// The WebSocket upgrade response has already been sent, so the client
+	// will receive confirmation through the standard WebSocket handshake
+	wsConn.Start(context.Background())
+
+	h.logger.Info("WebSocket connection closed",
+		"user_id", wsConn.UserID(),
 		"connection_id", wsConn.ID())
 
 	return nil

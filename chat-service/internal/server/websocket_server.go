@@ -38,7 +38,7 @@ func NewWebSocketServer(
 
 	registerWebSocketMiddlewares(e, cfg)
 
-	wsHandler := handler.NewWebSocketHandler(hub, appLogger)
+	wsHandler := handler.NewWebSocketHandler(hub, appLogger, cfg.WebSocketServer)
 
 	routes.SetupWebSocketRoutes(e, wsHandler)
 

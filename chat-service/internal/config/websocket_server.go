@@ -23,6 +23,8 @@ type WebSocketServerConfig struct {
 	MaxHeaderBytes       int           `mapstructure:"WS_SERVER_MAX_HEADER_BYTES"`
 	HSTSMaxAge           int           `mapstructure:"WS_SERVER_HSTS_MAX_AGE"`
 	RateLimiter          rate.Limit    `mapstructure:"WS_SERVER_RATE_LIMITER"`
+	ReadBufferSize       int           `mapstructure:"WS_SERVER_READ_BUFFER_SIZE"`
+	WriteBufferSize      int           `mapstructure:"WS_SERVER_WRITE_BUFFER_SIZE"`
 }
 
 // initWebSocketServerConfig initializes the WebSocket server configuration from environment variables.
@@ -46,6 +48,8 @@ func initWebSocketServerConfig() *WebSocketServerConfig {
 	viper.SetDefault("WS_SERVER_MAX_HEADER_BYTES", constant.WsServerMaxHeaderBytes)
 	viper.SetDefault("WS_SERVER_HSTS_MAX_AGE", constant.WsServerHSTSMaxAge)
 	viper.SetDefault("WS_SERVER_RATE_LIMITER", constant.WsServerRateLimiter)
+	viper.SetDefault("WS_SERVER_READ_BUFFER_SIZE", constant.WsServerReadBufferSize)
+	viper.SetDefault("WS_SERVER_WRITE_BUFFER_SIZE", constant.WsServerWriteBufferSize)
 
 	webSocketServerConfig := &WebSocketServerConfig{}
 	if err := viper.Unmarshal(webSocketServerConfig); err != nil {

@@ -18,4 +18,6 @@ const (
 	WsServerMaxHeaderBytes                  = 1 << 20  // 1 MB
 	WsServerHSTSMaxAge                      = 31536000 // 1 year
 	WsServerRateLimiter          rate.Limit = 1000     // 1000 requests per second
+	WsServerReadBufferSize                  = 1024
+	WsServerWriteBufferSize                 = 1024
 )
