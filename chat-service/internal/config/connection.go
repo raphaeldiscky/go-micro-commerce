@@ -23,7 +23,7 @@ type ConnectionConfig struct {
 func initConnectionConfig() *ConnectionConfig {
 	// Set defaults
 	viper.SetDefault("CONN_JWT_SECRET", "your-super-secret-jwt-key-change-in-production")
-	viper.SetDefault("CONN_TICKET_EXPIRATION", constant.ConnMaxConnections)
+	viper.SetDefault("CONN_TICKET_EXPIRATION", constant.ConnTicketExpiration)
 	viper.SetDefault("CONN_DEFAULT_NODE_ADDRESS", "ws://localhost:9088")
 	viper.SetDefault("CONN_MAX_CONNECTIONS", constant.ConnMaxConnections)
 	viper.SetDefault("CONN_CONSUL_ADDRESS", "localhost:8500")

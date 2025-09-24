@@ -89,55 +89,6 @@ func (m *AuthMiddleware) parseAccessToken(c echo.Context) (string, error) {
 	return splitToken[1], nil
 }
 
-// TokenParamAuthorization validates the access token from URL query parameter and extracts user information.
-// This is specifically designed for WebSocket connections where custom headers may not work well.
-func (m *AuthMiddleware) TokenParamAuthorization() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			token := c.QueryParam("token")
-			if token == "" {
-				return echo.NewHTTPError(
-					http.StatusUnauthorized,
-					"missing token query parameter",
-				)
-			}
-
-			claims, err := m.jwtUtils.ValidateAccessToken(token)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid or expired token")
-			}
-
-			// Additional validation
-			if claims.UserID == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid userID in token")
-			}
-
-			if claims.Email == "" {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid email in token")
-			}
-
-			// Parse user ID to UUID
-			userID, err := uuid.Parse(claims.UserID)
-			if err != nil {
-				return echo.NewHTTPError(http.StatusUnauthorized, "invalid userID format in token")
-			}
-
-			// Additional validation for active users only
-			if !claims.IsActive {
-				return echo.NewHTTPError(http.StatusUnauthorized, "user account is inactive")
-			}
-
-			// Set user information in context
-			c.Set(string(constant.CtxUserID), userID)
-			c.Set(string(constant.CtxEmail), claims.Email)
-			c.Set(string(constant.CtxRoles), claims.Roles)
-			c.Set(string(constant.CtxIsActive), claims.IsActive)
-
-			return next(c)
-		}
-	}
-}
-
 // RequireRole is a middleware that checks if the user has a specific role.
 func (m *AuthMiddleware) RequireRole(requiredRole string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

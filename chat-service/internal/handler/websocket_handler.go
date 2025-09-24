@@ -12,7 +12,6 @@ import (
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	chatwebsocket "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
@@ -58,14 +57,19 @@ func (h *WebSocketHandler) createChatConnection(
 		return nil, err
 	}
 
-	// Try ticket-based authentication first (for direct connections)
+	// Require ticket-based authentication for all WebSocket connections
 	ticket := c.QueryParam("ticket")
-	if ticket != "" {
-		return h.createConnectionFromTicket(ticket, conn)
+	if ticket == "" {
+		h.logger.Error("Missing ticket parameter for WebSocket connection")
+
+		if closeErr := conn.Close(); closeErr != nil {
+			h.logger.Error("Failed to close connection", "error", closeErr)
+		}
+
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "ticket parameter is required")
 	}
 
-	// Fall back to JWT-based authentication (for gateway connections)
-	return h.createConnectionFromJWT(c, conn)
+	return h.createConnectionFromTicket(ticket, conn)
 }
 
 // createConnectionFromTicket creates a connection using a connection ticket.
@@ -98,49 +102,6 @@ func (h *WebSocketHandler) createConnectionFromTicket(
 	), nil
 }
 
-// createConnectionFromJWT creates a connection using JWT from context.
-func (h *WebSocketHandler) createConnectionFromJWT(
-	c echo.Context,
-	conn *websocket.Conn,
-) (*chatwebsocket.ChatConnection, error) {
-	roles := echoutils.GetRolesFromContext(c)
-	userID := echoutils.GetUserIDFromContext(c)
-
-	if len(roles) == 0 {
-		h.logger.Error("No roles found in context")
-
-		if closeErr := conn.Close(); closeErr != nil {
-			h.logger.Error("Failed to close connection", "error", closeErr)
-		}
-
-		return nil, echo.NewHTTPError(http.StatusUnauthorized, "no roles found")
-	}
-
-	userType := constant.UserType(roles[0])
-	if userType != constant.UserTypeUser && userType != constant.UserTypeAdmin {
-		h.logger.Error("Invalid user type", "type", userType)
-
-		if closeErr := conn.Close(); closeErr != nil {
-			h.logger.Error("Failed to close connection", "error", closeErr)
-		}
-
-		return nil, echo.NewHTTPError(http.StatusUnauthorized, "invalid user type")
-	}
-
-	h.logger.Info("Creating connection from JWT",
-		"user_id", userID,
-		"user_type", userType)
-
-	return chatwebsocket.NewChatConnection(
-		userID,
-		userType,
-		conn,
-		h.hub,
-		h.hub.ConnectionRepo,
-		h.logger,
-	), nil
-}
-
 // HandleWebSocket handles WebSocket connection upgrades for all users.
 func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
 	wsConn, err := h.createChatConnection(c)
@@ -166,12 +127,6 @@ func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
 		"connection_id", wsConn.ID())
 
 	return nil
-}
-
-// HandleAdminWebSocket handles WebSocket connections specifically for admin users.
-// This is kept for backward compatibility but uses the same logic as HandleWebSocket.
-func (h *WebSocketHandler) HandleAdminWebSocket(c echo.Context) error {
-	return h.HandleWebSocket(c)
 }
 
 // GetConnectionStats returns WebSocket connection statistics.
