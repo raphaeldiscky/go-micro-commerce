@@ -1,24 +1,18 @@
 import { Link } from '@tanstack/react-router'
-import { Github, Heart, Linkedin } from 'lucide-react'
+import { Heart } from 'lucide-react'
+import {
+  APP_CONFIG,
+  FOOTER_CONTENT,
+  PROFILE_IMAGE_URL,
+  QUICK_LINKS,
+  SOCIAL_LINKS,
+  TECHNOLOGY_LINKS,
+} from '@/constants'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
 
-  const technologies = [
-    { name: 'Go', url: 'https://golang.org' },
-    { name: 'React', url: 'https://reactjs.org' },
-    { name: 'PostgreSQL', url: 'https://postgresql.org' },
-    { name: 'Redis', url: 'https://redis.io' },
-    { name: 'Kafka', url: 'https://kafka.apache.org' },
-    { name: 'Docker', url: 'https://docker.com' },
-  ]
-
-  const quickLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Services', path: '/services' },
-    { name: 'Chat Demo', path: '/chat' },
-    { name: 'About', path: '/about' },
-  ]
+  // Data imported from constants
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -27,35 +21,29 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                GM
-              </div>
-              <span className="font-bold text-xl">Go Micro Commerce</span>
+              <img
+                src={PROFILE_IMAGE_URL}
+                alt={APP_CONFIG.BRAND.LOGO_ALT}
+                className="h-8 w-8 rounded-lg object-cover"
+              />
+              <span className="font-bold text-xl">{APP_CONFIG.NAME}</span>
             </div>
             <p className="text-gray-300 mb-4 max-w-md">
-              A modern distributed systems architecture built with Go
-              microservices, demonstrating advanced patterns and technologies
-              for educational purposes.
+              {FOOTER_CONTENT.DESCRIPTION}
             </p>
             <div className="flex space-x-4">
-              <a
-                href="https://github.com/yourusername/go-micro-commerce"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-white transition-colors"
-                aria-label="GitHub"
-              >
-                <Github className="h-6 w-6" />
-              </a>
-              <a
-                href="https://linkedin.com/in/yourprofile"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-300 hover:text-white transition-colors"
-                aria-label="LinkedIn"
-              >
-                <Linkedin className="h-6 w-6" />
-              </a>
+              {SOCIAL_LINKS.map((social) => (
+                <a
+                  key={social.name}
+                  href={social.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-white transition-colors"
+                  aria-label={social.ariaLabel}
+                >
+                  <social.icon className="h-6 w-6" />
+                </a>
+              ))}
             </div>
           </div>
 
@@ -63,7 +51,7 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              {quickLinks.map((link) => (
+              {QUICK_LINKS.map((link) => (
                 <li key={link.path}>
                   <Link
                     to={link.path}
@@ -80,7 +68,7 @@ export default function Footer() {
           <div>
             <h3 className="font-semibold mb-4">Built With</h3>
             <ul className="space-y-2">
-              {technologies.map((tech) => (
+              {TECHNOLOGY_LINKS.map((tech) => (
                 <li key={tech.name}>
                   <a
                     href={tech.url}
@@ -99,13 +87,13 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
           <div className="text-gray-400 text-sm">
-            © {currentYear} Go Micro Commerce. Built for educational purposes.
+            © {currentYear} {FOOTER_CONTENT.COPYRIGHT}
           </div>
           <div className="text-gray-400 text-sm mt-4 md:mt-0">
             <span className="flex items-center space-x-1">
-              <span>Made with</span>
+              <span>{FOOTER_CONTENT.MADE_WITH_LOVE}</span>
               <Heart className="h-4 w-4 text-red-500 fill-current" />
-              <span>by Raphael Discky</span>
+              <span>{FOOTER_CONTENT.BY_AUTHOR}</span>
             </span>
           </div>
         </div>

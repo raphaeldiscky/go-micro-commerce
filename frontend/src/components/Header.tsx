@@ -1,13 +1,7 @@
+import { APP_CONFIG, NAVIGATION_ITEMS, PROFILE_IMAGE_URL } from '@/constants'
+import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
-import {
-  Github,
-  Home,
-  Info,
-  Menu,
-  MessageCircle,
-  Settings,
-  X,
-} from 'lucide-react'
+import { Github, Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from './ui/button'
 import {
@@ -17,19 +11,13 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from './ui/navigation-menu'
-import { cn } from '@/lib/utils'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouterState()
   const currentPath = router.location.pathname
 
-  const navigationItems = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Services', path: '/services', icon: Settings },
-    { name: 'Chat Demo', path: '/chat', icon: MessageCircle },
-    { name: 'About', path: '/about', icon: Info },
-  ]
+  // Navigation items imported from constants
 
   const isActive = (path: string) => currentPath === path
 
@@ -43,11 +31,13 @@ export default function Header() {
               to="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
             >
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                GM
-              </div>
+              <img
+                src={PROFILE_IMAGE_URL}
+                alt={APP_CONFIG.BRAND.LOGO_ALT}
+                className="h-8 w-8 rounded-lg object-cover"
+              />
               <span className="hidden font-bold sm:inline-block">
-                Go Micro Commerce
+                {APP_CONFIG.NAME}
               </span>
             </Link>
           </div>
@@ -56,7 +46,7 @@ export default function Header() {
           <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2">
             <NavigationMenu>
               <NavigationMenuList>
-                {navigationItems.map((item) => (
+                {NAVIGATION_ITEMS.map((item) => (
                   <NavigationMenuItem key={item.path}>
                     <NavigationMenuLink asChild>
                       <Link
@@ -83,7 +73,7 @@ export default function Header() {
           <div className="hidden md:flex items-center space-x-4 ml-auto">
             <Button variant="outline" size="sm" asChild>
               <a
-                href="https://github.com/yourusername/go-micro-commerce"
+                href="{GITHUB_REPO_URL}"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center space-x-1"
@@ -113,7 +103,7 @@ export default function Header() {
         {isMobileMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
-              {navigationItems.map((item) => (
+              {NAVIGATION_ITEMS.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
@@ -132,7 +122,7 @@ export default function Header() {
               <div className="px-3 py-2">
                 <Button variant="outline" size="sm" asChild className="w-full">
                   <a
-                    href="https://github.com/yourusername/go-micro-commerce"
+                    href="{GITHUB_REPO_URL}"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center justify-center space-x-1"
