@@ -45,6 +45,10 @@
       "path": "/home/rdisckyzp/repos/go-micro-commerce/proto"
     },
     {
+      "name": "frontend",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/frontend"
+    },
+    {
       "path": ".."
     }
   ]
