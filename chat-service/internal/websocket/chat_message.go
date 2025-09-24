@@ -17,11 +17,21 @@ const (
 	ChatMessageTypeReadReceipt     pkgwebsocket.MessageType = "read_receipt"
 )
 
+// MessageMetadata represents structured metadata for messages.
+type MessageMetadata struct {
+	Edited    bool       `json:"edited,omitempty"`
+	EditedAt  *int64     `json:"edited_at,omitempty"`
+	ReplyToID *uuid.UUID `json:"reply_to_id,omitempty"`
+	ThreadID  *uuid.UUID `json:"thread_id,omitempty"`
+	Priority  string     `json:"priority,omitempty"`
+}
+
 // ChatContent represents the content of a chat message.
 type ChatContent struct {
-	Text        string               `json:"text"`
-	MessageType constant.MessageType `json:"message_type"`
-	Metadata    map[string]any       `json:"metadata,omitempty"`
+	ConversationID uuid.UUID            `json:"conversation_id"    validate:"required"`
+	Text           string               `json:"text"`
+	MessageType    constant.MessageType `json:"message_type"`
+	Metadata       *MessageMetadata     `json:"metadata,omitempty"`
 }
 
 // TypingContent represents typing indicator content.
@@ -78,7 +88,7 @@ func NewChatMessage(
 // NewSystemMessage creates a new system message.
 func NewSystemMessage(
 	content string,
-	metadata map[string]any,
+	metadata *MessageMetadata,
 ) (*pkgwebsocket.Message, error) {
 	systemContent := ChatContent{
 		Text:        content,

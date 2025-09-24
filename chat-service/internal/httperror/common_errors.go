@@ -21,3 +21,10 @@ func NewInternalServerError(message string) *httperror.ResponseError {
 
 	return httperror.NewResponseError(err, http.StatusInternalServerError, message)
 }
+
+// NewUnauthorizedError returns a 401 error.
+func NewUnauthorizedError(message string) *httperror.ResponseError {
+	err := errors.New(message)
+
+	return httperror.NewResponseError(err, http.StatusUnauthorized, message)
+}

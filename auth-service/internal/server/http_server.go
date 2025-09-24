@@ -38,7 +38,7 @@ func NewHTTPServer(
 	e.Validator = validation.NewValidator()
 
 	// Middlewares
-	RegisterMiddlewares(e, cfg)
+	registerMiddlewares(e, cfg)
 
 	// Setup HTTP
 	provider.SetupHTTP(ctx, cfg, e, appLogger, providers)
@@ -83,8 +83,8 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// RegisterMiddlewares registers custom middleware for the HTTP server.
-func RegisterMiddlewares(e *echo.Echo, cfg *config.Config) {
+// registerMiddlewares registers custom middleware for the HTTP server.
+func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
 			return uuid.New().String()

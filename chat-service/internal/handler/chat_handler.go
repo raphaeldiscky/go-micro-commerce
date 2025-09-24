@@ -1,8 +1,11 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
@@ -18,44 +21,33 @@ import (
 type ChatHandler struct {
 	chatService service.ChatService
 	hub         *websocket.ChatHub
+	logger      logger.Logger
 }
 
 // NewChatHandler creates a new ChatHandler instance.
-func NewChatHandler(chatService service.ChatService, hub *websocket.ChatHub) *ChatHandler {
+func NewChatHandler(
+	chatService service.ChatService,
+	hub *websocket.ChatHub,
+	appLogger logger.Logger,
+) *ChatHandler {
 	return &ChatHandler{
 		chatService: chatService,
 		hub:         hub,
+		logger:      appLogger,
 	}
-}
-
-// getUserInfo extracts user information from Echo context.
-func (h *ChatHandler) getUserInfo(c echo.Context) (uuid.UUID, constant.UserType) {
-	userID := echoutils.GetUserIDFromContext(c)
-	roles := echoutils.GetRolesFromContext(c)
-
-	// Determine user type based on roles
-	userType := constant.UserTypeUser
-
-	if len(roles) > 0 {
-		for _, role := range roles {
-			if role == pkgconstant.RoleAdmin {
-				userType = constant.UserTypeAdmin
-				break
-			}
-		}
-	}
-
-	return userID, userType
 }
 
 // CreateConversation creates a new conversation.
 func (h *ChatHandler) CreateConversation(c echo.Context) error {
 	var req chatDto.CreateConversationRequest
+
 	if err := c.Bind(&req); err != nil {
+		h.logger.Info("Failed to bind request", "error", err)
 		return err
 	}
 
 	if err := c.Validate(&req); err != nil {
+		h.logger.Info("Failed to validate request", "error", err)
 		return err
 	}
 
@@ -93,6 +85,18 @@ func (h *ChatHandler) GetConversation(c echo.Context) error {
 	return echoutils.ResponseOK(c, result)
 }
 
+// GetUserConversations retrieves all conversations for a user.
+func (h *ChatHandler) GetUserConversations(c echo.Context) error {
+	userID, userType := h.getUserInfo(c)
+
+	result, err := h.chatService.GetUserConversations(c.Request().Context(), userID, userType)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, result)
+}
+
 // SendMessage sends a message in a conversation.
 func (h *ChatHandler) SendMessage(c echo.Context) error {
 	conversationIDStr := c.Param("conversationID")
@@ -111,14 +115,13 @@ func (h *ChatHandler) SendMessage(c echo.Context) error {
 		return err
 	}
 
-	req.ConversationID = conversationID
-
 	userID, _ := h.getUserInfo(c)
 
 	result, err := h.chatService.SendMessage(
 		c.Request().Context(),
 		&req,
 		userID,
+		conversationID,
 	)
 	if err != nil {
 		return err
@@ -146,15 +149,18 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	))
 
-	offset := int(pageutils.ParseQueryInt64(
+	page := int(pageutils.ParseQueryInt64(
 		c,
-		"offset",
-		0,
-		0,
-		constant.DefaultConversationLimit,
+		"page",
+		pkgconstant.DefaultPage,
+		pkgconstant.DefaultMinPage,
+		pkgconstant.DefaultMaxPage,
 	))
 
-	result, err := h.chatService.GetConversationMessages(
+	// Convert page to offset
+	offset := (page - 1) * limit
+
+	messages, paging, err := h.chatService.GetConversationMessages(
 		c.Request().Context(),
 		conversationID,
 		userID,
@@ -165,7 +171,14 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, result)
+	paging.Links = pageutils.NewLinks(
+		c.Request(),
+		paging.Page,
+		paging.Size,
+		paging.TotalPage,
+	)
+
+	return echoutils.ResponseOKPagination(c, messages, paging)
 }
 
 // JoinConversation adds a participant to a conversation.
@@ -198,8 +211,8 @@ func (h *ChatHandler) JoinConversation(c echo.Context) error {
 	return echoutils.ResponseOK(c, result)
 }
 
-// UpdateConversationStatus updates the status of a conversation.
-func (h *ChatHandler) UpdateConversationStatus(c echo.Context) error {
+// GetParticipants retrieves participants in a conversation.
+func (h *ChatHandler) GetParticipants(c echo.Context) error {
 	conversationIDStr := c.Param("conversationID")
 
 	conversationID, err := uuid.Parse(conversationIDStr)
@@ -207,19 +220,9 @@ func (h *ChatHandler) UpdateConversationStatus(c echo.Context) error {
 		return err
 	}
 
-	var req chatDto.UpdateConversationStatusRequest
-	if err = c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err = c.Validate(&req); err != nil {
-		return err
-	}
-
-	result, err := h.chatService.UpdateConversationStatus(
+	result, err := h.chatService.GetConversationParticipants(
 		c.Request().Context(),
 		conversationID,
-		&req,
 	)
 	if err != nil {
 		return err
@@ -257,11 +260,13 @@ func (h *ChatHandler) UpdatePresence(c echo.Context) error {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, map[string]interface{}{
-		"user_id": userID,
-		"status":  req.Status,
-		"message": "Presence updated successfully",
-	})
+	response := chatDto.PresenceUpdateResponse{
+		UserID:  userID,
+		Status:  req.Status,
+		Message: "Presence updated successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
 }
 
 // SendTypingIndicator sends a typing indicator for a conversation.
@@ -300,12 +305,14 @@ func (h *ChatHandler) SendTypingIndicator(c echo.Context) error {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, map[string]interface{}{
-		"conversation_id": conversationID,
-		"user_id":         userID,
-		"is_typing":       req.IsTyping,
-		"message":         "Typing indicator sent successfully",
-	})
+	response := chatDto.TypingIndicatorResponse{
+		ConversationID: conversationID,
+		UserID:         userID,
+		IsTyping:       req.IsTyping,
+		Message:        "Typing indicator sent successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
 }
 
 // GetOnlineUsers retrieves a list of currently online users.
@@ -323,8 +330,132 @@ func (h *ChatHandler) GetOnlineUsers(c echo.Context) error {
 		}
 	}
 
-	return echoutils.ResponseOK(c, map[string]interface{}{
-		"online_users": filteredUsers,
-		"count":        len(filteredUsers),
-	})
+	response := chatDto.OnlineUsersResponse{
+		OnlineUsers: filteredUsers,
+		Count:       len(filteredUsers),
+	}
+
+	return echoutils.ResponseOK(c, response)
+}
+
+// SendDeliveryReceipt sends a delivery receipt for a message.
+func (h *ChatHandler) SendDeliveryReceipt(c echo.Context) error {
+	conversationIDStr := c.Param("conversationID")
+
+	conversationID, err := uuid.Parse(conversationIDStr)
+	if err != nil {
+		return err
+	}
+
+	var req chatDto.DeliveryReceiptRequest
+	if err = c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err = c.Validate(&req); err != nil {
+		return err
+	}
+
+	userID, _ := h.getUserInfo(c)
+
+	// Get current timestamp
+	deliveredAt := time.Now()
+
+	// Create and broadcast delivery receipt message
+	receiptMsg, err := websocket.NewDeliveryReceiptMessage(
+		req.MessageID,
+		conversationID,
+		userID,
+		deliveredAt.Unix(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to conversation participants (excluding recipient)
+	err = h.hub.BroadcastToConversation(conversationID, receiptMsg, userID)
+	if err != nil {
+		return err
+	}
+
+	response := chatDto.DeliveryReceiptResponse{
+		MessageID:      req.MessageID,
+		ConversationID: conversationID,
+		RecipientID:    userID,
+		DeliveredAt:    deliveredAt,
+		Message:        "Delivery receipt sent successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
+}
+
+// SendReadReceipt sends a read receipt for a message.
+func (h *ChatHandler) SendReadReceipt(c echo.Context) error {
+	conversationIDStr := c.Param("conversationID")
+
+	conversationID, err := uuid.Parse(conversationIDStr)
+	if err != nil {
+		return err
+	}
+
+	var req chatDto.ReadReceiptRequest
+	if err = c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err = c.Validate(&req); err != nil {
+		return err
+	}
+
+	userID, _ := h.getUserInfo(c)
+
+	// Get current timestamp
+	readAt := time.Now()
+
+	// Create and broadcast read receipt message
+	receiptMsg, err := websocket.NewReadReceiptMessage(
+		req.MessageID,
+		conversationID,
+		userID,
+		readAt.Unix(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to conversation participants (excluding reader)
+	err = h.hub.BroadcastToConversation(conversationID, receiptMsg, userID)
+	if err != nil {
+		return err
+	}
+
+	response := chatDto.ReadReceiptResponse{
+		MessageID:      req.MessageID,
+		ConversationID: conversationID,
+		ReaderID:       userID,
+		ReadAt:         readAt,
+		Message:        "Read receipt sent successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
+}
+
+// getUserInfo extracts user information from Echo context.
+func (h *ChatHandler) getUserInfo(c echo.Context) (uuid.UUID, constant.UserType) {
+	userID := echoutils.GetUserIDFromContext(c)
+	roles := echoutils.GetRolesFromContext(c)
+
+	// Determine user type based on roles
+	userType := constant.UserTypeUser
+
+	if len(roles) > 0 {
+		for _, role := range roles {
+			if role == pkgconstant.RoleAdmin {
+				userType = constant.UserTypeAdmin
+				break
+			}
+		}
+	}
+
+	return userID, userType
 }

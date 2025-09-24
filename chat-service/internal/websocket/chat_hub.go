@@ -19,6 +19,7 @@ type ChatHub struct {
 
 	logger           logger.Logger
 	ConnectionRepo   repository.ConnectionRepository
+	MessageRepo      repository.MessageRepository
 	pubSub           *pubsub.ChatPubSub
 	messagePublisher MessagePublisher
 	messageParser    MessageParser
@@ -27,6 +28,7 @@ type ChatHub struct {
 // NewChatHub creates a new chat-specific WebSocket hub.
 func NewChatHub(
 	connectionRepo repository.ConnectionRepository,
+	messageRepo repository.MessageRepository,
 	logger logger.Logger,
 	chatPubSub *pubsub.ChatPubSub,
 ) *ChatHub {
@@ -40,6 +42,7 @@ func NewChatHub(
 	hub := &ChatHub{
 		BaseHub:          baseHub,
 		ConnectionRepo:   connectionRepo,
+		MessageRepo:      messageRepo,
 		logger:           logger,
 		pubSub:           chatPubSub,
 		messagePublisher: messagePublisher,
@@ -62,24 +65,23 @@ func (h *ChatHub) BroadcastToConversation(
 ) error {
 	channelName := ConversationChannel(conversationID)
 
-	// First, broadcast to local connections
+	// Determine exclusion user ID
+	var excludeUID *uuid.UUID
+	if len(excludeUserID) > 0 {
+		excludeUID = &excludeUserID[0]
+	}
+
+	// Broadcast to local connections
 	var localErr error
 
-	if len(excludeUserID) > 0 {
-		h.broadcastWithFilter(channelName, message, excludeUserID[0])
-
-		localErr = nil
+	if excludeUID != nil {
+		h.broadcastWithFilter(channelName, message, *excludeUID)
 	} else {
 		localErr = h.BroadcastToChannel(channelName, message)
 	}
 
-	// Then, publish to Redis for other instances (if pub/sub is available)
+	// Publish to Redis for other instances (if pub/sub is available)
 	if h.messagePublisher != nil {
-		var excludeUID *uuid.UUID
-		if len(excludeUserID) > 0 {
-			excludeUID = &excludeUserID[0]
-		}
-
 		ctx := context.Background()
 		if err := h.messagePublisher.PublishMessage(ctx, conversationID, message, excludeUID); err != nil {
 			h.logger.Error("Failed to publish message to Redis", "error", err)
@@ -139,16 +141,19 @@ func (h *ChatHub) GetConversationConnections(conversationID uuid.UUID) []*ChatCo
 func (h *ChatHub) GetUserTypeConnections(userType constant.UserType) []*ChatConnection {
 	connections := make([]*ChatConnection, 0)
 
-	// Get all user connections and filter by type
-	err := h.BaseHub.Broadcast(&pkgwebsocket.Message{}, func(conn pkgwebsocket.Connection) bool {
+	// Use filter function with broadcast to collect matching connections
+	filter := func(conn pkgwebsocket.Connection) bool {
 		if chatConn, ok := conn.(*ChatConnection); ok && chatConn.UserType() == userType {
 			connections = append(connections, chatConn)
 		}
 
-		return false // Don't actually send the message, just collect connections
-	})
-	if err != nil {
-		h.logger.Error("Failed to broadcast message", "error", err)
+		return false // Don't actually send the message
+	}
+
+	// Create a dummy message and use broadcast with filter
+	dummyMessage := &pkgwebsocket.Message{}
+	if err := h.BaseHub.Broadcast(dummyMessage, filter); err != nil {
+		h.logger.Error("Failed to collect user type connections", "error", err)
 	}
 
 	return connections
@@ -167,22 +172,25 @@ func (h *ChatHub) GetUserCount() int {
 // GetOnlineUsers returns a list of all currently online user IDs.
 func (h *ChatHub) GetOnlineUsers() []uuid.UUID {
 	userIDs := make(map[uuid.UUID]bool)
-	userList := make([]uuid.UUID, 0)
 
-	// Collect all unique user IDs from active connections
-	err := h.BaseHub.Broadcast(&pkgwebsocket.Message{}, func(conn pkgwebsocket.Connection) bool {
+	// Use filter function to collect unique user IDs
+	filter := func(conn pkgwebsocket.Connection) bool {
 		if conn.IsActive() {
-			userID := conn.UserID()
-			if !userIDs[userID] {
-				userIDs[userID] = true
-				userList = append(userList, userID)
-			}
+			userIDs[conn.UserID()] = true
 		}
 
-		return false // Don't actually send the message
-	})
-	if err != nil {
+		return false // Don't send the message
+	}
+
+	// Use broadcast with filter to iterate through connections
+	if err := h.BaseHub.Broadcast(&pkgwebsocket.Message{}, filter); err != nil {
 		h.logger.Error("Failed to collect online users", "error", err)
+	}
+
+	// Convert map keys to slice
+	userList := make([]uuid.UUID, 0, len(userIDs))
+	for userID := range userIDs {
+		userList = append(userList, userID)
 	}
 
 	return userList

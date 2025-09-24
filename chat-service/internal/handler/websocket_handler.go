@@ -1,117 +1,134 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
+	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
+
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	chatwebsocket "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
 // WebSocketHandler handles WebSocket connections for the chat service.
 type WebSocketHandler struct {
-	hub    *chatwebsocket.ChatHub
-	logger logger.Logger
+	hub               *chatwebsocket.ChatHub
+	logger            logger.Logger
+	config            *config.WebSocketServerConfig
+	connectionService service.ConnectionService
+	chatService       service.ChatService
 }
 
 // NewWebSocketHandler creates a new WebSocket handler.
-func NewWebSocketHandler(hub *chatwebsocket.ChatHub, logger logger.Logger) *WebSocketHandler {
+func NewWebSocketHandler(
+	hub *chatwebsocket.ChatHub,
+	logger logger.Logger,
+	config *config.WebSocketServerConfig,
+	connectionService service.ConnectionService,
+	chatService service.ChatService,
+) *WebSocketHandler {
 	return &WebSocketHandler{
-		hub:    hub,
-		logger: logger,
+		hub:               hub,
+		logger:            logger,
+		config:            config,
+		connectionService: connectionService,
+		chatService:       chatService,
 	}
 }
 
-// HandleWebSocket handles WebSocket connection upgrades.
-func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
-	auth, err := middleware.AuthenticateWebSocket(c.Request())
-	if err != nil {
-		h.logger.Error("WebSocket authentication failed", "error", err)
-		return echo.NewHTTPError(http.StatusUnauthorized, "authentication failed")
-	}
-
-	if err = middleware.RequireActiveUser()(auth); err != nil {
-		h.logger.Error("WebSocket authorization failed", "error", err)
-		return echo.NewHTTPError(http.StatusForbidden, "authorization failed")
-	}
-
-	// Use universal websocket upgrader
-	conn, err := websocket.Upgrade(c.Response(), c.Request(), nil)
+// createChatConnection creates a new chat connection from the Echo context.
+func (h *WebSocketHandler) createChatConnection(
+	c echo.Context,
+) (*chatwebsocket.ChatConnection, error) {
+	conn, err := pkgwebsocket.Upgrade(c.Response(), c.Request(), pkgwebsocket.UpgraderConfig{
+		ReadBufferSize:  h.config.ReadBufferSize,
+		WriteBufferSize: h.config.WriteBufferSize,
+		CheckOrigin: func(_ *http.Request) bool {
+			return true // Allow all origins for development
+		},
+		Subprotocols: nil,
+	})
 	if err != nil {
 		h.logger.Error("Failed to upgrade WebSocket connection", "error", err)
-		return err
+		return nil, err
 	}
 
-	// Create chat-specific connection
-	wsConn := chatwebsocket.NewChatConnection(
-		auth.UserID,
-		auth.UserType,
-		conn,
-		h.hub,
-		h.hub.ConnectionRepo, // Access through hub
-		h.logger,
-	)
+	// Require ticket-based authentication for all WebSocket connections
+	ticket := c.QueryParam("ticket")
+	if ticket == "" {
+		h.logger.Error("Missing ticket parameter for WebSocket connection")
 
-	// Register with hub
-	h.hub.Register(wsConn)
+		if closeErr := conn.Close(); closeErr != nil {
+			h.logger.Error("Failed to close connection", "error", closeErr)
+		}
 
-	// Start connection handling
-	go wsConn.Start(c.Request().Context())
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "ticket parameter is required")
+	}
 
-	h.logger.Info("WebSocket connection established",
-		"user_id", auth.UserID,
-		"user_type", auth.UserType,
-		"connection_id", wsConn.ID())
-
-	return nil
+	return h.createConnectionFromTicket(ticket, conn)
 }
 
-// HandleAdminWebSocket handles WebSocket connections specifically for admin users.
-func (h *WebSocketHandler) HandleAdminWebSocket(c echo.Context) error {
-	auth, err := middleware.AuthenticateWebSocket(c.Request())
+// createConnectionFromTicket creates a connection using a connection ticket.
+func (h *WebSocketHandler) createConnectionFromTicket(
+	ticket string,
+	conn *websocket.Conn,
+) (*chatwebsocket.ChatConnection, error) {
+	claims, err := h.connectionService.ValidateConnectionTicket(context.Background(), ticket)
 	if err != nil {
-		h.logger.Error("WebSocket authentication failed", "error", err)
-		return echo.NewHTTPError(http.StatusUnauthorized, "authentication failed")
+		h.logger.Error("Failed to validate connection ticket", "error", err)
+
+		if closeErr := conn.Close(); closeErr != nil {
+			h.logger.Error("Failed to close connection", "error", closeErr)
+		}
+
+		return nil, err
 	}
 
-	if err = middleware.RequireActiveUser()(auth); err != nil {
-		h.logger.Error("WebSocket authorization failed", "error", err)
-		return echo.NewHTTPError(http.StatusForbidden, "authorization failed")
-	}
+	h.logger.Info("Creating connection from ticket",
+		"user_id", claims.UserID,
+		"user_type", claims.UserType)
 
-	if err = middleware.RequireUserType("admin")(auth); err != nil {
-		h.logger.Error("WebSocket admin authorization failed", "error", err)
-		return echo.NewHTTPError(http.StatusForbidden, "admin access required")
-	}
-
-	// Use universal websocket upgrader
-	conn, err := websocket.Upgrade(c.Response(), c.Request(), nil)
-	if err != nil {
-		h.logger.Error("Failed to upgrade WebSocket connection", "error", err)
-		return err
-	}
-
-	// Create chat-specific connection
-	wsConn := chatwebsocket.NewChatConnection(
-		auth.UserID,
-		auth.UserType,
+	return chatwebsocket.NewChatConnection(
+		claims.UserID,
+		claims.UserType,
 		conn,
 		h.hub,
 		h.hub.ConnectionRepo,
+		h.hub.MessageRepo,
+		h.chatService.GetUserConversations,
 		h.logger,
-	)
+	), nil
+}
 
-	// Register with hub
+// HandleWebSocket handles WebSocket connection upgrades for all users.
+func (h *WebSocketHandler) HandleWebSocket(c echo.Context) error {
+	wsConn, err := h.createChatConnection(c)
+	if err != nil {
+		return err
+	}
+
+	// Register with hub and start connection handling
 	h.hub.Register(wsConn)
 
-	// Start connection handling
-	go wsConn.Start(c.Request().Context())
+	h.logger.Info("WebSocket connection established",
+		"user_id", wsConn.UserID(),
+		"user_type", wsConn.UserType(),
+		"connection_id", wsConn.ID())
 
-	h.logger.Info("Admin WebSocket connection established",
-		"user_id", auth.UserID,
+	// Start connection handling - this blocks until connection closes
+	// The WebSocket upgrade response has already been sent, so the client
+	// will receive confirmation through the standard WebSocket handshake
+	wsConn.Start(context.Background())
+
+	h.logger.Info("WebSocket connection closed",
+		"user_id", wsConn.UserID(),
 		"connection_id", wsConn.ID())
 
 	return nil
@@ -119,10 +136,20 @@ func (h *WebSocketHandler) HandleAdminWebSocket(c echo.Context) error {
 
 // GetConnectionStats returns WebSocket connection statistics.
 func (h *WebSocketHandler) GetConnectionStats(c echo.Context) error {
-	stats := map[string]interface{}{
-		"total_connections": h.hub.GetConnectionCount(),
-		"unique_users":      h.hub.GetUserCount(),
+	stats := dto.ConnectionStatsResponse{
+		TotalConnections: h.hub.GetConnectionCount(),
+		UniqueUsers:      h.hub.GetUserCount(),
 	}
 
-	return c.JSON(http.StatusOK, stats)
+	return echoutils.ResponseOK(c, stats)
+}
+
+// WebSocketHealth handles websocket health check.
+func (h *WebSocketHandler) WebSocketHealth(c echo.Context) error {
+	healthStatus := dto.HealthStatusResponse{
+		Status:  "healthy",
+		Service: "chat-websocket",
+	}
+
+	return echoutils.ResponseOK(c, healthStatus)
 }

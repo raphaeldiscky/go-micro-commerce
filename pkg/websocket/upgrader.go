@@ -15,7 +15,7 @@ type UpgraderConfig struct {
 }
 
 // NewUpgrader creates a new WebSocket upgrader with the given configuration.
-func NewUpgrader(config *UpgraderConfig) *websocket.Upgrader {
+func NewUpgrader(config UpgraderConfig) *websocket.Upgrader {
 	return &websocket.Upgrader{
 		ReadBufferSize:  config.ReadBufferSize,
 		WriteBufferSize: config.WriteBufferSize,
@@ -25,11 +25,22 @@ func NewUpgrader(config *UpgraderConfig) *websocket.Upgrader {
 }
 
 // Upgrade upgrades an HTTP connection to a WebSocket connection.
+// If config is nil, uses default configuration.
 func Upgrade(
 	w http.ResponseWriter,
 	r *http.Request,
-	config *UpgraderConfig,
+	config UpgraderConfig,
 ) (*websocket.Conn, error) {
+	config = UpgraderConfig{
+		ReadBufferSize:  config.ReadBufferSize,
+		WriteBufferSize: config.WriteBufferSize,
+		CheckOrigin: func(_ *http.Request) bool {
+			return true // Allow all origins for development
+		},
+		Subprotocols: nil,
+	}
+
 	upgrader := NewUpgrader(config)
+
 	return upgrader.Upgrade(w, r, nil)
 }

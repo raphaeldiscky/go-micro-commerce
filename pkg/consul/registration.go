@@ -19,12 +19,15 @@ const (
 	ServiceTypeHTTP ServiceType = "http"
 	// ServiceTypeGRPC represents gRPC service type for Consul registration.
 	ServiceTypeGRPC ServiceType = "grpc"
+	// ServiceTypeWebSocket represents WebSocket service type for Consul registration.
+	ServiceTypeWebSocket ServiceType = "websocket"
 )
 
 // ServiceRegistration defines the interface for service registration.
 type ServiceRegistration interface {
 	RegisterHTTP(serviceName, address string, port int) error
 	RegisterGRPC(serviceName, address string, port int) error
+	RegisterWebSocket(serviceName, address string, port int) error
 	Deregister() error
 }
 
@@ -71,6 +74,11 @@ func (s *serviceRegistration) RegisterGRPC(serviceName, address string, port int
 	return s.register(serviceName, address, port, ServiceTypeGRPC)
 }
 
+// RegisterWebSocket registers a WebSocket service with Consul.
+func (s *serviceRegistration) RegisterWebSocket(serviceName, address string, port int) error {
+	return s.register(serviceName, address, port, ServiceTypeWebSocket)
+}
+
 // register registers a service with Consul based on service type.
 func (s *serviceRegistration) register(
 	serviceName, host string,
@@ -103,6 +111,17 @@ func (s *serviceRegistration) register(
 		// For gRPC health checks, use TCP check since we have custom health method
 		check = &api.AgentServiceCheck{
 			TCP:                            fmt.Sprintf("%s:%d", host, port),
+			Interval:                       "10s",
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
+		}
+	case ServiceTypeWebSocket:
+		tags = []string{"websocket", "realtime", "microservice"}
+		check = &api.AgentServiceCheck{
+			HTTP: fmt.Sprintf(
+				"http://%s/ws/health",
+				net.JoinHostPort(host, strconv.Itoa(port)),
+			),
 			Interval:                       "10s",
 			Timeout:                        "5s",
 			DeregisterCriticalServiceAfter: "30s",

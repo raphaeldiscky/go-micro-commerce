@@ -8,17 +8,32 @@ import (
 )
 
 // SetupChatRoutes sets up all chat routes.
-func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler) {
+func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler, connHandler *handler.ConnectionHandler) {
 	v1 := e.Group("/v1")
 
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
+	// Connection management routes
+	protected.POST("/connect", connHandler.RequestConnection)
+	protected.GET("/nodes/health", connHandler.GetNodeHealth)
+	protected.POST("/validate-ticket", connHandler.ValidateTicket)
+
 	// Chat conversation routes
+	protected.GET("/conversations", h.GetUserConversations)
 	protected.POST("/conversations", h.CreateConversation)
-	protected.GET("/conversations/:conversationID", h.GetConversation)
-	protected.POST("/conversations/:conversationID/messages", h.SendMessage)
-	protected.GET("/conversations/:conversationID/messages", h.GetMessages)
-	protected.POST("/conversations/:conversationID/join", h.JoinConversation)
-	protected.PATCH("/conversations/:conversationID/status", h.UpdateConversationStatus)
+	protected.GET("/:conversationID", h.GetConversation)
+	protected.POST("/:conversationID/messages", h.SendMessage)
+	protected.GET("/:conversationID/messages", h.GetMessages)
+	protected.POST("/:conversationID/join", h.JoinConversation)
+	protected.GET("/:conversationID/participants", h.GetParticipants)
+
+	// Real-time chat features
+	protected.PUT("/presence", h.UpdatePresence)
+	protected.POST("/:conversationID/typing", h.SendTypingIndicator)
+	protected.GET("/users/online", h.GetOnlineUsers)
+
+	// Message receipts
+	protected.POST("/:conversationID/delivery-receipt", h.SendDeliveryReceipt)
+	protected.POST("/:conversationID/read-receipt", h.SendReadReceipt)
 }

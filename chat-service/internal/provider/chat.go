@@ -8,30 +8,23 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/pubsub"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
 // SetupChat initializes the chat-related routes and services.
 func SetupChat(
 	_ context.Context,
-	_ *config.Config,
+	cfg *config.Config,
 	e *echo.Echo,
 	appLogger logger.Logger,
 	providers *Providers,
 ) {
-	// Create chat pub/sub service
-	chatPubSub := pubsub.NewChatPubSub(
-		providers.RedisPublisher,
-		providers.RedisSubscriber,
-		appLogger,
-	)
-
-	// Create WebSocket hub with Redis pub/sub integration
-	hub := websocket.NewChatHub(providers.ConnectionRepository, appLogger, chatPubSub)
-	providers.WebSocketHub = hub
+	// Use the pre-initialized WebSocket hub
+	hub := providers.WebSocketHub
+	if hub == nil {
+		appLogger.Fatal("WebSocket hub is nil in SetupChat")
+	}
 
 	// Create chat service
 	chatService := service.NewChatService(
@@ -41,9 +34,25 @@ func SetupChat(
 	)
 	providers.ChatService = chatService
 
-	// Create chat handler with WebSocket hub integration
-	chatHandler := handler.NewChatHandler(chatService, hub)
+	// Create connection service
+	nodeConfig := &service.NodeConfig{
+		DefaultNodeAddress: cfg.Connection.DefaultNodeAddress,
+		TicketExpiration:   cfg.Connection.TicketExpiration,
+		MaxConnections:     cfg.Connection.MaxConnections,
+		ConsulAddress:      cfg.Connection.ConsulAddress,
+		ChatServiceName:    cfg.Connection.ChatServiceName,
+	}
+	connectionService := service.NewConnectionService(
+		appLogger,
+		cfg.Connection.JWTSecret,
+		nodeConfig,
+	)
+	providers.ConnectionService = connectionService
+
+	// Create handlers
+	chatHandler := handler.NewChatHandler(chatService, hub, appLogger)
+	connectionHandler := handler.NewConnectionHandler(connectionService, appLogger)
 
 	// Setup routes
-	routes.SetupChatRoutes(e, chatHandler)
+	routes.SetupChatRoutes(e, chatHandler, connectionHandler)
 }

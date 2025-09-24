@@ -9,6 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/pubsub"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
@@ -19,6 +20,7 @@ type Providers struct {
 	DataStore            repository.DataStore
 	ConnectionRepository repository.ConnectionRepository
 	ChatService          service.ChatService
+	ConnectionService    service.ConnectionService
 	WebSocketHub         *websocket.ChatHub
 	RedisPublisher       redis.Publisher
 	RedisSubscriber      redis.Subscriber
@@ -68,12 +70,41 @@ func SetupGlobal(
 	redisPublisher := redis.NewPublisher(redisClusterClient, pubSubConfig)
 	redisSubscriber := redis.NewSubscriber(redisClusterClient, pubSubConfig, appLogger)
 
+	// Initialize WebSocket hub here to avoid race condition
+	chatPubSub := initChatPubSub(redisPublisher, redisSubscriber, appLogger)
+	webSocketHub := initWebSocketHub(
+		dataStore.ConnectionRepository(),
+		dataStore.MessageRepository(),
+		appLogger,
+		chatPubSub,
+	)
+
 	return &Providers{
 		DataStore:            dataStore,
 		ConnectionRepository: dataStore.ConnectionRepository(),
 		ChatService:          nil, // Will be set in SetupChat
-		WebSocketHub:         nil, // Will be set in SetupChat
+		ConnectionService:    nil, // Will be set in SetupChat
+		WebSocketHub:         webSocketHub,
 		RedisPublisher:       redisPublisher,
 		RedisSubscriber:      redisSubscriber,
 	}, nil
+}
+
+// initChatPubSub initializes the chat pub/sub service.
+func initChatPubSub(
+	publisher redis.Publisher,
+	subscriber redis.Subscriber,
+	logger logger.Logger,
+) *pubsub.ChatPubSub {
+	return pubsub.NewChatPubSub(publisher, subscriber, logger)
+}
+
+// initWebSocketHub initializes the WebSocket hub.
+func initWebSocketHub(
+	connectionRepo repository.ConnectionRepository,
+	messageRepo repository.MessageRepository,
+	logger logger.Logger,
+	chatPubSub *pubsub.ChatPubSub,
+) *websocket.ChatHub {
+	return websocket.NewChatHub(connectionRepo, messageRepo, logger, chatPubSub)
 }

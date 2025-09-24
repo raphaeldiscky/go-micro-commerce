@@ -11,7 +11,8 @@ type Config struct {
 	Postgres        *PostgresConfig
 	Redis           *RedisConfig
 	Consul          *ConsulConfig
-	WebsocketServer *WebsocketServerConfig
+	WebSocketServer *WebSocketServerConfig
+	Connection      *ConnectionConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -31,7 +32,8 @@ func LoadConfig() (*Config, error) {
 		Postgres:        initPostgresConfig(),
 		Redis:           initRedisConfig(),
 		Consul:          initConsulConfig(),
-		WebsocketServer: initWebsocketServerConfig(),
+		WebSocketServer: initWebSocketServerConfig(),
+		Connection:      initConnectionConfig(),
 	}
 
 	return cfg, nil

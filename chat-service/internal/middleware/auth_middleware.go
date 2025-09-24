@@ -2,13 +2,10 @@
 package middleware
 
 import (
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
-	chatConstant "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
 // AuthMiddleware is a middleware function that checks for the presence of user information in the context.
@@ -41,12 +38,4 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		return next(ctx)
 	}
-}
-
-// Auth represents authentication context information.
-type Auth struct {
-	UserID   uuid.UUID
-	Email    string
-	UserType chatConstant.UserType
-	IsActive bool
 }
