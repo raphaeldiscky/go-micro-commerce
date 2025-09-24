@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -57,4 +59,32 @@ type UpdatePresenceRequest struct {
 // TypingIndicatorRequest represents the request to send typing indicator.
 type TypingIndicatorRequest struct {
 	IsTyping bool `json:"is_typing"`
+}
+
+// DeliveryReceiptRequest represents the request to send delivery receipt.
+type DeliveryReceiptRequest struct {
+	MessageID uuid.UUID `json:"message_id" validate:"required"`
+}
+
+// ReadReceiptRequest represents the request to send read receipt.
+type ReadReceiptRequest struct {
+	MessageID uuid.UUID `json:"message_id" validate:"required"`
+}
+
+// DeliveryReceiptResponse represents a delivery receipt response.
+type DeliveryReceiptResponse struct {
+	MessageID      uuid.UUID `json:"message_id"`
+	ConversationID uuid.UUID `json:"conversation_id"`
+	RecipientID    uuid.UUID `json:"recipient_id"`
+	DeliveredAt    time.Time `json:"delivered_at"`
+	Message        string    `json:"message"`
+}
+
+// ReadReceiptResponse represents a read receipt response.
+type ReadReceiptResponse struct {
+	MessageID      uuid.UUID `json:"message_id"`
+	ConversationID uuid.UUID `json:"conversation_id"`
+	ReaderID       uuid.UUID `json:"reader_id"`
+	ReadAt         time.Time `json:"read_at"`
+	Message        string    `json:"message"`
 }

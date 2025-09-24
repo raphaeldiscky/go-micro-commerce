@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -319,6 +321,108 @@ func (h *ChatHandler) GetOnlineUsers(c echo.Context) error {
 	response := chatDto.OnlineUsersResponse{
 		OnlineUsers: filteredUsers,
 		Count:       len(filteredUsers),
+	}
+
+	return echoutils.ResponseOK(c, response)
+}
+
+// SendDeliveryReceipt sends a delivery receipt for a message.
+func (h *ChatHandler) SendDeliveryReceipt(c echo.Context) error {
+	conversationIDStr := c.Param("conversationID")
+
+	conversationID, err := uuid.Parse(conversationIDStr)
+	if err != nil {
+		return err
+	}
+
+	var req chatDto.DeliveryReceiptRequest
+	if err = c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err = c.Validate(&req); err != nil {
+		return err
+	}
+
+	userID, _ := h.getUserInfo(c)
+
+	// Get current timestamp
+	deliveredAt := time.Now()
+
+	// Create and broadcast delivery receipt message
+	receiptMsg, err := websocket.NewDeliveryReceiptMessage(
+		req.MessageID,
+		conversationID,
+		userID,
+		deliveredAt.Unix(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to conversation participants (excluding recipient)
+	err = h.hub.BroadcastToConversation(conversationID, receiptMsg, userID)
+	if err != nil {
+		return err
+	}
+
+	response := chatDto.DeliveryReceiptResponse{
+		MessageID:      req.MessageID,
+		ConversationID: conversationID,
+		RecipientID:    userID,
+		DeliveredAt:    deliveredAt,
+		Message:        "Delivery receipt sent successfully",
+	}
+
+	return echoutils.ResponseOK(c, response)
+}
+
+// SendReadReceipt sends a read receipt for a message.
+func (h *ChatHandler) SendReadReceipt(c echo.Context) error {
+	conversationIDStr := c.Param("conversationID")
+
+	conversationID, err := uuid.Parse(conversationIDStr)
+	if err != nil {
+		return err
+	}
+
+	var req chatDto.ReadReceiptRequest
+	if err = c.Bind(&req); err != nil {
+		return err
+	}
+
+	if err = c.Validate(&req); err != nil {
+		return err
+	}
+
+	userID, _ := h.getUserInfo(c)
+
+	// Get current timestamp
+	readAt := time.Now()
+
+	// Create and broadcast read receipt message
+	receiptMsg, err := websocket.NewReadReceiptMessage(
+		req.MessageID,
+		conversationID,
+		userID,
+		readAt.Unix(),
+	)
+	if err != nil {
+		return err
+	}
+
+	// Broadcast to conversation participants (excluding reader)
+	err = h.hub.BroadcastToConversation(conversationID, receiptMsg, userID)
+	if err != nil {
+		return err
+	}
+
+	response := chatDto.ReadReceiptResponse{
+		MessageID:      req.MessageID,
+		ConversationID: conversationID,
+		ReaderID:       userID,
+		ReadAt:         readAt,
+		Message:        "Read receipt sent successfully",
 	}
 
 	return echoutils.ResponseOK(c, response)

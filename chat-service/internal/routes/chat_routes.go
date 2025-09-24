@@ -26,4 +26,13 @@ func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler, connHandler *handler.
 	protected.GET("/:conversationID/messages", h.GetMessages)
 	protected.POST("/:conversationID/join", h.JoinConversation)
 	protected.GET("/:conversationID/participants", h.GetParticipants)
+
+	// Real-time chat features
+	protected.PUT("/presence", h.UpdatePresence)
+	protected.POST("/:conversationID/typing", h.SendTypingIndicator)
+	protected.GET("/users/online", h.GetOnlineUsers)
+
+	// Message receipts
+	protected.POST("/:conversationID/delivery-receipt", h.SendDeliveryReceipt)
+	protected.POST("/:conversationID/read-receipt", h.SendReadReceipt)
 }
