@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -47,6 +48,7 @@ type ConnectionConfig struct {
 	WriteBufferSize int           // Size of the write buffer
 	MaxMessageSize  int64         // Maximum message size in bytes
 	PongWait        time.Duration // Time allowed to read the next pong message
+	GracePeriod     time.Duration // Grace period before closing the connection
 	PingPeriod      time.Duration // Send pings to peer with this period
 	WriteWait       time.Duration // Time allowed to write a message
 	SendBufferSize  int           // Size of the send channel buffer
@@ -60,7 +62,9 @@ type BaseConnection struct {
 	send          chan *Message
 	hub           Hub
 	handler       ConnectionHandler
+	self          Connection // The actual connection instance to pass to handlers
 	mutex         sync.RWMutex
+	writeMutex    sync.Mutex // Protects WebSocket write operations
 	isActive      bool
 	lastHeartbeat time.Time
 	logger        logger.Logger
@@ -80,7 +84,7 @@ func NewBaseConnection(
 		panic("websocket config is nil")
 	}
 
-	return &BaseConnection{
+	base := &BaseConnection{
 		id:            uuid.New(),
 		userID:        userID,
 		conn:          conn,
@@ -92,6 +96,18 @@ func NewBaseConnection(
 		logger:        logger,
 		config:        config,
 	}
+
+	// By default, self points to the base connection
+	base.self = base
+
+	return base
+}
+
+// SetSelf sets the actual connection instance that should be passed to handlers.
+// This should be called by connection wrappers (like ChatConnection) to ensure
+// handlers receive the correct connection type.
+func (c *BaseConnection) SetSelf(self Connection) {
+	c.self = self
 }
 
 // ID returns the connection ID.
@@ -143,20 +159,14 @@ func (c *BaseConnection) Close() error {
 	}
 
 	c.isActive = false
+
+	// Close the send channel to signal writePump to exit
+	// writePump will handle sending the CloseMessage
 	close(c.send)
 
-	// Set close handler
-	err := c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteWait))
-	if err != nil {
-		return err
-	}
-
-	err = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-	if err != nil {
-		return err
-	}
-
-	err = c.conn.Close()
+	// Close the underlying network connection
+	// writePump will exit when it tries to write after this
+	err := c.conn.Close()
 	if err != nil {
 		return err
 	}
@@ -183,7 +193,7 @@ func (c *BaseConnection) GetLastHeartbeat() time.Time {
 // Start starts the connection's read and write pumps.
 func (c *BaseConnection) Start(ctx context.Context) {
 	// Notify handler of connection
-	if err := c.handler.OnConnect(c); err != nil {
+	if err := c.handler.OnConnect(c.self); err != nil {
 		c.logger.Error("Connection handler failed", "error", err)
 
 		err = c.Close()
@@ -202,28 +212,46 @@ func (c *BaseConnection) Start(ctx context.Context) {
 // readPump pumps messages from the WebSocket connection to the hub.
 func (c *BaseConnection) readPump(ctx context.Context) {
 	defer func() {
-		c.hub.Unregister(c)
+		c.hub.Unregister(c.self)
 
 		err := c.Close()
 		if err != nil {
 			return
 		}
 
-		c.handler.OnDisconnect(c)
+		c.handler.OnDisconnect(c.self)
 	}()
 
 	c.conn.SetReadLimit(c.config.MaxMessageSize)
 
-	err := c.conn.SetReadDeadline(time.Now().Add(c.config.PongWait))
+	// Give a grace period for initial connection before starting ping/pong cycle
+	// This helps with WebSocket clients that don't immediately handle ping/pong
+	gracePeriod := c.config.GracePeriod
+	initialDeadline := time.Now().Add(gracePeriod)
+	c.logger.Debug("Setting initial read deadline with grace period",
+		"connection_id", c.id,
+		"deadline", initialDeadline,
+		"grace_period_seconds", gracePeriod.Seconds(),
+		"normal_pong_wait_seconds", c.config.PongWait.Seconds())
+
+	err := c.conn.SetReadDeadline(initialDeadline)
 	if err != nil {
+		c.logger.Error("Failed to set read deadline", "error", err)
 		return
 	}
 
 	c.conn.SetPongHandler(func(string) error {
+		c.logger.Debug("Pong message received", "connection_id", c.id)
 		c.UpdateHeartbeat()
 
-		err = c.conn.SetReadDeadline(time.Now().Add(c.config.PongWait))
+		newDeadline := time.Now().Add(c.config.PongWait)
+		c.logger.Debug("Extending read deadline after pong",
+			"connection_id", c.id,
+			"new_deadline", newDeadline)
+
+		err = c.conn.SetReadDeadline(newDeadline)
 		if err != nil {
+			c.logger.Error("Failed to extend read deadline", "error", err)
 			return err
 		}
 
@@ -236,24 +264,41 @@ func (c *BaseConnection) readPump(ctx context.Context) {
 			return
 		default:
 			var message Message
+
+			c.logger.Debug("Waiting for WebSocket message", "connection_id", c.id)
+
 			if err = c.conn.ReadJSON(&message); err != nil {
+				c.logger.Debug("WebSocket read error occurred",
+					"connection_id", c.id,
+					"error", err,
+					"error_type", fmt.Sprintf("%T", err))
+
 				if websocket.IsUnexpectedCloseError(
 					err,
+					websocket.CloseNormalClosure,
 					websocket.CloseGoingAway,
 					websocket.CloseAbnormalClosure,
 				) {
 					c.logger.Error("WebSocket error", "error", err)
-					c.handler.OnError(c, err)
+					c.handler.OnError(c.self, err)
+				} else {
+					c.logger.Debug("WebSocket connection closed normally", "error", err)
 				}
 
 				return
 			}
 
+			c.logger.Debug("WebSocket message received",
+				"connection_id", c.id,
+				"message_type", message.Type,
+				"message_id", message.ID)
+
 			c.UpdateHeartbeat()
 
-			if err = c.handler.OnMessage(c, &message); err != nil {
+			// Pass the actual connection instance (c.self) to handlers, not the base connection
+			if err = c.handler.OnMessage(c.self, &message); err != nil {
 				c.logger.Error("Message handler error", "error", err)
-				c.handler.OnError(c, err)
+				c.handler.OnError(c.self, err)
 			}
 		}
 	}
@@ -283,35 +328,81 @@ func (c *BaseConnection) writePump(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case message, ok := <-c.send:
+			// Check if connection is still active before writing
+			c.mutex.RLock()
+			isActive := c.isActive
+			c.mutex.RUnlock()
+
+			if !isActive {
+				return
+			}
+
+			c.writeMutex.Lock()
+
+			// Set write deadline
 			err := c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteWait))
 			if err != nil {
+				c.writeMutex.Unlock()
 				return
 			}
 
 			if !ok {
+				// Send channel was closed, send close message and exit
 				err = c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.writeMutex.Unlock()
+
 				if err != nil {
-					c.logger.Error("Write message error", "error", err)
-					return
+					c.logger.Debug(
+						"Write close message error (connection likely already closed)",
+						"error",
+						err,
+					)
 				}
 
 				return
 			}
 
 			if err = c.conn.WriteJSON(message); err != nil {
+				c.writeMutex.Unlock()
 				c.logger.Error("Write message error", "error", err)
+
 				return
 			}
 
+			c.writeMutex.Unlock()
+
 		case <-ticker.C:
+			// Check if connection is still active before sending ping
+			c.mutex.RLock()
+			isActive := c.isActive
+			c.mutex.RUnlock()
+
+			if !isActive {
+				c.logger.Debug("Skipping ping - connection not active", "connection_id", c.id)
+				return
+			}
+
+			c.logger.Debug("Sending ping message", "connection_id", c.id)
+
+			c.writeMutex.Lock()
+
 			err := c.conn.SetWriteDeadline(time.Now().Add(c.config.WriteWait))
 			if err != nil {
+				c.logger.Error("Failed to set write deadline for ping", "error", err)
+				c.writeMutex.Unlock()
+
 				return
 			}
 
 			if err = c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				c.writeMutex.Unlock()
+				c.logger.Debug("Write ping message error (connection likely closed)", "error", err)
+
 				return
 			}
+
+			c.logger.Debug("Ping message sent successfully", "connection_id", c.id)
+			c.writeMutex.Unlock()
 		}
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -35,12 +34,19 @@ func NewWebSocketServer(
 	cfg *config.Config,
 	appLogger logger.Logger,
 	connectionService service.ConnectionService,
+	chatService service.ChatService,
 ) *WebSocketServer {
 	e := echo.New()
 
 	registerWebSocketMiddlewares(e, cfg)
 
-	wsHandler := handler.NewWebSocketHandler(hub, appLogger, cfg.WebSocketServer, connectionService)
+	wsHandler := handler.NewWebSocketHandler(
+		hub,
+		appLogger,
+		cfg.WebSocketServer,
+		connectionService,
+		chatService,
+	)
 
 	routes.SetupWebSocketRoutes(e, wsHandler)
 
@@ -75,7 +81,7 @@ func (s *WebSocketServer) Start(ctx context.Context) error {
 
 		shutdownCtx, cancel := context.WithTimeout(
 			context.Background(),
-			constant.DefaultShutdownTimeout*time.Second,
+			constant.DefaultShutdownTimeout,
 		)
 		defer cancel()
 

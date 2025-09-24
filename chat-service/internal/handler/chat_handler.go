@@ -85,6 +85,18 @@ func (h *ChatHandler) GetConversation(c echo.Context) error {
 	return echoutils.ResponseOK(c, result)
 }
 
+// GetUserConversations retrieves all conversations for a user.
+func (h *ChatHandler) GetUserConversations(c echo.Context) error {
+	userID, userType := h.getUserInfo(c)
+
+	result, err := h.chatService.GetUserConversations(c.Request().Context(), userID, userType)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, result)
+}
+
 // SendMessage sends a message in a conversation.
 func (h *ChatHandler) SendMessage(c echo.Context) error {
 	conversationIDStr := c.Param("conversationID")

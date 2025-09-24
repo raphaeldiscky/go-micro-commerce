@@ -28,15 +28,17 @@ type DataStore interface {
 
 // dataStore is a struct that implements the DataStore interface.
 type dataStore struct {
-	pool *pgxpool.Pool
-	db   DBTX
+	pool   *pgxpool.Pool
+	db     DBTX
+	logger logger.Logger
 }
 
 // NewDataStore creates a new DataStore.
-func NewDataStore(pool *pgxpool.Pool, _ *redislock.Client, _ logger.Logger) DataStore {
+func NewDataStore(pool *pgxpool.Pool, _ *redislock.Client, appLogger logger.Logger) DataStore {
 	return &dataStore{
-		pool: pool,
-		db:   pool,
+		pool:   pool,
+		db:     pool,
+		logger: appLogger,
 	}
 }
 
@@ -71,7 +73,7 @@ func (s *dataStore) MessageRepository() MessageRepository {
 
 // ParticipantRepository returns a new ParticipantRepository.
 func (s *dataStore) ParticipantRepository() ParticipantRepository {
-	return NewParticipantRepository(s.db)
+	return NewParticipantRepository(s.db, s.logger)
 }
 
 // ConnectionRepository returns a new ConnectionRepository.

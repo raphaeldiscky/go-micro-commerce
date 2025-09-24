@@ -19,6 +19,7 @@ type ChatHub struct {
 
 	logger           logger.Logger
 	ConnectionRepo   repository.ConnectionRepository
+	MessageRepo      repository.MessageRepository
 	pubSub           *pubsub.ChatPubSub
 	messagePublisher MessagePublisher
 	messageParser    MessageParser
@@ -27,6 +28,7 @@ type ChatHub struct {
 // NewChatHub creates a new chat-specific WebSocket hub.
 func NewChatHub(
 	connectionRepo repository.ConnectionRepository,
+	messageRepo repository.MessageRepository,
 	logger logger.Logger,
 	chatPubSub *pubsub.ChatPubSub,
 ) *ChatHub {
@@ -40,6 +42,7 @@ func NewChatHub(
 	hub := &ChatHub{
 		BaseHub:          baseHub,
 		ConnectionRepo:   connectionRepo,
+		MessageRepo:      messageRepo,
 		logger:           logger,
 		pubSub:           chatPubSub,
 		messagePublisher: messagePublisher,

@@ -40,7 +40,7 @@ func (h *ConnectionHandler) RequestConnection(c echo.Context) error {
 		return httperror.NewUnauthorizedError("No roles found in context")
 	}
 
-	userType := constant.UserType(roles[0]) // Convert to proper type
+	userType := h.determineUserTypeForChat(roles)
 
 	// Parse request body (optional for additional metadata)
 	var req dto.ConnectionRequest
@@ -67,6 +67,30 @@ func (h *ConnectionHandler) RequestConnection(c echo.Context) error {
 		"node_address", response.NodeAddress)
 
 	return echoutils.ResponseOK(c, response)
+}
+
+// determineUserTypeForChat determines the appropriate UserType for chat connections.
+// It prioritizes admin role if present, otherwise falls back to the first role.
+func (h *ConnectionHandler) determineUserTypeForChat(roles []string) constant.UserType {
+	h.logger.Debug("Determining UserType for chat connection", "roles", roles)
+
+	// Prioritize admin role for chat service
+	for _, role := range roles {
+		if role == string(constant.UserTypeAdmin) {
+			h.logger.Debug("Using admin UserType for chat connection", "selected_role", role)
+			return constant.UserTypeAdmin
+		}
+	}
+
+	// Fall back to first role if admin not found
+	selectedRole := roles[0]
+	userType := constant.UserType(selectedRole)
+
+	h.logger.Debug("Using fallback UserType for chat connection",
+		"selected_role", selectedRole,
+		"user_type", userType)
+
+	return userType
 }
 
 // GetNodeHealth returns health status of available chat nodes.

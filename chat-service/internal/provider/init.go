@@ -72,7 +72,12 @@ func SetupGlobal(
 
 	// Initialize WebSocket hub here to avoid race condition
 	chatPubSub := initChatPubSub(redisPublisher, redisSubscriber, appLogger)
-	webSocketHub := initWebSocketHub(dataStore.ConnectionRepository(), appLogger, chatPubSub)
+	webSocketHub := initWebSocketHub(
+		dataStore.ConnectionRepository(),
+		dataStore.MessageRepository(),
+		appLogger,
+		chatPubSub,
+	)
 
 	return &Providers{
 		DataStore:            dataStore,
@@ -97,8 +102,9 @@ func initChatPubSub(
 // initWebSocketHub initializes the WebSocket hub.
 func initWebSocketHub(
 	connectionRepo repository.ConnectionRepository,
+	messageRepo repository.MessageRepository,
 	logger logger.Logger,
 	chatPubSub *pubsub.ChatPubSub,
 ) *websocket.ChatHub {
-	return websocket.NewChatHub(connectionRepo, logger, chatPubSub)
+	return websocket.NewChatHub(connectionRepo, messageRepo, logger, chatPubSub)
 }

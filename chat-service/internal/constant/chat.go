@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 // ConversationStatus represents the status of a chat conversation.
 type ConversationStatus string
 
@@ -99,11 +101,13 @@ const (
 	// WebSocketMaxMessageSize defines the maximum message size allowed.
 	WebSocketMaxMessageSize = 512
 	// WebSocketPongWait defines the timeout for receiving pong messages.
-	WebSocketPongWait = 60
+	WebSocketPongWait = 60 * time.Second
 	// WebSocketPingPeriod defines the interval for sending ping messages.
-	WebSocketPingPeriod = 54
+	WebSocketPingPeriod = 60 * time.Second
+	// WebSocketGracePeriod defines the grace period for closing WebSocket connections.
+	WebSocketGracePeriod = 30 * time.Second
 	// WebSocketWriteWait defines the timeout for writing messages.
-	WebSocketWriteWait = 10
+	WebSocketWriteWait = 10 * time.Second
 	// WebSocketSendBufferSize defines the channel buffer size for sending messages.
 	WebSocketSendBufferSize = 256
 )
@@ -111,7 +115,7 @@ const (
 // Service configuration constants.
 const (
 	// DefaultShutdownTimeout defines the default timeout for service shutdown.
-	DefaultShutdownTimeout = 30
+	DefaultShutdownTimeout = 30 * time.Second
 	// DefaultMessageLimit defines the default limit for message queries.
 	DefaultMessageLimit = 50
 	// DefaultConversationLimit defines the default limit for conversation queries.

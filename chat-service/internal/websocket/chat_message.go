@@ -28,9 +28,10 @@ type MessageMetadata struct {
 
 // ChatContent represents the content of a chat message.
 type ChatContent struct {
-	Text        string               `json:"text"`
-	MessageType constant.MessageType `json:"message_type"`
-	Metadata    *MessageMetadata     `json:"metadata,omitempty"`
+	ConversationID uuid.UUID            `json:"conversation_id"    validate:"required"`
+	Text           string               `json:"text"`
+	MessageType    constant.MessageType `json:"message_type"`
+	Metadata       *MessageMetadata     `json:"metadata,omitempty"`
 }
 
 // TypingContent represents typing indicator content.

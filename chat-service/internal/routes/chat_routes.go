@@ -20,7 +20,8 @@ func SetupChatRoutes(e *echo.Echo, h *handler.ChatHandler, connHandler *handler.
 	protected.POST("/validate-ticket", connHandler.ValidateTicket)
 
 	// Chat conversation routes
-	protected.POST("/", h.CreateConversation)
+	protected.GET("/conversations", h.GetUserConversations)
+	protected.POST("/conversations", h.CreateConversation)
 	protected.GET("/:conversationID", h.GetConversation)
 	protected.POST("/:conversationID/messages", h.SendMessage)
 	protected.GET("/:conversationID/messages", h.GetMessages)

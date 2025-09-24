@@ -23,6 +23,7 @@ type WebSocketHandler struct {
 	logger            logger.Logger
 	config            *config.WebSocketServerConfig
 	connectionService service.ConnectionService
+	chatService       service.ChatService
 }
 
 // NewWebSocketHandler creates a new WebSocket handler.
@@ -31,12 +32,14 @@ func NewWebSocketHandler(
 	logger logger.Logger,
 	config *config.WebSocketServerConfig,
 	connectionService service.ConnectionService,
+	chatService service.ChatService,
 ) *WebSocketHandler {
 	return &WebSocketHandler{
 		hub:               hub,
 		logger:            logger,
 		config:            config,
 		connectionService: connectionService,
+		chatService:       chatService,
 	}
 }
 
@@ -98,6 +101,8 @@ func (h *WebSocketHandler) createConnectionFromTicket(
 		conn,
 		h.hub,
 		h.hub.ConnectionRepo,
+		h.hub.MessageRepo,
+		h.chatService.GetUserConversations,
 		h.logger,
 	), nil
 }
