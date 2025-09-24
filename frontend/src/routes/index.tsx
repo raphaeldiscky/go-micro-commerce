@@ -2,11 +2,11 @@ import { Link, createFileRoute } from '@tanstack/react-router'
 import {
   Docker,
   Go,
+  Kafka,
   Kubernetes,
   PostgreSQL,
   React,
   Redis,
-  Kafka,
 } from 'developer-icons'
 import {
   BookOpen,
@@ -170,29 +170,56 @@ function HomePage() {
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Technology Stack
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300">
-              Built with modern, production-ready technologies
+            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Built with modern, production-ready technologies powering our
+              distributed architecture
             </p>
           </div>
 
-          <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-4">
-            {technologies.map((tech) => (
-              <Card
-                key={tech.name}
-                className="flex flex-col items-center p-4 hover:shadow-md transition-shadow group cursor-default"
-              >
-                <div className="w-12 h-12 flex items-center justify-center mb-3 rounded-lg bg-muted/50 group-hover:bg-muted transition-colors">
-                  <tech.icon className="h-7 w-7 text-foreground" />
+          <Card className="p-8 max-w-5xl mx-auto">
+            <div className="grid gap-8 md:grid-cols-2">
+              <div>
+                <div className="grid gap-3 grid-cols-2">
+                  {technologies.slice(0, 4).map((tech) => (
+                    <div
+                      key={tech.name}
+                      className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-medium text-foreground">
+                          {tech.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {tech.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <h3 className="text-xs font-semibold text-foreground mb-1">
-                  {tech.name}
-                </h3>
-                <p className="text-xs text-muted-foreground text-center">
-                  {tech.description}
-                </p>
-              </Card>
-            ))}
-          </div>
+              </div>
+              <div>
+                <div className="grid gap-3 grid-cols-2">
+                  {technologies.slice(4, 8).map((tech) => (
+                    <div
+                      key={tech.name}
+                      className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    >
+                      <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-medium text-foreground">
+                          {tech.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          {tech.description}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
       </section>
 

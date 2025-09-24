@@ -36,8 +36,8 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo/Brand */}
+        <div className="flex h-16 items-center relative">
+          {/* Logo/Brand - Left */}
           <div className="flex items-center space-x-2">
             <Link
               to="/"
@@ -52,33 +52,35 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
-              {navigationItems.map((item) => (
-                <NavigationMenuItem key={item.path}>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      to={item.path}
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        'inline-flex items-center',
-                        isActive(item.path)
-                          ? 'bg-accent text-accent-foreground'
-                          : '',
-                      )}
-                    >
-                      <item.icon className="mr-1 h-4 w-4" />
-                      {item.name}
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
+          {/* Desktop Navigation - Centered */}
+          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {navigationItems.map((item) => (
+                  <NavigationMenuItem key={item.path}>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        to={item.path}
+                        className={cn(
+                          navigationMenuTriggerStyle(),
+                          'inline-flex items-center',
+                          isActive(item.path)
+                            ? 'bg-accent text-accent-foreground'
+                            : '',
+                        )}
+                      >
+                        <item.icon className="mr-1 h-4 w-4" />
+                        {item.name}
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
 
           {/* Right side - GitHub Link */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-4 ml-auto">
             <Button variant="outline" size="sm" asChild>
               <a
                 href="https://github.com/yourusername/go-micro-commerce"
@@ -96,7 +98,7 @@ export default function Header() {
           <Button
             variant="ghost"
             size="sm"
-            className="md:hidden"
+            className="md:hidden ml-auto"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? (
