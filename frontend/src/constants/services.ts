@@ -1,13 +1,4 @@
 import {
-  CreditCard,
-  ExternalLink,
-  FileText,
-  Link as LinkIcon,
-  Lock,
-  MessageCircle,
-  Package,
-} from 'lucide-react'
-import {
   Docker,
   Go,
   Kafka,
@@ -16,11 +7,20 @@ import {
   React,
   Redis,
 } from 'developer-icons'
+import {
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Link as LinkIcon,
+  Lock,
+  MessageCircle,
+  Package,
+} from 'lucide-react'
 import type { ServiceInfo, TechnologyInfo, TechnologyLink } from './types'
 import { TECH_URLS } from './urls'
 
 // Microservices information
-export const SERVICES: ServiceInfo[] = [
+export const SERVICES: Array<ServiceInfo> = [
   {
     name: 'API Gateway',
     description: 'Central entry point with load balancing and rate limiting',
@@ -60,7 +60,7 @@ export const SERVICES: ServiceInfo[] = [
 ]
 
 // Technology stack information
-export const TECHNOLOGIES: TechnologyInfo[] = [
+export const TECHNOLOGIES: Array<TechnologyInfo> = [
   { name: 'Go', icon: Go, description: 'Backend Services' },
   { name: 'React', icon: React, description: 'Frontend UI' },
   { name: 'PostgreSQL', icon: PostgreSQL, description: 'Database' },
@@ -72,7 +72,7 @@ export const TECHNOLOGIES: TechnologyInfo[] = [
 ]
 
 // Technology links for footer
-export const TECHNOLOGY_LINKS: TechnologyLink[] = [
+export const TECHNOLOGY_LINKS: Array<TechnologyLink> = [
   { name: 'Go', url: TECH_URLS.GO },
   { name: 'React', url: TECH_URLS.REACT },
   { name: 'PostgreSQL', url: TECH_URLS.POSTGRESQL },

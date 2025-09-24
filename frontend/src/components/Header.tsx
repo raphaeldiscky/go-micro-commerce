@@ -1,5 +1,3 @@
-import { APP_CONFIG, NAVIGATION_ITEMS, PROFILE_IMAGE_URL } from '@/constants'
-import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Github, Menu, X } from 'lucide-react'
 import { useState } from 'react'
@@ -11,6 +9,8 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from './ui/navigation-menu'
+import { APP_CONFIG, NAVIGATION_ITEMS, PROFILE_IMAGE_URL } from '@/constants'
+import { cn } from '@/lib/utils'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)

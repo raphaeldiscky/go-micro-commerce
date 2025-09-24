@@ -1,9 +1,3 @@
-import {
-  GITHUB_REPO_URL,
-  KEY_FEATURES,
-  PAGE_CONTENT,
-  TECHNICAL_GOALS,
-} from '@/constants'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   BookOpen,
@@ -22,6 +16,12 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/card'
+import {
+  GITHUB_REPO_URL,
+  KEY_FEATURES,
+  PAGE_CONTENT,
+  TECHNICAL_GOALS,
+} from '@/constants'
 
 export const Route = createFileRoute('/about')({
   component: AboutPage,

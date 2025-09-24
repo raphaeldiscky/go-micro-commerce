@@ -10,7 +10,7 @@ export interface ServiceInfo {
   name: string
   description: string
   icon: React.ElementType
-  features: string[]
+  features: Array<string>
 }
 
 export interface TechnologyInfo {
@@ -39,5 +39,5 @@ export interface KeyFeature {
 
 export interface TechnicalGoalSection {
   category: string
-  goals: string[]
+  goals: Array<string>
 }

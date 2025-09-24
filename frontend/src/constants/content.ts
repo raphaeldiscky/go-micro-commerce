@@ -1,15 +1,15 @@
 import {
   Building2,
+  MessageCircle,
   Radio,
+  Rocket,
   RotateCcw,
   Target,
-  Rocket,
-  MessageCircle,
 } from 'lucide-react'
 import type { KeyFeature, TechnicalGoalSection } from './types'
 
 // About page content
-export const KEY_FEATURES: KeyFeature[] = [
+export const KEY_FEATURES: Array<KeyFeature> = [
   {
     title: 'Microservices Architecture',
     description:
@@ -48,7 +48,7 @@ export const KEY_FEATURES: KeyFeature[] = [
   },
 ]
 
-export const TECHNICAL_GOALS: TechnicalGoalSection[] = [
+export const TECHNICAL_GOALS: Array<TechnicalGoalSection> = [
   {
     category: 'Architecture Exploration',
     goals: [

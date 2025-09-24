@@ -13,7 +13,7 @@ on:
       - "frontend/**"
 
 jobs:
-  frontend-check:
+  build:
     runs-on: tenki-standard-autoscale
     timeout-minutes: 10
     defaults:
@@ -55,6 +55,9 @@ jobs:
 
       - name: Check formatting and linting
         run: pnpm run check
+
+      - name: Build
+        run: pnpm run build
 
       - name: Generate Job Summary
         if: always()

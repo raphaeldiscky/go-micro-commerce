@@ -3,7 +3,7 @@ import type { SocialLink } from './types'
 import { GITHUB_REPO_URL, LINKEDIN_PROFILE_URL } from './urls'
 
 // Social media links
-export const SOCIAL_LINKS: SocialLink[] = [
+export const SOCIAL_LINKS: Array<SocialLink> = [
   {
     name: 'GitHub',
     url: GITHUB_REPO_URL,
