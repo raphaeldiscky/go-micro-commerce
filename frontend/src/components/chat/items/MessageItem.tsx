@@ -1,5 +1,6 @@
 import type { Message } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { formatTime } from '@/lib/utils/date'
 import { Check, CheckCheck, Clock, Reply } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
 import { Button } from '../../ui/button'
@@ -31,11 +32,6 @@ export function MessageItem({
       default:
         return <Clock className="h-3 w-3 text-gray-300" />
     }
-  }
-
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   const getInitials = (name?: string) => {
@@ -79,7 +75,10 @@ export function MessageItem({
           <div className="flex-shrink-0">
             {!isConsecutive && (
               <Avatar className="h-8 w-8">
-                <AvatarImage alt={message.sender_name || 'User'} src={undefined} />
+                <AvatarImage
+                  alt={message.sender_name || 'User'}
+                  src={undefined}
+                />
                 <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                   {getInitials(message.sender_name)}
                 </AvatarFallback>

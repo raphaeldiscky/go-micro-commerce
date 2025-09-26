@@ -1,6 +1,7 @@
 import { useConversations } from '@/hooks/chat/useConversations'
 import { useIsAuthenticated } from '@/hooks/useAuth'
 import type { Conversation } from '@/lib/api'
+import { formatRelativeTime } from '@/lib/utils/date'
 import { Link } from '@tanstack/react-router'
 import {
   ChevronRight,
@@ -49,21 +50,6 @@ export function ChatListPage() {
       default:
         return <MessageCircle className="h-5 w-5 text-gray-500" />
     }
-  }
-
-  const formatLastMessageTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / (1000 * 60))
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffMins < 1) return 'now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
-    return date.toLocaleDateString()
   }
 
   if (!isAuthenticated) {
@@ -209,7 +195,7 @@ export function ChatListPage() {
                               {conversation.last_message && (
                                 <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
                                   <Clock className="h-3 w-3 mr-1" />
-                                  {formatLastMessageTime(
+                                  {formatRelativeTime(
                                     conversation.last_message.timestamp,
                                   )}
                                 </span>
@@ -223,7 +209,9 @@ export function ChatListPage() {
                               {conversation.last_message ? (
                                 <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                   <span className="font-medium">
-                                    {conversation.last_message.sender_name || 'User'}:
+                                    {conversation.last_message.sender_name ||
+                                      'User'}
+                                    :
                                   </span>{' '}
                                   {conversation.last_message.content}
                                 </p>

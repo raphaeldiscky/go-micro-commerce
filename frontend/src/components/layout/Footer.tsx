@@ -6,11 +6,12 @@ import {
   SOCIAL_LINKS,
   TECHNOLOGY_LINKS,
 } from '@/constants'
+import { getCurrentYear } from '@/lib/utils/date'
 import { Link } from '@tanstack/react-router'
 import { Heart } from 'lucide-react'
 
 export default function Footer() {
-  const currentYear = new Date().getFullYear()
+  const currentYear = getCurrentYear()
 
   // Data imported from constants
 

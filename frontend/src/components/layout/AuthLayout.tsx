@@ -1,8 +1,9 @@
 import { APP_CONFIG } from '@/constants'
+import { getCurrentYear } from '@/lib/utils/date'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
 import React from 'react'
-import { Button } from './ui/button'
+import { Button } from '../ui/button'
 
 interface AuthLayoutProps {
   children: React.ReactNode
@@ -58,8 +59,8 @@ export function AuthLayout({
       {/* Footer */}
       <footer className="relative z-10 py-6 text-center text-sm text-muted-foreground">
         <p>
-          &copy; {new Date().getFullYear()} {APP_CONFIG.NAME}. Built for
-          educational purposes.
+          &copy; {getCurrentYear()} {APP_CONFIG.NAME}. Built for educational
+          purposes.
         </p>
       </footer>
     </div>

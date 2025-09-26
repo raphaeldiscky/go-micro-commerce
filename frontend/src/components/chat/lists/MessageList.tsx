@@ -1,6 +1,7 @@
 import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
 import { useMessages } from '@/hooks/chat/useMessages'
 import type { Message, TypingIndicator as TypingIndicatorType } from '@/lib/api'
+import { areMessagesConsecutive } from '@/lib/utils/date'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../ui/button'
@@ -30,12 +31,12 @@ export function MessageList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    isLoading,
   } = useMessages(conversationId)
 
   const { markAsRead } = useMessageReceipts(conversationId)
 
   // Flatten all message pages
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const messages = messagesData?.pages.flat() || []
 
   // Check if message is consecutive (same sender within 5 minutes)
@@ -46,10 +47,7 @@ export function MessageList({
     if (!prevMsg) return false
     if (currentMsg.sender_id !== prevMsg.sender_id) return false
 
-    const timeDiff =
-      new Date(currentMsg.created_at).getTime() -
-      new Date(prevMsg.created_at).getTime()
-    return timeDiff < 5 * 60 * 1000 // 5 minutes
+    return areMessagesConsecutive(currentMsg.created_at, prevMsg.created_at)
   }
 
   // Scroll to bottom
@@ -109,17 +107,6 @@ export function MessageList({
       return () => scrollElement.removeEventListener('scroll', handleScroll)
     }
   }, [hasNextPage, isFetchingNextPage])
-
-  if (isLoading) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="flex items-center space-x-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading messages...</span>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex-1 relative min-h-0">

@@ -1,5 +1,6 @@
 import type { Message, SendMessageRequest } from '@/lib/api'
 import { getConversationMessages, sendMessage } from '@/lib/api'
+import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
 import {
   useInfiniteQuery,
   useMutation,
@@ -97,13 +98,13 @@ export function useSendMessage(conversationId: string) {
         const optimisticMessage: Message = {
           content: newMessage.content,
           conversation_id: conversationId,
-          created_at: new Date().toISOString(),
+          created_at: generateTimestamp(),
           delivery_status: 'sent',
-          id: `temp-${Date.now()}`,
+          id: generateUniqueId('temp'),
           message_type: newMessage.message_type || 'text',
           sender_id: 'current-user', // Will be replaced by real user ID
           sender_name: 'You',
-          updated_at: new Date().toISOString(),
+          updated_at: generateTimestamp(),
         }
 
         // Add message to the last page

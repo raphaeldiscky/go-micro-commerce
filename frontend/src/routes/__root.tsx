@@ -2,9 +2,9 @@ import { TanStackDevtools } from '@tanstack/react-devtools'
 import type { QueryClient } from '@tanstack/react-query'
 import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import AuthInitializer from '../components/AuthInitializer'
-import Footer from '../components/Footer'
-import Header from '../components/Header'
+import AuthInitializer from '../components/auth/AuthInitializer'
+import Footer from '../components/layout/Footer'
+import Header from '../components/layout/Header'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
 interface MyRouterContext {

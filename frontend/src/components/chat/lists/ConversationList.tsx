@@ -3,6 +3,7 @@ import {
   useJoinConversation,
 } from '@/hooks/chat/useConversations'
 import type { Conversation } from '@/lib/api'
+import { formatRelativeTime } from '@/lib/utils/date'
 import { Hash, MessageCircle, User, Users } from 'lucide-react'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
@@ -42,21 +43,6 @@ export function ConversationList({
       default:
         return <MessageCircle className="h-4 w-4" />
     }
-  }
-
-  const formatLastMessageTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMins = Math.floor(diffMs / (1000 * 60))
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-    if (diffMins < 1) return 'now'
-    if (diffMins < 60) return `${diffMins}m`
-    if (diffHours < 24) return `${diffHours}h`
-    if (diffDays < 7) return `${diffDays}d`
-    return date.toLocaleDateString()
   }
 
   if (isLoading) {
@@ -148,7 +134,7 @@ export function ConversationList({
                       )}
                       {conversation.last_message && (
                         <span className="text-xs text-muted-foreground">
-                          {formatLastMessageTime(
+                          {formatRelativeTime(
                             conversation.last_message.timestamp,
                           )}
                         </span>

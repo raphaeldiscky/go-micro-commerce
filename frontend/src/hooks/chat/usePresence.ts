@@ -1,5 +1,6 @@
 import type { PresenceUpdate } from '@/lib/api'
 import { getOnlineUsers, updatePresence } from '@/lib/api'
+import { generateTimestamp } from '@/lib/utils/date'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
 
@@ -36,7 +37,7 @@ export function usePresence() {
   const setPresenceStatus = useCallback(
     (status: PresenceUpdate['status']) => {
       const presenceUpdate: PresenceUpdate = {
-        last_seen: status === 'offline' ? new Date().toISOString() : undefined,
+        last_seen: status === 'offline' ? generateTimestamp() : undefined,
         status,
       }
 
@@ -109,7 +110,7 @@ export function usePresence() {
     const handleBeforeUnload = () => {
       // Use navigator.sendBeacon for reliable offline status
       const presenceData = JSON.stringify({
-        last_seen: new Date().toISOString(),
+        last_seen: generateTimestamp(),
         status: 'offline',
       })
       navigator.sendBeacon('/api/chats/v1/presence', presenceData)
