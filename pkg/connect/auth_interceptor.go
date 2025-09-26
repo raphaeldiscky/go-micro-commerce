@@ -119,3 +119,40 @@ func (a *AuthInterceptor) extractUserInfoFromHeaders(
 		IsActive: isActive,
 	}, nil
 }
+
+// HeaderSetter interface defines the contract for setting headers on requests.
+type HeaderSetter interface {
+	Header() http.Header
+}
+
+// AddAuthHeaders extracts user authentication information from context and adds it as headers.
+// This is used by Connect-RPC clients to propagate authentication information to other services.
+func AddAuthHeaders(ctx context.Context, req HeaderSetter) {
+	// Extract user ID
+	if userID := ctx.Value(constant.CtxUserID); userID != nil {
+		if id, ok := userID.(uuid.UUID); ok {
+			req.Header().Set(constant.XUserID, id.String())
+		}
+	}
+
+	// Extract email
+	if email := ctx.Value(constant.CtxEmail); email != nil {
+		if emailStr, ok := email.(string); ok {
+			req.Header().Set(constant.XEmail, emailStr)
+		}
+	}
+
+	// Extract roles
+	if roles := ctx.Value(constant.CtxRoles); roles != nil {
+		if rolesSlice, ok := roles.([]string); ok {
+			req.Header().Set(constant.XRoles, strings.Join(rolesSlice, ","))
+		}
+	}
+
+	// Extract is active
+	if isActive := ctx.Value(constant.CtxIsActive); isActive != nil {
+		if active, ok := isActive.(bool); ok {
+			req.Header().Set(constant.XIsActive, strconv.FormatBool(active))
+		}
+	}
+}

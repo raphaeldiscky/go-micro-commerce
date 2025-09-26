@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
