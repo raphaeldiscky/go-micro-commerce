@@ -19,6 +19,8 @@ const (
 	ServiceTypeHTTP ServiceType = "http"
 	// ServiceTypeGRPC represents gRPC service type for Consul registration.
 	ServiceTypeGRPC ServiceType = "grpc"
+	// ServiceTypeConnectRPC represents Connect-RPC service type for Consul registration.
+	ServiceTypeConnectRPC ServiceType = "connectrpc"
 	// ServiceTypeWebSocket represents WebSocket service type for Consul registration.
 	ServiceTypeWebSocket ServiceType = "websocket"
 )
@@ -27,6 +29,7 @@ const (
 type ServiceRegistration interface {
 	RegisterHTTP(serviceName, address string, port int) error
 	RegisterGRPC(serviceName, address string, port int) error
+	RegisterConnectRPC(serviceName, address string, port int) error
 	RegisterWebSocket(serviceName, address string, port int) error
 	Deregister() error
 }
@@ -74,6 +77,11 @@ func (s *serviceRegistration) RegisterGRPC(serviceName, address string, port int
 	return s.register(serviceName, address, port, ServiceTypeGRPC)
 }
 
+// RegisterConnectRPC registers a Connect-RPC service with Consul.
+func (s *serviceRegistration) RegisterConnectRPC(serviceName, address string, port int) error {
+	return s.register(serviceName, address, port, ServiceTypeConnectRPC)
+}
+
 // RegisterWebSocket registers a WebSocket service with Consul.
 func (s *serviceRegistration) RegisterWebSocket(serviceName, address string, port int) error {
 	return s.register(serviceName, address, port, ServiceTypeWebSocket)
@@ -111,6 +119,19 @@ func (s *serviceRegistration) register(
 		// For gRPC health checks, use TCP check since we have custom health method
 		check = &api.AgentServiceCheck{
 			TCP:                            fmt.Sprintf("%s:%d", host, port),
+			Interval:                       "10s",
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
+		}
+	case ServiceTypeConnectRPC:
+		tags = []string{"connectrpc", "grpc", "http", "api", "microservice"}
+		// Connect-RPC supports gRPC, HTTP, and gRPC-Web protocols over HTTP
+		// Use HTTP health check since Connect-RPC serves over HTTP
+		check = &api.AgentServiceCheck{
+			HTTP: fmt.Sprintf(
+				"http://%s/health",
+				net.JoinHostPort(host, strconv.Itoa(port)),
+			),
 			Interval:                       "10s",
 			Timeout:                        "5s",
 			DeregisterCriticalServiceAfter: "30s",

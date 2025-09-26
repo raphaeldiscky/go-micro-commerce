@@ -1,14 +1,13 @@
 syntax = "proto3";
 
-package fulfillment;
+package fulfillment.v1;
 
-option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment";
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1;fulfillmentv1";
 
-import "google/protobuf/empty.proto";
 
 service FulfillmentService {
   rpc GetShippingCost(GetShippingCostRequest) returns (GetShippingCostResponse);
-  rpc Health(google.protobuf.Empty) returns (HealthResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
 }
 
 message GetShippingCostRequest {
@@ -54,12 +53,14 @@ message FromAddress {
   string country = 4;
 }
 
+message HealthRequest {}
+
 message HealthResponse {
   HealthStatus status = 1; // e.g., "SERVING"
 }
 
 enum HealthStatus {
-  UNKNOWN = 0;
-  SERVING = 1;
-  NOT_SERVING = 2;
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_SERVING = 1;
+  HEALTH_STATUS_NOT_SERVING = 2;
 }

@@ -1,17 +1,18 @@
-// Package client provides a gRPC client for interacting with the product service.
 package client
 
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+	"strconv"
 
+	"connectrpc.com/connect"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
+	"github.com/raphaeldiscky/go-micro-commerce/proto/product/v1/productv1connect"
 
-	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
+	pkgconnect "github.com/raphaeldiscky/go-micro-commerce/pkg/connect"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -41,39 +42,33 @@ type ProductClient interface {
 		items []dto.ProductRestorationItem,
 	) ([]entity.Product, error)
 	HealthCheck(ctx context.Context) error
-	Close() error
 }
 
-// productClient is a gRPC client for interacting with the product service.
+// productClient is a Connect-RPC client for interacting with the product service.
 type productClient struct {
-	grpcClient *grpc.Client
-	client     pb.ProductServiceClient
+	client productv1connect.ProductServiceClient
 }
 
-// NewProductClient creates a new productClient instance with gRPC connection.
+// NewProductClient creates a new productClient instance with Connect-RPC.
 func NewProductClient(
 	cfg *config.Config,
 ) (ProductClient, error) {
-	// Create gRPC client configuration
-	grpcConfig := pkgconfig.DefaultGRPCClientConfig(pkgconstant.GRPCServiceNameProduct)
-
-	// Configure based on existing client config
-	grpcConfig.UseServiceDiscovery = cfg.Client.UseServiceDiscovery
-	grpcConfig.ConsulEnabled = cfg.Consul.Enabled
-	grpcConfig.ConsulAddress = cfg.Consul.Address
-	grpcConfig.SetStaticAddress(cfg.Client.ProductGRPCHost, cfg.Client.ProductGRPCPort)
-
-	gClient, err := grpc.NewGRPCClient(grpcConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create gRPC client: %w", err)
+	// Create HTTP client for Connect-RPC
+	httpClient := &http.Client{
+		Timeout: constant.ProductClientTimeout,
 	}
 
-	// Create the product service client
-	client := pb.NewProductServiceClient(gClient.GetConnection())
+	// Use static configuration for now
+	baseURL := "http://" + net.JoinHostPort(
+		cfg.Client.ProductGRPCHost,
+		strconv.Itoa(cfg.Client.ProductGRPCPort),
+	)
+
+	// Create Connect-RPC client
+	client := productv1connect.NewProductServiceClient(httpClient, baseURL)
 
 	return &productClient{
-		grpcClient: gClient,
-		client:     client,
+		client: client,
 	}, nil
 }
 
@@ -90,14 +85,17 @@ func (pc *productClient) GetProducts(
 	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	resp, err := pc.client.GetProducts(ctx, &pb.GetProductsRequest{Ids: stringIDs})
+	req := connect.NewRequest(&pb.GetProductsRequest{Ids: stringIDs})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.GetProducts(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetProducts: %w", err)
 	}
 
-	products := make([]entity.Product, len(resp.GetProducts()))
+	products := make([]entity.Product, len(resp.Msg.GetProducts()))
 
-	for i, p := range resp.GetProducts() {
+	for i, p := range resp.Msg.GetProducts() {
 		product, rowErr := mapper.MapProtoToProduct(p)
 		if rowErr != nil {
 			return nil, rowErr
@@ -128,25 +126,28 @@ func (pc *productClient) ReserveProducts(
 	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	resp, err := pc.client.ReserveProducts(ctx, &pb.ReserveProductsRequest{
+	req := connect.NewRequest(&pb.ReserveProductsRequest{
 		IdempotencyKey: idempotencyKey.String(),
 		Items:          pbItems,
 	})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.ReserveProducts(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to call ReserveProducts gRPC: %w", err)
+		return nil, fmt.Errorf("failed to call ReserveProducts: %w", err)
 	}
 
-	if !resp.GetSuccess() {
+	if !resp.Msg.GetSuccess() {
 		return nil, fmt.Errorf(
 			"reservation failed from product-service: %s",
-			resp.GetErrorMessage(),
+			resp.Msg.GetErrorMessage(),
 		)
 	}
 
 	// Convert response to entities
-	products := make([]entity.Product, len(resp.GetReservedProducts()))
+	products := make([]entity.Product, len(resp.Msg.GetReservedProducts()))
 
-	for i, p := range resp.GetReservedProducts() {
+	for i, p := range resp.Msg.GetReservedProducts() {
 		product, rowErr := mapper.MapProtoToProduct(p)
 		if rowErr != nil {
 			return nil, rowErr
@@ -175,15 +176,18 @@ func (pc *productClient) ReleaseProducts(
 	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	resp, err := pc.client.ReleaseProducts(ctx, &pb.ReleaseProductsRequest{
+	req := connect.NewRequest(&pb.ReleaseProductsRequest{
 		Items: pbItems,
 	})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.ReleaseProducts(ctx, req)
 	if err != nil {
 		return fmt.Errorf("failed to call ReleaseProducts: %w", err)
 	}
 
-	if !resp.GetSuccess() {
-		return fmt.Errorf("products release failed: %s", resp.GetErrorMessage())
+	if !resp.Msg.GetSuccess() {
+		return fmt.Errorf("products release failed: %s", resp.Msg.GetErrorMessage())
 	}
 
 	return nil
@@ -206,20 +210,26 @@ func (pc *productClient) ConfirmProductsDeduction(
 	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	resp, err := pc.client.ConfirmProductsDeduction(ctx, &pb.ConfirmProductsDeductionRequest{
+	req := connect.NewRequest(&pb.ConfirmProductsDeductionRequest{
 		Items: pbItems,
 	})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.ConfirmProductsDeduction(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call ConfirmProductsDeduction: %w", err)
 	}
 
-	if !resp.GetSuccess() {
-		return nil, fmt.Errorf("stocks deduction confirmation failed: %s", resp.GetErrorMessage())
+	if !resp.Msg.GetSuccess() {
+		return nil, fmt.Errorf(
+			"stocks deduction confirmation failed: %s",
+			resp.Msg.GetErrorMessage(),
+		)
 	}
 
-	products := make([]entity.Product, len(resp.GetUpdatedProducts()))
+	products := make([]entity.Product, len(resp.Msg.GetUpdatedProducts()))
 
-	for i, p := range resp.GetUpdatedProducts() {
+	for i, p := range resp.Msg.GetUpdatedProducts() {
 		product, rowErr := mapper.MapProtoToProduct(p)
 		if rowErr != nil {
 			return nil, rowErr
@@ -248,22 +258,25 @@ func (pc *productClient) RestoreProducts(
 	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	resp, err := pc.client.RestoreProducts(ctx, &pb.RestoreProductsRequest{
+	req := connect.NewRequest(&pb.RestoreProductsRequest{
 		Items:  pbItems,
 		Reason: "order_compensation", // Standard reason for saga compensation
 	})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.RestoreProducts(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call RestoreProducts: %w", err)
 	}
 
-	if !resp.GetSuccess() {
-		return nil, fmt.Errorf("products restoration failed: %s", resp.GetErrorMessage())
+	if !resp.Msg.GetSuccess() {
+		return nil, fmt.Errorf("products restoration failed: %s", resp.Msg.GetErrorMessage())
 	}
 
 	// Convert response to entities
-	products := make([]entity.Product, len(resp.GetRestoredProducts()))
+	products := make([]entity.Product, len(resp.Msg.GetRestoredProducts()))
 
-	for i, p := range resp.GetRestoredProducts() {
+	for i, p := range resp.Msg.GetRestoredProducts() {
 		product, rowErr := mapper.MapProtoToProduct(p)
 		if rowErr != nil {
 			return nil, rowErr
@@ -277,22 +290,20 @@ func (pc *productClient) RestoreProducts(
 
 // HealthCheck verifies the connection to product-service.
 func (pc *productClient) HealthCheck(ctx context.Context) error {
-	_, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	resp, err := pc.client.Health(ctx, &emptypb.Empty{})
+	req := connect.NewRequest(&pb.HealthRequest{})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.Health(ctx, req)
 	if err != nil {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if resp.GetStatus() != pb.HealthStatus_SERVING {
-		return fmt.Errorf("service unhealthy: %s", resp.GetStatus())
+	if resp.Msg.GetStatus() != pb.HealthStatus_HEALTH_STATUS_SERVING {
+		return fmt.Errorf("service unhealthy: %s", resp.Msg.GetStatus())
 	}
 
 	return nil
-}
-
-// Close closes the gRPC connection.
-func (pc *productClient) Close() error {
-	return pc.grpcClient.Close()
 }

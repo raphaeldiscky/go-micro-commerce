@@ -1,3 +1,4 @@
+// Package client provides external service clients for the order service.
 package client
 
 import (

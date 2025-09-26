@@ -3,6 +3,7 @@ module github.com/raphaeldiscky/go-micro-commerce/order-service
 go 1.24.7
 
 require (
+	connectrpc.com/connect v1.19.0
 	github.com/IBM/sarama v1.45.2
 	github.com/bsm/redislock v0.9.4
 	github.com/go-playground/validator/v10 v10.27.0
@@ -19,7 +20,6 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.temporal.io/sdk v1.36.0
 	golang.org/x/time v0.11.0
-	google.golang.org/protobuf v1.36.8
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
@@ -27,6 +27,7 @@ replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
 
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -106,5 +107,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/grpc v1.75.0 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

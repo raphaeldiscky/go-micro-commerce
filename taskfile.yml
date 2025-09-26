@@ -309,14 +309,7 @@ tasks:
     vars:
       SERVICE: '{{.SERVICE | default ""}}'
     cmds:
-      - |
-        if [ -z "{{.SERVICE}}" ]; then
-          echo "Generating protobuf files for all services..."
-          sh ./scripts/proto.sh
-        else
-          echo "Generating protobuf files for {{.SERVICE}}..."
-          sh ./scripts/proto.sh {{.SERVICE}}
-        fi
+      - buf generate
 
   sqlc:
     desc: Generate SQLC files

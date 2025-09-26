@@ -1,0 +1,11 @@
+{
+  "files.watcherExclude": {
+    "*.lock": true
+  },
+  "search.exclude": {
+    "*.lock": true
+  },
+  "files.readonlyInclude": {
+    "*.lock": true
+  }
+}
