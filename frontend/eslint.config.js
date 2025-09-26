@@ -1,29 +1,33 @@
 //  @ts-check
 
 import { tanstackConfig } from '@tanstack/eslint-config'
+import perfectionist from 'eslint-plugin-perfectionist'
 
 export default [
   ...tanstackConfig,
   {
+    plugins: {
+      perfectionist,
+    },
     rules: {
-      'import/order': [
+      'import/order': 'off',
+      'perfectionist/sort-imports': [
         'error',
         {
-          alphabetize: {
-            order: 'asc',
-            caseInsensitive: true,
-          },
+          type: 'alphabetical',
+          order: 'asc',
+          newlinesBetween: 'never',
+          internalPattern: ['^@/'],
           groups: [
-            'builtin', // fs, path, http…
-            'external', // react, lodash…
-            'internal', // your aliases like @/*
-            'parent', // ../*
-            'sibling', // ./sibling
-            'index', // ./ (index file)
+            'type-import',
+            'internal',
+            ['builtin', 'external'],
+            ['parent', 'sibling', 'index'],
+            'unknown',
           ],
-          'newlines-between': 'never', // change to 'always' if you want spacing between groups
         },
       ],
+      'sort-imports': 'off',
     },
   },
 ]

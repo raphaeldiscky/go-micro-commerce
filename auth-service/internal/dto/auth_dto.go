@@ -25,7 +25,7 @@ type LoginRequest struct {
 // AuthResponse represents the response after successful authentication.
 type AuthResponse struct {
 	AccessToken  string        `json:"access_token"`
-	RefreshToken string        `json:"refresh_token"`
+	RefreshToken string        `json:"refresh_token,omitempty"` // omitempty for JSON marshaling when not needed
 	TokenType    string        `json:"token_type"`
 	ExpiresIn    int64         `json:"expires_in"`
 	User         *UserResponse `json:"user"`
@@ -71,6 +71,7 @@ type ResendVerificationRequest struct {
 }
 
 // RefreshTokenRequest represents a token refresh request.
+// The refresh token is read from HTTP-only cookie, not from request body.
 type RefreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token" validate:"required"`
 }

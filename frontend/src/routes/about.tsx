@@ -1,3 +1,9 @@
+import {
+  GITHUB_REPO_URL,
+  KEY_FEATURES,
+  PAGE_CONTENT,
+  TECHNICAL_GOALS,
+} from '@/constants'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   BookOpen,
@@ -16,12 +22,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/card'
-import {
-  GITHUB_REPO_URL,
-  KEY_FEATURES,
-  PAGE_CONTENT,
-  TECHNICAL_GOALS,
-} from '@/constants'
 
 export const Route = createFileRoute('/about')({
   component: AboutPage,
@@ -76,8 +76,8 @@ function AboutPage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {KEY_FEATURES.map((feature) => (
               <Card
-                key={feature.title}
                 className="hover:shadow-lg transition-shadow"
+                key={feature.title}
               >
                 <CardHeader>
                   <div className="flex items-center space-x-2 mb-2">
@@ -99,14 +99,14 @@ function AboutPage() {
           </h2>
           <div className="grid gap-6 md:grid-cols-2">
             {TECHNICAL_GOALS.map((section) => (
-              <Card key={section.category} className="h-fit">
+              <Card className="h-fit" key={section.category}>
                 <CardHeader>
                   <CardTitle className="text-xl">{section.category}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2">
                     {section.goals.map((goal, index) => (
-                      <li key={index} className="flex items-start space-x-2">
+                      <li className="flex items-start space-x-2" key={index}>
                         <CheckCircle
                           className="text-green-500 mt-1"
                           size={16}
@@ -236,10 +236,10 @@ function AboutPage() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg">
                   <a
-                    href={GITHUB_REPO_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex items-center space-x-2"
+                    href={GITHUB_REPO_URL}
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     <svg
                       className="h-5 w-5"
@@ -251,8 +251,8 @@ function AboutPage() {
                     <span>{PAGE_CONTENT.ABOUT.CTA.VIEW_SOURCE}</span>
                   </a>
                 </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <a href="/services" className="flex items-center space-x-2">
+                <Button asChild size="lg" variant="outline">
+                  <a className="flex items-center space-x-2" href="/services">
                     <FileText size={16} />
                     <span>{PAGE_CONTENT.ABOUT.CTA.BROWSE_SERVICES}</span>
                   </a>

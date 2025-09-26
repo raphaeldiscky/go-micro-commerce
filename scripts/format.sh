@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 SERVICES=(
   "auth-service"
@@ -24,7 +24,7 @@ format_service() {
   echo "Format complete for $dir"
 }
 
-if [ -n "$1" ]; then
+if [ -n "${1-}" ]; then
   if [[ " ${SERVICES[*]} " =~ " $1 " ]]; then
     format_service "$1"
   else
@@ -33,7 +33,19 @@ if [ -n "$1" ]; then
     exit 1
   fi
 else
+  pids=()
+
   for service in "${SERVICES[@]}"; do
-    format_service "$service"
+    format_service "$service" &
+    pids+=($!)
   done
+
+  for pid in "${pids[@]}"; do
+    wait "$pid" || {
+      echo "Formatting failed in one of the services."
+      exit 1
+    }
+  done
+
+  echo "All format checks completed successfully!"
 fi

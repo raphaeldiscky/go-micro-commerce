@@ -31,11 +31,10 @@ export const Route = createFileRoute('/services')({
 function ServicesPage() {
   const services = [
     {
-      name: 'API Gateway',
       description:
         'Central entry point for all client requests with comprehensive traffic management',
-      icon: ExternalLink,
-      port: ':8080',
+      details:
+        'Handles all incoming requests and routes them to appropriate microservices. Provides cross-cutting concerns like authentication, logging, and monitoring.',
       features: [
         'Load Balancing',
         'Rate Limiting',
@@ -44,17 +43,17 @@ function ServicesPage() {
         'Circuit Breaker',
         'Monitoring',
       ],
-      technologies: ['Traefik', 'Consul', 'Go'],
+      icon: ExternalLink,
+      name: 'API Gateway',
       patterns: ['Gateway Pattern', 'Circuit Breaker', 'Service Discovery'],
-      details:
-        'Handles all incoming requests and routes them to appropriate microservices. Provides cross-cutting concerns like authentication, logging, and monitoring.',
+      port: ':8080',
+      technologies: ['Traefik', 'Consul', 'Go'],
     },
     {
-      name: 'Auth Service',
       description:
         'JWT-based authentication and authorization with role management',
-      icon: Lock,
-      port: ':8081',
+      details:
+        'Manages user authentication, authorization, and access control across all services. Implements secure password handling and token-based authentication.',
       features: [
         'JWT Authentication',
         'User Registration',
@@ -63,17 +62,17 @@ function ServicesPage() {
         'Session Management',
         'Password Security',
       ],
-      technologies: ['Go', 'PostgreSQL', 'JWT', 'bcrypt'],
+      icon: Lock,
+      name: 'Auth Service',
       patterns: ['JWT Pattern', 'Repository Pattern', 'Clean Architecture'],
-      details:
-        'Manages user authentication, authorization, and access control across all services. Implements secure password handling and token-based authentication.',
+      port: ':8081',
+      technologies: ['Go', 'PostgreSQL', 'JWT', 'bcrypt'],
     },
     {
-      name: 'Product Service',
       description:
         'Product catalog management with both REST and gRPC interfaces',
-      icon: Package,
-      port: ':8082',
+      details:
+        'Handles product catalog operations with dual API support. Integrates with search service for enhanced product discovery.',
       features: [
         'Product CRUD',
         'gRPC API',
@@ -82,17 +81,17 @@ function ServicesPage() {
         'Search Integration',
         'Price Management',
       ],
-      technologies: ['Go', 'PostgreSQL', 'gRPC', 'Protocol Buffers'],
+      icon: Package,
+      name: 'Product Service',
       patterns: ['Domain-Driven Design', 'gRPC Pattern', 'Repository Pattern'],
-      details:
-        'Handles product catalog operations with dual API support. Integrates with search service for enhanced product discovery.',
+      port: ':8082',
+      technologies: ['Go', 'PostgreSQL', 'gRPC', 'Protocol Buffers'],
     },
     {
-      name: 'Order Service',
       description:
         'Complex order processing with saga orchestration and workflow management',
-      icon: FileText,
-      port: ':8083',
+      details:
+        'Orchestrates complex order workflows using saga patterns. Manages distributed transactions with compensation logic for failure scenarios.',
       features: [
         'Order Management',
         'Saga Orchestration',
@@ -101,22 +100,22 @@ function ServicesPage() {
         'State Management',
         'Event Sourcing',
       ],
-      technologies: ['Go', 'PostgreSQL', 'Temporal', 'Kafka'],
+      icon: FileText,
+      name: 'Order Service',
       patterns: [
         'Saga Pattern',
         'Event Sourcing',
         'Temporal Workflows',
         'CQRS',
       ],
-      details:
-        'Orchestrates complex order workflows using saga patterns. Manages distributed transactions with compensation logic for failure scenarios.',
+      port: ':8083',
+      technologies: ['Go', 'PostgreSQL', 'Temporal', 'Kafka'],
     },
     {
-      name: 'Payment Service',
       description:
         'Secure payment processing with transaction management and fraud prevention',
-      icon: CreditCard,
-      port: ':8084',
+      details:
+        'Handles secure payment processing with multiple payment methods. Implements fraud detection and comprehensive transaction management.',
       features: [
         'Payment Processing',
         'Transaction History',
@@ -125,17 +124,17 @@ function ServicesPage() {
         'Payment Methods',
         'Webhooks',
       ],
-      technologies: ['Go', 'PostgreSQL', 'Stripe API', 'Redis'],
+      icon: CreditCard,
+      name: 'Payment Service',
       patterns: ['Payment Gateway Pattern', 'Idempotency', 'Retry Pattern'],
-      details:
-        'Handles secure payment processing with multiple payment methods. Implements fraud detection and comprehensive transaction management.',
+      port: ':8084',
+      technologies: ['Go', 'PostgreSQL', 'Stripe API', 'Redis'],
     },
     {
-      name: 'Fulfillment Service',
       description:
         'Inventory management and order fulfillment with shipping integration',
-      icon: Package,
-      port: ':8085',
+      details:
+        'Manages inventory levels and fulfillment processes. Coordinates with shipping providers and maintains real-time stock information.',
       features: [
         'Inventory Management',
         'Order Fulfillment',
@@ -144,17 +143,17 @@ function ServicesPage() {
         'Warehouse Management',
         'Delivery Updates',
       ],
-      technologies: ['Go', 'PostgreSQL', 'Redis', 'Kafka'],
+      icon: Package,
+      name: 'Fulfillment Service',
       patterns: ['Event-Driven Architecture', 'Saga Pattern', 'Domain Events'],
-      details:
-        'Manages inventory levels and fulfillment processes. Coordinates with shipping providers and maintains real-time stock information.',
+      port: ':8085',
+      technologies: ['Go', 'PostgreSQL', 'Redis', 'Kafka'],
     },
     {
-      name: 'Chat Service',
       description:
         'Real-time messaging with WebSocket connections and message persistence',
-      icon: MessageCircle,
-      port: ':9088',
+      details:
+        'Provides real-time communication capabilities with persistent message storage. Supports multiple concurrent connections and room-based messaging.',
       features: [
         'WebSocket Support',
         'Real-time Messaging',
@@ -163,16 +162,16 @@ function ServicesPage() {
         'Connection Management',
         'Scalable Architecture',
       ],
-      technologies: ['Go', 'WebSocket', 'Redis', 'PostgreSQL'],
+      icon: MessageCircle,
+      name: 'Chat Service',
       patterns: ['WebSocket Pattern', 'Pub/Sub', 'Connection Pooling'],
-      details:
-        'Provides real-time communication capabilities with persistent message storage. Supports multiple concurrent connections and room-based messaging.',
+      port: ':9088',
+      technologies: ['Go', 'WebSocket', 'Redis', 'PostgreSQL'],
     },
     {
-      name: 'Notification Service',
       description: 'Event-driven notifications with multiple delivery channels',
-      icon: Mail,
-      port: ':8086',
+      details:
+        'Handles all system notifications across multiple channels. Processes events from other services to trigger appropriate notifications.',
       features: [
         'Email Notifications',
         'Push Notifications',
@@ -181,21 +180,21 @@ function ServicesPage() {
         'Delivery Tracking',
         'Event-driven Triggers',
       ],
-      technologies: ['Go', 'Kafka', 'SMTP', 'Redis'],
+      icon: Mail,
+      name: 'Notification Service',
       patterns: [
         'Event-Driven Architecture',
         'Template Pattern',
         'Observer Pattern',
       ],
-      details:
-        'Handles all system notifications across multiple channels. Processes events from other services to trigger appropriate notifications.',
+      port: ':8086',
+      technologies: ['Go', 'Kafka', 'SMTP', 'Redis'],
     },
     {
-      name: 'Search Service',
       description:
         'Advanced search capabilities with Elasticsearch integration',
-      icon: Search,
-      port: ':8087',
+      details:
+        'Provides powerful search capabilities with Elasticsearch. Includes features like auto-completion, faceted search, and search analytics.',
       features: [
         'Full-text Search',
         'Elasticsearch Integration',
@@ -204,47 +203,48 @@ function ServicesPage() {
         'Faceted Search',
         'Search Indexing',
       ],
-      technologies: ['Go', 'Elasticsearch', 'Redis'],
+      icon: Search,
+      name: 'Search Service',
       patterns: ['Search Pattern', 'Indexing Strategy', 'Caching Pattern'],
-      details:
-        'Provides powerful search capabilities with Elasticsearch. Includes features like auto-completion, faceted search, and search analytics.',
+      port: ':8087',
+      technologies: ['Go', 'Elasticsearch', 'Redis'],
     },
   ]
 
   const architecturalPatterns = [
     {
-      name: 'Domain-Driven Design (DDD)',
       description:
         'Strategic design approach focusing on core domain and domain logic',
       icon: Building,
+      name: 'Domain-Driven Design (DDD)',
     },
     {
-      name: 'Event-Driven Architecture',
       description:
         'Loosely coupled architecture using events for communication',
       icon: Radio,
+      name: 'Event-Driven Architecture',
     },
     {
-      name: 'Saga Pattern',
       description: 'Manages distributed transactions across multiple services',
       icon: RotateCw,
+      name: 'Saga Pattern',
     },
     {
-      name: 'CQRS',
       description:
         'Command Query Responsibility Segregation for scalable data access',
       icon: ArrowLeftRight,
+      name: 'CQRS',
     },
     {
-      name: 'Circuit Breaker',
       description: 'Prevents cascade failures in distributed systems',
       icon: Zap,
+      name: 'Circuit Breaker',
     },
     {
-      name: 'API Gateway',
       description:
         'Single entry point for managing microservices communication',
       icon: ExternalLink,
+      name: 'API Gateway',
     },
   ]
 
@@ -272,8 +272,8 @@ function ServicesPage() {
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {architecturalPatterns.map((pattern) => (
               <Card
-                key={pattern.name}
                 className="hover:shadow-lg transition-shadow"
+                key={pattern.name}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center space-x-2">
@@ -299,8 +299,8 @@ function ServicesPage() {
           <div className="grid gap-8 lg:grid-cols-1 xl:grid-cols-2">
             {services.map((service) => (
               <Card
-                key={service.name}
                 className="hover:shadow-xl transition-all duration-300 border-l-4 border-blue-500"
+                key={service.name}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -334,9 +334,9 @@ function ServicesPage() {
                     <div className="flex flex-wrap gap-2">
                       {service.features.map((feature) => (
                         <Badge
+                          className="text-xs"
                           key={feature}
                           variant="secondary"
-                          className="text-xs"
                         >
                           {feature}
                         </Badge>
@@ -351,7 +351,7 @@ function ServicesPage() {
                     </h4>
                     <div className="flex flex-wrap gap-2">
                       {service.technologies.map((tech) => (
-                        <Badge key={tech} variant="outline" className="text-xs">
+                        <Badge className="text-xs" key={tech} variant="outline">
                           {tech}
                         </Badge>
                       ))}
@@ -366,8 +366,8 @@ function ServicesPage() {
                     <div className="flex flex-wrap gap-2">
                       {service.patterns.map((pattern) => (
                         <Badge
-                          key={pattern}
                           className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"
+                          key={pattern}
                         >
                           {pattern}
                         </Badge>

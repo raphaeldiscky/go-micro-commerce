@@ -1,5 +1,8 @@
+import { APP_CONFIG, NAVIGATION_ITEMS, PROFILE_IMAGE_URL } from '@/constants'
+import { useIsAuthenticated, useLogout, useUser } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Github, Menu, X } from 'lucide-react'
+import { Github, LogIn, LogOut, Menu, User, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from './ui/button'
 import {
@@ -9,17 +12,20 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from './ui/navigation-menu'
-import { APP_CONFIG, NAVIGATION_ITEMS, PROFILE_IMAGE_URL } from '@/constants'
-import { cn } from '@/lib/utils'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouterState()
   const currentPath = router.location.pathname
-
-  // Navigation items imported from constants
+  const isAuthenticated = useIsAuthenticated()
+  const user = useUser()
+  const logoutMutation = useLogout()
 
   const isActive = (path: string) => currentPath === path
+
+  const handleLogout = () => {
+    logoutMutation.mutate()
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -28,13 +34,13 @@ export default function Header() {
           {/* Logo/Brand - Left */}
           <div className="flex items-center space-x-2">
             <Link
-              to="/"
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+              to="/"
             >
               <img
-                src={PROFILE_IMAGE_URL}
                 alt={APP_CONFIG.BRAND.LOGO_ALT}
                 className="h-8 w-8 rounded-lg object-cover"
+                src={PROFILE_IMAGE_URL}
               />
               <span className="hidden font-bold sm:inline-block">
                 {APP_CONFIG.NAME}
@@ -50,7 +56,6 @@ export default function Header() {
                   <NavigationMenuItem key={item.path}>
                     <NavigationMenuLink asChild>
                       <Link
-                        to={item.path}
                         className={cn(
                           navigationMenuTriggerStyle(),
                           'inline-flex items-center',
@@ -58,6 +63,7 @@ export default function Header() {
                             ? 'bg-accent text-accent-foreground'
                             : '',
                         )}
+                        to={item.path}
                       >
                         <item.icon className="mr-1 h-4 w-4" />
                         {item.name}
@@ -69,14 +75,53 @@ export default function Header() {
             </NavigationMenu>
           </div>
 
-          {/* Right side - GitHub Link */}
+          {/* Right side - Auth & GitHub */}
           <div className="hidden md:flex items-center space-x-4 ml-auto">
-            <Button variant="outline" size="sm" asChild>
+            {isAuthenticated ? (
+              <>
+                <span className="text-sm text-muted-foreground">
+                  Welcome, {user?.first_name}!
+                </span>
+                <Button
+                  className="flex items-center space-x-1"
+                  disabled={logoutMutation.isPending}
+                  onClick={handleLogout}
+                  size="sm"
+                  variant="ghost"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild size="sm" variant="ghost">
+                  <Link
+                    className="flex items-center space-x-1"
+                    to="/auth/login"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Login</span>
+                  </Link>
+                </Button>
+                <Button asChild size="sm" variant="default">
+                  <Link
+                    className="flex items-center space-x-1"
+                    to="/auth/register"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>Sign Up</span>
+                  </Link>
+                </Button>
+              </>
+            )}
+
+            <Button asChild size="sm" variant="outline">
               <a
-                href="{GITHUB_REPO_URL}"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="flex items-center space-x-1"
+                href="{GITHUB_REPO_URL}"
+                rel="noopener noreferrer"
+                target="_blank"
               >
                 <Github className="h-4 w-4" />
                 <span>GitHub</span>
@@ -86,10 +131,10 @@ export default function Header() {
 
           {/* Mobile menu button */}
           <Button
-            variant="ghost"
-            size="sm"
             className="md:hidden ml-auto"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            size="sm"
+            variant="ghost"
           >
             {isMobileMenuOpen ? (
               <X className="h-6 w-6" />
@@ -105,27 +150,80 @@ export default function Header() {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
               {NAVIGATION_ITEMS.map((item) => (
                 <Link
-                  key={item.path}
-                  to={item.path}
                   className={cn(
                     'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
                     isActive(item.path)
                       ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                   )}
+                  key={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
+                  to={item.path}
                 >
                   <item.icon className="mr-2 h-4 w-4" />
                   {item.name}
                 </Link>
               ))}
-              <div className="px-3 py-2">
-                <Button variant="outline" size="sm" asChild className="w-full">
+              {/* Mobile Auth Section */}
+              <div className="px-3 py-2 space-y-2">
+                {isAuthenticated ? (
+                  <>
+                    <div className="flex items-center px-3 py-2 text-sm text-muted-foreground">
+                      <User className="mr-2 h-4 w-4" />
+                      {user?.first_name} {user?.last_name}
+                    </div>
+                    <Button
+                      className="w-full flex items-center justify-center space-x-1"
+                      disabled={logoutMutation.isPending}
+                      onClick={handleLogout}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>Logout</span>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      asChild
+                      className="w-full"
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Link
+                        className="flex items-center justify-center space-x-1"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        to="/auth/login"
+                      >
+                        <LogIn className="h-4 w-4" />
+                        <span>Login</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      asChild
+                      className="w-full"
+                      size="sm"
+                      variant="default"
+                    >
+                      <Link
+                        className="flex items-center justify-center space-x-1"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        to="/auth/register"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        <span>Sign Up</span>
+                      </Link>
+                    </Button>
+                  </>
+                )}
+
+                <Button asChild className="w-full" size="sm" variant="outline">
                   <a
-                    href="{GITHUB_REPO_URL}"
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="flex items-center justify-center space-x-1"
+                    href="{GITHUB_REPO_URL}"
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     <Github className="h-4 w-4" />
                     <span>GitHub</span>

@@ -1,22 +1,22 @@
 import { cn } from '@/lib/utils'
 
 export interface ChatMessage {
-  id: string
   content: string
+  id: string
   senderId: string
   senderName: string
   timestamp: Date
-  type: 'sent' | 'received'
+  type: 'received' | 'sent'
 }
 
 interface ChatMessageProps {
-  message: ChatMessage
   currentUserId: string
+  message: ChatMessage
 }
 
 export function ChatMessageComponent({
-  message,
   currentUserId,
+  message,
 }: ChatMessageProps) {
   const isSent = message.senderId === currentUserId
 

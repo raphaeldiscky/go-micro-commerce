@@ -11,40 +11,40 @@ import type { KeyFeature, TechnicalGoalSection } from './types'
 // About page content
 export const KEY_FEATURES: Array<KeyFeature> = [
   {
-    title: 'Microservices Architecture',
     description:
       'Distributed system with independent services for scalability and maintainability',
     icon: Building2,
+    title: 'Microservices Architecture',
   },
   {
-    title: 'Event-Driven Communication',
     description:
       'Services communicate through events using Kafka for loose coupling',
     icon: Radio,
+    title: 'Event-Driven Communication',
   },
   {
-    title: 'Saga Orchestration',
     description:
       'Complex workflows managed with saga patterns and compensation logic',
     icon: RotateCcw,
+    title: 'Saga Orchestration',
   },
   {
-    title: 'Advanced Patterns',
     description:
       'Implementation of DDD, CQRS, Event Sourcing, and Circuit Breaker patterns',
     icon: Target,
+    title: 'Advanced Patterns',
   },
   {
-    title: 'Modern Infrastructure',
     description:
       'Containerized services with Docker, service discovery, and observability',
     icon: Rocket,
+    title: 'Modern Infrastructure',
   },
   {
-    title: 'Real-time Features',
     description:
       'WebSocket-based chat system with multi-user support and message persistence',
     icon: MessageCircle,
+    title: 'Real-time Features',
   },
 ]
 
@@ -90,19 +90,29 @@ export const TECHNICAL_GOALS: Array<TechnicalGoalSection> = [
 // Page titles and descriptions
 export const PAGE_CONTENT = {
   ABOUT: {
-    TITLE: 'About This Project',
-    HERO_DESCRIPTION:
-      'Go Micro Commerce is a comprehensive exploration of distributed systems architecture, built to demonstrate advanced patterns and technologies in modern software development.',
-    PROJECT_MISSION: {
-      TITLE: 'Project Mission',
-      DESCRIPTION:
-        'This application is primarily intended for exploring technical concepts. The goal is to experiment with different technologies, software architecture designs, and all the essential components involved in building distributed systems in Golang.',
-      NOTE: 'While this project simulates an e-commerce platform, its primary purpose is educational and technical exploration rather than production deployment.',
-    },
-    KEY_FEATURES_TITLE: 'Key Features & Concepts',
-    TECHNICAL_GOALS_TITLE: 'Technical Learning Goals',
     ARCHITECTURE_HIGHLIGHTS: {
-      TITLE: 'Architecture Highlights',
+      ADVANCED_ITEMS: [
+        'Saga Orchestration for distributed transactions',
+        'Event Sourcing with Kafka integration',
+        'CQRS for scalable data operations',
+        'Temporal Workflows for complex business logic',
+      ],
+      ADVANCED_PATTERNS: 'Advanced Patterns',
+      DATA_LAYER: {
+        DESCRIPTION:
+          'PostgreSQL, Redis, Elasticsearch for comprehensive data management',
+        TITLE: 'Data Layer',
+      },
+      INFRASTRUCTURE_TITLE: 'Infrastructure & Observability',
+      MESSAGING: {
+        DESCRIPTION: 'Apache Kafka with outbox pattern and dead letter queues',
+        TITLE: 'Messaging',
+      },
+      MONITORING: {
+        DESCRIPTION:
+          'OpenTelemetry, Prometheus, Grafana for full observability',
+        TITLE: 'Monitoring',
+      },
       SERVICE_ARCHITECTURE: 'Service Architecture',
       SERVICE_ITEMS: [
         '9 Microservices with distinct responsibilities',
@@ -110,67 +120,57 @@ export const PAGE_CONTENT = {
         'Clean Architecture with layered approach',
         'gRPC & REST APIs for service communication',
       ],
-      ADVANCED_PATTERNS: 'Advanced Patterns',
-      ADVANCED_ITEMS: [
-        'Saga Orchestration for distributed transactions',
-        'Event Sourcing with Kafka integration',
-        'CQRS for scalable data operations',
-        'Temporal Workflows for complex business logic',
-      ],
-      INFRASTRUCTURE_TITLE: 'Infrastructure & Observability',
-      DATA_LAYER: {
-        TITLE: 'Data Layer',
-        DESCRIPTION:
-          'PostgreSQL, Redis, Elasticsearch for comprehensive data management',
-      },
-      MESSAGING: {
-        TITLE: 'Messaging',
-        DESCRIPTION: 'Apache Kafka with outbox pattern and dead letter queues',
-      },
-      MONITORING: {
-        TITLE: 'Monitoring',
-        DESCRIPTION:
-          'OpenTelemetry, Prometheus, Grafana for full observability',
-      },
+      TITLE: 'Architecture Highlights',
     },
     CTA: {
-      TITLE: 'Explore the Architecture',
+      BROWSE_SERVICES: 'Browse Services',
       DESCRIPTION:
         'Dive into the technical implementation and see these concepts in action',
+      TITLE: 'Explore the Architecture',
       VIEW_SOURCE: 'View Source Code',
-      BROWSE_SERVICES: 'Browse Services',
     },
+    HERO_DESCRIPTION:
+      'Go Micro Commerce is a comprehensive exploration of distributed systems architecture, built to demonstrate advanced patterns and technologies in modern software development.',
+    KEY_FEATURES_TITLE: 'Key Features & Concepts',
+    PROJECT_MISSION: {
+      DESCRIPTION:
+        'This application is primarily intended for exploring technical concepts. The goal is to experiment with different technologies, software architecture designs, and all the essential components involved in building distributed systems in Golang.',
+      NOTE: 'While this project simulates an e-commerce platform, its primary purpose is educational and technical exploration rather than production deployment.',
+      TITLE: 'Project Mission',
+    },
+    TECHNICAL_GOALS_TITLE: 'Technical Learning Goals',
+    TITLE: 'About This Project',
   },
   HOME: {
-    SERVICES_SECTION: {
-      TITLE: 'Microservices Architecture',
-      DESCRIPTION:
-        'Built with Domain-Driven Design principles, featuring distributed systems patterns and event-driven architecture for scalable e-commerce operations.',
-    },
-    TECH_STACK: {
-      TITLE: 'Technology Stack',
-      DESCRIPTION:
-        'Built with modern, production-ready technologies powering our distributed architecture',
-    },
     GET_STARTED: {
-      TITLE: 'Get Started',
       ARCHITECTURE: {
-        TITLE: 'Architecture',
+        CTA: 'View Architecture',
         DESCRIPTION:
           'Explore the distributed systems architecture and design patterns',
-        CTA: 'View Architecture',
-      },
-      LIVE_DEMO: {
-        TITLE: 'Live Demo',
-        DESCRIPTION: 'Try the real-time chat with WebSocket connections',
-        CTA: 'Try Chat Demo',
+        TITLE: 'Architecture',
       },
       LEARN_MORE: {
-        TITLE: 'Learn More',
+        CTA: 'About Project',
         DESCRIPTION:
           'Discover the technical concepts and implementation details',
-        CTA: 'About Project',
+        TITLE: 'Learn More',
       },
+      LIVE_DEMO: {
+        CTA: 'Try Chat Demo',
+        DESCRIPTION: 'Try the real-time chat with WebSocket connections',
+        TITLE: 'Live Demo',
+      },
+      TITLE: 'Get Started',
+    },
+    SERVICES_SECTION: {
+      DESCRIPTION:
+        'Built with Domain-Driven Design principles, featuring distributed systems patterns and event-driven architecture for scalable e-commerce operations.',
+      TITLE: 'Microservices Architecture',
+    },
+    TECH_STACK: {
+      DESCRIPTION:
+        'Built with modern, production-ready technologies powering our distributed architecture',
+      TITLE: 'Technology Stack',
     },
   },
 } as const
