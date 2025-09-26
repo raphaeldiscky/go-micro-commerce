@@ -4,32 +4,30 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 
+	"connectrpc.com/connect"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/types/known/emptypb"
 
-	grpcauth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product/v1"
+	"github.com/raphaeldiscky/go-micro-commerce/proto/product/v1/productv1connect"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
 )
 
-// GRPCServer is the gRPC server for product service.
+// GRPCServer is the Connect-RPC server for product service.
 type GRPCServer struct {
-	pb.UnimplementedProductServiceServer
-
 	cfg            *config.Config
 	productService service.ProductService
 	logger         logger.Logger
-	grpcServer     *grpc.Server
+	httpServer     *http.Server
 }
 
-// NewGRPCServer creates a new gRPC server for product service.
+// NewGRPCServer creates a new Connect-RPC server for product service.
 func NewGRPCServer(
 	productService service.ProductService,
 	appLogger logger.Logger,
@@ -38,17 +36,20 @@ func NewGRPCServer(
 	return &GRPCServer{cfg: cfg, productService: productService, logger: appLogger}
 }
 
-// GetProducts retrieves products by IDs via gRPC.
+// GetProducts retrieves products by IDs via Connect-RPC.
 func (s *GRPCServer) GetProducts(
 	ctx context.Context,
-	req *pb.GetProductsRequest,
-) (*pb.GetProductsResponse, error) {
-	ids := make([]uuid.UUID, len(req.GetIds()))
+	req *connect.Request[pb.GetProductsRequest],
+) (*connect.Response[pb.GetProductsResponse], error) {
+	ids := make([]uuid.UUID, len(req.Msg.GetIds()))
 
-	for i, idStr := range req.GetIds() {
+	for i, idStr := range req.Msg.GetIds() {
 		uid, err := uuid.Parse(idStr)
 		if err != nil {
-			return nil, fmt.Errorf("invalid product ID: %w", err)
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				fmt.Errorf("invalid product ID: %w", err),
+			)
 		}
 
 		ids[i] = uid
@@ -56,44 +57,34 @@ func (s *GRPCServer) GetProducts(
 
 	products, err := s.productService.GetProductsByIDs(ctx, ids)
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	resp := &pb.GetProductsResponse{}
-
-	for i := range products {
-		p := &products[i]
-		resp.Products = append(resp.Products, &pb.Product{
-			Id:               p.ID.String(),
-			Name:             p.Name,
-			Price:            p.Price.InexactFloat64(),
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-		})
+	resp := &pb.GetProductsResponse{
+		Products: mapper.MapToProtobufProducts(products),
 	}
 
-	return resp, nil
+	return connect.NewResponse(resp), nil
 }
 
 // ReserveProducts reserves stock for products with optimistic locking.
 func (s *GRPCServer) ReserveProducts(
 	ctx context.Context,
-	req *pb.ReserveProductsRequest,
-) (*pb.ReserveProductsResponse, error) {
+	req *connect.Request[pb.ReserveProductsRequest],
+) (*connect.Response[pb.ReserveProductsResponse], error) {
 	// Convert protobuf request to service DTO
 	reserveReq := dto.ReserveProductsRequest{
-		IdempotencyKey: req.GetIdempotencyKey(),
-		Items:          make([]dto.ProductReservationItem, len(req.GetItems())),
+		IdempotencyKey: req.Msg.GetIdempotencyKey(),
+		Items:          make([]dto.ProductReservationItem, len(req.Msg.GetItems())),
 	}
 
-	for i, item := range req.GetItems() {
+	for i, item := range req.Msg.GetItems() {
 		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
-			return &pb.ReserveProductsResponse{
+			return connect.NewResponse(&pb.ReserveProductsResponse{
 				Success:      false,
 				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
-			}, err
+			}), nil
 		}
 
 		reserveReq.Items[i] = dto.ProductReservationItem{
@@ -106,50 +97,38 @@ func (s *GRPCServer) ReserveProducts(
 	// Call service method
 	reservedProducts, err := s.productService.ReserveProducts(ctx, reserveReq)
 	if err != nil {
-		return &pb.ReserveProductsResponse{
+		return connect.NewResponse(&pb.ReserveProductsResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, err
+		}), nil
 	}
 
 	// Convert service response to protobuf
 	resp := &pb.ReserveProductsResponse{
 		Success:          true,
-		ReservedProducts: make([]*pb.Product, len(reservedProducts)),
+		ReservedProducts: mapper.MapToProtobufProducts(reservedProducts),
 	}
 
-	for i := range reservedProducts {
-		p := &reservedProducts[i]
-		resp.ReservedProducts[i] = &pb.Product{
-			Id:               p.ID.String(),
-			Name:             p.Name,
-			Price:            p.Price.InexactFloat64(),
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-		}
-	}
-
-	return resp, nil
+	return connect.NewResponse(resp), nil
 }
 
-// ConfirmProductsDeduction confirms stock deduction for reserved products via gRPC.
+// ConfirmProductsDeduction confirms stock deduction for reserved products via Connect-RPC.
 func (s *GRPCServer) ConfirmProductsDeduction(
 	ctx context.Context,
-	req *pb.ConfirmProductsDeductionRequest,
-) (*pb.ConfirmProductsDeductionResponse, error) {
+	req *connect.Request[pb.ConfirmProductsDeductionRequest],
+) (*connect.Response[pb.ConfirmProductsDeductionResponse], error) {
 	// Convert protobuf request to service DTO
 	deductReq := dto.ConfirmProductsDeductionRequest{
-		Items: make([]dto.ProductRestorationItem, len(req.GetItems())),
+		Items: make([]dto.ProductRestorationItem, len(req.Msg.GetItems())),
 	}
 
-	for i, item := range req.GetItems() {
+	for i, item := range req.Msg.GetItems() {
 		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
-			return &pb.ConfirmProductsDeductionResponse{
+			return connect.NewResponse(&pb.ConfirmProductsDeductionResponse{
 				Success:      false,
 				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
-			}, err
+			}), nil
 		}
 
 		deductReq.Items[i] = dto.ProductRestorationItem{
@@ -161,50 +140,38 @@ func (s *GRPCServer) ConfirmProductsDeduction(
 	// Call service method
 	updatedProducts, err := s.productService.ConfirmProductsDeduction(ctx, deductReq)
 	if err != nil {
-		return &pb.ConfirmProductsDeductionResponse{
+		return connect.NewResponse(&pb.ConfirmProductsDeductionResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, err
+		}), nil
 	}
 
 	// Convert service response to protobuf
 	resp := &pb.ConfirmProductsDeductionResponse{
 		Success:         true,
-		UpdatedProducts: make([]*pb.Product, len(updatedProducts)),
+		UpdatedProducts: mapper.MapToProtobufProducts(updatedProducts),
 	}
 
-	for i := range updatedProducts {
-		p := &updatedProducts[i]
-		resp.UpdatedProducts[i] = &pb.Product{
-			Id:               p.ID.String(),
-			Name:             p.Name,
-			Price:            p.Price.InexactFloat64(),
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-		}
-	}
-
-	return resp, nil
+	return connect.NewResponse(resp), nil
 }
 
-// ReleaseProducts releases reserved products via gRPC.
+// ReleaseProducts releases reserved products via Connect-RPC.
 func (s *GRPCServer) ReleaseProducts(
 	ctx context.Context,
-	req *pb.ReleaseProductsRequest,
-) (*pb.ReleaseProductsResponse, error) {
+	req *connect.Request[pb.ReleaseProductsRequest],
+) (*connect.Response[pb.ReleaseProductsResponse], error) {
 	// Convert protobuf request to service DTO
 	releaseReq := dto.ReleaseProductsRequest{
-		Items: make([]dto.ProductRestorationItem, len(req.GetItems())),
+		Items: make([]dto.ProductRestorationItem, len(req.Msg.GetItems())),
 	}
 
-	for i, item := range req.GetItems() {
+	for i, item := range req.Msg.GetItems() {
 		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
-			return &pb.ReleaseProductsResponse{
+			return connect.NewResponse(&pb.ReleaseProductsResponse{
 				Success:      false,
 				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
-			}, err
+			}), nil
 		}
 
 		releaseReq.Items[i] = dto.ProductRestorationItem{
@@ -216,33 +183,33 @@ func (s *GRPCServer) ReleaseProducts(
 	// Call service method
 	err := s.productService.ReleaseProducts(ctx, releaseReq)
 	if err != nil {
-		return &pb.ReleaseProductsResponse{
+		return connect.NewResponse(&pb.ReleaseProductsResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, err
+		}), nil
 	}
 
-	return &pb.ReleaseProductsResponse{Success: true}, nil
+	return connect.NewResponse(&pb.ReleaseProductsResponse{Success: true}), nil
 }
 
-// RestoreProducts restores products via gRPC.
+// RestoreProducts restores products via Connect-RPC.
 func (s *GRPCServer) RestoreProducts(
 	ctx context.Context,
-	req *pb.RestoreProductsRequest,
-) (*pb.RestoreProductsResponse, error) {
+	req *connect.Request[pb.RestoreProductsRequest],
+) (*connect.Response[pb.RestoreProductsResponse], error) {
 	// Convert protobuf request to service DTO
 	restoreReq := dto.RestoreProductsRequest{
-		Items:  make([]dto.ProductRestorationItem, len(req.GetItems())),
-		Reason: req.GetReason(),
+		Items:  make([]dto.ProductRestorationItem, len(req.Msg.GetItems())),
+		Reason: req.Msg.GetReason(),
 	}
 
-	for i, item := range req.GetItems() {
+	for i, item := range req.Msg.GetItems() {
 		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
-			return &pb.RestoreProductsResponse{
+			return connect.NewResponse(&pb.RestoreProductsResponse{
 				Success:      false,
 				ErrorMessage: fmt.Sprintf("invalid product ID: %s", item.GetProductId()),
-			}, err
+			}), nil
 		}
 
 		restoreReq.Items[i] = dto.ProductRestorationItem{
@@ -254,91 +221,77 @@ func (s *GRPCServer) RestoreProducts(
 	// Call service method
 	restoredProducts, err := s.productService.RestoreProducts(ctx, restoreReq)
 	if err != nil {
-		return &pb.RestoreProductsResponse{
+		return connect.NewResponse(&pb.RestoreProductsResponse{
 			Success:      false,
 			ErrorMessage: err.Error(),
-		}, err
+		}), nil
 	}
 
 	// Convert service response to protobuf
 	resp := &pb.RestoreProductsResponse{
 		Success:          true,
-		RestoredProducts: make([]*pb.Product, len(restoredProducts)),
+		RestoredProducts: mapper.MapToProtobufProducts(restoredProducts),
 	}
 
-	for i := range restoredProducts {
-		p := &restoredProducts[i]
-		resp.RestoredProducts[i] = &pb.Product{
-			Id:               p.ID.String(),
-			Name:             p.Name,
-			Price:            p.Price.InexactFloat64(),
-			Quantity:         p.Quantity,
-			Version:          p.Version,
-			ReservedQuantity: p.ReservedQuantity,
-		}
-	}
-
-	return resp, nil
+	return connect.NewResponse(resp), nil
 }
 
 // Health returns the health status of the product service.
-func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
-	return &pb.HealthResponse{Status: pb.HealthStatus_SERVING}, nil
+func (s *GRPCServer) Health(
+	_ context.Context,
+	_ *connect.Request[pb.HealthRequest],
+) (*connect.Response[pb.HealthResponse], error) {
+	resp := &pb.HealthResponse{
+		Status: pb.HealthStatus_HEALTH_STATUS_SERVING,
+	}
+
+	return connect.NewResponse(resp), nil
 }
 
-// Start runs the gRPC server.
+// Start runs the Connect-RPC server.
 func (s *GRPCServer) Start(ctx context.Context) error {
 	address := fmt.Sprintf("%s:%d", s.cfg.GRPCServer.Host, s.cfg.GRPCServer.Port)
-	lc := &net.ListenConfig{}
 
+	// Create Connect-RPC handler
+	path, handler := productv1connect.NewProductServiceHandler(s)
+
+	// Create HTTP mux and register the handler
+	mux := http.NewServeMux()
+	mux.Handle(path, handler)
+
+	// Create HTTP server
+	s.httpServer = &http.Server{
+		Addr:    address,
+		Handler: mux,
+	}
+
+	// Create listener
+	lc := &net.ListenConfig{}
 	lis, err := lc.Listen(ctx, "tcp", address)
 	if err != nil {
 		return fmt.Errorf("failed to listen on %s: %w", address, err)
 	}
 
-	// Create authentication interceptor
-	authInterceptor := grpcauth.NewAuthInterceptor()
+	s.logger.Infof("Connect-RPC server listening on %s", address)
 
-	// Create gRPC server with authentication interceptor
-	s.grpcServer = grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor.ServiceToServiceAuth()),
-	)
-	pb.RegisterProductServiceServer(s.grpcServer, s)
-
-	// Enable gRPC reflection for development
-	reflection.Register(s.grpcServer)
-
-	s.logger.Infof("gRPC server listening on %s", address)
-
-	return s.grpcServer.Serve(lis)
+	return s.httpServer.Serve(lis)
 }
 
-// Shutdown gracefully shuts down the gRPC server.
+// Shutdown gracefully shuts down the Connect-RPC server.
 func (s *GRPCServer) Shutdown(ctx context.Context) error {
-	s.logger.Info("Attempting to shut down the gRPC server...")
+	s.logger.Info("Attempting to shut down the Connect-RPC server...")
 
-	if s.grpcServer == nil {
-		s.logger.Info("gRPC server was not started, nothing to shut down")
-
+	if s.httpServer == nil {
+		s.logger.Info("Connect-RPC server was not started, nothing to shut down")
 		return nil
 	}
 
-	stopped := make(chan struct{})
-
-	go func() {
-		s.grpcServer.GracefulStop()
-		close(stopped)
-	}()
-
-	select {
-	case <-ctx.Done():
-		s.logger.Warn("Graceful shutdown timed out, forcing stop...")
-		s.grpcServer.Stop()
-
-		return ctx.Err()
-	case <-stopped:
-		s.logger.Info("gRPC server shut down gracefully")
-
-		return nil
+	err := s.httpServer.Shutdown(ctx)
+	if err != nil {
+		s.logger.Warn("Connect-RPC server shutdown error: %v", err)
+		return err
 	}
+
+	s.logger.Info("Connect-RPC server shut down gracefully")
+	return nil
 }

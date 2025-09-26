@@ -19,7 +19,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	go.temporal.io/sdk v1.36.0
 	golang.org/x/time v0.11.0
-	google.golang.org/protobuf v1.36.8
+	google.golang.org/protobuf v1.36.9
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg

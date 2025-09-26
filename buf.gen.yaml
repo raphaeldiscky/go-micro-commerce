@@ -1,0 +1,25 @@
+version: v2
+inputs:
+  - directory: proto
+clean: true
+plugins:
+  # Go protobuf generation
+  - local: protoc-gen-go
+    out: proto
+    opt: paths=source_relative
+  # Connect-Go server generation
+  - local: protoc-gen-connect-go
+    out: proto
+    opt: paths=source_relative
+  # TypeScript protobuf generation for frontend
+  - local: frontend/node_modules/.bin/protoc-gen-es
+    out: frontend/src/proto
+    include_imports: true
+    opt:
+      - target=ts
+
+managed:
+  enabled: true
+  disable:
+    - file_option: go_package
+      module: buf.build/bufbuild/protovalidate
