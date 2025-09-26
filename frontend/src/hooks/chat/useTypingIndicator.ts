@@ -61,12 +61,12 @@ export function useTypingIndicator(conversationId: string) {
     setTypingUsers([])
   }, [])
 
-  // Cleanup on unmount
+  // Cleanup on unmount - no dependency needed for cleanup functions
   useEffect(() => {
     return () => {
       stopTyping()
     }
-  }, [stopTyping])
+  }, [])
 
   return {
     addTypingUser,

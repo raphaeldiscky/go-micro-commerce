@@ -122,7 +122,7 @@ export function MessageList({
   }
 
   return (
-    <div className="flex-1 relative">
+    <div className="flex-1 relative min-h-0">
       <ScrollArea className="h-full" ref={scrollAreaRef}>
         <div className="p-4 space-y-1">
           {/* Load More Button */}

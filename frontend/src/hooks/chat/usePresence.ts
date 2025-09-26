@@ -82,13 +82,18 @@ export function usePresence() {
 
   // Update online users when query data changes
   useEffect(() => {
-    if (onlineUsersList) {
+    if (onlineUsersList && Array.isArray(onlineUsersList)) {
       setOnlineUsers(new Set(onlineUsersList))
+    } else {
+      // Handle case where API might return wrapped data or different format
+      console.warn('Online users data is not an array:', onlineUsersList)
+      setOnlineUsers(new Set())
     }
   }, [onlineUsersList])
 
-  // Set user as online when component mounts
+  // Set user as online when component mounts - no dependency needed for one-time setup
   useEffect(() => {
+    // Initial setup
     setPresenceStatus('online')
 
     // Set user as away when window loses focus
@@ -119,7 +124,8 @@ export function usePresence() {
       // Set offline on unmount
       setPresenceStatus('offline')
     }
-  }, [setPresenceStatus])
+    // Only run on mount/unmount, not when setPresenceStatus changes
+  }, [])
 
   return {
     addOnlineUser,

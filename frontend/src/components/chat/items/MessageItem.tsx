@@ -38,7 +38,9 @@ export function MessageItem({
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
-  const getInitials = (name: string) => {
+  const getInitials = (name?: string) => {
+    if (!name) return 'U' // Default fallback for undefined names
+
     return name
       .split(' ')
       .map((word) => word[0])
@@ -77,7 +79,7 @@ export function MessageItem({
           <div className="flex-shrink-0">
             {!isConsecutive && (
               <Avatar className="h-8 w-8">
-                <AvatarImage alt={message.sender_name} src={undefined} />
+                <AvatarImage alt={message.sender_name || 'User'} src={undefined} />
                 <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                   {getInitials(message.sender_name)}
                 </AvatarFallback>
@@ -95,7 +97,7 @@ export function MessageItem({
           {!isConsecutive && !isOwn && (
             <div className="flex items-center space-x-2 mb-1">
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {message.sender_name}
+                {message.sender_name || `User ${message.sender_id.slice(-4)}`}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
                 {formatTime(message.created_at)}

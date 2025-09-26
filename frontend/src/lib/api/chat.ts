@@ -1,5 +1,5 @@
 import { apiRequest } from './client'
-import type { ApiSuccessResponse } from './types'
+import type { ApiPaginatedResponse, ApiSuccessResponse } from './types'
 import { ApiError } from './types'
 
 export interface ChatTicketData {
@@ -66,7 +66,7 @@ export interface Message {
   message_type: 'file' | 'image' | 'system' | 'text'
   reply_to_id?: string
   sender_id: string
-  sender_name: string
+  sender_name?: string
   updated_at: string
 }
 
@@ -166,11 +166,16 @@ export async function getConversationMessages(
   conversationId: string,
   page: number = 1,
   limit: number = 50,
-): Promise<Array<Message>> {
-  const response = await apiRequest<ApiSuccessResponse<Array<Message>>>(
-    `/chats/v1/${conversationId}/messages?page=${page}&limit=${limit}`,
+): Promise<{ messages: Array<Message>; hasMore: boolean; totalPages: number }> {
+  const response = await apiRequest<ApiPaginatedResponse<Message>>(
+    `/chats/v1/${conversationId}/messages?page=${page}&size=${limit}`,
   )
-  return response.data
+
+  return {
+    messages: response.data,
+    hasMore: response.pagination.page < response.pagination.total_page,
+    totalPages: response.pagination.total_page,
+  }
 }
 
 export async function getConversationParticipants(

@@ -82,7 +82,7 @@ export function MessageInput({
   )
 
   return (
-    <div className="border-t bg-white dark:bg-gray-800 p-4">
+    <div className="border-t bg-white dark:bg-gray-800 p-4 flex-shrink-0">
       {/* Reply Context */}
       {replyingTo && (
         <div className="mb-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg border-l-2 border-blue-500">

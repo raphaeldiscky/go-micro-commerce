@@ -223,7 +223,7 @@ export function ChatListPage() {
                               {conversation.last_message ? (
                                 <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                                   <span className="font-medium">
-                                    {conversation.last_message.sender_name}:
+                                    {conversation.last_message.sender_name || 'User'}:
                                   </span>{' '}
                                   {conversation.last_message.content}
                                 </p>

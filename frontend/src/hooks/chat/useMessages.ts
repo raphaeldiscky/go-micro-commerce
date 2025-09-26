@@ -45,8 +45,8 @@ export function useMessages(conversationId: string) {
     enabled: !!conversationId,
     gcTime: 5 * 60 * 1000, // 5 minutes
     getNextPageParam: (lastPage, allPages) => {
-      // If the last page has fewer than 50 messages, we've reached the end
-      return lastPage.length === 50 ? allPages.length + 1 : undefined
+      // Use the hasMore flag from the API response
+      return lastPage.hasMore ? allPages.length + 1 : undefined
     },
     initialPageParam: 1,
     queryFn: ({ pageParam = 1 }) =>
@@ -54,6 +54,10 @@ export function useMessages(conversationId: string) {
     queryKey: ['messages', conversationId],
     refetchOnWindowFocus: false, // Real-time updates handle this
     staleTime: 30 * 1000, // 30 seconds - messages are real-time
+    select: (data) => ({
+      ...data,
+      pages: data.pages.map((page) => page.messages),
+    }),
   })
 }
 

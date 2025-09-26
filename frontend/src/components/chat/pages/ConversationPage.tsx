@@ -7,7 +7,7 @@ import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
 import { useIsAuthenticated, useUser } from '@/hooks/useAuth'
 import type { Message, SendMessageRequest } from '@/lib/api'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Phone, Settings, Users, Video } from 'lucide-react'
+import { ArrowLeft, Maximize2, Minimize2, Phone, Settings, Users, Video } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../../ui/button'
 import { Card } from '../../ui/card'
@@ -17,9 +17,17 @@ import { ParticipantsList } from '../participants/ParticipantsList'
 
 interface ConversationPageProps {
   conversationId: string
+  isFullscreen?: boolean
+  onToggleFullscreen?: () => void
+  showToggle?: boolean
 }
 
-export function ConversationPage({ conversationId }: ConversationPageProps) {
+export function ConversationPage({
+  conversationId,
+  isFullscreen = false,
+  onToggleFullscreen,
+  showToggle = true
+}: ConversationPageProps) {
   const [showParticipants, setShowParticipants] = useState(false)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
   const [_ws, setWs] = useState<null | WebSocket>(null)
@@ -49,6 +57,24 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
 
   const wsRef = useRef<null | WebSocket>(null)
 
+  // Stable references for WebSocket event handlers
+  const handlersRef = useRef({
+    addTypingUser,
+    addOnlineUser,
+    removeOnlineUser,
+    updateMessageStatus,
+  })
+
+  // Update handlers ref when they change
+  useEffect(() => {
+    handlersRef.current = {
+      addTypingUser,
+      addOnlineUser,
+      removeOnlineUser,
+      updateMessageStatus,
+    }
+  }, [addTypingUser, addOnlineUser, removeOnlineUser, updateMessageStatus])
+
   // WebSocket connection management
   const connectWebSocket = useCallback(() => {
     if (!ticketData || !user || !isAuthenticated) return
@@ -59,6 +85,11 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
       console.log('Ticket expired, refetching...')
       refetchTicket()
       return
+    }
+
+    // Close existing connection if any
+    if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+      wsRef.current.close()
     }
 
     setConnectionStatus('connecting')
@@ -76,6 +107,7 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
     websocket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
+        const handlers = handlersRef.current
 
         switch (data.type) {
           case 'message':
@@ -83,16 +115,16 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
             break
           case 'presence':
             if (data.data.is_online) {
-              addOnlineUser(data.data.user_id)
+              handlers.addOnlineUser(data.data.user_id)
             } else {
-              removeOnlineUser(data.data.user_id)
+              handlers.removeOnlineUser(data.data.user_id)
             }
             break
           case 'receipt':
-            updateMessageStatus(data.data.message_id, data.data.status)
+            handlers.updateMessageStatus(data.data.message_id, data.data.status)
             break
           case 'typing':
-            addTypingUser(data.data)
+            handlers.addTypingUser(data.data)
             break
           default:
             console.log('Unknown message type:', data.type)
@@ -120,30 +152,25 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
       console.error('WebSocket error:', error)
       setConnectionStatus('error')
     }
-  }, [
-    ticketData,
-    user,
-    isAuthenticated,
-    conversationId,
-    refetchTicket,
-    addTypingUser,
-    addOnlineUser,
-    removeOnlineUser,
-    updateMessageStatus,
-  ])
+  }, [ticketData, user, isAuthenticated, conversationId, refetchTicket])
+
+  // Track connection attempts to prevent multiple connections
+  const connectionAttemptRef = useRef<boolean>(false)
 
   // Connect WebSocket when component mounts or ticket changes
   useEffect(() => {
-    if (ticketData && user && isAuthenticated) {
+    if (ticketData && user && isAuthenticated && !connectionAttemptRef.current) {
+      connectionAttemptRef.current = true
       connectWebSocket()
     }
 
     return () => {
+      connectionAttemptRef.current = false
       if (wsRef.current) {
         wsRef.current.close(1000) // Normal closure
       }
     }
-  }, [connectWebSocket])
+  }, [ticketData, user, isAuthenticated, conversationId])
 
   // Handle sending messages
   const handleSendMessage = useCallback(
@@ -225,7 +252,7 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-4">
@@ -273,6 +300,20 @@ export function ConversationPage({ conversationId }: ConversationPageProps) {
           <Button size="sm" variant="ghost">
             <Settings className="h-4 w-4" />
           </Button>
+          {onToggleFullscreen && showToggle && (
+            <Button
+              onClick={onToggleFullscreen}
+              size="sm"
+              variant="ghost"
+              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
