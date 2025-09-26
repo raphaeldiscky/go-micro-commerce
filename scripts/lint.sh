@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 SERVICES=(
   "auth-service"
@@ -19,11 +19,13 @@ SERVICES=(
 lint_service() {
   local dir="$1"
   echo "Linting $dir..."
-  (cd "$dir" && golangci-lint run ./... --fix --timeout 5m)
+  (
+    cd "$dir" && golangci-lint run ./... --fix --timeout 5m
+  )
   echo "Lint completed for $dir"
 }
 
-if [ -n "$1" ]; then
+if [ -n "${1-}" ]; then
   if [[ " ${SERVICES[*]} " =~ " $1 " ]]; then
     lint_service "$1"
   else
@@ -32,7 +34,21 @@ if [ -n "$1" ]; then
     exit 1
   fi
 else
+  pids=()
+
   for service in "${SERVICES[@]}"; do
-    lint_service "$service"
+    # run in background
+    lint_service "$service" &
+    pids+=($!)
   done
+
+  # wait for all jobs to finish
+  for pid in "${pids[@]}"; do
+    wait "$pid" || {
+      echo "Lint failed in one of the services."
+      exit 1
+    }
+  done
+
+  echo "All lint checks completed successfully!"
 fi
