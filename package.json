@@ -16,10 +16,9 @@
   },
   "homepage": "https://github.com/raphaeldiscky/go-micro-commerce#readme",
   "devDependencies": {
-    "@bufbuild/protoc-gen-es": "^2.9.0",
-    "@commitlint/cli": "19.8.1",
-    "@commitlint/config-conventional": "19.8.1",
-    "@connectrpc/protoc-gen-connect-es": "^1.7.0",
+    "@commitlint/cli": "20.0.0",
+    "@commitlint/config-conventional": "20.0.0",
+    "@commitlint/types": "^20.0.0",
     "husky": "9.1.7"
   }
 }

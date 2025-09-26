@@ -1,7 +1,6 @@
 version: v2
 inputs:
   - directory: proto
-clean: true
 plugins:
   # Go protobuf generation
   - local: protoc-gen-go

@@ -284,3 +284,141 @@ func (gw *Gateway) addUserHeaders(c echo.Context, req *http.Request) {
 		}
 	}
 }
+
+// ProxyToConnectRPC creates a handler that proxies Connect-RPC requests to a service,
+// preserving the full service method path.
+func (gw *Gateway) ProxyToConnectRPC(serviceName string) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		start := time.Now()
+
+		// Get service endpoint
+		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
+		if err != nil {
+			gw.logger.Error("Failed to get service endpoint",
+				"service", serviceName,
+				"error", err)
+
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
+		}
+
+		// Execute request through circuit breaker, preserving full path
+		result, err := gw.circuitBreaker.Execute(serviceName, func() (any, error) {
+			return gw.proxyConnectRPCRequest(c, endpoint)
+		})
+
+		duration := time.Since(start)
+
+		if err != nil {
+			gw.logger.Error("Circuit breaker rejected request",
+				"service", serviceName,
+				"error", err)
+
+			// Record metrics
+			gw.metrics.RecordGatewayRequest(
+				serviceName,
+				c.Request().Method,
+				http.StatusServiceUnavailable,
+				duration,
+			)
+
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "service circuit breaker open")
+		}
+
+		response, ok := result.(*ProxyResponse)
+		if !ok {
+			gw.logger.Error("Invalid response type from circuit breaker",
+				"service", serviceName)
+
+			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		}
+
+		// Record metrics
+		gw.metrics.RecordGatewayRequest(
+			serviceName,
+			c.Request().Method,
+			response.StatusCode,
+			duration,
+		)
+
+		// Set response headers
+		for key, values := range response.Headers {
+			for _, value := range values {
+				c.Response().Header().Add(key, value)
+			}
+		}
+
+		return c.Blob(response.StatusCode, response.ContentType, response.Body)
+	}
+}
+
+// proxyConnectRPCRequest performs the actual HTTP request to the Connect-RPC service,
+// preserving the full method path.
+func (gw *Gateway) proxyConnectRPCRequest(c echo.Context, endpoint string) (*ProxyResponse, error) {
+	// Build target URL
+	targetURL, err := url.Parse(endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
+	}
+
+	// For Connect-RPC, preserve the full path from the original request
+	targetURL.Path = c.Request().URL.Path
+	targetURL.RawQuery = c.Request().URL.RawQuery
+
+	// Create request
+	req, err := http.NewRequestWithContext(
+		c.Request().Context(),
+		c.Request().Method,
+		targetURL.String(),
+		c.Request().Body,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Copy headers (excluding hop-by-hop headers)
+	gw.copyHeaders(c.Request().Header, req.Header)
+
+	// Add user headers
+	gw.addUserHeaders(c, req)
+
+	// Add tracing headers
+	headers := make(map[string]string)
+	tracing.InjectHeaders(c.Request().Context(), headers)
+
+	for key, value := range headers {
+		req.Header.Set(key, value)
+	}
+
+	// Add gateway identification
+	req.Header.Set("X-Gateway", "api-gateway")
+	req.Header.Set("X-Forwarded-For", c.RealIP())
+	req.Header.Set("X-Forwarded-Proto", c.Scheme())
+	req.Header.Set("X-Forwarded-Host", c.Request().Host)
+
+	// Perform request
+	client := &http.Client{
+		Timeout: gw.config.App.TimeoutProxyRequest,
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to perform request: %w", err)
+	}
+
+	if err = resp.Body.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close response body: %w", err)
+	}
+
+	// Read response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	return &ProxyResponse{
+		StatusCode:  resp.StatusCode,
+		Headers:     resp.Header,
+		Body:        body,
+		ContentType: resp.Header.Get("Content-Type"),
+	}, nil
+}

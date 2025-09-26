@@ -3,6 +3,7 @@ module github.com/raphaeldiscky/go-micro-commerce/pkg
 go 1.24.7
 
 require (
+	connectrpc.com/connect v1.19.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/consul/api v1.32.1
 	github.com/hibiken/asynq v0.25.1
@@ -75,7 +76,7 @@ require (
 	golang.org/x/sync v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
