@@ -1,43 +1,43 @@
 // TypeScript interfaces for all constants
 
+export interface KeyFeature {
+  description: string
+  icon: React.ElementType
+  title: string
+}
+
 export interface NavigationItem {
+  icon: React.ElementType
   name: string
   path: string
-  icon: React.ElementType
 }
 
 export interface ServiceInfo {
-  name: string
   description: string
-  icon: React.ElementType
   features: Array<string>
-}
-
-export interface TechnologyInfo {
-  name: string
-  description: string
   icon: React.ElementType
-}
-
-export interface TechnologyLink {
   name: string
-  url: string
 }
 
 export interface SocialLink {
+  ariaLabel: string
+  icon: React.ElementType
   name: string
   url: string
-  icon: React.ElementType
-  ariaLabel: string
-}
-
-export interface KeyFeature {
-  title: string
-  description: string
-  icon: React.ElementType
 }
 
 export interface TechnicalGoalSection {
   category: string
   goals: Array<string>
+}
+
+export interface TechnologyInfo {
+  description: string
+  icon: React.ElementType
+  name: string
+}
+
+export interface TechnologyLink {
+  name: string
+  url: string
 }

@@ -1,5 +1,3 @@
-import { Link } from '@tanstack/react-router'
-import { Heart } from 'lucide-react'
 import {
   APP_CONFIG,
   FOOTER_CONTENT,
@@ -8,6 +6,8 @@ import {
   SOCIAL_LINKS,
   TECHNOLOGY_LINKS,
 } from '@/constants'
+import { Link } from '@tanstack/react-router'
+import { Heart } from 'lucide-react'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -22,9 +22,9 @@ export default function Footer() {
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <img
-                src={PROFILE_IMAGE_URL}
                 alt={APP_CONFIG.BRAND.LOGO_ALT}
                 className="h-8 w-8 rounded-lg object-cover"
+                src={PROFILE_IMAGE_URL}
               />
               <span className="font-bold text-xl">{APP_CONFIG.NAME}</span>
             </div>
@@ -34,12 +34,12 @@ export default function Footer() {
             <div className="flex space-x-4">
               {SOCIAL_LINKS.map((social) => (
                 <a
-                  key={social.name}
-                  href={social.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-gray-300 hover:text-white transition-colors"
                   aria-label={social.ariaLabel}
+                  className="text-gray-300 hover:text-white transition-colors"
+                  href={social.url}
+                  key={social.name}
+                  rel="noopener noreferrer"
+                  target="_blank"
                 >
                   <social.icon className="h-6 w-6" />
                 </a>
@@ -54,8 +54,8 @@ export default function Footer() {
               {QUICK_LINKS.map((link) => (
                 <li key={link.path}>
                   <Link
-                    to={link.path}
                     className="text-gray-300 hover:text-white transition-colors text-sm"
+                    to={link.path}
                   >
                     {link.name}
                   </Link>
@@ -71,10 +71,10 @@ export default function Footer() {
               {TECHNOLOGY_LINKS.map((tech) => (
                 <li key={tech.name}>
                   <a
-                    href={tech.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
                     className="text-gray-300 hover:text-white transition-colors text-sm"
+                    href={tech.url}
+                    rel="noopener noreferrer"
+                    target="_blank"
                   >
                     {tech.name}
                   </a>

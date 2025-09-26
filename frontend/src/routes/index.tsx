@@ -1,4 +1,5 @@
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { HERO_CONTENT, PAGE_CONTENT, SERVICES, TECHNOLOGIES } from '@/constants'
+import { createFileRoute, Link } from '@tanstack/react-router'
 import { BookOpen, Building, MessageCircle, Wrench } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import {
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '../components/ui/card'
-import { HERO_CONTENT, PAGE_CONTENT, SERVICES, TECHNOLOGIES } from '@/constants'
 
 export const Route = createFileRoute('/')({
   component: HomePage,
@@ -31,13 +31,13 @@ function HomePage() {
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button asChild size="lg">
-                <Link to="/services" className="flex items-center gap-2">
+                <Link className="flex items-center gap-2" to="/services">
                   <Wrench className="h-5 w-5" />
                   {HERO_CONTENT.PRIMARY_CTA}
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link to="/chat" className="flex items-center gap-2">
+              <Button asChild size="lg" variant="outline">
+                <Link className="flex items-center gap-2" to="/chat">
                   <MessageCircle className="h-5 w-5" />
                   {HERO_CONTENT.SECONDARY_CTA}
                 </Link>
@@ -64,8 +64,8 @@ function HomePage() {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {SERVICES.map((service) => (
               <Card
-                key={service.name}
                 className="hover:shadow-lg transition-shadow"
+                key={service.name}
               >
                 <CardHeader>
                   <div className="flex items-center space-x-2">
@@ -78,8 +78,8 @@ function HomePage() {
                   <div className="flex flex-wrap gap-2">
                     {service.features.map((feature) => (
                       <span
-                        key={feature}
                         className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
+                        key={feature}
                       >
                         {feature}
                       </span>
@@ -110,8 +110,8 @@ function HomePage() {
                 <div className="grid gap-3 grid-cols-2">
                   {TECHNOLOGIES.slice(0, 4).map((tech) => (
                     <div
-                      key={tech.name}
                       className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      key={tech.name}
                     >
                       <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
                       <div>
@@ -130,8 +130,8 @@ function HomePage() {
                 <div className="grid gap-3 grid-cols-2">
                   {TECHNOLOGIES.slice(4, 8).map((tech) => (
                     <div
-                      key={tech.name}
                       className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      key={tech.name}
                     >
                       <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
                       <div>
@@ -172,7 +172,7 @@ function HomePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="outline" asChild className="w-full">
+                  <Button asChild className="w-full" variant="outline">
                     <Link to="/services">
                       {PAGE_CONTENT.HOME.GET_STARTED.ARCHITECTURE.CTA}
                     </Link>
@@ -214,7 +214,7 @@ function HomePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="outline" asChild className="w-full">
+                  <Button asChild className="w-full" variant="outline">
                     <Link to="/about">
                       {PAGE_CONTENT.HOME.GET_STARTED.LEARN_MORE.CTA}
                     </Link>

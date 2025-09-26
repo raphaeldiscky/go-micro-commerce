@@ -1,17 +1,16 @@
 import { useCallback, useState } from 'react'
-import { Button } from './ui/button'
+import { Button } from '../../ui/button'
 import { UserChatPanel } from './UserChatPanel'
 
 interface User {
   id: string
   name: string
-  ticket: string
 }
 
 export function MultiUserChat() {
   const [users, setUsers] = useState<Array<User>>([
-    { id: '1', name: 'User 1', ticket: 'user1-ticket' },
-    { id: '2', name: 'User 2', ticket: 'user2-ticket' },
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
   ])
 
   const addUser = useCallback(() => {
@@ -19,7 +18,6 @@ export function MultiUserChat() {
     const newUser: User = {
       id: newUserId,
       name: `User ${newUserId}`,
-      ticket: `user${newUserId}-ticket`,
     }
     setUsers((prev) => [...prev, newUser])
   }, [users.length])
@@ -40,8 +38,8 @@ export function MultiUserChat() {
         {users.map((user) => (
           <UserChatPanel
             key={user.id}
-            user={user}
             onRemove={users.length > 1 ? () => removeUser(user.id) : undefined}
+            user={user}
           />
         ))}
       </div>

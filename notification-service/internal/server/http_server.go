@@ -95,7 +95,14 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"}, // Configure this properly for production
+		AllowOrigins: []string{
+			"http://localhost:3001", // React development server
+			"http://127.0.0.1:3001",
+			"http://localhost:3002",
+			"http://127.0.0.1:3002",
+			"http://localhost:3003",
+			"http://127.0.0.1:3003",
+		},
 		AllowMethods: []string{
 			http.MethodGet,
 			http.MethodPost,

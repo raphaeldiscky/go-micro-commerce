@@ -1,33 +1,49 @@
+import { useChatTicket } from '@/hooks/chat/useChatTicket'
+import { useIsAuthenticated, useUser } from '@/hooks/useAuth'
+import { MessageCircle } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { Badge } from '../../ui/badge'
+import { Button } from '../../ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
+import { Input } from '../../ui/input'
 import type { ChatMessage } from './ChatMessage'
 import { ChatMessageComponent } from './ChatMessage'
-import { Badge } from './ui/badge'
-import { Button } from './ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { Input } from './ui/input'
 
-interface User {
-  id: string
-  name: string
-  ticket: string
+interface ChatInterfaceProps {
+  conversationId: string
+  conversationName: string
 }
 
-interface UserChatPanelProps {
-  user: User
-  onRemove?: () => void
-}
+type ConnectionStatus =
+  | 'connected'
+  | 'connecting'
+  | 'disconnected'
+  | 'error'
+  | 'fetching_ticket'
 
-type ConnectionStatus = 'connecting' | 'connected' | 'disconnected' | 'error'
-
-export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
+export function ChatInterface({
+  conversationId,
+  conversationName,
+}: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Array<ChatMessage>>([])
   const [inputMessage, setInputMessage] = useState('')
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>('disconnected')
-  const [ws, setWs] = useState<WebSocket | null>(null)
+  const [ws, setWs] = useState<null | WebSocket>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const reconnectAttemptsRef = useRef(0)
+
+  const isAuthenticated = useIsAuthenticated()
+  const user = useUser()
+
+  // Use TanStack Query to fetch chat ticket with complete data
+  const {
+    data: ticketData,
+    error: ticketError,
+    isLoading: isLoadingTicket,
+    refetch: refetchTicket,
+  } = useChatTicket(user?.id || '')
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -42,13 +58,32 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
       return
     }
 
+    // Don't try to connect if we don't have ticket data yet or user is not authenticated
+    if (!ticketData || !user || !isAuthenticated) {
+      return
+    }
+
+    // Check if ticket is expired
+    const expiresAt = new Date(ticketData.expires_at)
+    if (expiresAt <= new Date()) {
+      console.log(
+        `Ticket expired for conversation ${conversationId}, refetching...`,
+      )
+      refetchTicket()
+      return
+    }
+
     setConnectionStatus('connecting')
-    const websocket = new WebSocket(
-      `ws://192.168.0.107:9088/v1/ws?ticket=${user.ticket}`,
+    const websocketUrl = `${ticketData.node_address}/v1/ws?ticket=${ticketData.ticket}&conversation_id=${conversationId}`
+    console.log(
+      `Connecting to WebSocket for conversation ${conversationId}:`,
+      websocketUrl,
     )
 
+    const websocket = new WebSocket(websocketUrl)
+
     websocket.onopen = () => {
-      console.log(`WebSocket connected for ${user.name}`)
+      console.log(`WebSocket connected for conversation ${conversationId}`)
       setConnectionStatus('connected')
       setWs(websocket)
       reconnectAttemptsRef.current = 0
@@ -58,8 +93,8 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
       try {
         const data = JSON.parse(event.data)
         const newMessage: ChatMessage = {
-          id: `${Date.now()}-${Math.random()}`,
           content: data.message || data.content || event.data,
+          id: `${Date.now()}-${Math.random()}`,
           senderId: data.senderId || data.userId || 'unknown',
           senderName:
             data.senderName ||
@@ -73,8 +108,8 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
       } catch (error) {
         // If it's not JSON, treat as plain text message
         const newMessage: ChatMessage = {
-          id: `${Date.now()}-${Math.random()}`,
           content: event.data,
+          id: `${Date.now()}-${Math.random()}`,
           senderId: 'unknown',
           senderName: 'Unknown User',
           timestamp: new Date(),
@@ -87,7 +122,7 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
 
     websocket.onclose = (event) => {
       console.log(
-        `WebSocket closed for ${user.name}:`,
+        `WebSocket closed for conversation ${conversationId}:`,
         event.code,
         event.reason,
       )
@@ -101,7 +136,7 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
 
         reconnectTimeoutRef.current = setTimeout(() => {
           console.log(
-            `Attempting to reconnect ${user.name} (attempt ${reconnectAttemptsRef.current})`,
+            `Attempting to reconnect conversation ${conversationId} (attempt ${reconnectAttemptsRef.current})`,
           )
           connectWebSocket()
         }, timeout)
@@ -109,14 +144,36 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
     }
 
     websocket.onerror = (error) => {
-      console.error(`WebSocket error for ${user.name}:`, error)
+      console.error(
+        `WebSocket error for conversation ${conversationId}:`,
+        error,
+      )
       setConnectionStatus('error')
     }
 
     return websocket
-  }, [user.id, user.name, user.ticket, ws])
+  }, [conversationId, ticketData, refetchTicket, user, isAuthenticated, ws])
 
   useEffect(() => {
+    // Set connection status based on ticket loading state
+    if (isLoadingTicket) {
+      setConnectionStatus('fetching_ticket')
+    } else if (ticketError) {
+      setConnectionStatus('error')
+    } else if (ticketData && connectionStatus === 'fetching_ticket') {
+      setConnectionStatus('disconnected') // Ready to connect
+    }
+  }, [isLoadingTicket, ticketError, ticketData, connectionStatus])
+
+  useEffect(() => {
+    // Only attempt to connect if we have ticket data and user is authenticated
+    if (!ticketData || !user || !isAuthenticated) {
+      return
+    }
+
+    // Clear previous messages when switching conversations
+    setMessages([])
+
     const websocket = connectWebSocket()
 
     return () => {
@@ -128,17 +185,24 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
         websocket.close()
       }
     }
-  }, [connectWebSocket])
+  }, [connectWebSocket, ticketData, conversationId, user, isAuthenticated])
 
   const sendMessage = useCallback(() => {
-    if (!inputMessage.trim() || !ws || ws.readyState !== WebSocket.OPEN) {
+    if (
+      !inputMessage.trim() ||
+      !ws ||
+      ws.readyState !== WebSocket.OPEN ||
+      !user
+    ) {
       return
     }
 
     const messageData = {
+      conversationId: conversationId,
       message: inputMessage.trim(),
       senderId: user.id,
-      senderName: user.name,
+      senderName:
+        `${user.first_name} ${user.last_name}`.trim() || user.username,
       timestamp: Date.now(),
     }
 
@@ -147,10 +211,11 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
 
       // Add message to local state for immediate feedback
       const newMessage: ChatMessage = {
-        id: `${Date.now()}-${Math.random()}`,
         content: inputMessage.trim(),
+        id: `${Date.now()}-${Math.random()}`,
         senderId: user.id,
-        senderName: user.name,
+        senderName:
+          `${user.first_name} ${user.last_name}`.trim() || user.username,
         timestamp: new Date(),
         type: 'sent',
       }
@@ -158,9 +223,12 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
       setMessages((prev) => [...prev, newMessage])
       setInputMessage('')
     } catch (error) {
-      console.error(`Error sending message for ${user.name}:`, error)
+      console.error(
+        `Error sending message for conversation ${conversationId}:`,
+        error,
+      )
     }
-  }, [inputMessage, user.id, user.name, ws])
+  }, [inputMessage, user, conversationId, ws])
 
   const handleKeyPress = useCallback(
     (event: React.KeyboardEvent) => {
@@ -177,6 +245,7 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
       case 'connected':
         return 'success'
       case 'connecting':
+      case 'fetching_ticket':
         return 'warning'
       case 'error':
         return 'destructive'
@@ -192,30 +261,36 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
       case 'connecting':
         return 'Connecting...'
       case 'error':
-        return 'Error'
+        return ticketError ? 'Ticket error' : 'Connection error'
+      case 'fetching_ticket':
+        return 'Getting ticket...'
       default:
         return 'Disconnected'
     }
   }
 
+  if (!isAuthenticated || !user) {
+    return (
+      <Card className="flex-1 h-full flex flex-col">
+        <CardContent className="flex-1 flex items-center justify-center">
+          <div className="text-center text-muted-foreground">
+            <MessageCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
+            <p>Please log in to use chat</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
-    <Card className="w-full max-w-md mx-auto h-[500px] flex flex-col">
+    <Card className="flex-1 h-full flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{user.name}</CardTitle>
-          <div className="flex items-center gap-2">
-            <Badge variant={getStatusBadgeVariant()}>{getStatusText()}</Badge>
-            {onRemove && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onRemove}
-                className="h-6 w-6 p-0"
-              >
-                ×
-              </Button>
-            )}
-          </div>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            {conversationName}
+          </CardTitle>
+          <Badge variant={getStatusBadgeVariant()}>{getStatusText()}</Badge>
         </div>
       </CardHeader>
 
@@ -229,9 +304,9 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
           ) : (
             messages.map((message) => (
               <ChatMessageComponent
+                currentUserId={user.id}
                 key={message.id}
                 message={message}
-                currentUserId={user.id}
               />
             ))
           )}
@@ -241,16 +316,16 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
         {/* Input area */}
         <div className="flex gap-2">
           <Input
-            value={inputMessage}
+            className="flex-1"
+            disabled={connectionStatus !== 'connected'}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="Type a message..."
-            disabled={connectionStatus !== 'connected'}
-            className="flex-1"
+            value={inputMessage}
           />
           <Button
-            onClick={sendMessage}
             disabled={connectionStatus !== 'connected' || !inputMessage.trim()}
+            onClick={sendMessage}
             size="sm"
           >
             Send
@@ -259,19 +334,34 @@ export function UserChatPanel({ user, onRemove }: UserChatPanelProps) {
 
         {connectionStatus !== 'connected' && (
           <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {connectionStatus === 'error'
-              ? 'Connection failed. Check WebSocket server.'
-              : connectionStatus === 'connecting'
-                ? 'Establishing connection...'
-                : 'Click to reconnect'}
-            {connectionStatus === 'disconnected' && (
+            {connectionStatus === 'error' && ticketError
+              ? `Failed to get ticket: ${ticketError.message}`
+              : connectionStatus === 'error'
+                ? 'Connection failed. Check WebSocket server.'
+                : connectionStatus === 'connecting'
+                  ? 'Establishing connection...'
+                  : connectionStatus === 'fetching_ticket'
+                    ? 'Getting authentication ticket...'
+                    : 'Click to reconnect'}
+            {(connectionStatus === 'disconnected' ||
+              (connectionStatus === 'error' && !ticketError)) && (
               <Button
-                variant="link"
-                size="sm"
-                onClick={connectWebSocket}
                 className="h-auto p-0 ml-2 text-xs"
+                onClick={connectWebSocket}
+                size="sm"
+                variant="link"
               >
                 Reconnect
+              </Button>
+            )}
+            {connectionStatus === 'error' && ticketError && (
+              <Button
+                className="h-auto p-0 ml-2 text-xs"
+                onClick={() => refetchTicket()}
+                size="sm"
+                variant="link"
+              >
+                Retry
               </Button>
             )}
           </div>

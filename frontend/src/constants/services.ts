@@ -22,53 +22,53 @@ import { TECH_URLS } from './urls'
 // Microservices information
 export const SERVICES: Array<ServiceInfo> = [
   {
-    name: 'API Gateway',
     description: 'Central entry point with load balancing and rate limiting',
-    icon: ExternalLink,
     features: ['Load Balancing', 'Rate Limiting', 'Service Discovery'],
+    icon: ExternalLink,
+    name: 'API Gateway',
   },
   {
-    name: 'Auth Service',
     description: 'JWT authentication and authorization management',
-    icon: Lock,
     features: ['JWT Tokens', 'User Management', 'Role-based Access'],
+    icon: Lock,
+    name: 'Auth Service',
   },
   {
-    name: 'Product Service',
     description: 'Product catalog management with gRPC support',
-    icon: Package,
     features: ['Product CRUD', 'gRPC API', 'Inventory Tracking'],
+    icon: Package,
+    name: 'Product Service',
   },
   {
-    name: 'Order Service',
     description: 'Order processing with saga orchestration patterns',
-    icon: FileText,
     features: ['Order Management', 'Saga Pattern', 'Workflow Engine'],
+    icon: FileText,
+    name: 'Order Service',
   },
   {
-    name: 'Payment Service',
     description: 'Secure payment processing and transaction management',
-    icon: CreditCard,
     features: ['Payment Processing', 'Transaction History', 'Refunds'],
+    icon: CreditCard,
+    name: 'Payment Service',
   },
   {
-    name: 'Chat Service',
     description: 'Real-time messaging with WebSocket connections',
+    features: ['WebSocket', 'Real-time Messaging'],
     icon: MessageCircle,
-    features: ['WebSocket', 'Real-time Messaging', 'Multi-user Support'],
+    name: 'Chat Service',
   },
 ]
 
 // Technology stack information
 export const TECHNOLOGIES: Array<TechnologyInfo> = [
-  { name: 'Go', icon: Go, description: 'Backend Services' },
-  { name: 'React', icon: React, description: 'Frontend UI' },
-  { name: 'PostgreSQL', icon: PostgreSQL, description: 'Database' },
-  { name: 'Redis', icon: Redis, description: 'Caching' },
-  { name: 'Kafka', icon: Kafka, description: 'Event Streaming' },
-  { name: 'Docker', icon: Docker, description: 'Containerization' },
-  { name: 'Kubernetes', icon: Kubernetes, description: 'Orchestration' },
-  { name: 'gRPC', icon: LinkIcon, description: 'API Communication' },
+  { description: 'Backend Services', icon: Go, name: 'Go' },
+  { description: 'Frontend UI', icon: React, name: 'React' },
+  { description: 'Database', icon: PostgreSQL, name: 'PostgreSQL' },
+  { description: 'Caching', icon: Redis, name: 'Redis' },
+  { description: 'Event Streaming', icon: Kafka, name: 'Kafka' },
+  { description: 'Containerization', icon: Docker, name: 'Docker' },
+  { description: 'Orchestration', icon: Kubernetes, name: 'Kubernetes' },
+  { description: 'API Communication', icon: LinkIcon, name: 'gRPC' },
 ]
 
 // Technology links for footer

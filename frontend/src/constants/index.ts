@@ -4,8 +4,8 @@
 // Configuration
 export * from './config'
 
-// URLs and links
-export * from './urls'
+// Content data
+export * from './content'
 
 // Navigation
 export * from './navigation'
@@ -13,11 +13,11 @@ export * from './navigation'
 // Services and technology data
 export * from './services'
 
-// Content data
-export * from './content'
-
 // Social media
 export * from './social'
 
 // TypeScript types
 export * from './types'
+
+// URLs and links
+export * from './urls'
