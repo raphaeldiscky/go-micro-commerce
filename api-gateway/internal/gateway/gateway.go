@@ -405,9 +405,11 @@ func (gw *Gateway) proxyConnectRPCRequest(c echo.Context, endpoint string) (*Pro
 		return nil, fmt.Errorf("failed to perform request: %w", err)
 	}
 
-	if err = resp.Body.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close response body: %w", err)
-	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			gw.logger.Warn("Failed to close response body", "error", closeErr)
+		}
+	}()
 
 	// Read response body
 	body, err := io.ReadAll(resp.Body)
