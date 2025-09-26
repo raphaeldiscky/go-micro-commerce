@@ -1,4 +1,5 @@
 import { useChatTicket } from '@/hooks/chat/useChatTicket'
+import { generateTimestamp, generateUniqueId, isExpired } from '@/lib/utils/date'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'
@@ -61,8 +62,7 @@ export function UserChatPanel({ onRemove, user }: UserChatPanelProps) {
     }
 
     // Check if ticket is expired
-    const expiresAt = new Date(ticketData.expires_at)
-    if (expiresAt <= new Date()) {
+    if (isExpired(ticketData.expires_at)) {
       console.log(`Ticket expired for ${user.name}, refetching...`)
       refetchTicket()
       return
@@ -86,13 +86,13 @@ export function UserChatPanel({ onRemove, user }: UserChatPanelProps) {
         const data = JSON.parse(event.data)
         const newMessage: ChatMessage = {
           content: data.message || data.content || event.data,
-          id: `${Date.now()}-${Math.random()}`,
+          id: generateUniqueId(),
           senderId: data.senderId || data.userId || 'unknown',
           senderName:
             data.senderName ||
             data.userName ||
             `User ${data.senderId || 'Unknown'}`,
-          timestamp: new Date(data.timestamp || Date.now()),
+          timestamp: new Date(data.timestamp || generateTimestamp()),
           type: data.senderId === user.id ? 'sent' : 'received',
         }
 
@@ -101,10 +101,10 @@ export function UserChatPanel({ onRemove, user }: UserChatPanelProps) {
         // If it's not JSON, treat as plain text message
         const newMessage: ChatMessage = {
           content: event.data,
-          id: `${Date.now()}-${Math.random()}`,
+          id: generateUniqueId(),
           senderId: 'unknown',
           senderName: 'Unknown User',
-          timestamp: new Date(),
+          timestamp: new Date(generateTimestamp()),
           type: 'received',
         }
 
@@ -182,7 +182,7 @@ export function UserChatPanel({ onRemove, user }: UserChatPanelProps) {
       message: inputMessage.trim(),
       senderId: user.id,
       senderName: user.name,
-      timestamp: Date.now(),
+      timestamp: generateTimestamp(),
     }
 
     try {
@@ -191,10 +191,10 @@ export function UserChatPanel({ onRemove, user }: UserChatPanelProps) {
       // Add message to local state for immediate feedback
       const newMessage: ChatMessage = {
         content: inputMessage.trim(),
-        id: `${Date.now()}-${Math.random()}`,
+        id: generateUniqueId(),
         senderId: user.id,
         senderName: user.name,
-        timestamp: new Date(),
+        timestamp: new Date(generateTimestamp()),
         type: 'sent',
       }
 

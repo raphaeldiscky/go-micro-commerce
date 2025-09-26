@@ -1,5 +1,6 @@
 import { useChatTicket } from '@/hooks/chat/useChatTicket'
 import { useIsAuthenticated, useUser } from '@/hooks/useAuth'
+import { generateTimestamp, generateUniqueId, isExpired } from '@/lib/utils/date'
 import { MessageCircle } from 'lucide-react'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Badge } from '../../ui/badge'
@@ -64,8 +65,7 @@ export function ChatInterface({
     }
 
     // Check if ticket is expired
-    const expiresAt = new Date(ticketData.expires_at)
-    if (expiresAt <= new Date()) {
+    if (isExpired(ticketData.expires_at)) {
       console.log(
         `Ticket expired for conversation ${conversationId}, refetching...`,
       )
@@ -94,13 +94,13 @@ export function ChatInterface({
         const data = JSON.parse(event.data)
         const newMessage: ChatMessage = {
           content: data.message || data.content || event.data,
-          id: `${Date.now()}-${Math.random()}`,
+          id: generateUniqueId(),
           senderId: data.senderId || data.userId || 'unknown',
           senderName:
             data.senderName ||
             data.userName ||
             `User ${data.senderId || 'Unknown'}`,
-          timestamp: new Date(data.timestamp || Date.now()),
+          timestamp: new Date(data.timestamp || generateTimestamp()),
           type: data.senderId === user.id ? 'sent' : 'received',
         }
 
@@ -109,10 +109,10 @@ export function ChatInterface({
         // If it's not JSON, treat as plain text message
         const newMessage: ChatMessage = {
           content: event.data,
-          id: `${Date.now()}-${Math.random()}`,
+          id: generateUniqueId(),
           senderId: 'unknown',
           senderName: 'Unknown User',
-          timestamp: new Date(),
+          timestamp: new Date(generateTimestamp()),
           type: 'received',
         }
 
@@ -203,7 +203,7 @@ export function ChatInterface({
       senderId: user.id,
       senderName:
         `${user.first_name} ${user.last_name}`.trim() || user.username,
-      timestamp: Date.now(),
+      timestamp: generateTimestamp(),
     }
 
     try {
@@ -212,11 +212,11 @@ export function ChatInterface({
       // Add message to local state for immediate feedback
       const newMessage: ChatMessage = {
         content: inputMessage.trim(),
-        id: `${Date.now()}-${Math.random()}`,
+        id: generateUniqueId(),
         senderId: user.id,
         senderName:
           `${user.first_name} ${user.last_name}`.trim() || user.username,
-        timestamp: new Date(),
+        timestamp: new Date(generateTimestamp()),
         type: 'sent',
       }
 

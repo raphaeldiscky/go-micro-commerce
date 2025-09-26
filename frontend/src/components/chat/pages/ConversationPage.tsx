@@ -6,8 +6,17 @@ import { usePresence } from '@/hooks/chat/usePresence'
 import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
 import { useIsAuthenticated, useUser } from '@/hooks/useAuth'
 import type { Message, SendMessageRequest } from '@/lib/api'
+import { isExpired } from '@/lib/utils/date'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, Maximize2, Minimize2, Phone, Settings, Users, Video } from 'lucide-react'
+import {
+  ArrowLeft,
+  Maximize2,
+  Minimize2,
+  Phone,
+  Settings,
+  Users,
+  Video,
+} from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Button } from '../../ui/button'
 import { Card } from '../../ui/card'
@@ -26,7 +35,7 @@ export function ConversationPage({
   conversationId,
   isFullscreen = false,
   onToggleFullscreen,
-  showToggle = true
+  showToggle = true,
 }: ConversationPageProps) {
   const [showParticipants, setShowParticipants] = useState(false)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
@@ -80,8 +89,7 @@ export function ConversationPage({
     if (!ticketData || !user || !isAuthenticated) return
 
     // Check if ticket is expired
-    const expiresAt = new Date(ticketData.expires_at)
-    if (expiresAt <= new Date()) {
+    if (isExpired(ticketData.expires_at)) {
       console.log('Ticket expired, refetching...')
       refetchTicket()
       return
@@ -159,7 +167,12 @@ export function ConversationPage({
 
   // Connect WebSocket when component mounts or ticket changes
   useEffect(() => {
-    if (ticketData && user && isAuthenticated && !connectionAttemptRef.current) {
+    if (
+      ticketData &&
+      user &&
+      isAuthenticated &&
+      !connectionAttemptRef.current
+    ) {
       connectionAttemptRef.current = true
       connectWebSocket()
     }
@@ -252,7 +265,9 @@ export function ConversationPage({
   }
 
   return (
-    <div className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}>
+    <div
+      className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-4">

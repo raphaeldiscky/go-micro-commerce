@@ -4,14 +4,14 @@ import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Github, LogIn, LogOut, Menu, User, UserPlus, X } from 'lucide-react'
 import { useState } from 'react'
-import { Button } from './ui/button'
+import { Button } from '../ui/button'
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
   navigationMenuTriggerStyle,
-} from './ui/navigation-menu'
+} from '../ui/navigation-menu'
 
 export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
