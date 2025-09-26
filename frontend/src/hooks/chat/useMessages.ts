@@ -23,12 +23,20 @@ export function useAddMessage(conversationId: string) {
 
       if (messageExists) return old
 
+      // Add message to the last page
+      const updatedPages = [...old.pages]
+      if (updatedPages.length > 0) {
+        updatedPages[updatedPages.length - 1] = [
+          ...updatedPages[updatedPages.length - 1],
+          message,
+        ]
+      } else {
+        updatedPages.push([message])
+      }
+
       return {
         ...old,
-        pages: [
-          ...old.pages.slice(0, -1),
-          [...old.pages[old.pages.length - 1], message],
-        ],
+        pages: updatedPages,
       }
     })
 
@@ -44,7 +52,7 @@ export function useMessages(conversationId: string) {
   return useInfiniteQuery({
     enabled: !!conversationId,
     gcTime: 5 * 60 * 1000, // 5 minutes
-    getNextPageParam: (lastPage, allPages) => {
+    getNextPageParam: (lastPage: { messages: Array<Message>; hasMore: boolean; totalPages: number }, allPages) => {
       // Use the hasMore flag from the API response
       return lastPage.hasMore ? allPages.length + 1 : undefined
     },
@@ -56,7 +64,7 @@ export function useMessages(conversationId: string) {
     staleTime: 30 * 1000, // 30 seconds - messages are real-time
     select: (data) => ({
       ...data,
-      pages: data.pages.map((page) => page.messages),
+      pages: data.pages.map((page: { messages: Array<Message>; hasMore: boolean; totalPages: number }) => page.messages),
     }),
   })
 }
@@ -70,15 +78,6 @@ export function useSendMessage(conversationId: string) {
   return useMutation({
     mutationFn: (message: SendMessageRequest) =>
       sendMessage(conversationId, message),
-    onError: (_err, _newMessage, context) => {
-      // Revert optimistic update on error
-      if (context?.previousMessages) {
-        queryClient.setQueryData(
-          ['messages', conversationId],
-          context.previousMessages,
-        )
-      }
-    },
     onMutate: async (newMessage) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
@@ -107,16 +106,33 @@ export function useSendMessage(conversationId: string) {
           updated_at: new Date().toISOString(),
         }
 
+        // Add message to the last page
+        const updatedPages = [...old.pages]
+        if (updatedPages.length > 0) {
+          updatedPages[updatedPages.length - 1] = [
+            ...updatedPages[updatedPages.length - 1],
+            optimisticMessage,
+          ]
+        } else {
+          updatedPages.push([optimisticMessage])
+        }
+
         return {
           ...old,
-          pages: [
-            ...old.pages.slice(0, -1),
-            [...old.pages[old.pages.length - 1], optimisticMessage],
-          ],
+          pages: updatedPages,
         }
       })
 
       return { previousMessages }
+    },
+    onError: (_err, _newMessage, context) => {
+      // Revert optimistic update on error
+      if (context?.previousMessages) {
+        queryClient.setQueryData(
+          ['messages', conversationId],
+          context.previousMessages,
+        )
+      }
     },
     onSuccess: (data) => {
       // Replace optimistic message with real message

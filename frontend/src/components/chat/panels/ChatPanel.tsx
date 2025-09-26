@@ -1,6 +1,4 @@
-import { Maximize2, Minimize2, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { Button } from '../../ui/button'
 import { Card } from '../../ui/card'
 import { Dialog, DialogContent } from '../../ui/dialog'
 import { ConversationPage } from '../pages/ConversationPage'
