@@ -86,19 +86,12 @@ func (h *ProductHandler) GetProducts(c echo.Context) error {
 		return err
 	}
 
-	products, paging, err := h.productService.GetProducts(c.Request().Context(), req)
+	products, pagination, err := h.productService.GetProducts(c.Request().Context(), req)
 	if err != nil {
 		return err
 	}
 
-	paging.Links = pageutils.NewLinks(
-		c.Request(),
-		paging.Page,
-		paging.Size,
-		paging.TotalPage,
-	)
-
-	return echoutils.ResponseOKPagination(c, products, paging)
+	return echoutils.ResponseOKOffsetPagination(c, products, pagination)
 }
 
 // UpdateProduct handles PUT /products/:productID.

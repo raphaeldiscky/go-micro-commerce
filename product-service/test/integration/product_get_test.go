@@ -37,7 +37,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
 
-	var createResponse dto.WebResponse[productDto.ProductResponse]
+	var createResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	err = s.parseResponse(resp, &createResponse)
 	s.Require().NoError(err)
@@ -54,7 +54,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var getResponse dto.WebResponse[productDto.ProductResponse]
+	var getResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	err = s.parseResponse(resp, &getResponse)
 	s.Require().NoError(err)

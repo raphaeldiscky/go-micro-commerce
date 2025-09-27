@@ -155,14 +155,7 @@ func (h *OrderHandler) GetOrdersByCustomer(c echo.Context) error {
 		return err
 	}
 
-	paging.Links = pageutils.NewLinks(
-		c.Request(),
-		paging.Page,
-		paging.Size,
-		paging.TotalPage,
-	)
-
-	return echoutils.ResponseOKPagination(c, orders, paging)
+	return echoutils.ResponseOKOffsetPagination(c, orders, paging)
 }
 
 // GetOrders retrieves a list of orders with pagination.
@@ -197,14 +190,7 @@ func (h *OrderHandler) GetOrders(c echo.Context) error {
 		return err
 	}
 
-	paging.Links = pageutils.NewLinks(
-		c.Request(),
-		paging.Page,
-		paging.Size,
-		paging.TotalPage,
-	)
-
-	return echoutils.ResponseOKPagination(c, orders, paging)
+	return echoutils.ResponseOKOffsetPagination(c, orders, paging)
 }
 
 // GetLoggedInOrders retrieves a list of orders for the logged-in user with pagination.
@@ -245,14 +231,7 @@ func (h *OrderHandler) GetLoggedInOrders(c echo.Context) error {
 		return err
 	}
 
-	paging.Links = pageutils.NewLinks(
-		c.Request(),
-		paging.Page,
-		paging.Size,
-		paging.TotalPage,
-	)
-
-	return echoutils.ResponseOKPagination(c, orders, paging)
+	return echoutils.ResponseOKOffsetPagination(c, orders, paging)
 }
 
 // CancelOrder handles DELETE /orders/:orderID.

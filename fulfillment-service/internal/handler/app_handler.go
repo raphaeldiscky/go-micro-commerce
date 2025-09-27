@@ -18,7 +18,7 @@ func NewAppHandler() *AppHandler {
 
 // Health handles health check.
 func (c *AppHandler) Health(e echo.Context) error {
-	return e.JSON(http.StatusOK, dto.WebResponse[any]{
+	return e.JSON(http.StatusOK, dto.WebResponse[any, any]{
 		Data: map[string]any{
 			"status":  "healthy",
 			"service": "fulfillment-service",
@@ -29,7 +29,7 @@ func (c *AppHandler) Health(e echo.Context) error {
 
 // RouteNotFound handles 404 errors.
 func (c *AppHandler) RouteNotFound(e echo.Context) error {
-	return e.JSON(http.StatusNotFound, dto.WebResponse[any]{
+	return e.JSON(http.StatusNotFound, dto.WebResponse[any, any]{
 		Message: "route not found",
 	})
 }

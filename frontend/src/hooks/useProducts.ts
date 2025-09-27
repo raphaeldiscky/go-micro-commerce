@@ -3,8 +3,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { productApi } from '../lib/api/product'
 import type { Product } from '../proto/product/v1/product_pb'
 import {
+  BatchGetProductsByIDsRequestSchema,
   ConfirmProductsDeductionRequestSchema,
-  GetProductsRequestSchema,
   ReleaseProductsRequestSchema,
   ReserveProductsRequestSchema,
   RestoreProductsRequestSchema,
@@ -24,8 +24,8 @@ export function useProducts(ids: Array<string>) {
   return useQuery({
     queryKey: productKeys.list(ids),
     queryFn: async () => {
-      const request = create(GetProductsRequestSchema, { ids })
-      const response = await productApi.getProducts(request)
+      const request = create(BatchGetProductsByIDsRequestSchema, { ids })
+      const response = await productApi.batchGetProductsByIDs(request)
       return response.products
     },
     enabled: ids.length > 0,

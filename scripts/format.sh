@@ -19,33 +19,52 @@ SERVICES=(
 format_service() {
   local dir="$1"
   echo "Formatting $dir..."
-  gofumpt -w "$dir"
-  goimports -w "$dir"
-  echo "Format complete for $dir"
+  # Run commands in a subshell to isolate them
+  (
+    gofumpt -w "$dir"
+    goimports -w "$dir"
+  )
+  # The exit code of the last command in the subshell is returned
 }
 
+# If a specific service is provided as an argument
 if [ -n "${1-}" ]; then
   if [[ " ${SERVICES[*]} " =~ " $1 " ]]; then
     format_service "$1"
+    echo "Format complete for $1."
   else
     echo "Error: '$1' is not a valid service directory."
     echo "Available services: ${SERVICES[*]}"
     exit 1
   fi
+# If no argument, run for all services concurrently
 else
   pids=()
-
   for service in "${SERVICES[@]}"; do
+    # Run in the background and store the process ID
     format_service "$service" &
     pids+=($!)
   done
 
+  # Variable to track if any process fails
+  exit_code=0
+
+  # Wait for all background jobs to finish
   for pid in "${pids[@]}"; do
-    wait "$pid" || {
-      echo "Formatting failed in one of the services."
-      exit 1
-    }
+    # 'wait "$pid"' will return the exit code of the process.
+    # If a command fails, its exit code will be non-zero.
+    if ! wait "$pid"; then
+      echo "⚠️ A format process failed."
+      # Record that at least one failure occurred
+      exit_code=1
+    fi
   done
+
+  # After checking all processes, decide the final outcome
+  if [ "$exit_code" -ne 0 ]; then
+    echo "Formatting failed in one or more services."
+    exit 1
+  fi
 
   echo "All format checks completed successfully!"
 fi

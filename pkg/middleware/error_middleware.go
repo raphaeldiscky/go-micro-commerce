@@ -50,9 +50,12 @@ func ErrorHandler() echo.MiddlewareFunc {
 				case errors.As(err, &e3):
 					return handleParseTimeError(c, e3)
 				case errors.As(err, &e4):
-					return c.JSON(e4.GetCode(), dto.WebResponse[any]{Message: e4.DisplayMessage()})
+					return c.JSON(
+						e4.GetCode(),
+						dto.WebResponse[any, any]{Message: e4.DisplayMessage()},
+					)
 				case isUUIDError(err):
-					return c.JSON(http.StatusBadRequest, dto.WebResponse[any]{
+					return c.JSON(http.StatusBadRequest, dto.WebResponse[any, any]{
 						Message: "invalid UUID format",
 					})
 				case errors.As(err, &e6):
@@ -71,18 +74,18 @@ func ErrorHandler() echo.MiddlewareFunc {
 						}
 					}
 
-					return c.JSON(code, dto.WebResponse[any]{Message: message})
+					return c.JSON(code, dto.WebResponse[any, any]{Message: message})
 				default:
 					if errors.Is(err, io.EOF) {
 						return c.JSON(
 							http.StatusBadRequest,
-							dto.WebResponse[any]{Message: constant.EOFErrorMessage},
+							dto.WebResponse[any, any]{Message: constant.EOFErrorMessage},
 						)
 					}
 
 					return c.JSON(
 						http.StatusInternalServerError,
-						dto.WebResponse[any]{Message: constant.InternalServerErrorMessage},
+						dto.WebResponse[any, any]{Message: constant.InternalServerErrorMessage},
 					)
 				}
 			}
@@ -92,21 +95,21 @@ func ErrorHandler() echo.MiddlewareFunc {
 
 // handleJSONSyntaxError handles JSON syntax errors.
 func handleJSONSyntaxError(c echo.Context) error {
-	return c.JSON(http.StatusBadRequest, dto.WebResponse[any]{
+	return c.JSON(http.StatusBadRequest, dto.WebResponse[any, any]{
 		Message: constant.JSONSyntaxErrorMessage,
 	})
 }
 
 // handleJSONUnmarshalTypeError handles JSON unmarshal type errors.
 func handleJSONUnmarshalTypeError(c echo.Context, err *json.UnmarshalTypeError) error {
-	return c.JSON(http.StatusBadRequest, dto.WebResponse[any]{
+	return c.JSON(http.StatusBadRequest, dto.WebResponse[any, any]{
 		Message: "invalid type for field " + err.Field,
 	})
 }
 
 // handleParseTimeError handles parse time errors.
 func handleParseTimeError(c echo.Context, err *time.ParseError) error {
-	return c.JSON(http.StatusBadRequest, dto.WebResponse[any]{
+	return c.JSON(http.StatusBadRequest, dto.WebResponse[any, any]{
 		Message: "please send time in format of " +
 			constant.ConvertGoTimeLayoutToReadable(err.Layout) +
 			", got: " + err.Value,
@@ -124,7 +127,7 @@ func handleValidationError(c echo.Context, err validator.ValidationErrors) error
 		})
 	}
 
-	return c.JSON(http.StatusBadRequest, dto.WebResponse[any]{
+	return c.JSON(http.StatusBadRequest, dto.WebResponse[any, any]{
 		Message: constant.ValidationErrorMessage,
 		Errors:  ve,
 	})

@@ -46,7 +46,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSaga() {
 	// Should return 201 Created for successful order creation
 	s.Equal(http.StatusCreated, resp.StatusCode)
 
-	var response pkgDto.WebResponse[dto.OrderResponse]
+	var response pkgDto.WebResponse[dto.OrderResponse, any]
 
 	s.Require().NoError(s.parseResponse(resp, &response))
 

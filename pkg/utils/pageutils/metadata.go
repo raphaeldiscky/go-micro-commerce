@@ -6,15 +6,30 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
-// NewMetadata creates a new PageMetaData instance.
-func NewMetadata(count, page, limit int64) *dto.PageMetaData {
+// NewOffsetPagination creates a new OffsetPagination instance.
+func NewOffsetPagination(count, page, size int64) *dto.OffsetPagination {
 	totalItems := count
-	totalPage := int64(math.Ceil(float64(totalItems) / float64(limit)))
+	totalPage := int64(math.Ceil(float64(totalItems) / float64(size)))
 
-	return &dto.PageMetaData{
+	return &dto.OffsetPagination{
 		Page:      page,
-		Size:      limit,
+		Size:      size,
 		TotalItem: totalItems,
 		TotalPage: totalPage,
+	}
+}
+
+// NewCursorPagination creates a new CursorPagination instance.
+func NewCursorPagination(
+	nextCursor, prevCursor string,
+	hasNext, hasPrev bool,
+	limit int64,
+) *dto.CursorPagination {
+	return &dto.CursorPagination{
+		NextCursor: nextCursor,
+		PrevCursor: prevCursor,
+		HasNext:    hasNext,
+		HasPrev:    hasPrev,
+		Limit:      limit,
 	}
 }

@@ -40,11 +40,11 @@ func NewGRPCServer(
 	return &GRPCServer{cfg: cfg, productService: productService, logger: appLogger}
 }
 
-// GetProducts retrieves products by IDs via Connect-RPC.
-func (s *GRPCServer) GetProducts(
+// BatchGetProductsByIDs retrieves products by IDs via Connect-RPC.
+func (s *GRPCServer) BatchGetProductsByIDs(
 	ctx context.Context,
-	req *connect.Request[pb.GetProductsRequest],
-) (*connect.Response[pb.GetProductsResponse], error) {
+	req *connect.Request[pb.BatchGetProductsByIDsRequest],
+) (*connect.Response[pb.BatchGetProductsByIDsResponse], error) {
 	ids := make([]uuid.UUID, len(req.Msg.GetIds()))
 
 	for i, idStr := range req.Msg.GetIds() {
@@ -59,12 +59,12 @@ func (s *GRPCServer) GetProducts(
 		ids[i] = uid
 	}
 
-	products, err := s.productService.GetProductsByIDs(ctx, ids)
+	products, err := s.productService.BatchGetProductsByIDs(ctx, ids)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	resp := &pb.GetProductsResponse{
+	resp := &pb.BatchGetProductsByIDsResponse{
 		Products: mapper.MapDTOToProtobufProducts(products),
 	}
 
@@ -248,7 +248,8 @@ func (s *GRPCServer) Start(_ context.Context) error {
 	authInterceptor := connectauth.NewAuthInterceptor()
 
 	// Create Connect-RPC handler with auth interceptor
-	path, handler := productv1connect.NewProductServiceHandler(s,
+	path, handler := productv1connect.NewProductServiceHandler(
+		s,
 		connect.WithInterceptors(authInterceptor.ServiceToServiceAuth()),
 	)
 

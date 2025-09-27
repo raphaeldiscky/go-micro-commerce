@@ -10,7 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
@@ -29,8 +29,8 @@ type ProductService interface {
 	GetProducts(
 		ctx context.Context,
 		req dto.GetProductsRequest,
-	) ([]dto.ProductResponse, *pkgDto.PageMetaData, error)
-	GetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]dto.ProductResponse, error)
+	) ([]dto.ProductResponse, *pkgdto.OffsetPagination, error)
+	BatchGetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]dto.ProductResponse, error)
 	UpdateProduct(ctx context.Context, req dto.UpdateProductRequest) (*dto.ProductResponse, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
 	ReserveProducts(
@@ -169,7 +169,7 @@ func (s *productService) GetProduct(
 func (s *productService) GetProducts(
 	ctx context.Context,
 	req dto.GetProductsRequest,
-) ([]dto.ProductResponse, *pkgDto.PageMetaData, error) {
+) ([]dto.ProductResponse, *pkgdto.OffsetPagination, error) {
 	cacheRepo := s.dataStore.CacheRepository()
 	productRepo := s.dataStore.ProductRepository()
 
@@ -181,15 +181,15 @@ func (s *productService) GetProducts(
 			res[i] = *mapper.MapToProductResponse(product)
 		}
 
-		// Still need to get total count for metadata (could be cached separately)
+		// Still need to get total count for pagination (could be cached separately)
 		total, errCount := productRepo.Count(ctx)
 		if errCount != nil {
 			return nil, nil, httperror.NewInternalServerError("failed to count products")
 		}
 
-		metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
+		pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
 
-		return res, metadata, nil
+		return res, pagination, nil
 	}
 
 	// Cache miss or unavailable, get from database
@@ -216,13 +216,13 @@ func (s *productService) GetProducts(
 		return nil, nil, err
 	}
 
-	metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
+	pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
 
-	return res, metadata, nil
+	return res, pagination, nil
 }
 
-// GetProductsByIDs retrieves products by their IDs.
-func (s *productService) GetProductsByIDs(
+// BatchGetProductsByIDs retrieves products by their IDs.
+func (s *productService) BatchGetProductsByIDs(
 	ctx context.Context,
 	ids []uuid.UUID,
 ) ([]dto.ProductResponse, error) {

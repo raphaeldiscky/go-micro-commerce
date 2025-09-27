@@ -45,11 +45,11 @@ type OrderService interface {
 		ctx context.Context,
 		customerID uuid.UUID,
 		req dto.GetOrdersRequest,
-	) ([]dto.OrderResponse, *pkgdto.PageMetaData, error)
+	) ([]dto.OrderResponse, *pkgdto.OffsetPagination, error)
 	GetOrders(
 		ctx context.Context,
 		req dto.GetOrdersRequest,
-	) ([]dto.OrderResponse, *pkgdto.PageMetaData, error)
+	) ([]dto.OrderResponse, *pkgdto.OffsetPagination, error)
 	UpdateOrderStatus(
 		ctx context.Context,
 		id uuid.UUID,
@@ -242,7 +242,7 @@ func (s *orderService) GetOrdersByCustomer(
 	ctx context.Context,
 	customerID uuid.UUID,
 	req dto.GetOrdersRequest,
-) ([]dto.OrderResponse, *pkgdto.PageMetaData, error) {
+) ([]dto.OrderResponse, *pkgdto.OffsetPagination, error) {
 	var orders []*entity.Order
 
 	var total int64
@@ -267,16 +267,16 @@ func (s *orderService) GetOrdersByCustomer(
 		return nil, nil, httperror.NewInternalServerError("failed to count customer orders")
 	}
 
-	metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
+	pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
 
-	return res, metadata, nil
+	return res, pagination, nil
 }
 
 // GetOrders retrieves all orders with pagination.
 func (s *orderService) GetOrders(
 	ctx context.Context,
 	req dto.GetOrdersRequest,
-) ([]dto.OrderResponse, *pkgdto.PageMetaData, error) {
+) ([]dto.OrderResponse, *pkgdto.OffsetPagination, error) {
 	var orders []*entity.Order
 
 	var total int64
@@ -301,9 +301,9 @@ func (s *orderService) GetOrders(
 		return nil, nil, httperror.NewInternalServerError("failed to count orders")
 	}
 
-	metadata := pageutils.NewMetadata(total, req.Page, req.Limit)
+	pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
 
-	return res, metadata, nil
+	return res, pagination, nil
 }
 
 // UpdateOrderStatus updates only the status of an order.
