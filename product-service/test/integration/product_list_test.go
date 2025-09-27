@@ -47,7 +47,7 @@ func (s *ProductListTestSuite) TestGetProducts() {
 
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var productList dto.WebResponse[[]productDto.ProductResponse]
+	var productList dto.WebResponse[[]productDto.ProductResponse, dto.OffsetPagination]
 
 	err = s.parseResponse(resp, &productList)
 	s.Require().NoError(err)
@@ -87,7 +87,7 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var productList dto.WebResponse[[]productDto.ProductResponse]
+	var productList dto.WebResponse[[]productDto.ProductResponse, dto.OffsetPagination]
 
 	err = s.parseResponse(resp, &productList)
 	s.Require().NoError(err)

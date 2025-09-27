@@ -154,7 +154,7 @@ func (s *TestSuite) mockSagaEndpoint(w http.ResponseWriter, r *http.Request) {
 		UpdatedAt:  time.Now(),
 	}
 
-	response := pkgDto.WebResponse[dto.OrderResponse]{
+	response := pkgDto.WebResponse[dto.OrderResponse, any]{
 		Message: "Order created successfully",
 		Data:    mockOrder,
 	}

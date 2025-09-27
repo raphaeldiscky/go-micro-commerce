@@ -37,7 +37,7 @@ func (s *ProductDeleteTestSuite) TestDeleteProduct() {
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
 
-	var createResponse dto.WebResponse[productDto.ProductResponse]
+	var createResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	err = s.parseResponse(resp, &createResponse)
 	s.Require().NoError(err)

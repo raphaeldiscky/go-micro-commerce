@@ -85,10 +85,10 @@ func (pc *productClient) GetProducts(
 	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
 	defer cancel()
 
-	req := connect.NewRequest(&pb.GetProductsRequest{Ids: stringIDs})
+	req := connect.NewRequest(&pb.BatchGetProductsByIDsRequest{Ids: stringIDs})
 	pkgconnect.AddAuthHeaders(ctx, req)
 
-	resp, err := pc.client.GetProducts(ctx, req)
+	resp, err := pc.client.BatchGetProductsByIDs(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call GetProducts: %w", err)
 	}
@@ -140,7 +140,7 @@ func (pc *productClient) ReserveProducts(
 	if !resp.Msg.GetSuccess() {
 		return nil, fmt.Errorf(
 			"reservation failed from product-service: %s",
-			resp.Msg.GetErrorMessage(),
+			resp.Msg.GetMessage(),
 		)
 	}
 
@@ -187,7 +187,7 @@ func (pc *productClient) ReleaseProducts(
 	}
 
 	if !resp.Msg.GetSuccess() {
-		return fmt.Errorf("products release failed: %s", resp.Msg.GetErrorMessage())
+		return fmt.Errorf("products release failed: %s", resp.Msg.GetMessage())
 	}
 
 	return nil
@@ -223,7 +223,7 @@ func (pc *productClient) ConfirmProductsDeduction(
 	if !resp.Msg.GetSuccess() {
 		return nil, fmt.Errorf(
 			"stocks deduction confirmation failed: %s",
-			resp.Msg.GetErrorMessage(),
+			resp.Msg.GetMessage(),
 		)
 	}
 
@@ -270,7 +270,7 @@ func (pc *productClient) RestoreProducts(
 	}
 
 	if !resp.Msg.GetSuccess() {
-		return nil, fmt.Errorf("products restoration failed: %s", resp.Msg.GetErrorMessage())
+		return nil, fmt.Errorf("products restoration failed: %s", resp.Msg.GetMessage())
 	}
 
 	// Convert response to entities

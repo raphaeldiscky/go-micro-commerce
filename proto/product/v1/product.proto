@@ -9,7 +9,8 @@ import "buf/validate/validate.proto";
 
 // Product service definition
 service ProductService {
-  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+  //
+  rpc BatchGetProductsByIDs(BatchGetProductsByIDsRequest) returns (BatchGetProductsByIDsResponse);
   // ReserveProducts reduce quantity initially and adds reserved_quantity
   rpc ReserveProducts(ReserveProductsRequest) returns (ReserveProductsResponse);
   // ReleaseProducts re-add quantity and remove reserved_quantity
@@ -21,20 +22,16 @@ service ProductService {
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
-message GetProductsRequest {
-  repeated string ids = 1 [(buf.validate.field).repeated = {
-    min_items: 1,
-    max_items: 100,
-    items: {
-      string: {
-        pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-      }
-    }
-  }]; // product UUIDs
+message BatchGetProductsByIDsRequest {
+  repeated string ids = 1 [
+    (buf.validate.field).repeated.min_items = 1,
+    (buf.validate.field).repeated.max_items = 100,
+    (buf.validate.field).repeated.items.string.uuid = true
+  ]; 
 }
-
-message GetProductsResponse {
+message BatchGetProductsByIDsResponse {
   repeated Product products = 1;
+  string message = 2;
 }
 
 message ReserveProductsRequest {
@@ -49,9 +46,7 @@ message ReserveProductsRequest {
 }
 
 message ProductQuantityWithVersion {
-  string product_id = 1 [(buf.validate.field).string = {
-    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-  }];
+  string product_id = 1 [(buf.validate.field).string.uuid = true];
   int64 quantity = 2 [(buf.validate.field).int64 = {
     gt: 0,
     lte: 1000000
@@ -60,9 +55,7 @@ message ProductQuantityWithVersion {
 }
 
 message ProductQuantity {
-  string product_id = 1 [(buf.validate.field).string = {
-    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-  }];
+  string product_id = 1 [(buf.validate.field).string.uuid = true];
   int64 quantity = 2 [(buf.validate.field).int64 = {
     gt: 0,
     lte: 1000000
@@ -72,13 +65,11 @@ message ProductQuantity {
 message ReserveProductsResponse {
   bool success = 1;
   repeated Product reserved_products = 2;
-  string error_message = 3;
+  string message = 3;
 }
 
 message Product {
-  string id = 1 [(buf.validate.field).string = {
-    pattern: "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
-  }];
+  string id = 1 [(buf.validate.field).string.uuid = true];
   string name = 2 [(buf.validate.field).string = {
     min_len: 1,
     max_len: 255
@@ -103,7 +94,7 @@ message ReleaseProductsRequest {
 
 message ReleaseProductsResponse {
   bool success = 1;
-  string error_message = 2;
+  string message = 2;
 }
 
 message ConfirmProductsDeductionRequest {
@@ -116,7 +107,7 @@ message ConfirmProductsDeductionRequest {
 message ConfirmProductsDeductionResponse {
   bool success = 1;
   repeated Product updated_products = 2;
-  string error_message = 3;
+  string message = 3;
 }
 
 message RestoreProductsRequest {
@@ -133,7 +124,7 @@ message RestoreProductsRequest {
 message RestoreProductsResponse {
   bool success = 1;
   repeated Product restored_products = 2;
-  string error_message = 3;
+  string message = 3;
 }
 
 message HealthRequest {}

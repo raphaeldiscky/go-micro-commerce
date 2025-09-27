@@ -31,7 +31,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
 
-	var createResponse dto.WebResponse[productDto.ProductResponse]
+	var createResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	err = s.parseResponse(resp, &createResponse)
 	s.Require().NoError(err)
@@ -57,7 +57,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 	s.Require().NoError(err)
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var updateResponse dto.WebResponse[productDto.ProductResponse]
+	var updateResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	err = s.parseResponse(resp, &updateResponse)
 	s.Require().NoError(err)
@@ -115,7 +115,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
 
-	var createResponse dto.WebResponse[productDto.ProductResponse]
+	var createResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	err = s.parseResponse(resp, &createResponse)
 	s.Require().NoError(err)

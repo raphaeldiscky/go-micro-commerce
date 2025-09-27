@@ -55,7 +55,7 @@ type ChatService interface {
 		conversationID uuid.UUID,
 		userID uuid.UUID,
 		limit, offset int,
-	) ([]dto.MessageResponse, *pkgdto.PageMetaData, error)
+	) ([]dto.MessageResponse, *pkgdto.OffsetPagination, error)
 
 	// Participant management
 	JoinConversation(
@@ -350,7 +350,7 @@ func (s *chatService) GetConversationMessages(
 	conversationID uuid.UUID,
 	userID uuid.UUID,
 	limit, offset int,
-) ([]dto.MessageResponse, *pkgdto.PageMetaData, error) {
+) ([]dto.MessageResponse, *pkgdto.OffsetPagination, error) {
 	messageRepo := s.dataStore.MessageRepository()
 
 	// Verify user is participant
@@ -379,12 +379,11 @@ func (s *chatService) GetConversationMessages(
 	totalPages := (totalCount + int64(limit) - 1) / int64(limit)
 	page := int64((offset / limit) + 1)
 
-	paging := &pkgdto.PageMetaData{
+	paging := &pkgdto.OffsetPagination{
 		Page:      page,
 		Size:      int64(limit),
 		TotalItem: totalCount,
 		TotalPage: totalPages,
-		Links:     nil, // Links will be set in handler
 	}
 
 	return messageResponses, paging, nil

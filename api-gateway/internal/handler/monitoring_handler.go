@@ -172,7 +172,7 @@ func (h *MonitoringHandler) TestError(c echo.Context) error {
 		"timestamp": time.Now(),
 	}
 
-	return echoutils.ResponseJSON(
+	return echoutils.ResponseJSON[any, any](
 		c,
 		http.StatusInternalServerError,
 		"Test error created successfully",

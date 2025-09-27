@@ -46,15 +46,7 @@ func (h *SearchHandler) SearchProducts(c echo.Context) error {
 		return err
 	}
 
-	// Add pagination links
-	paging.Links = pageutils.NewLinks(
-		c.Request(),
-		paging.Page,
-		paging.Size,
-		paging.TotalPage,
-	)
-
-	return echoutils.ResponseOKPagination(c, results, paging)
+	return echoutils.ResponseOKOffsetPagination(c, results, paging)
 }
 
 // AutoComplete handles autocomplete requests.

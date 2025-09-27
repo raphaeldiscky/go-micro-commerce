@@ -171,14 +171,7 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		return err
 	}
 
-	paging.Links = pageutils.NewLinks(
-		c.Request(),
-		paging.Page,
-		paging.Size,
-		paging.TotalPage,
-	)
-
-	return echoutils.ResponseOKPagination(c, messages, paging)
+	return echoutils.ResponseOKOffsetPagination(c, messages, paging)
 }
 
 // JoinConversation adds a participant to a conversation.

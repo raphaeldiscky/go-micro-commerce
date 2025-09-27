@@ -36,7 +36,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
 
-	var createResponse dto.WebResponse[productDto.ProductResponse]
+	var createResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	s.Require().NoError(s.parseResponse(resp, &createResponse))
 	productID := createResponse.Data.ID
@@ -53,7 +53,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var getResponse dto.WebResponse[productDto.ProductResponse]
+	var getResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	s.Require().NoError(s.parseResponse(resp, &getResponse))
 	s.Equal("Workflow Test Product", getResponse.Data.Name)
@@ -79,7 +79,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var updateResponse dto.WebResponse[productDto.ProductResponse]
+	var updateResponse dto.WebResponse[productDto.ProductResponse, any]
 
 	s.Require().NoError(s.parseResponse(resp, &updateResponse))
 	s.Equal("Updated Workflow Product", updateResponse.Data.Name)

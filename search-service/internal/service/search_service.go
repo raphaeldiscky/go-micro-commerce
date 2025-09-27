@@ -11,7 +11,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
-	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
@@ -26,7 +26,7 @@ type SearchService interface {
 	SearchProducts(
 		ctx context.Context,
 		query *entity.SearchQuery,
-	) ([]entity.SearchResult, *pkgDto.PageMetaData, error)
+	) ([]entity.SearchResult, *pkgdto.OffsetPagination, error)
 	GetProduct(ctx context.Context, productID string) (*entity.ProductDocument, error)
 	BulkIndexProducts(ctx context.Context, products []entity.ProductDocument) error
 	InitializeIndices(ctx context.Context) error
@@ -120,7 +120,7 @@ func (s *searchService) DeleteProduct(ctx context.Context, productID string) err
 func (s *searchService) SearchProducts(
 	ctx context.Context,
 	query *entity.SearchQuery,
-) ([]entity.SearchResult, *pkgDto.PageMetaData, error) {
+) ([]entity.SearchResult, *pkgdto.OffsetPagination, error) {
 	s.logger.Infof("Searching products with query: %s", query.Query)
 
 	result, err := s.searchRepo.SearchProducts(ctx, query)
@@ -131,9 +131,13 @@ func (s *searchService) SearchProducts(
 	}
 
 	// Create pagination metadata
-	paging := pageutils.NewMetadata(result.Total, int64(result.Page), int64(result.PerPage))
+	pagination := pageutils.NewOffsetPagination(
+		result.Total,
+		int64(result.Page),
+		int64(result.PerPage),
+	)
 
-	return result.Results, paging, nil
+	return result.Results, pagination, nil
 }
 
 // GetProduct retrieves a product by ID.

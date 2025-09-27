@@ -64,6 +64,10 @@ tasks:
           bash ./scripts/format.sh {{.SERVICE}}
           bash ./scripts/build.sh {{.SERVICE}}
         fi
+  build_fe:
+    desc: Build frontend
+    cmds:
+      - cd frontend && npm run build
 
   push:
     desc: Push all services to the container registry

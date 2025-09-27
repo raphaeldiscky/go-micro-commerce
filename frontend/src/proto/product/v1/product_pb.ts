@@ -13,42 +13,45 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file product/v1/product.proto.
  */
 export const file_product_v1_product: GenFile = /*@__PURE__*/
-  fileDesc("Chhwcm9kdWN0L3YxL3Byb2R1Y3QucHJvdG8SCnByb2R1Y3QudjEicQoSR2V0UHJvZHVjdHNSZXF1ZXN0ElsKA2lkcxgBIAMoCUJOukhLkgFICAEQZCJCckAyPl5bMC05YS1mXXs4fS1bMC05YS1mXXs0fS1bMC05YS1mXXs0fS1bMC05YS1mXXs0fS1bMC05YS1mXXsxMn0kIjwKE0dldFByb2R1Y3RzUmVzcG9uc2USJQoIcHJvZHVjdHMYASADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QigAEKFlJlc2VydmVQcm9kdWN0c1JlcXVlc3QSIwoPaWRlbXBvdGVuY3lfa2V5GAEgASgJQgq6SAdyBRABGP8BEkEKBWl0ZW1zGAIgAygLMiYucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlXaXRoVmVyc2lvbkIKukgHkgEECAEQMiKwAQoaUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb24SWQoKcHJvZHVjdF9pZBgBIAEoCUJFukhCckAyPl5bMC05YS1mXXs4fS1bMC05YS1mXXs0fS1bMC05YS1mXXs0fS1bMC05YS1mXXs0fS1bMC05YS1mXXsxMn0kEh0KCHF1YW50aXR5GAIgASgDQgu6SAgiBhjAhD0gABIYCgd2ZXJzaW9uGAMgASgDQge6SAQiAigAIosBCg9Qcm9kdWN0UXVhbnRpdHkSWQoKcHJvZHVjdF9pZBgBIAEoCUJFukhCckAyPl5bMC05YS1mXXs4fS1bMC05YS1mXXs0fS1bMC05YS1mXXs0fS1bMC05YS1mXXs0fS1bMC05YS1mXXsxMn0kEh0KCHF1YW50aXR5GAIgASgDQgu6SAgiBhjAhD0gACJxChdSZXNlcnZlUHJvZHVjdHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi4KEXJlc2VydmVkX3Byb2R1Y3RzGAIgAygLMhMucHJvZHVjdC52MS5Qcm9kdWN0EhUKDWVycm9yX21lc3NhZ2UYAyABKAki1wIKB1Byb2R1Y3QSUQoCaWQYASABKAlCRbpIQnJAMj5eWzAtOWEtZl17OH0tWzAtOWEtZl17NH0tWzAtOWEtZl17NH0tWzAtOWEtZl17NH0tWzAtOWEtZl17MTJ9JBIYCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BEiYKBXByaWNlGAMgASgBQhe6SBQSEhkAAAAAgIQuQSEAAAAAAAAAABIZCghxdWFudGl0eRgEIAEoA0IHukgEIgIoABIYCgd2ZXJzaW9uGAUgASgDQge6SAQiAigAEiIKEXJlc2VydmVkX3F1YW50aXR5GAYgASgDQge6SAQiAigAEi4KCmNyZWF0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIlAKFlJlbGVhc2VQcm9kdWN0c1JlcXVlc3QSNgoFaXRlbXMYASADKAsyGy5wcm9kdWN0LnYxLlByb2R1Y3RRdWFudGl0eUIKukgHkgEECAEQMiJBChdSZWxlYXNlUHJvZHVjdHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDWVycm9yX21lc3NhZ2UYAiABKAkiWQofQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVxdWVzdBI2CgVpdGVtcxgBIAMoCzIbLnByb2R1Y3QudjEuUHJvZHVjdFF1YW50aXR5Qgq6SAeSAQQIARAyInkKIENvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLQoQdXBkYXRlZF9wcm9kdWN0cxgCIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIVCg1lcnJvcl9tZXNzYWdlGAMgASgJImwKFlJlc3RvcmVQcm9kdWN0c1JlcXVlc3QSNgoFaXRlbXMYASADKAsyGy5wcm9kdWN0LnYxLlByb2R1Y3RRdWFudGl0eUIKukgHkgEECAEQMhIaCgZyZWFzb24YAiABKAlCCrpIB3IFEAEY/wEicQoXUmVzdG9yZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIuChFyZXN0b3JlZF9wcm9kdWN0cxgCIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIVCg1lcnJvcl9tZXNzYWdlGAMgASgJIg8KDUhlYWx0aFJlcXVlc3QiOgoOSGVhbHRoUmVzcG9uc2USKAoGc3RhdHVzGAEgASgOMhgucHJvZHVjdC52MS5IZWFsdGhTdGF0dXMqZwoMSGVhbHRoU3RhdHVzEh0KGUhFQUxUSF9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUFMVEhfU1RBVFVTX1NFUlZJTkcQARIdChlIRUFMVEhfU1RBVFVTX05PVF9TRVJWSU5HEAIyrAQKDlByb2R1Y3RTZXJ2aWNlEk4KC0dldFByb2R1Y3RzEh4ucHJvZHVjdC52MS5HZXRQcm9kdWN0c1JlcXVlc3QaHy5wcm9kdWN0LnYxLkdldFByb2R1Y3RzUmVzcG9uc2USWgoPUmVzZXJ2ZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZXNlcnZlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZXNlcnZlUHJvZHVjdHNSZXNwb25zZRJaCg9SZWxlYXNlUHJvZHVjdHMSIi5wcm9kdWN0LnYxLlJlbGVhc2VQcm9kdWN0c1JlcXVlc3QaIy5wcm9kdWN0LnYxLlJlbGVhc2VQcm9kdWN0c1Jlc3BvbnNlEnUKGENvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvbhIrLnByb2R1Y3QudjEuQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVxdWVzdBosLnByb2R1Y3QudjEuQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVzcG9uc2USWgoPUmVzdG9yZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZXN0b3JlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZXN0b3JlUHJvZHVjdHNSZXNwb25zZRI/CgZIZWFsdGgSGS5wcm9kdWN0LnYxLkhlYWx0aFJlcXVlc3QaGi5wcm9kdWN0LnYxLkhlYWx0aFJlc3BvbnNlQq4BCg5jb20ucHJvZHVjdC52MUIMUHJvZHVjdFByb3RvUAFaRWdpdGh1Yi5jb20vcmFwaGFlbGRpc2NreS9nby1taWNyby1jb21tZXJjZS9wcm90by9wcm9kdWN0L3YxO3Byb2R1Y3R2MaICA1BYWKoCClByb2R1Y3QuVjHKAgpQcm9kdWN0XFYx4gIWUHJvZHVjdFxWMVxHUEJNZXRhZGF0YeoCC1Byb2R1Y3Q6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_buf_validate_validate]);
+  fileDesc("Chhwcm9kdWN0L3YxL3Byb2R1Y3QucHJvdG8SCnByb2R1Y3QudjEiPgocQmF0Y2hHZXRQcm9kdWN0c0J5SURzUmVxdWVzdBIeCgNpZHMYASADKAlCEbpIDpIBCwgBEGQiBXIDsAEBIlcKHUJhdGNoR2V0UHJvZHVjdHNCeUlEc1Jlc3BvbnNlEiUKCHByb2R1Y3RzGAEgAygLMhMucHJvZHVjdC52MS5Qcm9kdWN0Eg8KB21lc3NhZ2UYAiABKAkigAEKFlJlc2VydmVQcm9kdWN0c1JlcXVlc3QSIwoPaWRlbXBvdGVuY3lfa2V5GAEgASgJQgq6SAdyBRABGP8BEkEKBWl0ZW1zGAIgAygLMiYucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlXaXRoVmVyc2lvbkIKukgHkgEECAEQMiJzChpQcm9kdWN0UXVhbnRpdHlXaXRoVmVyc2lvbhIcCgpwcm9kdWN0X2lkGAEgASgJQgi6SAVyA7ABARIdCghxdWFudGl0eRgCIAEoA0ILukgIIgYYwIQ9IAASGAoHdmVyc2lvbhgDIAEoA0IHukgEIgIoACJOCg9Qcm9kdWN0UXVhbnRpdHkSHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESHQoIcXVhbnRpdHkYAiABKANCC7pICCIGGMCEPSAAImsKF1Jlc2VydmVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLgoRcmVzZXJ2ZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSKaAgoHUHJvZHVjdBIUCgJpZBgBIAEoCUIIukgFcgOwAQESGAoEbmFtZRgCIAEoCUIKukgHcgUQARj/ARImCgVwcmljZRgDIAEoAUIXukgUEhIZAAAAAICELkEhAAAAAAAAAAASGQoIcXVhbnRpdHkYBCABKANCB7pIBCICKAASGAoHdmVyc2lvbhgFIAEoA0IHukgEIgIoABIiChFyZXNlcnZlZF9xdWFudGl0eRgGIAEoA0IHukgEIgIoABIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJQChZSZWxlYXNlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDIiOwoXUmVsZWFzZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIlkKH0NvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QSNgoFaXRlbXMYASADKAsyGy5wcm9kdWN0LnYxLlByb2R1Y3RRdWFudGl0eUIKukgHkgEECAEQMiJzCiBDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi0KEHVwZGF0ZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJsChZSZXN0b3JlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDISGgoGcmVhc29uGAIgASgJQgq6SAdyBRABGP8BImsKF1Jlc3RvcmVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLgoRcmVzdG9yZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSIPCg1IZWFsdGhSZXF1ZXN0IjoKDkhlYWx0aFJlc3BvbnNlEigKBnN0YXR1cxgBIAEoDjIYLnByb2R1Y3QudjEuSGVhbHRoU3RhdHVzKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMsoECg5Qcm9kdWN0U2VydmljZRJsChVCYXRjaEdldFByb2R1Y3RzQnlJRHMSKC5wcm9kdWN0LnYxLkJhdGNoR2V0UHJvZHVjdHNCeUlEc1JlcXVlc3QaKS5wcm9kdWN0LnYxLkJhdGNoR2V0UHJvZHVjdHNCeUlEc1Jlc3BvbnNlEloKD1Jlc2VydmVQcm9kdWN0cxIiLnByb2R1Y3QudjEuUmVzZXJ2ZVByb2R1Y3RzUmVxdWVzdBojLnByb2R1Y3QudjEuUmVzZXJ2ZVByb2R1Y3RzUmVzcG9uc2USWgoPUmVsZWFzZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZWxlYXNlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZWxlYXNlUHJvZHVjdHNSZXNwb25zZRJ1ChhDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb24SKy5wcm9kdWN0LnYxLkNvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QaLC5wcm9kdWN0LnYxLkNvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlc3BvbnNlEloKD1Jlc3RvcmVQcm9kdWN0cxIiLnByb2R1Y3QudjEuUmVzdG9yZVByb2R1Y3RzUmVxdWVzdBojLnByb2R1Y3QudjEuUmVzdG9yZVByb2R1Y3RzUmVzcG9uc2USPwoGSGVhbHRoEhkucHJvZHVjdC52MS5IZWFsdGhSZXF1ZXN0GhoucHJvZHVjdC52MS5IZWFsdGhSZXNwb25zZUKuAQoOY29tLnByb2R1Y3QudjFCDFByb2R1Y3RQcm90b1ABWkVnaXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vcHJvZHVjdC92MTtwcm9kdWN0djGiAgNQWFiqAgpQcm9kdWN0LlYxygIKUHJvZHVjdFxWMeICFlByb2R1Y3RcVjFcR1BCTWV0YWRhdGHqAgtQcm9kdWN0OjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_buf_validate_validate]);
 
 /**
- * @generated from message product.v1.GetProductsRequest
+ * @generated from message product.v1.BatchGetProductsByIDsRequest
  */
-export type GetProductsRequest = Message<"product.v1.GetProductsRequest"> & {
+export type BatchGetProductsByIDsRequest = Message<"product.v1.BatchGetProductsByIDsRequest"> & {
   /**
-   * product UUIDs
-   *
    * @generated from field: repeated string ids = 1;
    */
   ids: string[];
 };
 
 /**
- * Describes the message product.v1.GetProductsRequest.
- * Use `create(GetProductsRequestSchema)` to create a new message.
+ * Describes the message product.v1.BatchGetProductsByIDsRequest.
+ * Use `create(BatchGetProductsByIDsRequestSchema)` to create a new message.
  */
-export const GetProductsRequestSchema: GenMessage<GetProductsRequest> = /*@__PURE__*/
+export const BatchGetProductsByIDsRequestSchema: GenMessage<BatchGetProductsByIDsRequest> = /*@__PURE__*/
   messageDesc(file_product_v1_product, 0);
 
 /**
- * @generated from message product.v1.GetProductsResponse
+ * @generated from message product.v1.BatchGetProductsByIDsResponse
  */
-export type GetProductsResponse = Message<"product.v1.GetProductsResponse"> & {
+export type BatchGetProductsByIDsResponse = Message<"product.v1.BatchGetProductsByIDsResponse"> & {
   /**
    * @generated from field: repeated product.v1.Product products = 1;
    */
   products: Product[];
+
+  /**
+   * @generated from field: string message = 2;
+   */
+  message: string;
 };
 
 /**
- * Describes the message product.v1.GetProductsResponse.
- * Use `create(GetProductsResponseSchema)` to create a new message.
+ * Describes the message product.v1.BatchGetProductsByIDsResponse.
+ * Use `create(BatchGetProductsByIDsResponseSchema)` to create a new message.
  */
-export const GetProductsResponseSchema: GenMessage<GetProductsResponse> = /*@__PURE__*/
+export const BatchGetProductsByIDsResponseSchema: GenMessage<BatchGetProductsByIDsResponse> = /*@__PURE__*/
   messageDesc(file_product_v1_product, 1);
 
 /**
@@ -139,9 +142,9 @@ export type ReserveProductsResponse = Message<"product.v1.ReserveProductsRespons
   reservedProducts: Product[];
 
   /**
-   * @generated from field: string error_message = 3;
+   * @generated from field: string message = 3;
    */
-  errorMessage: string;
+  message: string;
 };
 
 /**
@@ -234,9 +237,9 @@ export type ReleaseProductsResponse = Message<"product.v1.ReleaseProductsRespons
   success: boolean;
 
   /**
-   * @generated from field: string error_message = 2;
+   * @generated from field: string message = 2;
    */
-  errorMessage: string;
+  message: string;
 };
 
 /**
@@ -278,9 +281,9 @@ export type ConfirmProductsDeductionResponse = Message<"product.v1.ConfirmProduc
   updatedProducts: Product[];
 
   /**
-   * @generated from field: string error_message = 3;
+   * @generated from field: string message = 3;
    */
-  errorMessage: string;
+  message: string;
 };
 
 /**
@@ -329,9 +332,9 @@ export type RestoreProductsResponse = Message<"product.v1.RestoreProductsRespons
   restoredProducts: Product[];
 
   /**
-   * @generated from field: string error_message = 3;
+   * @generated from field: string message = 3;
    */
-  errorMessage: string;
+  message: string;
 };
 
 /**
@@ -406,12 +409,12 @@ export const HealthStatusSchema: GenEnum<HealthStatus> = /*@__PURE__*/
  */
 export const ProductService: GenService<{
   /**
-   * @generated from rpc product.v1.ProductService.GetProducts
+   * @generated from rpc product.v1.ProductService.BatchGetProductsByIDs
    */
-  getProducts: {
+  batchGetProductsByIDs: {
     methodKind: "unary";
-    input: typeof GetProductsRequestSchema;
-    output: typeof GetProductsResponseSchema;
+    input: typeof BatchGetProductsByIDsRequestSchema;
+    output: typeof BatchGetProductsByIDsResponseSchema;
   },
   /**
    * ReserveProducts reduce quantity initially and adds reserved_quantity
