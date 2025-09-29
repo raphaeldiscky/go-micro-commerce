@@ -1,0 +1,84 @@
+connect:
+  post:
+    tags:
+      - Connection
+    summary: Request WebSocket connection
+    description: Obtain connection ticket and node address for WebSocket establishment
+    operationId: requestConnection
+    requestBody:
+      required: false
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/connection.yaml#/ConnectionRequest"
+    responses:
+      "200":
+        description: Connection information returned successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/connection.yaml#/ChatConnectionResponse"
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"
+
+nodes-health:
+  get:
+    tags:
+      - Connection
+    summary: Get node health status
+    description: Retrieve health status of all available chat nodes
+    operationId: getNodeHealth
+    responses:
+      "200":
+        description: Node health information returned successfully
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nodes:
+                  type: array
+                  items:
+                    $ref: "../schemas/connection.yaml#/NodeHealthResponse"
+                count:
+                  type: integer
+                  description: Number of nodes
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"
+
+validate-ticket:
+  post:
+    tags:
+      - Connection
+    summary: Validate connection ticket
+    description: Validate a WebSocket connection ticket for testing purposes
+    operationId: validateTicket
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - ticket
+            properties:
+              ticket:
+                type: string
+                description: JWT connection ticket
+    responses:
+      "200":
+        description: Ticket validated successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/connection.yaml#/ConnectionTicketClaims"
+      "400":
+        $ref: "../schemas/responses.yaml#/BadRequestError"
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"

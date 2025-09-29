@@ -1,0 +1,136 @@
+syntax = "proto3";
+
+package chat.conversation.v1;
+
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/chat/conversation/v1;conversationv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "buf/validate/validate.proto";
+
+// ConversationService handles conversation data management
+service ConversationService {
+  // GetUserConversations retrieves all conversations for a user
+  rpc GetUserConversations(GetUserConversationsRequest) returns (GetUserConversationsResponse);
+  // CreateConversation creates a new conversation
+  rpc CreateConversation(CreateConversationRequest) returns (CreateConversationResponse);
+  // GetConversation retrieves a conversation by ID
+  rpc GetConversation(GetConversationRequest) returns (GetConversationResponse);
+  // UpdateConversationStatus updates conversation status
+  rpc UpdateConversationStatus(UpdateConversationStatusRequest) returns (UpdateConversationStatusResponse);
+  // JoinConversation adds a participant to a conversation (data operation)
+  rpc JoinConversation(JoinConversationRequest) returns (JoinConversationResponse);
+}
+
+// GetUserConversationsRequest represents the request to get user conversations
+message GetUserConversationsRequest {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  UserType user_type = 2;
+}
+
+// GetUserConversationsResponse represents the response for user conversations
+message GetUserConversationsResponse {
+  repeated Conversation conversations = 1;
+}
+
+// CreateConversationRequest represents the request to create a new conversation
+message CreateConversationRequest {
+  optional string subject = 1 [(buf.validate.field).string = {
+    max_len: 255
+  }];
+  int32 priority = 2 [(buf.validate.field).int32 = {
+    gte: 1,
+    lte: 4
+  }];
+}
+
+// CreateConversationResponse represents the response for conversation creation
+message CreateConversationResponse {
+  Conversation conversation = 1;
+}
+
+// GetConversationRequest represents the request to get a conversation
+message GetConversationRequest {
+  string conversation_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+// GetConversationResponse represents the response for getting a conversation
+message GetConversationResponse {
+  Conversation conversation = 1;
+}
+
+// JoinConversationRequest represents the request to join a conversation
+message JoinConversationRequest {
+  string conversation_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  UserType user_type = 3;
+  ParticipantRole role = 4;
+}
+
+// JoinConversationResponse represents the response for joining a conversation
+message JoinConversationResponse {
+  Participant participant = 1;
+}
+
+// UpdateConversationStatusRequest represents the request to update conversation status
+message UpdateConversationStatusRequest {
+  string conversation_id = 1 [(buf.validate.field).string.uuid = true];
+  ConversationStatus status = 2;
+}
+
+// UpdateConversationStatusResponse represents the response for updating conversation status
+message UpdateConversationStatusResponse {
+  Conversation conversation = 1;
+}
+
+// Conversation represents a chat conversation
+message Conversation {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  ConversationStatus status = 2;
+  optional string subject = 3;
+  int32 priority = 4 [(buf.validate.field).int32 = {
+    gte: 1,
+    lte: 4
+  }];
+  google.protobuf.Struct metadata = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+  optional google.protobuf.Timestamp ended_at = 8;
+}
+
+// Participant represents a conversation participant
+message Participant {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string conversation_id = 2 [(buf.validate.field).string.uuid = true];
+  string user_id = 3 [(buf.validate.field).string.uuid = true];
+  UserType user_type = 4;
+  ParticipantRole role = 5;
+  google.protobuf.Timestamp joined_at = 6;
+  optional google.protobuf.Timestamp left_at = 7;
+  bool is_active = 8;
+}
+
+// ConversationStatus represents the status of a chat conversation
+enum ConversationStatus {
+  CONVERSATION_STATUS_UNSPECIFIED = 0;
+  CONVERSATION_STATUS_WAITING = 1;      // Waiting for admin assignment
+  CONVERSATION_STATUS_ACTIVE = 2;       // Active conversation
+  CONVERSATION_STATUS_ENDED = 3;        // Ended conversation
+  CONVERSATION_STATUS_TRANSFERRED = 4;  // Transferred to another admin
+}
+
+// UserType represents the type of user in the chat system
+enum UserType {
+  USER_TYPE_UNSPECIFIED = 0;
+  USER_TYPE_USER = 1;    // Regular user/customer
+  USER_TYPE_ADMIN = 2;   // Admin/support agent
+}
+
+// ParticipantRole represents the role of a participant in a conversation
+enum ParticipantRole {
+  PARTICIPANT_ROLE_UNSPECIFIED = 0;
+  PARTICIPANT_ROLE_PARTICIPANT = 1;  // Regular participant
+  PARTICIPANT_ROLE_MODERATOR = 2;    // Moderator with elevated permissions
+  PARTICIPANT_ROLE_OBSERVER = 3;     // Observer with read-only access
+}

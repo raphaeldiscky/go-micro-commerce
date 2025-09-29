@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package chat.message.v1;
+
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/chat/message/v1;messagev1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "buf/validate/validate.proto";
+
+// MessageService handles message data operations (read-only)
+service MessageService {
+  // GetMessages retrieves messages from a conversation with pagination
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+  // GetMessage retrieves a single message by ID
+  rpc GetMessage(GetMessageRequest) returns (GetMessageResponse);
+}
+
+// GetMessagesRequest represents the request to get conversation messages
+message GetMessagesRequest {
+  string conversation_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  int32 limit = 3 [(buf.validate.field).int32 = {
+    gte: 1,
+    lte: 100
+  }];
+  int32 offset = 4 [(buf.validate.field).int32.gte = 0];
+}
+
+// GetMessagesResponse represents the response for getting messages
+message GetMessagesResponse {
+  repeated Message messages = 1;
+  Pagination pagination = 2;
+}
+
+// GetMessageRequest represents the request to get a single message
+message GetMessageRequest {
+  string message_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+// GetMessageResponse represents the response for getting a single message
+message GetMessageResponse {
+  Message message = 1;
+}
+
+// Message represents a chat message
+message Message {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string conversation_id = 2 [(buf.validate.field).string.uuid = true];
+  optional string sender_id = 3 [(buf.validate.field).string.uuid = true];
+  string content = 4 [(buf.validate.field).string = {
+    min_len: 1,
+    max_len: 1000
+  }];
+  MessageType message_type = 5;
+  google.protobuf.Struct metadata = 6;
+  bool is_system = 7;
+  google.protobuf.Timestamp created_at = 8;
+}
+
+// Pagination represents pagination information
+message Pagination {
+  int64 total = 1;
+  int32 page = 2;
+  int32 per_page = 3;
+  int32 total_pages = 4;
+  bool has_next = 5;
+  bool has_prev = 6;
+}
+
+// MessageType represents the type of message
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0;
+  MESSAGE_TYPE_TEXT = 1;    // Text message
+  MESSAGE_TYPE_IMAGE = 2;   // Image message
+  MESSAGE_TYPE_FILE = 3;    // File attachment message
+  MESSAGE_TYPE_SYSTEM = 4;  // System-generated message
+}

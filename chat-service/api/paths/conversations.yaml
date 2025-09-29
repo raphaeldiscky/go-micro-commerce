@@ -1,0 +1,110 @@
+conversations:
+  get:
+    tags:
+      - Conversations
+    summary: Get user conversations
+    description: Retrieve all conversations for the authenticated user
+    operationId: getUserConversations
+    responses:
+      "200":
+        description: Conversations retrieved successfully
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "../schemas/conversation.yaml#/ConversationResponse"
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"
+
+  post:
+    tags:
+      - Conversations
+    summary: Create new conversation
+    description: Create a new conversation with optional subject and priority
+    operationId: createConversation
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "../schemas/conversation.yaml#/CreateConversationRequest"
+    responses:
+      "201":
+        description: Conversation created successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/conversation.yaml#/ConversationResponse"
+      "400":
+        $ref: "../schemas/responses.yaml#/BadRequestError"
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"
+
+conversation-by-id:
+  get:
+    tags:
+      - Conversations
+    summary: Get conversation by ID
+    description: Retrieve a specific conversation by its ID
+    operationId: getConversation
+    parameters:
+      - name: conversationID
+        in: path
+        required: true
+        description: UUID of the conversation
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Conversation retrieved successfully
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/conversation.yaml#/ConversationResponse"
+      "400":
+        $ref: "../schemas/responses.yaml#/BadRequestError"
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../schemas/responses.yaml#/NotFoundError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"
+
+join-conversation:
+  post:
+    tags:
+      - Conversations
+    summary: Join conversation
+    description: Add the current user as a participant to the conversation
+    operationId: joinConversation
+    parameters:
+      - name: conversationID
+        in: path
+        required: true
+        description: UUID of the conversation
+        schema:
+          type: string
+          format: uuid
+    responses:
+      "200":
+        description: Successfully joined conversation
+        content:
+          application/json:
+            schema:
+              $ref: "../schemas/participant.yaml#/ParticipantResponse"
+      "400":
+        $ref: "../schemas/responses.yaml#/BadRequestError"
+      "401":
+        $ref: "../schemas/responses.yaml#/UnauthorizedError"
+      "404":
+        $ref: "../schemas/responses.yaml#/NotFoundError"
+      "409":
+        $ref: "../schemas/responses.yaml#/ConflictError"
+      "500":
+        $ref: "../schemas/responses.yaml#/InternalServerError"

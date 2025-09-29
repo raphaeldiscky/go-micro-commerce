@@ -43,13 +43,7 @@ type ChatService interface {
 		conversationID uuid.UUID,
 	) (*dto.ConversationResponse, error)
 
-	// Message management
-	SendMessage(
-		ctx context.Context,
-		req *dto.CreateMessageRequest,
-		conversationID uuid.UUID,
-		senderID uuid.UUID,
-	) (*dto.MessageResponse, error)
+	// Message management (read-only - sending handled via WebSocket)
 	GetConversationMessages(
 		ctx context.Context,
 		conversationID uuid.UUID,
@@ -289,60 +283,7 @@ func (s *chatService) EndConversation(
 	})
 }
 
-// SendMessage sends a message to a conversation.
-func (s *chatService) SendMessage(
-	ctx context.Context,
-	req *dto.CreateMessageRequest,
-	senderID uuid.UUID,
-	conversationID uuid.UUID,
-) (*dto.MessageResponse, error) {
-	var result *dto.MessageResponse
-
-	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		messageRepo := ds.MessageRepository()
-
-		// Verify sender is participant
-		if err := s.conversationAccess.VerifyActiveUserAccess(ctx, conversationID, senderID); err != nil {
-			return err
-		}
-
-		// Create message entity
-		message, err := entity.NewMessage(
-			conversationID,
-			senderID,
-			req.Content,
-			req.MessageType,
-		)
-		if err != nil {
-			return httperror.NewBadRequestError(fmt.Sprintf("failed to create message: %v", err))
-		}
-
-		// Add metadata if provided
-		if req.Metadata != nil {
-			message.Metadata = req.Metadata
-		}
-
-		// Save message
-		savedMessage, err := messageRepo.Create(ctx, message)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to save message")
-		}
-
-		result = mapper.MapToMessageResponse(savedMessage)
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Broadcast message to conversation participants via WebSocket
-	s.broadcastMessage(conversationID, result)
-
-	s.logger.Infof("Message sent by user %s to conversation %s", senderID, conversationID)
-
-	return result, nil
-}
+// NOTE: SendMessage removed - message sending now handled directly via WebSocket in chat_connection.go
 
 // GetConversationMessages retrieves messages for a conversation with pagination.
 func (s *chatService) GetConversationMessages(
@@ -555,32 +496,7 @@ func (s *chatService) GetWaitingConversations(
 	return responses, nil
 }
 
-// broadcastMessage broadcasts a message to conversation participants via WebSocket.
-func (s *chatService) broadcastMessage(
-	conversationID uuid.UUID,
-	message *dto.MessageResponse,
-) {
-	if s.hub == nil {
-		return
-	}
-
-	wsMessage, err := websocket.NewChatMessage(
-		conversationID,
-		*message.SenderID,
-		message.Content,
-		message.MessageType,
-	)
-	if err != nil {
-		s.logger.Errorf("Failed to create WebSocket message: %v", err)
-		return
-	}
-
-	err = s.hub.BroadcastToConversation(conversationID, wsMessage)
-	if err != nil {
-		s.logger.Errorf("Failed to broadcast message: %v", err)
-		return
-	}
-}
+// NOTE: broadcastMessage removed - broadcasting now handled directly in WebSocket handlers
 
 // broadcastSystemMessage broadcasts a system message to conversation participants.
 func (s *chatService) broadcastSystemMessage(

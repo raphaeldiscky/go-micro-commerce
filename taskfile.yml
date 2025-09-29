@@ -315,6 +315,20 @@ tasks:
     cmds:
       - buf generate
 
+  oapi:
+    desc: Generate OpenAPI files
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating OpenAPI files for all services..."
+          bash ./scripts/oapi.sh
+        else
+          echo "Generating OpenAPI files for {{.SERVICE}}..."
+          bash ./scripts/oapi.sh {{.SERVICE}}
+        fi
+
   sqlc:
     desc: Generate SQLC files
     vars:

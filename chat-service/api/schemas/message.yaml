@@ -1,0 +1,39 @@
+MessageResponse:
+  type: object
+  required:
+    - id
+    - conversation_id
+    - content
+    - message_type
+    - is_system
+    - created_at
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Message ID
+    conversation_id:
+      type: string
+      format: uuid
+      description: Parent conversation ID
+    sender_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Sender user ID (null for system messages)
+    content:
+      type: string
+      description: Message content
+    message_type:
+      $ref: "./enums.yaml#/MessageType"
+    metadata:
+      type: object
+      additionalProperties: true
+      description: Additional message metadata
+    is_system:
+      type: boolean
+      description: Whether this is a system-generated message
+    created_at:
+      type: string
+      format: date-time
+      description: Message creation timestamp
