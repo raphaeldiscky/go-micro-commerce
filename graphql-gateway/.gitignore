@@ -1,0 +1,5 @@
+# Generated supergraph schema
+supergraph-schema.graphql
+
+# Rover cache
+.rover/

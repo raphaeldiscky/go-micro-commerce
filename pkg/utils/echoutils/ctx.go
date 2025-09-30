@@ -14,7 +14,7 @@ import (
 
 // GetUserIDFromContext retrieves the user ID (UUID) from the context safely.
 func GetUserIDFromContext(ctx echo.Context) uuid.UUID {
-	if val, ok := ctx.Get(string(constant.CtxUserID)).(uuid.UUID); ok {
+	if val, ok := ctx.Get(string(constant.CtxKeyUserID)).(uuid.UUID); ok {
 		return val
 	}
 
@@ -23,7 +23,7 @@ func GetUserIDFromContext(ctx echo.Context) uuid.UUID {
 
 // GetEmailFromContext retrieves the user email from the context safely.
 func GetEmailFromContext(ctx echo.Context) string {
-	val, ok := ctx.Get(string(constant.CtxEmail)).(string)
+	val, ok := ctx.Get(string(constant.CtxKeyEmail)).(string)
 	if !ok {
 		return ""
 	}
@@ -33,7 +33,7 @@ func GetEmailFromContext(ctx echo.Context) string {
 
 // GetRolesFromContext retrieves the user roles from the context safely.
 func GetRolesFromContext(ctx echo.Context) []string {
-	val, ok := ctx.Get(string(constant.CtxRoles)).([]string)
+	val, ok := ctx.Get(string(constant.CtxKeyRoles)).([]string)
 	if !ok {
 		return nil
 	}
@@ -43,7 +43,7 @@ func GetRolesFromContext(ctx echo.Context) []string {
 
 // GetIsActiveFromContext checks if the user is active based on the context safely.
 func GetIsActiveFromContext(ctx echo.Context) bool {
-	val, ok := ctx.Get(string(constant.CtxIsActive)).(bool)
+	val, ok := ctx.Get(string(constant.CtxKeyIsActive)).(bool)
 	if !ok {
 		return false
 	}
@@ -58,19 +58,19 @@ func ContextWithUserInfo(c echo.Context) context.Context {
 
 	// Extract user info from Echo context and add to Go context
 	if userID := GetUserIDFromContext(c); userID != uuid.Nil {
-		ctx = context.WithValue(ctx, constant.CtxUserID, userID)
+		ctx = context.WithValue(ctx, constant.CtxKeyUserID, userID)
 	}
 
 	if email := GetEmailFromContext(c); email != "" {
-		ctx = context.WithValue(ctx, constant.CtxEmail, email)
+		ctx = context.WithValue(ctx, constant.CtxKeyEmail, email)
 	}
 
 	if roles := GetRolesFromContext(c); len(roles) > 0 {
-		ctx = context.WithValue(ctx, constant.CtxRoles, roles)
+		ctx = context.WithValue(ctx, constant.CtxKeyRoles, roles)
 	}
 
 	if isActive := GetIsActiveFromContext(c); isActive {
-		ctx = context.WithValue(ctx, constant.CtxIsActive, isActive)
+		ctx = context.WithValue(ctx, constant.CtxKeyIsActive, isActive)
 	}
 
 	return ctx
@@ -83,20 +83,20 @@ func PropagateUserContextToBackground(ctx context.Context) context.Context {
 	bgCtx := context.Background()
 
 	// Copy user authentication information
-	if userID := ctx.Value(constant.CtxUserID); userID != nil {
-		bgCtx = context.WithValue(bgCtx, constant.CtxUserID, userID)
+	if userID := ctx.Value(constant.CtxKeyUserID); userID != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxKeyUserID, userID)
 	}
 
-	if email := ctx.Value(constant.CtxEmail); email != nil {
-		bgCtx = context.WithValue(bgCtx, constant.CtxEmail, email)
+	if email := ctx.Value(constant.CtxKeyEmail); email != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxKeyEmail, email)
 	}
 
-	if roles := ctx.Value(constant.CtxRoles); roles != nil {
-		bgCtx = context.WithValue(bgCtx, constant.CtxRoles, roles)
+	if roles := ctx.Value(constant.CtxKeyRoles); roles != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxKeyRoles, roles)
 	}
 
-	if isActive := ctx.Value(constant.CtxIsActive); isActive != nil {
-		bgCtx = context.WithValue(bgCtx, constant.CtxIsActive, isActive)
+	if isActive := ctx.Value(constant.CtxKeyIsActive); isActive != nil {
+		bgCtx = context.WithValue(bgCtx, constant.CtxKeyIsActive, isActive)
 	}
 
 	return bgCtx
@@ -106,28 +106,28 @@ func PropagateUserContextToBackground(ctx context.Context) context.Context {
 func GetUserAuthContexts(ctx context.Context) (dto.UserAuthInfo, error) {
 	var uc dto.UserAuthInfo
 
-	userID, ok := ctx.Value(constant.CtxUserID).(uuid.UUID)
+	userID, ok := ctx.Value(constant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return uc, errors.New("failed to get user ID from context")
 	}
 
 	uc.UserID = userID
 
-	email, ok := ctx.Value(constant.CtxEmail).(string)
+	email, ok := ctx.Value(constant.CtxKeyEmail).(string)
 	if !ok {
 		return uc, errors.New("failed to get email from context")
 	}
 
 	uc.Email = email
 
-	roles, ok := ctx.Value(constant.CtxRoles).([]string)
+	roles, ok := ctx.Value(constant.CtxKeyRoles).([]string)
 	if !ok {
 		return uc, errors.New("failed to get roles from context")
 	}
 
 	uc.Roles = roles
 
-	isActive, ok := ctx.Value(constant.CtxIsActive).(bool)
+	isActive, ok := ctx.Value(constant.CtxKeyIsActive).(bool)
 	if !ok {
 		return uc, errors.New("failed to get is active from context")
 	}
@@ -139,10 +139,10 @@ func GetUserAuthContexts(ctx context.Context) (dto.UserAuthInfo, error) {
 
 // AddUserAuthToContexts adds user authentication information to the contexts.
 func AddUserAuthToContexts(ctx context.Context, uc dto.UserAuthInfo) context.Context {
-	ctx = context.WithValue(ctx, constant.CtxUserID, uc.UserID)
-	ctx = context.WithValue(ctx, constant.CtxEmail, uc.Email)
-	ctx = context.WithValue(ctx, constant.CtxRoles, uc.Roles)
-	ctx = context.WithValue(ctx, constant.CtxIsActive, uc.IsActive)
+	ctx = context.WithValue(ctx, constant.CtxKeyUserID, uc.UserID)
+	ctx = context.WithValue(ctx, constant.CtxKeyEmail, uc.Email)
+	ctx = context.WithValue(ctx, constant.CtxKeyRoles, uc.Roles)
+	ctx = context.WithValue(ctx, constant.CtxKeyIsActive, uc.IsActive)
 
 	return ctx
 }

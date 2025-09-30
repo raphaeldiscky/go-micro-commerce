@@ -43,19 +43,19 @@ func (c *ClientAuthInterceptor) addUserInfoToMetadata(ctx context.Context) conte
 	mdMap := make(map[string]string)
 
 	// Extract user information from context
-	if userID, ok := ctx.Value(constant.CtxUserID).(uuid.UUID); ok {
+	if userID, ok := ctx.Value(constant.CtxKeyUserID).(uuid.UUID); ok {
 		mdMap[strings.ToLower(constant.XUserID)] = userID.String()
 	}
 
-	if email, ok := ctx.Value(constant.CtxEmail).(string); ok {
+	if email, ok := ctx.Value(constant.CtxKeyEmail).(string); ok {
 		mdMap[strings.ToLower(constant.XEmail)] = email
 	}
 
-	if roles, ok := ctx.Value(constant.CtxRoles).([]string); ok {
+	if roles, ok := ctx.Value(constant.CtxKeyRoles).([]string); ok {
 		mdMap[strings.ToLower(constant.XRoles)] = strings.Join(roles, ",")
 	}
 
-	if isActive, ok := ctx.Value(constant.CtxIsActive).(bool); ok {
+	if isActive, ok := ctx.Value(constant.CtxKeyIsActive).(bool); ok {
 		mdMap[strings.ToLower(constant.XIsActive)] = strconv.FormatBool(isActive)
 	}
 

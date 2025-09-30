@@ -1,0 +1,39 @@
+# User entity - owned by auth-service
+type User @key(fields: "id") {
+  id: ID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  isActive: Boolean!
+  emailVerified: Boolean!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+input RegisterUserInput {
+  email: String!
+  password: String!
+  firstName: String!
+  lastName: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type AuthPayload {
+  token: String!
+  refreshToken: String!
+  user: User!
+}
+
+extend type Query {
+  me: User
+  user(id: ID!): User
+}
+
+extend type Mutation {
+  register(input: RegisterUserInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+}

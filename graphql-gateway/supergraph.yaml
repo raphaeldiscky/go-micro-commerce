@@ -1,0 +1,10 @@
+federation_version: 2
+subgraphs:
+  chat-service:
+    routing_url: http://chat-service:8088/graph
+    schema:
+      subgraph_url: http://localhost:8088/graph
+  auth-service:
+    routing_url: http://auth-service:8081/graph
+    schema:
+      subgraph_url: http://localhost:8081/graph

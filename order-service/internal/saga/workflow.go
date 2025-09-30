@@ -58,7 +58,7 @@ func (wc *WorkflowContext) OrderID() uuid.UUID {
 
 // GetXEmail returns the X-Email header from the context.
 func (wc *WorkflowContext) GetXEmail() (string, error) {
-	email, ok := wc.ctx.Value(pkgconstant.CtxEmail).(string)
+	email, ok := wc.ctx.Value(pkgconstant.CtxKeyEmail).(string)
 	if !ok {
 		return "", errors.New("X-Email header not found in context")
 	}

@@ -259,30 +259,34 @@ func (gw *Gateway) copyHeaders(src, dst http.Header) {
 // addUserHeaders adds user information headers to the request.
 func (gw *Gateway) addUserHeaders(c echo.Context, req *http.Request) {
 	// Get user information from context (set by Authorization middleware)
-	if userID := c.Get(string(constant.CtxUserID)); userID != nil {
+	if userID := c.Get(string(constant.CtxKeyUserID)); userID != nil {
 		if id, ok := userID.(uuid.UUID); ok {
 			req.Header.Set(constant.XUserID, id.String())
 		}
 	}
 
-	if email := c.Get(string(constant.CtxEmail)); email != nil {
+	if email := c.Get(string(constant.CtxKeyEmail)); email != nil {
 		if emailStr, ok := email.(string); ok {
 			req.Header.Set(constant.XEmail, emailStr)
 		}
 	}
 
-	if roles := c.Get(string(constant.CtxRoles)); roles != nil {
+	if roles := c.Get(string(constant.CtxKeyRoles)); roles != nil {
 		if rolesSlice, ok := roles.([]string); ok {
 			// Join roles with comma or send as JSON
 			req.Header.Set(constant.XRoles, strings.Join(rolesSlice, ","))
 		}
 	}
 
-	if isActive := c.Get(string(constant.CtxIsActive)); isActive != nil {
+	if isActive := c.Get(string(constant.CtxKeyIsActive)); isActive != nil {
 		if active, ok := isActive.(bool); ok {
 			req.Header.Set(constant.XIsActive, strconv.FormatBool(active))
 		}
 	}
+
+	// Add client metadata for audit logging and security
+	req.Header.Set(constant.XClientIP, c.RealIP())
+	req.Header.Set(constant.XUserAgent, c.Request().UserAgent())
 }
 
 // ProxyToConnectRPC creates a handler that proxies Connect-RPC requests to a service,

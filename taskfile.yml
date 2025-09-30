@@ -343,6 +343,28 @@ tasks:
           bash ./scripts/graphql.sh {{.SERVICE}}
         fi
 
+  compose_graphql:
+    desc: Compose Apollo Federation supergraph schema
+    cmds:
+      - bash ./scripts/compose-supergraph.sh
+
+  start_graphql_gateway:
+    desc: Start GraphQL Gateway
+    cmds:
+      - docker-compose -f {{.DC_DIR}}/graphql-gateway.yaml up -d
+
+  stop_graphql_gateway:
+    desc: Stop GraphQL Gateway
+    cmds:
+      - docker-compose -f {{.DC_DIR}}/graphql-gateway.yaml down
+
+  restart_graphql_gateway:
+    desc: Restart GraphQL Gateway
+    cmds:
+      - task: stop_graphql_gateway
+      - task: sleep
+      - task: start_graphql_gateway
+
   sqlc:
     desc: Generate SQLC files
     vars:
