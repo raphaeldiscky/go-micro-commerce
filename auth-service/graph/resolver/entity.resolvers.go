@@ -15,13 +15,13 @@ import (
 )
 
 // FindUserByID is the resolver for the findUserByID field.
-func (r *entityResolver) FindUserByID(_ context.Context, id string) (*graph.User, error) {
+func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*graph.User, error) {
 	userID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid user ID format")
 	}
 
-	user, err := r.authService.GetUser(context.Background(), userID)
+	user, err := r.authService.GetUser(ctx, userID)
 	if err != nil {
 		r.logger.Error("Failed to find user by ID", "id", id, "error", err)
 		return nil, err

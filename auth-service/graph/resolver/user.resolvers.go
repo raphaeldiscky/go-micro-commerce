@@ -25,7 +25,7 @@ func (r *mutationResolver) Register(
 	req := &dto.RegisterRequest{
 		Email:     input.Email,
 		Password:  input.Password,
-		Username:  input.Email, // Use email as username for GraphQL
+		Username:  input.Username, // Use provided username
 		FirstName: input.FirstName,
 		LastName:  input.LastName,
 	}

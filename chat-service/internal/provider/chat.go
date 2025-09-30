@@ -58,5 +58,6 @@ func SetupChat(
 	graphqlResolver := resolver.NewResolver(chatService, appLogger)
 
 	// Setup routes
-	routes.SetupChatRoutes(e, chatHandler, connectionHandler, graphqlResolver)
+	routes.SetupChatRoutes(e, chatHandler, connectionHandler)
+	routes.SetupGraphQLRoutes(e, graphqlResolver)
 }

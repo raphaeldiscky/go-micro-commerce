@@ -13,6 +13,7 @@ type User @key(fields: "id") {
 input RegisterUserInput {
   email: String!
   password: String!
+  username: String!
   firstName: String!
   lastName: String!
 }

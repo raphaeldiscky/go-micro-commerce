@@ -2875,7 +2875,7 @@ func (ec *executionContext) unmarshalInputRegisterUserInput(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"email", "password", "firstName", "lastName"}
+	fieldsInOrder := [...]string{"email", "password", "username", "firstName", "lastName"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -2896,6 +2896,13 @@ func (ec *executionContext) unmarshalInputRegisterUserInput(ctx context.Context,
 				return it, err
 			}
 			it.Password = data
+		case "username":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Username = data
 		case "firstName":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("firstName"))
 			data, err := ec.unmarshalNString2string(ctx, v)

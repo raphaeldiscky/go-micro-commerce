@@ -23,7 +23,16 @@ generate_graphql() {
     (
       cd "$dir"
       echo "Running gqlgen in $(pwd)..."
+
+      echo "Installing gqlgen dependencies..."
+      printf '//go:build tools\npackage tools\nimport (_ "github.com/99designs/gqlgen"\n _ "github.com/99designs/gqlgen/graphql/introspection")' | gofmt > tools.go
+      go mod tidy
+
+      echo "Generating GraphQL code..."
       go run github.com/99designs/gqlgen generate --verbose
+
+      echo "Remove tools.go"
+      rm tools.go
     )
   else
     echo "Skipping $service (missing go.mod or gqlgen.yml)."

@@ -56,9 +56,8 @@ check_service() {
     local service_url=$1
     local service_name=$2
 
-    if curl -s -f -X POST "$service_url" \
-        -H "Content-Type: application/json" \
-        -d '{"query": "{ __schema { queryType { name } } }"}' > /dev/null 2>&1; then
+    # Use GET request with query parameter for introspection (works with auth middleware)
+    if curl -s -f -X GET "$service_url?query=%7B__typename%7D" > /dev/null 2>&1; then
         echo -e "${GREEN}✓${NC} $service_name is running"
         return 0
     else
