@@ -265,7 +265,7 @@ jobs:
           echo "- **Type**: ${{ matrix.type }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          if [ -f "${{ matrix.name }}/coverage.out" ]; then
+          if [ "${{ matrix.type }}" = "go" ] && [ -f "${{ matrix.name }}/coverage.out" ]; then
             COVERAGE=$(go tool cover -func=${{ matrix.name }}/coverage.out | grep total: | awk '{print $3}')
             echo "- **Test Coverage**: $COVERAGE" >> $GITHUB_STEP_SUMMARY
           fi

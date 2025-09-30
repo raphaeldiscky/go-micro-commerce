@@ -46,29 +46,22 @@ tasks:
         fi
 
   build:
-    desc: Build all services
+    desc: Build docker images
     vars:
       SERVICE: '{{.SERVICE | default ""}}'
     cmds:
       - |
         if [ -z "{{.SERVICE}}" ]; then
-          echo "Building all services..."
-          bash ./scripts/deadcode.sh
+          echo "Building docker images for all services..."
           bash ./scripts/lint.sh
           bash ./scripts/format.sh
           bash ./scripts/build.sh
         else
-          echo "Building {{.SERVICE}}..."
-          bash ./scripts/deadcode.sh {{.SERVICE}}
+          echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
           bash ./scripts/format.sh {{.SERVICE}}
           bash ./scripts/build.sh {{.SERVICE}}
         fi
-  build_fe:
-    desc: Build frontend
-    cmds:
-      - cd frontend && npm run build
-
   push:
     desc: Push all services to the container registry
     vars:

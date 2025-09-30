@@ -6,9 +6,7 @@ SERVICES=()
 
 for dir in */ ; do
   dir="${dir%/}"  
-  if [[ -f "$dir/go.mod" ]]; then
-    SERVICES+=("$dir")
-  elif [[ -f "$dir/package.json" ]]; then
+  if [[ -f "$dir/Dockerfile" ]]; then
     SERVICES+=("$dir")
   fi
 done
