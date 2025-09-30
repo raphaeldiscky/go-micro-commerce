@@ -101,12 +101,41 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Setup Node.js for graphql-gateway
+      - name: Setup Node.js
+        if: matrix.service == 'graphql-gateway'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        if: matrix.service == 'graphql-gateway'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache pnpm modules
+        if: matrix.service == 'graphql-gateway'
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('graphql-gateway/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install Node.js dependencies
+        if: matrix.service == 'graphql-gateway'
+        run: cd graphql-gateway && pnpm install
+
+      # Setup Go for Go services
       - name: Setup Go
+        if: matrix.service != 'graphql-gateway'
         uses: actions/setup-go@v5
         with:
           go-version: "1.24.7" # Updated to match go.mod requirement
 
       - name: Cache Go modules
+        if: matrix.service != 'graphql-gateway'
         uses: actions/cache@v4
         with:
           path: |
@@ -117,7 +146,8 @@ jobs:
             ${{ runner.os }}-go-${{ matrix.service }}-
             ${{ runner.os }}-go-
 
-      - name: Install Tools
+      - name: Install Go Tools
+        if: matrix.service != 'graphql-gateway'
         run: |
           go install mvdan.cc/gofumpt@latest
           go install golang.org/x/tools/cmd/goimports@latest
@@ -125,19 +155,26 @@ jobs:
           go install golang.org/x/tools/cmd/deadcode@latest
           go install golang.org/x/vuln/cmd/govulncheck@latest
 
+      # Run checks (scripts handle Node.js vs Go internally)
       - name: Check deadcode for ${{ matrix.service }}
         run: bash scripts/deadcode.sh ${{ matrix.service }}
 
       - name: Run Linter for ${{ matrix.service }}
         run: bash scripts/lint.sh ${{ matrix.service }}
 
+      - name: Run Format check for ${{ matrix.service }}
+        run: bash scripts/format.sh ${{ matrix.service }}
+
       - name: Run Security Vulnerability Scan for ${{ matrix.service }}
+        if: matrix.service != 'graphql-gateway'
         run: bash scripts/security.sh ${{ matrix.service }}
 
       - name: Run Tests for ${{ matrix.service }}
+        if: matrix.service != 'graphql-gateway'
         run: bash scripts/test.sh ${{ matrix.service }}
 
       - name: Upload test coverage to Codecov
+        if: matrix.service != 'graphql-gateway'
         uses: codecov/codecov-action@v4
         with:
           file: ./${{ matrix.service }}/coverage.out
@@ -146,8 +183,8 @@ jobs:
           fail_ci_if_error: false
 
       - name: Upload coverage reports
+        if: always() && matrix.service != 'graphql-gateway'
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: ${{ matrix.service }}-coverage
           path: |
