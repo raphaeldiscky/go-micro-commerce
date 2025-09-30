@@ -3,13 +3,13 @@ package mapper
 import (
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/generated"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 )
 
 // MapConversationToGraphQL maps a ConversationResponse to a Conversation GraphQL type.
-func MapConversationToGraphQL(conv *dto.ConversationResponse) *generated.Conversation {
-	return &generated.Conversation{
+func MapConversationToGraphQL(conv *dto.ConversationResponse) *graph.Conversation {
+	return &graph.Conversation{
 		ID:        conv.ID.String(),
 		Subject:   conv.Subject,
 		Status:    conv.Status,
@@ -21,7 +21,7 @@ func MapConversationToGraphQL(conv *dto.ConversationResponse) *generated.Convers
 }
 
 // MapMessageToGraphQL maps a MessageResponse to a Message GraphQL type.
-func MapMessageToGraphQL(msg *dto.MessageResponse) *generated.Message {
+func MapMessageToGraphQL(msg *dto.MessageResponse) *graph.Message {
 	var senderID *string
 
 	if msg.SenderID != nil {
@@ -29,7 +29,7 @@ func MapMessageToGraphQL(msg *dto.MessageResponse) *generated.Message {
 		senderID = &id
 	}
 
-	return &generated.Message{
+	return &graph.Message{
 		ID:             msg.ID.String(),
 		ConversationID: msg.ConversationID.String(),
 		SenderID:       senderID,
@@ -41,8 +41,8 @@ func MapMessageToGraphQL(msg *dto.MessageResponse) *generated.Message {
 }
 
 // MapParticipantToGraphQL maps a ParticipantResponse to a Participant GraphQL type.
-func MapParticipantToGraphQL(p *dto.ParticipantResponse) *generated.Participant {
-	return &generated.Participant{
+func MapParticipantToGraphQL(p *dto.ParticipantResponse) *graph.Participant {
+	return &graph.Participant{
 		ID:             p.ID.String(),
 		ConversationID: p.ConversationID.String(),
 		UserID:         p.UserID.String(),
@@ -58,15 +58,15 @@ func MapParticipantToGraphQL(p *dto.ParticipantResponse) *generated.Participant 
 func MapMessagesToConnection(
 	messages []dto.MessageResponse,
 	paging *pkgdto.OffsetPagination,
-) *generated.MessageConnection {
-	items := make([]*generated.Message, len(messages))
+) *graph.MessageConnection {
+	items := make([]*graph.Message, len(messages))
 	for i, msg := range messages {
 		items[i] = MapMessageToGraphQL(&msg)
 	}
 
-	return &generated.MessageConnection{
+	return &graph.MessageConnection{
 		Items: items,
-		Pagination: &generated.OffsetPagination{
+		Pagination: &graph.OffsetPagination{
 			TotalItems:  int(paging.TotalItem),
 			TotalPages:  int(paging.TotalPage),
 			CurrentPage: int(paging.Page),

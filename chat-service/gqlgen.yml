@@ -1,22 +1,24 @@
 schema:
-  - graphql/schema/*.graphql
+  - graph/schema/*.graphql
 
 exec:
-  filename: graphql/generated/generated.go
-  package: generated
+  filename: graph/generated.go
+  package: graph
 
 model:
-  filename: graphql/generated/models_gen.go
-  package: generated
+  filename: graph/models_gen.go
+  package: graph
 
 resolver:
   layout: follow-schema
-  dir: graphql/resolver
+  dir: graph/resolver
   package: resolver
   filename_template: "{name}.resolvers.go"
 
 # Enable Apollo Federation v2
 federation:
+  filename: graph/federation.go
+  package: graph
   version: 2
 
 # Autobind existing types
@@ -40,3 +42,5 @@ models:
     model: github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant.UserType
   ParticipantRole:
     model: github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant.ParticipantRole
+
+skip_mod_tidy: true

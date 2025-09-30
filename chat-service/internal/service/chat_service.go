@@ -33,6 +33,10 @@ type ChatService interface {
 		conversationID uuid.UUID,
 		userID uuid.UUID,
 	) (*dto.ConversationResponse, error)
+	GetConversationByID(
+		ctx context.Context,
+		conversationID uuid.UUID,
+	) (*dto.ConversationResponse, error)
 	GetUserConversations(
 		ctx context.Context,
 		userID uuid.UUID,
@@ -50,6 +54,7 @@ type ChatService interface {
 		userID uuid.UUID,
 		limit, offset int,
 	) ([]dto.MessageResponse, *pkgdto.OffsetPagination, error)
+	GetMessageByID(ctx context.Context, messageID uuid.UUID) (*dto.MessageResponse, error)
 
 	// Participant management
 	JoinConversation(
@@ -173,6 +178,25 @@ func (s *chatService) GetConversation(
 	}
 
 	// Get conversation
+	conversation, err := conversationRepo.FindByID(ctx, conversationID)
+	if err != nil {
+		return nil, httperror.NewInternalServerError("failed to get conversation")
+	}
+
+	if conversation == nil {
+		return nil, httperror.NewBadRequestError("conversation not found")
+	}
+
+	return mapper.MapToConversationResponse(conversation), nil
+}
+
+// GetConversationByID retrieves a conversation by ID without access control (for federation).
+func (s *chatService) GetConversationByID(
+	ctx context.Context,
+	conversationID uuid.UUID,
+) (*dto.ConversationResponse, error) {
+	conversationRepo := s.dataStore.ConversationRepository()
+
 	conversation, err := conversationRepo.FindByID(ctx, conversationID)
 	if err != nil {
 		return nil, httperror.NewInternalServerError("failed to get conversation")
@@ -328,6 +352,25 @@ func (s *chatService) GetConversationMessages(
 	}
 
 	return messageResponses, paging, nil
+}
+
+// GetMessageByID retrieves a message by ID without access control (for federation).
+func (s *chatService) GetMessageByID(
+	ctx context.Context,
+	messageID uuid.UUID,
+) (*dto.MessageResponse, error) {
+	messageRepo := s.dataStore.MessageRepository()
+
+	message, err := messageRepo.FindByID(ctx, messageID)
+	if err != nil {
+		return nil, httperror.NewInternalServerError("failed to get message")
+	}
+
+	if message == nil {
+		return nil, httperror.NewBadRequestError("message not found")
+	}
+
+	return mapper.MapToMessageResponse(message), nil
 }
 
 // JoinConversation adds a participant to a conversation.

@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/resolver"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/routes"

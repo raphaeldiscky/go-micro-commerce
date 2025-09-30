@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/generated"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
@@ -18,8 +18,8 @@ import (
 // JoinConversation is the resolver for the joinConversation field.
 func (r *mutationResolver) JoinConversation(
 	ctx context.Context,
-	input generated.JoinConversationInput,
-) (*generated.Participant, error) {
+	input graph.JoinConversationInput,
+) (*graph.Participant, error) {
 	userID, ok := ctx.Value("user_id").(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")
@@ -73,7 +73,7 @@ func (r *mutationResolver) LeaveConversation(
 func (r *queryResolver) ConversationParticipants(
 	ctx context.Context,
 	conversationID string,
-) ([]*generated.Participant, error) {
+) ([]*graph.Participant, error) {
 	convID, err := uuid.Parse(conversationID)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
@@ -85,7 +85,7 @@ func (r *queryResolver) ConversationParticipants(
 		return nil, err
 	}
 
-	result := make([]*generated.Participant, len(participants))
+	result := make([]*graph.Participant, len(participants))
 	for i, p := range participants {
 		result[i] = mapper.MapParticipantToGraphQL(&p)
 	}

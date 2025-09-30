@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/generated"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
@@ -21,7 +21,7 @@ func (r *queryResolver) ConversationMessages(
 	conversationID string,
 	limit *int,
 	offset *int,
-) (*generated.MessageConnection, error) {
+) (*graph.MessageConnection, error) {
 	userID, ok := ctx.Value("user_id").(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")

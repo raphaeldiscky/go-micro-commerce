@@ -7,13 +7,15 @@ package resolver
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/generated"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 )
 
 // OnlineUsers is the resolver for the onlineUsers field.
-func (r *queryResolver) OnlineUsers(_ context.Context) ([]*generated.User, error) {
+func (r *queryResolver) OnlineUsers(ctx context.Context) ([]*graph.User, error) {
+	_ = ctx
 	// This would require integration with presence/connection service
 	// For now, return empty list as this is a complex feature
 	r.logger.Warn("OnlineUsers called but not fully implemented yet")
-	return []*generated.User{}, nil
+
+	return []*graph.User{}, nil
 }

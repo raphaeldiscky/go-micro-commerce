@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/generated"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
@@ -19,8 +19,8 @@ import (
 // CreateConversation is the resolver for the createConversation field.
 func (r *mutationResolver) CreateConversation(
 	ctx context.Context,
-	input generated.CreateConversationInput,
-) (*generated.Conversation, error) {
+	input graph.CreateConversationInput,
+) (*graph.Conversation, error) {
 	// Get user ID from context (set by auth middleware)
 	userID, ok := ctx.Value("user_id").(uuid.UUID)
 	if !ok {
@@ -45,7 +45,7 @@ func (r *mutationResolver) CreateConversation(
 func (r *mutationResolver) EndConversation(
 	ctx context.Context,
 	conversationID string,
-) (*generated.Conversation, error) {
+) (*graph.Conversation, error) {
 	convID, err := uuid.Parse(conversationID)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
@@ -65,7 +65,7 @@ func (r *mutationResolver) AssignConversationToAdmin(
 	ctx context.Context,
 	conversationID string,
 	adminID string,
-) (*generated.Conversation, error) {
+) (*graph.Conversation, error) {
 	convID, err := uuid.Parse(conversationID)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
@@ -86,10 +86,7 @@ func (r *mutationResolver) AssignConversationToAdmin(
 }
 
 // Conversation is the resolver for the conversation field.
-func (r *queryResolver) Conversation(
-	ctx context.Context,
-	id string,
-) (*generated.Conversation, error) {
+func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Conversation, error) {
 	// Get user ID from context
 	userID, ok := ctx.Value("user_id").(uuid.UUID)
 	if !ok {
@@ -111,7 +108,7 @@ func (r *queryResolver) Conversation(
 }
 
 // Conversations is the resolver for the conversations field.
-func (r *queryResolver) Conversations(ctx context.Context) ([]*generated.Conversation, error) {
+func (r *queryResolver) Conversations(ctx context.Context) ([]*graph.Conversation, error) {
 	// Get user ID from context
 	userID, ok := ctx.Value("user_id").(uuid.UUID)
 	if !ok {
@@ -124,7 +121,7 @@ func (r *queryResolver) Conversations(ctx context.Context) ([]*generated.Convers
 		return nil, err
 	}
 
-	result := make([]*generated.Conversation, len(conversations))
+	result := make([]*graph.Conversation, len(conversations))
 	for i, conv := range conversations {
 		result[i] = mapper.MapConversationToGraphQL(&conv)
 	}
@@ -133,16 +130,14 @@ func (r *queryResolver) Conversations(ctx context.Context) ([]*generated.Convers
 }
 
 // WaitingConversations is the resolver for the waitingConversations field.
-func (r *queryResolver) WaitingConversations(
-	ctx context.Context,
-) ([]*generated.Conversation, error) {
+func (r *queryResolver) WaitingConversations(ctx context.Context) ([]*graph.Conversation, error) {
 	conversations, err := r.chatService.GetWaitingConversations(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get waiting conversations", "error", err)
 		return nil, err
 	}
 
-	result := make([]*generated.Conversation, len(conversations))
+	result := make([]*graph.Conversation, len(conversations))
 	for i, conv := range conversations {
 		result[i] = mapper.MapConversationToGraphQL(&conv)
 	}
