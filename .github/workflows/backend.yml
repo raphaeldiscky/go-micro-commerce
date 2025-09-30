@@ -199,6 +199,30 @@ jobs:
             ./${{ matrix.name }}/coverage.out
             ./${{ matrix.name }}/coverage.html
 
+      # Generate supergraph schema for graphql-gateway
+      - name: Install Rover CLI
+        if: matrix.type == 'node' && matrix.name == 'graphql-gateway'
+        run: |
+          curl -sSL https://rover.apollo.dev/nix/latest | sh
+          echo "$HOME/.rover/bin" >> $GITHUB_PATH
+
+      - name: Start required services for schema composition
+        if: matrix.type == 'node' && matrix.name == 'graphql-gateway'
+        run: |
+          # Start auth-service and chat-service for introspection
+          docker compose -f deployments/docker-compose/apps.yaml up -d auth-service chat-service
+          # Wait for services to be ready
+          timeout 60 bash -c 'until curl -sf http://localhost:8081/health; do sleep 2; done'
+          timeout 60 bash -c 'until curl -sf http://localhost:8088/health; do sleep 2; done'
+
+      - name: Compose supergraph schema
+        if: matrix.type == 'node' && matrix.name == 'graphql-gateway'
+        run: bash scripts/compose-supergraph.sh
+
+      - name: Stop services
+        if: always() && matrix.type == 'node' && matrix.name == 'graphql-gateway'
+        run: docker compose -f deployments/docker-compose/apps.yaml down
+
       # Docker build & push
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
