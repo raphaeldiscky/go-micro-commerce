@@ -1,13 +1,14 @@
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import {
   differenceInDays,
   differenceInHours,
   differenceInMinutes,
   format,
+  formatISO,
   getYear,
   isAfter,
   isValid,
   parseISO,
-  formatISO,
 } from 'date-fns'
 
 /**
@@ -114,4 +115,13 @@ export function generateTimestamp(): string {
  */
 export function generateUniqueId(prefix = 'temp'): string {
   return `${prefix}-${Date.now()}`
+}
+
+/**
+ * Convert timestamp to date object
+ */
+export function timestampToDate(ts: Timestamp | undefined): Date | null {
+  if (!ts) return null
+  const millis = Number(ts.seconds) * 1000 + Math.floor(ts.nanos / 1_000_000)
+  return new Date(millis)
 }

@@ -1,9 +1,13 @@
 import { create } from '@bufbuild/protobuf'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { productApi } from '../lib/api/product'
 import type { Product } from '../proto/product/v1/product_pb'
 import {
-  BatchGetProductsByIDsRequestSchema,
   ConfirmProductsDeductionRequestSchema,
   ReleaseProductsRequestSchema,
   ReserveProductsRequestSchema,
@@ -14,21 +18,30 @@ import {
 export const productKeys = {
   all: ['products'] as const,
   lists: () => [...productKeys.all, 'list'] as const,
-  list: (ids: Array<string>) => [...productKeys.lists(), { ids }] as const,
+  list: (limit?: string, cursor?: string) =>
+    [...productKeys.lists(), { limit, cursor }] as const,
   details: () => [...productKeys.all, 'detail'] as const,
   detail: (id: string) => [...productKeys.details(), id] as const,
 }
 
-// Get products hook
-export function useProducts(ids: Array<string>) {
-  return useQuery({
-    queryKey: productKeys.list(ids),
-    queryFn: async () => {
-      const request = create(BatchGetProductsByIDsRequestSchema, { ids })
-      const response = await productApi.batchGetProductsByIDs(request)
-      return response.products
+// List products with cursor pagination using infinite query
+export function useProducts(limit: string = '10') {
+  return useInfiniteQuery({
+    queryKey: productKeys.list(limit, undefined),
+    queryFn: async ({ pageParam }) => {
+      const response = await productApi.listProducts(limit, pageParam)
+      return {
+        products: response.products,
+        pagination: response.pagination,
+      }
     },
-    enabled: ids.length > 0,
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination?.hasNext && lastPage.pagination.nextCursor) {
+        return lastPage.pagination.nextCursor
+      }
+      return undefined
+    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }

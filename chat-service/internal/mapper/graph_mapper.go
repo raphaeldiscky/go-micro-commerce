@@ -1,0 +1,78 @@
+package mapper
+
+import (
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
+
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph/model"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
+)
+
+// MapConversationToGraphQL maps a ConversationResponse to a Conversation GraphQL type.
+func MapConversationToGraphQL(conv *dto.ConversationResponse) *model.Conversation {
+	return &model.Conversation{
+		ID:        conv.ID.String(),
+		Subject:   conv.Subject,
+		Status:    conv.Status,
+		Priority:  conv.Priority,
+		CreatedAt: conv.CreatedAt,
+		UpdatedAt: conv.UpdatedAt,
+		EndedAt:   conv.EndedAt,
+	}
+}
+
+// MapMessageToGraphQL maps a MessageResponse to a Message GraphQL type.
+func MapMessageToGraphQL(msg *dto.MessageResponse) *model.Message {
+	var senderID *string
+
+	if msg.SenderID != nil {
+		id := msg.SenderID.String()
+		senderID = &id
+	}
+
+	return &model.Message{
+		ID:             msg.ID.String(),
+		ConversationID: msg.ConversationID.String(),
+		SenderID:       senderID,
+		Content:        msg.Content,
+		MessageType:    msg.MessageType,
+		IsSystem:       msg.IsSystem,
+		CreatedAt:      msg.CreatedAt,
+	}
+}
+
+// MapParticipantToGraphQL maps a ParticipantResponse to a Participant GraphQL type.
+func MapParticipantToGraphQL(p *dto.ParticipantResponse) *model.Participant {
+	return &model.Participant{
+		ID:             p.ID.String(),
+		ConversationID: p.ConversationID.String(),
+		UserID:         p.UserID.String(),
+		UserType:       p.UserType,
+		Role:           p.Role,
+		JoinedAt:       p.JoinedAt,
+		LeftAt:         p.LeftAt,
+		IsActive:       p.IsActive,
+	}
+}
+
+// MapMessagesToConnection maps messages and pagination to a MessageConnection.
+func MapMessagesToConnection(
+	messages []dto.MessageResponse,
+	paging *pkgdto.OffsetPagination,
+) *model.MessageConnection {
+	items := make([]*model.Message, len(messages))
+	for i, msg := range messages {
+		items[i] = MapMessageToGraphQL(&msg)
+	}
+
+	return &model.MessageConnection{
+		Items: items,
+		Pagination: &model.OffsetPagination{
+			TotalItems:  int(paging.TotalItem),
+			TotalPages:  int(paging.TotalPage),
+			CurrentPage: int(paging.Page),
+			PageSize:    int(paging.Size),
+			HasNext:     paging.Page < paging.TotalPage,
+			HasPrev:     paging.Page > 1,
+		},
+	}
+}

@@ -9,4 +9,6 @@ const (
 	GRPCPort = 50052
 	// GRPCReadHeaderTimeout is the timeout for reading HTTP request headers.
 	GRPCReadHeaderTimeout = 30 * time.Second
+	// GRPCDefaultLimit is the default limit for pagination in gRPC requests.
+	GRPCDefaultLimit = 10
 )

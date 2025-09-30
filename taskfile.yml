@@ -329,6 +329,20 @@ tasks:
           bash ./scripts/oapi.sh {{.SERVICE}}
         fi
 
+  graphql:
+    desc: Generate GraphQL files
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating GraphQL files for all services..."
+          bash ./scripts/graphql.sh
+        else
+          echo "Generating GraphQL files for {{.SERVICE}}..."
+          bash ./scripts/graphql.sh {{.SERVICE}}
+        fi
+
   sqlc:
     desc: Generate SQLC files
     vars:

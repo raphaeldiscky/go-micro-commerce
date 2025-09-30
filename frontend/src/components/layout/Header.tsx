@@ -1,15 +1,34 @@
-import { APP_CONFIG, NAVIGATION_ITEMS, PROFILE_IMAGE_URL } from '@/constants'
+import {
+  APP_CONFIG,
+  FEATURES_ITEMS,
+  GITHUB_REPO_URL,
+  PROFILE_IMAGE_URL,
+} from '@/constants'
 import { useIsAuthenticated, useLogout, useUser } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
-import { Github, LogIn, LogOut, Menu, User, UserPlus, X } from 'lucide-react'
+import {
+  Github,
+  Home,
+  Info,
+  LogIn,
+  LogOut,
+  Menu,
+  Settings,
+  User,
+  UserPlus,
+  X,
+  Zap,
+} from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '../ui/button'
 import {
   NavigationMenu,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '../ui/navigation-menu'
 
@@ -30,9 +49,9 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center relative">
+        <div className="grid grid-cols-3 h-16 items-center">
           {/* Logo/Brand - Left */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 justify-self-start">
             <Link
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
               to="/"
@@ -49,121 +68,253 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex absolute left-1/2 transform -translate-x-1/2">
-            <NavigationMenu>
+          <div className="hidden md:flex justify-self-center">
+            <NavigationMenu viewport={false}>
               <NavigationMenuList>
-                {NAVIGATION_ITEMS.map((item) => (
-                  <NavigationMenuItem key={item.path}>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        className={cn(
-                          navigationMenuTriggerStyle(),
-                          'inline-flex items-center',
-                          isActive(item.path)
-                            ? 'bg-accent text-accent-foreground'
-                            : '',
-                        )}
-                        to={item.path}
-                      >
-                        <item.icon className="mr-1 h-4 w-4" />
-                        {item.name}
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-                ))}
+                {/* Home */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'inline-flex items-center',
+                        isActive('/') ? 'bg-accent text-accent-foreground' : '',
+                      )}
+                      to="/"
+                    >
+                      <Home className="mr-1 h-4 w-4" />
+                      Home
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                {/* Features Dropdown */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="inline-flex items-center">
+                    <Zap className="mr-1 h-4 w-4" />
+                    Features
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
+                      {FEATURES_ITEMS.map((feature) => (
+                        <li key={feature.path}>
+                          <NavigationMenuLink asChild>
+                            <Link
+                              className={cn(
+                                'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                                isActive(feature.path) ? 'bg-accent/50' : '',
+                              )}
+                              to={feature.path}
+                            >
+                              <div className="flex items-center space-x-2">
+                                <feature.icon className="h-5 w-5" />
+                                <div className="text-sm font-medium leading-none">
+                                  {feature.name}
+                                </div>
+                              </div>
+                              <p className="line-clamp-2 text-sm leading-snug text-muted-foreground">
+                                {feature.description}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                      ))}
+                    </ul>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                {/* Services */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'inline-flex items-center',
+                        isActive('/services')
+                          ? 'bg-accent text-accent-foreground'
+                          : '',
+                      )}
+                      to="/services"
+                    >
+                      <Settings className="mr-1 h-4 w-4" />
+                      Services
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                {/* About */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'inline-flex items-center',
+                        isActive('/about')
+                          ? 'bg-accent text-accent-foreground'
+                          : '',
+                      )}
+                      to="/about"
+                    >
+                      <Info className="mr-1 h-4 w-4" />
+                      About
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
           </div>
 
-          {/* Right side - Auth & GitHub */}
-          <div className="hidden md:flex items-center space-x-4 ml-auto">
-            {isAuthenticated ? (
-              <>
-                <span className="text-sm text-muted-foreground">
-                  Welcome, {user?.first_name}!
-                </span>
-                <Button
-                  className="flex items-center space-x-1"
-                  disabled={logoutMutation.isPending}
-                  onClick={handleLogout}
-                  size="sm"
-                  variant="ghost"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span>Logout</span>
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button asChild size="sm" variant="ghost">
-                  <Link
+          {/* Right side - Auth & GitHub / Mobile menu button */}
+          <div className="flex items-center space-x-4 justify-self-end">
+            {/* Desktop Auth & GitHub */}
+            <div className="hidden md:flex items-center space-x-4">
+              {isAuthenticated ? (
+                <>
+                  <span className="text-sm text-muted-foreground">
+                    Welcome, {user?.first_name}!
+                  </span>
+                  <Button
                     className="flex items-center space-x-1"
-                    to="/auth/login"
+                    disabled={logoutMutation.isPending}
+                    onClick={handleLogout}
+                    size="sm"
+                    variant="ghost"
                   >
-                    <LogIn className="h-4 w-4" />
-                    <span>Login</span>
-                  </Link>
-                </Button>
-                <Button asChild size="sm" variant="default">
-                  <Link
-                    className="flex items-center space-x-1"
-                    to="/auth/register"
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    <span>Sign Up</span>
-                  </Link>
-                </Button>
-              </>
-            )}
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild size="sm" variant="ghost">
+                    <Link
+                      className="flex items-center space-x-1"
+                      to="/auth/login"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      <span>Login</span>
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" variant="default">
+                    <Link
+                      className="flex items-center space-x-1"
+                      to="/auth/register"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      <span>Sign Up</span>
+                    </Link>
+                  </Button>
+                </>
+              )}
 
-            <Button asChild size="sm" variant="outline">
-              <a
-                className="flex items-center space-x-1"
-                href="{GITHUB_REPO_URL}"
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <Github className="h-4 w-4" />
-                <span>GitHub</span>
-              </a>
+              <Button asChild size="sm" variant="outline">
+                <a
+                  className="flex items-center space-x-1"
+                  href={GITHUB_REPO_URL}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  <Github className="h-4 w-4" />
+                  <span>GitHub</span>
+                </a>
+              </Button>
+            </div>
+
+            {/* Mobile menu button */}
+            <Button
+              className="md:hidden"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              size="sm"
+              variant="ghost"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </Button>
           </div>
-
-          {/* Mobile menu button */}
-          <Button
-            className="md:hidden ml-auto"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            size="sm"
-            variant="ghost"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </Button>
         </div>
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
-              {NAVIGATION_ITEMS.map((item) => (
-                <Link
-                  className={cn(
-                    'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
-                    isActive(item.path)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent',
-                  )}
-                  key={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  to={item.path}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.name}
-                </Link>
-              ))}
+              {/* Home */}
+              <Link
+                className={cn(
+                  'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
+                  isActive('/')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+                to="/"
+              >
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Link>
+
+              {/* Features Section */}
+              <div className="px-3 py-2">
+                <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  <Zap className="mr-1 h-3 w-3" />
+                  Features
+                </div>
+                <div className="space-y-1 ml-4">
+                  {FEATURES_ITEMS.map((feature) => (
+                    <Link
+                      className={cn(
+                        'flex items-start px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                        isActive(feature.path)
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                      )}
+                      key={feature.path}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      to={feature.path}
+                    >
+                      <feature.icon className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <div>{feature.name}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          {feature.description}
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              {/* Services */}
+              <Link
+                className={cn(
+                  'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
+                  isActive('/services')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+                to="/services"
+              >
+                <Settings className="mr-2 h-4 w-4" />
+                Services
+              </Link>
+
+              {/* About */}
+              <Link
+                className={cn(
+                  'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
+                  isActive('/about')
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+                to="/about"
+              >
+                <Info className="mr-2 h-4 w-4" />
+                About
+              </Link>
               {/* Mobile Auth Section */}
               <div className="px-3 py-2 space-y-2">
                 {isAuthenticated ? (
@@ -221,7 +372,7 @@ export default function Header() {
                 <Button asChild className="w-full" size="sm" variant="outline">
                   <a
                     className="flex items-center justify-center space-x-1"
-                    href="{GITHUB_REPO_URL}"
+                    href={GITHUB_REPO_URL}
                     rel="noopener noreferrer"
                     target="_blank"
                   >

@@ -13,7 +13,83 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file product/v1/product.proto.
  */
 export const file_product_v1_product: GenFile = /*@__PURE__*/
-  fileDesc("Chhwcm9kdWN0L3YxL3Byb2R1Y3QucHJvdG8SCnByb2R1Y3QudjEiPgocQmF0Y2hHZXRQcm9kdWN0c0J5SURzUmVxdWVzdBIeCgNpZHMYASADKAlCEbpIDpIBCwgBEGQiBXIDsAEBIlcKHUJhdGNoR2V0UHJvZHVjdHNCeUlEc1Jlc3BvbnNlEiUKCHByb2R1Y3RzGAEgAygLMhMucHJvZHVjdC52MS5Qcm9kdWN0Eg8KB21lc3NhZ2UYAiABKAkigAEKFlJlc2VydmVQcm9kdWN0c1JlcXVlc3QSIwoPaWRlbXBvdGVuY3lfa2V5GAEgASgJQgq6SAdyBRABGP8BEkEKBWl0ZW1zGAIgAygLMiYucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlXaXRoVmVyc2lvbkIKukgHkgEECAEQMiJzChpQcm9kdWN0UXVhbnRpdHlXaXRoVmVyc2lvbhIcCgpwcm9kdWN0X2lkGAEgASgJQgi6SAVyA7ABARIdCghxdWFudGl0eRgCIAEoA0ILukgIIgYYwIQ9IAASGAoHdmVyc2lvbhgDIAEoA0IHukgEIgIoACJOCg9Qcm9kdWN0UXVhbnRpdHkSHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESHQoIcXVhbnRpdHkYAiABKANCC7pICCIGGMCEPSAAImsKF1Jlc2VydmVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLgoRcmVzZXJ2ZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSKaAgoHUHJvZHVjdBIUCgJpZBgBIAEoCUIIukgFcgOwAQESGAoEbmFtZRgCIAEoCUIKukgHcgUQARj/ARImCgVwcmljZRgDIAEoAUIXukgUEhIZAAAAAICELkEhAAAAAAAAAAASGQoIcXVhbnRpdHkYBCABKANCB7pIBCICKAASGAoHdmVyc2lvbhgFIAEoA0IHukgEIgIoABIiChFyZXNlcnZlZF9xdWFudGl0eRgGIAEoA0IHukgEIgIoABIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJQChZSZWxlYXNlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDIiOwoXUmVsZWFzZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIlkKH0NvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QSNgoFaXRlbXMYASADKAsyGy5wcm9kdWN0LnYxLlByb2R1Y3RRdWFudGl0eUIKukgHkgEECAEQMiJzCiBDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi0KEHVwZGF0ZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJsChZSZXN0b3JlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDISGgoGcmVhc29uGAIgASgJQgq6SAdyBRABGP8BImsKF1Jlc3RvcmVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLgoRcmVzdG9yZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSIPCg1IZWFsdGhSZXF1ZXN0IjoKDkhlYWx0aFJlc3BvbnNlEigKBnN0YXR1cxgBIAEoDjIYLnByb2R1Y3QudjEuSGVhbHRoU3RhdHVzKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMsoECg5Qcm9kdWN0U2VydmljZRJsChVCYXRjaEdldFByb2R1Y3RzQnlJRHMSKC5wcm9kdWN0LnYxLkJhdGNoR2V0UHJvZHVjdHNCeUlEc1JlcXVlc3QaKS5wcm9kdWN0LnYxLkJhdGNoR2V0UHJvZHVjdHNCeUlEc1Jlc3BvbnNlEloKD1Jlc2VydmVQcm9kdWN0cxIiLnByb2R1Y3QudjEuUmVzZXJ2ZVByb2R1Y3RzUmVxdWVzdBojLnByb2R1Y3QudjEuUmVzZXJ2ZVByb2R1Y3RzUmVzcG9uc2USWgoPUmVsZWFzZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZWxlYXNlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZWxlYXNlUHJvZHVjdHNSZXNwb25zZRJ1ChhDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb24SKy5wcm9kdWN0LnYxLkNvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QaLC5wcm9kdWN0LnYxLkNvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlc3BvbnNlEloKD1Jlc3RvcmVQcm9kdWN0cxIiLnByb2R1Y3QudjEuUmVzdG9yZVByb2R1Y3RzUmVxdWVzdBojLnByb2R1Y3QudjEuUmVzdG9yZVByb2R1Y3RzUmVzcG9uc2USPwoGSGVhbHRoEhkucHJvZHVjdC52MS5IZWFsdGhSZXF1ZXN0GhoucHJvZHVjdC52MS5IZWFsdGhSZXNwb25zZUKuAQoOY29tLnByb2R1Y3QudjFCDFByb2R1Y3RQcm90b1ABWkVnaXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vcHJvZHVjdC92MTtwcm9kdWN0djGiAgNQWFiqAgpQcm9kdWN0LlYxygIKUHJvZHVjdFxWMeICFlByb2R1Y3RcVjFcR1BCTWV0YWRhdGHqAgtQcm9kdWN0OjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_buf_validate_validate]);
+  fileDesc("Chhwcm9kdWN0L3YxL3Byb2R1Y3QucHJvdG8SCnByb2R1Y3QudjEiZgoTTGlzdFByb2R1Y3RzUmVxdWVzdBIbCgVsaW1pdBgBIAEoCUIHukgEcgIYA0gAiAEBEhgKC25leHRfY3Vyc29yGAIgASgJSAGIAQFCCAoGX2xpbWl0Qg4KDF9uZXh0X2N1cnNvciJvChRMaXN0UHJvZHVjdHNSZXNwb25zZRIlCghwcm9kdWN0cxgBIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIwCgpwYWdpbmF0aW9uGAIgASgLMhwucHJvZHVjdC52MS5DdXJzb3JQYWdpbmF0aW9uIooBChBDdXJzb3JQYWdpbmF0aW9uEhgKC25leHRfY3Vyc29yGAEgASgJSACIAQESGAoLcHJldl9jdXJzb3IYAiABKAlIAYgBARIQCghoYXNfbmV4dBgDIAEoCBIQCghoYXNfcHJldhgEIAEoCEIOCgxfbmV4dF9jdXJzb3JCDgoMX3ByZXZfY3Vyc29yIj4KHEJhdGNoR2V0UHJvZHVjdHNCeUlEc1JlcXVlc3QSHgoDaWRzGAEgAygJQhG6SA6SAQsIARBkIgVyA7ABASJXCh1CYXRjaEdldFByb2R1Y3RzQnlJRHNSZXNwb25zZRIlCghwcm9kdWN0cxgBIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIPCgdtZXNzYWdlGAIgASgJIoABChZSZXNlcnZlUHJvZHVjdHNSZXF1ZXN0EiMKD2lkZW1wb3RlbmN5X2tleRgBIAEoCUIKukgHcgUQARj/ARJBCgVpdGVtcxgCIAMoCzImLnByb2R1Y3QudjEuUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb25CCrpIB5IBBAgBEDIicwoaUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb24SHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESHQoIcXVhbnRpdHkYAiABKANCC7pICCIGGMCEPSAAEhgKB3ZlcnNpb24YAyABKANCB7pIBCICKAAiTgoPUHJvZHVjdFF1YW50aXR5EhwKCnByb2R1Y3RfaWQYASABKAlCCLpIBXIDsAEBEh0KCHF1YW50aXR5GAIgASgDQgu6SAgiBhjAhD0gACJrChdSZXNlcnZlUHJvZHVjdHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi4KEXJlc2VydmVkX3Byb2R1Y3RzGAIgAygLMhMucHJvZHVjdC52MS5Qcm9kdWN0Eg8KB21lc3NhZ2UYAyABKAkimgIKB1Byb2R1Y3QSFAoCaWQYASABKAlCCLpIBXIDsAEBEhgKBG5hbWUYAiABKAlCCrpIB3IFEAEY/wESJgoFcHJpY2UYAyABKAFCF7pIFBISGQAAAACAhC5BIQAAAAAAAAAAEhkKCHF1YW50aXR5GAQgASgDQge6SAQiAigAEhgKB3ZlcnNpb24YBSABKANCB7pIBCICKAASIgoRcmVzZXJ2ZWRfcXVhbnRpdHkYBiABKANCB7pIBCICKAASLgoKY3JlYXRlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKdXBkYXRlZF9hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiUAoWUmVsZWFzZVByb2R1Y3RzUmVxdWVzdBI2CgVpdGVtcxgBIAMoCzIbLnByb2R1Y3QudjEuUHJvZHVjdFF1YW50aXR5Qgq6SAeSAQQIARAyIjsKF1JlbGVhc2VQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSJZCh9Db25maXJtUHJvZHVjdHNEZWR1Y3Rpb25SZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDIicwogQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBItChB1cGRhdGVkX3Byb2R1Y3RzGAIgAygLMhMucHJvZHVjdC52MS5Qcm9kdWN0Eg8KB21lc3NhZ2UYAyABKAkibAoWUmVzdG9yZVByb2R1Y3RzUmVxdWVzdBI2CgVpdGVtcxgBIAMoCzIbLnByb2R1Y3QudjEuUHJvZHVjdFF1YW50aXR5Qgq6SAeSAQQIARAyEhoKBnJlYXNvbhgCIAEoCUIKukgHcgUQARj/ASJrChdSZXN0b3JlUHJvZHVjdHNSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi4KEXJlc3RvcmVkX3Byb2R1Y3RzGAIgAygLMhMucHJvZHVjdC52MS5Qcm9kdWN0Eg8KB21lc3NhZ2UYAyABKAkiDwoNSGVhbHRoUmVxdWVzdCI6Cg5IZWFsdGhSZXNwb25zZRIoCgZzdGF0dXMYASABKA4yGC5wcm9kdWN0LnYxLkhlYWx0aFN0YXR1cypnCgxIZWFsdGhTdGF0dXMSHQoZSEVBTFRIX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFQUxUSF9TVEFUVVNfU0VSVklORxABEh0KGUhFQUxUSF9TVEFUVVNfTk9UX1NFUlZJTkcQAjKdBQoOUHJvZHVjdFNlcnZpY2USUQoMTGlzdFByb2R1Y3RzEh8ucHJvZHVjdC52MS5MaXN0UHJvZHVjdHNSZXF1ZXN0GiAucHJvZHVjdC52MS5MaXN0UHJvZHVjdHNSZXNwb25zZRJsChVCYXRjaEdldFByb2R1Y3RzQnlJRHMSKC5wcm9kdWN0LnYxLkJhdGNoR2V0UHJvZHVjdHNCeUlEc1JlcXVlc3QaKS5wcm9kdWN0LnYxLkJhdGNoR2V0UHJvZHVjdHNCeUlEc1Jlc3BvbnNlEloKD1Jlc2VydmVQcm9kdWN0cxIiLnByb2R1Y3QudjEuUmVzZXJ2ZVByb2R1Y3RzUmVxdWVzdBojLnByb2R1Y3QudjEuUmVzZXJ2ZVByb2R1Y3RzUmVzcG9uc2USWgoPUmVsZWFzZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZWxlYXNlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZWxlYXNlUHJvZHVjdHNSZXNwb25zZRJ1ChhDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb24SKy5wcm9kdWN0LnYxLkNvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QaLC5wcm9kdWN0LnYxLkNvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlc3BvbnNlEloKD1Jlc3RvcmVQcm9kdWN0cxIiLnByb2R1Y3QudjEuUmVzdG9yZVByb2R1Y3RzUmVxdWVzdBojLnByb2R1Y3QudjEuUmVzdG9yZVByb2R1Y3RzUmVzcG9uc2USPwoGSGVhbHRoEhkucHJvZHVjdC52MS5IZWFsdGhSZXF1ZXN0GhoucHJvZHVjdC52MS5IZWFsdGhSZXNwb25zZUKuAQoOY29tLnByb2R1Y3QudjFCDFByb2R1Y3RQcm90b1ABWkVnaXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vcHJvZHVjdC92MTtwcm9kdWN0djGiAgNQWFiqAgpQcm9kdWN0LlYxygIKUHJvZHVjdFxWMeICFlByb2R1Y3RcVjFcR1BCTWV0YWRhdGHqAgtQcm9kdWN0OjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_buf_validate_validate]);
+
+/**
+ * @generated from message product.v1.ListProductsRequest
+ */
+export type ListProductsRequest = Message<"product.v1.ListProductsRequest"> & {
+  /**
+   * @generated from field: optional string limit = 1;
+   */
+  limit?: string;
+
+  /**
+   * @generated from field: optional string next_cursor = 2;
+   */
+  nextCursor?: string;
+};
+
+/**
+ * Describes the message product.v1.ListProductsRequest.
+ * Use `create(ListProductsRequestSchema)` to create a new message.
+ */
+export const ListProductsRequestSchema: GenMessage<ListProductsRequest> = /*@__PURE__*/
+  messageDesc(file_product_v1_product, 0);
+
+/**
+ * @generated from message product.v1.ListProductsResponse
+ */
+export type ListProductsResponse = Message<"product.v1.ListProductsResponse"> & {
+  /**
+   * @generated from field: repeated product.v1.Product products = 1;
+   */
+  products: Product[];
+
+  /**
+   * @generated from field: product.v1.CursorPagination pagination = 2;
+   */
+  pagination?: CursorPagination;
+};
+
+/**
+ * Describes the message product.v1.ListProductsResponse.
+ * Use `create(ListProductsResponseSchema)` to create a new message.
+ */
+export const ListProductsResponseSchema: GenMessage<ListProductsResponse> = /*@__PURE__*/
+  messageDesc(file_product_v1_product, 1);
+
+/**
+ * @generated from message product.v1.CursorPagination
+ */
+export type CursorPagination = Message<"product.v1.CursorPagination"> & {
+  /**
+   * @generated from field: optional string next_cursor = 1;
+   */
+  nextCursor?: string;
+
+  /**
+   * @generated from field: optional string prev_cursor = 2;
+   */
+  prevCursor?: string;
+
+  /**
+   * @generated from field: bool has_next = 3;
+   */
+  hasNext: boolean;
+
+  /**
+   * @generated from field: bool has_prev = 4;
+   */
+  hasPrev: boolean;
+};
+
+/**
+ * Describes the message product.v1.CursorPagination.
+ * Use `create(CursorPaginationSchema)` to create a new message.
+ */
+export const CursorPaginationSchema: GenMessage<CursorPagination> = /*@__PURE__*/
+  messageDesc(file_product_v1_product, 2);
 
 /**
  * @generated from message product.v1.BatchGetProductsByIDsRequest
@@ -30,7 +106,7 @@ export type BatchGetProductsByIDsRequest = Message<"product.v1.BatchGetProductsB
  * Use `create(BatchGetProductsByIDsRequestSchema)` to create a new message.
  */
 export const BatchGetProductsByIDsRequestSchema: GenMessage<BatchGetProductsByIDsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 0);
+  messageDesc(file_product_v1_product, 3);
 
 /**
  * @generated from message product.v1.BatchGetProductsByIDsResponse
@@ -52,7 +128,7 @@ export type BatchGetProductsByIDsResponse = Message<"product.v1.BatchGetProducts
  * Use `create(BatchGetProductsByIDsResponseSchema)` to create a new message.
  */
 export const BatchGetProductsByIDsResponseSchema: GenMessage<BatchGetProductsByIDsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 1);
+  messageDesc(file_product_v1_product, 4);
 
 /**
  * @generated from message product.v1.ReserveProductsRequest
@@ -74,7 +150,7 @@ export type ReserveProductsRequest = Message<"product.v1.ReserveProductsRequest"
  * Use `create(ReserveProductsRequestSchema)` to create a new message.
  */
 export const ReserveProductsRequestSchema: GenMessage<ReserveProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 2);
+  messageDesc(file_product_v1_product, 5);
 
 /**
  * @generated from message product.v1.ProductQuantityWithVersion
@@ -103,7 +179,7 @@ export type ProductQuantityWithVersion = Message<"product.v1.ProductQuantityWith
  * Use `create(ProductQuantityWithVersionSchema)` to create a new message.
  */
 export const ProductQuantityWithVersionSchema: GenMessage<ProductQuantityWithVersion> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 3);
+  messageDesc(file_product_v1_product, 6);
 
 /**
  * @generated from message product.v1.ProductQuantity
@@ -125,7 +201,7 @@ export type ProductQuantity = Message<"product.v1.ProductQuantity"> & {
  * Use `create(ProductQuantitySchema)` to create a new message.
  */
 export const ProductQuantitySchema: GenMessage<ProductQuantity> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 4);
+  messageDesc(file_product_v1_product, 7);
 
 /**
  * @generated from message product.v1.ReserveProductsResponse
@@ -152,7 +228,7 @@ export type ReserveProductsResponse = Message<"product.v1.ReserveProductsRespons
  * Use `create(ReserveProductsResponseSchema)` to create a new message.
  */
 export const ReserveProductsResponseSchema: GenMessage<ReserveProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 5);
+  messageDesc(file_product_v1_product, 8);
 
 /**
  * @generated from message product.v1.Product
@@ -208,7 +284,7 @@ export type Product = Message<"product.v1.Product"> & {
  * Use `create(ProductSchema)` to create a new message.
  */
 export const ProductSchema: GenMessage<Product> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 6);
+  messageDesc(file_product_v1_product, 9);
 
 /**
  * @generated from message product.v1.ReleaseProductsRequest
@@ -225,7 +301,7 @@ export type ReleaseProductsRequest = Message<"product.v1.ReleaseProductsRequest"
  * Use `create(ReleaseProductsRequestSchema)` to create a new message.
  */
 export const ReleaseProductsRequestSchema: GenMessage<ReleaseProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 7);
+  messageDesc(file_product_v1_product, 10);
 
 /**
  * @generated from message product.v1.ReleaseProductsResponse
@@ -247,7 +323,7 @@ export type ReleaseProductsResponse = Message<"product.v1.ReleaseProductsRespons
  * Use `create(ReleaseProductsResponseSchema)` to create a new message.
  */
 export const ReleaseProductsResponseSchema: GenMessage<ReleaseProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 8);
+  messageDesc(file_product_v1_product, 11);
 
 /**
  * @generated from message product.v1.ConfirmProductsDeductionRequest
@@ -264,7 +340,7 @@ export type ConfirmProductsDeductionRequest = Message<"product.v1.ConfirmProduct
  * Use `create(ConfirmProductsDeductionRequestSchema)` to create a new message.
  */
 export const ConfirmProductsDeductionRequestSchema: GenMessage<ConfirmProductsDeductionRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 9);
+  messageDesc(file_product_v1_product, 12);
 
 /**
  * @generated from message product.v1.ConfirmProductsDeductionResponse
@@ -291,7 +367,7 @@ export type ConfirmProductsDeductionResponse = Message<"product.v1.ConfirmProduc
  * Use `create(ConfirmProductsDeductionResponseSchema)` to create a new message.
  */
 export const ConfirmProductsDeductionResponseSchema: GenMessage<ConfirmProductsDeductionResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 10);
+  messageDesc(file_product_v1_product, 13);
 
 /**
  * @generated from message product.v1.RestoreProductsRequest
@@ -315,7 +391,7 @@ export type RestoreProductsRequest = Message<"product.v1.RestoreProductsRequest"
  * Use `create(RestoreProductsRequestSchema)` to create a new message.
  */
 export const RestoreProductsRequestSchema: GenMessage<RestoreProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 11);
+  messageDesc(file_product_v1_product, 14);
 
 /**
  * @generated from message product.v1.RestoreProductsResponse
@@ -342,7 +418,7 @@ export type RestoreProductsResponse = Message<"product.v1.RestoreProductsRespons
  * Use `create(RestoreProductsResponseSchema)` to create a new message.
  */
 export const RestoreProductsResponseSchema: GenMessage<RestoreProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 12);
+  messageDesc(file_product_v1_product, 15);
 
 /**
  * @generated from message product.v1.HealthRequest
@@ -355,7 +431,7 @@ export type HealthRequest = Message<"product.v1.HealthRequest"> & {
  * Use `create(HealthRequestSchema)` to create a new message.
  */
 export const HealthRequestSchema: GenMessage<HealthRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 13);
+  messageDesc(file_product_v1_product, 16);
 
 /**
  * @generated from message product.v1.HealthResponse
@@ -374,7 +450,7 @@ export type HealthResponse = Message<"product.v1.HealthResponse"> & {
  * Use `create(HealthResponseSchema)` to create a new message.
  */
 export const HealthResponseSchema: GenMessage<HealthResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 14);
+  messageDesc(file_product_v1_product, 17);
 
 /**
  * @generated from enum product.v1.HealthStatus
@@ -409,6 +485,18 @@ export const HealthStatusSchema: GenEnum<HealthStatus> = /*@__PURE__*/
  */
 export const ProductService: GenService<{
   /**
+   * ListProducts returns a list of products
+   *
+   * @generated from rpc product.v1.ProductService.ListProducts
+   */
+  listProducts: {
+    methodKind: "unary";
+    input: typeof ListProductsRequestSchema;
+    output: typeof ListProductsResponseSchema;
+  },
+  /**
+   * BatchGetProductsByIDs retrieves products by their IDs
+   *
    * @generated from rpc product.v1.ProductService.BatchGetProductsByIDs
    */
   batchGetProductsByIDs: {

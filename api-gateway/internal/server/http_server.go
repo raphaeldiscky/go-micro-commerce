@@ -119,6 +119,8 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 			echo.HeaderAuthorization,
 			"X-Requested-With",
 			"Cache-Control",
+			"Connect-Protocol-Version",
+			"Connect-Timeout-Ms",
 		},
 		AllowCredentials: true, // Required for HTTP-only cookies
 	}))
