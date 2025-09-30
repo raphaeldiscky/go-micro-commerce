@@ -2,18 +2,16 @@
 
 set -e
 
-SERVICES=(
-  "api-gateway"
-  "graphql-gateway"
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "payment-service"
-  "fulfillment-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/go.mod" ]]; then
+    SERVICES+=("$dir")
+  elif [[ -f "$dir/package.json" ]]; then
+    SERVICES+=("$dir")
+  fi
+done
 
 # Configuration
 REGISTRY="${REGISTRY:-localhost:5000}"

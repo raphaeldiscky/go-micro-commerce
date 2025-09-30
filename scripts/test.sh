@@ -4,20 +4,13 @@ set -e
 
 SERVICE=${1:-"all"}  # default to all
 
-# Services with Go code
-SERVICES=(
-  "auth-service"
-  "product-service"
-  "order-service"
-  "notification-service"
-  "payment-service"
-  "fulfillment-service"
-  "api-gateway"
-  "pkg"
-  "proto"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/go.mod" ]]; then
+    SERVICES+=("$dir")
+done
 
 run_tests() {
   local dir="$1"

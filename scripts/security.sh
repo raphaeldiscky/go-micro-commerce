@@ -2,19 +2,13 @@
 
 set -e
 
-SERVICES=(
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "pkg"
-  "proto"
-  "api-gateway"
-  "payment-service"
-  "fulfillment-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/go.mod" ]]; then
+    SERVICES+=("$dir")
+done
 
 # Install govulncheck if not present
 if ! command -v govulncheck &> /dev/null; then

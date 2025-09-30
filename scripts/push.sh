@@ -2,18 +2,13 @@
 
 set -e
 
-SERVICES=(
-  "api-gateway"
-  "graphql-gateway"
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "payment-service"
-  "notification-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/Dockerfile" ]]; then
+    SERVICES+=("$dir")
+done
 
 # Configuration
 REGISTRY="${REGISTRY:-ghcr.io/raphaeldiscky/go-micro-commerce}"

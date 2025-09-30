@@ -10,7 +10,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({
   conversationId,
-  defaultFullscreen = false
+  defaultFullscreen = false,
 }: ChatPanelProps) {
   const [isFullscreen, setIsFullscreen] = useState(defaultFullscreen)
   const [isMobile, setIsMobile] = useState(false)
