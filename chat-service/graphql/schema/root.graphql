@@ -1,0 +1,24 @@
+# Apollo Federation v2 directives
+directive @key(fields: String!, resolvable: Boolean = true) repeatable on OBJECT | INTERFACE
+directive @extends on OBJECT | INTERFACE
+directive @external on OBJECT | FIELD_DEFINITION
+directive @requires(fields: String!) on FIELD_DEFINITION
+directive @provides(fields: String!) on FIELD_DEFINITION
+directive @shareable on OBJECT | FIELD_DEFINITION
+directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+directive @tag(name: String!) repeatable on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+directive @override(from: String!) on FIELD_DEFINITION
+
+# Scalars
+scalar Time
+
+# Extend User entity from auth-service (we reference it but don't own it)
+extend type User @key(fields: "id") {
+  id: ID! @external
+  conversations: [Conversation!]!
+  onlineStatus: OnlineStatus
+}
+
+# Root query and mutation types
+type Query
+type Mutation

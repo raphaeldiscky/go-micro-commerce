@@ -7,9 +7,6 @@ SERVICES=(
   "notification-service"
   "order-service"
   "product-service"
-  "pkg"
-  "proto"
-  "api-gateway"
   "payment-service"
   "fulfillment-service"
   "search-service"
@@ -54,7 +51,7 @@ else
     # 'wait "$pid"' will return the exit code of the process.
     # If a command fails, its exit code will be non-zero.
     if ! wait "$pid"; then
-      echo "⚠️ A format process failed."
+      echo "A format process failed."
       # Record that at least one failure occurred
       exit_code=1
     fi

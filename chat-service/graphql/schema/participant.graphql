@@ -1,0 +1,47 @@
+# Participant entity (owned by chat-service)
+type Participant {
+  id: ID!
+  conversationId: ID!
+  conversation: Conversation!
+  userId: ID!
+  user: User!
+  userType: UserType!
+  role: ParticipantRole!
+  joinedAt: Time!
+  leftAt: Time
+  isActive: Boolean!
+}
+
+# User type enum
+enum UserType {
+  USER
+  ADMIN
+}
+
+# Participant role enum
+enum ParticipantRole {
+  MEMBER
+  OWNER
+  MODERATOR
+}
+
+# Participant input types
+input JoinConversationInput {
+  conversationId: ID!
+  role: ParticipantRole!
+}
+
+# Participant queries
+extend type Query {
+  # Get participants of a conversation
+  conversationParticipants(conversationId: ID!): [Participant!]!
+}
+
+# Participant mutations
+extend type Mutation {
+  # Join conversation
+  joinConversation(input: JoinConversationInput!): Participant!
+
+  # Leave conversation
+  leaveConversation(conversationId: ID!): Boolean!
+}

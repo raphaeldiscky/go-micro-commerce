@@ -5,7 +5,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/generated"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graphql/resolver"
 	chathandler "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
 )
@@ -15,7 +16,7 @@ func SetupChatRoutes(
 	e *echo.Echo,
 	h *chathandler.ChatHandler,
 	connHandler *chathandler.ConnectionHandler,
-	graphqlResolver *graph.Resolver,
+	graphqlResolver *resolver.Resolver,
 ) {
 	v1 := e.Group("/v1")
 	protected := v1.Group("")
@@ -37,7 +38,7 @@ func SetupChatRoutes(
 
 	// GraphQL endpoints
 	graphqlHandler := handler.NewDefaultServer(
-		graph.NewExecutableSchema(graph.Config{Resolvers: graphqlResolver}),
+		generated.NewExecutableSchema(generated.Config{Resolvers: graphqlResolver}),
 	)
 
 	// GraphQL endpoint with auth middleware

@@ -1,5 +1,5 @@
-// Package graph provides GraphQL resolvers and schema for the chat service.
-package graph
+// Package resolver provides GraphQL resolvers for the chat service.
+package resolver
 
 import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"

@@ -1,0 +1,50 @@
+# Conversation entity (owned by chat-service)
+type Conversation @key(fields: "id") {
+  id: ID!
+  subject: String
+  status: ConversationStatus!
+  priority: Int!
+  participants: [Participant!]!
+  messages(limit: Int = 50, offset: Int = 0): MessageConnection!
+  createdAt: Time!
+  updatedAt: Time!
+  endedAt: Time
+}
+
+# Conversation status enum
+enum ConversationStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+
+# Conversation input types
+input CreateConversationInput {
+  subject: String
+  priority: Int!
+  initialMessage: String
+}
+
+# Conversation queries
+extend type Query {
+  # Get single conversation
+  conversation(id: ID!): Conversation
+
+  # Get user's conversations
+  conversations: [Conversation!]!
+
+  # Admin: Get waiting conversations
+  waitingConversations: [Conversation!]!
+}
+
+# Conversation mutations
+extend type Mutation {
+  # Create new conversation
+  createConversation(input: CreateConversationInput!): Conversation!
+
+  # End conversation (admin only)
+  endConversation(conversationId: ID!): Conversation!
+
+  # Assign conversation to admin
+  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation!
+}
