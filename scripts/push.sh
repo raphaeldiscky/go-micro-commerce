@@ -3,12 +3,13 @@
 set -e
 
 SERVICES=(
+  "api-gateway"
+  "graphql-gateway"
   "auth-service"
   "notification-service"
   "order-service"
   "product-service"
   "payment-service"
-  "api-gateway"
   "notification-service"
   "search-service"
   "chat-service"
@@ -50,11 +51,6 @@ build_and_push_image() {
 
   if [ ! -f "$dockerfile" ]; then
     print_warning "Skipping $service: $dockerfile not found"
-    return 1
-  fi
-
-  if [ ! -f "$CURDIR/$service/cmd/api/main.go" ]; then
-    print_warning "Skipping $service: main.go not found in $CURDIR/$service/cmd/api/"
     return 1
   fi
 

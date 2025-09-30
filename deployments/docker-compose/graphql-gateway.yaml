@@ -6,19 +6,19 @@ services:
       dockerfile: graphql-gateway/Dockerfile
     container_name: graphql-gateway
     ports:
-      - "4000:4000"   # GraphQL endpoint
-      - "8088:8088"   # Health check
-      - "9091:9091"   # Prometheus metrics
+      - "4000:4000" # GraphQL endpoint
+      - "8088:8088" # Health check
+      - "9091:9091" # Prometheus metrics
     networks:
       - go-micro-commerce
     environment:
       - APOLLO_ROUTER_SUPERGRAPH_PATH=/app/supergraph-schema.graphql
       - APOLLO_ROUTER_CONFIG_PATH=/app/router.yaml
       - RUST_LOG=info
-    depends_on:
-      - auth-service
-      - chat-service
-      - otel-collector
+    # depends_on:
+    #   - auth-service
+    #   - chat-service
+    #   - otel-collector
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:8088/health"]
       interval: 10s

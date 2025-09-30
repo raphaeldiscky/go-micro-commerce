@@ -1,0 +1,13 @@
+{
+  "name": "graphql-gateway",
+  "version": "1.0.0",
+  "description": "Apollo Federation Gateway for Go Microservices",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write \"**/*.{yaml,yml,json,md}\"",
+    "lint": "prettier --check \"**/*.{yaml,yml,json,md}\""
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}

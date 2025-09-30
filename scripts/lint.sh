@@ -14,12 +14,33 @@ SERVICES=(
   "fulfillment-service"
   "search-service"
   "chat-service"
+  "graphql-gateway"
 )
 
 lint_service() {
   local dir="$1"
+
+
+  # Check if this is a Node.js project
+  if [ -f "$dir/package.json" ]; then
+    echo "Linting $dir(node project)..."
+    (
+      cd "$dir"
+      if [ -f "pnpm-lock.yaml" ]; then
+        pnpm run lint
+      elif [ -f "package-lock.json" ]; then
+        npm run lint
+      else
+        echo "Warning: No lock file found, using npm"
+        npm run lint
+      fi
+    )
+    return $?
+  fi
+
   echo "Linting $dir..."
-  # The subshell captures output/errors for this specific service
+
+  # Go project linting
   (
     cd "$dir" && golangci-lint run ./... --fix --timeout 5m
   )

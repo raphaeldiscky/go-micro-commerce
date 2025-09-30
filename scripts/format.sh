@@ -11,12 +11,33 @@ SERVICES=(
   "fulfillment-service"
   "search-service"
   "chat-service"
+  "graphql-gateway"
 )
 
 format_service() {
   local dir="$1"
+
+  # Check if this is a Node.js project
+  if [ -f "$dir/package.json" ]; then
+    echo "Formatting $dir(node project)..."
+    (
+      cd "$dir"
+      if [ -f "pnpm-lock.yaml" ]; then
+        pnpm run format
+      elif [ -f "package-lock.json" ]; then
+        npm run format
+      else
+        echo "Warning: No lock file found, using npm"
+        npm run format
+      fi
+    )
+    return $?
+  fi
+
   echo "Formatting $dir..."
-  # Run commands in a subshell to isolate them
+
+
+  # Go project formatting
   (
     gofumpt -w "$dir"
     goimports -w "$dir"

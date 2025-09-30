@@ -32,6 +32,8 @@ jobs:
               - 'proto/**'
               - 'go.mod' 
               - 'go.sum'
+            graphql-gateway:
+              - 'graphql-gateway/**'
             auth-service:
               - 'auth-service/**'
               - 'pkg/**'

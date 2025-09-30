@@ -12,6 +12,7 @@ SERVICES=(
   "fulfillment-service"
   "search-service"
   "chat-service"
+  "graphql-gateway"
 )
 
 MAX_CONCURRENT=4
@@ -19,6 +20,12 @@ MAX_CONCURRENT=4
 deadcode_service() {
   local dir="$1"
   echo "Running deadcode analysis on $dir..."
+
+  # Skip Node.js projects (no Go code)
+  if [ -f "$dir/package.json" ]; then
+    echo "Skipping $dir - node project (no Go code to analyze)"
+    return 0
+  fi
 
   # Run deadcode from cmd/api main package
   if [ -f "$dir/cmd/api/main.go" ]; then

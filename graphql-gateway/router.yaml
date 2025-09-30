@@ -12,8 +12,8 @@ http:
 # CORS configuration
 cors:
   origins:
-    - http://localhost:3000  # Frontend
-    - http://localhost:8080  # API Gateway
+    - http://localhost:3000 # Frontend
+    - http://localhost:8080 # API Gateway
   allow_headers:
     - Content-Type
     - Authorization
@@ -28,7 +28,7 @@ headers:
   all:
     request:
       - propagate:
-          matching: ".*"  # Propagate all headers
+          matching: ".*" # Propagate all headers
   subgraphs:
     auth-service:
       request:

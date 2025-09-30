@@ -5,6 +5,10 @@
       "path": "/home/rdisckyzp/repos/go-micro-commerce/api-gateway"
     },
     {
+      "name": "graphql-gateway",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/graphql-gateway"
+    },
+    {
       "name": "auth-service",
       "path": "/home/rdisckyzp/repos/go-micro-commerce/auth-service"
     },
