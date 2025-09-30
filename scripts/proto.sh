@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 set -e
 echo "This is legacy script, use buf instead"
 # Check if protoc-gen-go is installed

@@ -8,6 +8,7 @@ for dir in */ ; do
   dir="${dir%/}"  
   if [[ -f "$dir/Dockerfile" ]]; then
     SERVICES+=("$dir")
+  fi
 done
 
 # Configuration

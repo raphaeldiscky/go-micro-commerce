@@ -8,6 +8,7 @@ for dir in */ ; do
   dir="${dir%/}"  
   if [[ -f "$dir/go.mod" ]]; then
     SERVICES+=("$dir")
+  fi
 done
 
 install_deps() {
