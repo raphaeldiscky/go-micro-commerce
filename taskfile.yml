@@ -266,6 +266,13 @@ tasks:
         fi
     deps: ["format"]
 
+  check:
+    desc: Run deadcode, linter, and formatter checks for all services
+    cmds:
+      - task: format
+      - task: lint
+      - task: deadcode
+
   security:
     desc: Check security
     vars:
@@ -279,13 +286,6 @@ tasks:
           echo "Running security for {{.SERVICE}}..."
           bash ./scripts/security.sh {{.SERVICE}}
         fi
-
-  full_check:
-    desc: Run deadcode, linter, and formatter checks
-    cmds:
-      - task: deadcode
-      - task: lint
-      - task: format
 
   mock:
     desc: Generate mock
