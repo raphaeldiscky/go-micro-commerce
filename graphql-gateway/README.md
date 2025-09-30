@@ -57,6 +57,7 @@ docker-compose -f deployments/docker-compose/graphql-gateway.yaml up
 ### router.yaml
 
 Main router configuration:
+
 - CORS settings
 - Header propagation
 - OpenTelemetry integration
@@ -66,6 +67,7 @@ Main router configuration:
 ### supergraph.yaml
 
 Subgraph composition configuration:
+
 - Subgraph routing URLs
 - Schema sources
 
@@ -81,6 +83,7 @@ Subgraph composition configuration:
 ## Monitoring
 
 The gateway exports:
+
 - **Traces**: to OpenTelemetry Collector → Tempo
 - **Metrics**: Prometheus format on port 9091
 - **Logs**: JSON structured logs
