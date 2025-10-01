@@ -13,7 +13,6 @@ jobs:
     runs-on: tenki-standard-autoscale
     outputs:
       typed_services: ${{ steps.classify.outputs.typed_services }}
-      graphql_schemas_changed: ${{ steps.filter.outputs.graphql-schemas }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -31,10 +30,8 @@ jobs:
               - 'go.sum'
             graphql-gateway:
               - 'graphql-gateway/**'
-            graphql-schemas:
-              - 'auth-service/**/schema.graphql'
-              - 'chat-service/**/schema.graphql'
-              - 'graphql-gateway/supergraph.yaml'
+              - 'auth-service/graph/schema/**/*.graphql'
+              - 'chat-service/graph/schema/**/*.graphql'
             auth-service:
               - 'auth-service/**'
               - 'pkg/**'
@@ -277,10 +274,7 @@ jobs:
 
   compose-supergraph:
     needs: [detect-changes, build-and-push]
-    if: |
-      needs.detect-changes.outputs.typed_services != '[]' &&
-      (contains(needs.detect-changes.outputs.typed_services, 'graphql-gateway') ||
-       needs.detect-changes.outputs.graphql_schemas_changed == 'true')
+    if: ${{ needs.detect-changes.outputs.typed_services != '[]' }}
     runs-on: tenki-standard-autoscale
     timeout-minutes: 10
     steps:
@@ -294,9 +288,6 @@ jobs:
           curl -sSL https://rover.apollo.dev/nix/latest | sh
           echo "$HOME/.rover/bin" >> $GITHUB_PATH
 
-      - name: Verify Rover installation
-        run: rover --version
-
       - name: Compose supergraph schema
         env:
           APOLLO_ELV2_LICENSE: accept
@@ -304,10 +295,14 @@ jobs:
           cd graphql-gateway
           rover supergraph compose --config supergraph.yaml > supergraph-schema.graphql
 
-      - name: Check for schema changes
+      - name: Detect schema changes
         id: check_changes
         run: |
-          git diff --exit-code graphql-gateway/supergraph-schema.graphql || echo "changed=true" >> $GITHUB_OUTPUT
+          if git diff --quiet graphql-gateway/supergraph-schema.graphql; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Commit and push schema changes
         if: steps.check_changes.outputs.changed == 'true' && github.event_name != 'pull_request'
@@ -317,11 +312,3 @@ jobs:
           git add graphql-gateway/supergraph-schema.graphql
           git commit -m "chore(graphql): update supergraph schema [skip ci]"
           git push
-
-      - name: Generate Job Summary
-        if: always()
-        run: |
-          echo "## Supergraph Composition Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Schema Changed**: ${{ steps.check_changes.outputs.changed || 'false' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
