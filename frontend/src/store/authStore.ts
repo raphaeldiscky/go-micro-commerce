@@ -1,5 +1,9 @@
-import type { User } from '@/lib/api'
-import { getAccessToken, getCurrentUser, setAccessToken } from '@/lib/api'
+import { getAccessToken, setAccessToken } from '@/lib/api'
+import { ME_QUERY } from '@/lib/graphql/auth'
+import type { MeQuery } from '@/lib/graphql/auth.generated'
+import { graphqlClient } from '@/lib/graphql/client'
+import { mapGraphQLUserToApiUser } from '@/lib/graphql/mappers'
+import type { User } from '@/types/__generated__/graphql'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
@@ -46,11 +50,12 @@ export const useAuthStore = create<AuthStore>()(
 
         try {
           set({ isLoading: true })
-          const user = await getCurrentUser()
+          const data = await graphqlClient.request<MeQuery>(ME_QUERY)
+          const user = data.me ? mapGraphQLUserToApiUser(data.me) : null
           set({
             error: null,
             hasInitialized: true,
-            isAuthenticated: true,
+            isAuthenticated: !!user,
             isLoading: false,
             user,
           })

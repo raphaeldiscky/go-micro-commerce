@@ -1,4 +1,3 @@
-export * from './auth'
 export * from './chat'
 // Re-export client utilities
 export { apiRequest, getAccessToken, setAccessToken } from './client'

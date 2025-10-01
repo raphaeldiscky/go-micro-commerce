@@ -32,7 +32,7 @@ ENV APOLLO_ELV2_LICENSE=accept
 COPY graphql-gateway/supergraph-schema.graphql ./supergraph-schema.graphql
 
 # ---- Final Stage ----
-FROM ghcr.io/apollographql/router:v1.59.1
+FROM ghcr.io/apollographql/router:v2.7.0
 
 # Set working directory
 WORKDIR /app
@@ -45,10 +45,11 @@ COPY --from=builder /build/supergraph-schema.graphql /app/supergraph-schema.grap
 EXPOSE 4000
 
 # Expose health check port
-EXPOSE 8088
+EXPOSE 4088
 
 # Expose Prometheus metrics port
 EXPOSE 9091
 
-# Start the router
-CMD ["-c", "/app/router.yaml", "-s", "/app/supergraph-schema.graphql"]
+# The router will use the environment variables:
+# APOLLO_ROUTER_SUPERGRAPH_PATH and APOLLO_ROUTER_CONFIG_PATH
+# No CMD needed - will use default entrypoint

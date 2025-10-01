@@ -1,5 +1,18 @@
-import type { AuthResponse, LoginRequest, RegisterRequest } from '@/lib/api'
-import { login, logout, register } from '@/lib/api'
+import { setAccessToken } from '@/lib/api/client'
+import {
+  LOGIN_MUTATION,
+  LOGOUT_MUTATION,
+  REGISTER_MUTATION,
+} from '@/lib/graphql/auth'
+import type {
+  LoginMutation,
+  LoginMutationVariables,
+  LogoutMutation,
+  RegisterMutation,
+  RegisterMutationVariables,
+} from '@/lib/graphql/auth.generated'
+import { graphqlClient } from '@/lib/graphql/client'
+import { mapGraphQLUserToApiUser } from '@/lib/graphql/mappers'
 import { useAuthStore } from '@/store/authStore'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
@@ -29,7 +42,7 @@ export function useCurrentUser() {
 }
 
 /**
- * Hook for user login
+ * Hook for user login using GraphQL
  */
 export function useLogin() {
   const queryClient = useQueryClient()
@@ -37,16 +50,28 @@ export function useLogin() {
   const loginUser = useAuthStore((state) => state.login)
 
   return useMutation({
-    mutationFn: (credentials: LoginRequest) => login(credentials),
+    mutationFn: async (input: LoginMutationVariables['input']) => {
+      const data = await graphqlClient.request<
+        LoginMutation,
+        LoginMutationVariables
+      >(LOGIN_MUTATION, { input })
+      return data.login
+    },
     onError: (error) => {
       console.error('Login failed:', error)
     },
-    onSuccess: (data: AuthResponse) => {
-      // Update auth store
-      loginUser(data.user)
+    onSuccess: (data) => {
+      // Store access token
+      setAccessToken(data.token)
+
+      // Map GraphQL user to API user format
+      const user = mapGraphQLUserToApiUser(data.user)
+
+      // Update auth store with user data
+      loginUser(user)
 
       // Update React Query cache
-      queryClient.setQueryData(AUTH_QUERY_KEYS.currentUser, data.user)
+      queryClient.setQueryData(AUTH_QUERY_KEYS.currentUser, user)
 
       // Invalidate all auth-related queries
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.all })
@@ -58,7 +83,7 @@ export function useLogin() {
 }
 
 /**
- * Hook for user logout
+ * Hook for user logout using GraphQL
  */
 export function useLogout() {
   const queryClient = useQueryClient()
@@ -66,16 +91,16 @@ export function useLogout() {
   const logoutUser = useAuthStore((state) => state.logout)
 
   return useMutation({
-    mutationFn: logout,
+    mutationFn: async () => {
+      await graphqlClient.request<LogoutMutation>(LOGOUT_MUTATION)
+    },
     onSettled: () => {
       // Always clear auth state even if API call fails
+      setAccessToken(null)
       logoutUser()
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.all })
     },
     onSuccess: () => {
-      // Clear auth store
-      logoutUser()
-
       // Clear all React Query cache
       queryClient.clear()
 
@@ -86,7 +111,7 @@ export function useLogout() {
 }
 
 /**
- * Hook for user registration
+ * Hook for user registration using GraphQL
  */
 export function useRegister() {
   const queryClient = useQueryClient()
@@ -94,16 +119,28 @@ export function useRegister() {
   const loginUser = useAuthStore((state) => state.login)
 
   return useMutation({
-    mutationFn: (userData: RegisterRequest) => register(userData),
+    mutationFn: async (input: RegisterMutationVariables['input']) => {
+      const data = await graphqlClient.request<
+        RegisterMutation,
+        RegisterMutationVariables
+      >(REGISTER_MUTATION, { input })
+      return data.register
+    },
     onError: (error) => {
       console.error('Registration failed:', error)
     },
-    onSuccess: (data: AuthResponse) => {
-      // Update auth store
-      loginUser(data.user)
+    onSuccess: (data) => {
+      // Store access token
+      setAccessToken(data.token)
+
+      // Map GraphQL user to API user format
+      const user = mapGraphQLUserToApiUser(data.user)
+
+      // Update auth store with user data
+      loginUser(user)
 
       // Update React Query cache
-      queryClient.setQueryData(AUTH_QUERY_KEYS.currentUser, data.user)
+      queryClient.setQueryData(AUTH_QUERY_KEYS.currentUser, user)
 
       // Invalidate all auth-related queries
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.all })

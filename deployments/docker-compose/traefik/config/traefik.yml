@@ -11,6 +11,15 @@ http:
         - rate-limit
         - auth-headers
 
+    # GraphQL Gateway
+    graphql-gateway:
+      rule: "Host(`graphql.localhost`)"
+      service: graphql-gateway
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
     # Direct access to Auth Service (for testing/admin)
     auth-service:
       rule: "Host(`auth.localhost`)"
@@ -94,6 +103,15 @@ http:
           timeout: 10s
           headers:
             Host: api-gateway
+
+    graphql-gateway:
+      loadBalancer:
+        servers:
+          - url: "http://graphql-gateway:4000"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
 
     auth-service:
       loadBalancer:

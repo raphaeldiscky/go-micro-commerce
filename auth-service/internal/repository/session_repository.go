@@ -58,7 +58,7 @@ func NewSessionRepository(db DBTX) SessionRepository {
 func (r *sessionRepository) Create(ctx context.Context, session *entity.Session) error {
 	query := `
 		INSERT INTO sessions (user_id, refresh_token, is_active, ip_address, user_agent, expires_at, created_at, updated_at, last_used_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		VALUES ($1, $2, $3, NULLIF($4, ''), $5, $6, $7, $8, $9)
 	`
 
 	_, err := r.db.Exec(ctx, query,
@@ -188,7 +188,7 @@ func (r *sessionRepository) GetActiveSessionsByUserID(
 func (r *sessionRepository) Update(ctx context.Context, session *entity.Session) error {
 	query := `
 		UPDATE sessions
-		SET is_active = $2, ip_address = $3, user_agent = $4, expires_at = $5, updated_at = $6, last_used_at = $7
+		SET is_active = $2, ip_address = NULLIF($3, ''), user_agent = $4, expires_at = $5, updated_at = $6, last_used_at = $7
 		WHERE id = $1
 	`
 
