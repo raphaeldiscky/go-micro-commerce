@@ -9,27 +9,29 @@ on:
       - "main"
 
 jobs:
+  # This job's purpose is to figure out which services need to be built.
   detect-changes:
     runs-on: tenki-standard-autoscale
     outputs:
-      typed_services: ${{ steps.classify.outputs.typed_services }}
+      # It will output a JSON array of service names that have changed.
+      services: ${{ steps.filter.outputs.changes }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Use Path Filter to detect changes
-        id: filter
+        # This action checks which files have changed based on the paths.
+        # Each service directory is a key.
         uses: dorny/paths-filter@v3
+        id: filter
         with:
           filters: |
             api-gateway:
               - 'api-gateway/**'
               - 'pkg/**'
               - 'proto/**'
-              - 'go.mod'
+              - 'go.mod' 
               - 'go.sum'
-            graphql-gateway:
-              - 'graphql-gateway/**'
             auth-service:
               - 'auth-service/**'
               - 'pkg/**'
@@ -79,82 +81,41 @@ jobs:
               - 'go.mod'
               - 'go.sum'
 
-      - name: Classify services as node or go
-        id: classify
-        run: |
-          changes='${{ steps.filter.outputs.changes }}'
-          echo "Raw changes: $changes"
-
-          services=$(echo "$changes" | jq -c '.')
-          typed_services=$(jq -c 'map({
-            name: .,
-            type: (if (. == "graphql-gateway")
-                     then "node" else "go" end)
-          })' <<< "$services")
-
-          echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
-
+  # This job runs for each service that was detected in the previous job.
   build-and-push:
+    # It requires 'detect-changes' to finish successfully.
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.typed_services != '[]' }}
+    # Only run this job if there are actually changed services.
+    if: ${{ needs.detect-changes.outputs.services != '[]' }}
     runs-on: tenki-standard-autoscale
     timeout-minutes: 30
+    # The 'matrix' strategy creates a parallel job for each service name
+    # in the JSON array from the 'detect-changes' job output.
     strategy:
       fail-fast: true
       matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.typed_services) }}
-
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Node.js setup
-      - name: Setup Node.js
-        if: matrix.type == 'node'
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Setup pnpm
-        if: matrix.type == 'node'
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Cache pnpm modules
-        if: matrix.type == 'node'
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles(format('{0}/pnpm-lock.yaml', matrix.name)) }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-
-      - name: Install Node.js dependencies
-        if: matrix.type == 'node'
-        run: cd ${{ matrix.name }} && pnpm install
-
-      # Go setup
       - name: Setup Go
-        if: matrix.type == 'go'
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.7"
+          go-version: "1.24.7" # Updated to match go.mod requirement
 
       - name: Cache Go modules
-        if: matrix.type == 'go'
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.name }}-${{ hashFiles(format('{0}/go.sum', matrix.name), 'pkg/go.sum', 'proto/go.sum') }}
+          key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles(format('{0}/go.sum', matrix.service), 'pkg/go.sum', 'proto/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.name }}-
+            ${{ runner.os }}-go-${{ matrix.service }}-
             ${{ runner.os }}-go-
 
-      - name: Install Go Tools
-        if: matrix.type == 'go'
+      - name: Install Tools
         run: |
           go install mvdan.cc/gofumpt@latest
           go install golang.org/x/tools/cmd/goimports@latest
@@ -162,68 +123,35 @@ jobs:
           go install golang.org/x/tools/cmd/deadcode@latest
           go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      - name: Check deadcode for ${{ matrix.name }}
-        if: matrix.type == 'go'
-        run: bash scripts/deadcode.sh ${{ matrix.name }}
+      - name: Check deadcode for ${{ matrix.service }}
+        run: bash scripts/deadcode.sh ${{ matrix.service }}
 
-      # Run lint/format/test scripts (scripts should auto-handle Node vs Go)
-      - name: Run Linter for ${{ matrix.name }}
-        run: bash scripts/lint.sh ${{ matrix.name }}
+      - name: Run Linter for ${{ matrix.service }}
+        run: bash scripts/lint.sh ${{ matrix.service }}
 
-      - name: Run Format check for ${{ matrix.name }}
-        run: bash scripts/format.sh ${{ matrix.name }}
+      - name: Run Security Vulnerability Scan for ${{ matrix.service }}
+        run: bash scripts/security.sh ${{ matrix.service }}
 
-      - name: Run Security Vulnerability Scan for ${{ matrix.name }}
-        if: matrix.type == 'go'
-        run: bash scripts/security.sh ${{ matrix.name }}
-
-      - name: Run Tests for ${{ matrix.name }}
-        if: matrix.type == 'go'
-        run: bash scripts/test.sh ${{ matrix.name }}
+      - name: Run Tests for ${{ matrix.service }}
+        run: bash scripts/test.sh ${{ matrix.service }}
 
       - name: Upload test coverage to Codecov
-        if: matrix.type == 'go'
         uses: codecov/codecov-action@v4
         with:
-          file: ./${{ matrix.name }}/coverage.out
-          flags: ${{ matrix.name }}
-          name: ${{ matrix.name }}-coverage
+          file: ./${{ matrix.service }}/coverage.out
+          flags: ${{ matrix.service }}
+          name: ${{ matrix.service }}-coverage
           fail_ci_if_error: false
 
       - name: Upload coverage reports
-        if: always() && matrix.type == 'go'
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: ${{ matrix.name }}-coverage
+          name: ${{ matrix.service }}-coverage
           path: |
-            ./${{ matrix.name }}/coverage.out
-            ./${{ matrix.name }}/coverage.html
+            ./${{ matrix.service }}/coverage.out
+            ./${{ matrix.service }}/coverage.html
 
-      # Generate supergraph schema for graphql-gateway
-      - name: Install Rover CLI
-        if: matrix.type == 'node' && matrix.name == 'graphql-gateway'
-        run: |
-          curl -sSL https://rover.apollo.dev/nix/latest | sh
-          echo "$HOME/.rover/bin" >> $GITHUB_PATH
-
-      - name: Start required services for schema composition
-        if: matrix.type == 'node' && matrix.name == 'graphql-gateway'
-        run: |
-          # Start auth-service and chat-service for introspection
-          docker compose -f deployments/docker-compose/apps.yaml up -d auth-service chat-service
-          # Wait for services to be ready
-          timeout 60 bash -c 'until curl -sf http://localhost:8081/health; do sleep 2; done'
-          timeout 60 bash -c 'until curl -sf http://localhost:8088/health; do sleep 2; done'
-
-      - name: Compose supergraph schema
-        if: matrix.type == 'node' && matrix.name == 'graphql-gateway'
-        run: bash scripts/compose-supergraph.sh
-
-      - name: Stop services
-        if: always() && matrix.type == 'node' && matrix.name == 'graphql-gateway'
-        run: docker compose -f deployments/docker-compose/apps.yaml down
-
-      # Docker build & push
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -250,7 +178,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}
+          images: ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.service }}
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -260,7 +188,7 @@ jobs:
         id: build
         with:
           context: . # Use root as context to access pkg directory
-          file: ./${{ matrix.name }}/Dockerfile
+          file: ./${{ matrix.service }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -284,12 +212,11 @@ jobs:
       - name: Generate Job Summary
         if: always()
         run: |
-          echo "## Build Summary for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Service**: ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Type**: ${{ matrix.type }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Summary for ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ matrix.type }}" = "go" ] && [ -f "${{ matrix.name }}/coverage.out" ]; then
-            COVERAGE=$(go tool cover -func=${{ matrix.name }}/coverage.out | grep total: | awk '{print $3}')
+          if [ -f "${{ matrix.service }}/coverage.out" ]; then
+            COVERAGE=$(go tool cover -func=${{ matrix.service }}/coverage.out | grep total: | awk '{print $3}')
             echo "- **Test Coverage**: $COVERAGE" >> $GITHUB_STEP_SUMMARY
           fi
