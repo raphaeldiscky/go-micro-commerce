@@ -8,3 +8,6 @@ count.txt
 .nitro
 .tanstack
 CLAUDE.md
+
+# GraphQL Code Generator - operation files next to components
+**/*.generated.ts
