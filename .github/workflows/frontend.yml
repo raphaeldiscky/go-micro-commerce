@@ -6,11 +6,13 @@ on:
       - "main"
     paths:
       - "frontend/**"
+      - "graphql-gateway/supergraph-schema.graphql"
   pull_request:
     branches:
       - "main"
     paths:
       - "frontend/**"
+      - "graphql-gateway/supergraph-schema.graphql"
 
 jobs:
   build:
@@ -52,6 +54,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate GraphQL types
+        run: pnpm codegen
 
       - name: Check formatting and linting
         run: pnpm run check

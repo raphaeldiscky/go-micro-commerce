@@ -10,6 +10,7 @@
  * 5. Use typed graphqlClient.request<TData, TVariables>()
  */
 
+import { useForm } from '@tanstack/react-form'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { gql } from 'graphql-request'
 import { graphqlClient } from './client'
@@ -72,7 +73,7 @@ export function UserProfile({ userId }: { userId: string }) {
   )
 }
 
-// Example login form using mutation
+// Example login form using TanStack Form + TanStack Query mutation
 export function LoginForm() {
   const loginMutation = useMutation({
     mutationFn: async (input: LoginMutationVariables['input']) =>
@@ -85,22 +86,56 @@ export function LoginForm() {
     },
   })
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    loginMutation.mutate({
-      email: formData.get('email') as string,
-      password: formData.get('password') as string,
-    })
-  }
+  const form = useForm({
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+    onSubmit: ({ value }) => {
+      loginMutation.mutate(value)
+    },
+  })
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input name="email" type="email" required />
-      <input name="password" type="password" required />
+    <form
+      onSubmit={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        form.handleSubmit()
+      }}
+    >
+      <form.Field name="email">
+        {(field) => (
+          <div>
+            <input
+              type="email"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              required
+            />
+          </div>
+        )}
+      </form.Field>
+
+      <form.Field name="password">
+        {(field) => (
+          <div>
+            <input
+              type="password"
+              value={field.state.value}
+              onBlur={field.handleBlur}
+              onChange={(e) => field.handleChange(e.target.value)}
+              required
+            />
+          </div>
+        )}
+      </form.Field>
+
       <button type="submit" disabled={loginMutation.isPending}>
         {loginMutation.isPending ? 'Logging in...' : 'Login'}
       </button>
+
       {loginMutation.error && <div>Error: {loginMutation.error.message}</div>}
     </form>
   )
