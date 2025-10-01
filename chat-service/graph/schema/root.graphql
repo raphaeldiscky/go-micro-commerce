@@ -1,0 +1,16 @@
+# Scalars
+scalar Time
+
+# Note: Apollo Federation directives (@key, @external, etc.) are automatically
+# included by gqlgen when federation is enabled in gqlgen.yml
+
+# Extend User entity from auth-service (we reference it but don't own it)
+extend type User @key(fields: "id") {
+  id: ID! @external
+  conversations: [Conversation!]!
+  onlineStatus: OnlineStatus
+}
+
+# Root query and mutation types
+type Query
+type Mutation

@@ -340,14 +340,22 @@ func (e *Executor) executeStepWithRetry(
 			if metadata.UserAuth != nil {
 				stepCtx = context.WithValue(
 					stepCtx,
-					pkgconstant.CtxUserID,
+					pkgconstant.CtxKeyUserID,
 					metadata.UserAuth.UserID,
 				)
-				stepCtx = context.WithValue(stepCtx, pkgconstant.CtxEmail, metadata.UserAuth.Email)
-				stepCtx = context.WithValue(stepCtx, pkgconstant.CtxRoles, metadata.UserAuth.Roles)
 				stepCtx = context.WithValue(
 					stepCtx,
-					pkgconstant.CtxIsActive,
+					pkgconstant.CtxKeyEmail,
+					metadata.UserAuth.Email,
+				)
+				stepCtx = context.WithValue(
+					stepCtx,
+					pkgconstant.CtxKeyRoles,
+					metadata.UserAuth.Roles,
+				)
+				stepCtx = context.WithValue(
+					stepCtx,
+					pkgconstant.CtxKeyIsActive,
 					metadata.UserAuth.IsActive,
 				)
 			}
@@ -495,22 +503,22 @@ func (e *Executor) compensateStepWithRetry(
 	if metadata.UserAuth != nil {
 		compensationCtx = context.WithValue(
 			compensationCtx,
-			pkgconstant.CtxUserID,
+			pkgconstant.CtxKeyUserID,
 			metadata.UserAuth.UserID,
 		)
 		compensationCtx = context.WithValue(
 			compensationCtx,
-			pkgconstant.CtxEmail,
+			pkgconstant.CtxKeyEmail,
 			metadata.UserAuth.Email,
 		)
 		compensationCtx = context.WithValue(
 			compensationCtx,
-			pkgconstant.CtxRoles,
+			pkgconstant.CtxKeyRoles,
 			metadata.UserAuth.Roles,
 		)
 		compensationCtx = context.WithValue(
 			compensationCtx,
-			pkgconstant.CtxIsActive,
+			pkgconstant.CtxKeyIsActive,
 			metadata.UserAuth.IsActive,
 		)
 	}

@@ -9,29 +9,29 @@ on:
       - "main"
 
 jobs:
-  # This job's purpose is to figure out which services need to be built.
   detect-changes:
     runs-on: tenki-standard-autoscale
     outputs:
-      # It will output a JSON array of service names that have changed.
-      services: ${{ steps.filter.outputs.changes }}
+      typed_services: ${{ steps.classify.outputs.typed_services }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Use Path Filter to detect changes
-        # This action checks which files have changed based on the paths.
-        # Each service directory is a key.
-        uses: dorny/paths-filter@v3
         id: filter
+        uses: dorny/paths-filter@v3
         with:
           filters: |
             api-gateway:
               - 'api-gateway/**'
               - 'pkg/**'
               - 'proto/**'
-              - 'go.mod' 
+              - 'go.mod'
               - 'go.sum'
+            graphql-gateway:
+              - 'graphql-gateway/**'
+              - 'auth-service/graph/schema/**/*.graphql'
+              - 'chat-service/graph/schema/**/*.graphql'
             auth-service:
               - 'auth-service/**'
               - 'pkg/**'
@@ -81,41 +81,82 @@ jobs:
               - 'go.mod'
               - 'go.sum'
 
-  # This job runs for each service that was detected in the previous job.
+      - name: Classify services as node or go
+        id: classify
+        run: |
+          changes='${{ steps.filter.outputs.changes }}'
+          echo "Raw changes: $changes"
+
+          services=$(echo "$changes" | jq -c '.')
+          typed_services=$(jq -c 'map({
+            name: .,
+            type: (if (. == "graphql-gateway")
+                     then "node" else "go" end)
+          })' <<< "$services")
+
+          echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
+
   build-and-push:
-    # It requires 'detect-changes' to finish successfully.
     needs: detect-changes
-    # Only run this job if there are actually changed services.
-    if: ${{ needs.detect-changes.outputs.services != '[]' }}
+    if: ${{ needs.detect-changes.outputs.typed_services != '[]' }}
     runs-on: tenki-standard-autoscale
     timeout-minutes: 30
-    # The 'matrix' strategy creates a parallel job for each service name
-    # in the JSON array from the 'detect-changes' job output.
     strategy:
       fail-fast: true
       matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+        include: ${{ fromJson(needs.detect-changes.outputs.typed_services) }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # Node.js setup
+      - name: Setup Node.js
+        if: matrix.type == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup pnpm
+        if: matrix.type == 'node'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Cache pnpm modules
+        if: matrix.type == 'node'
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles(format('{0}/pnpm-lock.yaml', matrix.name)) }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      - name: Install Node.js dependencies
+        if: matrix.type == 'node'
+        run: cd ${{ matrix.name }} && pnpm install
+
+      # Go setup
       - name: Setup Go
+        if: matrix.type == 'go'
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.7" # Updated to match go.mod requirement
+          go-version: "1.24.7"
 
       - name: Cache Go modules
+        if: matrix.type == 'go'
         uses: actions/cache@v4
         with:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.service }}-${{ hashFiles(format('{0}/go.sum', matrix.service), 'pkg/go.sum', 'proto/go.sum') }}
+          key: ${{ runner.os }}-go-${{ matrix.name }}-${{ hashFiles(format('{0}/go.sum', matrix.name), 'pkg/go.sum', 'proto/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.service }}-
+            ${{ runner.os }}-go-${{ matrix.name }}-
             ${{ runner.os }}-go-
 
-      - name: Install Tools
+      - name: Install Go Tools
+        if: matrix.type == 'go'
         run: |
           go install mvdan.cc/gofumpt@latest
           go install golang.org/x/tools/cmd/goimports@latest
@@ -123,35 +164,44 @@ jobs:
           go install golang.org/x/tools/cmd/deadcode@latest
           go install golang.org/x/vuln/cmd/govulncheck@latest
 
-      - name: Check deadcode for ${{ matrix.service }}
-        run: bash scripts/deadcode.sh ${{ matrix.service }}
+      - name: Check deadcode for ${{ matrix.name }}
+        if: matrix.type == 'go'
+        run: bash scripts/deadcode.sh ${{ matrix.name }}
 
-      - name: Run Linter for ${{ matrix.service }}
-        run: bash scripts/lint.sh ${{ matrix.service }}
+      # Run lint/format/test scripts (scripts should auto-handle Node vs Go)
+      - name: Run Linter for ${{ matrix.name }}
+        run: bash scripts/lint.sh ${{ matrix.name }}
 
-      - name: Run Security Vulnerability Scan for ${{ matrix.service }}
-        run: bash scripts/security.sh ${{ matrix.service }}
+      - name: Run Format check for ${{ matrix.name }}
+        run: bash scripts/format.sh ${{ matrix.name }}
 
-      - name: Run Tests for ${{ matrix.service }}
-        run: bash scripts/test.sh ${{ matrix.service }}
+      - name: Run Security Vulnerability Scan for ${{ matrix.name }}
+        if: matrix.type == 'go'
+        run: bash scripts/security.sh ${{ matrix.name }}
+
+      - name: Run Tests for ${{ matrix.name }}
+        if: matrix.type == 'go'
+        run: bash scripts/test.sh ${{ matrix.name }}
 
       - name: Upload test coverage to Codecov
+        if: matrix.type == 'go'
         uses: codecov/codecov-action@v4
         with:
-          file: ./${{ matrix.service }}/coverage.out
-          flags: ${{ matrix.service }}
-          name: ${{ matrix.service }}-coverage
+          file: ./${{ matrix.name }}/coverage.out
+          flags: ${{ matrix.name }}
+          name: ${{ matrix.name }}-coverage
           fail_ci_if_error: false
 
       - name: Upload coverage reports
+        if: always() && matrix.type == 'go'
         uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: ${{ matrix.service }}-coverage
+          name: ${{ matrix.name }}-coverage
           path: |
-            ./${{ matrix.service }}/coverage.out
-            ./${{ matrix.service }}/coverage.html
+            ./${{ matrix.name }}/coverage.out
+            ./${{ matrix.name }}/coverage.html
 
+      # Docker build & push
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
@@ -178,7 +228,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.service }}
+          images: ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}
           tags: |
             type=sha,prefix=
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -188,7 +238,7 @@ jobs:
         id: build
         with:
           context: . # Use root as context to access pkg directory
-          file: ./${{ matrix.service }}/Dockerfile
+          file: ./${{ matrix.name }}/Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -212,11 +262,56 @@ jobs:
       - name: Generate Job Summary
         if: always()
         run: |
-          echo "## Build Summary for ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Service**: ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Summary for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Type**: ${{ matrix.type }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          if [ -f "${{ matrix.service }}/coverage.out" ]; then
-            COVERAGE=$(go tool cover -func=${{ matrix.service }}/coverage.out | grep total: | awk '{print $3}')
+          if [ "${{ matrix.type }}" = "go" ] && [ -f "${{ matrix.name }}/coverage.out" ]; then
+            COVERAGE=$(go tool cover -func=${{ matrix.name }}/coverage.out | grep total: | awk '{print $3}')
             echo "- **Test Coverage**: $COVERAGE" >> $GITHUB_STEP_SUMMARY
           fi
+
+  compose-supergraph:
+    needs: [detect-changes, build-and-push]
+    if: ${{ needs.detect-changes.outputs.typed_services != '[]' }}
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rover CLI
+        run: |
+          curl -sSL https://rover.apollo.dev/nix/latest | sh
+          echo "$HOME/.rover/bin" >> $GITHUB_PATH
+
+      - name: Merge GraphQL schemas
+        run: bash scripts/merge-graphql-schemas.sh
+
+      - name: Compose supergraph schema
+        env:
+          APOLLO_ELV2_LICENSE: accept
+        run: |
+          cd graphql-gateway
+          rover supergraph compose --config supergraph.yaml > supergraph-schema.graphql
+
+      - name: Detect schema changes
+        id: check_changes
+        run: |
+          if git diff --quiet graphql-gateway/supergraph-schema.graphql; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push schema changes
+        if: steps.check_changes.outputs.changed == 'true' && github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add graphql-gateway/supergraph-schema.graphql
+          git commit -m "chore(graphql): update supergraph schema [skip ci]"
+          git push

@@ -30,6 +30,11 @@ type ProductService interface {
 		ctx context.Context,
 		req dto.GetProductsRequest,
 	) ([]dto.ProductResponse, *pkgdto.OffsetPagination, error)
+	ListProducts(
+		ctx context.Context,
+		limit int64,
+		cursor string,
+	) ([]dto.ProductResponse, *pkgdto.CursorPagination, error)
 	BatchGetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]dto.ProductResponse, error)
 	UpdateProduct(ctx context.Context, req dto.UpdateProductRequest) (*dto.ProductResponse, error)
 	DeleteProduct(ctx context.Context, id uuid.UUID) error
@@ -217,6 +222,66 @@ func (s *productService) GetProducts(
 	}
 
 	pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
+
+	return res, pagination, nil
+}
+
+// ListProducts retrieves products with cursor-based pagination.
+func (s *productService) ListProducts(
+	ctx context.Context,
+	limit int64,
+	cursor string,
+) ([]dto.ProductResponse, *pkgdto.CursorPagination, error) {
+	productRepo := s.dataStore.ProductRepository()
+
+	var (
+		cursorID        string
+		cursorTimestamp int64
+	)
+
+	if cursor != "" {
+		cursorData, err := pageutils.DecodeCursor(cursor)
+		if err != nil {
+			return nil, nil, httperror.NewBadRequestError("invalid cursor")
+		}
+
+		cursorID = cursorData.ID
+		cursorTimestamp = cursorData.Timestamp
+	}
+
+	fetchLimit := limit + 1
+
+	products, err := productRepo.FindAllWithCursor(ctx, fetchLimit, cursorID, cursorTimestamp)
+	if err != nil {
+		return nil, nil, httperror.NewInternalServerError("failed to get products")
+	}
+
+	hasNext := len(products) > int(limit)
+	if hasNext {
+		products = products[:limit]
+	}
+
+	res := make([]dto.ProductResponse, len(products))
+	for i, product := range products {
+		res[i] = *mapper.MapToProductResponse(product)
+	}
+
+	var nextCursor string
+
+	if hasNext && len(products) > 0 {
+		lastProduct := products[len(products)-1]
+
+		nextCursor, err = pageutils.GenerateNextCursor(
+			lastProduct.ID.String(),
+			lastProduct.CreatedAt.Unix(),
+			"",
+		)
+		if err != nil {
+			return nil, nil, httperror.NewInternalServerError("failed to generate cursor")
+		}
+	}
+
+	pagination := pageutils.NewCursorPagination(nextCursor, "", hasNext, false, limit)
 
 	return res, pagination, nil
 }

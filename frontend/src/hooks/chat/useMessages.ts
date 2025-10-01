@@ -53,7 +53,14 @@ export function useMessages(conversationId: string) {
   return useInfiniteQuery({
     enabled: !!conversationId,
     gcTime: 5 * 60 * 1000, // 5 minutes
-    getNextPageParam: (lastPage: { messages: Array<Message>; hasMore: boolean; totalPages: number }, allPages) => {
+    getNextPageParam: (
+      lastPage: {
+        messages: Array<Message>
+        hasMore: boolean
+        totalPages: number
+      },
+      allPages,
+    ) => {
       // Use the hasMore flag from the API response
       return lastPage.hasMore ? allPages.length + 1 : undefined
     },
@@ -65,7 +72,13 @@ export function useMessages(conversationId: string) {
     staleTime: 30 * 1000, // 30 seconds - messages are real-time
     select: (data) => ({
       ...data,
-      pages: data.pages.map((page: { messages: Array<Message>; hasMore: boolean; totalPages: number }) => page.messages),
+      pages: data.pages.map(
+        (page: {
+          messages: Array<Message>
+          hasMore: boolean
+          totalPages: number
+        }) => page.messages,
+      ),
     }),
   })
 }

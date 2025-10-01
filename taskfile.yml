@@ -46,29 +46,22 @@ tasks:
         fi
 
   build:
-    desc: Build all services
+    desc: Build docker images
     vars:
       SERVICE: '{{.SERVICE | default ""}}'
     cmds:
       - |
         if [ -z "{{.SERVICE}}" ]; then
-          echo "Building all services..."
-          bash ./scripts/deadcode.sh
+          echo "Building docker images for all services..."
           bash ./scripts/lint.sh
           bash ./scripts/format.sh
           bash ./scripts/build.sh
         else
-          echo "Building {{.SERVICE}}..."
-          bash ./scripts/deadcode.sh {{.SERVICE}}
+          echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
           bash ./scripts/format.sh {{.SERVICE}}
           bash ./scripts/build.sh {{.SERVICE}}
         fi
-  build_fe:
-    desc: Build frontend
-    cmds:
-      - cd frontend && npm run build
-
   push:
     desc: Push all services to the container registry
     vars:
@@ -273,6 +266,13 @@ tasks:
         fi
     deps: ["format"]
 
+  check:
+    desc: Run deadcode, linter, and formatter checks for all services
+    cmds:
+      - task: format
+      - task: lint
+      - task: deadcode
+
   security:
     desc: Check security
     vars:
@@ -286,13 +286,6 @@ tasks:
           echo "Running security for {{.SERVICE}}..."
           bash ./scripts/security.sh {{.SERVICE}}
         fi
-
-  full_check:
-    desc: Run deadcode, linter, and formatter checks
-    cmds:
-      - task: deadcode
-      - task: lint
-      - task: format
 
   mock:
     desc: Generate mock
@@ -314,6 +307,56 @@ tasks:
       SERVICE: '{{.SERVICE | default ""}}'
     cmds:
       - buf generate
+
+  oapi:
+    desc: Generate OpenAPI files
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating OpenAPI files for all services..."
+          bash ./scripts/oapi.sh
+        else
+          echo "Generating OpenAPI files for {{.SERVICE}}..."
+          bash ./scripts/oapi.sh {{.SERVICE}}
+        fi
+
+  graphql:
+    desc: Generate GraphQL files
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Generating GraphQL files for all services..."
+          bash ./scripts/graphql.sh
+        else
+          echo "Generating GraphQL files for {{.SERVICE}}..."
+          bash ./scripts/graphql.sh {{.SERVICE}}
+        fi
+
+  compose_graphql:
+    desc: Compose Apollo Federation supergraph schema
+    cmds:
+      - bash ./scripts/compose-supergraph.sh
+
+  start_graphql_gateway:
+    desc: Start GraphQL Gateway
+    cmds:
+      - docker-compose -f {{.DC_DIR}}/graphql-gateway.yaml up -d
+
+  stop_graphql_gateway:
+    desc: Stop GraphQL Gateway
+    cmds:
+      - docker-compose -f {{.DC_DIR}}/graphql-gateway.yaml down
+
+  restart_graphql_gateway:
+    desc: Restart GraphQL Gateway
+    cmds:
+      - task: stop_graphql_gateway
+      - task: sleep
+      - task: start_graphql_gateway
 
   sqlc:
     desc: Generate SQLC files

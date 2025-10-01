@@ -7,6 +7,7 @@ export interface KeyFeature {
 }
 
 export interface NavigationItem {
+  description?: string
   icon: React.ElementType
   name: string
   path: string

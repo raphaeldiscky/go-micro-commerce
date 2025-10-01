@@ -43,10 +43,10 @@ func (a *AuthInterceptor) ServiceToServiceAuth() connect.UnaryInterceptorFunc {
 				}
 
 				// Add user information to context for downstream use
-				newCtx := context.WithValue(ctx, constant.CtxUserID, userInfo.UserID)
-				newCtx = context.WithValue(newCtx, constant.CtxEmail, userInfo.Email)
-				newCtx = context.WithValue(newCtx, constant.CtxRoles, userInfo.Roles)
-				newCtx = context.WithValue(newCtx, constant.CtxIsActive, userInfo.IsActive)
+				newCtx := context.WithValue(ctx, constant.CtxKeyUserID, userInfo.UserID)
+				newCtx = context.WithValue(newCtx, constant.CtxKeyEmail, userInfo.Email)
+				newCtx = context.WithValue(newCtx, constant.CtxKeyRoles, userInfo.Roles)
+				newCtx = context.WithValue(newCtx, constant.CtxKeyIsActive, userInfo.IsActive)
 
 				return next(newCtx, req)
 			},
@@ -129,28 +129,28 @@ type HeaderSetter interface {
 // This is used by Connect-RPC clients to propagate authentication information to other services.
 func AddAuthHeaders(ctx context.Context, req HeaderSetter) {
 	// Extract user ID
-	if userID := ctx.Value(constant.CtxUserID); userID != nil {
+	if userID := ctx.Value(constant.CtxKeyUserID); userID != nil {
 		if id, ok := userID.(uuid.UUID); ok {
 			req.Header().Set(constant.XUserID, id.String())
 		}
 	}
 
 	// Extract email
-	if email := ctx.Value(constant.CtxEmail); email != nil {
+	if email := ctx.Value(constant.CtxKeyEmail); email != nil {
 		if emailStr, ok := email.(string); ok {
 			req.Header().Set(constant.XEmail, emailStr)
 		}
 	}
 
 	// Extract roles
-	if roles := ctx.Value(constant.CtxRoles); roles != nil {
+	if roles := ctx.Value(constant.CtxKeyRoles); roles != nil {
 		if rolesSlice, ok := roles.([]string); ok {
 			req.Header().Set(constant.XRoles, strings.Join(rolesSlice, ","))
 		}
 	}
 
 	// Extract is active
-	if isActive := ctx.Value(constant.CtxIsActive); isActive != nil {
+	if isActive := ctx.Value(constant.CtxKeyIsActive); isActive != nil {
 		if active, ok := isActive.(bool); ok {
 			req.Header().Set(constant.XIsActive, strconv.FormatBool(active))
 		}

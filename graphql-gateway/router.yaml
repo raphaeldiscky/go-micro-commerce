@@ -1,0 +1,91 @@
+supergraph:
+  # Path to the supergraph schema file
+  path: /app/supergraph-schema.graphql
+  # Introspection enabled for development
+  introspection: true
+
+# Server configuration
+http:
+  # Listen on all interfaces
+  listen: 0.0.0.0:4000
+
+# CORS configuration
+cors:
+  origins:
+    - http://localhost:3000 # Frontend
+    - http://localhost:8080 # API Gateway
+  allow_headers:
+    - Content-Type
+    - Authorization
+    - X-User-ID
+    - X-Email
+    - X-Roles
+    - X-Is-Active
+  allow_credentials: true
+
+# Header propagation to subgraphs
+headers:
+  all:
+    request:
+      - propagate:
+          matching: ".*" # Propagate all headers
+  subgraphs:
+    auth-service:
+      request:
+        - insert:
+            name: "X-Gateway"
+            value: "graphql-gateway"
+    chat-service:
+      request:
+        - insert:
+            name: "X-Gateway"
+            value: "graphql-gateway"
+
+# OpenTelemetry configuration
+telemetry:
+  instrumentation:
+    spans:
+      mode: spec_compliant
+    instruments:
+      default_requirement_level: required
+
+  exporters:
+    tracing:
+      otlp:
+        enabled: true
+        endpoint: otel-collector:4317
+        protocol: grpc
+        batch_processor:
+          timeout: 5s
+          max_export_batch_size: 512
+          max_concurrent_exports: 1
+          max_queue_size: 2048
+    metrics:
+      prometheus:
+        enabled: true
+        listen: 0.0.0.0:9091
+        path: /metrics
+
+# Health check endpoint
+health_check:
+  listen: 0.0.0.0:8088
+  enabled: true
+
+# Limits and timeouts
+traffic_shaping:
+  router:
+    timeout: 30s
+    global_rate_limit:
+      capacity: 1000
+      interval: 1s
+  all:
+    deduplicate_query: true
+    timeout: 20s
+
+# Logging
+plugins:
+  experimental.logging:
+    format:
+      json:
+        display_filename: true
+        display_line_number: true

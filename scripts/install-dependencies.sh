@@ -2,20 +2,14 @@
 
 set -e
 
-# List of service directories with Go modules
-SERVICES=(
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "pkg"
-  "proto"
-  "api-gateway"
-  "payment-service"
-  "fulfillment-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/go.mod" ]]; then
+    SERVICES+=("$dir")
+  fi
+done
 
 install_deps() {
   local dir="$1"

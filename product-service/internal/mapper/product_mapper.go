@@ -4,6 +4,7 @@ package mapper
 import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
@@ -44,6 +45,28 @@ func MapDTOToProtobufProducts(products []dto.ProductResponse) []*pb.Product {
 	result := make([]*pb.Product, len(products))
 	for i := range products {
 		result[i] = MapDTOToProtobufProduct(&products[i])
+	}
+
+	return result
+}
+
+// MapCursorPaginationToProtobuf converts cursor pagination DTO to protobuf message.
+func MapCursorPaginationToProtobuf(pagination *pkgdto.CursorPagination) *pb.CursorPagination {
+	if pagination == nil {
+		return nil
+	}
+
+	result := &pb.CursorPagination{
+		HasNext: pagination.HasNext,
+		HasPrev: pagination.HasPrev,
+	}
+
+	if pagination.NextCursor != "" {
+		result.NextCursor = &pagination.NextCursor
+	}
+
+	if pagination.PrevCursor != "" {
+		result.PrevCursor = &pagination.PrevCursor
 	}
 
 	return result

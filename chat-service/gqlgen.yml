@@ -1,0 +1,46 @@
+schema:
+  - graph/schema/*.graphql
+
+exec:
+  filename: graph/generated.go
+  package: graph
+
+model:
+  filename: graph/models_gen.go
+  package: graph
+
+resolver:
+  layout: follow-schema
+  dir: graph/resolver
+  package: resolver
+  filename_template: "{name}.resolvers.go"
+
+# Enable Apollo Federation v2
+federation:
+  filename: graph/federation.go
+  package: graph
+  version: 2
+
+# Autobind existing types
+autobind:
+  - "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+  Time:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
+
+  # Map enums to existing constants
+  ConversationStatus:
+    model: github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant.ConversationStatus
+  MessageType:
+    model: github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant.MessageType
+  UserType:
+    model: github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant.UserType
+  ParticipantRole:
+    model: github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant.ParticipantRole
+
+skip_mod_tidy: true

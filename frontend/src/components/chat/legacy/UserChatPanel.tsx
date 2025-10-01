@@ -1,5 +1,9 @@
 import { useChatTicket } from '@/hooks/chat/useChatTicket'
-import { generateTimestamp, generateUniqueId, isExpired } from '@/lib/utils/date'
+import {
+  generateTimestamp,
+  generateUniqueId,
+  isExpired,
+} from '@/lib/utils/date'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Badge } from '../../ui/badge'
 import { Button } from '../../ui/button'

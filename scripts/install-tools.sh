@@ -36,6 +36,14 @@ else
     echo "govulncheck already installed"
 fi
 
+if ! command -v oapi-codegen &> /dev/null; then
+    echo "Installing oapi..."
+    go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
+
+else
+    echo "oapi already installed"
+fi
+
 # install node.js tools
 npm install
 

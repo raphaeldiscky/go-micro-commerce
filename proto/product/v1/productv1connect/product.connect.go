@@ -34,6 +34,9 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// ProductServiceListProductsProcedure is the fully-qualified name of the ProductService's
+	// ListProducts RPC.
+	ProductServiceListProductsProcedure = "/product.v1.ProductService/ListProducts"
 	// ProductServiceBatchGetProductsByIDsProcedure is the fully-qualified name of the ProductService's
 	// BatchGetProductsByIDs RPC.
 	ProductServiceBatchGetProductsByIDsProcedure = "/product.v1.ProductService/BatchGetProductsByIDs"
@@ -55,6 +58,9 @@ const (
 
 // ProductServiceClient is a client for the product.v1.ProductService service.
 type ProductServiceClient interface {
+	// ListProducts returns a list of products
+	ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error)
+	// BatchGetProductsByIDs retrieves products by their IDs
 	BatchGetProductsByIDs(context.Context, *connect.Request[v1.BatchGetProductsByIDsRequest]) (*connect.Response[v1.BatchGetProductsByIDsResponse], error)
 	// ReserveProducts reduce quantity initially and adds reserved_quantity
 	ReserveProducts(context.Context, *connect.Request[v1.ReserveProductsRequest]) (*connect.Response[v1.ReserveProductsResponse], error)
@@ -78,6 +84,12 @@ func NewProductServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 	baseURL = strings.TrimRight(baseURL, "/")
 	productServiceMethods := v1.File_product_v1_product_proto.Services().ByName("ProductService").Methods()
 	return &productServiceClient{
+		listProducts: connect.NewClient[v1.ListProductsRequest, v1.ListProductsResponse](
+			httpClient,
+			baseURL+ProductServiceListProductsProcedure,
+			connect.WithSchema(productServiceMethods.ByName("ListProducts")),
+			connect.WithClientOptions(opts...),
+		),
 		batchGetProductsByIDs: connect.NewClient[v1.BatchGetProductsByIDsRequest, v1.BatchGetProductsByIDsResponse](
 			httpClient,
 			baseURL+ProductServiceBatchGetProductsByIDsProcedure,
@@ -119,12 +131,18 @@ func NewProductServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // productServiceClient implements ProductServiceClient.
 type productServiceClient struct {
+	listProducts             *connect.Client[v1.ListProductsRequest, v1.ListProductsResponse]
 	batchGetProductsByIDs    *connect.Client[v1.BatchGetProductsByIDsRequest, v1.BatchGetProductsByIDsResponse]
 	reserveProducts          *connect.Client[v1.ReserveProductsRequest, v1.ReserveProductsResponse]
 	releaseProducts          *connect.Client[v1.ReleaseProductsRequest, v1.ReleaseProductsResponse]
 	confirmProductsDeduction *connect.Client[v1.ConfirmProductsDeductionRequest, v1.ConfirmProductsDeductionResponse]
 	restoreProducts          *connect.Client[v1.RestoreProductsRequest, v1.RestoreProductsResponse]
 	health                   *connect.Client[v1.HealthRequest, v1.HealthResponse]
+}
+
+// ListProducts calls product.v1.ProductService.ListProducts.
+func (c *productServiceClient) ListProducts(ctx context.Context, req *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error) {
+	return c.listProducts.CallUnary(ctx, req)
 }
 
 // BatchGetProductsByIDs calls product.v1.ProductService.BatchGetProductsByIDs.
@@ -159,6 +177,9 @@ func (c *productServiceClient) Health(ctx context.Context, req *connect.Request[
 
 // ProductServiceHandler is an implementation of the product.v1.ProductService service.
 type ProductServiceHandler interface {
+	// ListProducts returns a list of products
+	ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error)
+	// BatchGetProductsByIDs retrieves products by their IDs
 	BatchGetProductsByIDs(context.Context, *connect.Request[v1.BatchGetProductsByIDsRequest]) (*connect.Response[v1.BatchGetProductsByIDsResponse], error)
 	// ReserveProducts reduce quantity initially and adds reserved_quantity
 	ReserveProducts(context.Context, *connect.Request[v1.ReserveProductsRequest]) (*connect.Response[v1.ReserveProductsResponse], error)
@@ -178,6 +199,12 @@ type ProductServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewProductServiceHandler(svc ProductServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	productServiceMethods := v1.File_product_v1_product_proto.Services().ByName("ProductService").Methods()
+	productServiceListProductsHandler := connect.NewUnaryHandler(
+		ProductServiceListProductsProcedure,
+		svc.ListProducts,
+		connect.WithSchema(productServiceMethods.ByName("ListProducts")),
+		connect.WithHandlerOptions(opts...),
+	)
 	productServiceBatchGetProductsByIDsHandler := connect.NewUnaryHandler(
 		ProductServiceBatchGetProductsByIDsProcedure,
 		svc.BatchGetProductsByIDs,
@@ -216,6 +243,8 @@ func NewProductServiceHandler(svc ProductServiceHandler, opts ...connect.Handler
 	)
 	return "/product.v1.ProductService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case ProductServiceListProductsProcedure:
+			productServiceListProductsHandler.ServeHTTP(w, r)
 		case ProductServiceBatchGetProductsByIDsProcedure:
 			productServiceBatchGetProductsByIDsHandler.ServeHTTP(w, r)
 		case ProductServiceReserveProductsProcedure:
@@ -236,6 +265,10 @@ func NewProductServiceHandler(svc ProductServiceHandler, opts ...connect.Handler
 
 // UnimplementedProductServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedProductServiceHandler struct{}
+
+func (UnimplementedProductServiceHandler) ListProducts(context.Context, *connect.Request[v1.ListProductsRequest]) (*connect.Response[v1.ListProductsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("product.v1.ProductService.ListProducts is not implemented"))
+}
 
 func (UnimplementedProductServiceHandler) BatchGetProductsByIDs(context.Context, *connect.Request[v1.BatchGetProductsByIDsRequest]) (*connect.Response[v1.BatchGetProductsByIDsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("product.v1.ProductService.BatchGetProductsByIDs is not implemented"))

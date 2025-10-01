@@ -1,0 +1,6 @@
+# Scalars
+scalar Time
+
+# Root query and mutation types
+type Query
+type Mutation

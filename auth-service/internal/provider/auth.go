@@ -8,6 +8,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/handler"
@@ -60,5 +61,10 @@ func SetupAuth(
 	)
 	authHandler := handler.NewAuthHandler(authService)
 
+	// Setup REST routes
 	routes.SetupAuthRoutes(e, authHandler)
+
+	// Setup GraphQL routes
+	graphqlResolver := resolver.NewResolver(authService, appLogger)
+	routes.SetupGraphQLRoutes(e, graphqlResolver)
 }

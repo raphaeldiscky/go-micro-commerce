@@ -1,0 +1,41 @@
+# Message entity (owned by chat-service)
+type Message @key(fields: "id") {
+  id: ID!
+  conversationId: ID!
+  conversation: Conversation!
+  senderId: ID
+  sender: User
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
+# Message type enum
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+# Pagination for messages
+type MessageConnection {
+  items: [Message!]!
+  pagination: OffsetPagination!
+}
+
+type OffsetPagination {
+  totalItems: Int!
+  totalPages: Int!
+  currentPage: Int!
+  pageSize: Int!
+  hasNext: Boolean!
+  hasPrev: Boolean!
+}
+
+# Message queries
+extend type Query {
+  # Get messages for a conversation
+  conversationMessages(conversationId: ID!, limit: Int = 50, offset: Int = 0): MessageConnection!
+}

@@ -2,24 +2,41 @@
 
 set -euo pipefail
 
-SERVICES=(
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "pkg"
-  "proto"
-  "api-gateway"
-  "payment-service"
-  "fulfillment-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/go.mod" ]]; then
+    SERVICES+=("$dir")
+  elif [[ -f "$dir/package.json" ]]; then
+    SERVICES+=("$dir")
+  fi
+done
 
 format_service() {
   local dir="$1"
+
+  # Check if this is a Node.js project
+  if [ -f "$dir/package.json" ]; then
+    echo "Formatting $dir(node project)..."
+    (
+      cd "$dir"
+      if [ -f "pnpm-lock.yaml" ]; then
+        pnpm run format
+      elif [ -f "package-lock.json" ]; then
+        npm run format
+      else
+        echo "Warning: No lock file found, using npm"
+        npm run format
+      fi
+    )
+    return $?
+  fi
+
   echo "Formatting $dir..."
-  # Run commands in a subshell to isolate them
+
+
+  # Go project formatting
   (
     gofumpt -w "$dir"
     goimports -w "$dir"
@@ -54,7 +71,7 @@ else
     # 'wait "$pid"' will return the exit code of the process.
     # If a command fails, its exit code will be non-zero.
     if ! wait "$pid"; then
-      echo "⚠️ A format process failed."
+      echo "A format process failed."
       # Record that at least one failure occurred
       exit_code=1
     fi

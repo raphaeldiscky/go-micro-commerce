@@ -28,6 +28,14 @@ type ProductRepository interface {
 	// FindByIDs retrieves products by their IDs without locking
 	FindByIDs(ctx context.Context, ids []uuid.UUID) ([]*entity.Product, error)
 
+	// FindAllWithCursor retrieves all products with cursor-based pagination
+	FindAllWithCursor(
+		ctx context.Context,
+		limit int64,
+		cursorID string,
+		cursorTimestamp int64,
+	) ([]*entity.Product, error)
+
 	// FindAll retrieves all products with optional pagination
 	FindAll(ctx context.Context, limit, offset int64) ([]*entity.Product, error)
 
@@ -391,6 +399,79 @@ func (r *productRepository) FindAll(
 	defer rows.Close()
 
 	var products []*entity.Product
+
+	for rows.Next() {
+		var product entity.Product
+
+		err = rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.Price,
+			&product.Quantity,
+			&product.Version,
+			&product.ReservedQuantity,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		products = append(products, &product)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
+// FindAllWithCursor finds all products with cursor-based pagination.
+func (r *productRepository) FindAllWithCursor(
+	ctx context.Context,
+	limit int64,
+	cursorID string,
+	cursorTimestamp int64,
+) ([]*entity.Product, error) {
+	var (
+		query string
+		rows  pgx.Rows
+		err   error
+	)
+
+	if cursorID == "" {
+		query = `
+			SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
+			FROM products
+			ORDER BY created_at DESC, id DESC
+			LIMIT $1
+		`
+		rows, err = r.db.Query(ctx, query, limit)
+	} else {
+		cursorUUID, parseErr := uuid.Parse(cursorID)
+		if parseErr != nil {
+			return nil, fmt.Errorf("invalid cursor ID: %w", parseErr)
+		}
+
+		query = `
+			SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
+			FROM products
+			WHERE created_at < to_timestamp($2)
+			   OR (created_at = to_timestamp($2) AND id < $3)
+			ORDER BY created_at DESC, id DESC
+			LIMIT $1
+		`
+		rows, err = r.db.Query(ctx, query, limit, cursorTimestamp, cursorUUID)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	products := make([]*entity.Product, 0, limit)
 
 	for rows.Next() {
 		var product entity.Product

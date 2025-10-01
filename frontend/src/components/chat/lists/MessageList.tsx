@@ -36,7 +36,7 @@ export function MessageList({
   const { markAsRead } = useMessageReceipts(conversationId)
 
   // Flatten all message pages
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+
   const messages = messagesData?.pages.flat() || []
 
   // Check if message is consecutive (same sender within 5 minutes)

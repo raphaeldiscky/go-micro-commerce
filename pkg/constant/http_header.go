@@ -11,6 +11,10 @@ const (
 	XIsActive = "X-Is-Active"
 	// XRequestID is the header for the request ID, automatically generated for each request from middleware.
 	XRequestID = "X-Request-Id"
+	// XClientIP is the header for the client IP address.
+	XClientIP = "X-Client-IP"
+	// XUserAgent is the header for the client user agent.
+	XUserAgent = "X-User-Agent"
 )
 
 const (

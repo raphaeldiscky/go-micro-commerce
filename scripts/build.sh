@@ -2,17 +2,14 @@
 
 set -e
 
-SERVICES=(
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "api-gateway"
-  "payment-service"
-  "fulfillment-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/Dockerfile" ]]; then
+    SERVICES+=("$dir")
+  fi
+done
 
 # Configuration
 REGISTRY="${REGISTRY:-localhost:5000}"
@@ -50,11 +47,6 @@ build_image() {
 
   if [ ! -f "$dockerfile" ]; then
     print_warning "Skipping $service: $dockerfile not found"
-    return 1
-  fi
-
-  if [ ! -f "$CURDIR/$service/cmd/api/main.go" ]; then
-    print_warning "Skipping $service: main.go not found in $CURDIR/$service/cmd/api/"
     return 1
   fi
 

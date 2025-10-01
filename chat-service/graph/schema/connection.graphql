@@ -1,0 +1,11 @@
+# Online status for users
+type OnlineStatus {
+  isOnline: Boolean!
+  lastSeen: Time
+}
+
+# Connection queries
+extend type Query {
+  # Get online users
+  onlineUsers: [User!]!
+}

@@ -4,12 +4,16 @@ package constant
 type ContextKey string
 
 const (
-	// CtxUserID is the context key for the user ID.
-	CtxUserID ContextKey = "user_id"
-	// CtxEmail is the context key for the user email.
-	CtxEmail ContextKey = "email"
-	// CtxRoles is the context key for the user roles.
-	CtxRoles ContextKey = "roles"
-	// CtxIsActive is the context key for the user active status.
-	CtxIsActive ContextKey = "is_active"
+	// CtxKeyUserID is the context key for the user ID.
+	CtxKeyUserID ContextKey = "user_id"
+	// CtxKeyEmail is the context key for the user email.
+	CtxKeyEmail ContextKey = "email"
+	// CtxKeyRoles is the context key for the user roles.
+	CtxKeyRoles ContextKey = "roles"
+	// CtxKeyIsActive is the context key for the user active status.
+	CtxKeyIsActive ContextKey = "is_active"
+	// CtxKeyClientIP is the context key for the client IP.
+	CtxKeyClientIP ContextKey = "client_ip"
+	// CtxKeyUserAgent is the context key for the user agent.
+	CtxKeyUserAgent ContextKey = "user_agent"
 )

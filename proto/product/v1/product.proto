@@ -9,7 +9,9 @@ import "buf/validate/validate.proto";
 
 // Product service definition
 service ProductService {
-  //
+  // ListProducts returns a list of products
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  // BatchGetProductsByIDs retrieves products by their IDs
   rpc BatchGetProductsByIDs(BatchGetProductsByIDsRequest) returns (BatchGetProductsByIDsResponse);
   // ReserveProducts reduce quantity initially and adds reserved_quantity
   rpc ReserveProducts(ReserveProductsRequest) returns (ReserveProductsResponse);
@@ -20,6 +22,25 @@ service ProductService {
   // RestoreProducts restore quantity
   rpc RestoreProducts(RestoreProductsRequest) returns (RestoreProductsResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message ListProductsRequest {
+  optional string limit = 1 [(buf.validate.field).string = {
+    max_len: 3
+  }];
+  optional string next_cursor = 2;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  CursorPagination pagination = 2;
+}
+
+message CursorPagination {
+  optional string next_cursor = 1;
+  optional string prev_cursor = 2;
+  bool has_next = 3;
+  bool has_prev = 4;
 }
 
 message BatchGetProductsByIDsRequest {

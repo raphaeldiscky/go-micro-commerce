@@ -48,10 +48,10 @@ func (a *AuthInterceptor) ServiceToServiceAuth() grpc.UnaryServerInterceptor {
 		}
 
 		// Add user information to context for downstream use
-		newCtx := context.WithValue(ctx, constant.CtxUserID, userInfo.UserID)
-		newCtx = context.WithValue(newCtx, constant.CtxEmail, userInfo.Email)
-		newCtx = context.WithValue(newCtx, constant.CtxRoles, userInfo.Roles)
-		newCtx = context.WithValue(newCtx, constant.CtxIsActive, userInfo.IsActive)
+		newCtx := context.WithValue(ctx, constant.CtxKeyUserID, userInfo.UserID)
+		newCtx = context.WithValue(newCtx, constant.CtxKeyEmail, userInfo.Email)
+		newCtx = context.WithValue(newCtx, constant.CtxKeyRoles, userInfo.Roles)
+		newCtx = context.WithValue(newCtx, constant.CtxKeyIsActive, userInfo.IsActive)
 
 		return handler(newCtx, req)
 	}

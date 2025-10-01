@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"connectrpc.com/connect"
 	"connectrpc.com/grpchealth"
@@ -18,6 +20,7 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/product/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/service"
@@ -38,6 +41,40 @@ func NewGRPCServer(
 	cfg *config.Config,
 ) *GRPCServer {
 	return &GRPCServer{cfg: cfg, productService: productService, logger: appLogger}
+}
+
+// ListProducts lists products via Connect-RPC.
+func (s *GRPCServer) ListProducts(
+	ctx context.Context,
+	req *connect.Request[pb.ListProductsRequest],
+) (*connect.Response[pb.ListProductsResponse], error) {
+	limit := int64(constant.GRPCDefaultLimit)
+
+	if req.Msg.GetLimit() != "" {
+		parsedLimit, err := strconv.ParseInt(req.Msg.GetLimit(), 10, 64)
+		if err != nil || parsedLimit < 1 || parsedLimit > 100 {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				errors.New("invalid limit: must be between 1 and 100"),
+			)
+		}
+
+		limit = parsedLimit
+	}
+
+	cursor := req.Msg.GetNextCursor()
+
+	products, pagination, err := s.productService.ListProducts(ctx, limit, cursor)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	resp := &pb.ListProductsResponse{
+		Products:   mapper.MapDTOToProtobufProducts(products),
+		Pagination: mapper.MapCursorPaginationToProtobuf(pagination),
+	}
+
+	return connect.NewResponse(resp), nil
 }
 
 // BatchGetProductsByIDs retrieves products by IDs via Connect-RPC.
