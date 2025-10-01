@@ -119,6 +119,7 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 			echo.HeaderAuthorization,
 		},
 	}))
+	e.Use(custommiddleware.ClientMetadataMiddleware())
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
 		XSSProtection:         "1; mode=block",
 		ContentTypeNosniff:    "nosniff",
