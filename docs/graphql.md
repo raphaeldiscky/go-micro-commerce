@@ -111,26 +111,22 @@ chat-service/
    ```
 
 2. **Configure `gqlgen.yml`**
-
    - Set federation mode: `version: 2`
    - Configure model bindings to existing entities
    - Set resolver paths
 
 3. **Create GraphQL Resolvers**
-
    - `ConversationResolver`: Implements conversation queries/mutations
    - `MessageResolver`: Implements message queries
    - `ParticipantResolver`: Implements participant operations
    - `UserResolver`: Federation resolver for User entity references
 
 4. **Add GraphQL Route**
-
    - Add `/graphql` endpoint in `chat_routes.go`
    - Handler wraps gqlgen's GraphQL handler
    - Apply auth middleware for protected operations
 
 5. **Update Service Layer**
-
    - Reuse existing `ChatService` methods
    - Add any missing methods for GraphQL field resolvers
    - Ensure proper error handling for GraphQL context
@@ -164,14 +160,12 @@ graphql-gateway/
 ### 2. Gateway Implementation Options
 
 - **Option A: Apollo Router (Recommended)**
-
   - Use official Apollo Router (Rust binary)
   - Configuration via YAML
   - Auto-compose subgraphs via introspection
   - Best performance and official support
 
 - **Option B: Pure Go Gateway**
-
   - Use [`github.com/nautilus/gateway`](https://github.com/nautilus/gateway)
   - All Go implementation
   - More control but less feature-complete

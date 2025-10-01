@@ -61,18 +61,15 @@ docker-compose -f apps.yaml up -d
 ### Accessing the Services
 
 1. **Grafana Dashboard**: <http://localhost:3000>
-
    - Username: admin
    - Password: admin
    - Pre-configured dashboards and data sources
 
 2. **Prometheus**: <http://localhost:9090>
-
    - Query metrics directly
    - Check service discovery and targets
 
 3. **Tempo**: <http://localhost:3200>
-
    - View traces through Grafana (integrated)
    - Direct API access for trace queries
 

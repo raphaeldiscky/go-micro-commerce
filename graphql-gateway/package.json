@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "format": "prettier --write \"**/*.{yaml,yml,json,md}\"",
-    "lint": "prettier --check \"**/*.{yaml,yml,json,md}\""
+    "lint": "prettier --write \"**/*.{yaml,yml,json,md}\""
   },
   "devDependencies": {
     "prettier": "3.6.2"

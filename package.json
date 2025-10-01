@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "format": "prettier --write \"**/*.{yaml,yml,json,md}\"",
+    "lint": "prettier --check \"**/*.{yaml,yml,json,md}\""
   },
   "repository": {
     "type": "git",
@@ -19,6 +21,7 @@
     "@commitlint/cli": "20.0.0",
     "@commitlint/config-conventional": "20.0.0",
     "@commitlint/types": "^20.0.0",
-    "husky": "9.1.7"
+    "husky": "9.1.7",
+    "prettier": "3.6.2"
   }
 }

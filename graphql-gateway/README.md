@@ -25,6 +25,7 @@ The supergraph schema uses a **commit-based workflow**:
 #### Automatic Composition (CI/CD)
 
 When you push changes to subgraph GraphQL schemas (auth-service, chat-service), the CI/CD pipeline automatically:
+
 1. Composes the supergraph schema using Rover
 2. Commits the updated `supergraph-schema.graphql` if changed
 3. Pushes the commit back to the repository
@@ -61,9 +62,9 @@ docker-compose -f deployments/docker-compose/graphql-gateway.yaml up
 
 ## Endpoints
 
-- **GraphQL**: http://localhost:4000/graphql
-- **Health Check**: http://localhost:8088/health
-- **Metrics**: http://localhost:9091/metrics
+- **GraphQL**: `http://localhost:4000/graphql`
+- **Health Check**: `http://localhost:8088/health`
+- **Metrics**: `http://localhost:9091/metrics`
 
 ## Configuration
 
@@ -103,7 +104,7 @@ The gateway exports:
 - **Metrics**: Prometheus format on port 9091
 - **Logs**: JSON structured logs
 
-View in Grafana: http://localhost:3000
+View in Grafana: `http://localhost:3000`
 
 ## Troubleshooting
 
