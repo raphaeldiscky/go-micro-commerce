@@ -49,43 +49,8 @@ fi
 echo -e "${BLUE}Composing supergraph from:${NC} $SUPERGRAPH_CONFIG"
 echo ""
 
-# Check if subgraph services are running
-echo -e "${YELLOW}Checking subgraph availability...${NC}"
-
-check_service() {
-    local service_url=$1
-    local service_name=$2
-
-    # Use GET request with query parameter for introspection (works with auth middleware)
-    if curl -s -f -X GET "$service_url?query=%7B__typename%7D" > /dev/null 2>&1; then
-        echo -e "${GREEN}✓${NC} $service_name is running"
-        return 0
-    else
-        echo -e "${RED}✗${NC} $service_name is not accessible at $service_url"
-        return 1
-    fi
-}
-
-# Check each subgraph
-CHAT_SERVICE_URL="http://localhost:8088/graph"
-AUTH_SERVICE_URL="http://localhost:8081/graph"
-
-all_services_up=true
-
-check_service "$CHAT_SERVICE_URL" "chat-service" || all_services_up=false
-check_service "$AUTH_SERVICE_URL" "auth-service" || all_services_up=false
-
-echo ""
-
-if [ "$all_services_up" = false ]; then
-    echo -e "${YELLOW}Warning: Not all subgraph services are running${NC}"
-    echo "Make sure services are started before composing:"
-    echo "  task start_infra"
-    echo "  task start_apps"
-    echo ""
-    echo -e "${YELLOW}Attempting composition anyway...${NC}"
-    echo ""
-fi
+# Merge GraphQL schemas first
+bash ./scripts/merge-graphql-schemas.sh
 
 # Compose supergraph
 echo -e "${BLUE}Composing supergraph schema...${NC}"

@@ -288,6 +288,9 @@ jobs:
           curl -sSL https://rover.apollo.dev/nix/latest | sh
           echo "$HOME/.rover/bin" >> $GITHUB_PATH
 
+      - name: Merge GraphQL schemas
+        run: bash scripts/merge-graphql-schemas.sh
+
       - name: Compose supergraph schema
         env:
           APOLLO_ELV2_LICENSE: accept

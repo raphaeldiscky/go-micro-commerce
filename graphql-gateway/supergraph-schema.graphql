@@ -1,56 +1,36 @@
 schema
   @link(url: "https://specs.apollo.dev/link/v1.0")
-  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION) {
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
   query: Query
   mutation: Mutation
 }
 
 directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
 
-directive @join__field(
-  graph: join__Graph
-  requires: join__FieldSet
-  provides: join__FieldSet
-  type: String
-  external: Boolean
-  override: String
-  usedOverridden: Boolean
-) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
 directive @join__graph(name: String!, url: String!) on ENUM_VALUE
 
-directive @join__implements(
-  graph: join__Graph!
-  interface: String!
-) repeatable on OBJECT | INTERFACE
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
 
-directive @join__type(
-  graph: join__Graph!
-  key: join__FieldSet
-  extension: Boolean! = false
-  resolvable: Boolean! = true
-  isInterfaceObject: Boolean! = false
-) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
 
-directive @join__unionMember(
-  graph: join__Graph!
-  member: String!
-) repeatable on UNION
+directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
 
-directive @link(
-  url: String
-  as: String
-  for: link__Purpose
-  import: [link__Import]
-) repeatable on SCHEMA
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
-type AuthPayload @join__type(graph: AUTH_SERVICE) {
+type AuthPayload
+  @join__type(graph: AUTH_SERVICE)
+{
   token: String!
   refreshToken: String!
   user: User!
 }
 
-type Conversation @join__type(graph: CHAT_SERVICE, key: "id") {
+type Conversation
+  @join__type(graph: CHAT_SERVICE, key: "id")
+{
   id: ID!
   subject: String
   status: ConversationStatus!
@@ -62,13 +42,17 @@ type Conversation @join__type(graph: CHAT_SERVICE, key: "id") {
   endedAt: Time
 }
 
-enum ConversationStatus @join__type(graph: CHAT_SERVICE) {
+enum ConversationStatus
+  @join__type(graph: CHAT_SERVICE)
+{
   WAITING @join__enumValue(graph: CHAT_SERVICE)
   ACTIVE @join__enumValue(graph: CHAT_SERVICE)
   ENDED @join__enumValue(graph: CHAT_SERVICE)
 }
 
-input CreateConversationInput @join__type(graph: CHAT_SERVICE) {
+input CreateConversationInput
+  @join__type(graph: CHAT_SERVICE)
+{
   subject: String
   priority: Int!
   initialMessage: String
@@ -77,13 +61,13 @@ input CreateConversationInput @join__type(graph: CHAT_SERVICE) {
 scalar join__FieldSet
 
 enum join__Graph {
-  AUTH_SERVICE
-    @join__graph(name: "auth-service", url: "http://auth-service:8081/graph")
-  CHAT_SERVICE
-    @join__graph(name: "chat-service", url: "http://chat-service:8088/graph")
+  AUTH_SERVICE @join__graph(name: "auth-service", url: "http://auth-service:8081/graph")
+  CHAT_SERVICE @join__graph(name: "chat-service", url: "http://chat-service:8088/graph")
 }
 
-input JoinConversationInput @join__type(graph: CHAT_SERVICE) {
+input JoinConversationInput
+  @join__type(graph: CHAT_SERVICE)
+{
   conversationId: ID!
   role: ParticipantRole!
 }
@@ -102,12 +86,16 @@ enum link__Purpose {
   EXECUTION
 }
 
-input LoginInput @join__type(graph: AUTH_SERVICE) {
+input LoginInput
+  @join__type(graph: AUTH_SERVICE)
+{
   email: String!
   password: String!
 }
 
-type Message @join__type(graph: CHAT_SERVICE, key: "id") {
+type Message
+  @join__type(graph: CHAT_SERVICE, key: "id")
+{
   id: ID!
   conversationId: ID!
   conversation: Conversation!
@@ -119,12 +107,16 @@ type Message @join__type(graph: CHAT_SERVICE, key: "id") {
   createdAt: Time!
 }
 
-type MessageConnection @join__type(graph: CHAT_SERVICE) {
+type MessageConnection
+  @join__type(graph: CHAT_SERVICE)
+{
   items: [Message!]!
   pagination: OffsetPagination!
 }
 
-enum MessageType @join__type(graph: CHAT_SERVICE) {
+enum MessageType
+  @join__type(graph: CHAT_SERVICE)
+{
   TEXT @join__enumValue(graph: CHAT_SERVICE)
   IMAGE @join__enumValue(graph: CHAT_SERVICE)
   FILE @join__enumValue(graph: CHAT_SERVICE)
@@ -133,23 +125,20 @@ enum MessageType @join__type(graph: CHAT_SERVICE) {
 
 type Mutation
   @join__type(graph: AUTH_SERVICE)
-  @join__type(graph: CHAT_SERVICE) {
-  register(input: RegisterUserInput!): AuthPayload!
-    @join__field(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+{
+  register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
-  createConversation(input: CreateConversationInput!): Conversation!
-    @join__field(graph: CHAT_SERVICE)
-  endConversation(conversationId: ID!): Conversation!
-    @join__field(graph: CHAT_SERVICE)
-  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation!
-    @join__field(graph: CHAT_SERVICE)
-  joinConversation(input: JoinConversationInput!): Participant!
-    @join__field(graph: CHAT_SERVICE)
-  leaveConversation(conversationId: ID!): Boolean!
-    @join__field(graph: CHAT_SERVICE)
+  createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
+  endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  joinConversation(input: JoinConversationInput!): Participant! @join__field(graph: CHAT_SERVICE)
+  leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
 }
 
-type OffsetPagination @join__type(graph: CHAT_SERVICE) {
+type OffsetPagination
+  @join__type(graph: CHAT_SERVICE)
+{
   totalItems: Int!
   totalPages: Int!
   currentPage: Int!
@@ -158,12 +147,16 @@ type OffsetPagination @join__type(graph: CHAT_SERVICE) {
   hasPrev: Boolean!
 }
 
-type OnlineStatus @join__type(graph: CHAT_SERVICE) {
+type OnlineStatus
+  @join__type(graph: CHAT_SERVICE)
+{
   isOnline: Boolean!
   lastSeen: Time
 }
 
-type Participant @join__type(graph: CHAT_SERVICE) {
+type Participant
+  @join__type(graph: CHAT_SERVICE)
+{
   id: ID!
   conversationId: ID!
   conversation: Conversation!
@@ -176,29 +169,31 @@ type Participant @join__type(graph: CHAT_SERVICE) {
   isActive: Boolean!
 }
 
-enum ParticipantRole @join__type(graph: CHAT_SERVICE) {
+enum ParticipantRole
+  @join__type(graph: CHAT_SERVICE)
+{
   MEMBER @join__enumValue(graph: CHAT_SERVICE)
   OWNER @join__enumValue(graph: CHAT_SERVICE)
   MODERATOR @join__enumValue(graph: CHAT_SERVICE)
 }
 
-type Query @join__type(graph: AUTH_SERVICE) @join__type(graph: CHAT_SERVICE) {
+type Query
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+{
   me: User @join__field(graph: AUTH_SERVICE)
   user(id: ID!): User @join__field(graph: AUTH_SERVICE)
   onlineUsers: [User!]! @join__field(graph: CHAT_SERVICE)
   conversation(id: ID!): Conversation @join__field(graph: CHAT_SERVICE)
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   waitingConversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
-  conversationMessages(
-    conversationId: ID!
-    limit: Int = 50
-    offset: Int = 0
-  ): MessageConnection! @join__field(graph: CHAT_SERVICE)
-  conversationParticipants(conversationId: ID!): [Participant!]!
-    @join__field(graph: CHAT_SERVICE)
+  conversationMessages(conversationId: ID!, limit: Int = 50, offset: Int = 0): MessageConnection! @join__field(graph: CHAT_SERVICE)
+  conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
 }
 
-input RegisterUserInput @join__type(graph: AUTH_SERVICE) {
+input RegisterUserInput
+  @join__type(graph: AUTH_SERVICE)
+{
   email: String!
   password: String!
   username: String!
@@ -206,11 +201,14 @@ input RegisterUserInput @join__type(graph: AUTH_SERVICE) {
   lastName: String!
 }
 
-scalar Time @join__type(graph: AUTH_SERVICE) @join__type(graph: CHAT_SERVICE)
+scalar Time
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
 
 type User
   @join__type(graph: AUTH_SERVICE, key: "id")
-  @join__type(graph: CHAT_SERVICE, key: "id") {
+  @join__type(graph: CHAT_SERVICE, key: "id")
+{
   id: ID!
   email: String! @join__field(graph: AUTH_SERVICE)
   firstName: String! @join__field(graph: AUTH_SERVICE)
@@ -223,7 +221,9 @@ type User
   onlineStatus: OnlineStatus @join__field(graph: CHAT_SERVICE)
 }
 
-enum UserType @join__type(graph: CHAT_SERVICE) {
+enum UserType
+  @join__type(graph: CHAT_SERVICE)
+{
   USER @join__enumValue(graph: CHAT_SERVICE)
   ADMIN @join__enumValue(graph: CHAT_SERVICE)
 }

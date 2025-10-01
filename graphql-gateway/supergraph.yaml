@@ -3,8 +3,8 @@ subgraphs:
   chat-service:
     routing_url: http://chat-service:8088/graph
     schema:
-      subgraph_url: http://localhost:8088/graph
+      file: ../chat-service/graph/schema.graphqls
   auth-service:
     routing_url: http://auth-service:8081/graph
     schema:
-      subgraph_url: http://localhost:8081/graph
+      file: ../auth-service/graph/schema.graphqls
