@@ -21,18 +21,7 @@ export async function apiRequest<T>(
   }
 
   try {
-    let response = await fetch(fullUrl, requestOptions)
-
-    if (response.status === 401 && getAccessToken()) {
-      const refreshed = await refreshAccessToken()
-      if (refreshed) {
-        requestOptions.headers = {
-          ...createHeaders(),
-          ...options.headers,
-        }
-        response = await fetch(fullUrl, requestOptions)
-      }
-    }
+    const response = await fetch(fullUrl, requestOptions)
 
     if (!response.ok) {
       if (response.status === 401) {
@@ -88,30 +77,4 @@ function createHeaders(): Record<string, string> {
   }
 
   return headers
-}
-
-async function refreshAccessToken(): Promise<boolean> {
-  try {
-    const response = await fetch(
-      `${env.VITE_API_GATEWAY_URL}/auth/v1/refresh-token`,
-      {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        method: 'POST',
-      },
-    )
-
-    if (!response.ok) {
-      return false
-    }
-
-    const data: ApiSuccessResponse<{ access_token: string }> =
-      await response.json()
-    setAccessToken(data.data.access_token)
-    return true
-  } catch {
-    return false
-  }
 }
