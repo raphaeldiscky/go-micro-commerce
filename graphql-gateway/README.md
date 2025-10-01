@@ -18,9 +18,20 @@ The GraphQL Gateway composes multiple GraphQL subgraphs into a unified supergrap
 - Docker and Docker Compose
 - Running subgraph services (auth-service, chat-service)
 
-### Compose Supergraph
+### Supergraph Schema Management
 
-Before starting the gateway, compose the supergraph schema:
+The supergraph schema uses a **commit-based workflow**:
+
+#### Automatic Composition (CI/CD)
+
+When you push changes to subgraph GraphQL schemas (auth-service, chat-service), the CI/CD pipeline automatically:
+1. Composes the supergraph schema using Rover
+2. Commits the updated `supergraph-schema.graphql` if changed
+3. Pushes the commit back to the repository
+
+#### Manual Composition (Local Development)
+
+Before committing subgraph schema changes, **you should compose locally**:
 
 ```bash
 # Using the script
@@ -31,6 +42,8 @@ task compose_graphql
 ```
 
 This generates `supergraph-schema.graphql` from running subgraph services.
+
+**Important**: Always commit the generated schema file along with your subgraph changes.
 
 ### Start Gateway
 
@@ -77,8 +90,10 @@ Subgraph composition configuration:
 2. Add `@key` directives to entity types
 3. Implement entity resolvers
 4. Add subgraph to `supergraph.yaml`
-5. Recompose supergraph: `task compose_graphql`
-6. Restart gateway
+5. Recompose supergraph locally: `task compose_graphql`
+6. Commit both subgraph schema and `supergraph-schema.graphql`
+7. CI/CD will validate and update if needed
+8. Restart gateway
 
 ## Monitoring
 
