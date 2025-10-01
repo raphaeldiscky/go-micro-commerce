@@ -1,5 +1,4 @@
 import { useRegister } from '@/hooks/useAuth'
-import type { RegisterRequest } from '@/lib/api'
 import { useForm } from '@tanstack/react-form'
 import { Link } from '@tanstack/react-router'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
@@ -20,11 +19,11 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
   const form = useForm({
     defaultValues: {
       email: '',
-      first_name: '',
-      last_name: '',
+      firstName: '',
+      lastName: '',
       password: '',
       username: '',
-    } as RegisterRequest,
+    },
     onSubmit: async ({ value }) => {
       try {
         await registerMutation.mutateAsync(value)
@@ -59,7 +58,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
           {/* Name Fields */}
           <div className="grid grid-cols-2 gap-4">
             <form.Field
-              name="first_name"
+              name="firstName"
               validators={{
                 onChange: ({ value }) => {
                   if (!value) return 'First name is required'
@@ -71,7 +70,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor="first_name">First Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
                     className={
                       field.state.meta.errors.length > 0
@@ -79,7 +78,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                         : ''
                     }
                     disabled={isLoading}
-                    id="first_name"
+                    id="firstName"
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="First name"
@@ -95,7 +94,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             </form.Field>
 
             <form.Field
-              name="last_name"
+              name="lastName"
               validators={{
                 onChange: ({ value }) => {
                   if (!value) return 'Last name is required'
@@ -107,7 +106,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
             >
               {(field) => (
                 <div className="space-y-2">
-                  <Label htmlFor="last_name">Last Name</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
                     className={
                       field.state.meta.errors.length > 0
@@ -115,7 +114,7 @@ export function SignupForm({ onSuccess }: SignupFormProps) {
                         : ''
                     }
                     disabled={isLoading}
-                    id="last_name"
+                    id="lastName"
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder="Last name"

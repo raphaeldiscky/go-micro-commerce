@@ -65,6 +65,26 @@ func (r *mutationResolver) Login(
 	return mapper.MapAuthResponseToGraphQL(authResponse), nil
 }
 
+// Logout is the resolver for the logout field.
+func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
+	// Get user ID from context
+	userID, ok := ctx.Value(constant.CtxKeyUserID).(uuid.UUID)
+	if !ok {
+		return false, httperror.NewBadRequestError("missing user ID in context")
+	}
+
+	r.logger.Info("User logged out", "user_id", userID)
+
+	// GraphQL logout is a no-op since JWT tokens are stateless
+	// The frontend will clear the token
+	// In a production system, you might want to:
+	// - Invalidate refresh tokens in the database
+	// - Add the access token to a blacklist (Redis)
+	// - Log the logout event for audit purposes
+
+	return true, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*graph.User, error) {
 	// Get user ID from context (set by auth middleware)

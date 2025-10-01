@@ -1,5 +1,4 @@
 import { useLogin } from '@/hooks/useAuth'
-import type { LoginRequest } from '@/lib/api'
 import { useForm } from '@tanstack/react-form'
 import { Link } from '@tanstack/react-router'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
@@ -21,7 +20,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     defaultValues: {
       email: '',
       password: '',
-    } as LoginRequest,
+    },
     onSubmit: async ({ value }) => {
       try {
         await loginMutation.mutateAsync(value)

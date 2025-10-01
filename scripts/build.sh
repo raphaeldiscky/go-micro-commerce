@@ -51,19 +51,24 @@ build_image() {
   fi
 
   print_status "Building Docker image for $service..."
-  
+
   # Build the Docker image using root context (like CI does)
   # This matches the CI workflow: context: . and file: ./${{ matrix.service }}/Dockerfile
-  if docker build \
-    --tag "$image_name" \
-    --file "$dockerfile" \
-    "$CURDIR"; then
+  local build_args="--tag $image_name --file $dockerfile"
+
+  # Add --no-cache flag if NO_CACHE is set
+  if [ "$NO_CACHE" = "true" ]; then
+    build_args="$build_args --no-cache"
+    print_warning "Building without cache"
+  fi
+
+  if docker build $build_args "$CURDIR"; then
     print_success "Successfully built image: $image_name"
   else
     print_error "failed to build image for $service"
     return 1
   fi
-  
+
   return 0
 }
 
@@ -75,6 +80,7 @@ show_usage() {
   echo "OPTIONS:"
   echo "  -r, --registry REGISTRY   Docker registry (default: localhost:5000)"
   echo "  -t, --tag TAG            Image tag (default: latest)"
+  echo "  --no-cache               Build without using cache"
   echo "  -h, --help               Show this help message"
   echo ""
   echo "SERVICES:"
@@ -86,11 +92,13 @@ show_usage() {
   echo "  $0                       # Build all services"
   echo "  $0 api-gateway          # Build only api-gateway"
   echo "  $0 -t dev               # Build all with tag dev"
+  echo "  $0 --no-cache graphql-gateway  # Build graphql-gateway without cache"
   echo ""
   echo "NOTE: This script only builds images locally. Use push.sh to build and push to registry."
 }
 
 # Parse command line arguments
+NO_CACHE=false
 while [[ $# -gt 0 ]]; do
   case $1 in
     -r|--registry)
@@ -100,6 +108,10 @@ while [[ $# -gt 0 ]]; do
     -t|--tag)
       TAG="$2"
       shift 2
+      ;;
+    --no-cache)
+      NO_CACHE=true
+      shift
       ;;
     -h|--help)
       show_usage

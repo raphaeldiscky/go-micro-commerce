@@ -61,8 +61,8 @@ input CreateConversationInput
 scalar join__FieldSet
 
 enum join__Graph {
-  AUTH_SERVICE @join__graph(name: "auth-service", url: "http://auth-service:8081/graph")
-  CHAT_SERVICE @join__graph(name: "chat-service", url: "http://chat-service:8088/graph")
+  AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
+  CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
 }
 
 input JoinConversationInput
@@ -129,6 +129,7 @@ type Mutation
 {
   register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
+  logout: Boolean! @join__field(graph: AUTH_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
   endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
   assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)

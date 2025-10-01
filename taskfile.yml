@@ -8,6 +8,7 @@ vars:
   INFRA_DC_FILE: "{{.DC_DIR}}/infra.yaml"
   APPS_DC_FILE: "{{.DC_DIR}}/apps.yaml"
   DEV_DC_FILE: "{{.DC_DIR}}/dev.yaml"
+  GRAPHQL_GATEWAY_DC_FILE: "{{.DC_DIR}}/graphql-gateway.yaml"
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
   COMPOSE_FILES:
@@ -20,6 +21,7 @@ vars:
         -f {{.DC_DIR}}/vault.yaml \
         -f {{.DC_DIR}}/dev-tools.yaml \
         -f {{.DC_DIR}}/api-gateway.yaml \
+        -f {{.DC_DIR}}/graphql-gateway.yaml \
         -f {{.DC_DIR}}/temporal.yaml \
         -f {{.DC_DIR}}/elasticsearch.yaml \
         -f {{.DC_DIR}}/apps.yaml \
@@ -55,12 +57,12 @@ tasks:
           echo "Building docker images for all services..."
           bash ./scripts/lint.sh
           bash ./scripts/format.sh
-          bash ./scripts/build.sh
+          bash ./scripts/build.sh --no-cache
         else
           echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
           bash ./scripts/format.sh {{.SERVICE}}
-          bash ./scripts/build.sh {{.SERVICE}}
+          bash ./scripts/build.sh --no-cache {{.SERVICE}}
         fi
   push:
     desc: Push all services to the container registry
@@ -127,28 +129,28 @@ tasks:
       - "{{.SLEEP_CMD}} {{.DURATION}}"
 
   start_infra:
-    desc: Start local infrastructure using docker-compose
+    desc: Start local infrastructure using docker compose
     cmds:
-      - docker network create --driver bridge go-micro-commerce
+      - docker network create --driver bridge go-micro-commerce || true
       - docker compose -f {{.INFRA_DC_FILE}} up -d
 
   start_monitoring:
-    desc: Start local monitoring using docker-compose
+    desc: Start local monitoring using docker compose
     cmds:
       - docker compose -f {{.MONITORING_DC_FILE}} up -d
 
   start_apps:
-    desc: Start all applications using docker-compose
+    desc: Start all applications using docker compose
     cmds:
       - docker compose -f {{.APPS_DC_FILE}} up -d
 
   start_dev:
-    desc: Start local development using docker-compose
+    desc: Start local development using docker compose
     cmds:
       - docker compose -f {{.DEV_DC_FILE}} up -d
 
   stop_infra:
-    desc: Stop local infrastructure using docker-compose
+    desc: Stop local infrastructure using docker compose
     cmds:
       - docker compose {{.COMPOSE_FILES}} down
       - |
@@ -160,36 +162,36 @@ tasks:
       - docker network rm go-micro-commerce
 
   stop_dev:
-    desc: Stop local development using docker-compose
+    desc: Stop local development using docker compose
     cmds:
       - docker compose -f {{.DEV_DC_FILE}} down
 
   stop_monitoring:
-    desc: Stop local monitoring using docker-compose
+    desc: Stop local monitoring using docker compose
     cmds:
       - docker compose -f {{.MONITORING_DC_FILE}} down
 
   stop_apps:
-    desc: Stop all applications using docker-compose
+    desc: Stop all applications using docker compose
     cmds:
       - docker compose -f {{.APPS_DC_FILE}} down
 
   restart_infra:
-    desc: Restart infrastructure using docker-compose
+    desc: Restart infrastructure using docker compose
     cmds:
       - task: stop_infra
       - task: sleep
       - task: start_infra
 
   restart_monitoring:
-    desc: Restart monitoring using docker-compose
+    desc: Restart monitoring using docker compose
     cmds:
       - task: stop_monitoring
       - task: sleep
       - task: start_monitoring
 
   restart_apps:
-    desc: Restart applications using docker-compose
+    desc: Restart applications using docker compose
     cmds:
       - task: stop_apps
       - task: sleep
@@ -337,26 +339,27 @@ tasks:
         fi
 
   compose_graphql:
-    desc: Compose Apollo Federation supergraph schema
+    desc: Compose Apollo Federation supergraph schema and generate frontend code
     cmds:
       - bash ./scripts/compose-supergraph.sh
+      - cd frontend && pnpm codegen
 
-  start_graphql_gateway:
+  start_graphql:
     desc: Start GraphQL Gateway
     cmds:
-      - docker-compose -f {{.DC_DIR}}/graphql-gateway.yaml up -d
+      - docker compose -f {{.GRAPHQL_GATEWAY_DC_FILE}} up -d
 
-  stop_graphql_gateway:
+  stop_graphql:
     desc: Stop GraphQL Gateway
     cmds:
-      - docker-compose -f {{.DC_DIR}}/graphql-gateway.yaml down
+      - docker compose -f {{.GRAPHQL_GATEWAY_DC_FILE}} down
 
-  restart_graphql_gateway:
+  restart_graphql:
     desc: Restart GraphQL Gateway
     cmds:
-      - task: stop_graphql_gateway
+      - task: stop_graphql
       - task: sleep
-      - task: start_graphql_gateway
+      - task: start_graphql
 
   sqlc:
     desc: Generate SQLC files

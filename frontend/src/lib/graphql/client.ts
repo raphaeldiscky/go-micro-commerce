@@ -3,9 +3,9 @@ import { GraphQLClient } from 'graphql-request'
 
 // GraphQL client instance
 export const graphqlClient = new GraphQLClient(env.VITE_GRAPHQL_GATEWAY_URL, {
+  credentials: 'include',
   headers: () => {
-    // Get token from localStorage or your auth store
-    const token = localStorage.getItem('token')
+    const token = localStorage.getItem('access_token')
 
     return {
       ...(token ? { authorization: `Bearer ${token}` } : {}),

@@ -9,6 +9,7 @@ include:
   - vault.yaml
   - dev-tools.yaml
   - api-gateway.yaml
+  - graphql-gateway.yaml
   # - dev.yaml
 
 networks:

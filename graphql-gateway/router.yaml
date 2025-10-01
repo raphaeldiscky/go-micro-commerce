@@ -1,27 +1,40 @@
 supergraph:
-  # Path to the supergraph schema file
-  path: /app/supergraph-schema.graphql
-  # Introspection enabled for development
-  introspection: true
-
-# Server configuration
-http:
   # Listen on all interfaces
   listen: 0.0.0.0:4000
+  # Supergraph endpoint path
+  path: /
+  # Introspection enabled for development
+  introspection: true
+  # Defer support for @defer directive
+  defer_support: true
 
-# CORS configuration
+# CORS configuration (v2 policy-based structure)
 cors:
-  origins:
-    - http://localhost:3000 # Frontend
-    - http://localhost:8080 # API Gateway
-  allow_headers:
-    - Content-Type
-    - Authorization
-    - X-User-ID
-    - X-Email
-    - X-Roles
-    - X-Is-Active
   allow_credentials: true
+  methods:
+    - GET
+    - POST
+    - OPTIONS
+  policies:
+    - origins:
+        - http://localhost:3000 # Frontend (default)
+        - http://localhost:3001 # Frontend (actual port)
+        - http://localhost:8080 # API Gateway
+        - http://graphql.localhost # Traefik routing
+      match_origins:
+        - "^http://localhost:[0-9]+$" # Allow any localhost port
+      allow_credentials: true
+      allow_headers:
+        - Content-Type
+        - Authorization
+        - X-User-ID
+        - X-Email
+        - X-Roles
+        - X-Is-Active
+        - apollographql-client-name
+        - apollographql-client-version
+      expose_headers:
+        - X-Request-ID
 
 # Header propagation to subgraphs
 headers:
@@ -29,25 +42,38 @@ headers:
     request:
       - propagate:
           matching: ".*" # Propagate all headers
+      - insert:
+          name: "X-Forwarded-For"
+          from_context: "apollo_client_ip"
   subgraphs:
     auth-service:
       request:
         - insert:
             name: "X-Gateway"
             value: "graphql-gateway"
+        - insert:
+            name: "X-Client-IP"
+            from_context: "apollo_client_ip"
+        - propagate:
+            named: "user-agent"
+            rename: "X-User-Agent"
     chat-service:
       request:
         - insert:
             name: "X-Gateway"
             value: "graphql-gateway"
+        - insert:
+            name: "X-Client-IP"
+            from_context: "apollo_client_ip"
+        - propagate:
+            named: "user-agent"
+            rename: "X-User-Agent"
 
 # OpenTelemetry configuration
 telemetry:
   instrumentation:
     spans:
       mode: spec_compliant
-    instruments:
-      default_requirement_level: required
 
   exporters:
     tracing:
@@ -68,8 +94,9 @@ telemetry:
 
 # Health check endpoint
 health_check:
-  listen: 0.0.0.0:8088
   enabled: true
+  listen: 0.0.0.0:4088
+  path: /health
 
 # Limits and timeouts
 traffic_shaping:
@@ -82,10 +109,6 @@ traffic_shaping:
     deduplicate_query: true
     timeout: 20s
 
-# Logging
-plugins:
-  experimental.logging:
-    format:
-      json:
-        display_filename: true
-        display_line_number: true
+# Include subgraph errors for debugging (disable in production)
+include_subgraph_errors:
+  all: true
