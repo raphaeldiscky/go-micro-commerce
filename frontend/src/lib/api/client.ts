@@ -1,5 +1,5 @@
 import { env } from '@/env'
-import type { ApiErrorResponse, ApiSuccessResponse } from './types'
+import type { ApiErrorResponse } from './types'
 import { ApiError } from './types'
 
 let accessToken: null | string = null

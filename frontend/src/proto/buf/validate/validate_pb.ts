@@ -16,7 +16,6 @@
 // @generated from file buf/validate/validate.proto (package buf.validate, syntax proto2)
 /* eslint-disable */
 
-import type { Message } from '@bufbuild/protobuf'
 import type {
   GenEnum,
   GenExtension,
@@ -42,6 +41,7 @@ import {
   file_google_protobuf_duration,
   file_google_protobuf_timestamp,
 } from '@bufbuild/protobuf/wkt'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file buf/validate/validate.proto.

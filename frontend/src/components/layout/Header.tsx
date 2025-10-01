@@ -171,7 +171,7 @@ export default function Header() {
               {isAuthenticated ? (
                 <>
                   <span className="text-sm text-muted-foreground">
-                    Welcome, {user?.first_name}!
+                    Welcome, {user?.firstName}!
                   </span>
                   <Button
                     className="flex items-center space-x-1"
@@ -321,7 +321,7 @@ export default function Header() {
                   <>
                     <div className="flex items-center px-3 py-2 text-sm text-muted-foreground">
                       <User className="mr-2 h-4 w-4" />
-                      {user?.first_name} {user?.last_name}
+                      {user?.firstName} {user?.lastName}
                     </div>
                     <Button
                       className="w-full flex items-center justify-center space-x-1"

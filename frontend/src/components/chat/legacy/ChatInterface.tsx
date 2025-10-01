@@ -205,8 +205,7 @@ export function ChatInterface({
       conversationId: conversationId,
       message: inputMessage.trim(),
       senderId: user.id,
-      senderName:
-        `${user.first_name} ${user.last_name}`.trim() || user.username,
+      senderName: `${user.firstName} ${user.lastName}`.trim() || user.email,
       timestamp: generateTimestamp(),
     }
 
@@ -218,8 +217,7 @@ export function ChatInterface({
         content: inputMessage.trim(),
         id: generateUniqueId(),
         senderId: user.id,
-        senderName:
-          `${user.first_name} ${user.last_name}`.trim() || user.username,
+        senderName: `${user.firstName} ${user.lastName}`.trim() || user.email,
         timestamp: new Date(generateTimestamp()),
         type: 'sent',
       }
