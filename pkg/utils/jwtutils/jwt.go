@@ -2,13 +2,19 @@
 package jwtutils
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"errors"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // JWT defines the methods for JWT utilities.
@@ -18,6 +24,7 @@ type JWT interface {
 	ValidateRefreshToken(tokenString string) (*refreshTokenClaims, error)
 	ValidateAccessToken(tokenString string) (*accessTokenClaims, error)
 	GetExpirationTime(tokenString string) (int64, error)
+	GetPublicKey() *rsa.PublicKey
 }
 
 // refreshTokenClaims represents the claims in a refresh token.
@@ -40,14 +47,83 @@ type accessTokenClaims struct {
 
 // jwtUtils implements JWTUtils.
 type jwtUtils struct {
-	config *config.JWTConfig
+	config     *config.JWTConfig
+	privateKey *rsa.PrivateKey
+	publicKey  *rsa.PublicKey
 }
 
 // NewJWTUtils creates a new jwtUtils instance.
 func NewJWTUtils(cfg *config.JWTConfig) JWT {
-	return &jwtUtils{
-		config: cfg,
+	// Load RSA keys if using RS256
+	var (
+		privateKey *rsa.PrivateKey
+		publicKey  *rsa.PublicKey
+	)
+
+	if cfg.SigningMethod == constant.SigningMethodRS256 {
+		var err error
+
+		privateKey, err = loadPrivateKey(cfg.PrivateKeyPath)
+		if err != nil {
+			panic("failed to load private key: " + err.Error())
+		}
+
+		publicKey, err = loadPublicKey(cfg.PublicKeyPath)
+		if err != nil {
+			panic("failed to load public key: " + err.Error())
+		}
 	}
+
+	return &jwtUtils{
+		config:     cfg,
+		privateKey: privateKey,
+		publicKey:  publicKey,
+	}
+}
+
+// loadPrivateKey loads an RSA private key from a PEM file.
+func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
+	keyData, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(keyData)
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block containing private key")
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return privateKey, nil
+}
+
+// loadPublicKey loads an RSA public key from a PEM file.
+func loadPublicKey(path string) (*rsa.PublicKey, error) {
+	keyData, err := os.ReadFile(filepath.Clean(path))
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := pem.Decode(keyData)
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block containing public key")
+	}
+
+	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	rsaPublicKey, ok := publicKey.(*rsa.PublicKey)
+	if !ok {
+		return nil, errors.New("not an RSA public key")
+	}
+
+	return rsaPublicKey, nil
 }
 
 // GenerateAccessToken generates a JWT access token for the given user.
@@ -64,15 +140,27 @@ func (j *jwtUtils) GenerateAccessToken(
 		Roles:    roles,
 		IsActive: isActive,
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(now.Add(j.config.ExpirationTime)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    j.config.Issuer,
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	var (
+		token      *jwt.Token
+		signingKey any
+	)
 
-	return token.SignedString([]byte(j.config.Secret))
+	if j.config.SigningMethod == constant.SigningMethodRS256 {
+		token = jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		signingKey = j.privateKey
+	} else {
+		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signingKey = []byte(j.config.Secret)
+	}
+
+	return token.SignedString(signingKey)
 }
 
 // GenerateRefreshToken generates a JWT refresh token for the given user.
@@ -83,15 +171,27 @@ func (j *jwtUtils) GenerateRefreshToken(userID string) (string, error) {
 		UserID: userID,
 		Type:   "refresh",
 		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   userID,
 			ExpiresAt: jwt.NewNumericDate(now.Add(j.config.RefreshTime)),
 			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    j.config.Issuer,
 		},
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	var (
+		token      *jwt.Token
+		signingKey any
+	)
 
-	return token.SignedString([]byte(j.config.Secret))
+	if j.config.SigningMethod == constant.SigningMethodRS256 {
+		token = jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+		signingKey = j.privateKey
+	} else {
+		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		signingKey = []byte(j.config.Secret)
+	}
+
+	return token.SignedString(signingKey)
 }
 
 // ValidateRefreshToken validates and parses a refresh token.
@@ -100,6 +200,14 @@ func (j *jwtUtils) ValidateRefreshToken(tokenString string) (*refreshTokenClaims
 		tokenString,
 		&refreshTokenClaims{},
 		func(token *jwt.Token) (any, error) {
+			if j.config.SigningMethod == constant.SigningMethodRS256 {
+				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+					return nil, errors.New("invalid signing method")
+				}
+
+				return j.publicKey, nil
+			}
+
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}
@@ -130,6 +238,14 @@ func (j *jwtUtils) ValidateAccessToken(tokenString string) (*accessTokenClaims, 
 		tokenString,
 		&accessTokenClaims{},
 		func(token *jwt.Token) (any, error) {
+			if j.config.SigningMethod == constant.SigningMethodRS256 {
+				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+					return nil, errors.New("invalid signing method")
+				}
+
+				return j.publicKey, nil
+			}
+
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, errors.New("invalid signing method")
 			}
@@ -187,4 +303,9 @@ func (j *jwtUtils) GetExpirationTime(tokenString string) (int64, error) {
 	}
 
 	return int64(time.Until(claims.ExpiresAt.Time).Seconds()), nil
+}
+
+// GetPublicKey returns the RSA public key.
+func (j *jwtUtils) GetPublicKey() *rsa.PublicKey {
+	return j.publicKey
 }

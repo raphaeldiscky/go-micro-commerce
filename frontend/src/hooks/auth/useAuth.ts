@@ -1,3 +1,4 @@
+import { queryKeys } from '@/constants/query-key'
 import { PATH_ROOT } from '@/constants/routes'
 import { setAccessToken } from '@/lib/api/client'
 import type {
@@ -18,11 +19,6 @@ import {
 import { useAuthStore } from '@/store/authStore'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
-
-export const AUTH_QUERY_KEYS = {
-  all: ['auth'] as const,
-  currentUser: ['auth', 'currentUser'] as const,
-} as const
 
 /**
  * Hook for getting current user profile
@@ -75,10 +71,10 @@ export function useLogin() {
       loginUser(user)
 
       // Update React Query cache
-      queryClient.setQueryData(AUTH_QUERY_KEYS.currentUser, user)
+      queryClient.setQueryData(queryKeys.auth.currentUser(), user)
 
       // Invalidate all auth-related queries
-      queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all })
 
       // Navigate to home or intended destination
       router.navigate({ to: PATH_ROOT.home })
@@ -103,7 +99,7 @@ export function useLogout() {
       // Note: Server will clear the HTTP-only refresh token cookie
       setAccessToken(null)
       logoutUser()
-      queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.all })
+      queryClient.removeQueries({ queryKey: queryKeys.auth.all })
     },
     onSuccess: () => {
       // Clear all React Query cache
@@ -147,10 +143,10 @@ export function useRegister() {
       loginUser(user)
 
       // Update React Query cache
-      queryClient.setQueryData(AUTH_QUERY_KEYS.currentUser, user)
+      queryClient.setQueryData(queryKeys.auth.currentUser(), user)
 
       // Invalidate all auth-related queries
-      queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all })
 
       // Navigate to home
       router.navigate({ to: PATH_ROOT.home })

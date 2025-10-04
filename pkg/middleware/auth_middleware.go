@@ -89,6 +89,49 @@ func (m *AuthMiddleware) parseAccessToken(c echo.Context) (string, error) {
 	return splitToken[1], nil
 }
 
+// OptionalAuthorization validates the access token if present but doesn't return error if missing.
+// This is useful for GraphQL endpoints where some queries require auth and others don't.
+func (m *AuthMiddleware) OptionalAuthorization() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			accessToken, err := m.parseAccessToken(c)
+			if err != nil {
+				// Token missing or invalid format - continue without setting user context
+				return next(c)
+			}
+
+			claims, err := m.jwtUtils.ValidateAccessToken(accessToken)
+			if err != nil {
+				// Token validation failed - continue without setting user context
+				return next(c)
+			}
+
+			// Validate user ID
+			if claims.UserID == "" {
+				return next(c)
+			}
+
+			// Parse user ID to UUID
+			userID, err := uuid.Parse(claims.UserID)
+			if err != nil {
+				return next(c)
+			}
+
+			// Set user information in context if validation succeeds
+			c.Set(string(constant.CtxKeyUserID), userID)
+
+			if claims.Email != "" {
+				c.Set(string(constant.CtxKeyEmail), claims.Email)
+			}
+
+			c.Set(string(constant.CtxKeyRoles), claims.Roles)
+			c.Set(string(constant.CtxKeyIsActive), claims.IsActive)
+
+			return next(c)
+		}
+	}
+}
+
 // RequireRole is a middleware that checks if the user has a specific role.
 func (m *AuthMiddleware) RequireRole(requiredRole string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {

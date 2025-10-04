@@ -2,10 +2,12 @@ import {
   useConversations,
   useJoinConversation,
 } from '@/hooks/chat/useConversations'
-import type { Conversation } from '@/lib/api'
 import { formatRelativeTime } from '@/lib/utils/date'
-import { Hash, MessageCircle, User, Users } from 'lucide-react'
-import { Badge } from '../../../ui/badge'
+import type {
+  Conversation,
+  ParticipantRole,
+} from '@/types/__generated__/graphql'
+import { MessageCircle, Users } from 'lucide-react'
 import { Button } from '../../../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card'
 import { ScrollArea } from '../../../ui/scroll-area'
@@ -25,24 +27,17 @@ export function ConversationList({
   const joinConversationMutation = useJoinConversation()
 
   const handleJoinConversation = (conversationId: string) => {
-    joinConversationMutation.mutate(conversationId, {
-      onSuccess: () => {
-        onConversationSelect(conversationId)
+    joinConversationMutation.mutate(
+      {
+        conversationId,
+        role: 'MEMBER' as ParticipantRole,
       },
-    })
-  }
-
-  const getConversationIcon = (type: Conversation['type']) => {
-    switch (type) {
-      case 'channel':
-        return <Hash className="h-4 w-4" />
-      case 'direct':
-        return <User className="h-4 w-4" />
-      case 'group':
-        return <Users className="h-4 w-4" />
-      default:
-        return <MessageCircle className="h-4 w-4" />
-    }
+      {
+        onSuccess: () => {
+          onConversationSelect(conversationId)
+        },
+      },
+    )
   }
 
   if (isLoading) {
@@ -116,51 +111,27 @@ export function ConversationList({
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      {getConversationIcon(conversation.type)}
+                      <MessageCircle className="h-4 w-4" />
                       <span className="font-medium text-sm truncate">
-                        {conversation.name}
+                        {conversation.subject || 'Untitled Conversation'}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
-                      {conversation.unread_count > 0 && (
-                        <Badge
-                          className="text-xs px-1.5 py-0"
-                          variant="destructive"
-                        >
-                          {conversation.unread_count > 99
-                            ? '99+'
-                            : conversation.unread_count}
-                        </Badge>
-                      )}
-                      {conversation.last_message && (
-                        <span className="text-xs text-muted-foreground">
-                          {formatRelativeTime(
-                            conversation.last_message.timestamp,
-                          )}
-                        </span>
-                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {formatRelativeTime(conversation.updatedAt)}
+                      </span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
-                      {conversation.last_message ? (
-                        <p className="text-xs text-muted-foreground truncate">
-                          <span className="font-medium">
-                            {conversation.last_message.sender_name}:
-                          </span>{' '}
-                          {conversation.last_message.content}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">
-                          No messages yet
-                        </p>
-                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Status: {conversation.status}
+                      </p>
                     </div>
                     <div className="flex items-center gap-1 ml-2">
-                      <Users className="h-3 w-3 text-muted-foreground" />
                       <span className="text-xs text-muted-foreground">
-                        {conversation.participant_count}
+                        Priority: {conversation.priority}
                       </span>
                     </div>
                   </div>

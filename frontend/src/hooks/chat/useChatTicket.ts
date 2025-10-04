@@ -1,7 +1,6 @@
+import { queryKeys } from '@/constants/query-key'
 import { getChatTicket } from '@/lib/api'
 import { useQuery } from '@tanstack/react-query'
-
-export const CHAT_TICKET_QUERY_KEY = 'chatTicket'
 
 /**
  * Custom hook for fetching chat tickets using TanStack Query
@@ -12,7 +11,7 @@ export function useChatTicket(userId: string) {
   return useQuery({
     gcTime: 10 * 60 * 1000, // 10 minutes - keep in cache for potential reuse
     queryFn: () => getChatTicket(userId),
-    queryKey: [CHAT_TICKET_QUERY_KEY, userId],
+    queryKey: queryKeys.chat.ticket(userId),
     refetchOnReconnect: true, // Refetch when network reconnects
     refetchOnWindowFocus: false, // Don't refetch when window regains focus
     retry: 3,

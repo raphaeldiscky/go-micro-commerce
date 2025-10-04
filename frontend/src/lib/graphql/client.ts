@@ -9,7 +9,7 @@ export const graphqlClient = new GraphQLClient(env.VITE_GRAPHQL_GATEWAY_URL, {
     const token = getAccessToken()
 
     return {
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     }
   },
 })

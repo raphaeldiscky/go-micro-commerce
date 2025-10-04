@@ -18,10 +18,32 @@ services:
       - APOLLO_ROUTER_CONFIG_PATH=/app/router.yaml
       - RUST_LOG=info
       - APOLLO_ELV2_LICENSE=accept
-    # depends_on:
-    #   - auth-service
-    #   - chat-service
-    #   - otel-collector
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Consul registration sidecar for graphql-gateway
+  graphql-gateway-consul-sidecar:
+    image: alpine:latest
+    container_name: graphql-gateway-consul-sidecar
+    volumes:
+      - ../../graphql-gateway/register-consul.sh:/register-consul.sh:ro
+    command: sh -c "apk add --no-cache curl && sh /register-consul.sh"
+    networks:
+      - go-micro-commerce
+    environment:
+      - CONSUL_HTTP_ADDR=consul:8500
+      - SERVICE_NAME=graphql-gateway
+      - SERVICE_ID=graphql-gateway-localhost-4000
+      - SERVICE_ADDRESS=localhost
+      - SERVICE_PORT=4000
+      - HEALTH_CHECK_URL=http://graphql-gateway:4088/health
+    depends_on:
+      graphql-gateway:
+        condition: service_started
+      consul:
+        condition: service_healthy
     restart: unless-stopped
 
 networks:

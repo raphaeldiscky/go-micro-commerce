@@ -1,14 +1,11 @@
-import type { Message } from '@/lib/api'
 import { sendDeliveryReceipt, sendReadReceipt } from '@/lib/api'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
 /**
  * Hook for managing message receipts
  */
 export function useMessageReceipts(conversationId: string) {
-  const queryClient = useQueryClient()
-
   // Mutation for delivery receipts
   const deliveryReceiptMutation = useMutation({
     mutationFn: ({ messageId }: { messageId: string }) =>
@@ -19,28 +16,13 @@ export function useMessageReceipts(conversationId: string) {
   })
 
   // Mutation for read receipts
+  // Note: GraphQL Message type doesn't have delivery_status field
+  // Message status updates are handled through WebSocket events
   const readReceiptMutation = useMutation({
     mutationFn: ({ messageId }: { messageId: string }) =>
       sendReadReceipt(conversationId, messageId),
     onError: (error) => {
       console.error('Failed to send read receipt:', error)
-    },
-    onSuccess: (_, { messageId }) => {
-      // Update message status in cache
-      queryClient.setQueryData(['messages', conversationId], (old: any) => {
-        if (!old) return old
-
-        return {
-          ...old,
-          pages: old.pages.map((page: Array<Message>) =>
-            page.map((msg) =>
-              msg.id === messageId
-                ? { ...msg, delivery_status: 'read' as const }
-                : msg,
-            ),
-          ),
-        }
-      })
     },
   })
 
@@ -78,23 +60,15 @@ export function useMessageReceipts(conversationId: string) {
 
   /**
    * Update message delivery status from WebSocket events
+   * Note: GraphQL Message type doesn't include delivery_status field
+   * Status updates would need to be handled differently if this field is added to the schema
    */
   const updateMessageStatus = useCallback(
-    (messageId: string, status: 'delivered' | 'read' | 'sent') => {
-      queryClient.setQueryData(['messages', conversationId], (old: any) => {
-        if (!old) return old
-
-        return {
-          ...old,
-          pages: old.pages.map((page: Array<Message>) =>
-            page.map((msg) =>
-              msg.id === messageId ? { ...msg, delivery_status: status } : msg,
-            ),
-          ),
-        }
-      })
+    (_messageId: string, _status: 'delivered' | 'read' | 'sent') => {
+      // GraphQL Message type doesn't have delivery_status field
+      // This function is kept for API compatibility but currently does nothing
     },
-    [queryClient, conversationId],
+    [],
   )
 
   return {

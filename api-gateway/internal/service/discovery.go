@@ -70,7 +70,7 @@ func (sd *ConsulDiscoveryService) GetServiceEndpoint(serviceName string) (string
 
 	// Simple round-robin for now (could be enhanced with load balancing)
 	endpoint := endpoints[0]
-	sd.logger.Debug("selected endpoint", "service", serviceName, "endpoint", endpoint)
+	sd.logger.Debugf("selected endpoint for service %s: %s", serviceName, endpoint)
 
 	return endpoint, nil
 }

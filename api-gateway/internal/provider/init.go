@@ -20,6 +20,8 @@ func SetupGlobal(cfg *config.Config) (*Providers, error) {
 		AllowedAlgs:    cfg.JWT.AllowedAlgs,
 		Issuer:         cfg.JWT.Issuer,
 		Secret:         cfg.JWT.Secret,
+		PublicKeyPath:  cfg.JWT.PublicKeyPath,
+		PrivateKeyPath: cfg.JWT.PrivateKeyPath,
 		ExpirationTime: cfg.JWT.ExpirationTime,
 		RefreshTime:    cfg.JWT.RefreshTime,
 		SigningMethod:  cfg.JWT.SigningMethod,

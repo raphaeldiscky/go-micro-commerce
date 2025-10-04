@@ -1,8 +1,15 @@
+import { queryKeys } from '@/constants/query-key'
 import type { PresenceUpdate } from '@/lib/api'
-import { getOnlineUsers, updatePresence } from '@/lib/api'
+import { updatePresence } from '@/lib/api'
+import { ONLINE_USERS_QUERY, graphqlClient } from '@/lib/graphql'
 import { generateTimestamp } from '@/lib/utils/date'
+import type { User } from '@/types/__generated__/graphql'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
+
+interface OnlineUsersQueryResponse {
+  onlineUsers: Array<User>
+}
 
 /**
  * Hook for managing user presence
@@ -14,8 +21,14 @@ export function usePresence() {
 
   // Query for online users
   const { data: onlineUsersList, refetch: refetchOnlineUsers } = useQuery({
-    queryFn: getOnlineUsers,
-    queryKey: ['online-users'],
+    queryFn: async () => {
+      const data =
+        await graphqlClient.request<OnlineUsersQueryResponse>(
+          ONLINE_USERS_QUERY,
+        )
+      return data.onlineUsers
+    },
+    queryKey: queryKeys.chat.onlineUsers(),
     refetchInterval: 30 * 1000, // Refetch every 30 seconds
     staleTime: 15 * 1000, // Consider stale after 15 seconds
   })
@@ -84,7 +97,9 @@ export function usePresence() {
   // Update online users when query data changes
   useEffect(() => {
     if (onlineUsersList && Array.isArray(onlineUsersList)) {
-      setOnlineUsers(new Set(onlineUsersList))
+      // Extract user IDs from User objects
+      const userIds = onlineUsersList.map((user) => user.id)
+      setOnlineUsers(new Set(userIds))
     } else {
       // Handle case where API might return wrapped data or different format
       console.warn('Online users data is not an array:', onlineUsersList)

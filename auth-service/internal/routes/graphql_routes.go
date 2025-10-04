@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph/resolver"
@@ -37,15 +36,14 @@ func graphQLEchoHandler(h http.Handler) echo.HandlerFunc {
 func SetupGraphQLRoutes(
 	e *echo.Echo,
 	graphResolver *resolver.Resolver,
-	jwtUtils jwtutils.JWT,
 ) {
 	// Create GraphQL handler with context middleware
 	graphHandler := handler.NewDefaultServer(
 		graph.NewExecutableSchema(graph.Config{Resolvers: graphResolver}),
 	)
 
-	// Add JWT auth middleware to parse Authorization header and set user context
-	graphHandler.AroundOperations(middleware.GraphQLAuthMiddleware(jwtUtils))
+	// Add middleware to extract user headers from Apollo Router (forwarded from JWT claims)
+	graphHandler.AroundOperations(middleware.GraphQLContextMiddleware())
 
 	// GraphQL endpoint with optional auth middleware
 	// GET for introspection queries (needed by Apollo Router)

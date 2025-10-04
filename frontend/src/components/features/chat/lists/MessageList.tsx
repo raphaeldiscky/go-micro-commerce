@@ -1,7 +1,8 @@
 import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
 import { useMessages } from '@/hooks/chat/useMessages'
-import type { Message, TypingIndicator as TypingIndicatorType } from '@/lib/api'
+import type { TypingIndicator as TypingIndicatorType } from '@/lib/api'
 import { areMessagesConsecutive } from '@/lib/utils/date'
+import type { Message } from '@/types/__generated__/graphql'
 import { ChevronDown, Loader2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Button } from '../../../ui/button'
@@ -45,9 +46,9 @@ export function MessageList({
     prevMsg: Message | undefined,
   ) => {
     if (!prevMsg) return false
-    if (currentMsg.sender_id !== prevMsg.sender_id) return false
+    if (currentMsg.senderId !== prevMsg.senderId) return false
 
-    return areMessagesConsecutive(currentMsg.created_at, prevMsg.created_at)
+    return areMessagesConsecutive(currentMsg.createdAt, prevMsg.createdAt)
   }
 
   // Scroll to bottom
@@ -81,8 +82,7 @@ export function MessageList({
   // Mark messages as read when they come into view
   useEffect(() => {
     const unreadMessages = messages.filter(
-      (msg) =>
-        msg.sender_id !== currentUserId && msg.delivery_status !== 'read',
+      (msg) => msg.senderId !== currentUserId,
     )
 
     if (unreadMessages.length > 0 && autoScroll) {

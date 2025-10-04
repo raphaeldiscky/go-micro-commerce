@@ -9,6 +9,8 @@ import (
 // JWTConfig holds JWT configuration values.
 type JWTConfig struct {
 	Secret         string        `mapstructure:"JWT_SECRET"`
+	PublicKeyPath  string        `mapstructure:"JWT_PUBLIC_KEY_PATH"`
+	PrivateKeyPath string        `mapstructure:"JWT_PRIVATE_KEY_PATH"`
 	ExpirationTime time.Duration `mapstructure:"JWT_EXPIRATION_TIME"`
 	RefreshTime    time.Duration `mapstructure:"JWT_REFRESH_TIME"`
 	Issuer         string        `mapstructure:"JWT_ISSUER"`
@@ -27,9 +29,9 @@ func initJWTConfig() *JWTConfig {
 	viper.SetDefault("JWT_ISSUER", "auth-service")
 	viper.SetDefault("JWT_TOKEN_LOOKUP", "header:Authorization")
 	viper.SetDefault("JWT_AUTH_SCHEME", "Bearer")
-	viper.SetDefault("JWT_SIGNING_METHOD", "HS256")
+	viper.SetDefault("JWT_SIGNING_METHOD", "RS256")
 	viper.SetDefault("JWT_CONTEXT_KEY", "user")
-	viper.SetDefault("JWT_ALLOWED_ALGS", []string{"HS256"})
+	viper.SetDefault("JWT_ALLOWED_ALGS", []string{"RS256"})
 
 	jwtConfig := &JWTConfig{}
 	if err := viper.Unmarshal(jwtConfig); err != nil {

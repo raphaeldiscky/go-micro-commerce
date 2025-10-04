@@ -27,10 +27,18 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
 	public.GET("/chats/ws/health", gw.ProxyToService("chat-service-websocket", "/ws/health"))
 
-	// GraphQL Federation Gateway
+	// GraphQL Federation Gateway (public - no auth)
 	// GET for introspection queries, POST for actual queries/mutations
 	public.GET("/graphql", gw.ProxyToService("graphql-gateway", "/"))
 	public.POST("/graphql", gw.ProxyToService("graphql-gateway", "/"))
+
+	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
+	// This allows both authenticated and unauthenticated queries to work
+	// Resolvers can use GraphQLRequireAuth() to enforce authentication per query
+	optionalAuth := e.Group("")
+	optionalAuth.Use(h.OptionalAuthorization())
+	optionalAuth.GET("/graphql/auth", gw.ProxyToService("graphql-gateway", "/"))
+	optionalAuth.POST("/graphql/auth", gw.ProxyToService("graphql-gateway", "/"))
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))
 	public.POST("/auth/v1/register", gw.ProxyToService("auth-service", "/v1/register"))
@@ -55,8 +63,4 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
 	protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
 	protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
-
-	// GraphQL Federation Gateway (authenticated)
-	protected.GET("/graphql/auth", gw.ProxyToService("graphql-gateway", "/"))
-	protected.POST("/graphql/auth", gw.ProxyToService("graphql-gateway", "/"))
 }

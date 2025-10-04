@@ -1,6 +1,12 @@
 import { apiRequest } from './client'
-import type { ApiPaginatedResponse, ApiSuccessResponse } from './types'
+import type { ApiSuccessResponse } from './types'
 import { ApiError } from './types'
+
+/**
+ * WebSocket and Real-time Event Types
+ * These are used for WebSocket connections and real-time features
+ * Historical data queries use GraphQL (see @/lib/graphql/chat.ts)
+ */
 
 export interface ChatTicketData {
   expires_at: string
@@ -13,78 +19,6 @@ export interface ChatTicketData {
 export interface ChatTicketResponse {
   data: ChatTicketData
   message: string
-}
-
-export interface Conversation {
-  created_at: string
-  description?: string
-  id: string
-  last_message?: {
-    content: string
-    sender_name: string
-    timestamp: string
-  }
-  name: string
-  participant_count?: number
-  priority?: number
-  status?: string
-  subject: string
-  type?: 'channel' | 'direct' | 'group'
-  unread_count: number
-  updated_at: string
-}
-
-export interface ConversationDetails {
-  created_at: string
-  created_by: string
-  description?: string
-  id: string
-  name: string
-  settings: {
-    allow_member_invite: boolean
-    is_public: boolean
-    message_retention_days?: number
-  }
-  type: 'channel' | 'direct' | 'group'
-  updated_at: string
-}
-
-export interface JoinConversationResponse {
-  data: {
-    conversation_id: string
-    joined_at: string
-  }
-  message: string
-}
-
-export interface Message {
-  content: string
-  conversation_id: string
-  created_at: string
-  delivery_status: 'delivered' | 'read' | 'sent'
-  id: string
-  message_type: 'file' | 'image' | 'system' | 'text'
-  reply_to_id?: string
-  sender_id: string
-  sender_name?: string
-  updated_at: string
-}
-
-export interface MessageReceipt {
-  message_id: string
-  receipt_type: 'delivered' | 'read'
-  timestamp: string
-  user_id: string
-}
-
-export interface Participant {
-  conversation_id: string
-  id: string
-  is_active: boolean
-  joined_at: string
-  role: string
-  user_id: string
-  user_type: string
 }
 
 export interface PresenceUpdate {
@@ -105,6 +39,22 @@ export interface TypingIndicator {
   username: string
 }
 
+// REST Message type (for WebSocket sendMessage response)
+export interface MessageResponse {
+  content: string
+  conversation_id: string
+  created_at: string
+  id: string
+  message_type: 'file' | 'image' | 'system' | 'text'
+  sender_id: string
+  updated_at: string
+}
+
+/**
+ * WebSocket and Real-time API Functions
+ * For historical data queries, use GraphQL hooks from @/hooks/chat/*
+ */
+
 export async function checkChatHealth(): Promise<{
   status: string
   timestamp: string
@@ -113,22 +63,6 @@ export async function checkChatHealth(): Promise<{
     '/chats/v1/nodes/health',
   )
   return response
-}
-
-export async function createConversation(data: {
-  description?: string
-  name: string
-  participant_ids?: Array<string>
-  type: 'channel' | 'direct' | 'group'
-}): Promise<ConversationDetails> {
-  const response = await apiRequest<ApiSuccessResponse<ConversationDetails>>(
-    '/chats/v1/conversations',
-    {
-      body: JSON.stringify(data),
-      method: 'POST',
-    },
-  )
-  return response.data
 }
 
 export async function getChatTicket(userId: string): Promise<ChatTicketData> {
@@ -153,66 +87,6 @@ export async function getChatTicket(userId: string): Promise<ChatTicketData> {
   return response.data
 }
 
-export async function getConversationDetails(
-  conversationId: string,
-): Promise<ConversationDetails> {
-  const response = await apiRequest<ApiSuccessResponse<ConversationDetails>>(
-    `/chats/v1/${conversationId}`,
-  )
-  return response.data
-}
-
-export async function getConversationMessages(
-  conversationId: string,
-  page: number = 1,
-  limit: number = 50,
-): Promise<{ messages: Array<Message>; hasMore: boolean; totalPages: number }> {
-  const response = await apiRequest<ApiPaginatedResponse<Message>>(
-    `/chats/v1/${conversationId}/messages?page=${page}&size=${limit}`,
-  )
-
-  return {
-    messages: response.data,
-    hasMore: response.pagination.page < response.pagination.total_page,
-    totalPages: response.pagination.total_page,
-  }
-}
-
-export async function getConversationParticipants(
-  conversationId: string,
-): Promise<Array<Participant>> {
-  const response = await apiRequest<ApiSuccessResponse<Array<Participant>>>(
-    `/chats/v1/${conversationId}/participants`,
-  )
-  return response.data
-}
-
-export async function getConversations(): Promise<Array<Conversation>> {
-  const response = await apiRequest<ApiSuccessResponse<Array<Conversation>>>(
-    '/chats/v1/conversations',
-  )
-  return response.data
-}
-
-export async function getOnlineUsers(): Promise<Array<string>> {
-  const response = await apiRequest<ApiSuccessResponse<Array<string>>>(
-    '/chats/v1/users/online',
-  )
-  return response.data
-}
-
-export async function joinConversation(
-  conversationId: string,
-): Promise<{ conversation_id: string; joined_at: string }> {
-  const response = await apiRequest<JoinConversationResponse>(
-    `/chats/v1/${conversationId}/join`,
-    {
-      method: 'POST',
-    },
-  )
-  return response.data
-}
-
 export async function sendDeliveryReceipt(
   conversationId: string,
   messageId: string,
@@ -226,8 +100,8 @@ export async function sendDeliveryReceipt(
 export async function sendMessage(
   conversationId: string,
   message: SendMessageRequest,
-): Promise<Message> {
-  const response = await apiRequest<ApiSuccessResponse<Message>>(
+): Promise<MessageResponse> {
+  const response = await apiRequest<ApiSuccessResponse<MessageResponse>>(
     `/chats/v1/${conversationId}/messages`,
     {
       body: JSON.stringify(message),

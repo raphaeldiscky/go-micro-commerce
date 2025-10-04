@@ -60,11 +60,12 @@ func SetupAuth(
 		userVerifiedProducer,
 	)
 	authHandler := handler.NewAuthHandler(authService)
+	jwksHandler := handler.NewJWKSHandler(providers.JWTUtils)
 
 	// Setup REST routes
-	routes.SetupAuthRoutes(e, authHandler)
+	routes.SetupAuthRoutes(e, authHandler, jwksHandler)
 
 	// Setup GraphQL routes
 	graphqlResolver := resolver.NewResolver(authService, appLogger)
-	routes.SetupGraphQLRoutes(e, graphqlResolver, providers.JWTUtils)
+	routes.SetupGraphQLRoutes(e, graphqlResolver)
 }

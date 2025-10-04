@@ -1,7 +1,28 @@
-import { getConversations, joinConversation } from '@/lib/api'
+import { queryKeys } from '@/constants/query-key'
+import {
+  CONVERSATIONS_QUERY,
+  JOIN_CONVERSATION_MUTATION,
+  graphqlClient,
+} from '@/lib/graphql'
+import type {
+  Conversation,
+  Participant,
+  ParticipantRole,
+} from '@/types/__generated__/graphql'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
-export const CONVERSATIONS_QUERY_KEY = 'conversations'
+interface ConversationsQueryResponse {
+  conversations: Array<Conversation>
+}
+
+interface JoinConversationMutationResponse {
+  joinConversation: Participant
+}
+
+interface JoinConversationInput {
+  conversationId: string
+  role: ParticipantRole
+}
 
 /**
  * Hook for fetching conversations list
@@ -9,8 +30,14 @@ export const CONVERSATIONS_QUERY_KEY = 'conversations'
 export function useConversations() {
   return useQuery({
     gcTime: 5 * 60 * 1000, // 5 minutes
-    queryFn: getConversations,
-    queryKey: [CONVERSATIONS_QUERY_KEY],
+    queryFn: async () => {
+      const data =
+        await graphqlClient.request<ConversationsQueryResponse>(
+          CONVERSATIONS_QUERY,
+        )
+      return data.conversations
+    },
+    queryKey: queryKeys.chat.conversations(),
     refetchOnWindowFocus: false,
     retry: 3,
     staleTime: 30 * 1000, // 30 seconds - conversations don't change frequently
@@ -24,13 +51,22 @@ export function useJoinConversation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (conversationId: string) => joinConversation(conversationId),
+    mutationFn: async (input: JoinConversationInput) => {
+      const data =
+        await graphqlClient.request<JoinConversationMutationResponse>(
+          JOIN_CONVERSATION_MUTATION,
+          { input },
+        )
+      return data.joinConversation
+    },
     onError: (error) => {
       console.error('Failed to join conversation:', error)
     },
     onSuccess: () => {
       // Refetch conversations list to update join status
-      queryClient.invalidateQueries({ queryKey: [CONVERSATIONS_QUERY_KEY] })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chat.conversations(),
+      })
     },
   })
 }

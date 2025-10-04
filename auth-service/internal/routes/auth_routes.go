@@ -9,7 +9,7 @@ import (
 )
 
 // SetupAuthRoutes sets up all authentication routes.
-func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
+func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler, jwksHandler *handler.JWKSHandler) {
 	// API versioning
 	v1 := e.Group("/v1")
 
@@ -21,6 +21,9 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
 	public.POST("/logout", h.Logout)
 	public.POST("/verify", h.VerifyUser)
 	public.POST("/resend-verification", h.ResendVerification)
+
+	// JWKS endpoint (public, for Apollo Router JWT validation)
+	public.GET("/.well-known/jwks.json", jwksHandler.GetJWKS)
 
 	// User routes (protected)
 	protected := v1.Group("/users")
