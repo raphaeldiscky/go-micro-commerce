@@ -16,4 +16,11 @@ const (
 	CtxKeyClientIP ContextKey = "client_ip"
 	// CtxKeyUserAgent is the context key for the user agent.
 	CtxKeyUserAgent ContextKey = "user_agent"
+	// CtxKeyResponseWriter is the context key for the HTTP response writer.
+	CtxKeyResponseWriter ContextKey = "response_writer"
+)
+
+const (
+	// BearerPrefix is the prefix for Bearer token in Authorization header.
+	BearerPrefix = "Bearer"
 )

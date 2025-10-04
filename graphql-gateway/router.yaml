@@ -36,6 +36,10 @@ cors:
       expose_headers:
         - X-Request-ID
 
+# Rhai script for Set-Cookie header propagation
+rhai:
+  main: /app/main.rhai
+
 # Header propagation to subgraphs
 headers:
   all:
@@ -48,6 +52,10 @@ headers:
   subgraphs:
     auth-service:
       request:
+        - propagate:
+            named: "authorization"
+        - propagate:
+            named: "cookie"
         - insert:
             name: "X-Gateway"
             value: "graphql-gateway"
@@ -59,6 +67,10 @@ headers:
             rename: "X-User-Agent"
     chat-service:
       request:
+        - propagate:
+            named: "authorization"
+        - propagate:
+            named: "cookie"
         - insert:
             name: "X-Gateway"
             value: "graphql-gateway"

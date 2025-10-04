@@ -18,12 +18,12 @@ const (
 const (
 	// CookieSecure indicates whether the cookie should only be sent over HTTPS.
 	// Should be true in production, false in development.
-	CookieSecure = true
+	CookieSecure = false
 
 	// CookieHTTPOnly indicates whether the cookie should be HTTP-only.
 	CookieHTTPOnly = true
 
 	// CookieSameSite defines the SameSite attribute for cookies.
-	// "Strict" provides the strongest CSRF protection.
-	CookieSameSite = "Strict"
+	// Use "Lax" for development to allow cross-origin cookies, "Strict" for production.
+	CookieSameSite = "Lax"
 )

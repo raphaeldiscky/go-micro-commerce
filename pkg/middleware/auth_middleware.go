@@ -82,7 +82,7 @@ func (m *AuthMiddleware) parseAccessToken(c echo.Context) (string, error) {
 	}
 
 	splitToken := strings.Split(accessToken, " ")
-	if len(splitToken) != 2 || splitToken[0] != "Bearer" {
+	if len(splitToken) != 2 || splitToken[0] != constant.BearerPrefix {
 		return "", errors.New("invalid Authorization header format")
 	}
 

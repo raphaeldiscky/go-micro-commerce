@@ -65,7 +65,7 @@ export function useLogin() {
       console.error('Login failed:', error)
     },
     onSuccess: (data) => {
-      // Store access token
+      // Store access token in memory (refresh token is in HTTP-only cookie)
       setAccessToken(data.token)
 
       // Map GraphQL user to API user format
@@ -100,6 +100,7 @@ export function useLogout() {
     },
     onSettled: () => {
       // Always clear auth state even if API call fails
+      // Note: Server will clear the HTTP-only refresh token cookie
       setAccessToken(null)
       logoutUser()
       queryClient.removeQueries({ queryKey: AUTH_QUERY_KEYS.all })
@@ -136,7 +137,7 @@ export function useRegister() {
       console.error('Registration failed:', error)
     },
     onSuccess: (data) => {
-      // Store access token
+      // Store access token in memory (refresh token is in HTTP-only cookie)
       setAccessToken(data.token)
 
       // Map GraphQL user to API user format

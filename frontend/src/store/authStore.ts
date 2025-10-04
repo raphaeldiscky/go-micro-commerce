@@ -1,6 +1,12 @@
 import { getAccessToken, setAccessToken } from '@/lib/api'
-import type { MeQuery } from '@/lib/graphql'
-import { ME_QUERY, graphqlClient, mapGraphQLUserToApiUser } from '@/lib/graphql'
+import type { MeQuery, RefreshTokenMutation } from '@/lib/graphql'
+import {
+  ME_QUERY,
+  REFRESH_TOKEN_MUTATION,
+  graphqlClient,
+  handleGraphQLRequest,
+  mapGraphQLUserToApiUser,
+} from '@/lib/graphql'
 import type { User } from '@/types/__generated__/graphql'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -36,18 +42,54 @@ export const useAuthStore = create<AuthStore>()(
           return
         }
 
-        const token = getAccessToken()
+        set({ isLoading: true })
 
-        if (!token) {
-          set({
-            hasInitialized: true,
-            isLoading: false,
-          })
+        // Check if we have an access token in memory
+        const currentToken = getAccessToken()
+
+        // If no access token in memory, try refresh token first (e.g., after page refresh)
+        if (!currentToken) {
+          try {
+            const refreshData = await handleGraphQLRequest(async () => {
+              // Note: No refreshToken parameter needed - cookie is sent automatically
+              return await graphqlClient.request<RefreshTokenMutation>(
+                REFRESH_TOKEN_MUTATION,
+                {},
+              )
+            }, 'Token refresh failed')
+
+            // Store new access token in memory
+            setAccessToken(refreshData.refreshToken.token)
+
+            // Fetch user with new token
+            const userData = await graphqlClient.request<MeQuery>(ME_QUERY)
+            const user = userData.me
+              ? mapGraphQLUserToApiUser(userData.me)
+              : null
+
+            set({
+              error: null,
+              hasInitialized: true,
+              isAuthenticated: !!user,
+              isLoading: false,
+              user,
+            })
+          } catch (refreshError) {
+            // Refresh failed (no cookie or cookie expired), logout
+            setAccessToken(null)
+            set({
+              error: null,
+              hasInitialized: true,
+              isAuthenticated: false,
+              isLoading: false,
+              user: null,
+            })
+          }
           return
         }
 
+        // We have a token, try to fetch user
         try {
-          set({ isLoading: true })
           const data = await graphqlClient.request<MeQuery>(ME_QUERY)
           const user = data.me ? mapGraphQLUserToApiUser(data.me) : null
           set({
@@ -58,15 +100,42 @@ export const useAuthStore = create<AuthStore>()(
             user,
           })
         } catch (error) {
-          // Token might be expired or invalid
-          setAccessToken(null)
-          set({
-            error: null,
-            hasInitialized: true,
-            isAuthenticated: false,
-            isLoading: false,
-            user: null,
-          })
+          // Access token might be expired, try to refresh
+          try {
+            const refreshData = await handleGraphQLRequest(async () => {
+              return await graphqlClient.request<RefreshTokenMutation>(
+                REFRESH_TOKEN_MUTATION,
+                {},
+              )
+            }, 'Token refresh failed')
+
+            // Store new access token in memory
+            setAccessToken(refreshData.refreshToken.token)
+
+            // Retry fetching user with new token
+            const userData = await graphqlClient.request<MeQuery>(ME_QUERY)
+            const user = userData.me
+              ? mapGraphQLUserToApiUser(userData.me)
+              : null
+
+            set({
+              error: null,
+              hasInitialized: true,
+              isAuthenticated: !!user,
+              isLoading: false,
+              user,
+            })
+          } catch (refreshError) {
+            // Refresh failed, logout
+            setAccessToken(null)
+            set({
+              error: null,
+              hasInitialized: true,
+              isAuthenticated: false,
+              isLoading: false,
+              user: null,
+            })
+          }
         }
       },
       clearError: () => {
@@ -82,6 +151,7 @@ export const useAuthStore = create<AuthStore>()(
       login: (user: User) => {
         set({
           error: null,
+          hasInitialized: true,
           isAuthenticated: true,
           isLoading: false,
           user,
@@ -89,9 +159,12 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
+        // Clear access token from memory
+        // Note: Server clears HTTP-only refresh token cookie
         setAccessToken(null)
         set({
           error: null,
+          hasInitialized: false,
           isAuthenticated: false,
           isLoading: false,
           user: null,

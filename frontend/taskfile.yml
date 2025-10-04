@@ -30,3 +30,8 @@ tasks:
     desc: Run tests with verbose output and coverage
     cmds:
       - npm run test
+
+  codegen:
+    desc: Generate graphql types
+    cmds:
+      - npm run codegen

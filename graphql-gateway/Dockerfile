@@ -1,12 +1,11 @@
 # ---- Build Stage ----
-# Use Ubuntu for Rover CLI installation and supergraph composition
-FROM ubuntu:22.04 AS builder
+# Use Alpine for Rover CLI installation and supergraph composition
+FROM alpine:latest AS builder
 
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     curl \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    ca-certificates
 
 # Install Rover CLI
 RUN curl -sSL https://rover.apollo.dev/nix/latest | sh
@@ -20,6 +19,7 @@ WORKDIR /build
 # Copy supergraph configuration
 COPY graphql-gateway/supergraph.yaml ./supergraph.yaml
 COPY graphql-gateway/router.yaml ./router.yaml
+COPY graphql-gateway/main.rhai ./main.rhai
 
 # Accept Apollo ELv2 license
 ENV APOLLO_ELV2_LICENSE=accept
@@ -39,6 +39,7 @@ WORKDIR /app
 
 # Copy router configuration and supergraph schema from builder
 COPY --from=builder /build/router.yaml /app/router.yaml
+COPY --from=builder /build/main.rhai /app/main.rhai
 COPY --from=builder /build/supergraph-schema.graphql /app/supergraph-schema.graphql
 
 # Expose router port

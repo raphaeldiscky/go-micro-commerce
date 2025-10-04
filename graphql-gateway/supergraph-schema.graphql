@@ -129,6 +129,7 @@ type Mutation
 {
   register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
+  refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
   logout: Boolean! @join__field(graph: AUTH_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
   endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)

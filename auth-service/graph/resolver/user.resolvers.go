@@ -15,6 +15,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/utils/cookieutils"
 )
 
 // Register is the resolver for the register field.
@@ -40,6 +41,9 @@ func (r *mutationResolver) Register(
 		return nil, err
 	}
 
+	// Set refresh token in HTTP-only cookie
+	cookieutils.SetRefreshTokenCookie(ctx, authResponse.RefreshToken)
+
 	return mapper.MapAuthResponseToGraphQL(authResponse), nil
 }
 
@@ -62,6 +66,35 @@ func (r *mutationResolver) Login(
 		return nil, err
 	}
 
+	// Set refresh token in HTTP-only cookie
+	cookieutils.SetRefreshTokenCookie(ctx, authResponse.RefreshToken)
+
+	return mapper.MapAuthResponseToGraphQL(authResponse), nil
+}
+
+// RefreshToken is the resolver for the refreshToken field.
+func (r *mutationResolver) RefreshToken(ctx context.Context) (*graph.AuthPayload, error) {
+	// Get refresh token from HTTP-only cookie
+	refreshToken, err := cookieutils.GetRefreshTokenFromCookie(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get refresh token from cookie", "error", err)
+		return nil, httperror.NewUnauthorizedError("missing or invalid refresh token")
+	}
+
+	// Call service to refresh token
+	req := &dto.RefreshTokenRequest{
+		RefreshToken: refreshToken,
+	}
+
+	authResponse, err := r.authService.RefreshToken(ctx, req)
+	if err != nil {
+		r.logger.Error("Failed to refresh token", "error", err)
+		return nil, err
+	}
+
+	// Set new refresh token in HTTP-only cookie
+	cookieutils.SetRefreshTokenCookie(ctx, authResponse.RefreshToken)
+
 	return mapper.MapAuthResponseToGraphQL(authResponse), nil
 }
 
@@ -75,8 +108,11 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 
 	r.logger.Info("User logged out", "user_id", userID)
 
-	// GraphQL logout is a no-op since JWT tokens are stateless
-	// The frontend will clear the token
+	// Clear refresh token cookie
+	cookieutils.ClearRefreshTokenCookie(ctx)
+
+	// GraphQL logout: clear HTTP-only cookie
+	// The frontend will clear the access token from memory
 	// In a production system, you might want to:
 	// - Invalidate refresh tokens in the database
 	// - Add the access token to a blacklist (Redis)

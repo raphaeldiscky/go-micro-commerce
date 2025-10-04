@@ -1,5 +1,6 @@
 services:
   graphql-gateway:
+    image: localhost:5000/graphql-gateway:latest
     build:
       context: ../..
       dockerfile: graphql-gateway/Dockerfile
