@@ -2,9 +2,10 @@ import {
   APP_CONFIG,
   FEATURES_ITEMS,
   GITHUB_REPO_URL,
+  PATH_AUTH,
+  PATH_ROOT,
   PROFILE_IMAGE_URL,
 } from '@/constants'
-import { PATH_AUTH, PATH_DASHBOARD, PATH_ROOT } from '@/constants/routes'
 import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth/useAuth'
 import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
@@ -79,7 +80,9 @@ export default function Header() {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         'inline-flex items-center',
-                        isActive('/') ? 'bg-accent text-accent-foreground' : '',
+                        isActive(PATH_ROOT.home)
+                          ? 'bg-accent text-accent-foreground'
+                          : '',
                       )}
                       to={PATH_ROOT.home}
                     >
@@ -91,7 +94,7 @@ export default function Header() {
 
                 {/* Features Dropdown */}
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="inline-flex items-center">
+                  <NavigationMenuTrigger className="inline-flex items-center mt-3">
                     <Zap className="mr-1 h-4 w-4" />
                     Features
                   </NavigationMenuTrigger>
@@ -131,11 +134,11 @@ export default function Header() {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         'inline-flex items-center',
-                        isActive('/services')
+                        isActive(PATH_ROOT.services)
                           ? 'bg-accent text-accent-foreground'
                           : '',
                       )}
-                      to={PATH_DASHBOARD.services.root}
+                      to={PATH_ROOT.services}
                     >
                       <Settings className="mr-1 h-4 w-4" />
                       Services
@@ -150,7 +153,7 @@ export default function Header() {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         'inline-flex items-center',
-                        isActive('/about')
+                        isActive(PATH_ROOT.about)
                           ? 'bg-accent text-accent-foreground'
                           : '',
                       )}
@@ -291,12 +294,12 @@ export default function Header() {
               <Link
                 className={cn(
                   'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
-                  isActive('/services')
+                  isActive(PATH_ROOT.services)
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to={PATH_DASHBOARD.services.root}
+                to={PATH_ROOT.services}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Services

@@ -1,4 +1,4 @@
-import { PATH_AUTH, PATH_DASHBOARD } from '@/constants/routes'
+import { PATH_AUTH, PATH_FEATURES } from '@/constants/routes'
 import { useIsAuthenticated } from '@/hooks/auth/useAuth'
 import { useConversations } from '@/hooks/chat/useConversations'
 import type { Conversation } from '@/lib/api'
@@ -166,7 +166,7 @@ export function ChatListPage() {
               >
                 <Link
                   params={{ conversationId: conversation.id }}
-                  to={PATH_DASHBOARD.chat.detail(conversation.id)}
+                  to={PATH_FEATURES.chat.detail(conversation.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">

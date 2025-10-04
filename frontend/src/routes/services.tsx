@@ -6,6 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { PATH_ROOT } from '@/constants'
+import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   ArrowLeftRight,
@@ -24,7 +26,9 @@ import {
   Zap,
 } from 'lucide-react'
 
-export const Route = createFileRoute('/dashboard/services/')({
+export const Route = createFileRoute(
+  PATH_ROOT.services as keyof FileRoutesByPath,
+)({
   component: ServicesPage,
 })
 

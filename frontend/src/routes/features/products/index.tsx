@@ -1,13 +1,17 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PATH_FEATURES } from '@/constants'
 import { useProducts } from '@/hooks/products/useProducts'
+import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertCircle, Package } from 'lucide-react'
 import { useMemo } from 'react'
-import { ProductList } from '../../../components/dashboard/products/ProductList'
-import { ProductPagination } from '../../../components/dashboard/products/ProductPagination'
+import { ProductList } from '../../../components/features/products/ProductList'
+import { ProductPagination } from '../../../components/features/products/ProductPagination'
 
-export const Route = createFileRoute('/dashboard/products/')({
+export const Route = createFileRoute(
+  PATH_FEATURES.products.root as keyof FileRoutesByPath,
+)({
   component: ProductsPage,
 })
 

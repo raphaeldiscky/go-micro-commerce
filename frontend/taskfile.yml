@@ -1,0 +1,32 @@
+version: '3'
+
+dotenv: ['.env']
+
+vars:
+  CURDIR: '{{.PWD}}'
+
+tasks:
+  build:
+    desc: Build the application binary
+    cmds:
+      - npm run build
+
+  run:
+    desc: Run the application
+    cmds:
+      - npm run dev
+
+  lint:
+    desc: Run linters
+    cmds:
+      - npm run lint
+
+  format:
+    desc: Run formatters
+    cmds:
+      - npm run format
+
+  test:
+    desc: Run tests with verbose output and coverage
+    cmds:
+      - npm run test

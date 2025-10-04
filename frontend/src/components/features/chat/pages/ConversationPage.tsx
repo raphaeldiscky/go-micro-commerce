@@ -1,4 +1,4 @@
-import { PATH_AUTH, PATH_DASHBOARD } from '@/constants'
+import { PATH_AUTH, PATH_FEATURES } from '@/constants'
 import { useIsAuthenticated, useUser } from '@/hooks/auth/useAuth'
 import { useChatTicket } from '@/hooks/chat/useChatTicket'
 import { useConversationDetails } from '@/hooks/chat/useConversationDetails'
@@ -258,7 +258,7 @@ export function ConversationPage({
             This conversation might not exist or you don't have access to it.
           </p>
           <Button asChild>
-            <Link to={PATH_DASHBOARD.chat.root}>Back to Conversations</Link>
+            <Link to={PATH_FEATURES.chat.root}>Back to Conversations</Link>
           </Button>
         </Card>
       </div>
@@ -273,7 +273,7 @@ export function ConversationPage({
       <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-4">
           <Button
-            onClick={() => navigate({ to: PATH_DASHBOARD.chat.root })}
+            onClick={() => navigate({ to: PATH_FEATURES.chat.root })}
             size="sm"
             variant="ghost"
           >

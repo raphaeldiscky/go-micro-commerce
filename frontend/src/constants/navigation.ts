@@ -1,13 +1,14 @@
 import { Home, Info, MessageCircle, Package, Settings } from 'lucide-react'
+import { PATH_FEATURES, PATH_ROOT } from './routes'
 import type { NavigationItem } from './types'
 
 // Navigation menu items
 export const NAVIGATION_ITEMS: Array<NavigationItem> = [
-  { icon: Home, name: 'Home', path: '/' },
-  { icon: Package, name: 'Products', path: '/products' },
-  { icon: MessageCircle, name: 'Chat Demo', path: '/chat' },
-  { icon: Settings, name: 'Services', path: '/services' },
-  { icon: Info, name: 'About', path: '/about' },
+  { icon: Home, name: 'Home', path: PATH_ROOT.home },
+  { icon: Package, name: 'Products', path: PATH_FEATURES.products.root },
+  { icon: MessageCircle, name: 'Chat Demo', path: PATH_FEATURES.chat.root },
+  { icon: Settings, name: 'Services', path: PATH_ROOT.services },
+  { icon: Info, name: 'About', path: PATH_ROOT.about },
 ]
 
 // Features dropdown items
@@ -16,21 +17,21 @@ export const FEATURES_ITEMS: Array<NavigationItem> = [
     description: 'Browse products with cursor pagination',
     icon: Package,
     name: 'Products',
-    path: '/products',
+    path: PATH_FEATURES.products.root,
   },
   {
     description: 'Real-time messaging with WebSocket',
     icon: MessageCircle,
     name: 'Chat Demo',
-    path: '/chat',
+    path: PATH_FEATURES.chat.root,
   },
 ]
 
 // Quick links for footer (subset of navigation)
 export const QUICK_LINKS: Array<NavigationItem> = [
-  { icon: Home, name: 'Home', path: '/' },
-  { icon: Package, name: 'Products', path: '/products' },
-  { icon: Settings, name: 'Services', path: '/services' },
-  { icon: MessageCircle, name: 'Chat Demo', path: '/chat' },
-  { icon: Info, name: 'About', path: '/about' },
+  { icon: Home, name: 'Home', path: PATH_ROOT.home },
+  { icon: Package, name: 'Products', path: PATH_FEATURES.products.root },
+  { icon: Settings, name: 'Services', path: PATH_ROOT.services },
+  { icon: MessageCircle, name: 'Chat Demo', path: PATH_FEATURES.chat.root },
+  { icon: Info, name: 'About', path: PATH_ROOT.about },
 ]

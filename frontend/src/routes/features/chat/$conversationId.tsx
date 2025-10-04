@@ -1,7 +1,8 @@
-import { ChatPanel } from '@/components/dashboard/chat/panels/ChatPanel'
+import { ChatPanel } from '@/components/features/chat/panels/ChatPanel'
 import { createFileRoute } from '@tanstack/react-router'
+import { PATH_FEATURES } from '../../../constants'
 
-export const Route = createFileRoute('/dashboard/chat/$conversationId')({
+export const Route = createFileRoute(PATH_FEATURES.chat.$conversationId)({
   component: ConversationRoute,
 })
 

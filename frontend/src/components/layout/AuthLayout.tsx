@@ -1,5 +1,4 @@
-import { APP_CONFIG } from '@/constants'
-import { PATH_ROOT } from '@/constants/routes'
+import { APP_CONFIG, PATH_ROOT } from '@/constants'
 import { getCurrentYear } from '@/lib/utils/date'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'

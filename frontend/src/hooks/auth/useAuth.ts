@@ -1,19 +1,20 @@
 import { PATH_ROOT } from '@/constants/routes'
 import { setAccessToken } from '@/lib/api/client'
-import {
-  LOGIN_MUTATION,
-  LOGOUT_MUTATION,
-  REGISTER_MUTATION,
-} from '@/lib/graphql/auth'
 import type {
   LoginMutation,
   LoginMutationVariables,
   LogoutMutation,
   RegisterMutation,
   RegisterMutationVariables,
-} from '@/lib/graphql/auth.generated'
-import { graphqlClient } from '@/lib/graphql/client'
-import { mapGraphQLUserToApiUser } from '@/lib/graphql/mappers'
+} from '@/lib/graphql'
+import {
+  LOGIN_MUTATION,
+  LOGOUT_MUTATION,
+  REGISTER_MUTATION,
+  graphqlClient,
+  handleGraphQLRequest,
+  mapGraphQLUserToApiUser,
+} from '@/lib/graphql'
 import { useAuthStore } from '@/store/authStore'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from '@tanstack/react-router'
@@ -52,11 +53,13 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: async (input: LoginMutationVariables['input']) => {
-      const data = await graphqlClient.request<
-        LoginMutation,
-        LoginMutationVariables
-      >(LOGIN_MUTATION, { input })
-      return data.login
+      return handleGraphQLRequest(async () => {
+        const data = await graphqlClient.request<
+          LoginMutation,
+          LoginMutationVariables
+        >(LOGIN_MUTATION, { input })
+        return data.login
+      }, 'Login failed')
     },
     onError: (error) => {
       console.error('Login failed:', error)
@@ -121,11 +124,13 @@ export function useRegister() {
 
   return useMutation({
     mutationFn: async (input: RegisterMutationVariables['input']) => {
-      const data = await graphqlClient.request<
-        RegisterMutation,
-        RegisterMutationVariables
-      >(REGISTER_MUTATION, { input })
-      return data.register
+      return handleGraphQLRequest(async () => {
+        const data = await graphqlClient.request<
+          RegisterMutation,
+          RegisterMutationVariables
+        >(REGISTER_MUTATION, { input })
+        return data.register
+      }, 'Registration failed')
     },
     onError: (error) => {
       console.error('Registration failed:', error)

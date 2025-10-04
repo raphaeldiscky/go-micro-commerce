@@ -1,9 +1,12 @@
-import { PATH_ROOT } from '@/constants/routes'
+import { PATH_AUTH, PATH_ROOT } from '@/constants/routes'
+import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { SignupForm } from '../../components/auth/SignupForm'
 import { AuthLayout } from '../../components/layout/AuthLayout'
 
-export const Route = createFileRoute('/auth/register')({
+export const Route = createFileRoute(
+  PATH_AUTH.register as keyof FileRoutesByPath,
+)({
   beforeLoad: () => {
     // Redirect to home if already authenticated
     const token = localStorage.getItem('access_token')

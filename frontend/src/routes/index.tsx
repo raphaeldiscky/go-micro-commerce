@@ -1,5 +1,12 @@
-import { HERO_CONTENT, PAGE_CONTENT, SERVICES, TECHNOLOGIES } from '@/constants'
-import { PATH_DASHBOARD, PATH_ROOT } from '@/constants/routes'
+import {
+  HERO_CONTENT,
+  PAGE_CONTENT,
+  PATH_FEATURES,
+  PATH_ROOT,
+  SERVICES,
+  TECHNOLOGIES,
+} from '@/constants'
+import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { BookOpen, Building, MessageCircle, Wrench } from 'lucide-react'
 import { Button } from '../components/ui/button'
@@ -11,7 +18,7 @@ import {
   CardTitle,
 } from '../components/ui/card'
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute(PATH_ROOT.home as keyof FileRoutesByPath)({
   component: HomePage,
 })
 
@@ -32,13 +39,19 @@ function HomePage() {
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
               <Button asChild size="lg">
-                <Link className="flex items-center gap-2" to={PATH_DASHBOARD.services.root}>
+                <Link
+                  className="flex items-center gap-2"
+                  to={PATH_ROOT.services}
+                >
                   <Wrench className="h-5 w-5" />
                   {HERO_CONTENT.PRIMARY_CTA}
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link className="flex items-center gap-2" to={PATH_DASHBOARD.chat.root}>
+                <Link
+                  className="flex items-center gap-2"
+                  to={PATH_FEATURES.chat.root}
+                >
                   <MessageCircle className="h-5 w-5" />
                   {HERO_CONTENT.SECONDARY_CTA}
                 </Link>
@@ -174,7 +187,7 @@ function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <Button asChild className="w-full" variant="outline">
-                    <Link to={PATH_DASHBOARD.services.root}>
+                    <Link to={PATH_ROOT.services}>
                       {PAGE_CONTENT.HOME.GET_STARTED.ARCHITECTURE.CTA}
                     </Link>
                   </Button>
@@ -195,7 +208,7 @@ function HomePage() {
                 </CardHeader>
                 <CardContent>
                   <Button asChild className="w-full">
-                    <Link to={PATH_DASHBOARD.chat.root}>
+                    <Link to={PATH_FEATURES.chat.root}>
                       {PAGE_CONTENT.HOME.GET_STARTED.LIVE_DEMO.CTA}
                     </Link>
                   </Button>
