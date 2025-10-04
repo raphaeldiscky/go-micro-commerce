@@ -81,8 +81,13 @@ type ComplexityRoot struct {
 	}
 
 	MessageConnection struct {
-		Items      func(childComplexity int) int
-		Pagination func(childComplexity int) int
+		Edges    func(childComplexity int) int
+		PageInfo func(childComplexity int) int
+	}
+
+	MessageEdge struct {
+		Cursor func(childComplexity int) int
+		Node   func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -93,18 +98,16 @@ type ComplexityRoot struct {
 		LeaveConversation         func(childComplexity int, conversationID string) int
 	}
 
-	OffsetPagination struct {
-		CurrentPage func(childComplexity int) int
-		HasNext     func(childComplexity int) int
-		HasPrev     func(childComplexity int) int
-		PageSize    func(childComplexity int) int
-		TotalItems  func(childComplexity int) int
-		TotalPages  func(childComplexity int) int
-	}
-
 	OnlineStatus struct {
 		IsOnline func(childComplexity int) int
 		LastSeen func(childComplexity int) int
+	}
+
+	PageInfo struct {
+		EndCursor       func(childComplexity int) int
+		HasNextPage     func(childComplexity int) int
+		HasPreviousPage func(childComplexity int) int
+		StartCursor     func(childComplexity int) int
 	}
 
 	Participant struct {
@@ -122,7 +125,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Conversation             func(childComplexity int, id string) int
-		ConversationMessages     func(childComplexity int, conversationID string, limit *int, offset *int) int
+		ConversationMessages     func(childComplexity int, conversationID string, first *int, after *string, last *int, before *string) int
 		ConversationParticipants func(childComplexity int, conversationID string) int
 		Conversations            func(childComplexity int) int
 		OnlineUsers              func(childComplexity int) int
@@ -159,7 +162,7 @@ type QueryResolver interface {
 	Conversation(ctx context.Context, id string) (*Conversation, error)
 	Conversations(ctx context.Context) ([]*Conversation, error)
 	WaitingConversations(ctx context.Context) ([]*Conversation, error)
-	ConversationMessages(ctx context.Context, conversationID string, limit *int, offset *int) (*MessageConnection, error)
+	ConversationMessages(ctx context.Context, conversationID string, first *int, after *string, last *int, before *string) (*MessageConnection, error)
 	ConversationParticipants(ctx context.Context, conversationID string) ([]*Participant, error)
 }
 
@@ -331,18 +334,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Message.SenderID(childComplexity), true
 
-	case "MessageConnection.items":
-		if e.complexity.MessageConnection.Items == nil {
+	case "MessageConnection.edges":
+		if e.complexity.MessageConnection.Edges == nil {
 			break
 		}
 
-		return e.complexity.MessageConnection.Items(childComplexity), true
-	case "MessageConnection.pagination":
-		if e.complexity.MessageConnection.Pagination == nil {
+		return e.complexity.MessageConnection.Edges(childComplexity), true
+	case "MessageConnection.pageInfo":
+		if e.complexity.MessageConnection.PageInfo == nil {
 			break
 		}
 
-		return e.complexity.MessageConnection.Pagination(childComplexity), true
+		return e.complexity.MessageConnection.PageInfo(childComplexity), true
+
+	case "MessageEdge.cursor":
+		if e.complexity.MessageEdge.Cursor == nil {
+			break
+		}
+
+		return e.complexity.MessageEdge.Cursor(childComplexity), true
+	case "MessageEdge.node":
+		if e.complexity.MessageEdge.Node == nil {
+			break
+		}
+
+		return e.complexity.MessageEdge.Node(childComplexity), true
 
 	case "Mutation.assignConversationToAdmin":
 		if e.complexity.Mutation.AssignConversationToAdmin == nil {
@@ -400,43 +416,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.LeaveConversation(childComplexity, args["conversationId"].(string)), true
 
-	case "OffsetPagination.currentPage":
-		if e.complexity.OffsetPagination.CurrentPage == nil {
-			break
-		}
-
-		return e.complexity.OffsetPagination.CurrentPage(childComplexity), true
-	case "OffsetPagination.hasNext":
-		if e.complexity.OffsetPagination.HasNext == nil {
-			break
-		}
-
-		return e.complexity.OffsetPagination.HasNext(childComplexity), true
-	case "OffsetPagination.hasPrev":
-		if e.complexity.OffsetPagination.HasPrev == nil {
-			break
-		}
-
-		return e.complexity.OffsetPagination.HasPrev(childComplexity), true
-	case "OffsetPagination.pageSize":
-		if e.complexity.OffsetPagination.PageSize == nil {
-			break
-		}
-
-		return e.complexity.OffsetPagination.PageSize(childComplexity), true
-	case "OffsetPagination.totalItems":
-		if e.complexity.OffsetPagination.TotalItems == nil {
-			break
-		}
-
-		return e.complexity.OffsetPagination.TotalItems(childComplexity), true
-	case "OffsetPagination.totalPages":
-		if e.complexity.OffsetPagination.TotalPages == nil {
-			break
-		}
-
-		return e.complexity.OffsetPagination.TotalPages(childComplexity), true
-
 	case "OnlineStatus.isOnline":
 		if e.complexity.OnlineStatus.IsOnline == nil {
 			break
@@ -449,6 +428,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.OnlineStatus.LastSeen(childComplexity), true
+
+	case "PageInfo.endCursor":
+		if e.complexity.PageInfo.EndCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.EndCursor(childComplexity), true
+	case "PageInfo.hasNextPage":
+		if e.complexity.PageInfo.HasNextPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+	case "PageInfo.hasPreviousPage":
+		if e.complexity.PageInfo.HasPreviousPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
+	case "PageInfo.startCursor":
+		if e.complexity.PageInfo.StartCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
 	case "Participant.conversation":
 		if e.complexity.Participant.Conversation == nil {
@@ -532,7 +536,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ConversationMessages(childComplexity, args["conversationId"].(string), args["limit"].(*int), args["offset"].(*int)), true
+		return e.complexity.Query.ConversationMessages(childComplexity, args["conversationId"].(string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 	case "Query.conversationParticipants":
 		if e.complexity.Query.ConversationParticipants == nil {
 			break
@@ -946,16 +950,26 @@ func (ec *executionContext) field_Query_conversationMessages_args(ctx context.Co
 		return nil, err
 	}
 	args["conversationId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
-	args["limit"] = arg1
-	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	args["first"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOString2ᚖstring)
 	if err != nil {
 		return nil, err
 	}
-	args["offset"] = arg2
+	args["after"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["last"] = arg3
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["before"] = arg4
 	return args, nil
 }
 
@@ -1224,10 +1238,10 @@ func (ec *executionContext) fieldContext_Conversation_messages(ctx context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "items":
-				return ec.fieldContext_MessageConnection_items(ctx, field)
-			case "pagination":
-				return ec.fieldContext_MessageConnection_pagination(ctx, field)
+			case "edges":
+				return ec.fieldContext_MessageConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_MessageConnection_pageInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MessageConnection", field.Name)
 		},
@@ -1793,25 +1807,128 @@ func (ec *executionContext) fieldContext_Message_createdAt(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _MessageConnection_items(ctx context.Context, field graphql.CollectedField, obj *MessageConnection) (ret graphql.Marshaler) {
+func (ec *executionContext) _MessageConnection_edges(ctx context.Context, field graphql.CollectedField, obj *MessageConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_MessageConnection_items,
+		ec.fieldContext_MessageConnection_edges,
 		func(ctx context.Context) (any, error) {
-			return obj.Items, nil
+			return obj.Edges, nil
 		},
 		nil,
-		ec.marshalNMessage2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageᚄ,
+		ec.marshalNMessageEdge2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageEdgeᚄ,
 		true,
 		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_MessageConnection_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MessageConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MessageConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cursor":
+				return ec.fieldContext_MessageEdge_cursor(ctx, field)
+			case "node":
+				return ec.fieldContext_MessageEdge_node(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MessageEdge", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MessageConnection_pageInfo(ctx context.Context, field graphql.CollectedField, obj *MessageConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MessageConnection_pageInfo,
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
+		nil,
+		ec.marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPageInfo,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MessageConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MessageConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MessageEdge_cursor(ctx context.Context, field graphql.CollectedField, obj *MessageEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MessageEdge_cursor,
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MessageEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MessageEdge",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MessageEdge_node(ctx context.Context, field graphql.CollectedField, obj *MessageEdge) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MessageEdge_node,
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
+		nil,
+		ec.marshalNMessage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessage,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MessageEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MessageEdge",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -1837,49 +1954,6 @@ func (ec *executionContext) fieldContext_MessageConnection_items(_ context.Conte
 				return ec.fieldContext_Message_createdAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MessageConnection_pagination(ctx context.Context, field graphql.CollectedField, obj *MessageConnection) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_MessageConnection_pagination,
-		func(ctx context.Context) (any, error) {
-			return obj.Pagination, nil
-		},
-		nil,
-		ec.marshalNOffsetPagination2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐOffsetPagination,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_MessageConnection_pagination(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MessageConnection",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "totalItems":
-				return ec.fieldContext_OffsetPagination_totalItems(ctx, field)
-			case "totalPages":
-				return ec.fieldContext_OffsetPagination_totalPages(ctx, field)
-			case "currentPage":
-				return ec.fieldContext_OffsetPagination_currentPage(ctx, field)
-			case "pageSize":
-				return ec.fieldContext_OffsetPagination_pageSize(ctx, field)
-			case "hasNext":
-				return ec.fieldContext_OffsetPagination_hasNext(ctx, field)
-			case "hasPrev":
-				return ec.fieldContext_OffsetPagination_hasPrev(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OffsetPagination", field.Name)
 		},
 	}
 	return fc, nil
@@ -2172,180 +2246,6 @@ func (ec *executionContext) fieldContext_Mutation_leaveConversation(ctx context.
 	return fc, nil
 }
 
-func (ec *executionContext) _OffsetPagination_totalItems(ctx context.Context, field graphql.CollectedField, obj *OffsetPagination) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_OffsetPagination_totalItems,
-		func(ctx context.Context) (any, error) {
-			return obj.TotalItems, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_OffsetPagination_totalItems(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OffsetPagination",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OffsetPagination_totalPages(ctx context.Context, field graphql.CollectedField, obj *OffsetPagination) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_OffsetPagination_totalPages,
-		func(ctx context.Context) (any, error) {
-			return obj.TotalPages, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_OffsetPagination_totalPages(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OffsetPagination",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OffsetPagination_currentPage(ctx context.Context, field graphql.CollectedField, obj *OffsetPagination) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_OffsetPagination_currentPage,
-		func(ctx context.Context) (any, error) {
-			return obj.CurrentPage, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_OffsetPagination_currentPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OffsetPagination",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OffsetPagination_pageSize(ctx context.Context, field graphql.CollectedField, obj *OffsetPagination) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_OffsetPagination_pageSize,
-		func(ctx context.Context) (any, error) {
-			return obj.PageSize, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_OffsetPagination_pageSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OffsetPagination",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OffsetPagination_hasNext(ctx context.Context, field graphql.CollectedField, obj *OffsetPagination) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_OffsetPagination_hasNext,
-		func(ctx context.Context) (any, error) {
-			return obj.HasNext, nil
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_OffsetPagination_hasNext(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OffsetPagination",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OffsetPagination_hasPrev(ctx context.Context, field graphql.CollectedField, obj *OffsetPagination) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_OffsetPagination_hasPrev,
-		func(ctx context.Context) (any, error) {
-			return obj.HasPrev, nil
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_OffsetPagination_hasPrev(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OffsetPagination",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _OnlineStatus_isOnline(ctx context.Context, field graphql.CollectedField, obj *OnlineStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2399,6 +2299,122 @@ func (ec *executionContext) fieldContext_OnlineStatus_lastSeen(_ context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_hasNextPage,
+		func(ctx context.Context) (any, error) {
+			return obj.HasNextPage, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_hasPreviousPage,
+		func(ctx context.Context) (any, error) {
+			return obj.HasPreviousPage, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_startCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.StartCursor, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_endCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.EndCursor, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2926,7 +2942,7 @@ func (ec *executionContext) _Query_conversationMessages(ctx context.Context, fie
 		ec.fieldContext_Query_conversationMessages,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().ConversationMessages(ctx, fc.Args["conversationId"].(string), fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.resolvers.Query().ConversationMessages(ctx, fc.Args["conversationId"].(string), fc.Args["first"].(*int), fc.Args["after"].(*string), fc.Args["last"].(*int), fc.Args["before"].(*string))
 		},
 		nil,
 		ec.marshalNMessageConnection2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageConnection,
@@ -2943,10 +2959,10 @@ func (ec *executionContext) fieldContext_Query_conversationMessages(ctx context.
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "items":
-				return ec.fieldContext_MessageConnection_items(ctx, field)
-			case "pagination":
-				return ec.fieldContext_MessageConnection_pagination(ctx, field)
+			case "edges":
+				return ec.fieldContext_MessageConnection_edges(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_MessageConnection_pageInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MessageConnection", field.Name)
 		},
@@ -5176,13 +5192,57 @@ func (ec *executionContext) _MessageConnection(ctx context.Context, sel ast.Sele
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("MessageConnection")
-		case "items":
-			out.Values[i] = ec._MessageConnection_items(ctx, field, obj)
+		case "edges":
+			out.Values[i] = ec._MessageConnection_edges(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "pagination":
-			out.Values[i] = ec._MessageConnection_pagination(ctx, field, obj)
+		case "pageInfo":
+			out.Values[i] = ec._MessageConnection_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var messageEdgeImplementors = []string{"MessageEdge"}
+
+func (ec *executionContext) _MessageEdge(ctx context.Context, sel ast.SelectionSet, obj *MessageEdge) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, messageEdgeImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MessageEdge")
+		case "cursor":
+			out.Values[i] = ec._MessageEdge_cursor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "node":
+			out.Values[i] = ec._MessageEdge_node(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5286,47 +5346,24 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
-var offsetPaginationImplementors = []string{"OffsetPagination"}
+var onlineStatusImplementors = []string{"OnlineStatus"}
 
-func (ec *executionContext) _OffsetPagination(ctx context.Context, sel ast.SelectionSet, obj *OffsetPagination) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, offsetPaginationImplementors)
+func (ec *executionContext) _OnlineStatus(ctx context.Context, sel ast.SelectionSet, obj *OnlineStatus) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, onlineStatusImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("OffsetPagination")
-		case "totalItems":
-			out.Values[i] = ec._OffsetPagination_totalItems(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("OnlineStatus")
+		case "isOnline":
+			out.Values[i] = ec._OnlineStatus_isOnline(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "totalPages":
-			out.Values[i] = ec._OffsetPagination_totalPages(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "currentPage":
-			out.Values[i] = ec._OffsetPagination_currentPage(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "pageSize":
-			out.Values[i] = ec._OffsetPagination_pageSize(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "hasNext":
-			out.Values[i] = ec._OffsetPagination_hasNext(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "hasPrev":
-			out.Values[i] = ec._OffsetPagination_hasPrev(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
+		case "lastSeen":
+			out.Values[i] = ec._OnlineStatus_lastSeen(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5350,24 +5387,31 @@ func (ec *executionContext) _OffsetPagination(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var onlineStatusImplementors = []string{"OnlineStatus"}
+var pageInfoImplementors = []string{"PageInfo"}
 
-func (ec *executionContext) _OnlineStatus(ctx context.Context, sel ast.SelectionSet, obj *OnlineStatus) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, onlineStatusImplementors)
+func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *PageInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, pageInfoImplementors)
 
 	out := graphql.NewFieldSet(fields)
 	deferred := make(map[string]*graphql.FieldSet)
 	for i, field := range fields {
 		switch field.Name {
 		case "__typename":
-			out.Values[i] = graphql.MarshalString("OnlineStatus")
-		case "isOnline":
-			out.Values[i] = ec._OnlineStatus_isOnline(ctx, field, obj)
+			out.Values[i] = graphql.MarshalString("PageInfo")
+		case "hasNextPage":
+			out.Values[i] = ec._PageInfo_hasNextPage(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "lastSeen":
-			out.Values[i] = ec._OnlineStatus_lastSeen(ctx, field, obj)
+		case "hasPreviousPage":
+			out.Values[i] = ec._PageInfo_hasPreviousPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startCursor":
+			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
+		case "endCursor":
+			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6265,50 +6309,6 @@ func (ec *executionContext) marshalNMessage2githubᚗcomᚋraphaeldisckyᚋgoᚑ
 	return ec._Message(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNMessage2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageᚄ(ctx context.Context, sel ast.SelectionSet, v []*Message) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNMessage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessage(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNMessage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessage(ctx context.Context, sel ast.SelectionSet, v *Message) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -6333,6 +6333,60 @@ func (ec *executionContext) marshalNMessageConnection2ᚖgithubᚗcomᚋraphaeld
 	return ec._MessageConnection(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNMessageEdge2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageEdgeᚄ(ctx context.Context, sel ast.SelectionSet, v []*MessageEdge) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMessageEdge2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageEdge(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMessageEdge2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageEdge(ctx context.Context, sel ast.SelectionSet, v *MessageEdge) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MessageEdge(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNMessageType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx context.Context, v any) (constant.MessageType, error) {
 	tmp, err := graphql.UnmarshalString(v)
 	res := constant.MessageType(tmp)
@@ -6350,14 +6404,14 @@ func (ec *executionContext) marshalNMessageType2githubᚗcomᚋraphaeldisckyᚋg
 	return res
 }
 
-func (ec *executionContext) marshalNOffsetPagination2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐOffsetPagination(ctx context.Context, sel ast.SelectionSet, v *OffsetPagination) graphql.Marshaler {
+func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
-	return ec._OffsetPagination(ctx, sel, v)
+	return ec._PageInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNParticipant2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐParticipant(ctx context.Context, sel ast.SelectionSet, v Participant) graphql.Marshaler {

@@ -50,3 +50,5 @@ tasks:
     desc: Generate GraphQL schema
     cmds:
       - gqlgen generate --verbose
+      - rm tools.go
+      - go mod tidy

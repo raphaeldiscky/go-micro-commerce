@@ -48,25 +48,28 @@ type Message struct {
 func (Message) IsEntity() {}
 
 type MessageConnection struct {
-	Items      []*Message        `json:"items"`
-	Pagination *OffsetPagination `json:"pagination"`
+	Edges    []*MessageEdge `json:"edges"`
+	PageInfo *PageInfo      `json:"pageInfo"`
+}
+
+type MessageEdge struct {
+	Cursor string   `json:"cursor"`
+	Node   *Message `json:"node"`
 }
 
 type Mutation struct {
 }
 
-type OffsetPagination struct {
-	TotalItems  int  `json:"totalItems"`
-	TotalPages  int  `json:"totalPages"`
-	CurrentPage int  `json:"currentPage"`
-	PageSize    int  `json:"pageSize"`
-	HasNext     bool `json:"hasNext"`
-	HasPrev     bool `json:"hasPrev"`
-}
-
 type OnlineStatus struct {
 	IsOnline bool       `json:"isOnline"`
 	LastSeen *time.Time `json:"lastSeen,omitempty"`
+}
+
+type PageInfo struct {
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor,omitempty"`
+	EndCursor       *string `json:"endCursor,omitempty"`
 }
 
 type Participant struct {

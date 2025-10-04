@@ -54,25 +54,35 @@ func MapParticipantToGraphQL(p *dto.ParticipantResponse) *graph.Participant {
 	}
 }
 
-// MapMessagesToConnection maps messages and pagination to a MessageConnection.
-func MapMessagesToConnection(
+// MapMessagesToCursorConnection maps messages and cursor pagination to a MessageConnection.
+func MapMessagesToCursorConnection(
 	messages []dto.MessageResponse,
-	paging *pkgdto.OffsetPagination,
+	paging *pkgdto.CursorPagination,
 ) *graph.MessageConnection {
-	items := make([]*graph.Message, len(messages))
+	edges := make([]*graph.MessageEdge, len(messages))
 	for i, msg := range messages {
-		items[i] = MapMessageToGraphQL(&msg)
+		// Use message ID as cursor
+		cursor := msg.ID.String()
+		edges[i] = &graph.MessageEdge{
+			Cursor: cursor,
+			Node:   MapMessageToGraphQL(&msg),
+		}
+	}
+
+	// Determine start and end cursors
+	var startCursor, endCursor *string
+	if len(edges) > 0 {
+		startCursor = &edges[0].Cursor
+		endCursor = &edges[len(edges)-1].Cursor
 	}
 
 	return &graph.MessageConnection{
-		Items: items,
-		Pagination: &graph.OffsetPagination{
-			TotalItems:  int(paging.TotalItem),
-			TotalPages:  int(paging.TotalPage),
-			CurrentPage: int(paging.Page),
-			PageSize:    int(paging.Size),
-			HasNext:     paging.Page < paging.TotalPage,
-			HasPrev:     paging.Page > 1,
+		Edges: edges,
+		PageInfo: &graph.PageInfo{
+			HasNextPage:     paging.HasNext,
+			HasPreviousPage: paging.HasPrev,
+			StartCursor:     startCursor,
+			EndCursor:       endCursor,
 		},
 	}
 }

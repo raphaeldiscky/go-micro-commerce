@@ -19,8 +19,10 @@ import (
 func (r *queryResolver) ConversationMessages(
 	ctx context.Context,
 	conversationID string,
-	limit *int,
-	offset *int,
+	first *int,
+	after *string,
+	last *int,
+	before *string,
 ) (*graph.MessageConnection, error) {
 	userID, ok := ctx.Value("user_id").(uuid.UUID)
 	if !ok {
@@ -32,27 +34,39 @@ func (r *queryResolver) ConversationMessages(
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
 	}
 
-	msgLimit := constant.DefaultMessageLimit
-	if limit != nil && *limit > 0 {
-		msgLimit = *limit
+	// Determine limit and cursors
+	limit := constant.DefaultMessageLimit
+
+	var afterCursor, beforeCursor string
+
+	if first != nil && *first > 0 {
+		limit = *first
+
+		if after != nil {
+			afterCursor = *after
+		}
+	} else if last != nil && *last > 0 {
+		limit = *last
+
+		if before != nil {
+			beforeCursor = *before
+		}
 	}
 
-	msgOffset := 0
-	if offset != nil && *offset > 0 {
-		msgOffset = *offset
-	}
-
-	messages, paging, err := r.chatService.GetConversationMessages(
+	// Get messages with cursor pagination
+	messages, paging, err := r.chatService.GetConversationMessagesWithCursor(
 		ctx,
 		convID,
 		userID,
-		msgLimit,
-		msgOffset,
+		limit,
+		afterCursor,
+		beforeCursor,
 	)
 	if err != nil {
 		r.logger.Error("Failed to get conversation messages", "error", err)
 		return nil, err
 	}
 
-	return mapper.MapMessagesToConnection(messages, paging), nil
+	// Map to GraphQL MessageConnection
+	return mapper.MapMessagesToCursorConnection(messages, paging), nil
 }

@@ -110,8 +110,15 @@ type Message
 type MessageConnection
   @join__type(graph: CHAT_SERVICE)
 {
-  items: [Message!]!
-  pagination: OffsetPagination!
+  edges: [MessageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type MessageEdge
+  @join__type(graph: CHAT_SERVICE)
+{
+  cursor: String!
+  node: Message!
 }
 
 enum MessageType
@@ -138,22 +145,20 @@ type Mutation
   leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
 }
 
-type OffsetPagination
-  @join__type(graph: CHAT_SERVICE)
-{
-  totalItems: Int!
-  totalPages: Int!
-  currentPage: Int!
-  pageSize: Int!
-  hasNext: Boolean!
-  hasPrev: Boolean!
-}
-
 type OnlineStatus
   @join__type(graph: CHAT_SERVICE)
 {
   isOnline: Boolean!
   lastSeen: Time
+}
+
+type PageInfo
+  @join__type(graph: CHAT_SERVICE)
+{
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
 }
 
 type Participant
@@ -189,7 +194,7 @@ type Query
   conversation(id: ID!): Conversation @join__field(graph: CHAT_SERVICE)
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   waitingConversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
-  conversationMessages(conversationId: ID!, limit: Int = 50, offset: Int = 0): MessageConnection! @join__field(graph: CHAT_SERVICE)
+  conversationMessages(conversationId: ID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
   conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
 }
 

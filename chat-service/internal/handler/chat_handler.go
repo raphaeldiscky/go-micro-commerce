@@ -95,7 +95,7 @@ func (h *ChatHandler) GetUserConversations(c echo.Context) error {
 	return echoutils.ResponseOK(c, result)
 }
 
-// GetMessages retrieves messages from a conversation with pagination.
+// GetMessages retrieves messages from a conversation with cursor-based pagination.
 func (h *ChatHandler) GetMessages(c echo.Context) error {
 	conversationIDStr := c.Param("conversationID")
 
@@ -114,29 +114,22 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	))
 
-	page := int(pageutils.ParseQueryInt64(
-		c,
-		"page",
-		pkgconstant.DefaultPage,
-		pkgconstant.DefaultMinPage,
-		pkgconstant.DefaultMaxPage,
-	))
+	afterCursor := c.QueryParam("after")
+	beforeCursor := c.QueryParam("before")
 
-	// Convert page to offset
-	offset := (page - 1) * limit
-
-	messages, paging, err := h.chatService.GetConversationMessages(
+	messages, paging, err := h.chatService.GetConversationMessagesWithCursor(
 		c.Request().Context(),
 		conversationID,
 		userID,
 		limit,
-		offset,
+		afterCursor,
+		beforeCursor,
 	)
 	if err != nil {
 		return err
 	}
 
-	return echoutils.ResponseOKOffsetPagination(c, messages, paging)
+	return echoutils.ResponseOKCursorPagination(c, messages, paging)
 }
 
 // JoinConversation adds a participant to a conversation.
