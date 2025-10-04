@@ -4,7 +4,8 @@ import {
   GITHUB_REPO_URL,
   PROFILE_IMAGE_URL,
 } from '@/constants'
-import { useIsAuthenticated, useLogout, useUser } from '@/hooks/useAuth'
+import { PATH_AUTH, PATH_DASHBOARD, PATH_ROOT } from '@/constants/routes'
+import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth/useAuth'
 import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
@@ -54,7 +55,7 @@ export default function Header() {
           <div className="flex items-center space-x-2 justify-self-start">
             <Link
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-              to="/"
+              to={PATH_ROOT.home}
             >
               <img
                 alt={APP_CONFIG.BRAND.LOGO_ALT}
@@ -80,7 +81,7 @@ export default function Header() {
                         'inline-flex items-center',
                         isActive('/') ? 'bg-accent text-accent-foreground' : '',
                       )}
-                      to="/"
+                      to={PATH_ROOT.home}
                     >
                       <Home className="mr-1 h-4 w-4" />
                       Home
@@ -134,7 +135,7 @@ export default function Header() {
                           ? 'bg-accent text-accent-foreground'
                           : '',
                       )}
-                      to="/services"
+                      to={PATH_DASHBOARD.services.root}
                     >
                       <Settings className="mr-1 h-4 w-4" />
                       Services
@@ -153,7 +154,7 @@ export default function Header() {
                           ? 'bg-accent text-accent-foreground'
                           : '',
                       )}
-                      to="/about"
+                      to={PATH_ROOT.about}
                     >
                       <Info className="mr-1 h-4 w-4" />
                       About
@@ -189,7 +190,7 @@ export default function Header() {
                   <Button asChild size="sm" variant="ghost">
                     <Link
                       className="flex items-center space-x-1"
-                      to="/auth/login"
+                      to={PATH_AUTH.login}
                     >
                       <LogIn className="h-4 w-4" />
                       <span>Login</span>
@@ -198,7 +199,7 @@ export default function Header() {
                   <Button asChild size="sm" variant="default">
                     <Link
                       className="flex items-center space-x-1"
-                      to="/auth/register"
+                      to={PATH_AUTH.register}
                     >
                       <UserPlus className="h-4 w-4" />
                       <span>Sign Up</span>
@@ -249,7 +250,7 @@ export default function Header() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to="/"
+                to={PATH_ROOT.home}
               >
                 <Home className="mr-2 h-4 w-4" />
                 Home
@@ -295,7 +296,7 @@ export default function Header() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to="/services"
+                to={PATH_DASHBOARD.services.root}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Services
@@ -310,7 +311,7 @@ export default function Header() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to="/about"
+                to={PATH_ROOT.about}
               >
                 <Info className="mr-2 h-4 w-4" />
                 About
@@ -345,7 +346,7 @@ export default function Header() {
                       <Link
                         className="flex items-center justify-center space-x-1"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        to="/auth/login"
+                        to={PATH_AUTH.login}
                       >
                         <LogIn className="h-4 w-4" />
                         <span>Login</span>
@@ -360,7 +361,7 @@ export default function Header() {
                       <Link
                         className="flex items-center justify-center space-x-1"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        to="/auth/register"
+                        to={PATH_AUTH.register}
                       >
                         <UserPlus className="h-4 w-4" />
                         <span>Sign Up</span>

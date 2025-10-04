@@ -1,3 +1,12 @@
+import { productApi } from '@/lib/api/product'
+import type { Product } from '@/proto/product/v1/product_pb'
+import {
+  ConfirmProductsDeductionRequestSchema,
+  HealthRequestSchema,
+  ReleaseProductsRequestSchema,
+  ReserveProductsRequestSchema,
+  RestoreProductsRequestSchema,
+} from '@/proto/product/v1/product_pb'
 import { create } from '@bufbuild/protobuf'
 import {
   useInfiniteQuery,
@@ -5,14 +14,6 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query'
-import { productApi } from '../lib/api/product'
-import type { Product } from '../proto/product/v1/product_pb'
-import {
-  ConfirmProductsDeductionRequestSchema,
-  ReleaseProductsRequestSchema,
-  ReserveProductsRequestSchema,
-  RestoreProductsRequestSchema,
-} from '../proto/product/v1/product_pb'
 
 // Query keys
 export const productKeys = {
@@ -163,9 +164,6 @@ export function useProductHealth() {
   return useQuery({
     queryKey: ['product', 'health'],
     queryFn: async () => {
-      const { HealthRequestSchema } = await import(
-        '../proto/product/v1/product_pb'
-      )
       const request = create(HealthRequestSchema, {})
       return await productApi.health(request)
     },

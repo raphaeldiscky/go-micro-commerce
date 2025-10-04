@@ -1,5 +1,6 @@
+import { PATH_AUTH, PATH_DASHBOARD } from '@/constants/routes'
+import { useIsAuthenticated } from '@/hooks/auth/useAuth'
 import { useConversations } from '@/hooks/chat/useConversations'
-import { useIsAuthenticated } from '@/hooks/useAuth'
 import type { Conversation } from '@/lib/api'
 import { formatRelativeTime } from '@/lib/utils/date'
 import { Link } from '@tanstack/react-router'
@@ -14,11 +15,11 @@ import {
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Badge } from '../../ui/badge'
-import { Button } from '../../ui/button'
-import { Card, CardContent } from '../../ui/card'
-import { Input } from '../../ui/input'
-import { Skeleton } from '../../ui/skeleton'
+import { Badge } from '../../../ui/badge'
+import { Button } from '../../../ui/button'
+import { Card, CardContent } from '../../../ui/card'
+import { Input } from '../../../ui/input'
+import { Skeleton } from '../../../ui/skeleton'
 
 export function ChatListPage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -63,7 +64,7 @@ export function ChatListPage() {
               Please log in to access your conversations and start chatting.
             </p>
             <Button asChild>
-              <Link to="/auth/login">Sign In</Link>
+              <Link to={PATH_AUTH.login}>Sign In</Link>
             </Button>
           </CardContent>
         </Card>
@@ -165,7 +166,7 @@ export function ChatListPage() {
               >
                 <Link
                   params={{ conversationId: conversation.id }}
-                  to="/chat/$conversationId"
+                  to={PATH_DASHBOARD.chat.detail(conversation.id)}
                 >
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">

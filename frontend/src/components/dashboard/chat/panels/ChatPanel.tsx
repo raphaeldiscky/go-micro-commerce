@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { Card } from '../../ui/card'
-import { Dialog, DialogContent } from '../../ui/dialog'
+import { useEffect, useState } from 'react'
+import { Card } from '../../../ui/card'
+import { Dialog, DialogContent } from '../../../ui/dialog'
 import { ConversationPage } from '../pages/ConversationPage'
 
 interface ChatPanelProps {

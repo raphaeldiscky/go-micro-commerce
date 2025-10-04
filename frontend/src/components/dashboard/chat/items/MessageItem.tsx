@@ -2,8 +2,8 @@ import type { Message } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatTime } from '@/lib/utils/date'
 import { Check, CheckCheck, Clock, Reply } from 'lucide-react'
-import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
-import { Button } from '../../ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '../../../ui/avatar'
+import { Button } from '../../../ui/button'
 
 interface MessageItemProps {
   currentUserId: string

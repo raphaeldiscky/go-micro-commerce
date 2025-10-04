@@ -5,11 +5,11 @@ import {
 import type { Conversation } from '@/lib/api'
 import { formatRelativeTime } from '@/lib/utils/date'
 import { Hash, MessageCircle, User, Users } from 'lucide-react'
-import { Badge } from '../../ui/badge'
-import { Button } from '../../ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
-import { ScrollArea } from '../../ui/scroll-area'
-import { Skeleton } from '../../ui/skeleton'
+import { Badge } from '../../../ui/badge'
+import { Button } from '../../../ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card'
+import { ScrollArea } from '../../../ui/scroll-area'
+import { Skeleton } from '../../../ui/skeleton'
 
 interface ConversationListProps {
   onConversationSelect: (conversationId: string) => void

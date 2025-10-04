@@ -1,10 +1,11 @@
+import { PATH_AUTH, PATH_DASHBOARD } from '@/constants'
+import { useIsAuthenticated, useUser } from '@/hooks/auth/useAuth'
 import { useChatTicket } from '@/hooks/chat/useChatTicket'
 import { useConversationDetails } from '@/hooks/chat/useConversationDetails'
 import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
 import { useSendMessage } from '@/hooks/chat/useMessages'
 import { usePresence } from '@/hooks/chat/usePresence'
 import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
-import { useIsAuthenticated, useUser } from '@/hooks/useAuth'
 import type { Message, SendMessageRequest } from '@/lib/api'
 import { isExpired } from '@/lib/utils/date'
 import { Link, useNavigate } from '@tanstack/react-router'
@@ -18,8 +19,8 @@ import {
   Video,
 } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Button } from '../../ui/button'
-import { Card } from '../../ui/card'
+import { Button } from '../../../ui/button'
+import { Card } from '../../../ui/card'
 import { MessageInput } from '../input/MessageInput'
 import { MessageList } from '../lists/MessageList'
 import { ParticipantsList } from '../participants/ParticipantsList'
@@ -230,7 +231,7 @@ export function ConversationPage({
             Please log in to access this conversation.
           </p>
           <Button asChild>
-            <Link to="/auth/login">Sign In</Link>
+            <Link to={PATH_AUTH.login}>Sign In</Link>
           </Button>
         </Card>
       </div>
@@ -257,7 +258,7 @@ export function ConversationPage({
             This conversation might not exist or you don't have access to it.
           </p>
           <Button asChild>
-            <Link to="/chat">Back to Conversations</Link>
+            <Link to={PATH_DASHBOARD.chat.root}>Back to Conversations</Link>
           </Button>
         </Card>
       </div>
@@ -272,7 +273,7 @@ export function ConversationPage({
       <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-4">
           <Button
-            onClick={() => navigate({ to: '/chat' })}
+            onClick={() => navigate({ to: PATH_DASHBOARD.chat.root })}
             size="sm"
             variant="ghost"
           >

@@ -9,25 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ServicesRouteImport } from './routes/services'
-import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatIndexRouteImport } from './routes/chat/index'
-import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as DashboardServicesIndexRouteImport } from './routes/dashboard/services/index'
+import { Route as DashboardProductsIndexRouteImport } from './routes/dashboard/products/index'
+import { Route as DashboardChatIndexRouteImport } from './routes/dashboard/chat/index'
+import { Route as DashboardChatConversationIdRouteImport } from './routes/dashboard/chat/$conversationId'
 
-const ServicesRoute = ServicesRouteImport.update({
-  id: '/services',
-  path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsRoute = ProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -36,16 +26,6 @@ const AboutRoute = AboutRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatIndexRoute = ChatIndexRouteImport.update({
-  id: '/chat/',
-  path: '/chat/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
-  id: '/chat/$conversationId',
-  path: '/chat/$conversationId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
@@ -58,98 +38,105 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardServicesIndexRoute = DashboardServicesIndexRouteImport.update({
+  id: '/dashboard/services/',
+  path: '/dashboard/services/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardProductsIndexRoute = DashboardProductsIndexRouteImport.update({
+  id: '/dashboard/products/',
+  path: '/dashboard/products/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardChatIndexRoute = DashboardChatIndexRouteImport.update({
+  id: '/dashboard/chat/',
+  path: '/dashboard/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardChatConversationIdRoute =
+  DashboardChatConversationIdRouteImport.update({
+    id: '/dashboard/chat/$conversationId',
+    path: '/dashboard/chat/$conversationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/products': typeof ProductsRoute
-  '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/chat/$conversationId': typeof ChatConversationIdRoute
-  '/chat': typeof ChatIndexRoute
+  '/dashboard/chat/$conversationId': typeof DashboardChatConversationIdRoute
+  '/dashboard/chat': typeof DashboardChatIndexRoute
+  '/dashboard/products': typeof DashboardProductsIndexRoute
+  '/dashboard/services': typeof DashboardServicesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/products': typeof ProductsRoute
-  '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/chat/$conversationId': typeof ChatConversationIdRoute
-  '/chat': typeof ChatIndexRoute
+  '/dashboard/chat/$conversationId': typeof DashboardChatConversationIdRoute
+  '/dashboard/chat': typeof DashboardChatIndexRoute
+  '/dashboard/products': typeof DashboardProductsIndexRoute
+  '/dashboard/services': typeof DashboardServicesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/products': typeof ProductsRoute
-  '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/chat/$conversationId': typeof ChatConversationIdRoute
-  '/chat/': typeof ChatIndexRoute
+  '/dashboard/chat/$conversationId': typeof DashboardChatConversationIdRoute
+  '/dashboard/chat/': typeof DashboardChatIndexRoute
+  '/dashboard/products/': typeof DashboardProductsIndexRoute
+  '/dashboard/services/': typeof DashboardServicesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
-    | '/products'
-    | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/chat/$conversationId'
-    | '/chat'
+    | '/dashboard/chat/$conversationId'
+    | '/dashboard/chat'
+    | '/dashboard/products'
+    | '/dashboard/services'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/products'
-    | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/chat/$conversationId'
-    | '/chat'
+    | '/dashboard/chat/$conversationId'
+    | '/dashboard/chat'
+    | '/dashboard/products'
+    | '/dashboard/services'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/products'
-    | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/chat/$conversationId'
-    | '/chat/'
+    | '/dashboard/chat/$conversationId'
+    | '/dashboard/chat/'
+    | '/dashboard/products/'
+    | '/dashboard/services/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  ProductsRoute: typeof ProductsRoute
-  ServicesRoute: typeof ServicesRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
-  ChatConversationIdRoute: typeof ChatConversationIdRoute
-  ChatIndexRoute: typeof ChatIndexRoute
+  DashboardChatConversationIdRoute: typeof DashboardChatConversationIdRoute
+  DashboardChatIndexRoute: typeof DashboardChatIndexRoute
+  DashboardProductsIndexRoute: typeof DashboardProductsIndexRoute
+  DashboardServicesIndexRoute: typeof DashboardServicesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/services': {
-      id: '/services'
-      path: '/services'
-      fullPath: '/services'
-      preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/about': {
       id: '/about'
       path: '/about'
@@ -162,20 +149,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat/': {
-      id: '/chat/'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat/$conversationId': {
-      id: '/chat/$conversationId'
-      path: '/chat/$conversationId'
-      fullPath: '/chat/$conversationId'
-      preLoaderRoute: typeof ChatConversationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/register': {
@@ -192,18 +165,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/services/': {
+      id: '/dashboard/services/'
+      path: '/dashboard/services'
+      fullPath: '/dashboard/services'
+      preLoaderRoute: typeof DashboardServicesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/products/': {
+      id: '/dashboard/products/'
+      path: '/dashboard/products'
+      fullPath: '/dashboard/products'
+      preLoaderRoute: typeof DashboardProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/chat/': {
+      id: '/dashboard/chat/'
+      path: '/dashboard/chat'
+      fullPath: '/dashboard/chat'
+      preLoaderRoute: typeof DashboardChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/chat/$conversationId': {
+      id: '/dashboard/chat/$conversationId'
+      path: '/dashboard/chat/$conversationId'
+      fullPath: '/dashboard/chat/$conversationId'
+      preLoaderRoute: typeof DashboardChatConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  ProductsRoute: ProductsRoute,
-  ServicesRoute: ServicesRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
-  ChatConversationIdRoute: ChatConversationIdRoute,
-  ChatIndexRoute: ChatIndexRoute,
+  DashboardChatConversationIdRoute: DashboardChatConversationIdRoute,
+  DashboardChatIndexRoute: DashboardChatIndexRoute,
+  DashboardProductsIndexRoute: DashboardProductsIndexRoute,
+  DashboardServicesIndexRoute: DashboardServicesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

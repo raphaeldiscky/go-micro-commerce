@@ -2,8 +2,8 @@ import type { Message } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { Paperclip, Send, Smile, X } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
-import { Button } from '../../ui/button'
-import { Textarea } from '../../ui/textarea'
+import { Button } from '../../../ui/button'
+import { Textarea } from '../../../ui/textarea'
 
 interface MessageInputProps {
   disabled?: boolean

@@ -5,11 +5,11 @@ import {
 import { cn } from '@/lib/utils'
 import { Crown, MoreVertical, Settings, UserMinus, X } from 'lucide-react'
 import { useState } from 'react'
-import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
-import { Button } from '../../ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
-import { ScrollArea } from '../../ui/scroll-area'
-import { Skeleton } from '../../ui/skeleton'
+import { Avatar, AvatarFallback, AvatarImage } from '../../../ui/avatar'
+import { Button } from '../../../ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card'
+import { ScrollArea } from '../../../ui/scroll-area'
+import { Skeleton } from '../../../ui/skeleton'
 
 interface ParticipantsListProps {
   conversationId: string

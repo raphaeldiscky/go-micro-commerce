@@ -1,5 +1,5 @@
 import type { TypingIndicator as TypingIndicatorType } from '@/lib/api'
-import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '../../../ui/avatar'
 
 interface TypingIndicatorProps {
   typingUsers: Array<TypingIndicatorType>

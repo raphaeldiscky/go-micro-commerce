@@ -1,3 +1,4 @@
+import { PATH_ROOT } from '@/constants/routes'
 import { setAccessToken } from '@/lib/api/client'
 import {
   LOGIN_MUTATION,
@@ -77,7 +78,7 @@ export function useLogin() {
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.all })
 
       // Navigate to home or intended destination
-      router.navigate({ to: '/' })
+      router.navigate({ to: PATH_ROOT.home })
     },
   })
 }
@@ -105,7 +106,7 @@ export function useLogout() {
       queryClient.clear()
 
       // Navigate to home
-      router.navigate({ to: '/' })
+      router.navigate({ to: PATH_ROOT.home })
     },
   })
 }
@@ -146,7 +147,7 @@ export function useRegister() {
       queryClient.invalidateQueries({ queryKey: AUTH_QUERY_KEYS.all })
 
       // Navigate to home
-      router.navigate({ to: '/' })
+      router.navigate({ to: PATH_ROOT.home })
     },
   })
 }
