@@ -1,3 +1,13 @@
+import { Badge } from '@/components/ui/badge'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { PATH_ROOT } from '@/constants'
+import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   ArrowLeftRight,
@@ -15,16 +25,10 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react'
-import { Badge } from '../components/ui/badge'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '../components/ui/card'
 
-export const Route = createFileRoute('/services')({
+export const Route = createFileRoute(
+  PATH_ROOT.services as keyof FileRoutesByPath,
+)({
   component: ServicesPage,
 })
 

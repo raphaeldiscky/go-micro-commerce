@@ -10,22 +10,17 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
-import { Route as ProductsRouteImport } from './routes/products'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ChatIndexRouteImport } from './routes/chat/index'
-import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as FeaturesProductsIndexRouteImport } from './routes/features/products/index'
+import { Route as FeaturesChatIndexRouteImport } from './routes/features/chat/index'
+import { Route as FeaturesChatConversationIdRouteImport } from './routes/features/chat/$conversationId'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProductsRoute = ProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -38,16 +33,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ChatIndexRoute = ChatIndexRouteImport.update({
-  id: '/chat/',
-  path: '/chat/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
-  id: '/chat/$conversationId',
-  path: '/chat/$conversationId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
   path: '/auth/register',
@@ -58,80 +43,96 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeaturesProductsIndexRoute = FeaturesProductsIndexRouteImport.update({
+  id: '/features/products/',
+  path: '/features/products/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesChatIndexRoute = FeaturesChatIndexRouteImport.update({
+  id: '/features/chat/',
+  path: '/features/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FeaturesChatConversationIdRoute =
+  FeaturesChatConversationIdRouteImport.update({
+    id: '/features/chat/$conversationId',
+    path: '/features/chat/$conversationId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/products': typeof ProductsRoute
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/chat/$conversationId': typeof ChatConversationIdRoute
-  '/chat': typeof ChatIndexRoute
+  '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
+  '/features/chat': typeof FeaturesChatIndexRoute
+  '/features/products': typeof FeaturesProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/products': typeof ProductsRoute
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/chat/$conversationId': typeof ChatConversationIdRoute
-  '/chat': typeof ChatIndexRoute
+  '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
+  '/features/chat': typeof FeaturesChatIndexRoute
+  '/features/products': typeof FeaturesProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/products': typeof ProductsRoute
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/chat/$conversationId': typeof ChatConversationIdRoute
-  '/chat/': typeof ChatIndexRoute
+  '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
+  '/features/chat/': typeof FeaturesChatIndexRoute
+  '/features/products/': typeof FeaturesProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/about'
-    | '/products'
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/chat/$conversationId'
-    | '/chat'
+    | '/features/chat/$conversationId'
+    | '/features/chat'
+    | '/features/products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/products'
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/chat/$conversationId'
-    | '/chat'
+    | '/features/chat/$conversationId'
+    | '/features/chat'
+    | '/features/products'
   id:
     | '__root__'
     | '/'
     | '/about'
-    | '/products'
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/chat/$conversationId'
-    | '/chat/'
+    | '/features/chat/$conversationId'
+    | '/features/chat/'
+    | '/features/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  ProductsRoute: typeof ProductsRoute
   ServicesRoute: typeof ServicesRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
-  ChatConversationIdRoute: typeof ChatConversationIdRoute
-  ChatIndexRoute: typeof ChatIndexRoute
+  FeaturesChatConversationIdRoute: typeof FeaturesChatConversationIdRoute
+  FeaturesChatIndexRoute: typeof FeaturesChatIndexRoute
+  FeaturesProductsIndexRoute: typeof FeaturesProductsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -141,13 +142,6 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/products': {
-      id: '/products'
-      path: '/products'
-      fullPath: '/products'
-      preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -164,20 +158,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/chat/': {
-      id: '/chat/'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof ChatIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/chat/$conversationId': {
-      id: '/chat/$conversationId'
-      path: '/chat/$conversationId'
-      fullPath: '/chat/$conversationId'
-      preLoaderRoute: typeof ChatConversationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/auth/register': {
       id: '/auth/register'
       path: '/auth/register'
@@ -192,18 +172,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/features/products/': {
+      id: '/features/products/'
+      path: '/features/products'
+      fullPath: '/features/products'
+      preLoaderRoute: typeof FeaturesProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/chat/': {
+      id: '/features/chat/'
+      path: '/features/chat'
+      fullPath: '/features/chat'
+      preLoaderRoute: typeof FeaturesChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/features/chat/$conversationId': {
+      id: '/features/chat/$conversationId'
+      path: '/features/chat/$conversationId'
+      fullPath: '/features/chat/$conversationId'
+      preLoaderRoute: typeof FeaturesChatConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  ProductsRoute: ProductsRoute,
   ServicesRoute: ServicesRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
-  ChatConversationIdRoute: ChatConversationIdRoute,
-  ChatIndexRoute: ChatIndexRoute,
+  FeaturesChatConversationIdRoute: FeaturesChatConversationIdRoute,
+  FeaturesChatIndexRoute: FeaturesChatIndexRoute,
+  FeaturesProductsIndexRoute: FeaturesProductsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

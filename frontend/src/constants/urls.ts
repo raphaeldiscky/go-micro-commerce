@@ -1,11 +1,10 @@
 // All external URLs and links
 
 // Repository URLs
-export const GITHUB_REPO_URL =
-  'https://github.com/yourusername/go-micro-commerce'
+export const GITHUB_REPO_URL = 'https://dub.sh/rdiscky-github'
 
 // Social Media URLs
-export const LINKEDIN_PROFILE_URL = 'https://linkedin.com/in/yourprofile'
+export const LINKEDIN_PROFILE_URL = 'https://dub.sh/rdiscky-linkedin'
 
 // Technology Documentation URLs
 export const TECH_URLS = {

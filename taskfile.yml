@@ -57,12 +57,12 @@ tasks:
           echo "Building docker images for all services..."
           bash ./scripts/lint.sh
           bash ./scripts/format.sh
-          bash ./scripts/build.sh --no-cache
+          bash ./scripts/build.sh
         else
           echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
           bash ./scripts/format.sh {{.SERVICE}}
-          bash ./scripts/build.sh --no-cache {{.SERVICE}}
+          bash ./scripts/build.sh{{.SERVICE}}
         fi
   push:
     desc: Push all services to the container registry
@@ -338,7 +338,7 @@ tasks:
           bash ./scripts/graphql.sh {{.SERVICE}}
         fi
 
-  compose_graphql:
+  supergraph:
     desc: Compose Apollo Federation supergraph schema and generate frontend code
     cmds:
       - bash ./scripts/compose-supergraph.sh
@@ -347,7 +347,9 @@ tasks:
   start_graphql:
     desc: Start GraphQL Gateway
     cmds:
-      - docker compose -f {{.GRAPHQL_GATEWAY_DC_FILE}} up -d
+      - task: supergraph
+      - bash ./scripts/build.sh --no-cache graphql-gateway
+      - docker compose -f {{.GRAPHQL_GATEWAY_DC_FILE}} up -d --force-recreate
 
   stop_graphql:
     desc: Stop GraphQL Gateway

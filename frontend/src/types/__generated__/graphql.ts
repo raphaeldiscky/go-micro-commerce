@@ -113,6 +113,7 @@ export type Mutation = {
   leaveConversation: Scalars['Boolean']['output']
   login: AuthPayload
   logout: Scalars['Boolean']['output']
+  refreshToken: AuthPayload
   register: AuthPayload
 }
 

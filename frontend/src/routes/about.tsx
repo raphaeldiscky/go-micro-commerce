@@ -2,8 +2,10 @@ import {
   GITHUB_REPO_URL,
   KEY_FEATURES,
   PAGE_CONTENT,
+  PATH_ROOT,
   TECHNICAL_GOALS,
 } from '@/constants'
+import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
 import {
   BookOpen,
@@ -23,9 +25,11 @@ import {
   CardTitle,
 } from '../components/ui/card'
 
-export const Route = createFileRoute('/about')({
-  component: AboutPage,
-})
+export const Route = createFileRoute(PATH_ROOT.about as keyof FileRoutesByPath)(
+  {
+    component: AboutPage,
+  },
+)
 
 function AboutPage() {
   // Data imported from constants

@@ -73,3 +73,16 @@ export const LOGOUT_MUTATION = gql`
     logout
   }
 `
+
+/**
+ * Refresh token mutation
+ * Gets a new access token using the refresh token from HTTP-only cookie
+ */
+export const REFRESH_TOKEN_MUTATION = gql`
+  mutation RefreshToken {
+    refreshToken {
+      token
+      refreshToken
+    }
+  }
+`

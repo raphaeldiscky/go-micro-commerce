@@ -1,4 +1,5 @@
-import { useLogin } from '@/hooks/useAuth'
+import { PATH_AUTH } from '@/constants/routes'
+import { useLogin } from '@/hooks/auth/useAuth'
 import { useForm } from '@tanstack/react-form'
 import { Link } from '@tanstack/react-router'
 import { Eye, EyeOff, LogIn } from 'lucide-react'
@@ -175,7 +176,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             </span>
             <Link
               className="text-primary hover:underline font-medium"
-              to="/auth/register"
+              to={PATH_AUTH.register}
             >
               Sign up
             </Link>

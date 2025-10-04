@@ -1,4 +1,4 @@
-import { APP_CONFIG } from '@/constants'
+import { APP_CONFIG, PATH_ROOT } from '@/constants'
 import { getCurrentYear } from '@/lib/utils/date'
 import { Link } from '@tanstack/react-router'
 import { ArrowLeft } from 'lucide-react'
@@ -22,7 +22,7 @@ export function AuthLayout({
       <header className="relative z-10 flex items-center justify-between p-4 md:p-6">
         {showBackButton ? (
           <Button asChild size="sm" variant="ghost">
-            <Link className="flex items-center gap-2" to="/">
+            <Link className="flex items-center gap-2" to={PATH_ROOT.home}>
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Back to Home</span>
             </Link>
@@ -32,7 +32,7 @@ export function AuthLayout({
         )}
         <Link
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          to="/"
+          to={PATH_ROOT.home}
         >
           <span className="font-bold text-lg">{APP_CONFIG.NAME}</span>
         </Link>

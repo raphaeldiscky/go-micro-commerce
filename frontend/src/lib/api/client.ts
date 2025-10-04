@@ -1,7 +1,9 @@
 import { env } from '@/env'
+import { PATH_AUTH } from '../../constants'
 import type { ApiErrorResponse } from './types'
 import { ApiError } from './types'
 
+// Store access token in memory only (not localStorage)
 let accessToken: null | string = null
 
 export async function apiRequest<T>(
@@ -26,7 +28,7 @@ export async function apiRequest<T>(
     if (!response.ok) {
       if (response.status === 401) {
         setAccessToken(null)
-        window.location.href = '/auth/login'
+        window.location.href = PATH_AUTH.login
         throw new ApiError('Authentication required', 401)
       }
 
@@ -53,17 +55,20 @@ export async function apiRequest<T>(
   }
 }
 
+/**
+ * Get access token from memory
+ * Note: Access token is NOT persisted to localStorage for security
+ */
 export function getAccessToken(): null | string {
-  return accessToken || localStorage.getItem('access_token')
+  return accessToken
 }
 
+/**
+ * Set access token in memory only
+ * Note: Refresh token is stored in HTTP-only cookie by the server
+ */
 export function setAccessToken(token: null | string): void {
   accessToken = token
-  if (token) {
-    localStorage.setItem('access_token', token)
-  } else {
-    localStorage.removeItem('access_token')
-  }
 }
 
 function createHeaders(): Record<string, string> {

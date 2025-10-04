@@ -2,9 +2,11 @@ import {
   APP_CONFIG,
   FEATURES_ITEMS,
   GITHUB_REPO_URL,
+  PATH_AUTH,
+  PATH_ROOT,
   PROFILE_IMAGE_URL,
 } from '@/constants'
-import { useIsAuthenticated, useLogout, useUser } from '@/hooks/useAuth'
+import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth/useAuth'
 import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
@@ -54,7 +56,7 @@ export default function Header() {
           <div className="flex items-center space-x-2 justify-self-start">
             <Link
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-              to="/"
+              to={PATH_ROOT.home}
             >
               <img
                 alt={APP_CONFIG.BRAND.LOGO_ALT}
@@ -78,9 +80,11 @@ export default function Header() {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         'inline-flex items-center',
-                        isActive('/') ? 'bg-accent text-accent-foreground' : '',
+                        isActive(PATH_ROOT.home)
+                          ? 'bg-accent text-accent-foreground'
+                          : '',
                       )}
-                      to="/"
+                      to={PATH_ROOT.home}
                     >
                       <Home className="mr-1 h-4 w-4" />
                       Home
@@ -90,7 +94,7 @@ export default function Header() {
 
                 {/* Features Dropdown */}
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="inline-flex items-center">
+                  <NavigationMenuTrigger className="inline-flex items-center mt-3">
                     <Zap className="mr-1 h-4 w-4" />
                     Features
                   </NavigationMenuTrigger>
@@ -130,11 +134,11 @@ export default function Header() {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         'inline-flex items-center',
-                        isActive('/services')
+                        isActive(PATH_ROOT.services)
                           ? 'bg-accent text-accent-foreground'
                           : '',
                       )}
-                      to="/services"
+                      to={PATH_ROOT.services}
                     >
                       <Settings className="mr-1 h-4 w-4" />
                       Services
@@ -149,11 +153,11 @@ export default function Header() {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         'inline-flex items-center',
-                        isActive('/about')
+                        isActive(PATH_ROOT.about)
                           ? 'bg-accent text-accent-foreground'
                           : '',
                       )}
-                      to="/about"
+                      to={PATH_ROOT.about}
                     >
                       <Info className="mr-1 h-4 w-4" />
                       About
@@ -189,7 +193,7 @@ export default function Header() {
                   <Button asChild size="sm" variant="ghost">
                     <Link
                       className="flex items-center space-x-1"
-                      to="/auth/login"
+                      to={PATH_AUTH.login}
                     >
                       <LogIn className="h-4 w-4" />
                       <span>Login</span>
@@ -198,7 +202,7 @@ export default function Header() {
                   <Button asChild size="sm" variant="default">
                     <Link
                       className="flex items-center space-x-1"
-                      to="/auth/register"
+                      to={PATH_AUTH.register}
                     >
                       <UserPlus className="h-4 w-4" />
                       <span>Sign Up</span>
@@ -249,7 +253,7 @@ export default function Header() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to="/"
+                to={PATH_ROOT.home}
               >
                 <Home className="mr-2 h-4 w-4" />
                 Home
@@ -290,12 +294,12 @@ export default function Header() {
               <Link
                 className={cn(
                   'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
-                  isActive('/services')
+                  isActive(PATH_ROOT.services)
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to="/services"
+                to={PATH_ROOT.services}
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Services
@@ -310,7 +314,7 @@ export default function Header() {
                     : 'text-muted-foreground hover:text-foreground hover:bg-accent',
                 )}
                 onClick={() => setIsMobileMenuOpen(false)}
-                to="/about"
+                to={PATH_ROOT.about}
               >
                 <Info className="mr-2 h-4 w-4" />
                 About
@@ -345,7 +349,7 @@ export default function Header() {
                       <Link
                         className="flex items-center justify-center space-x-1"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        to="/auth/login"
+                        to={PATH_AUTH.login}
                       >
                         <LogIn className="h-4 w-4" />
                         <span>Login</span>
@@ -360,7 +364,7 @@ export default function Header() {
                       <Link
                         className="flex items-center justify-center space-x-1"
                         onClick={() => setIsMobileMenuOpen(false)}
-                        to="/auth/register"
+                        to={PATH_AUTH.register}
                       >
                         <UserPlus className="h-4 w-4" />
                         <span>Sign Up</span>

@@ -66,5 +66,5 @@ func SetupAuth(
 
 	// Setup GraphQL routes
 	graphqlResolver := resolver.NewResolver(authService, appLogger)
-	routes.SetupGraphQLRoutes(e, graphqlResolver)
+	routes.SetupGraphQLRoutes(e, graphqlResolver, providers.JWTUtils)
 }
