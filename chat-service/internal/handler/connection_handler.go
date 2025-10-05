@@ -107,27 +107,3 @@ func (h *ConnectionHandler) GetNodeHealth(c echo.Context) error {
 		"count": len(nodes),
 	})
 }
-
-// ValidateTicket validates a connection ticket (for testing purposes).
-// POST /v1/validate-ticket.
-func (h *ConnectionHandler) ValidateTicket(c echo.Context) error {
-	var req struct {
-		Ticket string `json:"ticket" validate:"required"`
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err := c.Validate(&req); err != nil {
-		return err
-	}
-
-	claims, err := h.connectionService.ValidateConnectionTicket(c.Request().Context(), req.Ticket)
-	if err != nil {
-		h.logger.Error("Failed to validate ticket", "error", err)
-		return err
-	}
-
-	return echoutils.ResponseOK(c, claims)
-}

@@ -14,7 +14,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/config"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/jwks"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // JWT defines the methods for JWT utilities.
@@ -47,26 +48,44 @@ type accessTokenClaims struct {
 
 // jwtUtils implements JWTUtils.
 type jwtUtils struct {
-	config     *config.JWTConfig
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
+	config      *config.JWTConfig
+	privateKey  *rsa.PrivateKey
+	publicKey   *rsa.PublicKey
+	jwksFetcher *jwks.Fetcher
+	useJWKS     bool
+	logger      logger.Logger
 }
 
 // NewJWTUtils creates a new jwtUtils instance.
-func NewJWTUtils(cfg *config.JWTConfig) JWT {
-	// Load RSA keys if using RS256
+func NewJWTUtils(cfg *config.JWTConfig, logger logger.Logger) JWT {
 	var (
-		privateKey *rsa.PrivateKey
-		publicKey  *rsa.PublicKey
+		publicKey   *rsa.PublicKey
+		privateKey  *rsa.PrivateKey
+		jwksFetcher *jwks.Fetcher
+		useJWKS     bool
 	)
 
-	if cfg.SigningMethod == constant.SigningMethodRS256 {
-		var err error
+	// Priority 1: Try JWKS if URL is provided
+	if cfg.JWKSUrl != "" {
+		jwksFetcher = jwks.NewFetcher(
+			cfg.JWKSUrl,
+			cfg.JWKSCacheTTL,
+			cfg.JWKSRefreshInterval,
+			logger,
+		)
 
-		privateKey, err = loadPrivateKey(cfg.PrivateKeyPath)
-		if err != nil {
-			panic("failed to load private key: " + err.Error())
+		// Try to get initial key from JWKS
+		key, err := jwksFetcher.GetPublicKey()
+		if err == nil {
+			publicKey = key
+			useJWKS = true
 		}
+		// If JWKS fails, fall through to file-based keys
+	}
+
+	// Priority 2: File-based keys (fallback or when JWKS not configured)
+	if !useJWKS && cfg.PublicKeyPath != "" {
+		var err error
 
 		publicKey, err = loadPublicKey(cfg.PublicKeyPath)
 		if err != nil {
@@ -74,10 +93,28 @@ func NewJWTUtils(cfg *config.JWTConfig) JWT {
 		}
 	}
 
+	// Load RSA private key only if path is provided (required for signing)
+	if cfg.PrivateKeyPath != "" {
+		var err error
+
+		privateKey, err = loadPrivateKey(cfg.PrivateKeyPath)
+		if err != nil {
+			panic("failed to load private key: " + err.Error())
+		}
+	}
+
+	// Ensure we have at least a public key
+	if publicKey == nil && privateKey == nil {
+		panic("no public or private key available")
+	}
+
 	return &jwtUtils{
-		config:     cfg,
-		privateKey: privateKey,
-		publicKey:  publicKey,
+		config:      cfg,
+		privateKey:  privateKey,
+		publicKey:   publicKey,
+		jwksFetcher: jwksFetcher,
+		useJWKS:     useJWKS,
+		logger:      logger,
 	}
 }
 
@@ -147,20 +184,9 @@ func (j *jwtUtils) GenerateAccessToken(
 		},
 	}
 
-	var (
-		token      *jwt.Token
-		signingKey any
-	)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
-	if j.config.SigningMethod == constant.SigningMethodRS256 {
-		token = jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-		signingKey = j.privateKey
-	} else {
-		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signingKey = []byte(j.config.Secret)
-	}
-
-	return token.SignedString(signingKey)
+	return token.SignedString(j.privateKey)
 }
 
 // GenerateRefreshToken generates a JWT refresh token for the given user.
@@ -178,20 +204,9 @@ func (j *jwtUtils) GenerateRefreshToken(userID string) (string, error) {
 		},
 	}
 
-	var (
-		token      *jwt.Token
-		signingKey any
-	)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 
-	if j.config.SigningMethod == constant.SigningMethodRS256 {
-		token = jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
-		signingKey = j.privateKey
-	} else {
-		token = jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		signingKey = []byte(j.config.Secret)
-	}
-
-	return token.SignedString(signingKey)
+	return token.SignedString(j.privateKey)
 }
 
 // ValidateRefreshToken validates and parses a refresh token.
@@ -200,19 +215,11 @@ func (j *jwtUtils) ValidateRefreshToken(tokenString string) (*refreshTokenClaims
 		tokenString,
 		&refreshTokenClaims{},
 		func(token *jwt.Token) (any, error) {
-			if j.config.SigningMethod == constant.SigningMethodRS256 {
-				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-					return nil, errors.New("invalid signing method")
-				}
-
-				return j.publicKey, nil
-			}
-
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, errors.New("invalid signing method")
 			}
 
-			return []byte(j.config.Secret), nil
+			return j.publicKey, nil
 		},
 	)
 	if err != nil {
@@ -238,19 +245,11 @@ func (j *jwtUtils) ValidateAccessToken(tokenString string) (*accessTokenClaims, 
 		tokenString,
 		&accessTokenClaims{},
 		func(token *jwt.Token) (any, error) {
-			if j.config.SigningMethod == constant.SigningMethodRS256 {
-				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-					return nil, errors.New("invalid signing method")
-				}
-
-				return j.publicKey, nil
-			}
-
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, errors.New("invalid signing method")
 			}
 
-			return []byte(j.config.Secret), nil
+			return j.publicKey, nil
 		},
 	)
 	if err != nil {
@@ -259,7 +258,8 @@ func (j *jwtUtils) ValidateAccessToken(tokenString string) (*accessTokenClaims, 
 
 	claims, ok := token.Claims.(*accessTokenClaims)
 	if !ok || !token.Valid {
-		return nil, errors.New("invalid token test 2")
+		j.logger.Warnf("Invalid access token: %v", err)
+		return nil, errors.New("invalid token")
 	}
 
 	return claims, nil
@@ -274,6 +274,7 @@ func (j *jwtUtils) GetUserIDFromRefreshToken(tokenString string) (uuid.UUID, err
 
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
+		j.logger.Warnf("Invalid user ID in refresh token: %v", err)
 		return uuid.Nil, errors.New("invalid user ID in token")
 	}
 
@@ -289,6 +290,7 @@ func (j *jwtUtils) GetUserIDFromAccessToken(tokenString string) (uuid.UUID, erro
 
 	userID, err := uuid.Parse(claims.UserID)
 	if err != nil {
+		j.logger.Warnf("Invalid user ID in access token: %v", err)
 		return uuid.Nil, errors.New("invalid user ID in token")
 	}
 
@@ -307,5 +309,15 @@ func (j *jwtUtils) GetExpirationTime(tokenString string) (int64, error) {
 
 // GetPublicKey returns the RSA public key.
 func (j *jwtUtils) GetPublicKey() *rsa.PublicKey {
+	// If using JWKS, try to get fresh key from cache
+	if j.useJWKS && j.jwksFetcher != nil {
+		j.logger.Info("Fetching public key from JWKS")
+
+		if key, err := j.jwksFetcher.GetPublicKey(); err == nil {
+			return key
+		}
+		// If JWKS fetch fails, fall back to initial cached key
+	}
+
 	return j.publicKey
 }

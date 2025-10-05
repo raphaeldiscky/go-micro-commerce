@@ -43,7 +43,7 @@ func (h *JWKSHandler) GetJWKS(e echo.Context) error {
 	publicKey := h.jwtUtils.GetPublicKey()
 	if publicKey == nil {
 		return e.JSON(http.StatusServiceUnavailable, dto.WebResponse[any, any]{
-			Message: "JWKS not available (HS256 signing method)",
+			Message: "JWKS not available",
 		})
 	}
 

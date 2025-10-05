@@ -31,18 +31,18 @@ type ConnectionRequest struct {
 // ChatConnectionResponse represents the response for chat connection establishment.
 type ChatConnectionResponse struct {
 	NodeAddress string            `json:"node_address"`
-	Ticket      string            `json:"ticket"`
-	ExpiresAt   time.Time         `json:"expires_at"`
 	UserID      uuid.UUID         `json:"user_id"`
 	UserType    constant.UserType `json:"user_type"`
 }
 
-// ConnectionTicketClaims represents the JWT claims for connection tickets.
-type ConnectionTicketClaims struct {
+// AuthTokenClaims represents the JWT claims from auth service tokens.
+type AuthTokenClaims struct {
 	jwt.RegisteredClaims
 
-	UserID   uuid.UUID         `json:"user_id"`
-	UserType constant.UserType `json:"user_type"`
+	UserID   uuid.UUID `json:"user_id"`
+	Email    string    `json:"email"`
+	Roles    []string  `json:"roles"`
+	IsActive bool      `json:"is_active"`
 }
 
 // NodeHealthResponse represents the health status of a chat node.

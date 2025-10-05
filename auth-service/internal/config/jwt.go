@@ -8,7 +8,6 @@ import (
 
 // JWTConfig holds JWT configuration.
 type JWTConfig struct {
-	Secret         string        `mapstructure:"JWT_SECRET"`
 	PrivateKeyPath string        `mapstructure:"JWT_PRIVATE_KEY_PATH"`
 	PublicKeyPath  string        `mapstructure:"JWT_PUBLIC_KEY_PATH"`
 	ExpirationTime time.Duration `mapstructure:"JWT_EXPIRATION_TIME"`
@@ -24,7 +23,6 @@ type JWTConfig struct {
 // initJWTConfig initializes the JWT configuration from environment variables.
 func initJWTConfig() *JWTConfig {
 	// Set defaults
-	viper.SetDefault("JWT_SECRET", "secret")
 	viper.SetDefault("JWT_PRIVATE_KEY_PATH", "./keys/private.pem")
 	viper.SetDefault("JWT_PUBLIC_KEY_PATH", "./keys/public.pem")
 	viper.SetDefault("JWT_EXPIRATION_TIME", "24h")

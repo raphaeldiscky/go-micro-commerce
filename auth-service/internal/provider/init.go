@@ -45,7 +45,8 @@ func SetupGlobal(
 	}
 
 	jwtUtils := jwtutils.NewJWTUtils(&pkgConfig.JWTConfig{
-		Secret:         cfg.JWT.Secret,
+		PublicKeyPath:  cfg.JWT.PublicKeyPath,
+		PrivateKeyPath: cfg.JWT.PrivateKeyPath,
 		ExpirationTime: cfg.JWT.ExpirationTime,
 		RefreshTime:    cfg.JWT.RefreshTime,
 		Issuer:         cfg.JWT.Issuer,
@@ -54,7 +55,9 @@ func SetupGlobal(
 		SigningMethod:  cfg.JWT.SigningMethod,
 		ContextKey:     cfg.JWT.ContextKey,
 		AllowedAlgs:    cfg.JWT.AllowedAlgs,
-	})
+	},
+		appLogger,
+	)
 
 	bcryptHasher := encryptutils.NewBcryptHasher(cfg.Bcrypt.Cost)
 

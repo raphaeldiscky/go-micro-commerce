@@ -20,7 +20,6 @@ func SetupChatRoutes(
 	// Connection management routes
 	protected.POST("/connect", connHandler.RequestConnection)
 	protected.GET("/nodes/health", connHandler.GetNodeHealth)
-	protected.POST("/validate-ticket", connHandler.ValidateTicket)
 
 	// Chat data management routes (read-only and CRUD operations)
 	protected.GET("/conversations", h.GetUserConversations)
