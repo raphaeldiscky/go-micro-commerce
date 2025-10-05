@@ -34,22 +34,24 @@ interface ConversationPageProps {
   showToggle?: boolean
 }
 
-export function ConversationPage({
+interface ConversationPageContentProps extends ConversationPageProps {
+  websocket: WebSocket | null
+  connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error'
+}
+
+function ConversationPageContent({
   conversationId,
   isFullscreen = false,
   onToggleFullscreen,
   showToggle = true,
-}: ConversationPageProps) {
+  websocket,
+  connectionStatus,
+}: ConversationPageContentProps) {
   const [showParticipants, setShowParticipants] = useState(false)
   const [replyingTo, setReplyingTo] = useState<Message | null>(null)
-  const [_ws, setWs] = useState<null | WebSocket>(null)
-  const [connectionStatus, setConnectionStatus] = useState<
-    'connected' | 'connecting' | 'disconnected' | 'error'
-  >('disconnected')
 
   const navigate = useNavigate()
   const user = useUser()
-  const isAuthenticated = useIsAuthenticated()
 
   // Hooks
   const { data: conversation, isLoading: isLoadingConversation } =
@@ -59,15 +61,6 @@ export function ConversationPage({
     useTypingIndicator(conversationId)
   const { addOnlineUser, isUserOnline, removeOnlineUser } = usePresence()
   const { updateMessageStatus } = useMessageReceipts(conversationId)
-
-  // Chat ticket for WebSocket connection
-  const {
-    data: ticketData,
-    isLoading: isLoadingTicket,
-    refetch: refetchTicket,
-  } = useChatTicket(user?.id || '')
-
-  const wsRef = useRef<null | WebSocket>(null)
 
   // Stable references for WebSocket event handlers
   const handlersRef = useRef({
@@ -87,42 +80,18 @@ export function ConversationPage({
     }
   }, [addTypingUser, addOnlineUser, removeOnlineUser, updateMessageStatus])
 
-  // WebSocket connection management
-  const connectWebSocket = useCallback(() => {
-    if (!ticketData || !user || !isAuthenticated) return
+  // Handle WebSocket messages
+  useEffect(() => {
+    if (!websocket) return
 
-    // Check if ticket is expired
-    if (isExpired(ticketData.expires_at)) {
-      console.log('Ticket expired, refetching...')
-      refetchTicket()
-      return
-    }
-
-    // Close existing connection if any
-    if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
-      wsRef.current.close()
-    }
-
-    setConnectionStatus('connecting')
-    const websocketUrl = `${ticketData.node_address}/v1/ws?ticket=${ticketData.ticket}&conversation_id=${conversationId}`
-
-    const websocket = new WebSocket(websocketUrl)
-    wsRef.current = websocket
-
-    websocket.onopen = () => {
-      console.log('WebSocket connected')
-      setConnectionStatus('connected')
-      setWs(websocket)
-    }
-
-    websocket.onmessage = (event) => {
+    const handleMessage = (event: MessageEvent) => {
       try {
         const data = JSON.parse(event.data)
         const handlers = handlersRef.current
 
         switch (data.type) {
           case 'message':
-            // Handle incoming message - this would be managed by useMessages hook
+            // Handle incoming message - managed by useMessages hook
             break
           case 'presence':
             if (data.data.is_online) {
@@ -145,48 +114,12 @@ export function ConversationPage({
       }
     }
 
-    websocket.onclose = (event) => {
-      console.log('WebSocket closed:', event.code, event.reason)
-      setConnectionStatus('disconnected')
-      setWs(null)
-      wsRef.current = null
-
-      // Try to reconnect after a delay if not closed intentionally
-      if (event.code !== 1000) {
-        setTimeout(() => {
-          connectWebSocket()
-        }, 3000)
-      }
-    }
-
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error)
-      setConnectionStatus('error')
-    }
-  }, [ticketData, user, isAuthenticated, conversationId, refetchTicket])
-
-  // Track connection attempts to prevent multiple connections
-  const connectionAttemptRef = useRef<boolean>(false)
-
-  // Connect WebSocket when component mounts or ticket changes
-  useEffect(() => {
-    if (
-      ticketData &&
-      user &&
-      isAuthenticated &&
-      !connectionAttemptRef.current
-    ) {
-      connectionAttemptRef.current = true
-      connectWebSocket()
-    }
+    websocket.addEventListener('message', handleMessage)
 
     return () => {
-      connectionAttemptRef.current = false
-      if (wsRef.current) {
-        wsRef.current.close(1000) // Normal closure
-      }
+      websocket.removeEventListener('message', handleMessage)
     }
-  }, [ticketData, user, isAuthenticated, conversationId])
+  }, [websocket])
 
   // Handle sending messages
   const handleSendMessage = useCallback(
@@ -222,25 +155,7 @@ export function ConversationPage({
     stopTyping()
   }, [stopTyping])
 
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-4">
-            Authentication Required
-          </h2>
-          <p className="text-muted-foreground mb-6">
-            Please log in to access this conversation.
-          </p>
-          <Button asChild>
-            <Link to={PATH_AUTH.login}>Sign In</Link>
-          </Button>
-        </Card>
-      </div>
-    )
-  }
-
-  if (isLoadingConversation || isLoadingTicket) {
+  if (isLoadingConversation) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -268,10 +183,9 @@ export function ConversationPage({
   }
 
   return (
-    <ChatWebSocketProvider connectionStatus={connectionStatus} websocket={_ws}>
-      <div
-        className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
-      >
+    <div
+      className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
+    >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
           <div className="flex items-center space-x-4">
@@ -376,6 +290,135 @@ export function ConversationPage({
           )}
         </div>
       </div>
+  )
+}
+
+// Wrapper component that provides WebSocket context
+export function ConversationPage(props: ConversationPageProps) {
+  const [ws, setWs] = useState<null | WebSocket>(null)
+  const [connectionStatus, setConnectionStatus] = useState<
+    'connected' | 'connecting' | 'disconnected' | 'error'
+  >('disconnected')
+
+  const user = useUser()
+  const isAuthenticated = useIsAuthenticated()
+
+  // Chat ticket for WebSocket connection
+  const {
+    data: ticketData,
+    isLoading: isLoadingTicket,
+    refetch: refetchTicket,
+  } = useChatTicket(user?.id || '')
+
+  const wsRef = useRef<null | WebSocket>(null)
+
+  // WebSocket connection management
+  const connectWebSocket = useCallback(() => {
+    if (!ticketData || !user || !isAuthenticated) return
+
+    // Check if ticket is expired
+    if (isExpired(ticketData.expires_at)) {
+      console.log('Ticket expired, refetching...')
+      refetchTicket()
+      return
+    }
+
+    // Close existing connection if any
+    if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+      wsRef.current.close()
+    }
+
+    setConnectionStatus('connecting')
+    const websocketUrl = `${ticketData.node_address}/v1/ws?ticket=${ticketData.ticket}&conversation_id=${props.conversationId}`
+
+    const websocket = new WebSocket(websocketUrl)
+    wsRef.current = websocket
+
+    websocket.onopen = () => {
+      console.log('WebSocket connected')
+      setConnectionStatus('connected')
+      setWs(websocket)
+    }
+
+    websocket.onclose = (event) => {
+      console.log('WebSocket closed:', event.code, event.reason)
+      setConnectionStatus('disconnected')
+      setWs(null)
+      wsRef.current = null
+
+      // Try to reconnect after a delay if not closed intentionally
+      if (event.code !== 1000) {
+        setTimeout(() => {
+          connectWebSocket()
+        }, 3000)
+      }
+    }
+
+    websocket.onerror = (error) => {
+      console.error('WebSocket error:', error)
+      setConnectionStatus('error')
+    }
+  }, [ticketData, user, isAuthenticated, props.conversationId, refetchTicket])
+
+  // Track connection attempts to prevent multiple connections
+  const connectionAttemptRef = useRef<boolean>(false)
+
+  // Connect WebSocket when component mounts or ticket changes
+  useEffect(() => {
+    if (
+      ticketData &&
+      user &&
+      isAuthenticated &&
+      !connectionAttemptRef.current
+    ) {
+      connectionAttemptRef.current = true
+      connectWebSocket()
+    }
+
+    return () => {
+      connectionAttemptRef.current = false
+      if (wsRef.current) {
+        wsRef.current.close(1000) // Normal closure
+      }
+    }
+  }, [ticketData, user, isAuthenticated, props.conversationId, connectWebSocket])
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="p-8 text-center">
+          <h2 className="text-xl font-semibold mb-4">
+            Authentication Required
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            Please log in to access this conversation.
+          </p>
+          <Button asChild>
+            <Link to={PATH_AUTH.login}>Sign In</Link>
+          </Button>
+        </Card>
+      </div>
+    )
+  }
+
+  if (isLoadingTicket) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Connecting...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <ChatWebSocketProvider connectionStatus={connectionStatus} websocket={ws}>
+      <ConversationPageContent
+        {...props}
+        connectionStatus={connectionStatus}
+        websocket={ws}
+      />
     </ChatWebSocketProvider>
   )
 }
