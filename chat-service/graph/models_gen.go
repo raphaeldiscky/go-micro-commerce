@@ -8,6 +8,12 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
+type ChatConnection struct {
+	NodeAddress string `json:"nodeAddress"`
+	UserID      string `json:"userId"`
+	UserType    string `json:"userType"`
+}
+
 type Conversation struct {
 	ID               string                      `json:"id"`
 	Subject          *string                     `json:"subject,omitempty"`

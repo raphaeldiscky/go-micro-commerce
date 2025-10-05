@@ -28,6 +28,14 @@ type AuthPayload
   user: User!
 }
 
+type ChatConnection
+  @join__type(graph: CHAT_SERVICE)
+{
+  nodeAddress: String!
+  userId: ID!
+  userType: String!
+}
+
 type Conversation
   @join__type(graph: CHAT_SERVICE, key: "id")
 {
@@ -139,6 +147,7 @@ type Mutation
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
   logout: Boolean! @join__field(graph: AUTH_SERVICE)
+  requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
   endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
   assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)

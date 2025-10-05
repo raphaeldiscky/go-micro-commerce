@@ -50,6 +50,12 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ChatConnection struct {
+		NodeAddress func(childComplexity int) int
+		UserID      func(childComplexity int) int
+		UserType    func(childComplexity int) int
+	}
+
 	Conversation struct {
 		CreatedAt        func(childComplexity int) int
 		EndedAt          func(childComplexity int) int
@@ -97,6 +103,7 @@ type ComplexityRoot struct {
 		EndConversation           func(childComplexity int, conversationID string) int
 		JoinConversation          func(childComplexity int, input JoinConversationInput) int
 		LeaveConversation         func(childComplexity int, conversationID string) int
+		RequestChatConnection     func(childComplexity int) int
 	}
 
 	OnlineStatus struct {
@@ -152,6 +159,7 @@ type EntityResolver interface {
 	FindUserByID(ctx context.Context, id string) (*User, error)
 }
 type MutationResolver interface {
+	RequestChatConnection(ctx context.Context) (*ChatConnection, error)
 	CreateConversation(ctx context.Context, input CreateConversationInput) (*Conversation, error)
 	EndConversation(ctx context.Context, conversationID string) (*Conversation, error)
 	AssignConversationToAdmin(ctx context.Context, conversationID string, adminID string) (*Conversation, error)
@@ -185,6 +193,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ChatConnection.nodeAddress":
+		if e.complexity.ChatConnection.NodeAddress == nil {
+			break
+		}
+
+		return e.complexity.ChatConnection.NodeAddress(childComplexity), true
+	case "ChatConnection.userId":
+		if e.complexity.ChatConnection.UserID == nil {
+			break
+		}
+
+		return e.complexity.ChatConnection.UserID(childComplexity), true
+	case "ChatConnection.userType":
+		if e.complexity.ChatConnection.UserType == nil {
+			break
+		}
+
+		return e.complexity.ChatConnection.UserType(childComplexity), true
 
 	case "Conversation.createdAt":
 		if e.complexity.Conversation.CreatedAt == nil {
@@ -422,6 +449,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.LeaveConversation(childComplexity, args["conversationId"].(string)), true
+	case "Mutation.requestChatConnection":
+		if e.complexity.Mutation.RequestChatConnection == nil {
+			break
+		}
+
+		return e.complexity.Mutation.RequestChatConnection(childComplexity), true
 
 	case "OnlineStatus.isOnline":
 		if e.complexity.OnlineStatus.IsOnline == nil {
@@ -1053,6 +1086,93 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ChatConnection_nodeAddress(ctx context.Context, field graphql.CollectedField, obj *ChatConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChatConnection_nodeAddress,
+		func(ctx context.Context) (any, error) {
+			return obj.NodeAddress, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChatConnection_nodeAddress(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChatConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChatConnection_userId(ctx context.Context, field graphql.CollectedField, obj *ChatConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChatConnection_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChatConnection_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChatConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ChatConnection_userType(ctx context.Context, field graphql.CollectedField, obj *ChatConnection) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ChatConnection_userType,
+		func(ctx context.Context) (any, error) {
+			return obj.UserType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ChatConnection_userType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ChatConnection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Conversation_id(ctx context.Context, field graphql.CollectedField, obj *Conversation) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -1994,6 +2114,43 @@ func (ec *executionContext) fieldContext_MessageEdge_node(_ context.Context, fie
 				return ec.fieldContext_Message_createdAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_requestChatConnection(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_requestChatConnection,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Mutation().RequestChatConnection(ctx)
+		},
+		nil,
+		ec.marshalNChatConnection2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐChatConnection,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_requestChatConnection(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "nodeAddress":
+				return ec.fieldContext_ChatConnection_nodeAddress(ctx, field)
+			case "userId":
+				return ec.fieldContext_ChatConnection_userId(ctx, field)
+			case "userType":
+				return ec.fieldContext_ChatConnection_userType(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ChatConnection", field.Name)
 		},
 	}
 	return fc, nil
@@ -4983,6 +5140,55 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 
 // region    **************************** object.gotpl ****************************
 
+var chatConnectionImplementors = []string{"ChatConnection"}
+
+func (ec *executionContext) _ChatConnection(ctx context.Context, sel ast.SelectionSet, obj *ChatConnection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, chatConnectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ChatConnection")
+		case "nodeAddress":
+			out.Values[i] = ec._ChatConnection_nodeAddress(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userId":
+			out.Values[i] = ec._ChatConnection_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "userType":
+			out.Values[i] = ec._ChatConnection_userType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var conversationImplementors = []string{"Conversation", "_Entity"}
 
 func (ec *executionContext) _Conversation(ctx context.Context, sel ast.SelectionSet, obj *Conversation) graphql.Marshaler {
@@ -5349,6 +5555,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "requestChatConnection":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestChatConnection(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createConversation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_createConversation(ctx, field)
@@ -6231,6 +6444,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNChatConnection2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐChatConnection(ctx context.Context, sel ast.SelectionSet, v ChatConnection) graphql.Marshaler {
+	return ec._ChatConnection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNChatConnection2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐChatConnection(ctx context.Context, sel ast.SelectionSet, v *ChatConnection) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ChatConnection(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNConversation2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversation(ctx context.Context, sel ast.SelectionSet, v Conversation) graphql.Marshaler {

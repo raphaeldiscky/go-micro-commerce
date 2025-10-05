@@ -38,6 +38,13 @@ export type AuthPayload = {
   user: User
 }
 
+export type ChatConnection = {
+  __typename?: 'ChatConnection'
+  nodeAddress: Scalars['String']['output']
+  userId: Scalars['ID']['output']
+  userType: Scalars['String']['output']
+}
+
 export type Conversation = {
   __typename?: 'Conversation'
   createdAt: Scalars['Time']['output']
@@ -122,6 +129,7 @@ export type Mutation = {
   logout: Scalars['Boolean']['output']
   refreshToken: AuthPayload
   register: AuthPayload
+  requestChatConnection: ChatConnection
 }
 
 export type MutationAssignConversationToAdminArgs = {

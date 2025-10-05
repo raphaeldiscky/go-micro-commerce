@@ -106,3 +106,12 @@ func MapMessagesToCursorConnection(
 		},
 	}
 }
+
+// MapChatConnectionToGraphQL maps a ChatConnectionResponse to a ChatConnection GraphQL type.
+func MapChatConnectionToGraphQL(conn *dto.ChatConnectionResponse) *graph.ChatConnection {
+	return &graph.ChatConnection{
+		NodeAddress: conn.NodeAddress,
+		UserID:      conn.UserID.String(),
+		UserType:    string(conn.UserType),
+	}
+}

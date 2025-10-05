@@ -13,14 +13,20 @@ import (
 
 // Resolver is the root resolver for GraphQL queries and mutations.
 type Resolver struct {
-	chatService service.ChatService
-	logger      logger.Logger
+	chatService       service.ChatService
+	connectionService service.ConnectionService
+	logger            logger.Logger
 }
 
 // NewResolver creates a new GraphQL resolver instance with the required dependencies.
-func NewResolver(chatService service.ChatService, appLogger logger.Logger) *Resolver {
+func NewResolver(
+	chatService service.ChatService,
+	connectionService service.ConnectionService,
+	appLogger logger.Logger,
+) *Resolver {
 	return &Resolver{
-		chatService: chatService,
-		logger:      appLogger,
+		chatService:       chatService,
+		connectionService: connectionService,
+		logger:            appLogger,
 	}
 }

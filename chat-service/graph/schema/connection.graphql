@@ -4,8 +4,21 @@ type OnlineStatus {
   lastSeen: Time
 }
 
+# Chat connection response for WebSocket node selection
+type ChatConnection {
+  nodeAddress: String!
+  userId: ID!
+  userType: String!
+}
+
 # Connection queries
 extend type Query {
   # Get online users
   onlineUsers: [User!]!
+}
+
+# Connection mutations
+extend type Mutation {
+  # Request WebSocket connection (returns node address for load balancing)
+  requestChatConnection: ChatConnection!
 }

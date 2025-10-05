@@ -1,6 +1,6 @@
 import { queryKeys } from '@/constants/query-key'
+import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
 import type { SendMessageRequest } from '@/lib/api'
-import { sendMessage } from '@/lib/api'
 import { CONVERSATION_MESSAGES_QUERY, graphqlClient } from '@/lib/graphql'
 import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
 import type { Message, MessageConnection } from '@/types/__generated__/graphql'
@@ -99,15 +99,30 @@ export function useMessages(conversationId: string) {
 }
 
 /**
- * Hook for sending messages
- * Note: sendMessage still uses WebSocket/REST for real-time delivery
+ * Hook for sending messages via WebSocket
+ * Messages are sent through WebSocket connection for real-time delivery
  */
 export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient()
+  const { sendMessage } = useChatWebSocket()
 
   return useMutation({
-    mutationFn: (message: SendMessageRequest) =>
-      sendMessage(conversationId, message),
+    mutationFn: async (message: SendMessageRequest) => {
+      // Send message via WebSocket
+      sendMessage({
+        type: 'chat',
+        content: {
+          conversation_id: conversationId,
+          content: message.content,
+          message_type: message.message_type || 'text',
+          reply_to_id: message.reply_to_id,
+        },
+      })
+
+      // Return a promise that resolves immediately
+      // The actual message will be received via WebSocket broadcast
+      return Promise.resolve()
+    },
     onMutate: async (newMessage) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({

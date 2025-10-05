@@ -146,3 +146,16 @@ export const JOIN_CONVERSATION_MUTATION = gql`
     }
   }
 `
+
+/**
+ * Request chat connection (returns WebSocket node address)
+ */
+export const REQUEST_CHAT_CONNECTION_MUTATION = gql`
+  mutation RequestChatConnection {
+    requestChatConnection {
+      nodeAddress
+      userId
+      userType
+    }
+  }
+`

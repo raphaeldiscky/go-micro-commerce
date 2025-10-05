@@ -1,15 +1,16 @@
 import { PATH_AUTH, PATH_FEATURES } from '@/constants'
 import { ChatWebSocketProvider } from '@/contexts/ChatWebSocketContext'
 import { useIsAuthenticated, useUser } from '@/hooks/auth/useAuth'
-import { useChatTicket } from '@/hooks/chat/useChatTicket'
 import { useConversationDetails } from '@/hooks/chat/useConversationDetails'
 import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
 import { useSendMessage } from '@/hooks/chat/useMessages'
 import { usePresence } from '@/hooks/chat/usePresence'
 import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
+import { getAccessToken } from '@/lib/api'
 import type { SendMessageRequest } from '@/lib/api'
-import { isExpired } from '@/lib/utils/date'
+import { graphqlClient, REQUEST_CHAT_CONNECTION_MUTATION } from '@/lib/graphql'
 import type { Message } from '@/types/__generated__/graphql'
+import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -186,110 +187,109 @@ function ConversationPageContent({
     <div
       className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
     >
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
-          <div className="flex items-center space-x-4">
-            <Button
-              onClick={() => navigate({ to: PATH_FEATURES.chat.root })}
-              size="sm"
-              variant="ghost"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
+        <div className="flex items-center space-x-4">
+          <Button
+            onClick={() => navigate({ to: PATH_FEATURES.chat.root })}
+            size="sm"
+            variant="ghost"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
 
-            <div>
-              <h1 className="text-lg font-semibold">
-                {conversation.subject || 'Conversation'}
-              </h1>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                <span
-                  className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}`}
-                ></span>
-                <span>
-                  {connectionStatus === 'connected'
-                    ? 'Connected'
-                    : connectionStatus === 'connecting'
-                      ? 'Connecting...'
-                      : connectionStatus === 'error'
-                        ? 'Connection error'
-                        : 'Disconnected'}
-                </span>
-              </div>
+          <div>
+            <h1 className="text-lg font-semibold">
+              {conversation.subject || 'Conversation'}
+            </h1>
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <span
+                className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}`}
+              ></span>
+              <span>
+                {connectionStatus === 'connected'
+                  ? 'Connected'
+                  : connectionStatus === 'connecting'
+                    ? 'Connecting...'
+                    : connectionStatus === 'error'
+                      ? 'Connection error'
+                      : 'Disconnected'}
+              </span>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Button size="sm" variant="ghost">
-              <Phone className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="ghost">
-              <Video className="h-4 w-4" />
-            </Button>
-            <Button
-              onClick={() => setShowParticipants(!showParticipants)}
-              size="sm"
-              variant="ghost"
-            >
-              <Users className="h-4 w-4" />
-            </Button>
-            <Button size="sm" variant="ghost">
-              <Settings className="h-4 w-4" />
-            </Button>
-            {onToggleFullscreen && showToggle && (
-              <Button
-                onClick={onToggleFullscreen}
-                size="sm"
-                variant="ghost"
-                title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="h-4 w-4" />
-                ) : (
-                  <Maximize2 className="h-4 w-4" />
-                )}
-              </Button>
-            )}
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Messages Area */}
-          <div className="flex-1 flex flex-col">
-            <MessageList
-              conversationId={conversationId}
-              currentUserId={user?.id || ''}
-              onReply={handleReply}
-              typingUsers={typingUsers}
-            />
-
-            <MessageInput
-              disabled={
-                connectionStatus !== 'connected' ||
-                sendMessageMutation.isPending
-              }
-              isLoading={sendMessageMutation.isPending}
-              onCancelReply={() => setReplyingTo(null)}
-              onSendMessage={handleSendMessage}
-              onTypingStart={handleTypingStart}
-              onTypingStop={handleTypingStop}
-              replyingTo={replyingTo}
-            />
-          </div>
-
-          {/* Participants Sidebar */}
-          {showParticipants && (
-            <div className="w-80 border-l bg-white dark:bg-gray-800">
-              <ParticipantsList
-                conversationId={conversationId}
-                currentUserId={user?.id || ''}
-                isUserOnline={isUserOnline}
-                onClose={() => setShowParticipants(false)}
-              />
-            </div>
+        <div className="flex items-center space-x-2">
+          <Button size="sm" variant="ghost">
+            <Phone className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost">
+            <Video className="h-4 w-4" />
+          </Button>
+          <Button
+            onClick={() => setShowParticipants(!showParticipants)}
+            size="sm"
+            variant="ghost"
+          >
+            <Users className="h-4 w-4" />
+          </Button>
+          <Button size="sm" variant="ghost">
+            <Settings className="h-4 w-4" />
+          </Button>
+          {onToggleFullscreen && showToggle && (
+            <Button
+              onClick={onToggleFullscreen}
+              size="sm"
+              variant="ghost"
+              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-4 w-4" />
+              ) : (
+                <Maximize2 className="h-4 w-4" />
+              )}
+            </Button>
           )}
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Messages Area */}
+        <div className="flex-1 flex flex-col">
+          <MessageList
+            conversationId={conversationId}
+            currentUserId={user?.id || ''}
+            onReply={handleReply}
+            typingUsers={typingUsers}
+          />
+
+          <MessageInput
+            disabled={
+              connectionStatus !== 'connected' || sendMessageMutation.isPending
+            }
+            isLoading={sendMessageMutation.isPending}
+            onCancelReply={() => setReplyingTo(null)}
+            onSendMessage={handleSendMessage}
+            onTypingStart={handleTypingStart}
+            onTypingStop={handleTypingStop}
+            replyingTo={replyingTo}
+          />
+        </div>
+
+        {/* Participants Sidebar */}
+        {showParticipants && (
+          <div className="w-80 border-l bg-white dark:bg-gray-800">
+            <ParticipantsList
+              conversationId={conversationId}
+              currentUserId={user?.id || ''}
+              isUserOnline={isUserOnline}
+              onClose={() => setShowParticipants(false)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -303,23 +303,30 @@ export function ConversationPage(props: ConversationPageProps) {
   const user = useUser()
   const isAuthenticated = useIsAuthenticated()
 
-  // Chat ticket for WebSocket connection
-  const {
-    data: ticketData,
-    isLoading: isLoadingTicket,
-    refetch: refetchTicket,
-  } = useChatTicket(user?.id || '')
+  // Request WebSocket node address from GraphQL
+  const requestConnection = useMutation({
+    mutationFn: async () => {
+      const response = await graphqlClient.request<{
+        requestChatConnection: {
+          nodeAddress: string
+          userId: string
+          userType: string
+        }
+      }>(REQUEST_CHAT_CONNECTION_MUTATION)
+      return response.requestChatConnection
+    },
+  })
 
   const wsRef = useRef<null | WebSocket>(null)
 
   // WebSocket connection management
-  const connectWebSocket = useCallback(() => {
-    if (!ticketData || !user || !isAuthenticated) return
+  const connectWebSocket = useCallback(async () => {
+    if (!user || !isAuthenticated) return
 
-    // Check if ticket is expired
-    if (isExpired(ticketData.expires_at)) {
-      console.log('Ticket expired, refetching...')
-      refetchTicket()
+    // Get JWT access token
+    const accessToken = getAccessToken()
+    if (!accessToken) {
+      console.error('No access token available')
       return
     }
 
@@ -329,48 +336,53 @@ export function ConversationPage(props: ConversationPageProps) {
     }
 
     setConnectionStatus('connecting')
-    const websocketUrl = `${ticketData.node_address}/v1/ws?ticket=${ticketData.ticket}&conversation_id=${props.conversationId}`
 
-    const websocket = new WebSocket(websocketUrl)
-    wsRef.current = websocket
+    try {
+      // Request node address from GraphQL
+      const connectionData = await requestConnection.mutateAsync()
 
-    websocket.onopen = () => {
-      console.log('WebSocket connected')
-      setConnectionStatus('connected')
-      setWs(websocket)
-    }
+      // Connect to WebSocket with JWT token
+      const websocketUrl = `${connectionData.nodeAddress}/v1/ws?token=${accessToken}&conversation_id=${props.conversationId}`
 
-    websocket.onclose = (event) => {
-      console.log('WebSocket closed:', event.code, event.reason)
-      setConnectionStatus('disconnected')
-      setWs(null)
-      wsRef.current = null
+      const websocket = new WebSocket(websocketUrl)
+      wsRef.current = websocket
 
-      // Try to reconnect after a delay if not closed intentionally
-      if (event.code !== 1000) {
-        setTimeout(() => {
-          connectWebSocket()
-        }, 3000)
+      websocket.onopen = () => {
+        console.log('WebSocket connected')
+        setConnectionStatus('connected')
+        setWs(websocket)
       }
-    }
 
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error)
+      websocket.onclose = (event) => {
+        console.log('WebSocket closed:', event.code, event.reason)
+        setConnectionStatus('disconnected')
+        setWs(null)
+        wsRef.current = null
+
+        // Try to reconnect after a delay if not closed intentionally
+        if (event.code !== 1000) {
+          setTimeout(() => {
+            connectWebSocket()
+          }, 3000)
+        }
+      }
+
+      websocket.onerror = (error) => {
+        console.error('WebSocket error:', error)
+        setConnectionStatus('error')
+      }
+    } catch (error) {
+      console.error('Failed to establish WebSocket connection:', error)
       setConnectionStatus('error')
     }
-  }, [ticketData, user, isAuthenticated, props.conversationId, refetchTicket])
+  }, [user, isAuthenticated, props.conversationId, requestConnection])
 
   // Track connection attempts to prevent multiple connections
   const connectionAttemptRef = useRef<boolean>(false)
 
-  // Connect WebSocket when component mounts or ticket changes
+  // Connect WebSocket when component mounts
   useEffect(() => {
-    if (
-      ticketData &&
-      user &&
-      isAuthenticated &&
-      !connectionAttemptRef.current
-    ) {
+    if (user && isAuthenticated && !connectionAttemptRef.current) {
       connectionAttemptRef.current = true
       connectWebSocket()
     }
@@ -381,7 +393,7 @@ export function ConversationPage(props: ConversationPageProps) {
         wsRef.current.close(1000) // Normal closure
       }
     }
-  }, [ticketData, user, isAuthenticated, props.conversationId, connectWebSocket])
+  }, [user, isAuthenticated, props.conversationId, connectWebSocket])
 
   if (!isAuthenticated) {
     return (
@@ -397,17 +409,6 @@ export function ConversationPage(props: ConversationPageProps) {
             <Link to={PATH_AUTH.login}>Sign In</Link>
           </Button>
         </Card>
-      </div>
-    )
-  }
-
-  if (isLoadingTicket) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Connecting...</p>
-        </div>
       </div>
     )
   }
