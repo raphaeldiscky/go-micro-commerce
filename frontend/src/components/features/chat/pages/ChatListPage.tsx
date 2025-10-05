@@ -198,7 +198,7 @@ export function ChatListPage() {
                             {/* Participants Count */}
                             <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 ml-2">
                               <Users className="h-3 w-3 mr-1" />
-                              {conversation.participants.length}
+                              {conversation.participantCount}
                             </div>
                           </div>
                         </div>

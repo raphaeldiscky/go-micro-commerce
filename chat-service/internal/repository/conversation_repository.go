@@ -40,6 +40,16 @@ type ConversationRepository interface {
 	// FindActiveByAdmin retrieves active conversations assigned to an admin
 	FindActiveByAdmin(ctx context.Context, adminID uuid.UUID) ([]*entity.Conversation, error)
 
+	// FindByUserIDWithCursor retrieves conversations for a user using cursor-based pagination
+	FindByUserIDWithCursor(
+		ctx context.Context,
+		userID uuid.UUID,
+		userType constant.UserType,
+		limit int,
+		afterCursor string,
+		beforeCursor string,
+	) ([]*entity.Conversation, error)
+
 	// Delete soft deletes a conversation
 	Delete(ctx context.Context, id uuid.UUID) error
 }
@@ -238,6 +248,96 @@ func (r *conversationRepository) UpdateStatus(
 	return nil
 }
 
+// FindByUserIDWithCursor retrieves conversations for a user using cursor-based pagination.
+func (r *conversationRepository) FindByUserIDWithCursor(
+	ctx context.Context,
+	userID uuid.UUID,
+	userType constant.UserType,
+	limit int,
+	afterCursor string,
+	beforeCursor string,
+) ([]*entity.Conversation, error) {
+	var (
+		query string
+		args  []any
+	)
+
+	if afterCursor != "" && beforeCursor != "" {
+		return nil, errors.New("cannot use both after and before cursors")
+	}
+
+	switch {
+	case afterCursor != "":
+		// Forward pagination: get conversations after the cursor
+		query = `
+			SELECT c.id, c.status, c.subject, c.priority, c.metadata, c.created_at, c.updated_at, c.ended_at,
+			       COUNT(DISTINCT p2.id) FILTER (WHERE p2.is_active = TRUE) as participant_count
+			FROM conversations c
+			INNER JOIN participants p ON c.id = p.conversation_id
+			LEFT JOIN participants p2 ON c.id = p2.conversation_id
+			WHERE p.user_id = $1 AND p.user_type = $2 AND p.is_active = TRUE
+				AND (c.updated_at, c.id) < (
+					SELECT updated_at, id FROM conversations WHERE id = $3
+				)
+			GROUP BY c.id, c.status, c.subject, c.priority, c.metadata, c.created_at, c.updated_at, c.ended_at
+			ORDER BY c.updated_at DESC, c.id DESC
+			LIMIT $4
+		`
+		args = []any{userID, userType, afterCursor, limit + 1} // +1 to check hasNext
+	case beforeCursor != "":
+		// Backward pagination: get conversations before the cursor
+		query = `
+			SELECT c.id, c.status, c.subject, c.priority, c.metadata, c.created_at, c.updated_at, c.ended_at,
+			       COUNT(DISTINCT p2.id) FILTER (WHERE p2.is_active = TRUE) as participant_count
+			FROM conversations c
+			INNER JOIN participants p ON c.id = p.conversation_id
+			LEFT JOIN participants p2 ON c.id = p2.conversation_id
+			WHERE p.user_id = $1 AND p.user_type = $2 AND p.is_active = TRUE
+				AND (c.updated_at, c.id) > (
+					SELECT updated_at, id FROM conversations WHERE id = $3
+				)
+			GROUP BY c.id, c.status, c.subject, c.priority, c.metadata, c.created_at, c.updated_at, c.ended_at
+			ORDER BY c.updated_at ASC, c.id ASC
+			LIMIT $4
+		`
+		args = []any{userID, userType, beforeCursor, limit + 1} // +1 to check hasPrev
+	default:
+		// No cursor: get first page
+		query = `
+			SELECT c.id, c.status, c.subject, c.priority, c.metadata, c.created_at, c.updated_at, c.ended_at,
+			       COUNT(DISTINCT p2.id) FILTER (WHERE p2.is_active = TRUE) as participant_count
+			FROM conversations c
+			INNER JOIN participants p ON c.id = p.conversation_id
+			LEFT JOIN participants p2 ON c.id = p2.conversation_id
+			WHERE p.user_id = $1 AND p.user_type = $2 AND p.is_active = TRUE
+			GROUP BY c.id, c.status, c.subject, c.priority, c.metadata, c.created_at, c.updated_at, c.ended_at
+			ORDER BY c.updated_at DESC, c.id DESC
+			LIMIT $3
+		`
+		args = []any{userID, userType, limit + 1} // +1 to check hasNext
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query conversations with cursor: %w", err)
+	}
+	defer rows.Close()
+
+	conversations, err := r.scanConversations(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reverse results for backward pagination
+	if beforeCursor != "" && len(conversations) > 0 {
+		for i, j := 0, len(conversations)-1; i < j; i, j = i+1, j-1 {
+			conversations[i], conversations[j] = conversations[j], conversations[i]
+		}
+	}
+
+	return conversations, nil
+}
+
 // Delete soft deletes a conversation by setting status to ended.
 func (r *conversationRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return r.UpdateStatus(ctx, id, constant.ConversationStatusEnded)
@@ -286,8 +386,9 @@ func (r *conversationRepository) scanConversations(rows pgx.Rows) ([]*entity.Con
 
 	for rows.Next() {
 		var (
-			conversation entity.Conversation
-			metadataJSON []byte
+			conversation     entity.Conversation
+			metadataJSON     []byte
+			participantCount *int
 		)
 
 		err := rows.Scan(
@@ -299,9 +400,15 @@ func (r *conversationRepository) scanConversations(rows pgx.Rows) ([]*entity.Con
 			&conversation.CreatedAt,
 			&conversation.UpdatedAt,
 			&conversation.EndedAt,
+			&participantCount,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan conversation: %w", err)
+		}
+
+		// Set participant count (default to 0 if NULL)
+		if participantCount != nil {
+			conversation.ParticipantCount = *participantCount
 		}
 
 		// Unmarshal metadata

@@ -26,6 +26,7 @@ export function MessageList({
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [autoScroll, setAutoScroll] = useState(true)
+  const markedAsReadRef = useRef<Set<string>>(new Set())
 
   const {
     data: messagesData,
@@ -35,6 +36,11 @@ export function MessageList({
   } = useMessages(conversationId)
 
   const { markAsRead } = useMessageReceipts(conversationId)
+
+  // Reset marked messages when conversation changes
+  useEffect(() => {
+    markedAsReadRef.current.clear()
+  }, [conversationId])
 
   // Flatten all message pages
 
@@ -86,11 +92,17 @@ export function MessageList({
     )
 
     if (unreadMessages.length > 0 && autoScroll) {
-      // Mark the last few messages as read
-      const messagesToMark = unreadMessages.slice(-3)
-      messagesToMark.forEach((msg) => markAsRead(msg.id))
+      // Mark the last few messages as read (only if not already marked)
+      const messagesToMark = unreadMessages
+        .slice(-3)
+        .filter((msg) => !markedAsReadRef.current.has(msg.id))
+
+      messagesToMark.forEach((msg) => {
+        markedAsReadRef.current.add(msg.id)
+        markAsRead(msg.id)
+      })
     }
-  }, [messages, currentUserId, markAsRead, autoScroll])
+  }, [messages, currentUserId, autoScroll])
 
   // Auto-scroll when new messages arrive
   useEffect(() => {

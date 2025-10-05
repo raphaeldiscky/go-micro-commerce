@@ -8,16 +8,23 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
+type ChatConnection struct {
+	NodeAddress string `json:"nodeAddress"`
+	UserID      string `json:"userId"`
+	UserType    string `json:"userType"`
+}
+
 type Conversation struct {
-	ID           string                      `json:"id"`
-	Subject      *string                     `json:"subject,omitempty"`
-	Status       constant.ConversationStatus `json:"status"`
-	Priority     int                         `json:"priority"`
-	Participants []*Participant              `json:"participants"`
-	Messages     *MessageConnection          `json:"messages"`
-	CreatedAt    time.Time                   `json:"createdAt"`
-	UpdatedAt    time.Time                   `json:"updatedAt"`
-	EndedAt      *time.Time                  `json:"endedAt,omitempty"`
+	ID               string                      `json:"id"`
+	Subject          *string                     `json:"subject,omitempty"`
+	Status           constant.ConversationStatus `json:"status"`
+	Priority         int                         `json:"priority"`
+	Participants     []*Participant              `json:"participants"`
+	ParticipantCount int                         `json:"participantCount"`
+	Messages         *MessageConnection          `json:"messages"`
+	CreatedAt        time.Time                   `json:"createdAt"`
+	UpdatedAt        time.Time                   `json:"updatedAt"`
+	EndedAt          *time.Time                  `json:"endedAt,omitempty"`
 }
 
 func (Conversation) IsEntity() {}

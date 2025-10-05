@@ -342,6 +342,7 @@ tasks:
   supergraph:
     desc: Compose Apollo Federation supergraph schema and generate frontend code
     cmds:
+      - task: graphql
       - bash ./scripts/compose-supergraph.sh
       - cd frontend && pnpm codegen
       - task: deps
@@ -351,12 +352,13 @@ tasks:
     cmds:
       - task: supergraph
       - bash ./scripts/build.sh --no-cache graphql-gateway
-      - docker compose -f {{.GRAPHQL_GATEWAY_DC_FILE}} up -d --force-recreate
+      - docker compose -f {{.INFRA_DC_FILE}} up -d --force-recreate graphql-gateway graphql-gateway-consul-sidecar
 
   stop_graphql:
     desc: Stop GraphQL Gateway
     cmds:
-      - docker compose -f {{.GRAPHQL_GATEWAY_DC_FILE}} down
+      - docker compose -f {{.INFRA_DC_FILE}} stop graphql-gateway graphql-gateway-consul-sidecar
+      - docker compose -f {{.INFRA_DC_FILE}} rm -f graphql-gateway graphql-gateway-consul-sidecar
 
   restart_graphql:
     desc: Restart GraphQL Gateway

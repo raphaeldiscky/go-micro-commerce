@@ -1,11 +1,12 @@
 import { queryKeys } from '@/constants/query-key'
+import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
+import { useUser } from '@/hooks/auth/useAuth'
 import type { PresenceUpdate } from '@/lib/api'
-import { updatePresence } from '@/lib/api'
 import { ONLINE_USERS_QUERY, graphqlClient } from '@/lib/graphql'
-import { generateTimestamp } from '@/lib/utils/date'
 import type { User } from '@/types/__generated__/graphql'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useState } from 'react'
+import { generateTimestamp } from '../../lib/utils/date'
 
 interface OnlineUsersQueryResponse {
   onlineUsers: Array<User>
@@ -18,6 +19,8 @@ export function usePresence() {
   const [currentStatus, setCurrentStatus] =
     useState<PresenceUpdate['status']>('online')
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
+  const { sendMessage, isConnected } = useChatWebSocket()
+  const user = useUser()
 
   // Query for online users
   const { data: onlineUsersList, refetch: refetchOnlineUsers } = useQuery({
@@ -33,30 +36,25 @@ export function usePresence() {
     staleTime: 15 * 1000, // Consider stale after 15 seconds
   })
 
-  // Mutation for updating presence
-  const updatePresenceMutation = useMutation({
-    mutationFn: (presence: PresenceUpdate) => updatePresence(presence),
-    onError: (error) => {
-      console.error('Failed to update presence:', error)
-    },
-    onSuccess: (_, variables) => {
-      setCurrentStatus(variables.status)
-    },
-  })
-
   /**
    * Update user's presence status
    */
   const setPresenceStatus = useCallback(
     (status: PresenceUpdate['status']) => {
-      const presenceUpdate: PresenceUpdate = {
-        last_seen: status === 'offline' ? generateTimestamp() : undefined,
-        status,
-      }
+      if (!isConnected || !user) return
 
-      updatePresenceMutation.mutate(presenceUpdate)
+      sendMessage({
+        type: 'presence',
+        content: {
+          user_id: user.id,
+          status,
+          event: 'status_change',
+        },
+      })
+
+      setCurrentStatus(status)
     },
-    [updatePresenceMutation],
+    [sendMessage, isConnected, user],
   )
 
   /**
@@ -98,7 +96,7 @@ export function usePresence() {
   useEffect(() => {
     if (onlineUsersList && Array.isArray(onlineUsersList)) {
       // Extract user IDs from User objects
-      const userIds = onlineUsersList.map((user) => user.id)
+      const userIds = onlineUsersList.map((u) => u.id)
       setOnlineUsers(new Set(userIds))
     } else {
       // Handle case where API might return wrapped data or different format
@@ -146,7 +144,6 @@ export function usePresence() {
   return {
     addOnlineUser,
     currentStatus,
-    isUpdating: updatePresenceMutation.isPending,
     isUserOnline,
     onlineUsers: Array.from(onlineUsers),
     refetchOnlineUsers,

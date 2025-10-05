@@ -1,43 +1,46 @@
+/**
+ * WebSocket and Real-time Event Types
+ * These are used for WebSocket connections and real-time features
+ * Historical data queries use GraphQL (see @/lib/graphql/chat.ts)
+ *
+ * NOTE: WebSocket connection uses JWT directly (not ticket-based)
+ * - Request node address via GraphQL: requestChatConnection
+ * - Connect with: ws://${nodeAddress}/v1/ws?token=${jwt}&conversation_id=${id}
+ */
+
+export interface PresenceUpdate {
+  last_seen?: string
+  status: 'away' | 'busy' | 'offline' | 'online'
+}
+
+export interface SendMessageRequest {
+  content: string
+  message_type?: 'file' | 'image' | 'text'
+  reply_to_id?: string
+}
+
+export interface TypingIndicator {
+  is_typing: boolean
+  timestamp: string
+  user_id: string
+  username: string
+}
+
+// REST Message type (for WebSocket sendMessage response)
+export interface MessageResponse {
+  content: string
+  conversation_id: string
+  created_at: string
+  id: string
+  message_type: 'file' | 'image' | 'system' | 'text'
+  sender_id: string
+  updated_at: string
+}
+
 export interface ApiErrorResponse {
   errors?: Array<{ field: string; message: string }>
   message: string
 }
-
-// Universal Links structure matching backend dto.Links
-export interface PaginationLinks {
-  self: string
-  first: string
-  prev: string
-  next: string
-  last: string
-}
-
-// Universal Pagination metadata matching backend dto.PageMetaData
-export interface PaginationInfo {
-  page: number
-  size: number
-  total_item: number
-  total_page: number
-  links: PaginationLinks
-}
-
-// Universal WebResponse matching backend dto.WebResponse[T]
-export interface WebResponse<T> {
-  message: string
-  data: T
-  pagination?: PaginationInfo | null
-}
-
-// Paginated response type (when pagination is always present)
-export interface PaginatedWebResponse<T> {
-  message: string
-  data: Array<T>
-  pagination: PaginationInfo
-}
-
-// Backward compatibility aliases
-export interface ApiPaginatedResponse<T> extends PaginatedWebResponse<T> {}
-export type ApiSuccessResponse<T> = WebResponse<T>
 
 export class ApiError extends Error {
   public readonly status?: number

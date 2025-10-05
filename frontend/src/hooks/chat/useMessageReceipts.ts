@@ -1,39 +1,32 @@
-import { sendDeliveryReceipt, sendReadReceipt } from '@/lib/api'
-import { useMutation } from '@tanstack/react-query'
+import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
+import { useUser } from '@/hooks/auth/useAuth'
 import { useCallback } from 'react'
 
 /**
  * Hook for managing message receipts
  */
 export function useMessageReceipts(conversationId: string) {
-  // Mutation for delivery receipts
-  const deliveryReceiptMutation = useMutation({
-    mutationFn: ({ messageId }: { messageId: string }) =>
-      sendDeliveryReceipt(conversationId, messageId),
-    onError: (error) => {
-      console.error('Failed to send delivery receipt:', error)
-    },
-  })
-
-  // Mutation for read receipts
-  // Note: GraphQL Message type doesn't have delivery_status field
-  // Message status updates are handled through WebSocket events
-  const readReceiptMutation = useMutation({
-    mutationFn: ({ messageId }: { messageId: string }) =>
-      sendReadReceipt(conversationId, messageId),
-    onError: (error) => {
-      console.error('Failed to send read receipt:', error)
-    },
-  })
+  const { sendMessage, isConnected } = useChatWebSocket()
+  const user = useUser()
 
   /**
    * Send delivery receipt for a message
    */
   const markAsDelivered = useCallback(
     (messageId: string) => {
-      deliveryReceiptMutation.mutate({ messageId })
+      if (!isConnected || !user) return
+
+      sendMessage({
+        type: 'delivery_receipt',
+        content: {
+          message_id: messageId,
+          conversation_id: conversationId,
+          recipient_id: user.id,
+          delivered_at: Math.floor(Date.now() / 1000),
+        },
+      })
     },
-    [deliveryReceiptMutation],
+    [sendMessage, isConnected, conversationId, user],
   )
 
   /**
@@ -41,9 +34,19 @@ export function useMessageReceipts(conversationId: string) {
    */
   const markAsRead = useCallback(
     (messageId: string) => {
-      readReceiptMutation.mutate({ messageId })
+      if (!isConnected || !user) return
+
+      sendMessage({
+        type: 'read_receipt',
+        content: {
+          message_id: messageId,
+          conversation_id: conversationId,
+          reader_id: user.id,
+          read_at: Math.floor(Date.now() / 1000),
+        },
+      })
     },
-    [readReceiptMutation],
+    [sendMessage, isConnected, conversationId, user],
   )
 
   /**
@@ -52,10 +55,10 @@ export function useMessageReceipts(conversationId: string) {
   const markMultipleAsRead = useCallback(
     (messageIds: Array<string>) => {
       messageIds.forEach((messageId) => {
-        readReceiptMutation.mutate({ messageId })
+        markAsRead(messageId)
       })
     },
-    [readReceiptMutation],
+    [markAsRead],
   )
 
   /**
@@ -72,8 +75,6 @@ export function useMessageReceipts(conversationId: string) {
   )
 
   return {
-    isMarkingDelivered: deliveryReceiptMutation.isPending,
-    isMarkingRead: readReceiptMutation.isPending,
     markAsDelivered,
     markAsRead,
     markMultipleAsRead,

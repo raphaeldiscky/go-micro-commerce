@@ -10,6 +10,7 @@ export const CONVERSATIONS_QUERY = gql`
       subject
       status
       priority
+      participantCount
       createdAt
       updatedAt
       endedAt
@@ -142,6 +143,19 @@ export const JOIN_CONVERSATION_MUTATION = gql`
       joinedAt
       leftAt
       isActive
+    }
+  }
+`
+
+/**
+ * Request chat connection (returns WebSocket node address)
+ */
+export const REQUEST_CHAT_CONNECTION_MUTATION = gql`
+  mutation RequestChatConnection {
+    requestChatConnection {
+      nodeAddress
+      userId
+      userType
     }
   }
 `

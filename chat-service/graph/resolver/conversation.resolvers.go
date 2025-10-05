@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/uuid"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
@@ -22,7 +24,7 @@ func (r *mutationResolver) CreateConversation(
 	input graph.CreateConversationInput,
 ) (*graph.Conversation, error) {
 	// Get user ID from context (set by auth middleware)
-	userID, ok := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")
 	}
@@ -88,7 +90,7 @@ func (r *mutationResolver) AssignConversationToAdmin(
 // Conversation is the resolver for the conversation field.
 func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Conversation, error) {
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")
 	}
@@ -110,7 +112,7 @@ func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Con
 // Conversations is the resolver for the conversations field.
 func (r *queryResolver) Conversations(ctx context.Context) ([]*graph.Conversation, error) {
 	// Get user ID from context
-	userID, ok := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")
 	}
