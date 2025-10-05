@@ -1,9 +1,13 @@
+// Package subscription provides GraphQL subscription infrastructure for bridging webSocket events to GraphQL subscriptions over graphql-transport-ws protocol.
 package subscription
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
@@ -13,18 +17,26 @@ import (
 )
 
 // EventConverter converts WebSocket messages to GraphQL subscription events.
-type EventConverter struct{}
+type EventConverter struct {
+	logger logger.Logger
+}
 
 // NewEventConverter creates a new event converter.
-func NewEventConverter() *EventConverter {
-	return &EventConverter{}
+func NewEventConverter(logger logger.Logger) *EventConverter {
+	return &EventConverter{
+		logger: logger,
+	}
 }
 
 // ToConversationEvent converts a WebSocket message to a GraphQL ConversationEvent.
-func (c *EventConverter) ToConversationEvent(msg *pkgwebsocket.Message) (graph.ConversationEvent, error) {
+func (c *EventConverter) ToConversationEvent(
+	msg *pkgwebsocket.Message,
+) (graph.ConversationEvent, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("message is nil")
+		return nil, errors.New("message is nil")
 	}
+
+	var err error
 
 	switch msg.Type {
 	case websocket.ChatMessageTypeChat:
@@ -35,24 +47,35 @@ func (c *EventConverter) ToConversationEvent(msg *pkgwebsocket.Message) (graph.C
 		return c.convertToDeliveryReceipt(msg)
 	case websocket.ChatMessageTypeReadReceipt:
 		return c.convertToReadReceipt(msg)
+	case websocket.ChatMessageTypeHeartbeat,
+		websocket.ChatMessageTypeError,
+		websocket.ChatMessageTypeSystem:
+		c.logger.Warnf("unsupported message type: %s", msg.Type)
+		return nil, err
 	default:
-		// Not a conversation event, return nil
-		return nil, nil
+		return nil, err
 	}
 }
 
 // ToUserEvent converts a WebSocket message to a GraphQL UserEvent.
 func (c *EventConverter) ToUserEvent(msg *pkgwebsocket.Message) (graph.UserEvent, error) {
 	if msg == nil {
-		return nil, fmt.Errorf("message is nil")
+		return nil, errors.New("message is nil")
 	}
+
+	var err error
 
 	switch msg.Type {
 	case websocket.ChatMessageTypePresence:
 		return c.convertToPresenceUpdate(msg)
+	case websocket.ChatMessageTypeChat, websocket.ChatMessageTypeTyping,
+		websocket.ChatMessageTypeDeliveryReceipt, websocket.ChatMessageTypeReadReceipt,
+		websocket.ChatMessageTypeHeartbeat, websocket.ChatMessageTypeError,
+		websocket.ChatMessageTypeSystem:
+		c.logger.Warnf("unsupported message type: %s", msg.Type)
+		return nil, err
 	default:
-		// Not a user event, return nil
-		return nil, nil
+		return nil, err
 	}
 }
 
@@ -64,30 +87,35 @@ func (c *EventConverter) convertToNewMessage(msg *pkgwebsocket.Message) (*graph.
 	}
 
 	// Extract conversation ID from channel (format: "conversation:{uuid}")
-	conversationID := extractUUIDFromChannel(msg.Channel)
-
-	// Convert MessageType enum to uppercase for GraphQL
-	messageType := constant.MessageType(content.MessageType)
+	var conversationID string
+	if msg.Channel != nil {
+		conversationID = extractUUIDFromChannel(*msg.Channel)
+	}
 
 	return &graph.NewMessage{
-		ID:             msg.ID,
+		ID:             msg.ID.String(),
 		ConversationID: conversationID,
 		SenderID:       msg.SenderID.String(),
 		Content:        content.Text,
-		MessageType:    messageType,
+		MessageType:    content.MessageType,
 		IsSystem:       content.MessageType == constant.MessageTypeSystem,
 		CreatedAt:      msg.Timestamp,
 	}, nil
 }
 
 // convertToTypingIndicator converts a typing message to TypingIndicator GraphQL type.
-func (c *EventConverter) convertToTypingIndicator(msg *pkgwebsocket.Message) (*graph.TypingIndicator, error) {
+func (c *EventConverter) convertToTypingIndicator(
+	msg *pkgwebsocket.Message,
+) (*graph.TypingIndicator, error) {
 	var content websocket.TypingContent
 	if err := c.unmarshalContent(msg.Content, &content); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal typing content: %w", err)
 	}
 
-	conversationID := extractUUIDFromChannel(msg.Channel)
+	var conversationID string
+	if msg.Channel != nil {
+		conversationID = extractUUIDFromChannel(*msg.Channel)
+	}
 
 	return &graph.TypingIndicator{
 		UserID:         msg.SenderID.String(),
@@ -98,7 +126,9 @@ func (c *EventConverter) convertToTypingIndicator(msg *pkgwebsocket.Message) (*g
 }
 
 // convertToDeliveryReceipt converts a delivery receipt message to DeliveryReceipt GraphQL type.
-func (c *EventConverter) convertToDeliveryReceipt(msg *pkgwebsocket.Message) (*graph.DeliveryReceipt, error) {
+func (c *EventConverter) convertToDeliveryReceipt(
+	msg *pkgwebsocket.Message,
+) (*graph.DeliveryReceipt, error) {
 	var content websocket.DeliveryReceiptContent
 	if err := c.unmarshalContent(msg.Content, &content); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal delivery receipt content: %w", err)
@@ -113,7 +143,9 @@ func (c *EventConverter) convertToDeliveryReceipt(msg *pkgwebsocket.Message) (*g
 }
 
 // convertToReadReceipt converts a read receipt message to ReadReceipt GraphQL type.
-func (c *EventConverter) convertToReadReceipt(msg *pkgwebsocket.Message) (*graph.ReadReceipt, error) {
+func (c *EventConverter) convertToReadReceipt(
+	msg *pkgwebsocket.Message,
+) (*graph.ReadReceipt, error) {
 	var content websocket.ReadReceiptContent
 	if err := c.unmarshalContent(msg.Content, &content); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal read receipt content: %w", err)
@@ -128,26 +160,16 @@ func (c *EventConverter) convertToReadReceipt(msg *pkgwebsocket.Message) (*graph
 }
 
 // convertToPresenceUpdate converts a presence message to PresenceUpdate GraphQL type.
-func (c *EventConverter) convertToPresenceUpdate(msg *pkgwebsocket.Message) (*graph.PresenceUpdate, error) {
+func (c *EventConverter) convertToPresenceUpdate(
+	msg *pkgwebsocket.Message,
+) (*graph.PresenceUpdate, error) {
 	var content websocket.PresenceContent
 	if err := c.unmarshalContent(msg.Content, &content); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal presence content: %w", err)
 	}
 
-	// Convert presence status to GraphQL enum
-	var status graph.PresenceStatus
-	switch content.Status {
-	case constant.PresenceStatusOnline:
-		status = graph.PresenceStatusOnline
-	case constant.PresenceStatusAway:
-		status = graph.PresenceStatusAway
-	case constant.PresenceStatusBusy:
-		status = graph.PresenceStatusBusy
-	case constant.PresenceStatusOffline:
-		status = graph.PresenceStatusOffline
-	default:
-		status = graph.PresenceStatusOffline
-	}
+	// Status is already the same type - no conversion needed
+	status := content.Status
 
 	// LastSeen is optional
 	var lastSeen *time.Time
@@ -172,6 +194,7 @@ func (c *EventConverter) unmarshalContent(content any, target any) error {
 		if err != nil {
 			return err
 		}
+
 		return json.Unmarshal(data, target)
 	case []byte:
 		return json.Unmarshal(v, target)
@@ -183,6 +206,7 @@ func (c *EventConverter) unmarshalContent(content any, target any) error {
 		if err != nil {
 			return err
 		}
+
 		return json.Unmarshal(data, target)
 	}
 }
@@ -198,5 +222,6 @@ func extractUUIDFromChannel(channel string) string {
 			}
 		}
 	}
+
 	return channel
 }

@@ -40,15 +40,16 @@ type ConnectionFilter func(Connection) bool
 
 // BaseHub provides a base implementation of the Hub interface.
 type BaseHub struct {
-	connections map[uuid.UUID]Connection               // All connections by ID
-	userConns   map[uuid.UUID]map[uuid.UUID]Connection // User connections by user ID
-	channels    map[string]map[uuid.UUID]Connection    // Channel connections by channel name
-	register    chan Connection
-	unregister  chan Connection
-	broadcast   chan *BroadcastRequest
-	mutex       sync.RWMutex
-	logger      logger.Logger
-	done        chan struct{}
+	connections        map[uuid.UUID]Connection               // All connections by ID
+	userConns          map[uuid.UUID]map[uuid.UUID]Connection // User connections by user ID
+	channels           map[string]map[uuid.UUID]Connection    // Channel connections by channel name
+	channelSubscribers map[string]map[string]chan<- *Message  // External channel subscribers (for GraphQL subscriptions)
+	register           chan Connection
+	unregister         chan Connection
+	broadcast          chan *BroadcastRequest
+	mutex              sync.RWMutex
+	logger             logger.Logger
+	done               chan struct{}
 }
 
 // BroadcastRequest represents a request to broadcast a message.
@@ -60,14 +61,15 @@ type BroadcastRequest struct {
 // NewBaseHub creates a new base hub instance.
 func NewBaseHub(logger logger.Logger) *BaseHub {
 	return &BaseHub{
-		connections: make(map[uuid.UUID]Connection),
-		userConns:   make(map[uuid.UUID]map[uuid.UUID]Connection),
-		channels:    make(map[string]map[uuid.UUID]Connection),
-		register:    make(chan Connection),
-		unregister:  make(chan Connection),
-		broadcast:   make(chan *BroadcastRequest),
-		logger:      logger,
-		done:        make(chan struct{}),
+		connections:        make(map[uuid.UUID]Connection),
+		userConns:          make(map[uuid.UUID]map[uuid.UUID]Connection),
+		channels:           make(map[string]map[uuid.UUID]Connection),
+		channelSubscribers: make(map[string]map[string]chan<- *Message),
+		register:           make(chan Connection),
+		unregister:         make(chan Connection),
+		broadcast:          make(chan *BroadcastRequest),
+		logger:             logger,
+		done:               make(chan struct{}),
 	}
 }
 
@@ -120,6 +122,44 @@ func (h *BaseHub) BroadcastToUser(userID uuid.UUID, message *Message) error {
 	}
 
 	return h.Broadcast(message, filter)
+}
+
+// SubscribeToChannel registers an external message channel to receive all broadcasts to a specific channel.
+// This is primarily used for GraphQL subscriptions to bridge WebSocket events.
+// Returns an unsubscribe function to remove the subscription.
+func (h *BaseHub) SubscribeToChannel(channelName string, messageChan chan<- *Message) func() {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	subID := uuid.New().String()
+
+	if h.channelSubscribers[channelName] == nil {
+		h.channelSubscribers[channelName] = make(map[string]chan<- *Message)
+	}
+
+	h.channelSubscribers[channelName][subID] = messageChan
+
+	h.logger.Info("Channel subscriber added",
+		"channel", channelName,
+		"subscriber_id", subID)
+
+	// Return unsubscribe function
+	return func() {
+		h.mutex.Lock()
+		defer h.mutex.Unlock()
+
+		if subs, exists := h.channelSubscribers[channelName]; exists {
+			delete(subs, subID)
+
+			if len(subs) == 0 {
+				delete(h.channelSubscribers, channelName)
+			}
+		}
+
+		h.logger.Info("Channel subscriber removed",
+			"channel", channelName,
+			"subscriber_id", subID)
+	}
 }
 
 // GetConnection retrieves a connection by ID.
@@ -308,6 +348,23 @@ func (h *BaseHub) handleBroadcast(request *BroadcastRequest) {
 				"error", err)
 		} else {
 			sentCount++
+		}
+	}
+
+	// Forward to channel subscribers if message has a channel
+	if request.Message.Channel != nil {
+		channelName := *request.Message.Channel
+		if subscribers, exists := h.channelSubscribers[channelName]; exists {
+			for subID, subChan := range subscribers {
+				select {
+				case subChan <- request.Message:
+					sentCount++
+				default:
+					h.logger.Warn("Channel subscriber full, dropping message",
+						"channel", channelName,
+						"subscriber_id", subID)
+				}
+			}
 		}
 	}
 

@@ -6,9 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
@@ -24,14 +26,12 @@ type Manager struct {
 
 // conversationSubscription represents a subscription to conversation events.
 type conversationSubscription struct {
-	conversationID uuid.UUID
-	subscribers    map[string]chan<- graph.ConversationEvent
-	mu             sync.RWMutex
+	subscribers map[string]chan<- graph.ConversationEvent
+	mu          sync.RWMutex
 }
 
 // userSubscription represents a subscription to user events.
 type userSubscription struct {
-	userID      uuid.UUID
 	subscribers map[string]chan<- graph.UserEvent
 	mu          sync.RWMutex
 }
@@ -43,7 +43,7 @@ func NewManager(hub *websocket.ChatHub, logger logger.Logger) *Manager {
 		subscriptions:  make(map[string]*conversationSubscription),
 		userSubs:       make(map[uuid.UUID]*userSubscription),
 		hub:            hub,
-		eventConverter: NewEventConverter(),
+		eventConverter: NewEventConverter(logger),
 	}
 }
 
@@ -53,21 +53,22 @@ func (m *Manager) SubscribeToConversation(
 	conversationID uuid.UUID,
 ) (<-chan graph.ConversationEvent, error) {
 	// Create channel for GraphQL subscription
-	ch := make(chan graph.ConversationEvent, 10)
+	ch := make(chan graph.ConversationEvent, constant.SubscriptionChannelBufferSize)
 	subID := uuid.New().String()
 
 	m.mu.Lock()
+
 	convSub, exists := m.subscriptions[conversationID.String()]
 	if !exists {
 		convSub = &conversationSubscription{
-			conversationID: conversationID,
-			subscribers:    make(map[string]chan<- graph.ConversationEvent),
+			subscribers: make(map[string]chan<- graph.ConversationEvent),
 		}
 		m.subscriptions[conversationID.String()] = convSub
 
 		// Start listening to ChatHub for this conversation
 		go m.listenToConversation(conversationID, convSub)
 	}
+
 	m.mu.Unlock()
 
 	// Add this subscriber
@@ -91,14 +92,14 @@ func (m *Manager) SubscribeToUserEvents(
 	userID uuid.UUID,
 ) (<-chan graph.UserEvent, error) {
 	// Create channel for GraphQL subscription
-	ch := make(chan graph.UserEvent, 10)
+	ch := make(chan graph.UserEvent, constant.SubscriptionChannelBufferSize)
 	subID := uuid.New().String()
 
 	m.mu.Lock()
+
 	userSub, exists := m.userSubs[userID]
 	if !exists {
 		userSub = &userSubscription{
-			userID:      userID,
 			subscribers: make(map[string]chan<- graph.UserEvent),
 		}
 		m.userSubs[userID] = userSub
@@ -106,6 +107,7 @@ func (m *Manager) SubscribeToUserEvents(
 		// Start listening to ChatHub for this user
 		go m.listenToUser(userID, userSub)
 	}
+
 	m.mu.Unlock()
 
 	// Add this subscriber
@@ -124,10 +126,13 @@ func (m *Manager) SubscribeToUserEvents(
 }
 
 // listenToConversation listens to ChatHub events for a conversation and forwards to subscribers.
-func (m *Manager) listenToConversation(conversationID uuid.UUID, convSub *conversationSubscription) {
+func (m *Manager) listenToConversation(
+	conversationID uuid.UUID,
+	convSub *conversationSubscription,
+) {
 	// Subscribe to ChatHub conversation channel
 	channelName := websocket.ConversationChannel(conversationID)
-	messageChan := make(chan *pkgwebsocket.Message, 100)
+	messageChan := make(chan *pkgwebsocket.Message, constant.SubscriptionMessageChannelBufferSize)
 
 	// Register this channel with the hub to receive messages
 	// Note: This requires adding SubscribeToChannel method to BaseHub
@@ -141,6 +146,7 @@ func (m *Manager) listenToConversation(conversationID uuid.UUID, convSub *conver
 			m.logger.Error("Failed to convert message to GraphQL event",
 				"error", err,
 				"conversation_id", conversationID)
+
 			continue
 		}
 
@@ -151,6 +157,7 @@ func (m *Manager) listenToConversation(conversationID uuid.UUID, convSub *conver
 
 		// Broadcast to all subscribers
 		convSub.mu.RLock()
+
 		for _, sub := range convSub.subscribers {
 			select {
 			case sub <- event:
@@ -158,6 +165,7 @@ func (m *Manager) listenToConversation(conversationID uuid.UUID, convSub *conver
 				m.logger.Warn("Subscriber channel full, dropping message")
 			}
 		}
+
 		convSub.mu.RUnlock()
 	}
 }
@@ -166,7 +174,7 @@ func (m *Manager) listenToConversation(conversationID uuid.UUID, convSub *conver
 func (m *Manager) listenToUser(userID uuid.UUID, userSub *userSubscription) {
 	// Subscribe to ChatHub user channel
 	channelName := websocket.UserChannel(userID)
-	messageChan := make(chan *pkgwebsocket.Message, 100)
+	messageChan := make(chan *pkgwebsocket.Message, constant.SubscriptionMessageChannelBufferSize)
 
 	// Register this channel with the hub
 	unsubscribe := m.hub.SubscribeToChannel(channelName, messageChan)
@@ -179,6 +187,7 @@ func (m *Manager) listenToUser(userID uuid.UUID, userSub *userSubscription) {
 			m.logger.Error("Failed to convert message to GraphQL user event",
 				"error", err,
 				"user_id", userID)
+
 			continue
 		}
 
@@ -189,6 +198,7 @@ func (m *Manager) listenToUser(userID uuid.UUID, userSub *userSubscription) {
 
 		// Broadcast to all subscribers
 		userSub.mu.RLock()
+
 		for _, sub := range userSub.subscribers {
 			select {
 			case sub <- event:
@@ -196,6 +206,7 @@ func (m *Manager) listenToUser(userID uuid.UUID, userSub *userSubscription) {
 				m.logger.Warn("Subscriber channel full, dropping message")
 			}
 		}
+
 		userSub.mu.RUnlock()
 	}
 }

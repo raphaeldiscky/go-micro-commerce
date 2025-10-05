@@ -6,19 +6,59 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // ConversationEvents is the resolver for the conversationEvents field.
 func (r *subscriptionResolver) ConversationEvents(ctx context.Context, conversationID string) (<-chan graph.ConversationEvent, error) {
-	panic(fmt.Errorf("not implemented: ConversationEvents - conversationEvents"))
+	// Validate conversation ID
+	convID, err := uuid.Parse(conversationID)
+	if err != nil {
+		return nil, httperror.NewBadRequestError("invalid conversation ID")
+	}
+
+	// Subscribe to conversation events via the manager
+	eventChan, err := r.subscriptionManager.SubscribeToConversation(ctx, convID)
+	if err != nil {
+		r.logger.Error("Failed to subscribe to conversation events",
+			"error", err,
+			"conversation_id", conversationID)
+
+		return nil, err
+	}
+
+	r.logger.Info("GraphQL subscription started for conversation",
+		"conversation_id", conversationID)
+
+	return eventChan, nil
 }
 
 // UserEvents is the resolver for the userEvents field.
 func (r *subscriptionResolver) UserEvents(ctx context.Context) (<-chan graph.UserEvent, error) {
-	panic(fmt.Errorf("not implemented: UserEvents - userEvents"))
+	// Get authenticated user ID from context
+	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
+	if !ok {
+		return nil, httperror.NewUnauthorizedError("user not authenticated")
+	}
+
+	// Subscribe to user events via the manager
+	eventChan, err := r.subscriptionManager.SubscribeToUserEvents(ctx, userID)
+	if err != nil {
+		r.logger.Error("Failed to subscribe to user events",
+			"error", err,
+			"user_id", userID)
+
+		return nil, err
+	}
+
+	r.logger.Info("GraphQL subscription started for user events",
+		"user_id", userID)
+
+	return eventChan, nil
 }
 
 // Subscription returns graph.SubscriptionResolver implementation.

@@ -5,6 +5,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/subscription"
 )
 
 // This file will not be regenerated automatically.
@@ -13,20 +14,23 @@ import (
 
 // Resolver is the root resolver for GraphQL queries and mutations.
 type Resolver struct {
-	chatService       service.ChatService
-	connectionService service.ConnectionService
-	logger            logger.Logger
+	chatService         service.ChatService
+	connectionService   service.ConnectionService
+	subscriptionManager *subscription.Manager
+	logger              logger.Logger
 }
 
 // NewResolver creates a new GraphQL resolver instance with the required dependencies.
 func NewResolver(
 	chatService service.ChatService,
 	connectionService service.ConnectionService,
+	subscriptionManager *subscription.Manager,
 	appLogger logger.Logger,
 ) *Resolver {
 	return &Resolver{
-		chatService:       chatService,
-		connectionService: connectionService,
-		logger:            appLogger,
+		chatService:         chatService,
+		connectionService:   connectionService,
+		subscriptionManager: subscriptionManager,
+		logger:              appLogger,
 	}
 }

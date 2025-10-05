@@ -15,6 +15,9 @@ const (
 	ChatMessageTypePresence        pkgwebsocket.MessageType = "presence"
 	ChatMessageTypeDeliveryReceipt pkgwebsocket.MessageType = "delivery_receipt"
 	ChatMessageTypeReadReceipt     pkgwebsocket.MessageType = "read_receipt"
+	ChatMessageTypeSystem          pkgwebsocket.MessageType = "system"
+	ChatMessageTypeError           pkgwebsocket.MessageType = "error"
+	ChatMessageTypeHeartbeat       pkgwebsocket.MessageType = "heartbeat"
 )
 
 // MessageMetadata represents structured metadata for messages.

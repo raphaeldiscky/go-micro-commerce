@@ -11,6 +11,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/subscription"
 )
 
 // SetupChat initializes the chat-related routes and services.
@@ -56,8 +57,16 @@ func SetupChat(
 	chatHandler := handler.NewChatHandler(chatService, hub, appLogger)
 	connectionHandler := handler.NewConnectionHandler(connectionService, appLogger)
 
+	// Create subscription manager for GraphQL subscriptions
+	subscriptionManager := subscription.NewManager(hub, appLogger)
+
 	// Create GraphQL resolver
-	graphqlResolver := resolver.NewResolver(chatService, connectionService, appLogger)
+	graphqlResolver := resolver.NewResolver(
+		chatService,
+		connectionService,
+		subscriptionManager,
+		appLogger,
+	)
 
 	// Setup routes
 	routes.SetupChatRoutes(e, chatHandler, connectionHandler)
