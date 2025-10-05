@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/hashicorp/consul/api"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -125,35 +124,27 @@ func (s *connectionService) ValidateAuthToken(
 	_ context.Context,
 	token string,
 ) (*dto.AuthTokenClaims, error) {
-	jwtToken, err := jwt.ParseWithClaims(
-		token,
-		&dto.AuthTokenClaims{},
-		func(jwtToken *jwt.Token) (any, error) {
-			// Verify the signing method
-			if _, ok := jwtToken.Method.(*jwt.SigningMethodRSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", jwtToken.Header["alg"])
-			}
-
-			// Get public key from jwtUtils (supports JWKS with caching)
-			return s.jwtUtils.GetPublicKey(), nil
-		},
-	)
+	// Use jwtUtils to validate the token (supports JWKS with caching)
+	claims, err := s.jwtUtils.ValidateAccessToken(token)
 	if err != nil {
 		s.logger.Warn("Invalid auth token", "error", err)
 		return nil, httperror.NewUnauthorizedError("invalid auth token")
 	}
 
-	claims, ok := jwtToken.Claims.(*dto.AuthTokenClaims)
-	if !ok || !jwtToken.Valid {
-		s.logger.Warn("Invalid auth token claims")
-		return nil, httperror.NewUnauthorizedError("invalid auth token claims")
+	// Map jwtutils.AccessTokenClaims to dto.AuthTokenClaims
+	authClaims := &dto.AuthTokenClaims{
+		RegisteredClaims: claims.RegisteredClaims,
+		UserID:           claims.UserID,
+		Email:            claims.Email,
+		Roles:            claims.Roles,
+		IsActive:         claims.IsActive,
 	}
 
 	s.logger.Info("Successfully validated auth token",
-		"user_id", claims.UserID,
-		"email", claims.Email)
+		"user_id", authClaims.UserID,
+		"email", authClaims.Email)
 
-	return claims, nil
+	return authClaims, nil
 }
 
 // GetNodeHealth returns health status of available chat nodes.

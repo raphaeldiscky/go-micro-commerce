@@ -23,7 +23,7 @@ type JWT interface {
 	GenerateAccessToken(userID, email string, roles []string, isActive bool) (string, error)
 	GenerateRefreshToken(userID string) (string, error)
 	ValidateRefreshToken(tokenString string) (*refreshTokenClaims, error)
-	ValidateAccessToken(tokenString string) (*accessTokenClaims, error)
+	ValidateAccessToken(tokenString string) (*AccessTokenClaims, error)
 	GetExpirationTime(tokenString string) (int64, error)
 	GetPublicKey() *rsa.PublicKey
 }
@@ -36,8 +36,8 @@ type refreshTokenClaims struct {
 	Type   string `json:"type"`
 }
 
-// accessTokenClaims represents the claims in an access token.
-type accessTokenClaims struct {
+// AccessTokenClaims represents the claims in an access token.
+type AccessTokenClaims struct {
 	jwt.RegisteredClaims
 
 	UserID   string   `json:"user_id"`
@@ -118,7 +118,7 @@ func NewJWTUtils(cfg *config.JWTConfig, logger logger.Logger) JWT {
 	}
 }
 
-// loadPrivateKey loads an RSA private key from a PEM file.
+// loadPrivateKey loads an RSA private key from a PEM file in PKCS8 format.
 func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
 	keyData, err := os.ReadFile(filepath.Clean(path))
 	if err != nil {
@@ -130,12 +130,17 @@ func loadPrivateKey(path string) (*rsa.PrivateKey, error) {
 		return nil, errors.New("failed to decode PEM block containing private key")
 	}
 
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return privateKey, nil
+	rsaKey, ok := key.(*rsa.PrivateKey)
+	if !ok {
+		return nil, errors.New("not an RSA private key")
+	}
+
+	return rsaKey, nil
 }
 
 // loadPublicKey loads an RSA public key from a PEM file.
@@ -171,7 +176,7 @@ func (j *jwtUtils) GenerateAccessToken(
 ) (string, error) {
 	now := time.Now()
 
-	claims := &accessTokenClaims{
+	claims := &AccessTokenClaims{
 		UserID:   userID,
 		Email:    email,
 		Roles:    roles,
@@ -219,7 +224,8 @@ func (j *jwtUtils) ValidateRefreshToken(tokenString string) (*refreshTokenClaims
 				return nil, errors.New("invalid signing method")
 			}
 
-			return j.publicKey, nil
+			// Use GetPublicKey() to leverage JWKS cache
+			return j.GetPublicKey(), nil
 		},
 	)
 	if err != nil {
@@ -240,23 +246,24 @@ func (j *jwtUtils) ValidateRefreshToken(tokenString string) (*refreshTokenClaims
 }
 
 // ValidateAccessToken validates and parses an access token.
-func (j *jwtUtils) ValidateAccessToken(tokenString string) (*accessTokenClaims, error) {
+func (j *jwtUtils) ValidateAccessToken(tokenString string) (*AccessTokenClaims, error) {
 	token, err := jwt.ParseWithClaims(
 		tokenString,
-		&accessTokenClaims{},
+		&AccessTokenClaims{},
 		func(token *jwt.Token) (any, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 				return nil, errors.New("invalid signing method")
 			}
 
-			return j.publicKey, nil
+			// Use GetPublicKey() to leverage JWKS cache
+			return j.GetPublicKey(), nil
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*accessTokenClaims)
+	claims, ok := token.Claims.(*AccessTokenClaims)
 	if !ok || !token.Valid {
 		j.logger.Warnf("Invalid access token: %v", err)
 		return nil, errors.New("invalid token")

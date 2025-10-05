@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -100,8 +101,10 @@ func (h *WebSocketHandler) createConnectionFromAuthToken(
 		"email", claims.Email,
 		"user_type", userType)
 
+	userID := uuid.MustParse(claims.UserID)
+
 	return chatwebsocket.NewChatConnection(
-		claims.UserID,
+		userID,
 		userType,
 		conn,
 		h.hub,

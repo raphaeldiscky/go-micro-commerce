@@ -39,10 +39,10 @@ type ChatConnectionResponse struct {
 type AuthTokenClaims struct {
 	jwt.RegisteredClaims
 
-	UserID   uuid.UUID `json:"user_id"`
-	Email    string    `json:"email"`
-	Roles    []string  `json:"roles"`
-	IsActive bool      `json:"is_active"`
+	UserID   string   `json:"user_id"`
+	Email    string   `json:"email"`
+	Roles    []string `json:"roles"`
+	IsActive bool     `json:"is_active"`
 }
 
 // NodeHealthResponse represents the health status of a chat node.

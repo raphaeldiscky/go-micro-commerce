@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS sessions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    refresh_token VARCHAR(500) UNIQUE NOT NULL,
+    refresh_token TEXT UNIQUE NOT NULL,
     is_active BOOLEAN DEFAULT true,
     ip_address INET,
     user_agent TEXT,
