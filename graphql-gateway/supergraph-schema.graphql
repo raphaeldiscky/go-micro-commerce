@@ -4,6 +4,7 @@ schema
 {
   query: Query
   mutation: Mutation
+  subscription: Subscription
 }
 
 directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
@@ -51,6 +52,14 @@ type Conversation
   endedAt: Time
 }
 
+union ConversationEvent
+  @join__type(graph: CHAT_SERVICE)
+  @join__unionMember(graph: CHAT_SERVICE, member: "NewMessage")
+  @join__unionMember(graph: CHAT_SERVICE, member: "TypingIndicator")
+  @join__unionMember(graph: CHAT_SERVICE, member: "DeliveryReceipt")
+  @join__unionMember(graph: CHAT_SERVICE, member: "ReadReceipt")
+ = NewMessage | TypingIndicator | DeliveryReceipt | ReadReceipt
+
 enum ConversationStatus
   @join__type(graph: CHAT_SERVICE)
 {
@@ -65,6 +74,15 @@ input CreateConversationInput
   subject: String
   priority: Int!
   initialMessage: String
+}
+
+type DeliveryReceipt
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+  recipientId: ID!
+  deliveredAt: Time!
 }
 
 scalar join__FieldSet
@@ -155,6 +173,18 @@ type Mutation
   leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
 }
 
+type NewMessage
+  @join__type(graph: CHAT_SERVICE)
+{
+  id: ID!
+  conversationId: ID!
+  senderId: ID!
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
 type OnlineStatus
   @join__type(graph: CHAT_SERVICE)
 {
@@ -194,6 +224,23 @@ enum ParticipantRole
   MODERATOR @join__enumValue(graph: CHAT_SERVICE)
 }
 
+enum PresenceStatus
+  @join__type(graph: CHAT_SERVICE)
+{
+  ONLINE @join__enumValue(graph: CHAT_SERVICE)
+  AWAY @join__enumValue(graph: CHAT_SERVICE)
+  BUSY @join__enumValue(graph: CHAT_SERVICE)
+  OFFLINE @join__enumValue(graph: CHAT_SERVICE)
+}
+
+type PresenceUpdate
+  @join__type(graph: CHAT_SERVICE)
+{
+  userId: ID!
+  status: PresenceStatus!
+  lastSeen: Time
+}
+
 type Query
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
@@ -208,6 +255,15 @@ type Query
   conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
 }
 
+type ReadReceipt
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+  readerId: ID!
+  readAt: Time!
+}
+
 input RegisterUserInput
   @join__type(graph: AUTH_SERVICE)
 {
@@ -218,9 +274,25 @@ input RegisterUserInput
   lastName: String!
 }
 
+type Subscription
+  @join__type(graph: CHAT_SERVICE)
+{
+  conversationEvents(conversationId: ID!): ConversationEvent!
+  userEvents: UserEvent!
+}
+
 scalar Time
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
+
+type TypingIndicator
+  @join__type(graph: CHAT_SERVICE)
+{
+  userId: ID!
+  conversationId: ID!
+  isTyping: Boolean!
+  timestamp: Time!
+}
 
 type User
   @join__type(graph: AUTH_SERVICE, key: "id")
@@ -237,6 +309,11 @@ type User
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   onlineStatus: OnlineStatus @join__field(graph: CHAT_SERVICE)
 }
+
+union UserEvent
+  @join__type(graph: CHAT_SERVICE)
+  @join__unionMember(graph: CHAT_SERVICE, member: "PresenceUpdate")
+ = PresenceUpdate
 
 enum UserType
   @join__type(graph: CHAT_SERVICE)

@@ -1,0 +1,70 @@
+# Real-time subscription types for chat events
+
+# Subscription root type
+type Subscription {
+  # Subscribe to conversation events (messages, typing, receipts)
+  conversationEvents(conversationId: ID!): ConversationEvent!
+
+  # Subscribe to user-specific events (presence updates)
+  userEvents: UserEvent!
+}
+
+# Union type for conversation events
+union ConversationEvent =
+  | NewMessage
+  | TypingIndicator
+  | DeliveryReceipt
+  | ReadReceipt
+
+# Union type for user events
+union UserEvent = PresenceUpdate
+
+# New message event
+type NewMessage {
+  id: ID!
+  conversationId: ID!
+  senderId: ID!
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
+# Typing indicator event
+type TypingIndicator {
+  userId: ID!
+  conversationId: ID!
+  isTyping: Boolean!
+  timestamp: Time!
+}
+
+# Delivery receipt event
+type DeliveryReceipt {
+  messageId: ID!
+  conversationId: ID!
+  recipientId: ID!
+  deliveredAt: Time!
+}
+
+# Read receipt event
+type ReadReceipt {
+  messageId: ID!
+  conversationId: ID!
+  readerId: ID!
+  readAt: Time!
+}
+
+# Presence update event
+type PresenceUpdate {
+  userId: ID!
+  status: PresenceStatus!
+  lastSeen: Time
+}
+
+# Presence status enum
+enum PresenceStatus {
+  ONLINE
+  AWAY
+  BUSY
+  OFFLINE
+}

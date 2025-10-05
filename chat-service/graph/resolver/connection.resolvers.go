@@ -8,19 +8,15 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // RequestChatConnection is the resolver for the requestChatConnection field.
-func (r *mutationResolver) RequestChatConnection(
-	ctx context.Context,
-) (*graph.ChatConnection, error) {
+func (r *mutationResolver) RequestChatConnection(ctx context.Context) (*graph.ChatConnection, error) {
 	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")
