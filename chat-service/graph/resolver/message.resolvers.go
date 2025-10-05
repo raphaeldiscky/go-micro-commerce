@@ -9,11 +9,12 @@ import (
 
 	"github.com/google/uuid"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // ConversationMessages is the resolver for the conversationMessages field.

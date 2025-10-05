@@ -51,15 +51,16 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Conversation struct {
-		CreatedAt    func(childComplexity int) int
-		EndedAt      func(childComplexity int) int
-		ID           func(childComplexity int) int
-		Messages     func(childComplexity int, limit *int, offset *int) int
-		Participants func(childComplexity int) int
-		Priority     func(childComplexity int) int
-		Status       func(childComplexity int) int
-		Subject      func(childComplexity int) int
-		UpdatedAt    func(childComplexity int) int
+		CreatedAt        func(childComplexity int) int
+		EndedAt          func(childComplexity int) int
+		ID               func(childComplexity int) int
+		Messages         func(childComplexity int, limit *int, offset *int) int
+		ParticipantCount func(childComplexity int) int
+		Participants     func(childComplexity int) int
+		Priority         func(childComplexity int) int
+		Status           func(childComplexity int) int
+		Subject          func(childComplexity int) int
+		UpdatedAt        func(childComplexity int) int
 	}
 
 	Entity struct {
@@ -214,6 +215,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Conversation.Messages(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
+	case "Conversation.participantCount":
+		if e.complexity.Conversation.ParticipantCount == nil {
+			break
+		}
+
+		return e.complexity.Conversation.ParticipantCount(childComplexity), true
 	case "Conversation.participants":
 		if e.complexity.Conversation.Participants == nil {
 			break
@@ -1214,6 +1221,35 @@ func (ec *executionContext) fieldContext_Conversation_participants(_ context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Conversation_participantCount(ctx context.Context, field graphql.CollectedField, obj *Conversation) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Conversation_participantCount,
+		func(ctx context.Context) (any, error) {
+			return obj.ParticipantCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Conversation_participantCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Conversation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Conversation_messages(ctx context.Context, field graphql.CollectedField, obj *Conversation) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1382,6 +1418,8 @@ func (ec *executionContext) fieldContext_Entity_findConversationByID(ctx context
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -1610,6 +1648,8 @@ func (ec *executionContext) fieldContext_Message_conversation(_ context.Context,
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -1994,6 +2034,8 @@ func (ec *executionContext) fieldContext_Mutation_createConversation(ctx context
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -2055,6 +2097,8 @@ func (ec *executionContext) fieldContext_Mutation_endConversation(ctx context.Co
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -2116,6 +2160,8 @@ func (ec *executionContext) fieldContext_Mutation_assignConversationToAdmin(ctx 
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -2512,6 +2558,8 @@ func (ec *executionContext) fieldContext_Participant_conversation(_ context.Cont
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -2810,6 +2858,8 @@ func (ec *executionContext) fieldContext_Query_conversation(ctx context.Context,
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -2870,6 +2920,8 @@ func (ec *executionContext) fieldContext_Query_conversations(_ context.Context, 
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -2919,6 +2971,8 @@ func (ec *executionContext) fieldContext_Query_waitingConversations(_ context.Co
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -3289,6 +3343,8 @@ func (ec *executionContext) fieldContext_User_conversations(_ context.Context, f
 				return ec.fieldContext_Conversation_priority(ctx, field)
 			case "participants":
 				return ec.fieldContext_Conversation_participants(ctx, field)
+			case "participantCount":
+				return ec.fieldContext_Conversation_participantCount(ctx, field)
 			case "messages":
 				return ec.fieldContext_Conversation_messages(ctx, field)
 			case "createdAt":
@@ -4957,6 +5013,11 @@ func (ec *executionContext) _Conversation(ctx context.Context, sel ast.Selection
 			}
 		case "participants":
 			out.Values[i] = ec._Conversation_participants(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "participantCount":
+			out.Values[i] = ec._Conversation_participantCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

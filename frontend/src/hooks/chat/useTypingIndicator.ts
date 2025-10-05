@@ -1,41 +1,55 @@
+import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
 import type { TypingIndicator } from '@/lib/api'
-import { sendTypingIndicator } from '@/lib/api'
-import { useMutation } from '@tanstack/react-query'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
  * Hook for managing typing indicators
  */
-export function useTypingIndicator(conversationId: string) {
+export function useTypingIndicator(_conversationId: string) {
   const [typingUsers, setTypingUsers] = useState<Array<TypingIndicator>>([])
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  const sendTypingMutation = useMutation({
-    mutationFn: (isTyping: boolean) =>
-      sendTypingIndicator(conversationId, isTyping),
-    onError: (error) => {
-      console.error('Failed to send typing indicator:', error)
-    },
-  })
+  const { sendMessage, isConnected } = useChatWebSocket()
 
   /**
    * Start typing indicator
    */
   const startTyping = useCallback(() => {
-    sendTypingMutation.mutate(true)
+    if (!isConnected) return
+
+    sendMessage({
+      type: 'typing',
+      content: { is_typing: true },
+    })
 
     // Stop typing after 3 seconds of inactivity
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
     typingTimeoutRef.current = setTimeout(() => {
-      sendTypingMutation.mutate(false)
+      sendMessage({
+        type: 'typing',
+        content: { is_typing: false },
+      })
     }, 3000)
-  }, [sendTypingMutation])
+  }, [sendMessage, isConnected])
 
   /**
    * Stop typing indicator
    */
   const stopTyping = useCallback(() => {
-    sendTypingMutation.mutate(false)
-  }, [sendTypingMutation])
+    if (!isConnected) return
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = null
+    }
+
+    sendMessage({
+      type: 'typing',
+      content: { is_typing: false },
+    })
+  }, [sendMessage, isConnected])
 
   /**
    * Add typing user from WebSocket
@@ -71,7 +85,6 @@ export function useTypingIndicator(conversationId: string) {
   return {
     addTypingUser,
     clearTypingUsers,
-    isLoading: sendTypingMutation.isPending,
     startTyping,
     stopTyping,
     typingUsers,

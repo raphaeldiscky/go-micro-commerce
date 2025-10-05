@@ -1,22 +1,26 @@
 package mapper
 
 import (
+	"strings"
+
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 )
 
 // MapConversationToGraphQL maps a ConversationResponse to a Conversation GraphQL type.
 func MapConversationToGraphQL(conv *dto.ConversationResponse) *graph.Conversation {
 	return &graph.Conversation{
-		ID:        conv.ID.String(),
-		Subject:   conv.Subject,
-		Status:    conv.Status,
-		Priority:  conv.Priority,
-		CreatedAt: conv.CreatedAt,
-		UpdatedAt: conv.UpdatedAt,
-		EndedAt:   conv.EndedAt,
+		ID:               conv.ID.String(),
+		Subject:          conv.Subject,
+		Status:           constant.ConversationStatus(strings.ToUpper(string(conv.Status))),
+		Priority:         conv.Priority,
+		ParticipantCount: conv.ParticipantCount,
+		CreatedAt:        conv.CreatedAt,
+		UpdatedAt:        conv.UpdatedAt,
+		EndedAt:          conv.EndedAt,
 	}
 }
 
@@ -34,9 +38,25 @@ func MapMessageToGraphQL(msg *dto.MessageResponse) *graph.Message {
 		ConversationID: msg.ConversationID.String(),
 		SenderID:       senderID,
 		Content:        msg.Content,
-		MessageType:    msg.MessageType,
+		MessageType:    constant.MessageType(strings.ToUpper(string(msg.MessageType))),
 		IsSystem:       msg.IsSystem,
 		CreatedAt:      msg.CreatedAt,
+	}
+}
+
+// convertParticipantRoleToGraphQL converts backend ParticipantRole to GraphQL enum.
+func convertParticipantRoleToGraphQL(role constant.ParticipantRole) constant.ParticipantRole {
+	// Backend uses: participant, moderator, observer
+	// GraphQL uses: MEMBER, OWNER, MODERATOR
+	switch role {
+	case constant.ParticipantRoleParticipant:
+		return "MEMBER"
+	case constant.ParticipantRoleModerator:
+		return "MODERATOR"
+	case constant.ParticipantRoleObserver:
+		return "OWNER"
+	default:
+		return constant.ParticipantRole(strings.ToUpper(string(role)))
 	}
 }
 
@@ -46,8 +66,8 @@ func MapParticipantToGraphQL(p *dto.ParticipantResponse) *graph.Participant {
 		ID:             p.ID.String(),
 		ConversationID: p.ConversationID.String(),
 		UserID:         p.UserID.String(),
-		UserType:       p.UserType,
-		Role:           p.Role,
+		UserType:       constant.UserType(strings.ToUpper(string(p.UserType))),
+		Role:           convertParticipantRoleToGraphQL(p.Role),
 		JoinedAt:       p.JoinedAt,
 		LeftAt:         p.LeftAt,
 		IsActive:       p.IsActive,

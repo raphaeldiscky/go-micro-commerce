@@ -342,6 +342,7 @@ tasks:
   supergraph:
     desc: Compose Apollo Federation supergraph schema and generate frontend code
     cmds:
+      - task: graphql
       - bash ./scripts/compose-supergraph.sh
       - cd frontend && pnpm codegen
       - task: deps

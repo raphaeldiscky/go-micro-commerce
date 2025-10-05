@@ -32,14 +32,15 @@ type JoinConversationRequest struct {
 
 // ConversationResponse represents the response for conversation operations.
 type ConversationResponse struct {
-	ID        uuid.UUID                   `json:"id"`
-	Status    constant.ConversationStatus `json:"status"`
-	Subject   *string                     `json:"subject,omitempty"`
-	Priority  int                         `json:"priority"`
-	Metadata  map[string]any              `json:"metadata,omitempty"`
-	CreatedAt time.Time                   `json:"created_at"`
-	UpdatedAt time.Time                   `json:"updated_at"`
-	EndedAt   *time.Time                  `json:"ended_at,omitempty"`
+	ID               uuid.UUID                   `json:"id"`
+	Status           constant.ConversationStatus `json:"status"`
+	Subject          *string                     `json:"subject,omitempty"`
+	Priority         int                         `json:"priority"`
+	ParticipantCount int                         `json:"participant_count"`
+	Metadata         map[string]any              `json:"metadata,omitempty"`
+	CreatedAt        time.Time                   `json:"created_at"`
+	UpdatedAt        time.Time                   `json:"updated_at"`
+	EndedAt          *time.Time                  `json:"ended_at,omitempty"`
 }
 
 // ConversationListResponse represents a paginated list of conversations.

@@ -12,14 +12,15 @@ import (
 
 // Conversation represents a chat conversation between users and admins.
 type Conversation struct {
-	ID        uuid.UUID
-	Status    constant.ConversationStatus
-	Subject   *string
-	Priority  int
-	Metadata  map[string]any
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	EndedAt   *time.Time
+	ID               uuid.UUID
+	Status           constant.ConversationStatus
+	Subject          *string
+	Priority         int
+	ParticipantCount int
+	Metadata         map[string]any
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	EndedAt          *time.Time
 }
 
 // NewConversation creates a new conversation with validation.

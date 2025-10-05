@@ -135,6 +135,7 @@ export function useSendMessage(conversationId: string) {
               subject: null,
               status: ConversationStatus.Active,
               priority: 0,
+              participantCount: 0,
               participants: [],
               messages: {
                 __typename: 'MessageConnection',

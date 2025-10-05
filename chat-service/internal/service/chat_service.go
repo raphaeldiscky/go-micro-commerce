@@ -42,6 +42,14 @@ type ChatService interface {
 		userID uuid.UUID,
 		userType constant.UserType,
 	) ([]dto.ConversationResponse, error)
+	GetUserConversationsWithCursor(
+		ctx context.Context,
+		userID uuid.UUID,
+		userType constant.UserType,
+		limit int,
+		afterCursor string,
+		beforeCursor string,
+	) ([]dto.ConversationResponse, *pkgdto.CursorPagination, error)
 	EndConversation(
 		ctx context.Context,
 		conversationID uuid.UUID,
@@ -266,6 +274,117 @@ func (s *chatService) GetUserConversations(
 	}
 
 	return conversations, nil
+}
+
+// GetUserConversationsWithCursor retrieves all conversations for a user using cursor-based pagination.
+func (s *chatService) GetUserConversationsWithCursor(
+	ctx context.Context,
+	userID uuid.UUID,
+	userType constant.UserType,
+	limit int,
+	afterCursor string,
+	beforeCursor string,
+) ([]dto.ConversationResponse, *pkgdto.CursorPagination, error) {
+	conversationRepo := s.dataStore.ConversationRepository()
+
+	// Get conversations with cursor
+	conversations, err := conversationRepo.FindByUserIDWithCursor(
+		ctx,
+		userID,
+		userType,
+		limit,
+		afterCursor,
+		beforeCursor,
+	)
+	if err != nil {
+		s.logger.Error("Failed to find conversations with cursor",
+			"user_id", userID,
+			"user_type", userType,
+			"error", err)
+
+		return nil, nil, httperror.NewInternalServerError("failed to get user conversations")
+	}
+
+	// Check if there are more results
+	hasMore := len(conversations) > limit
+	if hasMore {
+		conversations = conversations[:limit]
+	}
+
+	// Map to response
+	var conversationResponses []dto.ConversationResponse
+	for _, conv := range conversations {
+		conversationResponses = append(
+			conversationResponses,
+			*mapper.MapToConversationResponse(conv),
+		)
+	}
+
+	// Build cursor pagination
+	paging := s.buildConversationCursorPagination(
+		conversations,
+		afterCursor,
+		beforeCursor,
+		hasMore,
+		limit,
+	)
+
+	return conversationResponses, paging, nil
+}
+
+// buildConversationCursorPagination constructs cursor pagination data for conversations.
+func (s *chatService) buildConversationCursorPagination(
+	conversations []*entity.Conversation,
+	afterCursor string,
+	beforeCursor string,
+	hasMore bool,
+	limit int,
+) *pkgdto.CursorPagination {
+	var (
+		nextCursor, prevCursor string
+		hasNext, hasPrev       bool
+	)
+
+	if len(conversations) == 0 {
+		return &pkgdto.CursorPagination{
+			Limit: int64(limit),
+		}
+	}
+
+	// Forward pagination
+	if afterCursor != "" || (afterCursor == "" && beforeCursor == "") {
+		hasNext = hasMore
+		hasPrev = afterCursor != ""
+		lastConv := conversations[len(conversations)-1]
+		nextCursor = lastConv.ID.String()
+
+		if afterCursor != "" {
+			prevCursor = afterCursor
+		}
+
+		return &pkgdto.CursorPagination{
+			NextCursor: nextCursor,
+			PrevCursor: prevCursor,
+			HasNext:    hasNext,
+			HasPrev:    hasPrev,
+			Limit:      int64(limit),
+		}
+	}
+
+	// Backward pagination
+	hasPrev = hasMore
+	hasNext = true
+	firstConv := conversations[0]
+	prevCursor = firstConv.ID.String()
+	nextCursor = beforeCursor
+
+	return &pkgdto.CursorPagination{
+		NextCursor: nextCursor,
+		PrevCursor: prevCursor,
+		HasNext:    hasNext,
+		HasPrev:    hasPrev,
+		Limit:      int64(limit),
+	}
 }
 
 // UpdateConversationStatus updates the status of a conversation.

@@ -83,16 +83,34 @@ func (h *ChatHandler) GetConversation(c echo.Context) error {
 	return echoutils.ResponseOK(c, result)
 }
 
-// GetUserConversations retrieves all conversations for a user.
+// GetUserConversations retrieves all conversations for a user with cursor-based pagination.
 func (h *ChatHandler) GetUserConversations(c echo.Context) error {
 	userID, userType := h.getUserInfo(c)
 
-	result, err := h.chatService.GetUserConversations(c.Request().Context(), userID, userType)
+	limit := int(pageutils.ParseQueryInt64(
+		c,
+		"limit",
+		pkgconstant.DefaultLimit,
+		pkgconstant.DefaultMinLimit,
+		pkgconstant.DefaultMaxLimit,
+	))
+
+	afterCursor := c.QueryParam("after")
+	beforeCursor := c.QueryParam("before")
+
+	result, paging, err := h.chatService.GetUserConversationsWithCursor(
+		c.Request().Context(),
+		userID,
+		userType,
+		limit,
+		afterCursor,
+		beforeCursor,
+	)
 	if err != nil {
 		return err
 	}
 
-	return echoutils.ResponseOK(c, result)
+	return echoutils.ResponseOKCursorPagination(c, result, paging)
 }
 
 // GetMessages retrieves messages from a conversation with cursor-based pagination.

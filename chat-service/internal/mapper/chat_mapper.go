@@ -9,14 +9,15 @@ import (
 // MapToConversationResponse converts conversation entity to DTO response.
 func MapToConversationResponse(conversation *entity.Conversation) *dto.ConversationResponse {
 	return &dto.ConversationResponse{
-		ID:        conversation.ID,
-		Status:    conversation.Status,
-		Subject:   conversation.Subject,
-		Priority:  conversation.Priority,
-		Metadata:  conversation.Metadata,
-		CreatedAt: conversation.CreatedAt,
-		UpdatedAt: conversation.UpdatedAt,
-		EndedAt:   conversation.EndedAt,
+		ID:               conversation.ID,
+		Status:           conversation.Status,
+		Subject:          conversation.Subject,
+		Priority:         conversation.Priority,
+		ParticipantCount: conversation.ParticipantCount,
+		Metadata:         conversation.Metadata,
+		CreatedAt:        conversation.CreatedAt,
+		UpdatedAt:        conversation.UpdatedAt,
+		EndedAt:          conversation.EndedAt,
 	}
 }
 

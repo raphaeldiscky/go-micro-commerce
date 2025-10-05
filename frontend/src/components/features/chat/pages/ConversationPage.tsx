@@ -1,4 +1,5 @@
 import { PATH_AUTH, PATH_FEATURES } from '@/constants'
+import { ChatWebSocketProvider } from '@/contexts/ChatWebSocketContext'
 import { useIsAuthenticated, useUser } from '@/hooks/auth/useAuth'
 import { useChatTicket } from '@/hooks/chat/useChatTicket'
 import { useConversationDetails } from '@/hooks/chat/useConversationDetails'
@@ -267,111 +268,114 @@ export function ConversationPage({
   }
 
   return (
-    <div
-      className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
-        <div className="flex items-center space-x-4">
-          <Button
-            onClick={() => navigate({ to: PATH_FEATURES.chat.root })}
-            size="sm"
-            variant="ghost"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+    <ChatWebSocketProvider connectionStatus={connectionStatus} websocket={_ws}>
+      <div
+        className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => navigate({ to: PATH_FEATURES.chat.root })}
+              size="sm"
+              variant="ghost"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
 
-          <div>
-            <h1 className="text-lg font-semibold">
-              {conversation.subject || 'Conversation'}
-            </h1>
-            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <span
-                className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}`}
-              ></span>
-              <span>
-                {connectionStatus === 'connected'
-                  ? 'Connected'
-                  : connectionStatus === 'connecting'
-                    ? 'Connecting...'
-                    : connectionStatus === 'error'
-                      ? 'Connection error'
-                      : 'Disconnected'}
-              </span>
+            <div>
+              <h1 className="text-lg font-semibold">
+                {conversation.subject || 'Conversation'}
+              </h1>
+              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                <span
+                  className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}`}
+                ></span>
+                <span>
+                  {connectionStatus === 'connected'
+                    ? 'Connected'
+                    : connectionStatus === 'connecting'
+                      ? 'Connecting...'
+                      : connectionStatus === 'error'
+                        ? 'Connection error'
+                        : 'Disconnected'}
+                </span>
+              </div>
             </div>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Button size="sm" variant="ghost">
+              <Phone className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost">
+              <Video className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => setShowParticipants(!showParticipants)}
+              size="sm"
+              variant="ghost"
+            >
+              <Users className="h-4 w-4" />
+            </Button>
+            <Button size="sm" variant="ghost">
+              <Settings className="h-4 w-4" />
+            </Button>
+            {onToggleFullscreen && showToggle && (
+              <Button
+                onClick={onToggleFullscreen}
+                size="sm"
+                variant="ghost"
+                title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="h-4 w-4" />
+                ) : (
+                  <Maximize2 className="h-4 w-4" />
+                )}
+              </Button>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
-          <Button size="sm" variant="ghost">
-            <Phone className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="ghost">
-            <Video className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => setShowParticipants(!showParticipants)}
-            size="sm"
-            variant="ghost"
-          >
-            <Users className="h-4 w-4" />
-          </Button>
-          <Button size="sm" variant="ghost">
-            <Settings className="h-4 w-4" />
-          </Button>
-          {onToggleFullscreen && showToggle && (
-            <Button
-              onClick={onToggleFullscreen}
-              size="sm"
-              variant="ghost"
-              title={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-            >
-              {isFullscreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </Button>
+        {/* Main Content */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Messages Area */}
+          <div className="flex-1 flex flex-col">
+            <MessageList
+              conversationId={conversationId}
+              currentUserId={user?.id || ''}
+              onReply={handleReply}
+              typingUsers={typingUsers}
+            />
+
+            <MessageInput
+              disabled={
+                connectionStatus !== 'connected' ||
+                sendMessageMutation.isPending
+              }
+              isLoading={sendMessageMutation.isPending}
+              onCancelReply={() => setReplyingTo(null)}
+              onSendMessage={handleSendMessage}
+              onTypingStart={handleTypingStart}
+              onTypingStop={handleTypingStop}
+              replyingTo={replyingTo}
+            />
+          </div>
+
+          {/* Participants Sidebar */}
+          {showParticipants && (
+            <div className="w-80 border-l bg-white dark:bg-gray-800">
+              <ParticipantsList
+                conversationId={conversationId}
+                currentUserId={user?.id || ''}
+                isUserOnline={isUserOnline}
+                onClose={() => setShowParticipants(false)}
+              />
+            </div>
           )}
         </div>
       </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Messages Area */}
-        <div className="flex-1 flex flex-col">
-          <MessageList
-            conversationId={conversationId}
-            currentUserId={user?.id || ''}
-            onReply={handleReply}
-            typingUsers={typingUsers}
-          />
-
-          <MessageInput
-            disabled={
-              connectionStatus !== 'connected' || sendMessageMutation.isPending
-            }
-            isLoading={sendMessageMutation.isPending}
-            onCancelReply={() => setReplyingTo(null)}
-            onSendMessage={handleSendMessage}
-            onTypingStart={handleTypingStart}
-            onTypingStop={handleTypingStop}
-            replyingTo={replyingTo}
-          />
-        </div>
-
-        {/* Participants Sidebar */}
-        {showParticipants && (
-          <div className="w-80 border-l bg-white dark:bg-gray-800">
-            <ParticipantsList
-              conversationId={conversationId}
-              currentUserId={user?.id || ''}
-              isUserOnline={isUserOnline}
-              onClose={() => setShowParticipants(false)}
-            />
-          </div>
-        )}
-      </div>
-    </div>
+    </ChatWebSocketProvider>
   )
 }

@@ -10,6 +10,7 @@ export const CONVERSATIONS_QUERY = gql`
       subject
       status
       priority
+      participantCount
       createdAt
       updatedAt
       endedAt

@@ -87,15 +87,8 @@ export async function getChatTicket(userId: string): Promise<ChatTicketData> {
   return response.data
 }
 
-export async function sendDeliveryReceipt(
-  conversationId: string,
-  messageId: string,
-): Promise<void> {
-  await apiRequest(`/chats/v1/${conversationId}/delivery-receipt`, {
-    body: JSON.stringify({ message_id: messageId }),
-    method: 'POST',
-  })
-}
+// Note: Real-time events (typing, receipts, presence) are now sent via WebSocket
+// See ChatWebSocketContext and related hooks for WebSocket message sending
 
 export async function sendMessage(
   conversationId: string,
@@ -109,33 +102,6 @@ export async function sendMessage(
     },
   )
   return response.data
-}
-
-export async function sendReadReceipt(
-  conversationId: string,
-  messageId: string,
-): Promise<void> {
-  await apiRequest(`/chats/v1/${conversationId}/read-receipt`, {
-    body: JSON.stringify({ message_id: messageId }),
-    method: 'POST',
-  })
-}
-
-export async function sendTypingIndicator(
-  conversationId: string,
-  isTyping: boolean,
-): Promise<void> {
-  await apiRequest(`/chats/v1/${conversationId}/typing`, {
-    body: JSON.stringify({ is_typing: isTyping }),
-    method: 'POST',
-  })
-}
-
-export async function updatePresence(presence: PresenceUpdate): Promise<void> {
-  await apiRequest('/chats/v1/presence', {
-    body: JSON.stringify(presence),
-    method: 'PUT',
-  })
 }
 
 export async function validateTicket(ticket: string): Promise<boolean> {

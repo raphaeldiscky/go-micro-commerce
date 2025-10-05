@@ -5,6 +5,7 @@ type Conversation @key(fields: "id") {
   status: ConversationStatus!
   priority: Int!
   participants: [Participant!]!
+  participantCount: Int!
   messages(limit: Int = 50, offset: Int = 0): MessageConnection!
   createdAt: Time!
   updatedAt: Time!
