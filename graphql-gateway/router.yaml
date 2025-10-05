@@ -56,6 +56,14 @@ headers:
             named: "authorization"
         - propagate:
             named: "cookie"
+        - propagate:
+            named: "X-User-ID"
+        - propagate:
+            named: "X-Email"
+        - propagate:
+            named: "X-Roles"
+        - propagate:
+            named: "X-Is-Active"
         - insert:
             name: "X-Gateway"
             value: "graphql-gateway"
@@ -71,6 +79,14 @@ headers:
             named: "authorization"
         - propagate:
             named: "cookie"
+        - propagate:
+            named: "X-User-ID"
+        - propagate:
+            named: "X-Email"
+        - propagate:
+            named: "X-Roles"
+        - propagate:
+            named: "X-Is-Active"
         - insert:
             name: "X-Gateway"
             value: "graphql-gateway"

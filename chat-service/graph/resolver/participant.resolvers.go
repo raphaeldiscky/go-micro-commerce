@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // JoinConversation is the resolver for the joinConversation field.
@@ -20,7 +21,7 @@ func (r *mutationResolver) JoinConversation(
 	ctx context.Context,
 	input graph.JoinConversationInput,
 ) (*graph.Participant, error) {
-	userID, ok := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return nil, httperror.NewUnauthorizedError("user not authenticated")
 	}
@@ -50,7 +51,7 @@ func (r *mutationResolver) LeaveConversation(
 	ctx context.Context,
 	conversationID string,
 ) (bool, error) {
-	userID, ok := ctx.Value("user_id").(uuid.UUID)
+	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
 	if !ok {
 		return false, httperror.NewUnauthorizedError("user not authenticated")
 	}
