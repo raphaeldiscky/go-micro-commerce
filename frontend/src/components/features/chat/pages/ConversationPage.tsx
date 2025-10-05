@@ -10,7 +10,6 @@ import { getAccessToken } from '@/lib/api'
 import type { SendMessageRequest } from '@/lib/api'
 import { graphqlClient, REQUEST_CHAT_CONNECTION_MUTATION } from '@/lib/graphql'
 import type { Message } from '@/types/__generated__/graphql'
-import { useMutation } from '@tanstack/react-query'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -303,20 +302,6 @@ export function ConversationPage(props: ConversationPageProps) {
   const user = useUser()
   const isAuthenticated = useIsAuthenticated()
 
-  // Request WebSocket node address from GraphQL
-  const requestConnection = useMutation({
-    mutationFn: async () => {
-      const response = await graphqlClient.request<{
-        requestChatConnection: {
-          nodeAddress: string
-          userId: string
-          userType: string
-        }
-      }>(REQUEST_CHAT_CONNECTION_MUTATION)
-      return response.requestChatConnection
-    },
-  })
-
   const wsRef = useRef<null | WebSocket>(null)
 
   // WebSocket connection management
@@ -339,10 +324,16 @@ export function ConversationPage(props: ConversationPageProps) {
 
     try {
       // Request node address from GraphQL
-      const connectionData = await requestConnection.mutateAsync()
+      const response = await graphqlClient.request<{
+        requestChatConnection: {
+          nodeAddress: string
+          userId: string
+          userType: string
+        }
+      }>(REQUEST_CHAT_CONNECTION_MUTATION)
 
       // Connect to WebSocket with JWT token
-      const websocketUrl = `${connectionData.nodeAddress}/v1/ws?token=${accessToken}&conversation_id=${props.conversationId}`
+      const websocketUrl = `${response.requestChatConnection.nodeAddress}/v1/ws?token=${accessToken}&conversation_id=${props.conversationId}`
 
       const websocket = new WebSocket(websocketUrl)
       wsRef.current = websocket
@@ -375,7 +366,7 @@ export function ConversationPage(props: ConversationPageProps) {
       console.error('Failed to establish WebSocket connection:', error)
       setConnectionStatus('error')
     }
-  }, [user, isAuthenticated, props.conversationId, requestConnection])
+  }, [user, isAuthenticated, props.conversationId])
 
   // Track connection attempts to prevent multiple connections
   const connectionAttemptRef = useRef<boolean>(false)

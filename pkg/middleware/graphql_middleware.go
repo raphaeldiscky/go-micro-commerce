@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
@@ -53,7 +54,14 @@ func GraphQLContextMiddleware() graphql.OperationMiddleware {
 		}
 
 		if rolesHeader := requestContext.Headers.Get(constant.XRoles); rolesHeader != "" {
-			ctx = context.WithValue(ctx, constant.CtxKeyRoles, rolesHeader)
+			// Parse comma-separated roles string into []string
+			roles := strings.Split(rolesHeader, ",")
+			// Trim whitespace from each role
+			for i, role := range roles {
+				roles[i] = strings.TrimSpace(role)
+			}
+
+			ctx = context.WithValue(ctx, constant.CtxKeyRoles, roles)
 		}
 
 		if isActiveHeader := requestContext.Headers.Get(constant.XIsActive); isActiveHeader != "" {
