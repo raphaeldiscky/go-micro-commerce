@@ -84,10 +84,11 @@ func (h *AuthHandler) Login(c echo.Context) error {
 
 	// Remove refresh token from response (it's now in cookie)
 	responseWithoutRefreshToken := &dto.AuthResponse{
-		AccessToken: response.AccessToken,
-		TokenType:   response.TokenType,
-		ExpiresIn:   response.ExpiresIn,
-		User:        response.User,
+		AccessToken:  response.AccessToken,
+		RefreshToken: response.RefreshToken,
+		TokenType:    response.TokenType,
+		ExpiresIn:    response.ExpiresIn,
+		User:         response.User,
 	}
 
 	return echoutils.ResponseCreated(c, responseWithoutRefreshToken)

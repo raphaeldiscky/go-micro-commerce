@@ -3,11 +3,8 @@ import {
   useJoinConversation,
 } from '@/hooks/chat/useConversations'
 import { formatRelativeTime } from '@/lib/utils/date'
-import type {
-  Conversation,
-  ParticipantRole,
-} from '@/types/__generated__/graphql'
-import { MessageCircle, Users } from 'lucide-react'
+import type { ParticipantRole } from '@/types/__generated__/graphql'
+import { MessageCircle } from 'lucide-react'
 import { Button } from '../../../ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../../../ui/card'
 import { ScrollArea } from '../../../ui/scroll-area'

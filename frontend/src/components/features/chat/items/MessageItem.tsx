@@ -129,7 +129,7 @@ export function MessageItem({
                 isOwn ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400',
               )}
             >
-              <span className="text-xs">{formatTime(message.created_at)}</span>
+              <span className="text-xs">{formatTime(message.createdAt)}</span>
               {isOwn && getDeliveryStatusIcon()}
             </div>
           </div>

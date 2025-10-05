@@ -77,7 +77,7 @@ func (r *mutationResolver) RefreshToken(ctx context.Context) (*graph.AuthPayload
 	// Get refresh token from HTTP-only cookie
 	refreshToken, err := cookieutils.GetRefreshTokenFromCookie(ctx)
 	if err != nil {
-		r.logger.Error("Failed to get refresh token from cookie", "error", err)
+		r.logger.Warnf("Failed to get refresh token from cookie: %v", err)
 		return nil, httperror.NewUnauthorizedError("missing or invalid refresh token")
 	}
 

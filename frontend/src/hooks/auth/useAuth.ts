@@ -95,17 +95,15 @@ export function useLogout() {
       await graphqlClient.request<LogoutMutation>(LOGOUT_MUTATION)
     },
     onSettled: () => {
-      // Always clear auth state even if API call fails
-      // Note: Server will clear the HTTP-only refresh token cookie
+      // Always clear auth state and navigate, even if API call fails
+      // Note: Server will clear the HTTP-only refresh token cookie if request succeeds
       setAccessToken(null)
       logoutUser()
-      queryClient.removeQueries({ queryKey: queryKeys.auth.all })
-    },
-    onSuccess: () => {
+
       // Clear all React Query cache
       queryClient.clear()
 
-      // Navigate to home
+      // Navigate to home (always happens, even if logout API fails)
       router.navigate({ to: PATH_ROOT.home })
     },
   })
