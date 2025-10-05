@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/consul"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/cmd/worker"
@@ -25,6 +26,9 @@ func main() {
 	}
 
 	appLogger := logger.NewLogrusLogger(cfg.App.LoggerLevel)
+
+	consulCleanup := setupConsulRegistration(cfg, appLogger)
+	defer consulCleanup()
 
 	if err = tracing.InitTracing(cfg.Tracing); err != nil {
 		appLogger.Fatalf("failed to initialize tracing: %v", err)
@@ -52,4 +56,34 @@ func main() {
 	}
 
 	appLogger.Info("Application shutdown completed")
+}
+
+// setupConsulRegistration handles Consul service registration and returns a cleanup function.
+func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func() {
+	if cfg.ServiceDiscovery.Type != "consul" {
+		appLogger.Info("Consul service registration is disabled")
+		return func() {}
+	}
+
+	consulClient, err := consul.NewServiceRegistration(
+		cfg.ServiceDiscovery.ConsulAddress,
+		appLogger,
+	)
+	if err != nil {
+		appLogger.Errorf("Failed to create Consul client: %v", err)
+		return func() {}
+	}
+
+	if err = consulClient.RegisterHTTP(cfg.App.Name, cfg.HTTPServer.Host, cfg.HTTPServer.Port); err != nil {
+		appLogger.Errorf("Failed to register with Consul: %v", err)
+		return func() {}
+	}
+
+	appLogger.Infof("Successfully registered %s with Consul", cfg.App.Name)
+
+	return func() {
+		if deregErr := consulClient.Deregister(); deregErr != nil {
+			appLogger.Errorf("Failed to deregister from Consul: %v", deregErr)
+		}
+	}
 }

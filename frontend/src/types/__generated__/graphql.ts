@@ -93,8 +93,14 @@ export type Message = {
 
 export type MessageConnection = {
   __typename?: 'MessageConnection'
-  items: Array<Message>
-  pagination: OffsetPagination
+  edges: Array<MessageEdge>
+  pageInfo: PageInfo
+}
+
+export type MessageEdge = {
+  __typename?: 'MessageEdge'
+  cursor: Scalars['String']['output']
+  node: Message
 }
 
 export enum MessageType {
@@ -146,20 +152,18 @@ export type MutationRegisterArgs = {
   input: RegisterUserInput
 }
 
-export type OffsetPagination = {
-  __typename?: 'OffsetPagination'
-  currentPage: Scalars['Int']['output']
-  hasNext: Scalars['Boolean']['output']
-  hasPrev: Scalars['Boolean']['output']
-  pageSize: Scalars['Int']['output']
-  totalItems: Scalars['Int']['output']
-  totalPages: Scalars['Int']['output']
-}
-
 export type OnlineStatus = {
   __typename?: 'OnlineStatus'
   isOnline: Scalars['Boolean']['output']
   lastSeen?: Maybe<Scalars['Time']['output']>
+}
+
+export type PageInfo = {
+  __typename?: 'PageInfo'
+  endCursor?: Maybe<Scalars['String']['output']>
+  hasNextPage: Scalars['Boolean']['output']
+  hasPreviousPage: Scalars['Boolean']['output']
+  startCursor?: Maybe<Scalars['String']['output']>
 }
 
 export type Participant = {
@@ -199,9 +203,11 @@ export type QueryConversationArgs = {
 }
 
 export type QueryConversationMessagesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>
+  before?: InputMaybe<Scalars['String']['input']>
   conversationId: Scalars['ID']['input']
-  limit?: InputMaybe<Scalars['Int']['input']>
-  offset?: InputMaybe<Scalars['Int']['input']>
+  first?: InputMaybe<Scalars['Int']['input']>
+  last?: InputMaybe<Scalars['Int']['input']>
 }
 
 export type QueryConversationParticipantsArgs = {

@@ -9,7 +9,10 @@ import (
 )
 
 // SetupAuthRoutes sets up all authentication routes.
-func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler) {
+func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler, jwksHandler *handler.JWKSHandler) {
+	// JWKS endpoint (must be at root path for standard compliance)
+	e.GET("/.well-known/jwks.json", jwksHandler.GetJWKS)
+
 	// API versioning
 	v1 := e.Group("/v1")
 

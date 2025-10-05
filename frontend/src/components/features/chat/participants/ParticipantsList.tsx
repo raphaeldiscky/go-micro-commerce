@@ -3,7 +3,7 @@ import {
   useConversationParticipants,
 } from '@/hooks/chat/useConversationDetails'
 import { cn } from '@/lib/utils'
-import { Crown, MoreVertical, Settings, UserMinus, X } from 'lucide-react'
+import { Crown, MoreVertical, UserMinus, X } from 'lucide-react'
 import { useState } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '../../../ui/avatar'
 import { Button } from '../../../ui/button'
@@ -50,10 +50,8 @@ export function ParticipantsList({
 
   const getRoleIcon = (userType: string) => {
     switch (userType) {
-      case 'admin':
+      case 'ADMIN':
         return <Crown className="h-3 w-3 text-yellow-500" />
-      case 'moderator':
-        return <Settings className="h-3 w-3 text-blue-500" />
       default:
         return null
     }
@@ -61,10 +59,8 @@ export function ParticipantsList({
 
   const getRoleColor = (userType: string) => {
     switch (userType) {
-      case 'admin':
+      case 'ADMIN':
         return 'text-yellow-600 dark:text-yellow-400'
-      case 'moderator':
-        return 'text-blue-600 dark:text-blue-400'
       default:
         return 'text-gray-500 dark:text-gray-400'
     }
@@ -120,23 +116,23 @@ export function ParticipantsList({
 
   const participantsList = participants || []
   const sortedParticipants = [...participantsList].sort((a, b) => {
-    // Sort by online status first, then by user_type, then by user_id
-    const aOnline = isUserOnline(a.user_id)
-    const bOnline = isUserOnline(b.user_id)
+    // Sort by online status first, then by userType, then by userId
+    const aOnline = isUserOnline(a.userId)
+    const bOnline = isUserOnline(b.userId)
 
     if (aOnline !== bOnline) return bOnline ? 1 : -1
 
-    const roleOrder = { admin: 0, moderator: 1, user: 2 }
-    const aRoleOrder = roleOrder[a.user_type as keyof typeof roleOrder] || 2
-    const bRoleOrder = roleOrder[b.user_type as keyof typeof roleOrder] || 2
+    const roleOrder = { ADMIN: 0, USER: 1 }
+    const aRoleOrder = roleOrder[a.userType]
+    const bRoleOrder = roleOrder[b.userType]
 
     if (aRoleOrder !== bRoleOrder) return aRoleOrder - bRoleOrder
 
-    return a.user_id.localeCompare(b.user_id)
+    return a.userId.localeCompare(b.userId)
   })
 
-  const onlineCount = participantsList.filter((p: { user_id: string }) =>
-    isUserOnline(p.user_id),
+  const onlineCount = participantsList.filter((p) =>
+    isUserOnline(p.userId),
   ).length
 
   return (
@@ -159,32 +155,32 @@ export function ParticipantsList({
         <ScrollArea className="h-full">
           <div className="p-4 space-y-1">
             {sortedParticipants.map((participant) => {
-              const isOnline = isUserOnline(participant.user_id)
-              const isCurrentUser = participant.user_id === currentUserId
+              const isOnline = isUserOnline(participant.userId)
+              const isCurrentUser = participant.userId === currentUserId
 
               return (
                 <div
                   className={cn(
                     'flex items-center space-x-3 p-2 rounded-lg cursor-pointer transition-colors',
                     'hover:bg-gray-100 dark:hover:bg-gray-700',
-                    selectedParticipant === participant.user_id &&
+                    selectedParticipant === participant.userId &&
                       'bg-gray-100 dark:bg-gray-700',
                   )}
-                  key={participant.user_id}
+                  key={participant.userId}
                   onClick={() =>
                     setSelectedParticipant(
-                      selectedParticipant === participant.user_id
+                      selectedParticipant === participant.userId
                         ? null
-                        : participant.user_id,
+                        : participant.userId,
                     )
                   }
                 >
                   {/* Avatar with Online Status */}
                   <div className="relative">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage alt={participant.user_id} src={undefined} />
+                      <AvatarImage alt={participant.userId} src={undefined} />
                       <AvatarFallback className="text-sm bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                        {getInitials(participant.user_id)}
+                        {getInitials(participant.userId)}
                       </AvatarFallback>
                     </Avatar>
 
@@ -206,20 +202,20 @@ export function ParticipantsList({
                           isCurrentUser && 'text-blue-600 dark:text-blue-400',
                         )}
                       >
-                        {participant.user_id}
+                        {participant.userId}
                         {isCurrentUser && ' (You)'}
                       </p>
-                      {getRoleIcon(participant.user_type)}
+                      {getRoleIcon(participant.userType)}
                     </div>
 
                     <div className="flex items-center space-x-2">
                       <p
                         className={cn(
                           'text-xs capitalize',
-                          getRoleColor(participant.user_type),
+                          getRoleColor(participant.userType),
                         )}
                       >
-                        {participant.user_type}
+                        {participant.userType.toLowerCase()}
                       </p>
                       {isOnline && (
                         <span className="text-xs text-green-600 dark:text-green-400">

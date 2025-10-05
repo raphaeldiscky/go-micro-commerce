@@ -11,19 +11,22 @@ import (
 
 // ConnectionConfig holds the connection service configuration.
 type ConnectionConfig struct {
-	JWTSecret          string        `mapstructure:"CONN_JWT_SECRET"`
-	TicketExpiration   time.Duration `mapstructure:"CONN_TICKET_EXPIRATION"`
-	DefaultNodeAddress string        `mapstructure:"CONN_DEFAULT_NODE_ADDRESS"`
-	MaxConnections     int           `mapstructure:"CONN_MAX_CONNECTIONS"`
-	ConsulAddress      string        `mapstructure:"CONN_CONSUL_ADDRESS"`
-	ChatServiceName    string        `mapstructure:"CONN_CHAT_SERVICE_NAME"`
+	PublicKeyPath       string        `mapstructure:"CONN_PUBLIC_KEY_PATH"`
+	JWKSUrl             string        `mapstructure:"CONN_JWKS_URL"`
+	JWKSCacheTTL        time.Duration `mapstructure:"CONN_JWKS_CACHE_TTL"`
+	JWKSRefreshInterval time.Duration `mapstructure:"CONN_JWKS_REFRESH_INTERVAL"`
+	DefaultNodeAddress  string        `mapstructure:"CONN_DEFAULT_NODE_ADDRESS"`
+	MaxConnections      int           `mapstructure:"CONN_MAX_CONNECTIONS"`
+	ConsulAddress       string        `mapstructure:"CONN_CONSUL_ADDRESS"`
+	ChatServiceName     string        `mapstructure:"CONN_CHAT_SERVICE_NAME"`
 }
 
 // initConnectionConfig initializes the connection configuration from environment variables.
 func initConnectionConfig() *ConnectionConfig {
 	// Set defaults
-	viper.SetDefault("CONN_JWT_SECRET", "your-super-secret-jwt-key-change-in-production")
-	viper.SetDefault("CONN_TICKET_EXPIRATION", constant.ConnTicketExpiration)
+	viper.SetDefault("CONN_JWKS_CACHE_TTL", "1h")
+	viper.SetDefault("CONN_JWKS_REFRESH_INTERVAL", "15m")
+	viper.SetDefault("CONN_PUBLIC_KEY_PATH", "./keys/public.pem")
 	viper.SetDefault("CONN_DEFAULT_NODE_ADDRESS", "ws://localhost:9088")
 	viper.SetDefault("CONN_MAX_CONNECTIONS", constant.ConnMaxConnections)
 	viper.SetDefault("CONN_CONSUL_ADDRESS", "localhost:8500")

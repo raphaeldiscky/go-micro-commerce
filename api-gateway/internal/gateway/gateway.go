@@ -58,9 +58,8 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 		// Get service endpoint
 		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
 		if err != nil {
-			gw.logger.Error("Failed to get service endpoint",
-				"service", serviceName,
-				"error", err)
+			gw.logger.Errorf("failed to get service endpoint for service %s: %v",
+				serviceName, err)
 
 			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
 		}
@@ -73,9 +72,11 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 		duration := time.Since(start)
 
 		if err != nil {
-			gw.logger.Error("Circuit breaker rejected request",
-				"service", serviceName,
-				"error", err)
+			gw.logger.Errorf(
+				"Circuit breaker rejected request for service %s: %v",
+				serviceName,
+				err,
+			)
 
 			// Record metrics
 			gw.metrics.RecordGatewayRequest(
@@ -90,8 +91,10 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 
 		response, ok := result.(*ProxyResponse)
 		if !ok {
-			gw.logger.Error("Invalid response type from circuit breaker",
-				"service", serviceName)
+			gw.logger.Errorf(
+				"invalid response type from circuit breaker for service %s",
+				serviceName,
+			)
 
 			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 		}
@@ -298,9 +301,9 @@ func (gw *Gateway) ProxyToConnectRPC(serviceName string) echo.HandlerFunc {
 		// Get service endpoint
 		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
 		if err != nil {
-			gw.logger.Error("Failed to get service endpoint",
-				"service", serviceName,
-				"error", err)
+			gw.logger.Errorf("failed to get service endpoint for service %s: %v",
+				serviceName,
+				err)
 
 			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
 		}
@@ -313,9 +316,8 @@ func (gw *Gateway) ProxyToConnectRPC(serviceName string) echo.HandlerFunc {
 		duration := time.Since(start)
 
 		if err != nil {
-			gw.logger.Error("Circuit breaker rejected request",
-				"service", serviceName,
-				"error", err)
+			gw.logger.Errorf("circuit breaker rejected request for service %s: %v",
+				serviceName, err)
 
 			// Record metrics
 			gw.metrics.RecordGatewayRequest(

@@ -54,6 +54,14 @@ type ChatService interface {
 		userID uuid.UUID,
 		limit, offset int,
 	) ([]dto.MessageResponse, *pkgdto.OffsetPagination, error)
+	GetConversationMessagesWithCursor(
+		ctx context.Context,
+		conversationID uuid.UUID,
+		userID uuid.UUID,
+		limit int,
+		afterCursor string,
+		beforeCursor string,
+	) ([]dto.MessageResponse, *pkgdto.CursorPagination, error)
 	GetMessageByID(ctx context.Context, messageID uuid.UUID) (*dto.MessageResponse, error)
 
 	// Participant management
@@ -307,8 +315,6 @@ func (s *chatService) EndConversation(
 	})
 }
 
-// NOTE: SendMessage removed - message sending now handled directly via WebSocket in chat_connection.go
-
 // GetConversationMessages retrieves messages for a conversation with pagination.
 func (s *chatService) GetConversationMessages(
 	ctx context.Context,
@@ -352,6 +358,107 @@ func (s *chatService) GetConversationMessages(
 	}
 
 	return messageResponses, paging, nil
+}
+
+// GetConversationMessagesWithCursor retrieves messages for a conversation using cursor-based pagination.
+func (s *chatService) GetConversationMessagesWithCursor(
+	ctx context.Context,
+	conversationID uuid.UUID,
+	userID uuid.UUID,
+	limit int,
+	afterCursor string,
+	beforeCursor string,
+) ([]dto.MessageResponse, *pkgdto.CursorPagination, error) {
+	messageRepo := s.dataStore.MessageRepository()
+
+	// Verify user is participant
+	if err := s.conversationAccess.VerifyUserAccess(ctx, conversationID, userID); err != nil {
+		return nil, nil, err
+	}
+
+	// Get messages with cursor
+	messages, err := messageRepo.FindByConversationIDWithCursor(
+		ctx,
+		conversationID,
+		limit,
+		afterCursor,
+		beforeCursor,
+	)
+	if err != nil {
+		return nil, nil, httperror.NewInternalServerError("failed to get messages")
+	}
+
+	// Check if there are more results
+	hasMore := len(messages) > limit
+	if hasMore {
+		messages = messages[:limit]
+	}
+
+	// Map to response
+	var messageResponses []dto.MessageResponse
+	for _, msg := range messages {
+		messageResponses = append(messageResponses, *mapper.MapToMessageResponse(msg))
+	}
+
+	// Build cursor pagination
+	paging := s.buildMessageCursorPagination(messages, afterCursor, beforeCursor, hasMore, limit)
+
+	return messageResponses, paging, nil
+}
+
+// buildMessageCursorPagination constructs cursor pagination data.
+func (s *chatService) buildMessageCursorPagination(
+	messages []*entity.Message,
+	afterCursor string,
+	beforeCursor string,
+	hasMore bool,
+	limit int,
+) *pkgdto.CursorPagination {
+	var (
+		nextCursor, prevCursor string
+		hasNext, hasPrev       bool
+	)
+
+	if len(messages) == 0 {
+		return &pkgdto.CursorPagination{
+			Limit: int64(limit),
+		}
+	}
+
+	// Forward pagination
+	if afterCursor != "" || (afterCursor == "" && beforeCursor == "") {
+		hasNext = hasMore
+		hasPrev = afterCursor != ""
+		lastMsg := messages[len(messages)-1]
+		nextCursor = lastMsg.ID.String()
+
+		if afterCursor != "" {
+			prevCursor = afterCursor
+		}
+
+		return &pkgdto.CursorPagination{
+			NextCursor: nextCursor,
+			PrevCursor: prevCursor,
+			HasNext:    hasNext,
+			HasPrev:    hasPrev,
+			Limit:      int64(limit),
+		}
+	}
+
+	// Backward pagination
+	hasPrev = hasMore
+	hasNext = true
+	firstMsg := messages[0]
+	prevCursor = firstMsg.ID.String()
+	nextCursor = beforeCursor
+
+	return &pkgdto.CursorPagination{
+		NextCursor: nextCursor,
+		PrevCursor: prevCursor,
+		HasNext:    hasNext,
+		HasPrev:    hasPrev,
+		Limit:      int64(limit),
+	}
 }
 
 // GetMessageByID retrieves a message by ID without access control (for federation).

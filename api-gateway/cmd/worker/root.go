@@ -38,7 +38,7 @@ func Start(
 	gw *gateway.Gateway,
 	appLogger logger.Logger,
 ) error {
-	providers, err := provider.SetupGlobal(cfg)
+	providers, err := provider.SetupGlobal(cfg, appLogger)
 	if err != nil {
 		appLogger.Fatal("failed to setup providers:", err)
 	}

@@ -8,10 +8,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/hashicorp/consul/api"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/jwtutils"
+
+	pkgConfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
@@ -20,18 +22,18 @@ import (
 
 // ConnectionService defines the interface for chat connection management.
 type ConnectionService interface {
-	// RequestConnection generates a connection ticket and selects optimal chat node
+	// RequestConnection selects optimal chat node for connection
 	RequestConnection(
 		ctx context.Context,
 		userID uuid.UUID,
 		userType constant.UserType,
 	) (*dto.ChatConnectionResponse, error)
 
-	// ValidateConnectionTicket validates a connection ticket and extracts user information
-	ValidateConnectionTicket(
+	// ValidateAuthToken validates an auth service JWT and extracts user information
+	ValidateAuthToken(
 		ctx context.Context,
-		ticket string,
-	) (*dto.ConnectionTicketClaims, error)
+		token string,
+	) (*dto.AuthTokenClaims, error)
 
 	// GetNodeHealth returns health status of available chat nodes
 	GetNodeHealth(ctx context.Context) ([]dto.NodeHealthResponse, error)
@@ -40,7 +42,7 @@ type ConnectionService interface {
 // connectionService implements the ConnectionService interface.
 type connectionService struct {
 	logger       logger.Logger
-	jwtSecret    string
+	jwtUtils     jwtutils.JWT
 	nodeConfig   *NodeConfig
 	consulClient *api.Client
 }
@@ -48,7 +50,6 @@ type connectionService struct {
 // NodeConfig holds configuration for chat node selection.
 type NodeConfig struct {
 	DefaultNodeAddress string
-	TicketExpiration   time.Duration
 	MaxConnections     int
 	ConsulAddress      string
 	ChatServiceName    string
@@ -57,109 +58,93 @@ type NodeConfig struct {
 // NewConnectionService creates a new instance of connectionService.
 func NewConnectionService(
 	appLogger logger.Logger,
-	jwtSecret string,
+	publicKeyPath string,
+	jwksURL string,
+	jwksCacheTTL time.Duration,
+	jwksRefreshInterval time.Duration,
 	nodeConfig *NodeConfig,
 ) ConnectionService {
+	// Initialize JWT utils with JWKS support
+	jwtUtil := jwtutils.NewJWTUtils(&pkgConfig.JWTConfig{
+		PublicKeyPath:       publicKeyPath,
+		JWKSUrl:             jwksURL,
+		JWKSCacheTTL:        jwksCacheTTL,
+		JWKSRefreshInterval: jwksRefreshInterval,
+		AllowedAlgs:         []string{"RS256"},
+		SigningMethod:       "RS256",
+	}, appLogger)
+
 	// Initialize Consul client for service discovery
 	var consulClient *api.Client
 	if nodeConfig.ConsulAddress != "" {
 		consulConfig := api.DefaultConfig()
 		consulConfig.Address = nodeConfig.ConsulAddress
 
-		client, err := api.NewClient(consulConfig)
-		if err != nil {
-			appLogger.Warn("Failed to initialize Consul client, using fallback", "error", err)
-		} else {
-			consulClient = client
+		var consulErr error
+
+		consulClient, consulErr = api.NewClient(consulConfig)
+		if consulErr != nil {
+			appLogger.Warn("Failed to initialize Consul client, using fallback", "error", consulErr)
+
+			consulClient = nil
 		}
 	}
 
 	return &connectionService{
 		logger:       appLogger,
-		jwtSecret:    jwtSecret,
+		jwtUtils:     jwtUtil,
 		nodeConfig:   nodeConfig,
 		consulClient: consulClient,
 	}
 }
 
-// RequestConnection generates a connection ticket and selects optimal chat node.
+// RequestConnection selects optimal chat node for connection.
 func (s *connectionService) RequestConnection(
 	ctx context.Context,
 	userID uuid.UUID,
 	userType constant.UserType,
 ) (*dto.ChatConnectionResponse, error) {
-	// For now, use a simple node selection strategy
-	// In production, this would query service discovery and load balance
+	// Select optimal node using service discovery and load balancing
 	selectedNode := s.selectOptimalNode(ctx)
 
-	// Generate connection ticket
-	ticket, expiresAt, err := s.generateConnectionticket(userID, userType)
-	if err != nil {
-		s.logger.Error("Failed to generate connection ticket", "error", err, "user_id", userID)
-		return nil, httperror.NewInternalServerError("failed to generate connection ticket")
-	}
-
-	s.logger.Info("Generated connection ticket",
+	s.logger.Info("Selected chat node for connection",
 		"user_id", userID,
 		"user_type", userType,
-		"node_address", selectedNode,
-		"expires_at", expiresAt)
+		"node_address", selectedNode)
 
 	return &dto.ChatConnectionResponse{
 		NodeAddress: selectedNode,
-		Ticket:      ticket,
-		ExpiresAt:   expiresAt,
 		UserID:      userID,
 		UserType:    userType,
 	}, nil
 }
 
-// ValidateConnectionTicket validates a connection ticket and extracts user information.
-func (s *connectionService) ValidateConnectionTicket(
+// ValidateAuthToken validates an auth service JWT and extracts user information.
+func (s *connectionService) ValidateAuthToken(
 	_ context.Context,
-	ticket string,
-) (*dto.ConnectionTicketClaims, error) {
-	jwtToken, err := jwt.ParseWithClaims(
-		ticket,
-		&dto.ConnectionTicketClaims{},
-		func(jwtToken *jwt.Token) (interface{}, error) {
-			// Verify the signing method
-			if _, ok := jwtToken.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v", jwtToken.Header["alg"])
-			}
-
-			return []byte(s.jwtSecret), nil
-		},
-	)
+	token string,
+) (*dto.AuthTokenClaims, error) {
+	// Use jwtUtils to validate the token (supports JWKS with caching)
+	claims, err := s.jwtUtils.ValidateAccessToken(token)
 	if err != nil {
-		s.logger.Warn("Invalid connection ticket", "error", err)
-		return nil, httperror.NewUnauthorizedError("invalid connection ticket")
+		s.logger.Warn("Invalid auth token", "error", err)
+		return nil, httperror.NewUnauthorizedError("invalid auth token")
 	}
 
-	claims, ok := jwtToken.Claims.(*dto.ConnectionTicketClaims)
-	if !ok || !jwtToken.Valid {
-		s.logger.Warn("Invalid ticket claims")
-		return nil, httperror.NewUnauthorizedError("invalid ticket claims")
+	// Map jwtutils.AccessTokenClaims to dto.AuthTokenClaims
+	authClaims := &dto.AuthTokenClaims{
+		RegisteredClaims: claims.RegisteredClaims,
+		UserID:           claims.UserID,
+		Email:            claims.Email,
+		Roles:            claims.Roles,
+		IsActive:         claims.IsActive,
 	}
 
-	// Check if ticket has expired
-	if time.Now().After(claims.ExpiresAt.Time) {
-		s.logger.Warn(
-			"Connection ticket expired",
-			"user_id",
-			claims.UserID,
-			"expired_at",
-			claims.ExpiresAt.Time,
-		)
+	s.logger.Info("Successfully validated auth token",
+		"user_id", authClaims.UserID,
+		"email", authClaims.Email)
 
-		return nil, httperror.NewUnauthorizedError("connection ticket expired")
-	}
-
-	s.logger.Info("Successfully validated connection ticket",
-		"user_id", claims.UserID,
-		"user_type", claims.UserType)
-
-	return claims, nil
+	return authClaims, nil
 }
 
 // GetNodeHealth returns health status of available chat nodes.
@@ -253,33 +238,4 @@ func (s *connectionService) getFallbackNodes() []dto.NodeHealthResponse {
 			LastSeen:       time.Now(),
 		},
 	}
-}
-
-// generateConnectionticket creates a signed JWT ticket for WebSocket connection.
-func (s *connectionService) generateConnectionticket(
-	userID uuid.UUID,
-	userType constant.UserType,
-) (string, time.Time, error) {
-	expiresAt := time.Now().Add(s.nodeConfig.TicketExpiration)
-
-	claims := &dto.ConnectionTicketClaims{
-		UserID:   userID,
-		UserType: userType,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ID:        uuid.New().String(),
-			ExpiresAt: jwt.NewNumericDate(expiresAt),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "chat-service",
-			Subject:   userID.String(),
-		},
-	}
-
-	jwtToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	ticketString, err := jwtToken.SignedString([]byte(s.jwtSecret))
-	if err != nil {
-		return "", time.Time{}, fmt.Errorf("failed to sign connection ticket: %w", err)
-	}
-
-	return ticketString, expiresAt, nil
 }

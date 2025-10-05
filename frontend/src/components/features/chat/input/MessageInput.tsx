@@ -1,5 +1,5 @@
-import type { Message } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import type { Message } from '@/types/__generated__/graphql'
 import { Paperclip, Send, Smile, X } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 import { Button } from '../../../ui/button'
@@ -89,7 +89,10 @@ export function MessageInput({
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                Replying to {replyingTo.sender_name}
+                Replying to{' '}
+                {replyingTo.sender
+                  ? `${replyingTo.sender.firstName} ${replyingTo.sender.lastName}`
+                  : 'Unknown'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {replyingTo.content}

@@ -20,11 +20,20 @@ type MessageRepository interface {
 	// FindByID retrieves a message by its ID
 	FindByID(ctx context.Context, id uuid.UUID) (*entity.Message, error)
 
-	// FindByConversationID retrieves messages for a conversation with pagination
+	// FindByConversationID retrieves messages for a conversation with pagination (deprecated - use cursor)
 	FindByConversationID(
 		ctx context.Context,
 		conversationID uuid.UUID,
 		limit, offset int,
+	) ([]*entity.Message, error)
+
+	// FindByConversationIDWithCursor retrieves messages using cursor-based pagination
+	FindByConversationIDWithCursor(
+		ctx context.Context,
+		conversationID uuid.UUID,
+		limit int,
+		afterCursor string,
+		beforeCursor string,
 	) ([]*entity.Message, error)
 
 	// FindLatestByConversationID retrieves the latest messages for a conversation
@@ -120,6 +129,74 @@ func (r *messageRepository) FindByConversationID(
 	rows, err := r.db.Query(ctx, query, conversationID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query messages by conversation: %w", err)
+	}
+	defer rows.Close()
+
+	return r.scanMessages(rows)
+}
+
+// FindByConversationIDWithCursor retrieves messages using cursor-based pagination.
+func (r *messageRepository) FindByConversationIDWithCursor(
+	ctx context.Context,
+	conversationID uuid.UUID,
+	limit int,
+	afterCursor string,
+	beforeCursor string,
+) ([]*entity.Message, error) {
+	var (
+		query string
+		args  []any
+	)
+
+	if afterCursor != "" && beforeCursor != "" {
+		return nil, errors.New("cannot use both after and before cursors")
+	}
+
+	switch {
+	case afterCursor != "":
+		// Forward pagination: get messages after the cursor
+		query = `
+			SELECT id, conversation_id, sender_id, content,
+				message_type, metadata, is_system, created_at
+			FROM messages
+			WHERE conversation_id = $1
+				AND (created_at, id) > (
+					SELECT created_at, id FROM messages WHERE id = $2
+				)
+			ORDER BY created_at ASC, id ASC
+			LIMIT $3
+		`
+		args = []any{conversationID, afterCursor, limit + 1} // +1 to check hasNext
+	case beforeCursor != "":
+		// Backward pagination: get messages before the cursor
+		query = `
+			SELECT id, conversation_id, sender_id, content,
+				message_type, metadata, is_system, created_at
+			FROM messages
+			WHERE conversation_id = $1
+				AND (created_at, id) < (
+					SELECT created_at, id FROM messages WHERE id = $2
+				)
+			ORDER BY created_at DESC, id DESC
+			LIMIT $3
+		`
+		args = []any{conversationID, beforeCursor, limit + 1} // +1 to check hasPrev
+	default:
+		// No cursor: get first page
+		query = `
+			SELECT id, conversation_id, sender_id, content,
+				message_type, metadata, is_system, created_at
+			FROM messages
+			WHERE conversation_id = $1
+			ORDER BY created_at ASC, id ASC
+			LIMIT $2
+		`
+		args = []any{conversationID, limit + 1} // +1 to check hasNext
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query messages with cursor: %w", err)
 	}
 	defer rows.Close()
 

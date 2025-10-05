@@ -1,11 +1,24 @@
-import type { Message, SendMessageRequest } from '@/lib/api'
-import { getConversationMessages, sendMessage } from '@/lib/api'
+import { queryKeys } from '@/constants/query-key'
+import type { SendMessageRequest } from '@/lib/api'
+import { sendMessage } from '@/lib/api'
+import { CONVERSATION_MESSAGES_QUERY, graphqlClient } from '@/lib/graphql'
 import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
+import type { Message, MessageConnection } from '@/types/__generated__/graphql'
+import { ConversationStatus, MessageType } from '@/types/__generated__/graphql'
 import {
   useInfiniteQuery,
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query'
+
+interface ConversationMessagesQueryResponse {
+  conversationMessages: MessageConnection
+}
+
+interface InfiniteQueryData {
+  pages: Array<Array<Message>>
+  pageParams: Array<string | undefined>
+}
 
 /**
  * Helper hook to add real-time message to cache
@@ -14,70 +27,72 @@ export function useAddMessage(conversationId: string) {
   const queryClient = useQueryClient()
 
   return (message: Message) => {
-    queryClient.setQueryData(['messages', conversationId], (old: any) => {
-      if (!old) return old
+    queryClient.setQueryData<InfiniteQueryData>(
+      queryKeys.chat.messages(conversationId),
+      (old) => {
+        if (!old) return old
 
-      // Check if message already exists (prevent duplicates)
-      const messageExists = old.pages.some((page: Array<Message>) =>
-        page.some((msg) => msg.id === message.id),
-      )
+        // Check if message already exists (prevent duplicates)
+        const messageExists = old.pages.some((page) =>
+          page.some((msg) => msg.id === message.id),
+        )
 
-      if (messageExists) return old
+        if (messageExists) return old
 
-      // Add message to the last page
-      const updatedPages = [...old.pages]
-      if (updatedPages.length > 0) {
-        updatedPages[updatedPages.length - 1] = [
-          ...updatedPages[updatedPages.length - 1],
-          message,
-        ]
-      } else {
-        updatedPages.push([message])
-      }
+        // Add message to the last page
+        const updatedPages = [...old.pages]
+        if (updatedPages.length > 0) {
+          updatedPages[updatedPages.length - 1] = [
+            ...updatedPages[updatedPages.length - 1],
+            message,
+          ]
+        } else {
+          updatedPages.push([message])
+        }
 
-      return {
-        ...old,
-        pages: updatedPages,
-      }
-    })
+        return {
+          ...old,
+          pages: updatedPages,
+        }
+      },
+    )
 
     // Update conversation list
-    queryClient.invalidateQueries({ queryKey: ['conversations'] })
+    queryClient.invalidateQueries({ queryKey: queryKeys.chat.conversations() })
   }
 }
 
 /**
- * Hook for fetching messages with infinite scroll pagination
+ * Hook for fetching messages with cursor-based infinite scroll pagination
  */
 export function useMessages(conversationId: string) {
   return useInfiniteQuery({
     enabled: !!conversationId,
     gcTime: 5 * 60 * 1000, // 5 minutes
-    getNextPageParam: (
-      lastPage: {
-        messages: Array<Message>
-        hasMore: boolean
-        totalPages: number
-      },
-      allPages,
-    ) => {
-      // Use the hasMore flag from the API response
-      return lastPage.hasMore ? allPages.length + 1 : undefined
+    getNextPageParam: (lastPage: ConversationMessagesQueryResponse) => {
+      const { pageInfo } = lastPage.conversationMessages
+      return pageInfo.hasNextPage ? pageInfo.endCursor : undefined
     },
-    initialPageParam: 1,
-    queryFn: ({ pageParam = 1 }) =>
-      getConversationMessages(conversationId, pageParam, 50),
-    queryKey: ['messages', conversationId],
+    initialPageParam: undefined as string | undefined,
+    queryFn: async ({ pageParam }) => {
+      const data =
+        await graphqlClient.request<ConversationMessagesQueryResponse>(
+          CONVERSATION_MESSAGES_QUERY,
+          {
+            conversationId,
+            first: 50,
+            after: pageParam,
+          },
+        )
+      return data
+    },
+    queryKey: queryKeys.chat.messages(conversationId),
     refetchOnWindowFocus: false, // Real-time updates handle this
     staleTime: 30 * 1000, // 30 seconds - messages are real-time
     select: (data) => ({
       ...data,
-      pages: data.pages.map(
-        (page: {
-          messages: Array<Message>
-          hasMore: boolean
-          totalPages: number
-        }) => page.messages,
+      pages: data.pages.map((page) =>
+        page.conversationMessages.edges.map((edge) => edge.node),
       ),
     }),
   })
@@ -85,6 +100,7 @@ export function useMessages(conversationId: string) {
 
 /**
  * Hook for sending messages
+ * Note: sendMessage still uses WebSocket/REST for real-time delivery
  */
 export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient()
@@ -95,80 +111,100 @@ export function useSendMessage(conversationId: string) {
     onMutate: async (newMessage) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: ['messages', conversationId],
+        queryKey: queryKeys.chat.messages(conversationId),
       })
 
       // Snapshot the previous value
-      const previousMessages = queryClient.getQueryData([
+      const previousMessages = queryClient.getQueryData<InfiniteQueryData>([
         'messages',
         conversationId,
       ])
 
       // Optimistically update the cache
-      queryClient.setQueryData(['messages', conversationId], (old: any) => {
-        if (!old) return old
+      queryClient.setQueryData<InfiniteQueryData>(
+        queryKeys.chat.messages(conversationId),
+        (old) => {
+          if (!old) return old
 
-        const optimisticMessage: Message = {
-          content: newMessage.content,
-          conversation_id: conversationId,
-          created_at: generateTimestamp(),
-          delivery_status: 'sent',
-          id: generateUniqueId('temp'),
-          message_type: newMessage.message_type || 'text',
-          sender_id: 'current-user', // Will be replaced by real user ID
-          sender_name: 'You',
-          updated_at: generateTimestamp(),
-        }
+          const optimisticMessage: Message = {
+            __typename: 'Message',
+            content: newMessage.content,
+            conversation: {
+              __typename: 'Conversation',
+              id: conversationId,
+              subject: null,
+              status: ConversationStatus.Active,
+              priority: 0,
+              participants: [],
+              messages: {
+                __typename: 'MessageConnection',
+                edges: [],
+                pageInfo: {
+                  __typename: 'PageInfo',
+                  hasNextPage: false,
+                  hasPreviousPage: false,
+                  startCursor: null,
+                  endCursor: null,
+                },
+              },
+              createdAt: '',
+              updatedAt: '',
+              endedAt: null,
+            },
+            conversationId,
+            createdAt: generateTimestamp(),
+            id: generateUniqueId('temp'),
+            isSystem: false,
+            messageType:
+              newMessage.message_type === 'image'
+                ? MessageType.Image
+                : newMessage.message_type === 'file'
+                  ? MessageType.File
+                  : MessageType.Text,
+            sender: null,
+            senderId: 'current-user', // Will be replaced by real user ID
+          }
 
-        // Add message to the last page
-        const updatedPages = [...old.pages]
-        if (updatedPages.length > 0) {
-          updatedPages[updatedPages.length - 1] = [
-            ...updatedPages[updatedPages.length - 1],
-            optimisticMessage,
-          ]
-        } else {
-          updatedPages.push([optimisticMessage])
-        }
+          // Add message to the last page
+          const updatedPages = [...old.pages]
+          if (updatedPages.length > 0) {
+            updatedPages[updatedPages.length - 1] = [
+              ...updatedPages[updatedPages.length - 1],
+              optimisticMessage,
+            ]
+          } else {
+            updatedPages.push([optimisticMessage])
+          }
 
-        return {
-          ...old,
-          pages: updatedPages,
-        }
-      })
+          return {
+            ...old,
+            pages: updatedPages,
+          }
+        },
+      )
 
       return { previousMessages }
     },
     onError: (_err, _newMessage, context) => {
       // Revert optimistic update on error
       if (context?.previousMessages) {
-        queryClient.setQueryData(
-          ['messages', conversationId],
+        queryClient.setQueryData<InfiniteQueryData>(
+          queryKeys.chat.messages(conversationId),
           context.previousMessages,
         )
       }
     },
-    onSuccess: (data) => {
-      // Replace optimistic message with real message
-      queryClient.setQueryData(['messages', conversationId], (old: any) => {
-        if (!old) return old
-
-        return {
-          ...old,
-          pages: old.pages.map((page: Array<Message>, index: number) => {
-            if (index === old.pages.length - 1) {
-              // Replace the last optimistic message with the real one
-              return page.map((msg) =>
-                msg.id.startsWith('temp-') ? data : msg,
-              )
-            }
-            return page
-          }),
-        }
+    onSuccess: () => {
+      // Refetch messages to get the real message from server
+      // WebSocket will have already added it to the backend
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chat.messages(conversationId),
       })
 
       // Update conversation list to reflect new message
-      queryClient.invalidateQueries({ queryKey: ['conversations'] })
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.chat.conversations(),
+      })
     },
   })
 }

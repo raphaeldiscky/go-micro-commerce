@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -12,6 +13,7 @@ import (
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	chatwebsocket "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
@@ -60,29 +62,29 @@ func (h *WebSocketHandler) createChatConnection(
 		return nil, err
 	}
 
-	// Require ticket-based authentication for all WebSocket connections
-	ticket := c.QueryParam("ticket")
-	if ticket == "" {
-		h.logger.Error("Missing ticket parameter for WebSocket connection")
+	// Require auth token for all WebSocket connections
+	authToken := c.QueryParam("token")
+	if authToken == "" {
+		h.logger.Error("Missing token parameter for WebSocket connection")
 
 		if closeErr := conn.Close(); closeErr != nil {
 			h.logger.Error("Failed to close connection", "error", closeErr)
 		}
 
-		return nil, echo.NewHTTPError(http.StatusUnauthorized, "ticket parameter is required")
+		return nil, echo.NewHTTPError(http.StatusUnauthorized, "token parameter is required")
 	}
 
-	return h.createConnectionFromTicket(ticket, conn)
+	return h.createConnectionFromAuthToken(authToken, conn)
 }
 
-// createConnectionFromTicket creates a connection using a connection ticket.
-func (h *WebSocketHandler) createConnectionFromTicket(
-	ticket string,
+// createConnectionFromAuthToken creates a connection using an auth service JWT.
+func (h *WebSocketHandler) createConnectionFromAuthToken(
+	token string,
 	conn *websocket.Conn,
 ) (*chatwebsocket.ChatConnection, error) {
-	claims, err := h.connectionService.ValidateConnectionTicket(context.Background(), ticket)
+	claims, err := h.connectionService.ValidateAuthToken(context.Background(), token)
 	if err != nil {
-		h.logger.Error("Failed to validate connection ticket", "error", err)
+		h.logger.Error("Failed to validate auth token", "error", err)
 
 		if closeErr := conn.Close(); closeErr != nil {
 			h.logger.Error("Failed to close connection", "error", closeErr)
@@ -91,13 +93,19 @@ func (h *WebSocketHandler) createConnectionFromTicket(
 		return nil, err
 	}
 
-	h.logger.Info("Creating connection from ticket",
+	// Determine user type from roles
+	userType := h.determineUserTypeFromRoles(claims.Roles)
+
+	h.logger.Info("Creating connection from auth token",
 		"user_id", claims.UserID,
-		"user_type", claims.UserType)
+		"email", claims.Email,
+		"user_type", userType)
+
+	userID := uuid.MustParse(claims.UserID)
 
 	return chatwebsocket.NewChatConnection(
-		claims.UserID,
-		claims.UserType,
+		userID,
+		userType,
 		conn,
 		h.hub,
 		h.hub.ConnectionRepo,
@@ -105,6 +113,23 @@ func (h *WebSocketHandler) createConnectionFromTicket(
 		h.chatService.GetUserConversations,
 		h.logger,
 	), nil
+}
+
+// determineUserTypeFromRoles determines user type from JWT roles.
+func (h *WebSocketHandler) determineUserTypeFromRoles(roles []string) constant.UserType {
+	// Prioritize admin role
+	for _, role := range roles {
+		if role == string(constant.UserTypeAdmin) {
+			return constant.UserTypeAdmin
+		}
+	}
+
+	// Fall back to first role or user
+	if len(roles) > 0 {
+		return constant.UserType(roles[0])
+	}
+
+	return constant.UserTypeUser
 }
 
 // HandleWebSocket handles WebSocket connection upgrades for all users.

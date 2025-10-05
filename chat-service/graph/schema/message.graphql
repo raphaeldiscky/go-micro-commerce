@@ -19,23 +19,32 @@ enum MessageType {
   SYSTEM
 }
 
-# Pagination for messages
+# Cursor-based pagination for messages
 type MessageConnection {
-  items: [Message!]!
-  pagination: OffsetPagination!
+  edges: [MessageEdge!]!
+  pageInfo: PageInfo!
 }
 
-type OffsetPagination {
-  totalItems: Int!
-  totalPages: Int!
-  currentPage: Int!
-  pageSize: Int!
-  hasNext: Boolean!
-  hasPrev: Boolean!
+type MessageEdge {
+  cursor: String!
+  node: Message!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
 }
 
 # Message queries
 extend type Query {
-  # Get messages for a conversation
-  conversationMessages(conversationId: ID!, limit: Int = 50, offset: Int = 0): MessageConnection!
+  # Get messages for a conversation with cursor-based pagination
+  conversationMessages(
+    conversationId: ID!
+    first: Int
+    after: String
+    last: Int
+    before: String
+  ): MessageConnection!
 }

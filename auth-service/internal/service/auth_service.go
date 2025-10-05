@@ -240,11 +240,16 @@ func (s *authService) Login(
 			return err
 		}
 
+		// Check if user is verified
+		if !user.IsEmailVerified {
+			s.logger.Error("User email is not verified", "user_id", user.ID, "email", user.Email)
+			return httperror.NewUnauthorizedError("email not verified")
+		}
+
 		// Check if user is active
 		if !user.IsActive {
 			s.logger.Error("User account is inactive", "user_id", user.ID, "email", user.Email)
-
-			return httperror.NewInvalidCredentialError()
+			return httperror.NewUnauthorizedError("account is inactive")
 		}
 
 		// Verify password

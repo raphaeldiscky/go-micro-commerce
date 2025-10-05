@@ -38,14 +38,16 @@ func SetupChat(
 	// Create connection service
 	nodeConfig := &service.NodeConfig{
 		DefaultNodeAddress: cfg.Connection.DefaultNodeAddress,
-		TicketExpiration:   cfg.Connection.TicketExpiration,
 		MaxConnections:     cfg.Connection.MaxConnections,
 		ConsulAddress:      cfg.Connection.ConsulAddress,
 		ChatServiceName:    cfg.Connection.ChatServiceName,
 	}
 	connectionService := service.NewConnectionService(
 		appLogger,
-		cfg.Connection.JWTSecret,
+		cfg.Connection.PublicKeyPath,
+		cfg.Connection.JWKSUrl,
+		cfg.Connection.JWKSCacheTTL,
+		cfg.Connection.JWKSRefreshInterval,
 		nodeConfig,
 	)
 	providers.ConnectionService = connectionService

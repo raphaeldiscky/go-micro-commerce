@@ -1,5 +1,7 @@
 export * from './auth'
 export * from './auth.generated'
+export * from './chat'
+export * from './chat.generated'
 export * from './client'
 export * from './error-handler'
 export * from './mapper'

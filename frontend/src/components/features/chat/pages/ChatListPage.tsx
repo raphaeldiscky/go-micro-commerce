@@ -1,21 +1,18 @@
 import { PATH_AUTH, PATH_FEATURES } from '@/constants/routes'
 import { useIsAuthenticated } from '@/hooks/auth/useAuth'
 import { useConversations } from '@/hooks/chat/useConversations'
-import type { Conversation } from '@/lib/api'
 import { formatRelativeTime } from '@/lib/utils/date'
+import type { Conversation } from '@/types/__generated__/graphql'
 import { Link } from '@tanstack/react-router'
 import {
   ChevronRight,
   Clock,
-  Hash,
   MessageCircle,
   Plus,
   Search,
-  User,
   Users,
 } from 'lucide-react'
 import { useState } from 'react'
-import { Badge } from '../../../ui/badge'
 import { Button } from '../../../ui/button'
 import { Card, CardContent } from '../../../ui/card'
 import { Input } from '../../../ui/input'
@@ -28,26 +25,22 @@ export function ChatListPage() {
   const { data: conversations, error, isLoading, refetch } = useConversations()
 
   const getConversationName = (conversation: Conversation) => {
-    return conversation.name || conversation.subject || 'Untitled Conversation'
+    return conversation.subject || 'Untitled Conversation'
   }
 
   const filteredConversations = conversations?.filter((conv) => {
     const name = getConversationName(conv)
-    return (
-      name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (conv.description &&
-        conv.description.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
+    return name.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
-  const getConversationIcon = (type: Conversation['type']) => {
-    switch (type) {
-      case 'channel':
-        return <Hash className="h-5 w-5 text-green-500" />
-      case 'direct':
-        return <User className="h-5 w-5 text-purple-500" />
-      case 'group':
-        return <Users className="h-5 w-5 text-blue-500" />
+  const getConversationIcon = (status: Conversation['status']) => {
+    switch (status) {
+      case 'WAITING':
+        return <Clock className="h-5 w-5 text-yellow-500" />
+      case 'ACTIVE':
+        return <MessageCircle className="h-5 w-5 text-green-500" />
+      case 'ENDED':
+        return <MessageCircle className="h-5 w-5 text-gray-500" />
       default:
         return <MessageCircle className="h-5 w-5 text-gray-500" />
     }
@@ -173,69 +166,41 @@ export function ChatListPage() {
                       <div className="flex items-center space-x-4 flex-1 min-w-0">
                         {/* Conversation Icon */}
                         <div className="flex-shrink-0">
-                          {getConversationIcon(conversation.type)}
+                          {getConversationIcon(conversation.status)}
                         </div>
 
                         {/* Conversation Info */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
                             <h3 className="font-semibold text-gray-900 dark:text-white truncate">
-                              {conversation.name}
+                              {getConversationName(conversation)}
                             </h3>
                             <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
-                              {conversation.unread_count > 0 && (
-                                <Badge
-                                  className="text-xs"
-                                  variant="destructive"
-                                >
-                                  {conversation.unread_count > 99
-                                    ? '99+'
-                                    : conversation.unread_count}
-                                </Badge>
-                              )}
-                              {conversation.last_message && (
-                                <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
-                                  <Clock className="h-3 w-3 mr-1" />
-                                  {formatRelativeTime(
-                                    conversation.last_message.timestamp,
-                                  )}
-                                </span>
-                              )}
+                              <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                                <Clock className="h-3 w-3 mr-1" />
+                                {formatRelativeTime(conversation.updatedAt)}
+                              </span>
                             </div>
                           </div>
 
-                          {/* Last Message */}
+                          {/* Participants Count */}
                           <div className="flex items-center justify-between">
                             <div className="flex-1 min-w-0">
-                              {conversation.last_message ? (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                                  <span className="font-medium">
-                                    {conversation.last_message.sender_name ||
-                                      'User'}
-                                    :
-                                  </span>{' '}
-                                  {conversation.last_message.content}
-                                </p>
-                              ) : (
-                                <p className="text-sm text-gray-500 dark:text-gray-500 italic">
-                                  No messages yet
-                                </p>
-                              )}
+                              <p className="text-sm text-gray-500 dark:text-gray-500 italic">
+                                {conversation.status === 'ACTIVE'
+                                  ? 'Active conversation'
+                                  : conversation.status === 'WAITING'
+                                    ? 'Waiting for agent'
+                                    : 'Conversation ended'}
+                              </p>
                             </div>
 
                             {/* Participants Count */}
                             <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 ml-2">
                               <Users className="h-3 w-3 mr-1" />
-                              {conversation.participant_count}
+                              {conversation.participants.length}
                             </div>
                           </div>
-
-                          {/* Description */}
-                          {conversation.description && (
-                            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1 truncate">
-                              {conversation.description}
-                            </p>
-                          )}
                         </div>
                       </div>
 

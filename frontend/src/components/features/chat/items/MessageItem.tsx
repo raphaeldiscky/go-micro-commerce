@@ -1,7 +1,7 @@
-import type { Message } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { formatTime } from '@/lib/utils/date'
-import { Check, CheckCheck, Clock, Reply } from 'lucide-react'
+import type { Message } from '@/types/__generated__/graphql'
+import { Check, Reply } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '../../../ui/avatar'
 import { Button } from '../../../ui/button'
 
@@ -18,20 +18,12 @@ export function MessageItem({
   message,
   onReply,
 }: MessageItemProps) {
-  const isOwn = message.sender_id === currentUserId
-  const isSystem = message.message_type === 'system'
+  const isOwn = message.senderId === currentUserId
+  const isSystem = message.isSystem
 
   const getDeliveryStatusIcon = () => {
-    switch (message.delivery_status) {
-      case 'delivered':
-        return <CheckCheck className="h-3 w-3 text-gray-400" />
-      case 'read':
-        return <CheckCheck className="h-3 w-3 text-blue-500" />
-      case 'sent':
-        return <Check className="h-3 w-3 text-gray-400" />
-      default:
-        return <Clock className="h-3 w-3 text-gray-300" />
-    }
+    // GraphQL doesn't have delivery_status, so we show a simple sent icon
+    return <Check className="h-3 w-3 text-gray-400" />
   }
 
   const getInitials = (name?: string) => {
@@ -76,11 +68,19 @@ export function MessageItem({
             {!isConsecutive && (
               <Avatar className="h-8 w-8">
                 <AvatarImage
-                  alt={message.sender_name || 'User'}
+                  alt={
+                    message.sender
+                      ? `${message.sender.firstName} ${message.sender.lastName}`
+                      : 'User'
+                  }
                   src={undefined}
                 />
                 <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-                  {getInitials(message.sender_name)}
+                  {getInitials(
+                    message.sender
+                      ? `${message.sender.firstName} ${message.sender.lastName}`
+                      : undefined,
+                  )}
                 </AvatarFallback>
               </Avatar>
             )}
@@ -96,10 +96,14 @@ export function MessageItem({
           {!isConsecutive && !isOwn && (
             <div className="flex items-center space-x-2 mb-1">
               <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                {message.sender_name || `User ${message.sender_id.slice(-4)}`}
+                {message.sender
+                  ? `${message.sender.firstName} ${message.sender.lastName}`
+                  : message.senderId
+                    ? `User ${message.senderId.slice(-4)}`
+                    : 'System'}
               </span>
               <span className="text-xs text-gray-500 dark:text-gray-400">
-                {formatTime(message.created_at)}
+                {formatTime(message.createdAt)}
               </span>
             </div>
           )}
@@ -125,7 +129,7 @@ export function MessageItem({
                 isOwn ? 'text-blue-100' : 'text-gray-500 dark:text-gray-400',
               )}
             >
-              <span className="text-xs">{formatTime(message.created_at)}</span>
+              <span className="text-xs">{formatTime(message.createdAt)}</span>
               {isOwn && getDeliveryStatusIcon()}
             </div>
           </div>

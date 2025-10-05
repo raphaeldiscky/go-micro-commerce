@@ -337,12 +337,14 @@ tasks:
           echo "Generating GraphQL files for {{.SERVICE}}..."
           bash ./scripts/graphql.sh {{.SERVICE}}
         fi
+      - task: deps
 
   supergraph:
     desc: Compose Apollo Federation supergraph schema and generate frontend code
     cmds:
       - bash ./scripts/compose-supergraph.sh
       - cd frontend && pnpm codegen
+      - task: deps
 
   start_graphql:
     desc: Start GraphQL Gateway

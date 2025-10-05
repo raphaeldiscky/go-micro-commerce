@@ -6,8 +6,9 @@ import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
 import { useSendMessage } from '@/hooks/chat/useMessages'
 import { usePresence } from '@/hooks/chat/usePresence'
 import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
-import type { Message, SendMessageRequest } from '@/lib/api'
+import type { SendMessageRequest } from '@/lib/api'
 import { isExpired } from '@/lib/utils/date'
+import type { Message } from '@/types/__generated__/graphql'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -281,7 +282,9 @@ export function ConversationPage({
           </Button>
 
           <div>
-            <h1 className="text-lg font-semibold">{conversation.name}</h1>
+            <h1 className="text-lg font-semibold">
+              {conversation.subject || 'Conversation'}
+            </h1>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <span
                 className={`w-2 h-2 rounded-full ${connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'}`}
