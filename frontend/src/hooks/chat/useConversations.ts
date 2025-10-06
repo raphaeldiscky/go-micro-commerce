@@ -1,4 +1,4 @@
-import { queryKeys } from '@/constants/query-key'
+import { QUERY_KEY } from '@/constants/query-key'
 import {
   CONVERSATIONS_QUERY,
   JOIN_CONVERSATION_MUTATION,
@@ -37,7 +37,7 @@ export function useConversations() {
         )
       return data.conversations
     },
-    queryKey: queryKeys.chat.conversations(),
+    queryKey: QUERY_KEY.chat.conversations(),
     refetchOnWindowFocus: false,
     retry: 3,
     staleTime: 30 * 1000, // 30 seconds - conversations don't change frequently
@@ -65,7 +65,7 @@ export function useJoinConversation() {
     onSuccess: () => {
       // Refetch conversations list to update join status
       queryClient.invalidateQueries({
-        queryKey: queryKeys.chat.conversations(),
+        queryKey: QUERY_KEY.chat.conversations(),
       })
     },
   })

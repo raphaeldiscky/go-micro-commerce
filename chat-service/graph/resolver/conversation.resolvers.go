@@ -8,20 +8,24 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // CreateConversation is the resolver for the createConversation field.
-func (r *mutationResolver) CreateConversation(ctx context.Context, input graph.CreateConversationInput) (*graph.Conversation, error) {
-	// Get user ID from context (set by auth middleware)
-	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
-	if !ok {
-		return nil, httperror.NewUnauthorizedError("user not authenticated")
+func (r *mutationResolver) CreateConversation(
+	ctx context.Context,
+	input graph.CreateConversationInput,
+) (*graph.Conversation, error) {
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, err
 	}
 
 	req := &dto.CreateConversationRequest{
@@ -29,7 +33,12 @@ func (r *mutationResolver) CreateConversation(ctx context.Context, input graph.C
 		Priority: input.Priority,
 	}
 
-	conversation, err := r.chatService.CreateConversation(ctx, userID, constant.UserTypeUser, req)
+	conversation, err := r.chatService.CreateConversation(
+		ctx,
+		user.UserID,
+		constant.UserTypeUser,
+		req,
+	)
 	if err != nil {
 		r.logger.Error("Failed to create conversation", "error", err)
 		return nil, err
@@ -39,7 +48,10 @@ func (r *mutationResolver) CreateConversation(ctx context.Context, input graph.C
 }
 
 // EndConversation is the resolver for the endConversation field.
-func (r *mutationResolver) EndConversation(ctx context.Context, conversationID string) (*graph.Conversation, error) {
+func (r *mutationResolver) EndConversation(
+	ctx context.Context,
+	conversationID string,
+) (*graph.Conversation, error) {
 	convID, err := uuid.Parse(conversationID)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
@@ -55,7 +67,11 @@ func (r *mutationResolver) EndConversation(ctx context.Context, conversationID s
 }
 
 // AssignConversationToAdmin is the resolver for the assignConversationToAdmin field.
-func (r *mutationResolver) AssignConversationToAdmin(ctx context.Context, conversationID string, adminID string) (*graph.Conversation, error) {
+func (r *mutationResolver) AssignConversationToAdmin(
+	ctx context.Context,
+	conversationID string,
+	adminID string,
+) (*graph.Conversation, error) {
 	convID, err := uuid.Parse(conversationID)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
@@ -77,10 +93,10 @@ func (r *mutationResolver) AssignConversationToAdmin(ctx context.Context, conver
 
 // Conversation is the resolver for the conversation field.
 func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Conversation, error) {
-	// Get user ID from context
-	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
-	if !ok {
-		return nil, httperror.NewUnauthorizedError("user not authenticated")
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, err
 	}
 
 	conversationID, err := uuid.Parse(id)
@@ -88,7 +104,7 @@ func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Con
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
 	}
 
-	conversation, err := r.chatService.GetConversation(ctx, conversationID, userID)
+	conversation, err := r.chatService.GetConversation(ctx, conversationID, user.UserID)
 	if err != nil {
 		r.logger.Error("Failed to get conversation", "error", err)
 		return nil, err
@@ -99,13 +115,17 @@ func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Con
 
 // Conversations is the resolver for the conversations field.
 func (r *queryResolver) Conversations(ctx context.Context) ([]*graph.Conversation, error) {
-	// Get user ID from context
-	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
-	if !ok {
-		return nil, httperror.NewUnauthorizedError("user not authenticated")
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, err
 	}
 
-	conversations, err := r.chatService.GetUserConversations(ctx, userID, constant.UserTypeUser)
+	conversations, err := r.chatService.GetUserConversations(
+		ctx,
+		user.UserID,
+		constant.UserTypeUser,
+	)
 	if err != nil {
 		r.logger.Error("Failed to get conversations", "error", err)
 		return nil, err

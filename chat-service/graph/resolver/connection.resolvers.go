@@ -7,30 +7,29 @@ package resolver
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // RequestChatConnection is the resolver for the requestChatConnection field.
-func (r *mutationResolver) RequestChatConnection(ctx context.Context) (*graph.ChatConnection, error) {
-	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
-	if !ok {
-		return nil, httperror.NewUnauthorizedError("user not authenticated")
-	}
-
-	roles, ok := ctx.Value(pkgconstant.CtxKeyRoles).([]string)
-	if !ok || len(roles) == 0 {
-		return nil, httperror.NewUnauthorizedError("no roles found in context")
+func (r *mutationResolver) RequestChatConnection(
+	ctx context.Context,
+) (*graph.ChatConnection, error) {
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, err
 	}
 
 	// Determine user type from roles (prioritize admin)
 	userType := constant.UserTypeUser
 
-	for _, role := range roles {
+	for _, role := range user.Roles {
 		if role == pkgconstant.RoleAdmin {
 			userType = constant.UserTypeAdmin
 			break
@@ -38,9 +37,9 @@ func (r *mutationResolver) RequestChatConnection(ctx context.Context) (*graph.Ch
 	}
 
 	// Request connection from service (returns node address for load balancing)
-	response, err := r.connectionService.RequestConnection(ctx, userID, userType)
+	response, err := r.connectionService.RequestConnection(ctx, user.UserID, userType)
 	if err != nil {
-		r.logger.Error("Failed to request chat connection", "error", err, "user_id", userID)
+		r.logger.Error("Failed to request chat connection", "error", err, "user_id", user.UserID)
 		return nil, err
 	}
 

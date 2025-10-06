@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"

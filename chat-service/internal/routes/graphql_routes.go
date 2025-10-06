@@ -9,6 +9,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph/resolver"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	chatmiddleware "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
 )
@@ -16,6 +17,7 @@ import (
 // SetupGraphQLRoutes sets up all GraphQL routes.
 func SetupGraphQLRoutes(
 	e *echo.Echo,
+	cfg *config.Config,
 	graphResolver *resolver.Resolver,
 ) {
 	executableSchema := graph.NewExecutableSchema(graph.Config{Resolvers: graphResolver})
@@ -50,7 +52,19 @@ func SetupGraphQLRoutes(
 	// WebSocket subscriptions endpoint (protected with auth)
 	e.GET("/graphql/subscriptions", echo.WrapHandler(wsHandler), chatmiddleware.AuthMiddleware)
 
-	// GraphQL Playground (development only)
-	playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
-	e.GET("/graph/playground", echo.WrapHandler(playgroundHandler))
+	if cfg.App.Environment == "development" {
+		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
+
+		e.GET("/graph/playground", func(c echo.Context) error {
+			// Relax CSP for GraphQL Playground
+			c.Response().Header().Set("Content-Security-Policy",
+				"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net https://unpkg.com;")
+			c.Response().Header().Set("X-Frame-Options", "SAMEORIGIN")
+			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
+			c.Response().Header().Set("X-XSS-Protection", "1; mode=block")
+			playgroundHandler.ServeHTTP(c.Response(), c.Request())
+
+			return nil
+		})
+	}
 }

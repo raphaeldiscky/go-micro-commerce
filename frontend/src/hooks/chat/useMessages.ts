@@ -1,7 +1,10 @@
-import { queryKeys } from '@/constants/query-key'
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
+import { QUERY_KEY } from '@/constants/query-key'
 import type { SendMessageRequest } from '@/lib/api'
-import { CONVERSATION_MESSAGES_QUERY, graphqlClient } from '@/lib/graphql'
+import {
+  CONVERSATION_MESSAGES_QUERY,
+  SEND_MESSAGE_MUTATION,
+  graphqlClient,
+} from '@/lib/graphql'
 import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
 import type { Message, MessageConnection } from '@/types/__generated__/graphql'
 import { ConversationStatus, MessageType } from '@/types/__generated__/graphql'
@@ -28,7 +31,7 @@ export function useAddMessage(conversationId: string) {
 
   return (message: Message) => {
     queryClient.setQueryData<InfiniteQueryData>(
-      queryKeys.chat.messages(conversationId),
+      QUERY_KEY.chat.messages(conversationId),
       (old) => {
         if (!old) return old
 
@@ -58,7 +61,7 @@ export function useAddMessage(conversationId: string) {
     )
 
     // Update conversation list
-    queryClient.invalidateQueries({ queryKey: queryKeys.chat.conversations() })
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY.chat.conversations() })
   }
 }
 
@@ -86,7 +89,7 @@ export function useMessages(conversationId: string) {
         )
       return data
     },
-    queryKey: queryKeys.chat.messages(conversationId),
+    queryKey: QUERY_KEY.chat.messages(conversationId),
     refetchOnWindowFocus: false, // Real-time updates handle this
     staleTime: 30 * 1000, // 30 seconds - messages are real-time
     select: (data) => ({
@@ -99,34 +102,32 @@ export function useMessages(conversationId: string) {
 }
 
 /**
- * Hook for sending messages via WebSocket
- * Messages are sent through WebSocket connection for real-time delivery
+ * Hook for sending messages via GraphQL mutation
+ * Messages are sent through GraphQL and broadcasted via WebSocket subscriptions
  */
 export function useSendMessage(conversationId: string) {
   const queryClient = useQueryClient()
-  const { sendMessage } = useChatWebSocket()
 
   return useMutation({
     mutationFn: async (message: SendMessageRequest) => {
-      // Send message via WebSocket
-      sendMessage({
-        type: 'chat',
-        content: {
-          conversation_id: conversationId,
+      // Send message via GraphQL mutation
+      const result = await graphqlClient.request(SEND_MESSAGE_MUTATION, {
+        input: {
+          conversationId,
           content: message.content,
-          message_type: message.message_type || 'text',
-          reply_to_id: message.reply_to_id,
+          messageType: message.message_type
+            ? message.message_type.toUpperCase()
+            : 'TEXT',
+          replyToId: message.reply_to_id,
         },
       })
 
-      // Return a promise that resolves immediately
-      // The actual message will be received via WebSocket broadcast
-      return Promise.resolve()
+      return result.sendMessage
     },
     onMutate: async (newMessage) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: queryKeys.chat.messages(conversationId),
+        queryKey: QUERY_KEY.chat.messages(conversationId),
       })
 
       // Snapshot the previous value
@@ -137,7 +138,7 @@ export function useSendMessage(conversationId: string) {
 
       // Optimistically update the cache
       queryClient.setQueryData<InfiniteQueryData>(
-        queryKeys.chat.messages(conversationId),
+        QUERY_KEY.chat.messages(conversationId),
         (old) => {
           if (!old) return old
 
@@ -205,7 +206,7 @@ export function useSendMessage(conversationId: string) {
       // Revert optimistic update on error
       if (context?.previousMessages) {
         queryClient.setQueryData<InfiniteQueryData>(
-          queryKeys.chat.messages(conversationId),
+          QUERY_KEY.chat.messages(conversationId),
           context.previousMessages,
         )
       }
@@ -214,12 +215,12 @@ export function useSendMessage(conversationId: string) {
       // Refetch messages to get the real message from server
       // WebSocket will have already added it to the backend
       queryClient.invalidateQueries({
-        queryKey: queryKeys.chat.messages(conversationId),
+        queryKey: QUERY_KEY.chat.messages(conversationId),
       })
 
       // Update conversation list to reflect new message
       queryClient.invalidateQueries({
-        queryKey: queryKeys.chat.conversations(),
+        queryKey: QUERY_KEY.chat.conversations(),
       })
     },
   })

@@ -169,6 +169,9 @@ type Mutation
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
   endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
   assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  sendMessage(input: SendMessageInput!): Message! @join__field(graph: CHAT_SERVICE)
+  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt! @join__field(graph: CHAT_SERVICE)
+  sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @join__field(graph: CHAT_SERVICE)
   joinConversation(input: JoinConversationInput!): Participant! @join__field(graph: CHAT_SERVICE)
   leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
 }
@@ -272,6 +275,29 @@ input RegisterUserInput
   username: String!
   firstName: String!
   lastName: String!
+}
+
+input SendDeliveryReceiptInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+}
+
+input SendMessageInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  conversationId: ID!
+  content: String!
+  messageType: MessageType = TEXT
+  replyToId: ID
+}
+
+input SendReadReceiptInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
 }
 
 type Subscription

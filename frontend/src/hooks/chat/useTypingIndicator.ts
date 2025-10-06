@@ -1,14 +1,14 @@
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
+import { useWebSocketSend } from '@/contexts/WebSocketSendContext'
 import type { TypingIndicator } from '@/lib/api'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
- * Hook for managing typing indicators
+ * Hook for managing typing indicators via WebSocket
  */
 export function useTypingIndicator(_conversationId: string) {
   const [typingUsers, setTypingUsers] = useState<Array<TypingIndicator>>([])
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const { sendMessage, isConnected } = useChatWebSocket()
+  const { sendMessage, isConnected } = useWebSocketSend()
 
   /**
    * Start typing indicator

@@ -8,13 +8,17 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
 )
 
 // FindConversationByID is the resolver for the findConversationByID field.
-func (r *entityResolver) FindConversationByID(ctx context.Context, id string) (*graph.Conversation, error) {
+func (r *entityResolver) FindConversationByID(
+	ctx context.Context,
+	id string,
+) (*graph.Conversation, error) {
 	conversationID, err := uuid.Parse(id)
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid conversation ID format")

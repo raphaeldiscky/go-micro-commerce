@@ -20,7 +20,7 @@ type Manager struct {
 	subscriptions  map[string]*conversationSubscription
 	userSubs       map[uuid.UUID]*userSubscription
 	mu             sync.RWMutex
-	hub            *websocket.ChatHub
+	Hub            *websocket.ChatHub
 	eventConverter *EventConverter
 }
 
@@ -42,7 +42,7 @@ func NewManager(hub *websocket.ChatHub, logger logger.Logger) *Manager {
 		logger:         logger,
 		subscriptions:  make(map[string]*conversationSubscription),
 		userSubs:       make(map[uuid.UUID]*userSubscription),
-		hub:            hub,
+		Hub:            hub,
 		eventConverter: NewEventConverter(logger),
 	}
 }
@@ -136,7 +136,7 @@ func (m *Manager) listenToConversation(
 
 	// Register this channel with the hub to receive messages
 	// Note: This requires adding SubscribeToChannel method to BaseHub
-	unsubscribe := m.hub.SubscribeToChannel(channelName, messageChan)
+	unsubscribe := m.Hub.SubscribeToChannel(channelName, messageChan)
 	defer unsubscribe()
 
 	for msg := range messageChan {
@@ -177,7 +177,7 @@ func (m *Manager) listenToUser(userID uuid.UUID, userSub *userSubscription) {
 	messageChan := make(chan *pkgwebsocket.Message, constant.SubscriptionMessageChannelBufferSize)
 
 	// Register this channel with the hub
-	unsubscribe := m.hub.SubscribeToChannel(channelName, messageChan)
+	unsubscribe := m.Hub.SubscribeToChannel(channelName, messageChan)
 	defer unsubscribe()
 
 	for msg := range messageChan {

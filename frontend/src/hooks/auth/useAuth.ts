@@ -1,4 +1,4 @@
-import { queryKeys } from '@/constants/query-key'
+import { QUERY_KEY } from '@/constants/query-key'
 import { PATH_ROOT } from '@/constants/routes'
 import { setAccessToken } from '@/lib/api/client'
 import type {
@@ -71,10 +71,10 @@ export function useLogin() {
       loginUser(user)
 
       // Update React Query cache
-      queryClient.setQueryData(queryKeys.auth.currentUser(), user)
+      queryClient.setQueryData(QUERY_KEY.auth.currentUser(), user)
 
       // Invalidate all auth-related queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY.auth.all })
 
       // Navigate to home or intended destination
       router.navigate({ to: PATH_ROOT.home })
@@ -141,10 +141,10 @@ export function useRegister() {
       loginUser(user)
 
       // Update React Query cache
-      queryClient.setQueryData(queryKeys.auth.currentUser(), user)
+      queryClient.setQueryData(QUERY_KEY.auth.currentUser(), user)
 
       // Invalidate all auth-related queries
-      queryClient.invalidateQueries({ queryKey: queryKeys.auth.all })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY.auth.all })
 
       // Navigate to home
       router.navigate({ to: PATH_ROOT.home })

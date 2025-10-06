@@ -141,6 +141,23 @@ type ReadReceipt struct {
 
 func (ReadReceipt) IsConversationEvent() {}
 
+type SendDeliveryReceiptInput struct {
+	MessageID      string `json:"messageId"`
+	ConversationID string `json:"conversationId"`
+}
+
+type SendMessageInput struct {
+	ConversationID string                `json:"conversationId"`
+	Content        string                `json:"content"`
+	MessageType    *constant.MessageType `json:"messageType,omitempty"`
+	ReplyToID      *string               `json:"replyToId,omitempty"`
+}
+
+type SendReadReceiptInput struct {
+	MessageID      string `json:"messageId"`
+	ConversationID string `json:"conversationId"`
+}
+
 type Subscription struct {
 }
 

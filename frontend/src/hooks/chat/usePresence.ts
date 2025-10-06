@@ -1,5 +1,5 @@
-import { queryKeys } from '@/constants/query-key'
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
+import { QUERY_KEY } from '@/constants/query-key'
+import { useWebSocketSend } from '@/contexts/WebSocketSendContext'
 import { useUser } from '@/hooks/auth/useAuth'
 import type { PresenceUpdate } from '@/lib/api'
 import { ONLINE_USERS_QUERY, graphqlClient } from '@/lib/graphql'
@@ -13,13 +13,13 @@ interface OnlineUsersQueryResponse {
 }
 
 /**
- * Hook for managing user presence
+ * Hook for managing user presence via WebSocket
  */
 export function usePresence() {
   const [currentStatus, setCurrentStatus] =
     useState<PresenceUpdate['status']>('online')
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
-  const { sendMessage, isConnected } = useChatWebSocket()
+  const { sendMessage, isConnected } = useWebSocketSend()
   const user = useUser()
 
   // Query for online users
@@ -31,7 +31,7 @@ export function usePresence() {
         )
       return data.onlineUsers
     },
-    queryKey: queryKeys.chat.onlineUsers(),
+    queryKey: QUERY_KEY.chat.onlineUsers(),
     refetchInterval: 30 * 1000, // Refetch every 30 seconds
     staleTime: 15 * 1000, // Consider stale after 15 seconds
   })

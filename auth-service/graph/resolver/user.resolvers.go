@@ -8,17 +8,21 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
+
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/utils/cookieutils"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 )
 
 // Register is the resolver for the register field.
-func (r *mutationResolver) Register(ctx context.Context, input graph.RegisterUserInput) (*graph.AuthPayload, error) {
+func (r *mutationResolver) Register(
+	ctx context.Context,
+	input graph.RegisterUserInput,
+) (*graph.AuthPayload, error) {
 	req := &dto.RegisterRequest{
 		Email:     input.Email,
 		Password:  input.Password,
@@ -44,7 +48,10 @@ func (r *mutationResolver) Register(ctx context.Context, input graph.RegisterUse
 }
 
 // Login is the resolver for the login field.
-func (r *mutationResolver) Login(ctx context.Context, input graph.LoginInput) (*graph.AuthPayload, error) {
+func (r *mutationResolver) Login(
+	ctx context.Context,
+	input graph.LoginInput,
+) (*graph.AuthPayload, error) {
 	req := &dto.LoginRequest{
 		Email:    input.Email,
 		Password: input.Password,

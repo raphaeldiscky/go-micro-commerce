@@ -7,8 +7,13 @@ export const env = createEnv({
     VITE_GRAPHQL_GATEWAY_URL: z
       .url()
       .default('http://localhost:8080/graphql/auth'),
+    VITE_GRAPHQL_SUBSCRIPTION_URL: z
+      .url()
+      .default('ws://localhost:8080/graphql/subscriptions'),
+    VITE_GRAPHQL_GATEWAY_WS_URL: z
+      .url()
+      .default('ws://localhost:8080/chats/v1/ws'),
     VITE_APP_TITLE: z.string().min(1).optional(),
-    VITE_CHAT_SERVICE_WEBSOCKET_URL: z.url().default('ws://localhost:9088'),
   },
 
   /**
