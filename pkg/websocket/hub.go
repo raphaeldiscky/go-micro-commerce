@@ -214,7 +214,7 @@ func (h *BaseHub) GetChannelConnections(channel string) []Connection {
 
 // Run starts the hub and processes connection events.
 func (h *BaseHub) Run(ctx context.Context) {
-	cleanupTicker := time.NewTicker(constant.WsCleaupTicker)
+	cleanupTicker := time.NewTicker(constant.WsCleanupTicker)
 	defer cleanupTicker.Stop()
 
 	for {

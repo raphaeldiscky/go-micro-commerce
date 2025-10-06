@@ -11,12 +11,19 @@ let subscriptionClient: Client | null = null
  */
 export function getSubscriptionClient(): Client {
   if (!subscriptionClient) {
+    // Build WebSocket URL with token as query parameter
+    // Browser WebSocket API doesn't support custom headers, so we use query params
+    const baseUrl = env.VITE_GRAPHQL_SUBSCRIPTION_URL
+    const token = getAccessToken()
+    const url = token ? `${baseUrl}?token=${token}` : baseUrl
+
     subscriptionClient = createClient({
-      url: env.VITE_GRAPHQL_SUBSCRIPTION_URL,
+      url,
       connectionParams: () => {
-        const token = getAccessToken()
+        // Still send in connectionParams for graphql-transport-ws protocol compatibility
+        const currentToken = getAccessToken()
         return {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         }
       },
       retryAttempts: 5,
@@ -30,10 +37,20 @@ export function getSubscriptionClient(): Client {
 
 /**
  * Close the subscription client connection
+ * Call this when logging out or when token changes
  */
 export function closeSubscriptionClient(): void {
   if (subscriptionClient) {
     subscriptionClient.dispose()
     subscriptionClient = null
   }
+}
+
+/**
+ * Reset the subscription client
+ * Useful when token changes (e.g., after refresh)
+ */
+export function resetSubscriptionClient(): void {
+  closeSubscriptionClient()
+  // Next call to getSubscriptionClient() will create a new client with updated token
 }

@@ -49,8 +49,10 @@ func SetupGraphQLRoutes(
 	// Add context middleware for subscriptions
 	wsHandler.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
-	// WebSocket subscriptions endpoint (protected with auth)
-	e.GET("/graph/subscriptions", echo.WrapHandler(wsHandler), middleware.AuthMiddleware)
+	// WebSocket subscriptions endpoint
+	// Auth is handled by API Gateway which validates JWT and forwards X-User-* headers
+	// The GraphQLContextMiddleware extracts these headers and sets user context
+	e.GET("/graph/subscriptions", echo.WrapHandler(wsHandler))
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
