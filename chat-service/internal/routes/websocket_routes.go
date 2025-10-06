@@ -8,9 +8,8 @@ import (
 
 // SetupWebSocketRoutes sets up all WebSocket routes.
 func SetupWebSocketRoutes(e *echo.Echo, wsHandler *handler.WebSocketHandler) {
-	e.GET("/ws/health", wsHandler.WebSocketHealth)
-
-	v1 := e.Group("/v1")
-	v1.GET("/ws", wsHandler.HandleWebSocket)
-	v1.GET("/ws/stats", wsHandler.GetConnectionStats)
+	ws := e.Group("/ws")
+	ws.GET("", wsHandler.HandleWebSocket)
+	ws.GET("/health", wsHandler.WebSocketHealth)
+	ws.GET("/stats", wsHandler.GetConnectionStats)
 }

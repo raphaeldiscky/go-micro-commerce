@@ -24,6 +24,7 @@ export function usePresence() {
 
   // Query for online users
   const { data: onlineUsersList, refetch: refetchOnlineUsers } = useQuery({
+    enabled: !!user, // Only fetch when user is authenticated
     queryFn: async () => {
       const data =
         await graphqlClient.request<OnlineUsersQueryResponse>(
@@ -32,7 +33,7 @@ export function usePresence() {
       return data.onlineUsers
     },
     queryKey: QUERY_KEY.chat.onlineUsers(),
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds
+    refetchInterval: user ? 30 * 1000 : false,
     staleTime: 15 * 1000, // Consider stale after 15 seconds
   })
 
@@ -105,9 +106,14 @@ export function usePresence() {
     }
   }, [onlineUsersList])
 
-  // Set user as online when component mounts - no dependency needed for one-time setup
+  // Set user as online when component mounts
   useEffect(() => {
-    // Initial setup
+    // Skip if not connected or not authenticated
+    if (!isConnected || !user) {
+      return
+    }
+
+    // Initial setup - set user as online
     setPresenceStatus('online')
 
     // Set user as away when window loses focus
@@ -135,11 +141,9 @@ export function usePresence() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      // Set offline on unmount
       setPresenceStatus('offline')
     }
-    // Only run on mount/unmount, not when setPresenceStatus changes
-  }, [])
+  }, [isConnected, user, setPresenceStatus])
 
   return {
     addOnlineUser,

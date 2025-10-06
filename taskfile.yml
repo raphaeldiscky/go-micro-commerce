@@ -347,25 +347,25 @@ tasks:
       - cd frontend && pnpm codegen
       - task: deps
 
-  start_graphql:
+  start_graphql_gateway:
     desc: Start GraphQL Gateway
     cmds:
       - task: supergraph
       - bash ./scripts/build.sh --no-cache graphql-gateway
       - docker compose -f {{.INFRA_DC_FILE}} up -d --force-recreate graphql-gateway graphql-gateway-consul-sidecar
 
-  stop_graphql:
+  stop_graphql_gateway:
     desc: Stop GraphQL Gateway
     cmds:
       - docker compose -f {{.INFRA_DC_FILE}} stop graphql-gateway graphql-gateway-consul-sidecar
       - docker compose -f {{.INFRA_DC_FILE}} rm -f graphql-gateway graphql-gateway-consul-sidecar
 
-  restart_graphql:
+  restart_graphql_gateway:
     desc: Restart GraphQL Gateway
     cmds:
-      - task: stop_graphql
+      - task: stop_graphql_gateway
       - task: sleep
-      - task: start_graphql
+      - task: start_graphql_gateway
 
   sqlc:
     desc: Generate SQLC files

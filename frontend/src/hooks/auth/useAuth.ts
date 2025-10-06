@@ -92,19 +92,52 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: async () => {
-      await graphqlClient.request<LogoutMutation>(LOGOUT_MUTATION)
+      return handleGraphQLRequest(async () => {
+        const data =
+          await graphqlClient.request<LogoutMutation>(LOGOUT_MUTATION)
+        console.log('Logout API response:', data)
+        return data
+      }, 'Logout request failed')
     },
-    onSettled: () => {
-      // Always clear auth state and navigate, even if API call fails
-      // Note: Server will clear the HTTP-only refresh token cookie if request succeeds
+    onSuccess: () => {
+      console.log('Logout successful, cleaning up auth state...')
+
+      // Clear access token from memory
       setAccessToken(null)
+
+      // Update auth store (sets user to null, isAuthenticated to false)
       logoutUser()
 
       // Clear all React Query cache
       queryClient.clear()
 
-      // Navigate to home (always happens, even if logout API fails)
-      router.navigate({ to: PATH_ROOT.home })
+      console.log('Auth state cleared, navigating to home...')
+
+      // Navigate to home page
+      try {
+        router.navigate({ to: PATH_ROOT.home })
+        console.log('Navigation complete')
+      } catch (navError) {
+        console.error('Navigation failed:', navError)
+        // Force reload as fallback
+        window.location.href = PATH_ROOT.home
+      }
+    },
+    onError: (error) => {
+      console.error('Logout API failed:', error)
+
+      // Even if server logout fails, clear client-side state
+      setAccessToken(null)
+      logoutUser()
+      queryClient.clear()
+
+      // Navigate to home even on error
+      try {
+        router.navigate({ to: PATH_ROOT.home })
+      } catch (navError) {
+        console.error('Navigation failed:', navError)
+        window.location.href = PATH_ROOT.home
+      }
     },
   })
 }

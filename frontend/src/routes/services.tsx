@@ -169,7 +169,7 @@ function ServicesPage() {
       icon: MessageCircle,
       name: 'Chat Service',
       patterns: ['WebSocket Pattern', 'Pub/Sub', 'Connection Pooling'],
-      port: ':9088',
+      port: ':9098',
       technologies: ['Go', 'WebSocket', 'Redis', 'PostgreSQL'],
     },
     {

@@ -5,13 +5,14 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
+
+	pkgmiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
-	chatmiddleware "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
 )
 
 // SetupGraphQLRoutes sets up all GraphQL routes.
@@ -26,7 +27,7 @@ func SetupGraphQLRoutes(
 	graphHandler := handler.NewDefaultServer(executableSchema)
 
 	// Add middleware to extract client metadata from headers
-	graphHandler.AroundOperations(middleware.GraphQLContextMiddleware())
+	graphHandler.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
 	// GraphQL endpoint without auth (for introspection and public queries)
 	// GET for introspection queries (needed by Apollo Router)
@@ -34,9 +35,8 @@ func SetupGraphQLRoutes(
 
 	// POST for queries/mutations (public for introspection, use /graph/auth for protected)
 	e.POST("/graph", echo.WrapHandler(graphHandler))
-
 	// Protected GraphQL endpoint (requires authentication)
-	e.POST("/graph/auth", echo.WrapHandler(graphHandler), chatmiddleware.AuthMiddleware)
+	e.POST("/graph/auth", echo.WrapHandler(graphHandler), middleware.AuthMiddleware)
 
 	// WebSocket handler for GraphQL subscriptions with graphql-transport-ws protocol
 	wsHandler := handler.New(executableSchema)
@@ -47,10 +47,10 @@ func SetupGraphQLRoutes(
 	})
 
 	// Add context middleware for subscriptions
-	wsHandler.AroundOperations(middleware.GraphQLContextMiddleware())
+	wsHandler.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
 	// WebSocket subscriptions endpoint (protected with auth)
-	e.GET("/graphql/subscriptions", echo.WrapHandler(wsHandler), chatmiddleware.AuthMiddleware)
+	e.GET("/graph/subscriptions", echo.WrapHandler(wsHandler), middleware.AuthMiddleware)
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")

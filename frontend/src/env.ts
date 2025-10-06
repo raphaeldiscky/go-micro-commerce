@@ -6,13 +6,13 @@ export const env = createEnv({
     VITE_API_GATEWAY_URL: z.url().default('http://localhost:8080'),
     VITE_GRAPHQL_GATEWAY_URL: z
       .url()
-      .default('http://localhost:8080/graphql/auth'),
+      .default('http://localhost:8080/graph/auth'),
     VITE_GRAPHQL_SUBSCRIPTION_URL: z
       .url()
-      .default('ws://localhost:8080/graphql/subscriptions'),
+      .default('ws://localhost:8080/graph/subscriptions'),
     VITE_GRAPHQL_GATEWAY_WS_URL: z
       .url()
-      .default('ws://localhost:8080/chats/v1/ws'),
+      .default('ws://localhost:8080/chats/ws'),
     VITE_APP_TITLE: z.string().min(1).optional(),
   },
 

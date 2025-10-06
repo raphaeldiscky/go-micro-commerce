@@ -238,16 +238,26 @@ func (gw *Gateway) replacePath(targetPath string, c echo.Context) string {
 }
 
 // copyHeaders copies HTTP headers, excluding hop-by-hop headers.
+// For WebSocket connections, preserves Connection and Upgrade headers.
 func (gw *Gateway) copyHeaders(src, dst http.Header) {
+	gw.copyHeadersWithOptions(src, dst, false)
+}
+
+// copyHeadersWithOptions copies HTTP headers with optional WebSocket support.
+func (gw *Gateway) copyHeadersWithOptions(src, dst http.Header, isWebSocket bool) {
 	hopByHopHeaders := map[string]bool{
-		"Connection":          true,
 		"Keep-Alive":          true,
 		"Proxy-Authenticate":  true,
 		"Proxy-Authorization": true,
 		"Te":                  true,
 		"Trailers":            true,
 		"Transfer-Encoding":   true,
-		"Upgrade":             true,
+	}
+
+	// For WebSocket connections, preserve Connection and Upgrade headers
+	if !isWebSocket {
+		hopByHopHeaders["Connection"] = true
+		hopByHopHeaders["Upgrade"] = true
 	}
 
 	for key, values := range src {
@@ -429,4 +439,103 @@ func (gw *Gateway) proxyConnectRPCRequest(c echo.Context, endpoint string) (*Pro
 		Body:        body,
 		ContentType: resp.Header.Get("Content-Type"),
 	}, nil
+}
+
+// ProxyWebSocket creates a handler that proxies WebSocket connections to a service.
+func (gw *Gateway) ProxyWebSocket(serviceName, path string) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		// Get service endpoint
+		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
+		if err != nil {
+			gw.logger.Errorf("failed to get service endpoint for service %s: %v",
+				serviceName, err)
+
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
+		}
+
+		// Build target URL for WebSocket
+		targetURL, err := url.Parse(endpoint)
+		if err != nil {
+			gw.logger.Errorf("invalid endpoint URL for service %s: %v", serviceName, err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "invalid service endpoint")
+		}
+
+		// Determine final path
+		finalPath := path
+		if finalPath == "" {
+			finalPath = c.Request().URL.Path
+		} else {
+			finalPath = gw.replacePath(path, c)
+		}
+
+		targetURL.Path = finalPath
+		targetURL.RawQuery = c.Request().URL.RawQuery
+
+		// Convert http:// to ws:// or https:// to wss://
+		switch targetURL.Scheme {
+		case "http":
+			targetURL.Scheme = "ws"
+		case "https":
+			targetURL.Scheme = "wss"
+		}
+
+		// Create WebSocket proxy request
+		req, err := http.NewRequestWithContext(
+			c.Request().Context(),
+			c.Request().Method,
+			targetURL.String(),
+			c.Request().Body,
+		)
+		if err != nil {
+			gw.logger.Errorf("failed to create WebSocket request: %v", err)
+			return echo.NewHTTPError(http.StatusInternalServerError, "failed to create request")
+		}
+
+		// Copy headers INCLUDING WebSocket upgrade headers
+		gw.copyHeadersWithOptions(c.Request().Header, req.Header, true)
+
+		// Add user headers
+		gw.addUserHeaders(c, req)
+
+		// Add gateway identification
+		req.Header.Set("X-Gateway", "api-gateway")
+		req.Header.Set("X-Forwarded-For", c.RealIP())
+		req.Header.Set("X-Forwarded-Proto", c.Scheme())
+		req.Header.Set("X-Forwarded-Host", c.Request().Host)
+
+		// Perform WebSocket handshake
+		client := &http.Client{
+			Timeout: 0, // No timeout for WebSocket connections
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			gw.logger.Errorf("WebSocket upgrade failed: %v", err)
+			return echo.NewHTTPError(http.StatusBadGateway, "WebSocket upgrade failed")
+		}
+
+		defer func() {
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				gw.logger.Warn("Failed to close WebSocket response body", "error", closeErr)
+			}
+		}()
+
+		// Copy response headers
+		for key, values := range resp.Header {
+			for _, value := range values {
+				c.Response().Header().Add(key, value)
+			}
+		}
+
+		// Set status code
+		c.Response().WriteHeader(resp.StatusCode)
+
+		// Copy response body (WebSocket upgrade response)
+		if _, err = io.Copy(c.Response().Writer, resp.Body); err != nil {
+			gw.logger.Errorf("failed to copy WebSocket response: %v", err)
+			return err
+		}
+
+		return nil
+	}
 }

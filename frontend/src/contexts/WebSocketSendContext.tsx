@@ -1,4 +1,5 @@
 import { env } from '@/env'
+import { useIsAuthenticated } from '@/hooks/auth/useAuth'
 import { getAccessToken } from '@/lib/api/client'
 import {
   createContext,
@@ -31,35 +32,54 @@ export function WebSocketSendProvider({
   const wsRef = useRef<WebSocket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const maxReconnectAttempts = 5
+  const isAuthenticated = useIsAuthenticated()
 
   const connect = useCallback(() => {
     const token = getAccessToken()
     if (!token) {
-      console.warn('No auth token available for WebSocket connection')
       return
     }
 
-    // Create WebSocket connection to the old /v1/ws endpoint for typing/presence
-    // This is separate from the GraphQL subscription WebSocket
+    // Don't create a new connection if one already exists
+    if (
+      wsRef.current &&
+      (wsRef.current.readyState === WebSocket.CONNECTING ||
+        wsRef.current.readyState === WebSocket.OPEN)
+    ) {
+      return
+    }
+
     const wsUrl = env.VITE_GRAPHQL_GATEWAY_WS_URL
 
     const ws = new WebSocket(`${wsUrl}?token=${token}`)
 
     ws.onopen = () => {
-      console.log('WebSocket connected for typing/presence')
       setIsConnected(true)
+      reconnectAttemptsRef.current = 0 // Reset reconnect attempts on successful connection
     }
 
-    ws.onclose = () => {
-      console.log('WebSocket disconnected')
+    ws.onclose = (event) => {
       setIsConnected(false)
       wsRef.current = null
 
-      // Attempt to reconnect after 3 seconds
-      reconnectTimeoutRef.current = setTimeout(() => {
-        console.log('Attempting to reconnect WebSocket...')
-        connect()
-      }, 3000)
+      // Only reconnect if we haven't exceeded max attempts and have a token
+      if (
+        reconnectAttemptsRef.current < maxReconnectAttempts &&
+        getAccessToken()
+      ) {
+        reconnectAttemptsRef.current += 1
+        const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000) // Exponential backoff, max 30s
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect()
+        }, delay)
+      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        console.error(
+          'Max WebSocket reconnection attempts reached. Please refresh the page.',
+        )
+      }
     }
 
     ws.onerror = (error) => {
@@ -67,20 +87,43 @@ export function WebSocketSendProvider({
     }
 
     wsRef.current = ws
-  }, [])
+  }, []) // Empty dependencies - token is fetched inside the function
 
   useEffect(() => {
+    // Only connect once when component mounts
     connect()
 
     return () => {
+      // Clear any pending reconnection attempts
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current)
       }
+      // Close the WebSocket connection
       if (wsRef.current) {
         wsRef.current.close()
+        wsRef.current = null
       }
     }
-  }, [connect])
+  }, [])
+
+  // Handle authentication state changes
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
+      }
+      // Close WebSocket
+      if (wsRef.current) {
+        wsRef.current.close()
+        wsRef.current = null
+      }
+      setIsConnected(false)
+      reconnectAttemptsRef.current = 0
+    } else if (!wsRef.current) {
+      connect()
+    }
+  }, [isAuthenticated, connect])
 
   const sendMessage = useCallback((message: WebSocketMessage) => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
