@@ -136,6 +136,11 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	) // 1000 req/sec
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		Timeout: cfg.HTTPServer.IdleTimeout,
+		Skipper: func(c echo.Context) bool {
+			// Skip timeout middleware for WebSocket connections
+			// Timeout middleware wraps ResponseWriter, breaking http.Hijacker needed for WS upgrade
+			return c.Request().Header.Get("Upgrade") == "websocket"
+		},
 	}))
 	e.Use(middleware.BodyLimit("10M"))
 	e.Use(custommiddleware.ErrorHandler())

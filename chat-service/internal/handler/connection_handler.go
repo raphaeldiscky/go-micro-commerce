@@ -35,6 +35,10 @@ func (h *ConnectionHandler) RequestConnection(c echo.Context) error {
 	userID := echoutils.GetUserIDFromContext(c)
 	roles := echoutils.GetRolesFromContext(c)
 
+	h.logger.Info("Requesting WebSocket connection",
+		"user_id", userID,
+		"roles", roles[0])
+
 	if len(roles) == 0 {
 		h.logger.Error("No roles found in context", "user_id", userID)
 		return httperror.NewUnauthorizedError("No roles found in context")
@@ -82,15 +86,7 @@ func (h *ConnectionHandler) determineUserTypeForChat(roles []string) constant.Us
 		}
 	}
 
-	// Fall back to first role if admin not found
-	selectedRole := roles[0]
-	userType := constant.UserType(selectedRole)
-
-	h.logger.Debug("Using fallback UserType for chat connection",
-		"selected_role", selectedRole,
-		"user_type", userType)
-
-	return userType
+	return constant.UserTypeUser
 }
 
 // GetNodeHealth returns health status of available chat nodes.

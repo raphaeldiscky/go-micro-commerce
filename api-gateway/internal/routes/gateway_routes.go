@@ -27,7 +27,6 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
 
 	// Public WebSocket routes
-	public.GET("/chats/ws/health", gw.ProxyToService("chat-service-websocket", "/ws/health"))
 	public.GET("/chats/ws", gw.ProxyWebSocket("chat-service-websocket", "/ws"))
 
 	// GraphQL Federation Gateway (public - no auth)
@@ -47,7 +46,7 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	// Apollo Router doesn't support WebSocket subscriptions, so we route directly
 	optionalAuth.GET(
 		"/graph/subscriptions",
-		gw.ProxyWebSocket("chat-service", "/graph/subscriptions"),
+		gw.ProxyWebSocket("chat-service-websocket", "/graph/subscriptions"),
 	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))

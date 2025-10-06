@@ -51,7 +51,7 @@ export function WebSocketSendProvider({
       return
     }
 
-    const wsUrl = env.VITE_GRAPHQL_GATEWAY_WS_URL
+    const wsUrl = env.VITE_API_GATEWAY_WS_URL
 
     const ws = new WebSocket(`${wsUrl}?token=${token}`)
 
