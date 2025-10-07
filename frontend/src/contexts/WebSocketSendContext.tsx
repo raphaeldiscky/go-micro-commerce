@@ -60,7 +60,7 @@ export function WebSocketSendProvider({
       reconnectAttemptsRef.current = 0 // Reset reconnect attempts on successful connection
     }
 
-    ws.onclose = (event) => {
+    ws.onclose = () => {
       setIsConnected(false)
       wsRef.current = null
 

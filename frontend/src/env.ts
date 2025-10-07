@@ -5,7 +5,7 @@ export const env = createEnv({
   client: {
     VITE_API_GATEWAY_URL: z.url().default('http://localhost:8080'),
     VITE_API_GATEWAY_WS_URL: z.url().default('ws://localhost:8080/chats/ws'),
-    VITE_GRAPHQL_GATEWAY_URL: z
+    VITE_GRAPHQL_GATEWAY_AUTH_URL: z
       .url()
       .default('http://localhost:8080/graph/auth'),
     VITE_GRAPHQL_SUBSCRIPTION_URL: z
