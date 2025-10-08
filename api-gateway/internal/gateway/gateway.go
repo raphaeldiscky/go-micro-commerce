@@ -479,6 +479,10 @@ func (gw *Gateway) ProxyWebSocket(serviceName, path string) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 		}
 
+		// Extract subprotocols from client request (e.g., graphql-transport-ws)
+		// This is needed for GraphQL subscriptions protocol negotiation
+		clientSubprotocols := websocket.Subprotocols(c.Request())
+
 		// Upgrade client connection to WebSocket
 		// Use c.Response().Writer to get the underlying http.ResponseWriter that supports hijacking
 		clientConn, err := upgrader.Upgrade(c.Response().Writer, c.Request(), nil)
@@ -497,49 +501,42 @@ func (gw *Gateway) ProxyWebSocket(serviceName, path string) echo.HandlerFunc {
 		// Prepare headers for backend connection
 		backendHeaders := gw.prepareBackendHeaders(c)
 
-		// Dial backend WebSocket
+		// Dial backend WebSocket with subprotocols
+		// The Subprotocols field ensures proper protocol negotiation (e.g., graphql-transport-ws)
 		dialer := websocket.Dialer{
 			HandshakeTimeout: gw.config.App.TimeoutProxyRequest,
+			Subprotocols:     clientSubprotocols,
 		}
 
 		backendConn, resp, err := dialer.Dial(backendURL, backendHeaders)
+
+		// Close response body if present
 		if resp != nil {
-			if err = resp.Body.Close(); err != nil {
-				gw.logger.Errorf("failed to close backend response body: %v", err)
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				gw.logger.Errorf("failed to close backend response body: %v", closeErr)
 			}
 		}
 
-		if err != nil {
-			duration := time.Since(start)
-			statusCode := http.StatusBadGateway
-
-			if resp != nil {
-				statusCode = resp.StatusCode
-			}
-
-			gw.logger.Errorf("failed to dial backend WebSocket: %v", err)
-
-			// Record metrics
-			gw.metrics.RecordGatewayRequest(serviceName, "WEBSOCKET", statusCode, duration)
-
-			// Send close message to client
-			err = clientConn.WriteMessage(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(
-					websocket.CloseInternalServerErr,
-					"backend unavailable",
-				),
+		// Handle connection failures
+		if err != nil || backendConn == nil {
+			return gw.handleBackendDialFailure(
+				clientConn,
+				serviceName,
+				start,
+				resp,
+				err,
 			)
-			if err != nil {
-				gw.logger.Warn("Failed to send close message to client", "error", err)
-			}
-
-			return echo.NewHTTPError(statusCode, "failed to connect to backend")
 		}
 
 		defer func() {
-			if closeErr := backendConn.Close(); closeErr != nil {
-				gw.logger.Warn("Failed to close backend WebSocket connection", "error", closeErr)
+			if backendConn != nil {
+				if closeErr := backendConn.Close(); closeErr != nil {
+					gw.logger.Warn(
+						"Failed to close backend WebSocket connection",
+						"error",
+						closeErr,
+					)
+				}
 			}
 		}()
 
@@ -766,4 +763,43 @@ func (gw *Gateway) proxyWebSocketMessages(clientConn, backendConn *websocket.Con
 
 	// Wait for both goroutines to complete
 	wg.Wait()
+}
+
+// handleBackendDialFailure handles failures when dialing the backend WebSocket.
+func (gw *Gateway) handleBackendDialFailure(
+	clientConn *websocket.Conn,
+	serviceName string,
+	start time.Time,
+	resp *http.Response,
+	err error,
+) error {
+	duration := time.Since(start)
+	statusCode := http.StatusBadGateway
+
+	if resp != nil {
+		statusCode = resp.StatusCode
+	}
+
+	if err != nil {
+		gw.logger.Errorf("failed to dial backend WebSocket: %v", err)
+	} else {
+		gw.logger.Error("backend WebSocket connection is nil despite no error")
+	}
+
+	// Record metrics
+	gw.metrics.RecordGatewayRequest(serviceName, "WEBSOCKET", statusCode, duration)
+
+	// Send close message to client
+	closeErr := clientConn.WriteMessage(
+		websocket.CloseMessage,
+		websocket.FormatCloseMessage(
+			websocket.CloseInternalServerErr,
+			"backend unavailable",
+		),
+	)
+	if closeErr != nil {
+		gw.logger.Warn("Failed to send close message to client", "error", closeErr)
+	}
+
+	return echo.NewHTTPError(statusCode, "failed to connect to backend")
 }

@@ -98,12 +98,15 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{
+			"http://localhost:3000", // Frontend
 			"http://localhost:3001", // React development server
 			"http://127.0.0.1:3001",
 			"http://localhost:3002",
 			"http://127.0.0.1:3002",
 			"http://localhost:3003",
 			"http://127.0.0.1:3003",
+			"http://localhost:8080", // API Gateway
+			"http://127.0.0.1:8080",
 		},
 		AllowMethods: []string{
 			http.MethodGet,
@@ -117,6 +120,11 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 			echo.HeaderContentType,
 			echo.HeaderAccept,
 			echo.HeaderAuthorization,
+			"Upgrade",                // Required for WebSocket
+			"Connection",             // Required for WebSocket
+			"Sec-WebSocket-Key",      // Required for WebSocket
+			"Sec-WebSocket-Version",  // Required for WebSocket
+			"Sec-WebSocket-Protocol", // Required for GraphQL subscriptions
 		},
 	}))
 	e.Use(middleware.SecureWithConfig(middleware.SecureConfig{
@@ -129,9 +137,10 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	e.Use(
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(cfg.HTTPServer.RateLimiter)),
 	) // 1000 req/sec
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: cfg.HTTPServer.IdleTimeout,
-	}))
+
+	// e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
+	// 	Timeout: cfg.HTTPServer.IdleTimeout,
+	// }))
 	e.Use(middleware.BodyLimit("10M"))
 	e.Use(custommiddleware.ErrorHandler())
 }

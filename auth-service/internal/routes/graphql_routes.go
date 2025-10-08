@@ -24,22 +24,22 @@ func SetupGraphQLRoutes(
 	graphResolver *resolver.Resolver,
 ) {
 	// Create GraphQL handler with context middleware
-	graphHandler := handler.NewDefaultServer(
+	srv := handler.NewDefaultServer(
 		graph.NewExecutableSchema(graph.Config{Resolvers: graphResolver}),
 	)
 
 	// Add middleware to extract user headers from Apollo Router (forwarded from JWT claims)
-	graphHandler.AroundOperations(middleware.GraphQLContextMiddleware())
+	srv.AroundOperations(middleware.GraphQLContextMiddleware())
 
 	// GraphQL endpoint with optional auth middleware
 	// GET for introspection queries (needed by Apollo Router)
-	e.GET("/graph", graphQLEchoHandler(graphHandler))
+	e.GET("/graph", graphQLEchoHandler(srv))
 
 	// POST for actual queries/mutations (public for register/login, protected for me query)
-	e.POST("/graph", graphQLEchoHandler(graphHandler))
+	e.POST("/graph", graphQLEchoHandler(srv))
 
 	// Protected GraphQL endpoint (requires authentication)
-	e.POST("/graph/auth", graphQLEchoHandler(graphHandler), authmiddleware.AuthMiddleware)
+	e.POST("/graph/auth", graphQLEchoHandler(srv), authmiddleware.AuthMiddleware)
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")

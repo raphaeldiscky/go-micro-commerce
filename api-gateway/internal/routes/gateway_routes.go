@@ -44,9 +44,11 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 
 	// GraphQL Subscriptions WebSocket (bypass Apollo Router, proxy directly to chat-service)
 	// Apollo Router doesn't support WebSocket subscriptions, so we route directly
+	// Note: Use chat-service (port 8085) NOT chat-service-websocket (port 9098)
+	// GraphQL subscriptions are on the HTTP server, not the native WebSocket server
 	optionalAuth.GET(
 		"/graph/subscriptions",
-		gw.ProxyWebSocket("chat-service-websocket", "/graph/subscriptions"),
+		gw.ProxyWebSocket("chat-service", "/graph/subscriptions"),
 	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))

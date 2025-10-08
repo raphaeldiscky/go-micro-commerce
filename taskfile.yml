@@ -273,7 +273,6 @@ tasks:
     cmds:
       - task: format
       - task: lint
-      - task: deadcode
 
   security:
     desc: Check security

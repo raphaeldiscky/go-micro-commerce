@@ -1,9 +1,12 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 
 	pkgmiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
@@ -24,35 +27,45 @@ func SetupGraphQLRoutes(
 	executableSchema := graph.NewExecutableSchema(graph.Config{Resolvers: graphResolver})
 
 	// Create GraphQL handler with context middleware
-	graphHandler := handler.NewDefaultServer(executableSchema)
+	srv := handler.NewDefaultServer(executableSchema)
 
 	// Add middleware to extract client metadata from headers
-	graphHandler.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
+	srv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
 	// GraphQL endpoint without auth (for introspection and public queries)
 	// GET for introspection queries (needed by Apollo Router)
-	e.GET("/graph", echo.WrapHandler(graphHandler))
+	e.GET("/graph", echo.WrapHandler(srv))
 
 	// POST for queries/mutations (public for introspection, use /graph/auth for protected)
-	e.POST("/graph", echo.WrapHandler(graphHandler))
+	e.POST("/graph", echo.WrapHandler(srv))
 	// Protected GraphQL endpoint (requires authentication)
-	e.POST("/graph/auth", echo.WrapHandler(graphHandler), middleware.AuthMiddleware)
+	e.POST("/graph/auth", echo.WrapHandler(srv), middleware.AuthMiddleware)
 
 	// WebSocket handler for GraphQL subscriptions with graphql-transport-ws protocol
-	wsHandler := handler.New(executableSchema)
+	wsSrv := handler.New(executableSchema)
 
 	// Configure WebSocket transport (graphql-transport-ws protocol)
-	wsHandler.AddTransport(transport.Websocket{
+	// The Upgrader must allow connections from API Gateway proxy
+	wsSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: constant.GraphQLKeepAlivePingInterval,
+		Upgrader: websocket.Upgrader{
+			CheckOrigin: func(_ *http.Request) bool {
+				return true // Allow all origins for proxying through API Gateway
+			},
+			ReadBufferSize:  constant.WsServerReadBufferSize,
+			WriteBufferSize: constant.WsServerWriteBufferSize,
+		},
 	})
-
+	wsSrv.AddTransport(transport.Options{})
+	wsSrv.AddTransport(transport.GET{})
+	wsSrv.AddTransport(transport.POST{})
 	// Add context middleware for subscriptions
-	wsHandler.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
+	wsSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
 	// WebSocket subscriptions endpoint
 	// Auth is handled by API Gateway which validates JWT and forwards X-User-* headers
 	// The GraphQLContextMiddleware extracts these headers and sets user context
-	e.GET("/graph/subscriptions", echo.WrapHandler(wsHandler))
+	e.GET("/graph/subscriptions", echo.WrapHandler(wsSrv))
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
