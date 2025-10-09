@@ -58,9 +58,9 @@ export function ChatPanel({
     }
   }
 
-  if (isFullscreen) {
-    return (
-      <WebSocketSendProvider>
+  return (
+    <WebSocketSendProvider>
+      {isFullscreen ? (
         <Dialog open={isFullscreen} onOpenChange={handleDialogOpenChange}>
           <DialogContent
             className="w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 bg-transparent"
@@ -75,22 +75,18 @@ export function ChatPanel({
             </div>
           </DialogContent>
         </Dialog>
-      </WebSocketSendProvider>
-    )
-  }
-
-  return (
-    <WebSocketSendProvider>
-      <Card className="h-[calc(100vh-8rem)] min-h-[500px] max-h-[800px] md:max-w-4xl mx-auto overflow-hidden w-full">
-        <div className="h-full flex flex-col">
-          <ConversationPage
-            conversationId={conversationId}
-            isFullscreen={false}
-            onToggleFullscreen={!isMobile ? toggleFullscreen : undefined}
-            showToggle={!isMobile}
-          />
-        </div>
-      </Card>
+      ) : (
+        <Card className="h-[calc(100vh-8rem)] min-h-[500px] max-h-[800px] md:max-w-4xl mx-auto overflow-hidden w-full">
+          <div className="h-full flex flex-col">
+            <ConversationPage
+              conversationId={conversationId}
+              isFullscreen={false}
+              onToggleFullscreen={!isMobile ? toggleFullscreen : undefined}
+              showToggle={!isMobile}
+            />
+          </div>
+        </Card>
+      )}
     </WebSocketSendProvider>
   )
 }

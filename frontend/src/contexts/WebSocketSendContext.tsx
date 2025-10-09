@@ -1,18 +1,16 @@
 import { env } from '@/env'
 import { useIsAuthenticated } from '@/hooks/auth/useAuth'
 import { getAccessToken } from '@/lib/api/client'
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { createContext, useCallback, useContext, useMemo } from 'react'
+import useWebSocket, { ReadyState } from 'react-use-websocket'
 
 interface WebSocketMessage {
+  id?: string
   type: string
   content: unknown
+  timestamp?: string
+  sender_id?: string
+  channel?: string
 }
 
 interface WebSocketSendContextValue {
@@ -29,114 +27,76 @@ export function WebSocketSendProvider({
 }: {
   children: React.ReactNode
 }) {
-  const wsRef = useRef<WebSocket | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const reconnectAttemptsRef = useRef(0)
-  const maxReconnectAttempts = 5
   const isAuthenticated = useIsAuthenticated()
+  const token = getAccessToken()
 
-  const connect = useCallback(() => {
-    const token = getAccessToken()
-    if (!token) {
-      return
-    }
+  // Build WebSocket URL with token as query parameter
+  const socketUrl = useMemo(() => {
+    if (!token) return null
+    return `${env.VITE_CHAT_WEBSOCKET_URL}?token=${token}`
+  }, [token])
 
-    // Don't create a new connection if one already exists
-    if (
-      wsRef.current &&
-      (wsRef.current.readyState === WebSocket.CONNECTING ||
-        wsRef.current.readyState === WebSocket.OPEN)
-    ) {
-      return
-    }
+  const { sendJsonMessage, readyState } = useWebSocket(
+    socketUrl,
+    {
+      // Share WebSocket instance across all components using this context
+      // This prevents double-mounting issues in React StrictMode
+      share: true,
 
-    const wsUrl = env.VITE_GRAPHQL_SUBSCRIPTION_URL
+      // Only connect when authenticated and have a token
+      shouldReconnect: () => isAuthenticated && !!token,
 
-    const ws = new WebSocket(`${wsUrl}?token=${token}`)
+      // Reconnection configuration
+      reconnectAttempts: 5,
+      reconnectInterval: 3000, // 3 seconds
 
-    ws.onopen = () => {
-      setIsConnected(true)
-      reconnectAttemptsRef.current = 0 // Reset reconnect attempts on successful connection
-    }
+      // Connection lifecycle callbacks
+      onOpen: () => {
+        console.log('WebSocket connected')
+      },
+      onClose: () => {
+        console.log('WebSocket disconnected')
+      },
+      onError: (error) => {
+        console.error('WebSocket error:', error)
+      },
 
-    ws.onclose = () => {
-      setIsConnected(false)
-      wsRef.current = null
+      // Retry on error
+      retryOnError: true,
+    },
+    // Only enable WebSocket when authenticated and have token
+    isAuthenticated && !!token,
+  )
 
-      // Only reconnect if we haven't exceeded max attempts and have a token
-      if (
-        reconnectAttemptsRef.current < maxReconnectAttempts &&
-        getAccessToken()
-      ) {
-        reconnectAttemptsRef.current += 1
-        const delay = Math.min(1000 * 2 ** reconnectAttemptsRef.current, 30000) // Exponential backoff, max 30s
+  // Map readyState to simple boolean
+  const isConnected = readyState === ReadyState.OPEN
 
-        reconnectTimeoutRef.current = setTimeout(() => {
-          connect()
-        }, delay)
-      } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
-        console.error(
-          'Max WebSocket reconnection attempts reached. Please refresh the page.',
-        )
+  // Wrap sendJsonMessage to format messages according to backend expectations
+  const sendMessage = useCallback(
+    (message: WebSocketMessage) => {
+      if (readyState !== ReadyState.OPEN) {
+        console.warn('WebSocket not connected, cannot send message')
+        return
       }
-    }
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-
-    wsRef.current = ws
-  }, []) // Empty dependencies - token is fetched inside the function
-
-  useEffect(() => {
-    // Only connect once when component mounts
-    connect()
-
-    return () => {
-      // Clear any pending reconnection attempts
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
+      // Ensure message has required fields matching backend format
+      const completeMessage: WebSocketMessage = {
+        id: message.id || crypto.randomUUID(),
+        type: message.type,
+        content: message.content,
+        timestamp: message.timestamp || new Date().toISOString(),
+        ...(message.sender_id && { sender_id: message.sender_id }),
+        ...(message.channel && { channel: message.channel }),
       }
-      // Close the WebSocket connection
-      if (wsRef.current) {
-        wsRef.current.close()
-        wsRef.current = null
-      }
-    }
-  }, [])
 
-  // Handle authentication state changes
-  useEffect(() => {
-    if (!isAuthenticated) {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current)
-        reconnectTimeoutRef.current = null
+      try {
+        sendJsonMessage(completeMessage)
+      } catch (error) {
+        console.error('Failed to send WebSocket message:', error)
       }
-      // Close WebSocket
-      if (wsRef.current) {
-        wsRef.current.close()
-        wsRef.current = null
-      }
-      setIsConnected(false)
-      reconnectAttemptsRef.current = 0
-    } else if (!wsRef.current) {
-      connect()
-    }
-  }, [isAuthenticated, connect])
-
-  const sendMessage = useCallback((message: WebSocketMessage) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      console.warn('WebSocket not connected, cannot send message')
-      return
-    }
-
-    try {
-      wsRef.current.send(JSON.stringify(message))
-    } catch (error) {
-      console.error('Failed to send WebSocket message:', error)
-    }
-  }, [])
+    },
+    [sendJsonMessage, readyState],
+  )
 
   return (
     <WebSocketSendContext.Provider value={{ sendMessage, isConnected }}>

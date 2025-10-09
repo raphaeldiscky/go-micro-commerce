@@ -10,6 +10,7 @@ export const env = createEnv({
     VITE_GRAPHQL_SUBSCRIPTION_URL: z
       .url()
       .default('ws://localhost:8080/graph/subscriptions'),
+    VITE_CHAT_WEBSOCKET_URL: z.url().default('ws://localhost:8080/chats/ws'),
 
     VITE_APP_TITLE: z.string().min(1).optional(),
   },

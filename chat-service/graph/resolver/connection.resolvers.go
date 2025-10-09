@@ -50,9 +50,19 @@ func (r *mutationResolver) RequestChatConnection(
 // OnlineUsers is the resolver for the onlineUsers field.
 func (r *queryResolver) OnlineUsers(ctx context.Context) ([]*graph.User, error) {
 	_ = ctx
-	// This would require integration with presence/connection service
-	// For now, return empty list as this is a complex feature
-	r.logger.Warn("OnlineUsers called but not fully implemented yet")
 
-	return []*graph.User{}, nil
+	// Get online user IDs from WebSocket hub
+	onlineUserIDs := r.subscriptionManager.Hub.GetOnlineUsers()
+
+	// Convert user IDs to User stub objects (Apollo Federation will resolve full details)
+	users := make([]*graph.User, 0, len(onlineUserIDs))
+	for _, userID := range onlineUserIDs {
+		users = append(users, &graph.User{
+			ID: userID.String(),
+		})
+	}
+
+	r.logger.Info("OnlineUsers query executed", "count", len(users))
+
+	return users, nil
 }
