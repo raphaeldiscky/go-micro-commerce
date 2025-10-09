@@ -115,9 +115,11 @@ export function MessageList({
     if (lastMessageId === lastProcessedMessageIdRef.current) return
 
     // Mark the last few messages as read (only if not already marked)
+    // Skip optimistic messages (temp IDs) to avoid backend errors
     const messagesToMark = unreadMessages
       .slice(-3)
       .filter((msg) => !markedAsReadRef.current.has(msg.id))
+      .filter((msg) => !msg.id.startsWith('temp-'))
 
     if (messagesToMark.length > 0) {
       isMarkingRef.current = true

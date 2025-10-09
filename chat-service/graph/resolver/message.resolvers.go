@@ -66,10 +66,11 @@ func (r *mutationResolver) SendMessage(
 		return nil, httperror.NewUnauthorizedError("user not authorized for this conversation")
 	}
 
-	// Determine message type
+	// Determine message type and normalize GraphQL enum to database format
 	messageType := constant.MessageTypeText
 	if input.MessageType != nil {
-		messageType = *input.MessageType
+		// Convert GraphQL enum (UPPERCASE) to database format (lowercase)
+		messageType = mapper.NormalizeMessageType(*input.MessageType)
 	}
 
 	// Create message entity

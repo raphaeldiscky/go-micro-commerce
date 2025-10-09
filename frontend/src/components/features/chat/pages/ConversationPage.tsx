@@ -47,7 +47,7 @@ export function ConversationPage({
   // Hooks
   const { data: conversation, isLoading: isLoadingConversation } =
     useConversationDetails(conversationId)
-  const sendMessageMutation = useSendMessage(conversationId)
+  const sendMessageMutation = useSendMessage(conversationId, user?.id || '')
   const { startTyping, stopTyping, typingUsers } =
     useTypingIndicator(conversationId)
   const { isUserOnline } = usePresence()

@@ -19,7 +19,7 @@ interface ConversationMessagesQueryResponse {
 }
 
 interface InfiniteQueryData {
-  pages: Array<Array<Message>>
+  pages: Array<ConversationMessagesQueryResponse>
   pageParams: Array<string | undefined>
 }
 
@@ -37,7 +37,9 @@ export function useAddMessage(conversationId: string) {
 
         // Check if message already exists (prevent duplicates)
         const messageExists = old.pages.some((page) =>
-          page.some((msg) => msg.id === message.id),
+          page.conversationMessages.edges.some(
+            (edge) => edge.node.id === message.id,
+          ),
         )
 
         if (messageExists) return old
@@ -45,12 +47,42 @@ export function useAddMessage(conversationId: string) {
         // Add message to the last page
         const updatedPages = [...old.pages]
         if (updatedPages.length > 0) {
-          updatedPages[updatedPages.length - 1] = [
-            ...updatedPages[updatedPages.length - 1],
-            message,
-          ]
+          const lastPage = updatedPages[updatedPages.length - 1]
+          updatedPages[updatedPages.length - 1] = {
+            ...lastPage,
+            conversationMessages: {
+              ...lastPage.conversationMessages,
+              edges: [
+                ...lastPage.conversationMessages.edges,
+                {
+                  __typename: 'MessageEdge',
+                  node: message,
+                  cursor: message.id,
+                },
+              ],
+            },
+          }
         } else {
-          updatedPages.push([message])
+          // Create first page if none exist
+          updatedPages.push({
+            conversationMessages: {
+              __typename: 'MessageConnection',
+              edges: [
+                {
+                  __typename: 'MessageEdge',
+                  node: message,
+                  cursor: message.id,
+                },
+              ],
+              pageInfo: {
+                __typename: 'PageInfo',
+                hasNextPage: false,
+                hasPreviousPage: false,
+                startCursor: message.id,
+                endCursor: message.id,
+              },
+            },
+          })
         }
 
         return {
@@ -101,7 +133,7 @@ export function useMessages(conversationId: string) {
  * Hook for sending messages via GraphQL mutation
  * Messages are sent through GraphQL and broadcasted via WebSocket subscriptions
  */
-export function useSendMessage(conversationId: string) {
+export function useSendMessage(conversationId: string, currentUserId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -111,9 +143,13 @@ export function useSendMessage(conversationId: string) {
         input: {
           conversationId,
           content: message.content,
-          messageType: message.message_type
-            ? message.message_type.toUpperCase()
-            : 'TEXT',
+          // Use MessageType enum, GraphQL will serialize to uppercase string
+          messageType:
+            message.message_type === 'image'
+              ? MessageType.Image
+              : message.message_type === 'file'
+                ? MessageType.File
+                : MessageType.Text,
           replyToId: message.reply_to_id,
         },
       })
@@ -133,7 +169,7 @@ export function useSendMessage(conversationId: string) {
         conversationId,
       ])
 
-      // Optimistically update the cache
+      // Optimistically update the cache with GraphQL structure
       queryClient.setQueryData<InfiniteQueryData>(
         QUERY_KEY.chat.messages(conversationId),
         (old) => {
@@ -176,18 +212,48 @@ export function useSendMessage(conversationId: string) {
                   ? MessageType.File
                   : MessageType.Text,
             sender: null,
-            senderId: 'current-user', // Will be replaced by real user ID
+            senderId: currentUserId, // Use actual user ID for correct message alignment
           }
 
-          // Add message to the last page
+          // Add message to the last page in GraphQL structure
           const updatedPages = [...old.pages]
           if (updatedPages.length > 0) {
-            updatedPages[updatedPages.length - 1] = [
-              ...updatedPages[updatedPages.length - 1],
-              optimisticMessage,
-            ]
+            const lastPage = updatedPages[updatedPages.length - 1]
+            updatedPages[updatedPages.length - 1] = {
+              ...lastPage,
+              conversationMessages: {
+                ...lastPage.conversationMessages,
+                edges: [
+                  ...lastPage.conversationMessages.edges,
+                  {
+                    __typename: 'MessageEdge',
+                    node: optimisticMessage,
+                    cursor: optimisticMessage.id,
+                  },
+                ],
+              },
+            }
           } else {
-            updatedPages.push([optimisticMessage])
+            // Create first page if none exist
+            updatedPages.push({
+              conversationMessages: {
+                __typename: 'MessageConnection',
+                edges: [
+                  {
+                    __typename: 'MessageEdge',
+                    node: optimisticMessage,
+                    cursor: optimisticMessage.id,
+                  },
+                ],
+                pageInfo: {
+                  __typename: 'PageInfo',
+                  hasNextPage: false,
+                  hasPreviousPage: false,
+                  startCursor: optimisticMessage.id,
+                  endCursor: optimisticMessage.id,
+                },
+              },
+            })
           }
 
           return {
