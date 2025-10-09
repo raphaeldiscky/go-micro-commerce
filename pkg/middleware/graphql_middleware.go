@@ -6,6 +6,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
+	"github.com/labstack/echo/v4"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -59,11 +60,6 @@ func GraphQLContextMiddleware() graphql.OperationMiddleware {
 			ctx = context.WithValue(ctx, constant.CtxKeyRoles, roles)
 		}
 
-		if isActiveHeader := requestContext.Headers.Get(constant.XIsActive); isActiveHeader != "" {
-			isActive := isActiveHeader == "true"
-			ctx = context.WithValue(ctx, constant.CtxKeyIsActive, isActive)
-		}
-
 		return next(ctx)
 	}
 }
@@ -107,5 +103,54 @@ func GraphQLRequireAuth() graphql.OperationMiddleware {
 		}
 
 		return next(ctx)
+	}
+}
+
+// WebSocketAuthMiddleware is an Echo middleware that extracts auth headers forwarded by
+// API Gateway and adds them to the request context before WebSocket upgrade.
+// This allows GraphQL subscriptions to access user authentication information.
+func WebSocketAuthMiddleware() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			req := c.Request()
+			ctx := req.Context()
+
+			// Extract authentication headers forwarded by API Gateway
+			// These headers were set by the API Gateway after JWT validation
+			if userIDHeader := req.Header.Get(constant.XUserID); userIDHeader != "" {
+				if userID, err := uuid.Parse(userIDHeader); err == nil {
+					ctx = context.WithValue(ctx, constant.CtxKeyUserID, userID)
+				}
+			}
+
+			if email := req.Header.Get(constant.XEmail); email != "" {
+				ctx = context.WithValue(ctx, constant.CtxKeyEmail, email)
+			}
+
+			if rolesHeader := req.Header.Get(constant.XRoles); rolesHeader != "" {
+				// Parse comma-separated roles string into []string
+				roles := strings.Split(rolesHeader, ",")
+				// Trim whitespace from each role
+				for i, role := range roles {
+					roles[i] = strings.TrimSpace(role)
+				}
+
+				ctx = context.WithValue(ctx, constant.CtxKeyRoles, roles)
+			}
+
+			// Extract client metadata
+			if clientIP := req.Header.Get(constant.XClientIP); clientIP != "" {
+				ctx = context.WithValue(ctx, constant.CtxKeyClientIP, clientIP)
+			}
+
+			if userAgent := req.Header.Get(constant.XUserAgent); userAgent != "" {
+				ctx = context.WithValue(ctx, constant.CtxKeyUserAgent, userAgent)
+			}
+
+			// Update request with enriched context
+			c.SetRequest(req.WithContext(ctx))
+
+			return next(c)
+		}
 	}
 }

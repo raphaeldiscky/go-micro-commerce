@@ -44,7 +44,7 @@ func SetupGraphQLRoutes(
 	// WebSocket handler for GraphQL subscriptions with graphql-transport-ws protocol
 	wsSrv := handler.New(executableSchema)
 
-	// Configure WebSocket transport (graphql-transport-ws protocol)
+	// Configure the WebSocket transport
 	// The Upgrader must allow connections from API Gateway proxy
 	wsSrv.AddTransport(transport.Websocket{
 		KeepAlivePingInterval: constant.GraphQLKeepAlivePingInterval,
@@ -64,8 +64,8 @@ func SetupGraphQLRoutes(
 
 	// WebSocket subscriptions endpoint
 	// Auth is handled by API Gateway which validates JWT and forwards X-User-* headers
-	// The GraphQLContextMiddleware extracts these headers and sets user context
-	e.GET("/graph/subscriptions", echo.WrapHandler(wsSrv))
+	// The WebSocketAuthMiddleware extracts these headers from HTTP upgrade request and adds to context
+	e.GET("/graph/subscriptions", echo.WrapHandler(wsSrv), pkgmiddleware.WebSocketAuthMiddleware())
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")

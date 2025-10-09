@@ -7,8 +7,6 @@ const (
 	XEmail = "X-Email"
 	// XRoles is the header for the user roles.
 	XRoles = "X-Roles"
-	// XIsActive is the header for the user active status.
-	XIsActive = "X-Is-Active"
 	// XRequestID is the header for the request ID, automatically generated for each request from middleware.
 	XRequestID = "X-Request-Id"
 	// XClientIP is the header for the client IP address.

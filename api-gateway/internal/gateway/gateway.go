@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -298,12 +297,6 @@ func (gw *Gateway) addUserHeaders(c echo.Context, req *http.Request) {
 		}
 	}
 
-	if isActive := c.Get(string(constant.CtxKeyIsActive)); isActive != nil {
-		if active, ok := isActive.(bool); ok {
-			req.Header.Set(constant.XIsActive, strconv.FormatBool(active))
-		}
-	}
-
 	// Add client metadata for audit logging and security
 	req.Header.Set(constant.XClientIP, c.RealIP())
 	req.Header.Set(constant.XUserAgent, c.Request().UserAgent())
@@ -483,9 +476,19 @@ func (gw *Gateway) ProxyWebSocket(serviceName, path string) echo.HandlerFunc {
 		// This is needed for GraphQL subscriptions protocol negotiation
 		clientSubprotocols := websocket.Subprotocols(c.Request())
 
+		// Prepare response headers for WebSocket subprotocol negotiation
+		// For WebSocket proxying, we need to accept the client's requested subprotocol
+		// and forward it to the backend. The backend will validate if it's supported.
+		responseHeader := http.Header{}
+		if len(clientSubprotocols) > 0 {
+			// Accept the first requested subprotocol (typically graphql-transport-ws)
+			// This header is required for graphql-ws clients to accept the connection
+			responseHeader.Set("Sec-WebSocket-Protocol", clientSubprotocols[0])
+		}
+
 		// Upgrade client connection to WebSocket
 		// Use c.Response().Writer to get the underlying http.ResponseWriter that supports hijacking
-		clientConn, err := upgrader.Upgrade(c.Response().Writer, c.Request(), nil)
+		clientConn, err := upgrader.Upgrade(c.Response().Writer, c.Request(), responseHeader)
 		if err != nil {
 			gw.logger.Errorf("failed to upgrade client connection: %v", err)
 
@@ -623,12 +626,6 @@ func (gw *Gateway) prepareBackendHeaders(c echo.Context) http.Header {
 	if roles := c.Get(string(constant.CtxKeyRoles)); roles != nil {
 		if rolesSlice, ok := roles.([]string); ok {
 			backendHeaders.Set(constant.XRoles, strings.Join(rolesSlice, ","))
-		}
-	}
-
-	if isActive := c.Get(string(constant.CtxKeyIsActive)); isActive != nil {
-		if active, ok := isActive.(bool); ok {
-			backendHeaders.Set(constant.XIsActive, strconv.FormatBool(active))
 		}
 	}
 

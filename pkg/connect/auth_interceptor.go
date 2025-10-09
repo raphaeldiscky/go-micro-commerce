@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -46,7 +45,6 @@ func (a *AuthInterceptor) ServiceToServiceAuth() connect.UnaryInterceptorFunc {
 				newCtx := context.WithValue(ctx, constant.CtxKeyUserID, userInfo.UserID)
 				newCtx = context.WithValue(newCtx, constant.CtxKeyEmail, userInfo.Email)
 				newCtx = context.WithValue(newCtx, constant.CtxKeyRoles, userInfo.Roles)
-				newCtx = context.WithValue(newCtx, constant.CtxKeyIsActive, userInfo.IsActive)
 
 				return next(newCtx, req)
 			},
@@ -95,28 +93,10 @@ func (a *AuthInterceptor) extractUserInfoFromHeaders(
 
 	roles := strings.Split(rolesValue, ",")
 
-	// Extract X-Is-Active
-	isActiveValue := headers.Get(constant.XIsActive)
-	if isActiveValue == "" {
-		return nil, connect.NewError(
-			connect.CodeUnauthenticated,
-			errors.New(constant.MissingXIsActiveErrorMessage),
-		)
-	}
-
-	isActive, err := strconv.ParseBool(isActiveValue)
-	if err != nil {
-		return nil, connect.NewError(
-			connect.CodeUnauthenticated,
-			errors.New(constant.InvalidXIsActiveFormatErrorMessage),
-		)
-	}
-
 	return &dto.UserAuthInfo{
-		UserID:   userID,
-		Email:    email,
-		Roles:    roles,
-		IsActive: isActive,
+		UserID: userID,
+		Email:  email,
+		Roles:  roles,
 	}, nil
 }
 
@@ -146,13 +126,6 @@ func AddAuthHeaders(ctx context.Context, req HeaderSetter) {
 	if roles := ctx.Value(constant.CtxKeyRoles); roles != nil {
 		if rolesSlice, ok := roles.([]string); ok {
 			req.Header().Set(constant.XRoles, strings.Join(rolesSlice, ","))
-		}
-	}
-
-	// Extract is active
-	if isActive := ctx.Value(constant.CtxKeyIsActive); isActive != nil {
-		if active, ok := isActive.(bool); ok {
-			req.Header().Set(constant.XIsActive, strconv.FormatBool(active))
 		}
 	}
 }

@@ -3,7 +3,6 @@ package grpc
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -51,7 +50,6 @@ func (a *AuthInterceptor) ServiceToServiceAuth() grpc.UnaryServerInterceptor {
 		newCtx := context.WithValue(ctx, constant.CtxKeyUserID, userInfo.UserID)
 		newCtx = context.WithValue(newCtx, constant.CtxKeyEmail, userInfo.Email)
 		newCtx = context.WithValue(newCtx, constant.CtxKeyRoles, userInfo.Roles)
-		newCtx = context.WithValue(newCtx, constant.CtxKeyIsActive, userInfo.IsActive)
 
 		return handler(newCtx, req)
 	}
@@ -93,21 +91,9 @@ func (a *AuthInterceptor) extractUserInfoFromMetadata(
 
 	roles := strings.Split(rolesValues[0], ",")
 
-	// Extract X-Is-Active
-	isActiveValues := md[strings.ToLower(constant.XIsActive)]
-	if len(isActiveValues) == 0 {
-		return nil, status.Error(codes.Unauthenticated, constant.MissingXIsActiveErrorMessage)
-	}
-
-	isActive, err := strconv.ParseBool(isActiveValues[0])
-	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, constant.InvalidXIsActiveFormatErrorMessage)
-	}
-
 	return &dto.UserAuthInfo{
-		UserID:   userID,
-		Email:    email,
-		Roles:    roles,
-		IsActive: isActive,
+		UserID: userID,
+		Email:  email,
+		Roles:  roles,
 	}, nil
 }

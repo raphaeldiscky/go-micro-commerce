@@ -26,15 +26,9 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 			return httperror.NewMissingXRolesError()
 		}
 
-		isActive, ok := echoutils.GetXIsActive(ctx)
-		if !ok {
-			return httperror.NewMissingXIsActiveError()
-		}
-
 		ctx.Set(string(constant.CtxKeyUserID), userID)
 		ctx.Set(string(constant.CtxKeyEmail), email)
 		ctx.Set(string(constant.CtxKeyRoles), roles)
-		ctx.Set(string(constant.CtxKeyIsActive), isActive)
 
 		return next(ctx)
 	}
