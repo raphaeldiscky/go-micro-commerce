@@ -56,6 +56,7 @@ interface ConversationEventsData {
 export function useConversationSubscription(conversationId: string) {
   const queryClient = useQueryClient()
   const unsubscribeRef = useRef<(() => void) | null>(null)
+  const invalidationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (!conversationId) return
@@ -77,10 +78,17 @@ export function useConversationSubscription(conversationId: string) {
           // Handle different event types
           switch (event.__typename) {
             case 'NewMessage':
-              // Invalidate messages query to refetch and show new message
-              queryClient.invalidateQueries({
-                queryKey: QUERY_KEY.chat.messages(conversationId),
-              })
+              // Debounce message invalidations to prevent rapid-fire refetches
+              // This prevents infinite loops when multiple events come in quickly
+              if (invalidationTimeoutRef.current) {
+                clearTimeout(invalidationTimeoutRef.current)
+              }
+              invalidationTimeoutRef.current = setTimeout(() => {
+                queryClient.invalidateQueries({
+                  queryKey: QUERY_KEY.chat.messages(conversationId),
+                })
+                invalidationTimeoutRef.current = null
+              }, 100)
               break
 
             case 'TypingIndicator':
@@ -93,10 +101,12 @@ export function useConversationSubscription(conversationId: string) {
 
             case 'DeliveryReceipt':
             case 'ReadReceipt':
-              // Invalidate messages to update receipt status
-              queryClient.invalidateQueries({
-                queryKey: QUERY_KEY.chat.messages(conversationId),
-              })
+              // Note: GraphQL Message type doesn't include delivery_status or read_status fields
+              // So we don't need to refetch messages for receipt events
+              // If these fields are added to the schema in the future, uncomment the invalidation below
+              // queryClient.invalidateQueries({
+              //   queryKey: QUERY_KEY.chat.messages(conversationId),
+              // })
               break
           }
         },
@@ -111,10 +121,15 @@ export function useConversationSubscription(conversationId: string) {
 
     // Cleanup on unmount
     return () => {
+      if (invalidationTimeoutRef.current) {
+        clearTimeout(invalidationTimeoutRef.current)
+        invalidationTimeoutRef.current = null
+      }
       if (unsubscribeRef.current) {
         unsubscribeRef.current()
         unsubscribeRef.current = null
       }
     }
-  }, [conversationId, queryClient])
+    // queryClient is stable from useQueryClient() and doesn't need to be in deps
+  }, [conversationId])
 }

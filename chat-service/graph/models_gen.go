@@ -170,6 +170,11 @@ type TypingIndicator struct {
 
 func (TypingIndicator) IsConversationEvent() {}
 
+type TypingIndicatorInput struct {
+	ConversationID string `json:"conversationId"`
+	IsTyping       bool   `json:"isTyping"`
+}
+
 type User struct {
 	ID            string          `json:"id"`
 	Conversations []*Conversation `json:"conversations"`

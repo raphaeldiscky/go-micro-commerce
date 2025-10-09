@@ -174,6 +174,8 @@ type Mutation
   sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @join__field(graph: CHAT_SERVICE)
   joinConversation(input: JoinConversationInput!): Participant! @join__field(graph: CHAT_SERVICE)
   leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
+  updatePresence(status: PresenceStatus!): PresenceUpdate! @join__field(graph: CHAT_SERVICE)
+  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @join__field(graph: CHAT_SERVICE)
 }
 
 type NewMessage
@@ -318,6 +320,13 @@ type TypingIndicator
   conversationId: ID!
   isTyping: Boolean!
   timestamp: Time!
+}
+
+input TypingIndicatorInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  conversationId: ID!
+  isTyping: Boolean!
 }
 
 type User

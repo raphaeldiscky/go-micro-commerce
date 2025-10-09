@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/pubsub"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
@@ -21,6 +23,7 @@ type Manager struct {
 	userSubs       map[uuid.UUID]*userSubscription
 	mu             sync.RWMutex
 	Hub            *websocket.ChatHub
+	pubSub         *pubsub.ChatPubSub
 	eventConverter *EventConverter
 }
 
@@ -37,14 +40,57 @@ type userSubscription struct {
 }
 
 // NewManager creates a new subscription manager.
-func NewManager(hub *websocket.ChatHub, logger logger.Logger) *Manager {
-	return &Manager{
+func NewManager(
+	hub *websocket.ChatHub,
+	pubSub *pubsub.ChatPubSub,
+	logger logger.Logger,
+) *Manager {
+	m := &Manager{
 		logger:         logger,
 		subscriptions:  make(map[string]*conversationSubscription),
 		userSubs:       make(map[uuid.UUID]*userSubscription),
 		Hub:            hub,
+		pubSub:         pubSub,
 		eventConverter: NewEventConverter(logger),
 	}
+
+	// Register handlers for cross-instance messages
+	m.registerPubSubHandlers()
+
+	return m
+}
+
+// registerPubSubHandlers registers handlers for Redis pub/sub messages.
+func (m *Manager) registerPubSubHandlers() {
+	// Handle chat messages
+	m.pubSub.RegisterHandler(
+		pubsub.CrossInstanceMessageTypeChat,
+		m.handleCrossInstanceMessage,
+	)
+
+	// Handle typing indicators
+	m.pubSub.RegisterHandler(
+		pubsub.CrossInstanceMessageTypeTyping,
+		m.handleCrossInstanceMessage,
+	)
+
+	// Handle presence updates
+	m.pubSub.RegisterHandler(
+		pubsub.CrossInstanceMessageTypePresence,
+		m.handleCrossInstanceMessage,
+	)
+
+	// Handle delivery receipts
+	m.pubSub.RegisterHandler(
+		pubsub.CrossInstanceMessageTypeDeliveryReceipt,
+		m.handleCrossInstanceMessage,
+	)
+
+	// Handle read receipts
+	m.pubSub.RegisterHandler(
+		pubsub.CrossInstanceMessageTypeReadReceipt,
+		m.handleCrossInstanceMessage,
+	)
 }
 
 // SubscribeToConversation creates a new subscription to conversation events.
@@ -125,90 +171,175 @@ func (m *Manager) SubscribeToUserEvents(
 	return ch, nil
 }
 
-// listenToConversation listens to ChatHub events for a conversation and forwards to subscribers.
-func (m *Manager) listenToConversation(
-	conversationID uuid.UUID,
-	convSub *conversationSubscription,
-) {
-	// Subscribe to ChatHub conversation channel
-	channelName := websocket.ConversationChannel(conversationID)
-	messageChan := make(chan *pkgwebsocket.Message, constant.SubscriptionMessageChannelBufferSize)
+// handleCrossInstanceMessage handles incoming cross-instance messages from Redis.
+func (m *Manager) handleCrossInstanceMessage(
+	_ context.Context,
+	crossMsg *pubsub.CrossInstanceMessage,
+) error {
+	// Unmarshal the payload to CrossInstancePayload
+	var payload websocket.CrossInstancePayload
+	if err := json.Unmarshal(crossMsg.Payload, &payload); err != nil {
+		m.logger.Error("Failed to unmarshal cross-instance payload",
+			"error", err,
+			"message_type", crossMsg.MessageType)
 
-	// Register this channel with the hub to receive messages
-	// Note: This requires adding SubscribeToChannel method to BaseHub
-	unsubscribe := m.Hub.SubscribeToChannel(channelName, messageChan)
-	defer unsubscribe()
-
-	for msg := range messageChan {
-		// Convert WebSocket message to GraphQL event
-		event, err := m.eventConverter.ToConversationEvent(msg)
-		if err != nil {
-			m.logger.Error("Failed to convert message to GraphQL event",
-				"error", err,
-				"conversation_id", conversationID)
-
-			continue
-		}
-
-		if event == nil {
-			// Not a conversation event, skip
-			continue
-		}
-
-		// Broadcast to all subscribers
-		convSub.mu.RLock()
-
-		for _, sub := range convSub.subscribers {
-			select {
-			case sub <- event:
-			default:
-				m.logger.Warn("Subscriber channel full, dropping message")
-			}
-		}
-
-		convSub.mu.RUnlock()
+		return err
 	}
+
+	// Convert CrossInstancePayload to WebSocket message
+	wsMsg := &pkgwebsocket.Message{
+		ID:        payload.ID,
+		Type:      payload.Type,
+		Channel:   payload.Channel,
+		SenderID:  payload.SenderID,
+		Content:   payload.Content,
+		Timestamp: payload.Timestamp,
+	}
+
+	// Route message based on type
+	switch crossMsg.MessageType {
+	case pubsub.CrossInstanceMessageTypePresence:
+		return m.handlePresenceMessage(wsMsg)
+	case pubsub.CrossInstanceMessageTypeChat,
+		pubsub.CrossInstanceMessageTypeTyping,
+		pubsub.CrossInstanceMessageTypeDeliveryReceipt,
+		pubsub.CrossInstanceMessageTypeReadReceipt:
+		if crossMsg.ConversationID != nil {
+			return m.handleConversationMessage(wsMsg, *crossMsg.ConversationID)
+		}
+	}
+
+	return nil
 }
 
-// listenToUser listens to ChatHub events for a user and forwards to subscribers.
-func (m *Manager) listenToUser(userID uuid.UUID, userSub *userSubscription) {
-	// Subscribe to ChatHub user channel
-	channelName := websocket.UserChannel(userID)
-	messageChan := make(chan *pkgwebsocket.Message, constant.SubscriptionMessageChannelBufferSize)
+// handleConversationMessage broadcasts a message to all conversation subscribers.
+func (m *Manager) handleConversationMessage(
+	msg *pkgwebsocket.Message,
+	conversationID uuid.UUID,
+) error {
+	// Convert WebSocket message to GraphQL event
+	event, err := m.eventConverter.ToConversationEvent(msg)
+	if err != nil {
+		m.logger.Error("Failed to convert message to GraphQL event",
+			"error", err,
+			"conversation_id", conversationID)
 
-	// Register this channel with the hub
-	unsubscribe := m.Hub.SubscribeToChannel(channelName, messageChan)
-	defer unsubscribe()
-
-	for msg := range messageChan {
-		// Convert WebSocket message to GraphQL event
-		event, err := m.eventConverter.ToUserEvent(msg)
-		if err != nil {
-			m.logger.Error("Failed to convert message to GraphQL user event",
-				"error", err,
-				"user_id", userID)
-
-			continue
-		}
-
-		if event == nil {
-			// Not a user event, skip
-			continue
-		}
-
-		// Broadcast to all subscribers
-		userSub.mu.RLock()
-
-		for _, sub := range userSub.subscribers {
-			select {
-			case sub <- event:
-			default:
-				m.logger.Warn("Subscriber channel full, dropping message")
-			}
-		}
-
-		userSub.mu.RUnlock()
+		return err
 	}
+
+	if event == nil {
+		// Not a conversation event, skip
+		return nil
+	}
+
+	// Find subscribers for this conversation
+	m.mu.RLock()
+	convSub, exists := m.subscriptions[conversationID.String()]
+	m.mu.RUnlock()
+
+	if !exists {
+		// No subscribers for this conversation
+		return nil
+	}
+
+	// Broadcast to all subscribers
+	convSub.mu.RLock()
+	defer convSub.mu.RUnlock()
+
+	for _, sub := range convSub.subscribers {
+		select {
+		case sub <- event:
+		default:
+			m.logger.Warn("Subscriber channel full, dropping message",
+				"conversation_id", conversationID)
+		}
+	}
+
+	return nil
+}
+
+// handlePresenceMessage broadcasts a presence update to all user subscribers.
+func (m *Manager) handlePresenceMessage(msg *pkgwebsocket.Message) error {
+	// Convert WebSocket message to GraphQL event
+	event, err := m.eventConverter.ToUserEvent(msg)
+	if err != nil {
+		m.logger.Error("Failed to convert message to GraphQL user event",
+			"error", err)
+
+		return err
+	}
+
+	if event == nil {
+		// Not a user event, skip
+		return nil
+	}
+
+	// Extract user ID from the presence event
+	presenceUpdate, ok := event.(*graph.PresenceUpdate)
+	if !ok {
+		return nil
+	}
+
+	userID, err := uuid.Parse(presenceUpdate.UserID)
+	if err != nil {
+		m.logger.Error("Failed to parse user ID from presence update",
+			"error", err,
+			"user_id", presenceUpdate.UserID)
+
+		return err
+	}
+
+	// Find subscribers for this user
+	m.mu.RLock()
+	userSub, exists := m.userSubs[userID]
+	m.mu.RUnlock()
+
+	if !exists {
+		// No subscribers for this user
+		return nil
+	}
+
+	// Broadcast to all subscribers
+	userSub.mu.RLock()
+	defer userSub.mu.RUnlock()
+
+	for _, sub := range userSub.subscribers {
+		select {
+		case sub <- event:
+		default:
+			m.logger.Warn("Subscriber channel full, dropping message",
+				"user_id", userID)
+		}
+	}
+
+	return nil
+}
+
+// listenToConversation listens to Redis pub/sub events for a conversation.
+// Note: This method is now a no-op placeholder since Redis pub/sub handlers
+// are registered globally and route messages to subscribers automatically.
+func (m *Manager) listenToConversation(
+	_ uuid.UUID,
+	_ *conversationSubscription,
+) {
+	// Redis pub/sub handlers registered in registerPubSubHandlers will
+	// automatically route messages to the appropriate subscribers via
+	// handleCrossInstanceMessage -> handleConversationMessage
+	//
+	// This method is kept for interface compatibility but does nothing
+	// since subscription management is now fully handled by Redis pub/sub.
+}
+
+// listenToUser listens to Redis pub/sub events for a user.
+// Note: This method is now a no-op placeholder since Redis pub/sub handlers
+// are registered globally and route messages to subscribers automatically.
+func (m *Manager) listenToUser(_ uuid.UUID, _ *userSubscription) {
+	// Redis pub/sub handlers registered in registerPubSubHandlers will
+	// automatically route messages to the appropriate subscribers via
+	// handleCrossInstanceMessage -> handlePresenceMessage
+	//
+	// This method is kept for interface compatibility but does nothing
+	// since subscription management is now fully handled by Redis pub/sub.
 }
 
 // unsubscribeFromConversation removes a subscriber from a conversation.

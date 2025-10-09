@@ -6,13 +6,139 @@ package resolver
 
 import (
 	"context"
+	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
+	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
+
+// UpdatePresence is the resolver for the updatePresence field.
+func (r *mutationResolver) UpdatePresence(
+	ctx context.Context,
+	status constant.PresenceStatus,
+) (*graph.PresenceUpdate, error) {
+	// Get authenticated user from context
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, httperror.NewUnauthorizedError("authentication required")
+	}
+
+	// Create presence content
+	presenceContent := websocket.PresenceContent{
+		UserID: user.UserID,
+		Status: status,
+	}
+
+	contentBytes, err := json.Marshal(presenceContent)
+	if err != nil {
+		r.logger.Error("Failed to marshal presence content", "error", err)
+		return nil, httperror.NewInternalServerError("failed to process presence update")
+	}
+
+	// Create WebSocket message
+	now := time.Now()
+	wsMessage := &pkgwebsocket.Message{
+		ID:        uuid.New(),
+		Type:      websocket.ChatMessageTypePresence,
+		SenderID:  &user.UserID,
+		Content:   json.RawMessage(contentBytes),
+		Timestamp: now,
+	}
+
+	// Publish to Redis (will broadcast to all instances)
+	if err = r.messagePublisher.PublishMessage(ctx, uuid.Nil, wsMessage, nil); err != nil {
+		r.logger.Error("Failed to publish presence update",
+			"error", err,
+			"user_id", user.UserID)
+
+		return nil, httperror.NewInternalServerError("failed to publish presence update")
+	}
+
+	r.logger.Info("Presence update published",
+		"user_id", user.UserID,
+		"status", status)
+
+	// Return the presence update response
+	return &graph.PresenceUpdate{
+		UserID:   user.UserID.String(),
+		Status:   status,
+		LastSeen: &now,
+	}, nil
+}
+
+// SendTypingIndicator is the resolver for the sendTypingIndicator field.
+func (r *mutationResolver) SendTypingIndicator(
+	ctx context.Context,
+	input graph.TypingIndicatorInput,
+) (*graph.TypingIndicator, error) {
+	// Get authenticated user from context
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, httperror.NewUnauthorizedError("authentication required")
+	}
+
+	// Parse conversation ID
+	conversationID, err := uuid.Parse(input.ConversationID)
+	if err != nil {
+		return nil, httperror.NewBadRequestError("invalid conversation ID")
+	}
+
+	// Create typing indicator content
+	typingContent := websocket.TypingContent{
+		IsTyping: input.IsTyping,
+	}
+
+	contentBytes, err := json.Marshal(typingContent)
+	if err != nil {
+		r.logger.Error("Failed to marshal typing content", "error", err)
+		return nil, httperror.NewInternalServerError("failed to process typing indicator")
+	}
+
+	// Create WebSocket message
+	now := time.Now()
+	channelName := websocket.ConversationChannel(conversationID)
+	wsMessage := &pkgwebsocket.Message{
+		ID:        uuid.New(),
+		Type:      websocket.ChatMessageTypeTyping,
+		Channel:   &channelName,
+		SenderID:  &user.UserID,
+		Content:   json.RawMessage(contentBytes),
+		Timestamp: now,
+	}
+
+	// Publish to Redis (will broadcast to all instances)
+	if err = r.messagePublisher.PublishMessage(ctx, conversationID, wsMessage, &user.UserID); err != nil {
+		r.logger.Error("Failed to publish typing indicator",
+			"error", err,
+			"user_id", user.UserID,
+			"conversation_id", conversationID)
+
+		return nil, httperror.NewInternalServerError("failed to publish typing indicator")
+	}
+
+	r.logger.Info("Typing indicator published",
+		"user_id", user.UserID,
+		"conversation_id", conversationID,
+		"is_typing", input.IsTyping)
+
+	// Return the typing indicator response
+	return &graph.TypingIndicator{
+		UserID:         user.UserID.String(),
+		ConversationID: input.ConversationID,
+		IsTyping:       input.IsTyping,
+		Timestamp:      now,
+	}, nil
+}
 
 // ConversationEvents is the resolver for the conversationEvents field.
 func (r *subscriptionResolver) ConversationEvents(

@@ -147,6 +147,8 @@ export type Mutation = {
   sendDeliveryReceipt: DeliveryReceipt
   sendMessage: Message
   sendReadReceipt: ReadReceipt
+  sendTypingIndicator: TypingIndicator
+  updatePresence: PresenceUpdate
 }
 
 export type MutationAssignConversationToAdminArgs = {
@@ -188,6 +190,14 @@ export type MutationSendMessageArgs = {
 
 export type MutationSendReadReceiptArgs = {
   input: SendReadReceiptInput
+}
+
+export type MutationSendTypingIndicatorArgs = {
+  input: TypingIndicatorInput
+}
+
+export type MutationUpdatePresenceArgs = {
+  status: PresenceStatus
 }
 
 export type NewMessage = {
@@ -330,6 +340,11 @@ export type TypingIndicator = {
   isTyping: Scalars['Boolean']['output']
   timestamp: Scalars['Time']['output']
   userId: Scalars['ID']['output']
+}
+
+export type TypingIndicatorInput = {
+  conversationId: Scalars['ID']['input']
+  isTyping: Scalars['Boolean']['input']
 }
 
 export type User = {

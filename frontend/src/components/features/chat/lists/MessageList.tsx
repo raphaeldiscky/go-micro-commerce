@@ -1,10 +1,12 @@
 import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
 import { useMessages } from '@/hooks/chat/useMessages'
-import type { TypingIndicator as TypingIndicatorType } from '@/lib/api'
 import { areMessagesConsecutive } from '@/lib/utils/date'
-import type { Message } from '@/types/__generated__/graphql'
+import type {
+  Message,
+  TypingIndicator as TypingIndicatorType,
+} from '@/types/__generated__/graphql'
 import { ChevronDown, Loader2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '../../../ui/button'
 import { ScrollArea } from '../../../ui/scroll-area'
 import { TypingIndicator } from '../indicators/TypingIndicator'
@@ -27,6 +29,8 @@ export function MessageList({
   const [showScrollButton, setShowScrollButton] = useState(false)
   const [autoScroll, setAutoScroll] = useState(true)
   const markedAsReadRef = useRef<Set<string>>(new Set())
+  const lastProcessedMessageIdRef = useRef<string | null>(null)
+  const isMarkingRef = useRef(false)
 
   const {
     data: messagesData,
@@ -40,11 +44,18 @@ export function MessageList({
   // Reset marked messages when conversation changes
   useEffect(() => {
     markedAsReadRef.current.clear()
+    lastProcessedMessageIdRef.current = null
+    isMarkingRef.current = false
   }, [conversationId])
 
-  // Flatten all message pages
-
-  const messages = messagesData?.pages.flat() || []
+  // Flatten and transform message pages with useMemo to prevent infinite loops
+  // The data structure is: pages -> conversationMessages -> edges -> node
+  const messages = useMemo(() => {
+    if (!messagesData?.pages) return []
+    return messagesData.pages.flatMap((page) =>
+      page.conversationMessages.edges.map((edge) => edge.node),
+    )
+  }, [messagesData?.pages])
 
   // Check if message is consecutive (same sender within 5 minutes)
   const isConsecutiveMessage = (
@@ -70,39 +81,59 @@ export function MessageList({
   }
 
   // Handle scroll events
-  const handleScroll = (e: Event) => {
-    const target = e.target as HTMLElement
+  const handleScroll = useCallback(
+    (e: Event) => {
+      const target = e.target as HTMLElement
 
-    const { clientHeight, scrollHeight, scrollTop } = target
-    const isAtBottom = scrollHeight - scrollTop <= clientHeight + 100
+      const { clientHeight, scrollHeight, scrollTop } = target
+      const isAtBottom = scrollHeight - scrollTop <= clientHeight + 100
 
-    setAutoScroll(isAtBottom)
-    setShowScrollButton(!isAtBottom)
+      setAutoScroll(isAtBottom)
+      setShowScrollButton(!isAtBottom)
 
-    // Load more messages when scrolling to top
-    if (scrollTop < 100 && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage()
-    }
-  }
+      // Load more messages when scrolling to top
+      if (scrollTop < 100 && hasNextPage && !isFetchingNextPage) {
+        fetchNextPage()
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
+  )
 
   // Mark messages as read when they come into view
   useEffect(() => {
+    // Prevent concurrent marking operations
+    if (isMarkingRef.current) return
+
     const unreadMessages = messages.filter(
       (msg) => msg.senderId !== currentUserId,
     )
 
-    if (unreadMessages.length > 0 && autoScroll) {
-      // Mark the last few messages as read (only if not already marked)
-      const messagesToMark = unreadMessages
-        .slice(-3)
-        .filter((msg) => !markedAsReadRef.current.has(msg.id))
+    if (unreadMessages.length === 0 || !autoScroll) return
 
-      messagesToMark.forEach((msg) => {
-        markedAsReadRef.current.add(msg.id)
-        markAsRead(msg.id)
+    // Only process if we have new messages (last message ID changed)
+    const lastMessageId = messages[messages.length - 1]?.id
+    if (lastMessageId === lastProcessedMessageIdRef.current) return
+
+    // Mark the last few messages as read (only if not already marked)
+    const messagesToMark = unreadMessages
+      .slice(-3)
+      .filter((msg) => !markedAsReadRef.current.has(msg.id))
+
+    if (messagesToMark.length > 0) {
+      isMarkingRef.current = true
+      lastProcessedMessageIdRef.current = lastMessageId
+
+      // Mark messages asynchronously
+      Promise.all(
+        messagesToMark.map((msg) => {
+          markedAsReadRef.current.add(msg.id)
+          return markAsRead(msg.id)
+        }),
+      ).finally(() => {
+        isMarkingRef.current = false
       })
     }
-  }, [messages, currentUserId, autoScroll])
+  }, [messages, currentUserId, autoScroll, markAsRead])
 
   // Auto-scroll when new messages arrive
   useEffect(() => {
@@ -118,7 +149,7 @@ export function MessageList({
       scrollElement.addEventListener('scroll', handleScroll)
       return () => scrollElement.removeEventListener('scroll', handleScroll)
     }
-  }, [hasNextPage, isFetchingNextPage])
+  }, [handleScroll])
 
   return (
     <div className="flex-1 relative min-h-0">

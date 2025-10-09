@@ -6,6 +6,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/subscription"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
 // This file will not be regenerated automatically.
@@ -17,6 +18,7 @@ type Resolver struct {
 	chatService         service.ChatService
 	connectionService   service.ConnectionService
 	subscriptionManager *subscription.Manager
+	messagePublisher    websocket.MessagePublisher
 	logger              logger.Logger
 }
 
@@ -25,12 +27,14 @@ func NewResolver(
 	chatService service.ChatService,
 	connectionService service.ConnectionService,
 	subscriptionManager *subscription.Manager,
+	messagePublisher websocket.MessagePublisher,
 	appLogger logger.Logger,
 ) *Resolver {
 	return &Resolver{
 		chatService:         chatService,
 		connectionService:   connectionService,
 		subscriptionManager: subscriptionManager,
+		messagePublisher:    messagePublisher,
 		logger:              appLogger,
 	}
 }

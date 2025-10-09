@@ -92,12 +92,8 @@ export function useMessages(conversationId: string) {
     queryKey: QUERY_KEY.chat.messages(conversationId),
     refetchOnWindowFocus: false, // Real-time updates handle this
     staleTime: 30 * 1000, // 30 seconds - messages are real-time
-    select: (data) => ({
-      ...data,
-      pages: data.pages.map((page) =>
-        page.conversationMessages.edges.map((edge) => edge.node),
-      ),
-    }),
+    // Note: Removed select function because it creates new array references on every render
+    // causing infinite loops. Transform data in the component using useMemo instead.
   })
 }
 
@@ -213,11 +209,9 @@ export function useSendMessage(conversationId: string) {
       }
     },
     onSuccess: () => {
-      // Refetch messages to get the real message from server
-      // WebSocket will have already added it to the backend
-      queryClient.invalidateQueries({
-        queryKey: QUERY_KEY.chat.messages(conversationId),
-      })
+      // Note: We don't invalidate messages here because the GraphQL subscription
+      // will receive the NewMessage event and handle the invalidation
+      // This prevents double invalidations which can cause infinite loops
 
       // Update conversation list to reflect new message
       queryClient.invalidateQueries({

@@ -68,3 +68,18 @@ enum PresenceStatus {
   BUSY
   OFFLINE
 }
+
+# Typing indicator input
+input TypingIndicatorInput {
+  conversationId: ID!
+  isTyping: Boolean!
+}
+
+# Presence and typing mutations
+extend type Mutation {
+  # Update user presence status
+  updatePresence(status: PresenceStatus!): PresenceUpdate!
+
+  # Send typing indicator
+  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator!
+}

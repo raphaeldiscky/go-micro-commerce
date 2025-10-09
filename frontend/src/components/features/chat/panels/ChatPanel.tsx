@@ -1,4 +1,3 @@
-import { WebSocketSendProvider } from '@/contexts/WebSocketSendContext'
 import { useEffect, useState } from 'react'
 import { Card } from '../../../ui/card'
 import { Dialog, DialogContent } from '../../../ui/dialog'
@@ -59,7 +58,7 @@ export function ChatPanel({
   }
 
   return (
-    <WebSocketSendProvider>
+    <>
       {isFullscreen ? (
         <Dialog open={isFullscreen} onOpenChange={handleDialogOpenChange}>
           <DialogContent
@@ -77,7 +76,7 @@ export function ChatPanel({
         </Dialog>
       ) : (
         <Card className="h-[calc(100vh-8rem)] min-h-[500px] max-h-[800px] md:max-w-4xl mx-auto overflow-hidden w-full">
-          <div className="h-full flex flex-col">
+          <div className="h-full flex-col">
             <ConversationPage
               conversationId={conversationId}
               isFullscreen={false}
@@ -87,6 +86,6 @@ export function ChatPanel({
           </div>
         </Card>
       )}
-    </WebSocketSendProvider>
+    </>
   )
 }

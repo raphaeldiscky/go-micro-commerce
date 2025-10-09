@@ -115,6 +115,8 @@ type ComplexityRoot struct {
 		SendDeliveryReceipt       func(childComplexity int, input SendDeliveryReceiptInput) int
 		SendMessage               func(childComplexity int, input SendMessageInput) int
 		SendReadReceipt           func(childComplexity int, input SendReadReceiptInput) int
+		SendTypingIndicator       func(childComplexity int, input TypingIndicatorInput) int
+		UpdatePresence            func(childComplexity int, status constant.PresenceStatus) int
 	}
 
 	NewMessage struct {
@@ -214,6 +216,8 @@ type MutationResolver interface {
 	SendReadReceipt(ctx context.Context, input SendReadReceiptInput) (*ReadReceipt, error)
 	JoinConversation(ctx context.Context, input JoinConversationInput) (*Participant, error)
 	LeaveConversation(ctx context.Context, conversationID string) (bool, error)
+	UpdatePresence(ctx context.Context, status constant.PresenceStatus) (*PresenceUpdate, error)
+	SendTypingIndicator(ctx context.Context, input TypingIndicatorInput) (*TypingIndicator, error)
 }
 type QueryResolver interface {
 	OnlineUsers(ctx context.Context) ([]*User, error)
@@ -566,6 +570,28 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SendReadReceipt(childComplexity, args["input"].(SendReadReceiptInput)), true
+	case "Mutation.sendTypingIndicator":
+		if e.complexity.Mutation.SendTypingIndicator == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendTypingIndicator_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendTypingIndicator(childComplexity, args["input"].(TypingIndicatorInput)), true
+	case "Mutation.updatePresence":
+		if e.complexity.Mutation.UpdatePresence == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updatePresence_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdatePresence(childComplexity, args["status"].(constant.PresenceStatus)), true
 
 	case "NewMessage.content":
 		if e.complexity.NewMessage.Content == nil {
@@ -904,6 +930,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputSendDeliveryReceiptInput,
 		ec.unmarshalInputSendMessageInput,
 		ec.unmarshalInputSendReadReceiptInput,
+		ec.unmarshalInputTypingIndicatorInput,
 	)
 	first := true
 
@@ -1252,6 +1279,28 @@ func (ec *executionContext) field_Mutation_sendReadReceipt_args(ctx context.Cont
 		return nil, err
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendTypingIndicator_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNTypingIndicatorInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicatorInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updatePresence_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "status", ec.unmarshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus)
+	if err != nil {
+		return nil, err
+	}
+	args["status"] = arg0
 	return args, nil
 }
 
@@ -3028,6 +3077,106 @@ func (ec *executionContext) fieldContext_Mutation_leaveConversation(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_leaveConversation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updatePresence(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updatePresence,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().UpdatePresence(ctx, fc.Args["status"].(constant.PresenceStatus))
+		},
+		nil,
+		ec.marshalNPresenceUpdate2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updatePresence(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_PresenceUpdate_userId(ctx, field)
+			case "status":
+				return ec.fieldContext_PresenceUpdate_status(ctx, field)
+			case "lastSeen":
+				return ec.fieldContext_PresenceUpdate_lastSeen(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PresenceUpdate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updatePresence_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_sendTypingIndicator(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_sendTypingIndicator,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SendTypingIndicator(ctx, fc.Args["input"].(TypingIndicatorInput))
+		},
+		nil,
+		ec.marshalNTypingIndicator2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_sendTypingIndicator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_TypingIndicator_userId(ctx, field)
+			case "conversationId":
+				return ec.fieldContext_TypingIndicator_conversationId(ctx, field)
+			case "isTyping":
+				return ec.fieldContext_TypingIndicator_isTyping(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_TypingIndicator_timestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TypingIndicator", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_sendTypingIndicator_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6399,6 +6548,40 @@ func (ec *executionContext) unmarshalInputSendReadReceiptInput(ctx context.Conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputTypingIndicatorInput(ctx context.Context, obj any) (TypingIndicatorInput, error) {
+	var it TypingIndicatorInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"conversationId", "isTyping"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "conversationId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConversationID = data
+		case "isTyping":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isTyping"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsTyping = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -7018,6 +7201,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "leaveConversation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_leaveConversation(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatePresence":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updatePresence(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sendTypingIndicator":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_sendTypingIndicator(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -8488,6 +8685,20 @@ func (ec *executionContext) marshalNPresenceStatus2githubᚗcomᚋraphaeldiscky�
 	return res
 }
 
+func (ec *executionContext) marshalNPresenceUpdate2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate(ctx context.Context, sel ast.SelectionSet, v PresenceUpdate) graphql.Marshaler {
+	return ec._PresenceUpdate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPresenceUpdate2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate(ctx context.Context, sel ast.SelectionSet, v *PresenceUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PresenceUpdate(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNReadReceipt2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐReadReceipt(ctx context.Context, sel ast.SelectionSet, v ReadReceipt) graphql.Marshaler {
 	return ec._ReadReceipt(ctx, sel, &v)
 }
@@ -8547,6 +8758,25 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTypingIndicator2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator(ctx context.Context, sel ast.SelectionSet, v TypingIndicator) graphql.Marshaler {
+	return ec._TypingIndicator(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTypingIndicator2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator(ctx context.Context, sel ast.SelectionSet, v *TypingIndicator) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TypingIndicator(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTypingIndicatorInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicatorInput(ctx context.Context, v any) (TypingIndicatorInput, error) {
+	res, err := ec.unmarshalInputTypingIndicatorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {

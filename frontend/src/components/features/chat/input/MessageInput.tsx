@@ -78,7 +78,7 @@ export function MessageInput({
         onTypingStart?.()
       }
     },
-    [isTyping, onTypingStart, onTypingStop],
+    [isTyping, onTypingStart],
   )
 
   return (
