@@ -5,8 +5,8 @@ import { useConversationSubscription } from '@/hooks/chat/useConversationSubscri
 import { useSendMessage } from '@/hooks/chat/useMessages'
 import { usePresence } from '@/hooks/chat/usePresence'
 import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
-import type { SendMessageRequest } from '@/lib/api'
-import type { Message } from '@/types/__generated__/graphql'
+import type { Message, SendMessageInput } from '@/types/__generated__/graphql'
+import { MessageType } from '@/types/__generated__/graphql'
 import { Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
@@ -44,7 +44,6 @@ export function ConversationPage({
   const user = useUser()
   const isAuthenticated = useIsAuthenticated()
 
-  // Hooks
   const { data: conversation, isLoading: isLoadingConversation } =
     useConversationDetails(conversationId)
   const sendMessageMutation = useSendMessage(conversationId, user?.id || '')
@@ -52,22 +51,21 @@ export function ConversationPage({
     useTypingIndicator(conversationId)
   const { isUserOnline } = usePresence()
 
-  // GraphQL subscriptions for real-time events
   useConversationSubscription(conversationId)
 
-  // Handle sending messages
   const handleSendMessage = useCallback(
     async (content: string) => {
       if (!content.trim()) return
 
-      const messageData: SendMessageRequest = {
+      const messageData: SendMessageInput = {
+        conversationId,
         content: content.trim(),
-        message_type: 'text',
+        messageType: MessageType.Text,
       }
 
       try {
         await sendMessageMutation.mutateAsync(messageData)
-        setReplyingTo(null) // Clear reply after sending
+        setReplyingTo(null)
       } catch (error) {
         console.error('Failed to send message:', error)
       }
@@ -75,12 +73,10 @@ export function ConversationPage({
     [sendMessageMutation],
   )
 
-  // Handle reply to message
   const handleReply = useCallback((message: Message) => {
     setReplyingTo(message)
   }, [])
 
-  // Handle typing events
   const handleTypingStart = useCallback(() => {
     startTyping()
   }, [startTyping])
@@ -138,7 +134,6 @@ export function ConversationPage({
     <div
       className={`${isFullscreen ? 'h-screen' : 'h-full'} flex flex-col bg-gray-50 dark:bg-gray-900`}
     >
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b bg-white dark:bg-gray-800">
         <div className="flex items-center space-x-4">
           <Button
@@ -194,9 +189,7 @@ export function ConversationPage({
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Messages Area */}
         <div className="flex-1 flex flex-col">
           <MessageList
             conversationId={conversationId}
@@ -216,7 +209,6 @@ export function ConversationPage({
           />
         </div>
 
-        {/* Participants Sidebar */}
         {showParticipants && (
           <div className="w-80 border-l bg-white dark:bg-gray-800">
             <ParticipantsList

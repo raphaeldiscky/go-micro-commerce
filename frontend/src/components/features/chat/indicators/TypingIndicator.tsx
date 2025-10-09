@@ -9,13 +9,10 @@ export function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
   if (!typingUsers.length) return null
 
   const getInitials = (userId: string) => {
-    // Extract first 2 characters from userId as initials
     return userId.slice(0, 2).toUpperCase()
   }
 
   const getUserDisplayName = (userId: string) => {
-    // For now, just use a truncated userId
-    // TODO: Fetch actual username from user service
     return `User ${userId.slice(0, 8)}`
   }
 
@@ -32,7 +29,6 @@ export function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
 
   return (
     <div className="flex items-center space-x-2 px-4 py-2">
-      {/* User Avatars */}
       <div className="flex -space-x-1">
         {typingUsers.slice(0, 3).map((user) => (
           <Avatar
@@ -50,13 +46,11 @@ export function TypingIndicator({ typingUsers }: TypingIndicatorProps) {
         ))}
       </div>
 
-      {/* Typing Message */}
       <div className="flex items-center space-x-2">
         <span className="text-sm text-gray-600 dark:text-gray-400">
           {getTypingMessage()}
         </span>
 
-        {/* Animated Dots */}
         <div className="flex space-x-1">
           <div
             className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"

@@ -1,12 +1,15 @@
 import { QUERY_KEY } from '@/constants/query-key'
-import type { SendMessageRequest } from '@/lib/api'
 import {
   CONVERSATION_MESSAGES_QUERY,
   SEND_MESSAGE_MUTATION,
   graphqlClient,
 } from '@/lib/graphql'
 import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
-import type { Message, MessageConnection } from '@/types/__generated__/graphql'
+import type {
+  Message,
+  MessageConnection,
+  SendMessageInput,
+} from '@/types/__generated__/graphql'
 import { ConversationStatus, MessageType } from '@/types/__generated__/graphql'
 import {
   useInfiniteQuery,
@@ -23,9 +26,6 @@ interface InfiniteQueryData {
   pageParams: Array<string | undefined>
 }
 
-/**
- * Helper hook to add real-time message to cache
- */
 export function useAddMessage(conversationId: string) {
   const queryClient = useQueryClient()
 
@@ -35,7 +35,6 @@ export function useAddMessage(conversationId: string) {
       (old) => {
         if (!old) return old
 
-        // Check if message already exists (prevent duplicates)
         const messageExists = old.pages.some((page) =>
           page.conversationMessages.edges.some(
             (edge) => edge.node.id === message.id,
@@ -44,7 +43,6 @@ export function useAddMessage(conversationId: string) {
 
         if (messageExists) return old
 
-        // Add message to the last page
         const updatedPages = [...old.pages]
         if (updatedPages.length > 0) {
           const lastPage = updatedPages[updatedPages.length - 1]
@@ -63,7 +61,6 @@ export function useAddMessage(conversationId: string) {
             },
           }
         } else {
-          // Create first page if none exist
           updatedPages.push({
             conversationMessages: {
               __typename: 'MessageConnection',
@@ -92,18 +89,14 @@ export function useAddMessage(conversationId: string) {
       },
     )
 
-    // Update conversation list
     queryClient.invalidateQueries({ queryKey: QUERY_KEY.chat.conversations() })
   }
 }
 
-/**
- * Hook for fetching messages with cursor-based infinite scroll pagination
- */
 export function useMessages(conversationId: string) {
   return useInfiniteQuery({
     enabled: !!conversationId,
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000,
     getNextPageParam: (lastPage: ConversationMessagesQueryResponse) => {
       const { pageInfo } = lastPage.conversationMessages
       return pageInfo.hasNextPage ? pageInfo.endCursor : undefined
@@ -122,54 +115,33 @@ export function useMessages(conversationId: string) {
       return data
     },
     queryKey: QUERY_KEY.chat.messages(conversationId),
-    refetchOnWindowFocus: false, // Real-time updates handle this
-    staleTime: 30 * 1000, // 30 seconds - messages are real-time
-    // Note: Removed select function because it creates new array references on every render
-    // causing infinite loops. Transform data in the component using useMemo instead.
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
   })
 }
 
-/**
- * Hook for sending messages via GraphQL mutation
- * Messages are sent through GraphQL and broadcasted via WebSocket subscriptions
- */
 export function useSendMessage(conversationId: string, currentUserId: string) {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (message: SendMessageRequest) => {
-      // Send message via GraphQL mutation
+    mutationFn: async (input: SendMessageInput) => {
       await graphqlClient.request(SEND_MESSAGE_MUTATION, {
         input: {
+          ...input,
           conversationId,
-          content: message.content,
-          // Use MessageType enum, GraphQL will serialize to uppercase string
-          messageType:
-            message.message_type === 'image'
-              ? MessageType.Image
-              : message.message_type === 'file'
-                ? MessageType.File
-                : MessageType.Text,
-          replyToId: message.reply_to_id,
         },
       })
-
-      // @TODO: Fix later
-      // return result.sendMessage
     },
     onMutate: async (newMessage) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({
         queryKey: QUERY_KEY.chat.messages(conversationId),
       })
 
-      // Snapshot the previous value
       const previousMessages = queryClient.getQueryData<InfiniteQueryData>([
         'messages',
         conversationId,
       ])
 
-      // Optimistically update the cache with GraphQL structure
       queryClient.setQueryData<InfiniteQueryData>(
         QUERY_KEY.chat.messages(conversationId),
         (old) => {
@@ -205,17 +177,11 @@ export function useSendMessage(conversationId: string, currentUserId: string) {
             createdAt: generateTimestamp(),
             id: generateUniqueId('temp'),
             isSystem: false,
-            messageType:
-              newMessage.message_type === 'image'
-                ? MessageType.Image
-                : newMessage.message_type === 'file'
-                  ? MessageType.File
-                  : MessageType.Text,
+            messageType: newMessage.messageType || MessageType.Text,
             sender: null,
-            senderId: currentUserId, // Use actual user ID for correct message alignment
+            senderId: currentUserId,
           }
 
-          // Add message to the last page in GraphQL structure
           const updatedPages = [...old.pages]
           if (updatedPages.length > 0) {
             const lastPage = updatedPages[updatedPages.length - 1]
@@ -234,7 +200,6 @@ export function useSendMessage(conversationId: string, currentUserId: string) {
               },
             }
           } else {
-            // Create first page if none exist
             updatedPages.push({
               conversationMessages: {
                 __typename: 'MessageConnection',
@@ -266,7 +231,6 @@ export function useSendMessage(conversationId: string, currentUserId: string) {
       return { previousMessages }
     },
     onError: (_err, _newMessage, context) => {
-      // Revert optimistic update on error
       if (context?.previousMessages) {
         queryClient.setQueryData<InfiniteQueryData>(
           QUERY_KEY.chat.messages(conversationId),
@@ -275,11 +239,6 @@ export function useSendMessage(conversationId: string, currentUserId: string) {
       }
     },
     onSuccess: () => {
-      // Note: We don't invalidate messages here because the GraphQL subscription
-      // will receive the NewMessage event and handle the invalidation
-      // This prevents double invalidations which can cause infinite loops
-
-      // Update conversation list to reflect new message
       queryClient.invalidateQueries({
         queryKey: QUERY_KEY.chat.conversations(),
       })

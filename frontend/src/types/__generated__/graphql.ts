@@ -1,381 +1,382 @@
 /* eslint-disable */
-export type Maybe<T> = T | null
-export type InputMaybe<T> = Maybe<T>
-export type Exact<T extends { [key: string]: unknown }> = {
-  [K in keyof T]: T[K]
-}
-export type MakeOptional<T, K extends keyof T> = Omit<T, K> & {
-  [SubKey in K]?: Maybe<T[SubKey]>
-}
-export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & {
-  [SubKey in K]: Maybe<T[SubKey]>
-}
-export type MakeEmpty<
-  T extends { [key: string]: unknown },
-  K extends keyof T,
-> = { [_ in K]?: never }
-export type Incremental<T> =
-  | T
-  | {
-      [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never
-    }
+export type Maybe<T> = T | null;
+export type InputMaybe<T> = Maybe<T>;
+export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
+export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: Maybe<T[SubKey]> };
+export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
+export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
+export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
-  ID: { input: string; output: string }
-  String: { input: string; output: string }
-  Boolean: { input: boolean; output: boolean }
-  Int: { input: number; output: number }
-  Float: { input: number; output: number }
-  Time: { input: any; output: any }
-  join__FieldSet: { input: any; output: any }
-  link__Import: { input: any; output: any }
-}
+  ID: { input: string; output: string; }
+  String: { input: string; output: string; }
+  Boolean: { input: boolean; output: boolean; }
+  Int: { input: number; output: number; }
+  Float: { input: number; output: number; }
+  Time: { input: any; output: any; }
+  join__FieldSet: { input: any; output: any; }
+  link__Import: { input: any; output: any; }
+};
 
 export type AuthPayload = {
-  __typename?: 'AuthPayload'
-  refreshToken: Scalars['String']['output']
-  token: Scalars['String']['output']
-  user: User
-}
+  __typename?: 'AuthPayload';
+  refreshToken: Scalars['String']['output'];
+  token: Scalars['String']['output'];
+  user: User;
+};
 
 export type ChatConnection = {
-  __typename?: 'ChatConnection'
-  nodeAddress: Scalars['String']['output']
-  userId: Scalars['ID']['output']
-  userType: Scalars['String']['output']
-}
+  __typename?: 'ChatConnection';
+  nodeAddress: Scalars['String']['output'];
+  userId: Scalars['ID']['output'];
+  userType: Scalars['String']['output'];
+};
 
 export type Conversation = {
-  __typename?: 'Conversation'
-  createdAt: Scalars['Time']['output']
-  endedAt?: Maybe<Scalars['Time']['output']>
-  id: Scalars['ID']['output']
-  messages: MessageConnection
-  participantCount: Scalars['Int']['output']
-  participants: Array<Participant>
-  priority: Scalars['Int']['output']
-  status: ConversationStatus
-  subject?: Maybe<Scalars['String']['output']>
-  updatedAt: Scalars['Time']['output']
-}
+  __typename?: 'Conversation';
+  createdAt: Scalars['Time']['output'];
+  endedAt?: Maybe<Scalars['Time']['output']>;
+  id: Scalars['ID']['output'];
+  messages: MessageConnection;
+  participantCount: Scalars['Int']['output'];
+  participants: Array<Participant>;
+  priority: Scalars['Int']['output'];
+  status: ConversationStatus;
+  subject?: Maybe<Scalars['String']['output']>;
+  updatedAt: Scalars['Time']['output'];
+};
+
 
 export type ConversationMessagesArgs = {
-  limit?: InputMaybe<Scalars['Int']['input']>
-  offset?: InputMaybe<Scalars['Int']['input']>
-}
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  offset?: InputMaybe<Scalars['Int']['input']>;
+};
 
-export type ConversationEvent =
-  | DeliveryReceipt
-  | NewMessage
-  | ReadReceipt
-  | TypingIndicator
+export type ConversationEvent = DeliveryReceipt | NewMessage | ReadReceipt | TypingIndicator;
 
 export enum ConversationStatus {
   Active = 'ACTIVE',
   Ended = 'ENDED',
-  Waiting = 'WAITING',
+  Waiting = 'WAITING'
 }
 
 export type CreateConversationInput = {
-  initialMessage?: InputMaybe<Scalars['String']['input']>
-  priority: Scalars['Int']['input']
-  subject?: InputMaybe<Scalars['String']['input']>
-}
+  initialMessage?: InputMaybe<Scalars['String']['input']>;
+  priority: Scalars['Int']['input'];
+  subject?: InputMaybe<Scalars['String']['input']>;
+};
 
 export type DeliveryReceipt = {
-  __typename?: 'DeliveryReceipt'
-  conversationId: Scalars['ID']['output']
-  deliveredAt: Scalars['Time']['output']
-  messageId: Scalars['ID']['output']
-  recipientId: Scalars['ID']['output']
-}
+  __typename?: 'DeliveryReceipt';
+  conversationId: Scalars['ID']['output'];
+  deliveredAt: Scalars['Time']['output'];
+  messageId: Scalars['ID']['output'];
+  recipientId: Scalars['ID']['output'];
+};
 
 export type JoinConversationInput = {
-  conversationId: Scalars['ID']['input']
-  role: ParticipantRole
-}
+  conversationId: Scalars['ID']['input'];
+  role: ParticipantRole;
+};
 
 export type LoginInput = {
-  email: Scalars['String']['input']
-  password: Scalars['String']['input']
-}
+  email: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+};
 
 export type Message = {
-  __typename?: 'Message'
-  content: Scalars['String']['output']
-  conversation: Conversation
-  conversationId: Scalars['ID']['output']
-  createdAt: Scalars['Time']['output']
-  id: Scalars['ID']['output']
-  isSystem: Scalars['Boolean']['output']
-  messageType: MessageType
-  sender?: Maybe<User>
-  senderId?: Maybe<Scalars['ID']['output']>
-}
+  __typename?: 'Message';
+  content: Scalars['String']['output'];
+  conversation: Conversation;
+  conversationId: Scalars['ID']['output'];
+  createdAt: Scalars['Time']['output'];
+  id: Scalars['ID']['output'];
+  isSystem: Scalars['Boolean']['output'];
+  messageType: MessageType;
+  sender?: Maybe<User>;
+  senderId?: Maybe<Scalars['ID']['output']>;
+};
 
 export type MessageConnection = {
-  __typename?: 'MessageConnection'
-  edges: Array<MessageEdge>
-  pageInfo: PageInfo
-}
+  __typename?: 'MessageConnection';
+  edges: Array<MessageEdge>;
+  pageInfo: PageInfo;
+};
 
 export type MessageEdge = {
-  __typename?: 'MessageEdge'
-  cursor: Scalars['String']['output']
-  node: Message
-}
+  __typename?: 'MessageEdge';
+  cursor: Scalars['String']['output'];
+  node: Message;
+};
 
 export enum MessageType {
   File = 'FILE',
   Image = 'IMAGE',
   System = 'SYSTEM',
-  Text = 'TEXT',
+  Text = 'TEXT'
 }
 
 export type Mutation = {
-  __typename?: 'Mutation'
-  assignConversationToAdmin: Conversation
-  createConversation: Conversation
-  endConversation: Conversation
-  joinConversation: Participant
-  leaveConversation: Scalars['Boolean']['output']
-  login: AuthPayload
-  logout: Scalars['Boolean']['output']
-  refreshToken: AuthPayload
-  register: AuthPayload
-  requestChatConnection: ChatConnection
-  sendDeliveryReceipt: DeliveryReceipt
-  sendMessage: Message
-  sendReadReceipt: ReadReceipt
-  sendTypingIndicator: TypingIndicator
-  updatePresence: PresenceUpdate
-}
+  __typename?: 'Mutation';
+  assignConversationToAdmin: Conversation;
+  createConversation: Conversation;
+  endConversation: Conversation;
+  joinConversation: Participant;
+  leaveConversation: Scalars['Boolean']['output'];
+  login: AuthPayload;
+  logout: Scalars['Boolean']['output'];
+  refreshToken: AuthPayload;
+  register: AuthPayload;
+  requestChatConnection: ChatConnection;
+  sendDeliveryReceipt: DeliveryReceipt;
+  sendMessage: Message;
+  sendReadReceipt: ReadReceipt;
+  sendTypingIndicator: TypingIndicator;
+  updatePresence: PresenceUpdate;
+};
+
 
 export type MutationAssignConversationToAdminArgs = {
-  adminId: Scalars['ID']['input']
-  conversationId: Scalars['ID']['input']
-}
+  adminId: Scalars['ID']['input'];
+  conversationId: Scalars['ID']['input'];
+};
+
 
 export type MutationCreateConversationArgs = {
-  input: CreateConversationInput
-}
+  input: CreateConversationInput;
+};
+
 
 export type MutationEndConversationArgs = {
-  conversationId: Scalars['ID']['input']
-}
+  conversationId: Scalars['ID']['input'];
+};
+
 
 export type MutationJoinConversationArgs = {
-  input: JoinConversationInput
-}
+  input: JoinConversationInput;
+};
+
 
 export type MutationLeaveConversationArgs = {
-  conversationId: Scalars['ID']['input']
-}
+  conversationId: Scalars['ID']['input'];
+};
+
 
 export type MutationLoginArgs = {
-  input: LoginInput
-}
+  input: LoginInput;
+};
+
 
 export type MutationRegisterArgs = {
-  input: RegisterUserInput
-}
+  input: RegisterUserInput;
+};
+
 
 export type MutationSendDeliveryReceiptArgs = {
-  input: SendDeliveryReceiptInput
-}
+  input: SendDeliveryReceiptInput;
+};
+
 
 export type MutationSendMessageArgs = {
-  input: SendMessageInput
-}
+  input: SendMessageInput;
+};
+
 
 export type MutationSendReadReceiptArgs = {
-  input: SendReadReceiptInput
-}
+  input: SendReadReceiptInput;
+};
+
 
 export type MutationSendTypingIndicatorArgs = {
-  input: TypingIndicatorInput
-}
+  input: TypingIndicatorInput;
+};
+
 
 export type MutationUpdatePresenceArgs = {
-  status: PresenceStatus
-}
+  status: PresenceStatus;
+};
 
 export type NewMessage = {
-  __typename?: 'NewMessage'
-  content: Scalars['String']['output']
-  conversationId: Scalars['ID']['output']
-  createdAt: Scalars['Time']['output']
-  id: Scalars['ID']['output']
-  isSystem: Scalars['Boolean']['output']
-  messageType: MessageType
-  senderId: Scalars['ID']['output']
-}
+  __typename?: 'NewMessage';
+  content: Scalars['String']['output'];
+  conversationId: Scalars['ID']['output'];
+  createdAt: Scalars['Time']['output'];
+  id: Scalars['ID']['output'];
+  isSystem: Scalars['Boolean']['output'];
+  messageType: MessageType;
+  senderId: Scalars['ID']['output'];
+};
 
 export type OnlineStatus = {
-  __typename?: 'OnlineStatus'
-  isOnline: Scalars['Boolean']['output']
-  lastSeen?: Maybe<Scalars['Time']['output']>
-}
+  __typename?: 'OnlineStatus';
+  isOnline: Scalars['Boolean']['output'];
+  lastSeen?: Maybe<Scalars['Time']['output']>;
+};
 
 export type PageInfo = {
-  __typename?: 'PageInfo'
-  endCursor?: Maybe<Scalars['String']['output']>
-  hasNextPage: Scalars['Boolean']['output']
-  hasPreviousPage: Scalars['Boolean']['output']
-  startCursor?: Maybe<Scalars['String']['output']>
-}
+  __typename?: 'PageInfo';
+  endCursor?: Maybe<Scalars['String']['output']>;
+  hasNextPage: Scalars['Boolean']['output'];
+  hasPreviousPage: Scalars['Boolean']['output'];
+  startCursor?: Maybe<Scalars['String']['output']>;
+};
 
 export type Participant = {
-  __typename?: 'Participant'
-  conversation: Conversation
-  conversationId: Scalars['ID']['output']
-  id: Scalars['ID']['output']
-  isActive: Scalars['Boolean']['output']
-  joinedAt: Scalars['Time']['output']
-  leftAt?: Maybe<Scalars['Time']['output']>
-  role: ParticipantRole
-  user: User
-  userId: Scalars['ID']['output']
-  userType: UserType
-}
+  __typename?: 'Participant';
+  conversation: Conversation;
+  conversationId: Scalars['ID']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  joinedAt: Scalars['Time']['output'];
+  leftAt?: Maybe<Scalars['Time']['output']>;
+  role: ParticipantRole;
+  user: User;
+  userId: Scalars['ID']['output'];
+  userType: UserType;
+};
 
 export enum ParticipantRole {
   Member = 'MEMBER',
   Moderator = 'MODERATOR',
-  Owner = 'OWNER',
+  Owner = 'OWNER'
 }
 
 export enum PresenceStatus {
   Away = 'AWAY',
   Busy = 'BUSY',
   Offline = 'OFFLINE',
-  Online = 'ONLINE',
+  Online = 'ONLINE'
 }
 
 export type PresenceUpdate = {
-  __typename?: 'PresenceUpdate'
-  lastSeen?: Maybe<Scalars['Time']['output']>
-  status: PresenceStatus
-  userId: Scalars['ID']['output']
-}
+  __typename?: 'PresenceUpdate';
+  lastSeen?: Maybe<Scalars['Time']['output']>;
+  status: PresenceStatus;
+  userId: Scalars['ID']['output'];
+};
 
 export type Query = {
-  __typename?: 'Query'
-  conversation?: Maybe<Conversation>
-  conversationMessages: MessageConnection
-  conversationParticipants: Array<Participant>
-  conversations: Array<Conversation>
-  me?: Maybe<User>
-  onlineUsers: Array<User>
-  user?: Maybe<User>
-  waitingConversations: Array<Conversation>
-}
+  __typename?: 'Query';
+  conversation?: Maybe<Conversation>;
+  conversationMessages: MessageConnection;
+  conversationParticipants: Array<Participant>;
+  conversations: Array<Conversation>;
+  me?: Maybe<User>;
+  onlineUsers: Array<User>;
+  user?: Maybe<User>;
+  waitingConversations: Array<Conversation>;
+};
+
 
 export type QueryConversationArgs = {
-  id: Scalars['ID']['input']
-}
+  id: Scalars['ID']['input'];
+};
+
 
 export type QueryConversationMessagesArgs = {
-  after?: InputMaybe<Scalars['String']['input']>
-  before?: InputMaybe<Scalars['String']['input']>
-  conversationId: Scalars['ID']['input']
-  first?: InputMaybe<Scalars['Int']['input']>
-  last?: InputMaybe<Scalars['Int']['input']>
-}
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  conversationId: Scalars['ID']['input'];
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+};
+
 
 export type QueryConversationParticipantsArgs = {
-  conversationId: Scalars['ID']['input']
-}
+  conversationId: Scalars['ID']['input'];
+};
+
 
 export type QueryUserArgs = {
-  id: Scalars['ID']['input']
-}
+  id: Scalars['ID']['input'];
+};
 
 export type ReadReceipt = {
-  __typename?: 'ReadReceipt'
-  conversationId: Scalars['ID']['output']
-  messageId: Scalars['ID']['output']
-  readAt: Scalars['Time']['output']
-  readerId: Scalars['ID']['output']
-}
+  __typename?: 'ReadReceipt';
+  conversationId: Scalars['ID']['output'];
+  messageId: Scalars['ID']['output'];
+  readAt: Scalars['Time']['output'];
+  readerId: Scalars['ID']['output'];
+};
 
 export type RegisterUserInput = {
-  email: Scalars['String']['input']
-  firstName: Scalars['String']['input']
-  lastName: Scalars['String']['input']
-  password: Scalars['String']['input']
-  username: Scalars['String']['input']
-}
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  password: Scalars['String']['input'];
+  username: Scalars['String']['input'];
+};
 
 export type SendDeliveryReceiptInput = {
-  conversationId: Scalars['ID']['input']
-  messageId: Scalars['ID']['input']
-}
+  conversationId: Scalars['ID']['input'];
+  messageId: Scalars['ID']['input'];
+};
 
 export type SendMessageInput = {
-  content: Scalars['String']['input']
-  conversationId: Scalars['ID']['input']
-  messageType?: InputMaybe<MessageType>
-  replyToId?: InputMaybe<Scalars['ID']['input']>
-}
+  content: Scalars['String']['input'];
+  conversationId: Scalars['ID']['input'];
+  messageType?: InputMaybe<MessageType>;
+  replyToId?: InputMaybe<Scalars['ID']['input']>;
+};
 
 export type SendReadReceiptInput = {
-  conversationId: Scalars['ID']['input']
-  messageId: Scalars['ID']['input']
-}
+  conversationId: Scalars['ID']['input'];
+  messageId: Scalars['ID']['input'];
+};
 
 export type Subscription = {
-  __typename?: 'Subscription'
-  conversationEvents: ConversationEvent
-  userEvents: UserEvent
-}
+  __typename?: 'Subscription';
+  conversationEvents: ConversationEvent;
+  userEvents: UserEvent;
+};
+
 
 export type SubscriptionConversationEventsArgs = {
-  conversationId: Scalars['ID']['input']
-}
+  conversationId: Scalars['ID']['input'];
+};
 
 export type TypingIndicator = {
-  __typename?: 'TypingIndicator'
-  conversationId: Scalars['ID']['output']
-  isTyping: Scalars['Boolean']['output']
-  timestamp: Scalars['Time']['output']
-  userId: Scalars['ID']['output']
-}
+  __typename?: 'TypingIndicator';
+  conversationId: Scalars['ID']['output'];
+  isTyping: Scalars['Boolean']['output'];
+  timestamp: Scalars['Time']['output'];
+  userId: Scalars['ID']['output'];
+};
 
 export type TypingIndicatorInput = {
-  conversationId: Scalars['ID']['input']
-  isTyping: Scalars['Boolean']['input']
-}
+  conversationId: Scalars['ID']['input'];
+  isTyping: Scalars['Boolean']['input'];
+};
 
 export type User = {
-  __typename?: 'User'
-  conversations: Array<Conversation>
-  createdAt: Scalars['Time']['output']
-  email: Scalars['String']['output']
-  emailVerified: Scalars['Boolean']['output']
-  firstName: Scalars['String']['output']
-  id: Scalars['ID']['output']
-  isActive: Scalars['Boolean']['output']
-  lastName: Scalars['String']['output']
-  onlineStatus?: Maybe<OnlineStatus>
-  updatedAt: Scalars['Time']['output']
-}
+  __typename?: 'User';
+  conversations: Array<Conversation>;
+  createdAt: Scalars['Time']['output'];
+  email: Scalars['String']['output'];
+  emailVerified: Scalars['Boolean']['output'];
+  firstName: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  isActive: Scalars['Boolean']['output'];
+  lastName: Scalars['String']['output'];
+  onlineStatus?: Maybe<OnlineStatus>;
+  updatedAt: Scalars['Time']['output'];
+};
 
-export type UserEvent = PresenceUpdate
+export type UserEvent = PresenceUpdate;
 
 export enum UserType {
   Admin = 'ADMIN',
-  User = 'USER',
+  User = 'USER'
 }
 
 export enum Join__Graph {
   AuthService = 'AUTH_SERVICE',
-  ChatService = 'CHAT_SERVICE',
+  ChatService = 'CHAT_SERVICE'
 }
 
 export enum Link__Purpose {
   /** `EXECUTION` features provide metadata necessary for operation execution. */
   Execution = 'EXECUTION',
   /** `SECURITY` features provide metadata necessary to securely resolve fields. */
-  Security = 'SECURITY',
+  Security = 'SECURITY'
 }

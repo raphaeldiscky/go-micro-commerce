@@ -41,15 +41,12 @@ export function MessageList({
 
   const { markAsRead } = useMessageReceipts(conversationId)
 
-  // Reset marked messages when conversation changes
   useEffect(() => {
     markedAsReadRef.current.clear()
     lastProcessedMessageIdRef.current = null
     isMarkingRef.current = false
   }, [conversationId])
 
-  // Flatten and transform message pages with useMemo to prevent infinite loops
-  // The data structure is: pages -> conversationMessages -> edges -> node
   const messages = useMemo(() => {
     if (!messagesData?.pages) return []
     return messagesData.pages.flatMap((page) =>
@@ -57,7 +54,6 @@ export function MessageList({
     )
   }, [messagesData?.pages])
 
-  // Check if message is consecutive (same sender within 5 minutes)
   const isConsecutiveMessage = (
     currentMsg: Message,
     prevMsg: Message | undefined,
@@ -68,7 +64,6 @@ export function MessageList({
     return areMessagesConsecutive(currentMsg.createdAt, prevMsg.createdAt)
   }
 
-  // Scroll to bottom
   const scrollToBottom = (force = false) => {
     if (scrollAreaRef.current && (autoScroll || force)) {
       const scrollElement = scrollAreaRef.current.querySelector(
@@ -80,7 +75,6 @@ export function MessageList({
     }
   }
 
-  // Handle scroll events
   const handleScroll = useCallback(
     (e: Event) => {
       const target = e.target as HTMLElement
@@ -91,7 +85,6 @@ export function MessageList({
       setAutoScroll(isAtBottom)
       setShowScrollButton(!isAtBottom)
 
-      // Load more messages when scrolling to top
       if (scrollTop < 100 && hasNextPage && !isFetchingNextPage) {
         fetchNextPage()
       }
@@ -99,9 +92,7 @@ export function MessageList({
     [hasNextPage, isFetchingNextPage, fetchNextPage],
   )
 
-  // Mark messages as read when they come into view
   useEffect(() => {
-    // Prevent concurrent marking operations
     if (isMarkingRef.current) return
 
     const unreadMessages = messages.filter(
@@ -110,12 +101,9 @@ export function MessageList({
 
     if (unreadMessages.length === 0 || !autoScroll) return
 
-    // Only process if we have new messages (last message ID changed)
     const lastMessageId = messages[messages.length - 1]?.id
     if (lastMessageId === lastProcessedMessageIdRef.current) return
 
-    // Mark the last few messages as read (only if not already marked)
-    // Skip optimistic messages (temp IDs) to avoid backend errors
     const messagesToMark = unreadMessages
       .slice(-3)
       .filter((msg) => !markedAsReadRef.current.has(msg.id))
@@ -125,7 +113,6 @@ export function MessageList({
       isMarkingRef.current = true
       lastProcessedMessageIdRef.current = lastMessageId
 
-      // Mark messages asynchronously
       Promise.all(
         messagesToMark.map((msg) => {
           markedAsReadRef.current.add(msg.id)
@@ -137,12 +124,10 @@ export function MessageList({
     }
   }, [messages, currentUserId, autoScroll, markAsRead])
 
-  // Auto-scroll when new messages arrive
   useEffect(() => {
     scrollToBottom()
   }, [messages.length, typingUsers.length])
 
-  // Setup scroll listener
   useEffect(() => {
     const scrollElement = scrollAreaRef.current?.querySelector(
       '[data-radix-scroll-area-viewport]',
@@ -157,7 +142,6 @@ export function MessageList({
     <div className="flex-1 relative min-h-0">
       <ScrollArea className="h-full" ref={scrollAreaRef}>
         <div className="p-4 space-y-1">
-          {/* Load More Button */}
           {hasNextPage && (
             <div className="flex justify-center py-4">
               <Button
@@ -179,7 +163,6 @@ export function MessageList({
             </div>
           )}
 
-          {/* Messages */}
           {messages.length === 0 ? (
             <div className="flex items-center justify-center py-12 text-muted-foreground">
               <div className="text-center">
@@ -204,14 +187,12 @@ export function MessageList({
             ))
           )}
 
-          {/* Typing Indicators */}
           {typingUsers.length > 0 && (
             <TypingIndicator typingUsers={typingUsers} />
           )}
         </div>
       </ScrollArea>
 
-      {/* Scroll to Bottom Button */}
       {showScrollButton && (
         <div className="absolute bottom-4 right-4">
           <Button
