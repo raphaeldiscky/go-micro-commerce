@@ -2,7 +2,7 @@ import { useUser } from '@/hooks/auth/useAuth'
 import {
   SEND_DELIVERY_RECEIPT_MUTATION,
   SEND_READ_RECEIPT_MUTATION,
-  graphqlClient,
+  graphClient,
 } from '@/lib/graphql'
 import { useCallback } from 'react'
 
@@ -20,7 +20,7 @@ export function useMessageReceipts(conversationId: string) {
       if (!user) return
 
       try {
-        await graphqlClient.request(SEND_DELIVERY_RECEIPT_MUTATION, {
+        await graphClient.request(SEND_DELIVERY_RECEIPT_MUTATION, {
           input: {
             messageId,
             conversationId,
@@ -41,7 +41,7 @@ export function useMessageReceipts(conversationId: string) {
       if (!user) return
 
       try {
-        await graphqlClient.request(SEND_READ_RECEIPT_MUTATION, {
+        await graphClient.request(SEND_READ_RECEIPT_MUTATION, {
           input: {
             messageId,
             conversationId,

@@ -1,4 +1,4 @@
-import { graphqlClient } from '@/lib/graphql'
+import { graphClient } from '@/lib/graphql'
 import type { TypingIndicator } from '@/types/__generated__/graphql'
 import { useMutation } from '@tanstack/react-query'
 import { gql } from 'graphql-request'
@@ -25,7 +25,7 @@ export function useTypingIndicator(conversationId: string) {
   // Mutation for sending typing indicators
   const sendTypingMutation = useMutation({
     mutationFn: async (isTyping: boolean) => {
-      return graphqlClient.request(SEND_TYPING_INDICATOR_MUTATION, {
+      return graphClient.request(SEND_TYPING_INDICATOR_MUTATION, {
         input: {
           conversationId,
           isTyping,

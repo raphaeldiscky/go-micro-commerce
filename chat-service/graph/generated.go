@@ -48,6 +48,8 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	RequiresAuth func(ctx context.Context, obj any, next graphql.Resolver) (res any, err error)
+	RequiresRole func(ctx context.Context, obj any, next graphql.Resolver, role Role) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -1139,6 +1141,17 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_requiresRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "role", ec.unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐRole)
+	if err != nil {
+		return nil, err
+	}
+	args["role"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Conversation_messages_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -2599,7 +2612,20 @@ func (ec *executionContext) _Mutation_requestChatConnection(ctx context.Context,
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Mutation().RequestChatConnection(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *ChatConnection
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNChatConnection2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐChatConnection,
 		true,
 		true,
@@ -2637,7 +2663,20 @@ func (ec *executionContext) _Mutation_createConversation(ctx context.Context, fi
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().CreateConversation(ctx, fc.Args["input"].(CreateConversationInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *Conversation
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNConversation2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversation,
 		true,
 		true,
@@ -2700,7 +2739,32 @@ func (ec *executionContext) _Mutation_endConversation(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().EndConversation(ctx, fc.Args["conversationId"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *Conversation
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+			directive2 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal *Conversation
+					return zeroVal, err
+				}
+				if ec.directives.RequiresRole == nil {
+					var zeroVal *Conversation
+					return zeroVal, errors.New("directive requiresRole is not implemented")
+				}
+				return ec.directives.RequiresRole(ctx, nil, directive1, role)
+			}
+
+			next = directive2
+			return next
+		},
 		ec.marshalNConversation2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversation,
 		true,
 		true,
@@ -2763,7 +2827,32 @@ func (ec *executionContext) _Mutation_assignConversationToAdmin(ctx context.Cont
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().AssignConversationToAdmin(ctx, fc.Args["conversationId"].(string), fc.Args["adminId"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *Conversation
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+			directive2 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal *Conversation
+					return zeroVal, err
+				}
+				if ec.directives.RequiresRole == nil {
+					var zeroVal *Conversation
+					return zeroVal, errors.New("directive requiresRole is not implemented")
+				}
+				return ec.directives.RequiresRole(ctx, nil, directive1, role)
+			}
+
+			next = directive2
+			return next
+		},
 		ec.marshalNConversation2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversation,
 		true,
 		true,
@@ -2826,7 +2915,20 @@ func (ec *executionContext) _Mutation_sendMessage(ctx context.Context, field gra
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().SendMessage(ctx, fc.Args["input"].(SendMessageInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *Message
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNMessage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessage,
 		true,
 		true,
@@ -2887,7 +2989,20 @@ func (ec *executionContext) _Mutation_sendDeliveryReceipt(ctx context.Context, f
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().SendDeliveryReceipt(ctx, fc.Args["input"].(SendDeliveryReceiptInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *DeliveryReceipt
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNDeliveryReceipt2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐDeliveryReceipt,
 		true,
 		true,
@@ -2938,7 +3053,20 @@ func (ec *executionContext) _Mutation_sendReadReceipt(ctx context.Context, field
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().SendReadReceipt(ctx, fc.Args["input"].(SendReadReceiptInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *ReadReceipt
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNReadReceipt2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐReadReceipt,
 		true,
 		true,
@@ -2989,7 +3117,20 @@ func (ec *executionContext) _Mutation_joinConversation(ctx context.Context, fiel
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().JoinConversation(ctx, fc.Args["input"].(JoinConversationInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *Participant
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNParticipant2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐParticipant,
 		true,
 		true,
@@ -3052,7 +3193,20 @@ func (ec *executionContext) _Mutation_leaveConversation(ctx context.Context, fie
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().LeaveConversation(ctx, fc.Args["conversationId"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNBoolean2bool,
 		true,
 		true,
@@ -3093,7 +3247,20 @@ func (ec *executionContext) _Mutation_updatePresence(ctx context.Context, field 
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().UpdatePresence(ctx, fc.Args["status"].(constant.PresenceStatus))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *PresenceUpdate
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNPresenceUpdate2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate,
 		true,
 		true,
@@ -3142,7 +3309,20 @@ func (ec *executionContext) _Mutation_sendTypingIndicator(ctx context.Context, f
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Mutation().SendTypingIndicator(ctx, fc.Args["input"].(TypingIndicatorInput))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *TypingIndicator
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNTypingIndicator2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator,
 		true,
 		true,
@@ -3976,7 +4156,20 @@ func (ec *executionContext) _Query_onlineUsers(ctx context.Context, field graphq
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Query().OnlineUsers(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal []*User
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNUser2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUserᚄ,
 		true,
 		true,
@@ -4014,7 +4207,20 @@ func (ec *executionContext) _Query_conversation(ctx context.Context, field graph
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Query().Conversation(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *Conversation
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalOConversation2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversation,
 		true,
 		false,
@@ -4076,7 +4282,20 @@ func (ec *executionContext) _Query_conversations(ctx context.Context, field grap
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Query().Conversations(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal []*Conversation
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNConversation2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversationᚄ,
 		true,
 		true,
@@ -4127,7 +4346,32 @@ func (ec *executionContext) _Query_waitingConversations(ctx context.Context, fie
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Query().WaitingConversations(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal []*Conversation
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+			directive2 := func(ctx context.Context) (any, error) {
+				role, err := ec.unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐRole(ctx, "ADMIN")
+				if err != nil {
+					var zeroVal []*Conversation
+					return zeroVal, err
+				}
+				if ec.directives.RequiresRole == nil {
+					var zeroVal []*Conversation
+					return zeroVal, errors.New("directive requiresRole is not implemented")
+				}
+				return ec.directives.RequiresRole(ctx, nil, directive1, role)
+			}
+
+			next = directive2
+			return next
+		},
 		ec.marshalNConversation2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversationᚄ,
 		true,
 		true,
@@ -4179,7 +4423,20 @@ func (ec *executionContext) _Query_conversationMessages(ctx context.Context, fie
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Query().ConversationMessages(ctx, fc.Args["conversationId"].(string), fc.Args["first"].(*int), fc.Args["after"].(*string), fc.Args["last"].(*int), fc.Args["before"].(*string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *MessageConnection
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNMessageConnection2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessageConnection,
 		true,
 		true,
@@ -4226,7 +4483,20 @@ func (ec *executionContext) _Query_conversationParticipants(ctx context.Context,
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Query().ConversationParticipants(ctx, fc.Args["conversationId"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal []*Participant
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNParticipant2ᚕᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐParticipantᚄ,
 		true,
 		true,
@@ -4587,7 +4857,20 @@ func (ec *executionContext) _Subscription_conversationEvents(ctx context.Context
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Subscription().ConversationEvents(ctx, fc.Args["conversationId"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal ConversationEvent
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNConversationEvent2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversationEvent,
 		true,
 		true,
@@ -4627,7 +4910,20 @@ func (ec *executionContext) _Subscription_userEvents(ctx context.Context, field 
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Subscription().UserEvents(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal UserEvent
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNUserEvent2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUserEvent,
 		true,
 		true,
@@ -8711,6 +9007,16 @@ func (ec *executionContext) marshalNReadReceipt2ᚖgithubᚗcomᚋraphaeldiscky�
 		return graphql.Null
 	}
 	return ec._ReadReceipt(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {
+	var res Role
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐRole(ctx context.Context, sel ast.SelectionSet, v Role) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNSendDeliveryReceiptInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendDeliveryReceiptInput(ctx context.Context, v any) (SendDeliveryReceiptInput, error) {

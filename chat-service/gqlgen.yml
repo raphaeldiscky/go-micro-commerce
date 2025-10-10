@@ -21,6 +21,13 @@ federation:
   package: graph
   version: 2
 
+# Custom directive implementations
+directives:
+  requiresAuth:
+    skip_runtime: false
+  requiresRole:
+    skip_runtime: false
+
 # Autobind existing types
 autobind:
   - "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"

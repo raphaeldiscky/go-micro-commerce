@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
@@ -10,6 +11,7 @@ import (
 	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // GraphQLContextMiddleware extracts HTTP headers and adds them to GraphQL context.
@@ -17,7 +19,6 @@ import (
 // It extracts both client metadata (IP, user agent) and user authentication headers
 // (forwarded by Apollo Router or API Gateway from JWT claims).
 // Note: This middleware is permissive - it doesn't enforce authentication.
-// Use GraphQLRequireAuth() on specific resolvers that need authentication.
 func GraphQLContextMiddleware() graphql.OperationMiddleware {
 	return func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
 		// Get the HTTP request from GraphQL context
@@ -82,30 +83,6 @@ func ExtractUserAgent(ctx context.Context) string {
 	return ""
 }
 
-// GraphQLRequireAuth ensures a user is authenticated for GraphQL operations.
-// Returns a GraphQL error if user is not authenticated.
-func GraphQLRequireAuth() graphql.OperationMiddleware {
-	return func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
-		// Check if user ID exists in context
-		if _, ok := ctx.Value(constant.CtxKeyUserID).(uuid.UUID); !ok {
-			return func(_ context.Context) *graphql.Response {
-				return &graphql.Response{
-					Errors: gqlerror.List{
-						&gqlerror.Error{
-							Message: "unauthorized: missing or invalid authentication token",
-							Extensions: map[string]any{
-								"code": "UNAUTHENTICATED",
-							},
-						},
-					},
-				}
-			}
-		}
-
-		return next(ctx)
-	}
-}
-
 // WebSocketAuthMiddleware is an Echo middleware that extracts auth headers forwarded by
 // API Gateway and adds them to the request context before WebSocket upgrade.
 // This allows GraphQL subscriptions to access user authentication information.
@@ -151,6 +128,76 @@ func WebSocketAuthMiddleware() echo.MiddlewareFunc {
 			c.SetRequest(req.WithContext(ctx))
 
 			return next(c)
+		}
+	}
+}
+
+// GraphQLRequireAuth ensures a user is authenticated for GraphQL operations.
+// Returns a GraphQL error if user is not authenticated.
+func GraphQLRequireAuth() graphql.OperationMiddleware {
+	return func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+		// Check if user ID exists in context
+		if _, ok := ctx.Value(constant.CtxKeyUserID).(uuid.UUID); !ok {
+			return func(_ context.Context) *graphql.Response {
+				return &graphql.Response{
+					Errors: gqlerror.List{
+						&gqlerror.Error{
+							Message: "unauthorized: missing or invalid authentication token",
+							Extensions: map[string]any{
+								"code": "UNAUTHENTICATED",
+							},
+						},
+					},
+				}
+			}
+		}
+
+		return next(ctx)
+	}
+}
+
+// GraphQLLoggingMiddleware logs GraphQL operations with operation name, duration, and errors.
+// This middleware should be used with gqlgen's AroundOperations.
+func GraphQLLoggingMiddleware(appLogger logger.Logger) graphql.OperationMiddleware {
+	return func(ctx context.Context, next graphql.OperationHandler) graphql.ResponseHandler {
+		// Get operation context for operation name and other metadata
+		opCtx := graphql.GetOperationContext(ctx)
+		if opCtx == nil {
+			return next(ctx)
+		}
+
+		operationName := opCtx.OperationName
+		if operationName == "" {
+			operationName = "<unnamed>"
+		}
+
+		// Execute the operation and capture response
+		start := time.Now()
+		responseHandler := next(ctx)
+
+		return func(ctx context.Context) *graphql.Response {
+			response := responseHandler(ctx)
+			duration := time.Since(start)
+
+			// Build log fields
+			fields := map[string]any{
+				"operation": operationName,
+				"duration":  duration.String(),
+			}
+
+			// Check for errors in response
+			if response != nil && len(response.Errors) > 0 {
+				fields["status"] = "error"
+				fields["error_count"] = len(response.Errors)
+				fields["first_error"] = response.Errors[0].Message
+
+				appLogger.WithFields(fields).Info("GraphQL operation completed with errors")
+			} else {
+				fields["status"] = "success"
+				appLogger.WithFields(fields).Info("GraphQL operation completed")
+			}
+
+			return response
 		}
 	}
 }

@@ -34,14 +34,14 @@ input JoinConversationInput {
 # Participant queries
 extend type Query {
   # Get participants of a conversation
-  conversationParticipants(conversationId: ID!): [Participant!]!
+  conversationParticipants(conversationId: ID!): [Participant!]! @requiresAuth
 }
 
 # Participant mutations
 extend type Mutation {
   # Join conversation
-  joinConversation(input: JoinConversationInput!): Participant!
+  joinConversation(input: JoinConversationInput!): Participant! @requiresAuth
 
   # Leave conversation
-  leaveConversation(conversationId: ID!): Boolean!
+  leaveConversation(conversationId: ID!): Boolean! @requiresAuth
 }

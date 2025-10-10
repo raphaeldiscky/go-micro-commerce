@@ -12,7 +12,7 @@ import {
   LOGIN_MUTATION,
   LOGOUT_MUTATION,
   REGISTER_MUTATION,
-  graphqlClient,
+  graphClient,
   handleGraphQLRequest,
   mapGraphQLUserToApiUser,
 } from '@/lib/graphql'
@@ -50,7 +50,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: async (input: LoginMutationVariables['input']) => {
       return handleGraphQLRequest(async () => {
-        const data = await graphqlClient.request<
+        const data = await graphClient.request<
           LoginMutation,
           LoginMutationVariables
         >(LOGIN_MUTATION, { input })
@@ -93,8 +93,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: async () => {
       return handleGraphQLRequest(async () => {
-        const data =
-          await graphqlClient.request<LogoutMutation>(LOGOUT_MUTATION)
+        const data = await graphClient.request<LogoutMutation>(LOGOUT_MUTATION)
         console.log('Logout API response:', data)
         return data
       }, 'Logout request failed')
@@ -153,7 +152,7 @@ export function useRegister() {
   return useMutation({
     mutationFn: async (input: RegisterMutationVariables['input']) => {
       return handleGraphQLRequest(async () => {
-        const data = await graphqlClient.request<
+        const data = await graphClient.request<
           RegisterMutation,
           RegisterMutationVariables
         >(REGISTER_MUTATION, { input })

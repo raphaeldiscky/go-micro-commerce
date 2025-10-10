@@ -1,21 +1,24 @@
 package routes
 
 import (
+	"context"
 	"net/http"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgmiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
+	chatconstant "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
 // SetupGraphQLRoutes sets up all GraphQL routes.
@@ -23,8 +26,18 @@ func SetupGraphQLRoutes(
 	e *echo.Echo,
 	cfg *config.Config,
 	graphResolver *resolver.Resolver,
+	appLogger logger.Logger,
 ) {
-	executableSchema := graph.NewExecutableSchema(graph.Config{Resolvers: graphResolver})
+	executableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: graphResolver,
+		Directives: graph.DirectiveRoot{
+			RequiresAuth: pkgmiddleware.RequiresAuthDirective,
+			RequiresRole: func(ctx context.Context, obj any, next graphql.Resolver, role graph.Role) (any, error) {
+				// Convert graph.Role enum to string for middleware
+				return pkgmiddleware.RequiresRoleDirective(ctx, obj, next, string(role))
+			},
+		},
+	})
 
 	// Create GraphQL handler with context middleware
 	srv := handler.NewDefaultServer(executableSchema)
@@ -32,14 +45,12 @@ func SetupGraphQLRoutes(
 	// Add middleware to extract client metadata from headers
 	srv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
-	// GraphQL endpoint without auth (for introspection and public queries)
-	// GET for introspection queries (needed by Apollo Router)
-	e.GET("/graph", echo.WrapHandler(srv))
+	// Add logging middleware to log GraphQL operations
+	srv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
 
-	// POST for queries/mutations (public for introspection, use /graph/auth for protected)
-	e.POST("/graph", echo.WrapHandler(srv))
-	// Protected GraphQL endpoint (requires authentication)
-	e.POST("/graph/auth", echo.WrapHandler(srv), middleware.AuthMiddleware)
+	// GraphQL endpoint without auth (for introspection and public queries)
+	e.GET("/graph", graphQLEchoHandler(srv))
+	e.POST("/graph", graphQLEchoHandler(srv))
 
 	// WebSocket handler for GraphQL subscriptions with graphql-transport-ws protocol
 	wsSrv := handler.New(executableSchema)
@@ -47,13 +58,13 @@ func SetupGraphQLRoutes(
 	// Configure the WebSocket transport
 	// The Upgrader must allow connections from API Gateway proxy
 	wsSrv.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: constant.GraphQLKeepAlivePingInterval,
+		KeepAlivePingInterval: chatconstant.GraphQLKeepAlivePingInterval,
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(_ *http.Request) bool {
 				return true // Allow all origins for proxying through API Gateway
 			},
-			ReadBufferSize:  constant.WsServerReadBufferSize,
-			WriteBufferSize: constant.WsServerWriteBufferSize,
+			ReadBufferSize:  chatconstant.WsServerReadBufferSize,
+			WriteBufferSize: chatconstant.WsServerWriteBufferSize,
 		},
 	})
 	wsSrv.AddTransport(transport.Options{})
@@ -61,6 +72,9 @@ func SetupGraphQLRoutes(
 	wsSrv.AddTransport(transport.POST{})
 	// Add context middleware for subscriptions
 	wsSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
+
+	// Add logging middleware for subscriptions
+	wsSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
 
 	// WebSocket subscriptions endpoint
 	// Auth is handled by API Gateway which validates JWT and forwards X-User-* headers
@@ -81,5 +95,21 @@ func SetupGraphQLRoutes(
 
 			return nil
 		})
+	}
+}
+
+// graphQLEchoHandler wraps GraphQL handler to pass Echo context through to resolvers.
+func graphQLEchoHandler(h http.Handler) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := c.Request()
+		res := c.Response()
+
+		// Add response writer to context so resolvers can set cookies
+		ctx := context.WithValue(req.Context(), constant.CtxKeyResponseWriter, res.Writer)
+		req = req.WithContext(ctx)
+
+		h.ServeHTTP(res, req)
+
+		return nil
 	}
 }

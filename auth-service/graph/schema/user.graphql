@@ -30,13 +30,13 @@ type AuthPayload {
 }
 
 extend type Query {
-  me: User
-  user(id: ID!): User
+  me: User @requiresAuth
+  user(id: ID!): User @requiresAuth
 }
 
 extend type Mutation {
   register(input: RegisterUserInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
   refreshToken: AuthPayload!
-  logout: Boolean!
+  logout: Boolean! @requiresAuth
 }

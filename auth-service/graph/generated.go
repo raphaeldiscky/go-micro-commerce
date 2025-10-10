@@ -46,6 +46,8 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	RequiresAuth func(ctx context.Context, obj any, next graphql.Resolver) (res any, err error)
+	RequiresRole func(ctx context.Context, obj any, next graphql.Resolver, role Role) (res any, err error)
 }
 
 type ComplexityRoot struct {
@@ -475,6 +477,17 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
+func (ec *executionContext) dir_requiresRole_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "role", ec.unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐRole)
+	if err != nil {
+		return nil, err
+	}
+	args["role"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -901,7 +914,20 @@ func (ec *executionContext) _Mutation_logout(ctx context.Context, field graphql.
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Mutation().Logout(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal bool
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalNBoolean2bool,
 		true,
 		true,
@@ -930,7 +956,20 @@ func (ec *executionContext) _Query_me(ctx context.Context, field graphql.Collect
 		func(ctx context.Context) (any, error) {
 			return ec.resolvers.Query().Me(ctx)
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *User
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalOUser2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐUser,
 		true,
 		false,
@@ -978,7 +1017,20 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 			fc := graphql.GetFieldContext(ctx)
 			return ec.resolvers.Query().User(ctx, fc.Args["id"].(string))
 		},
-		nil,
+		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
+			directive0 := next
+
+			directive1 := func(ctx context.Context) (any, error) {
+				if ec.directives.RequiresAuth == nil {
+					var zeroVal *User
+					return zeroVal, errors.New("directive requiresAuth is not implemented")
+				}
+				return ec.directives.RequiresAuth(ctx, nil, directive0)
+			}
+
+			next = directive1
+			return next
+		},
 		ec.marshalOUser2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐUser,
 		true,
 		false,
@@ -3859,6 +3911,16 @@ func (ec *executionContext) unmarshalNLoginInput2githubᚗcomᚋraphaeldisckyᚋ
 func (ec *executionContext) unmarshalNRegisterUserInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐRegisterUserInput(ctx context.Context, v any) (RegisterUserInput, error) {
 	res, err := ec.unmarshalInputRegisterUserInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {
+	var res Role
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐRole(ctx context.Context, sel ast.SelectionSet, v Role) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

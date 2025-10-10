@@ -29,23 +29,23 @@ input CreateConversationInput {
 # Conversation queries
 extend type Query {
   # Get single conversation
-  conversation(id: ID!): Conversation
+  conversation(id: ID!): Conversation @requiresAuth
 
   # Get user's conversations
-  conversations: [Conversation!]!
+  conversations: [Conversation!]! @requiresAuth
 
   # Admin: Get waiting conversations
-  waitingConversations: [Conversation!]!
+  waitingConversations: [Conversation!]! @requiresAuth @requiresRole(role: ADMIN)
 }
 
 # Conversation mutations
 extend type Mutation {
   # Create new conversation
-  createConversation(input: CreateConversationInput!): Conversation!
+  createConversation(input: CreateConversationInput!): Conversation! @requiresAuth
 
   # End conversation (admin only)
-  endConversation(conversationId: ID!): Conversation!
+  endConversation(conversationId: ID!): Conversation! @requiresAuth @requiresRole(role: ADMIN)
 
   # Assign conversation to admin
-  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation!
+  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @requiresAuth @requiresRole(role: ADMIN)
 }

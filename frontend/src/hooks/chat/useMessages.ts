@@ -2,7 +2,7 @@ import { QUERY_KEY } from '@/constants/query-key'
 import {
   CONVERSATION_MESSAGES_QUERY,
   SEND_MESSAGE_MUTATION,
-  graphqlClient,
+  graphClient,
 } from '@/lib/graphql'
 import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
 import type {
@@ -103,15 +103,14 @@ export function useMessages(conversationId: string) {
     },
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam }) => {
-      const data =
-        await graphqlClient.request<ConversationMessagesQueryResponse>(
-          CONVERSATION_MESSAGES_QUERY,
-          {
-            conversationId,
-            first: 50,
-            after: pageParam,
-          },
-        )
+      const data = await graphClient.request<ConversationMessagesQueryResponse>(
+        CONVERSATION_MESSAGES_QUERY,
+        {
+          conversationId,
+          first: 50,
+          after: pageParam,
+        },
+      )
       return data
     },
     queryKey: QUERY_KEY.chat.messages(conversationId),
@@ -125,7 +124,7 @@ export function useSendMessage(conversationId: string, currentUserId: string) {
 
   return useMutation({
     mutationFn: async (input: SendMessageInput) => {
-      await graphqlClient.request(SEND_MESSAGE_MUTATION, {
+      await graphClient.request(SEND_MESSAGE_MUTATION, {
         input: {
           ...input,
           conversationId,

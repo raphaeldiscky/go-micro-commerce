@@ -3,10 +3,10 @@
 # Subscription root type
 type Subscription {
   # Subscribe to conversation events (messages, typing, receipts)
-  conversationEvents(conversationId: ID!): ConversationEvent!
+  conversationEvents(conversationId: ID!): ConversationEvent! @requiresAuth
 
   # Subscribe to user-specific events (presence updates)
-  userEvents: UserEvent!
+  userEvents: UserEvent! @requiresAuth
 }
 
 # Union type for conversation events
@@ -78,8 +78,8 @@ input TypingIndicatorInput {
 # Presence and typing mutations
 extend type Mutation {
   # Update user presence status
-  updatePresence(status: PresenceStatus!): PresenceUpdate!
+  updatePresence(status: PresenceStatus!): PresenceUpdate! @requiresAuth
 
   # Send typing indicator
-  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator!
+  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @requiresAuth
 }
