@@ -3,7 +3,6 @@ package grpc
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -53,10 +52,6 @@ func (c *ClientAuthInterceptor) addUserInfoToMetadata(ctx context.Context) conte
 
 	if roles, ok := ctx.Value(constant.CtxKeyRoles).([]string); ok {
 		mdMap[strings.ToLower(constant.XRoles)] = strings.Join(roles, ",")
-	}
-
-	if isActive, ok := ctx.Value(constant.CtxKeyIsActive).(bool); ok {
-		mdMap[strings.ToLower(constant.XIsActive)] = strconv.FormatBool(isActive)
 	}
 
 	// Create metadata from map

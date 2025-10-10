@@ -59,15 +59,13 @@ type ParticipantRepository interface {
 
 // participantRepository implements the ParticipantRepository interface for PostgreSQL.
 type participantRepository struct {
-	db     DBTX
-	logger logger.Logger
+	db DBTX
 }
 
 // NewParticipantRepository creates a new instance of participantRepository.
-func NewParticipantRepository(db DBTX, appLogger logger.Logger) ParticipantRepository {
+func NewParticipantRepository(db DBTX, _ logger.Logger) ParticipantRepository {
 	return &participantRepository{
-		db:     db,
-		logger: appLogger,
+		db: db,
 	}
 }
 
@@ -191,36 +189,16 @@ func (r *participantRepository) FindActiveByUserID(
 		ORDER BY joined_at DESC
 	`
 
-	r.logger.Debug("Executing FindActiveByUserID query",
-		"user_id", userID,
-		"user_type", userType,
-		"query", query)
-
 	rows, err := r.db.Query(ctx, query, userID, userType)
 	if err != nil {
-		r.logger.Error("Failed to execute FindActiveByUserID query",
-			"user_id", userID,
-			"user_type", userType,
-			"error", err)
-
 		return nil, fmt.Errorf("failed to query active participants by user: %w", err)
 	}
 	defer rows.Close()
 
 	participants, scanErr := r.scanParticipants(rows)
 	if scanErr != nil {
-		r.logger.Error("Failed to scan participants",
-			"user_id", userID,
-			"user_type", userType,
-			"error", scanErr)
-
 		return nil, scanErr
 	}
-
-	r.logger.Debug("FindActiveByUserID query results",
-		"user_id", userID,
-		"user_type", userType,
-		"result_count", len(participants))
 
 	return participants, nil
 }

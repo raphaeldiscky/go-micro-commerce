@@ -37,6 +37,24 @@ type PageInfo {
   endCursor: String
 }
 
+# Message input types
+input SendMessageInput {
+  conversationId: ID!
+  content: String!
+  messageType: MessageType = TEXT
+  replyToId: ID
+}
+
+input SendDeliveryReceiptInput {
+  messageId: ID!
+  conversationId: ID!
+}
+
+input SendReadReceiptInput {
+  messageId: ID!
+  conversationId: ID!
+}
+
 # Message queries
 extend type Query {
   # Get messages for a conversation with cursor-based pagination
@@ -47,4 +65,16 @@ extend type Query {
     last: Int
     before: String
   ): MessageConnection!
+}
+
+# Message mutations
+extend type Mutation {
+  # Send a new message
+  sendMessage(input: SendMessageInput!): Message!
+
+  # Send delivery receipt for a message
+  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt!
+
+  # Send read receipt for a message
+  sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt!
 }

@@ -127,13 +127,6 @@ func GetUserAuthContexts(ctx context.Context) (dto.UserAuthInfo, error) {
 
 	uc.Roles = roles
 
-	isActive, ok := ctx.Value(constant.CtxKeyIsActive).(bool)
-	if !ok {
-		return uc, errors.New("failed to get is active from context")
-	}
-
-	uc.IsActive = isActive
-
 	return uc, nil
 }
 
@@ -142,7 +135,6 @@ func AddUserAuthToContexts(ctx context.Context, uc dto.UserAuthInfo) context.Con
 	ctx = context.WithValue(ctx, constant.CtxKeyUserID, uc.UserID)
 	ctx = context.WithValue(ctx, constant.CtxKeyEmail, uc.Email)
 	ctx = context.WithValue(ctx, constant.CtxKeyRoles, uc.Roles)
-	ctx = context.WithValue(ctx, constant.CtxKeyIsActive, uc.IsActive)
 
 	return ctx
 }

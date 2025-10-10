@@ -19,7 +19,7 @@ type ChatPubSub struct {
 	subscriber      redispkg.Subscriber
 	logger          logger.Logger
 	instanceID      string
-	messageHandlers map[CrossInstanceMessageType]MessageHandler
+	messageHandlers map[CrossInstanceMessageType][]MessageHandler
 }
 
 // MessageHandler defines the function signature for handling cross-instance messages.
@@ -72,14 +72,16 @@ func NewChatPubSub(
 		subscriber:      subscriber,
 		logger:          logger,
 		instanceID:      instanceID,
-		messageHandlers: make(map[CrossInstanceMessageType]MessageHandler),
+		messageHandlers: make(map[CrossInstanceMessageType][]MessageHandler),
 	}
 }
 
 // RegisterHandler registers a handler for a specific message type.
+// Multiple handlers can be registered for the same message type and all will be called.
 func (c *ChatPubSub) RegisterHandler(msgType CrossInstanceMessageType, handler MessageHandler) {
-	c.messageHandlers[msgType] = handler
-	c.logger.Infof("Registered handler for message type: %s", msgType)
+	c.messageHandlers[msgType] = append(c.messageHandlers[msgType], handler)
+	c.logger.Infof("Registered handler for message type: %s (total handlers: %d)",
+		msgType, len(c.messageHandlers[msgType]))
 }
 
 // PublishChatMessage publishes a chat message to other instances.
@@ -264,16 +266,32 @@ func (c *ChatPubSub) handleRedisMessage(ctx context.Context, redisMsg *redispkg.
 		"source_instance", crossMsg.SourceInstanceID,
 		"our_instance", c.instanceID)
 
-	// Find and call the appropriate handler
-	handler, exists := c.messageHandlers[crossMsg.MessageType]
-	if !exists {
+	// Find and call all registered handlers for this message type
+	handlers, exists := c.messageHandlers[crossMsg.MessageType]
+	if !exists || len(handlers) == 0 {
 		c.logger.Warn("No handler registered for message type", "type", crossMsg.MessageType)
 		return nil
 	}
 
-	// Handle the message
-	if err := handler(ctx, &crossMsg); err != nil {
-		return fmt.Errorf("handler failed for message type %s: %w", crossMsg.MessageType, err)
+	// Call all handlers for this message type
+	var errs []error
+
+	for i, handler := range handlers {
+		if err := handler(ctx, &crossMsg); err != nil {
+			c.logger.Error("Handler failed for message type",
+				"type", crossMsg.MessageType,
+				"handler_index", i,
+				"error", err)
+			errs = append(errs, err)
+		}
+	}
+
+	if len(errs) > 0 {
+		return fmt.Errorf(
+			"one or more handlers failed for message type %s: %d errors",
+			crossMsg.MessageType,
+			len(errs),
+		)
 	}
 
 	return nil

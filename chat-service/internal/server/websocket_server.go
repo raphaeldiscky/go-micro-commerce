@@ -135,6 +135,11 @@ func registerWebSocketMiddlewares(e *echo.Echo, cfg *config.Config) {
 			echo.HeaderContentType,
 			echo.HeaderAccept,
 			echo.HeaderAuthorization,
+			echo.HeaderUpgrade,
+			echo.HeaderConnection,
+			"Sec-WebSocket-Key",      // Required for WebSocket
+			"Sec-WebSocket-Version",  // Required for WebSocket
+			"Sec-WebSocket-Protocol", // Required for GraphQL subscriptions
 		},
 	}))
 

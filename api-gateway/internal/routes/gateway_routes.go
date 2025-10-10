@@ -25,20 +25,31 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
 	public.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
 	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
-	public.GET("/chats/ws/health", gw.ProxyToService("chat-service-websocket", "/ws/health"))
+
+	// Public WebSocket routes
+	public.GET("/chats/ws", gw.ProxyWebSocket("chat-service-websocket", "/ws"))
 
 	// GraphQL Federation Gateway (public - no auth)
 	// GET for introspection queries, POST for actual queries/mutations
-	public.GET("/graphql", gw.ProxyToService("graphql-gateway", "/"))
-	public.POST("/graphql", gw.ProxyToService("graphql-gateway", "/"))
+	public.GET("/graph", gw.ProxyToService("graphql-gateway", "/"))
+	public.POST("/graph", gw.ProxyToService("graphql-gateway", "/"))
 
 	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
 	// This allows both authenticated and unauthenticated queries to work
 	// Resolvers can use GraphQLRequireAuth() to enforce authentication per query
 	optionalAuth := e.Group("")
 	optionalAuth.Use(h.OptionalAuthorization())
-	optionalAuth.GET("/graphql/auth", gw.ProxyToService("graphql-gateway", "/"))
-	optionalAuth.POST("/graphql/auth", gw.ProxyToService("graphql-gateway", "/"))
+	optionalAuth.GET("/graph/auth", gw.ProxyToService("graphql-gateway", "/"))
+	optionalAuth.POST("/graph/auth", gw.ProxyToService("graphql-gateway", "/"))
+
+	// GraphQL Subscriptions WebSocket (bypass Apollo Router, proxy directly to chat-service)
+	// Apollo Router doesn't support WebSocket subscriptions, so we route directly
+	// Note: Use chat-service (port 8085) NOT chat-service-websocket (port 9098)
+	// GraphQL subscriptions are on the HTTP server, not the native WebSocket server
+	optionalAuth.GET(
+		"/graph/subscriptions",
+		gw.ProxyWebSocket("chat-service", "/graph/subscriptions"),
+	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))
 	public.POST("/auth/v1/register", gw.ProxyToService("auth-service", "/v1/register"))

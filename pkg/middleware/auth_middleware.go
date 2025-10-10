@@ -75,10 +75,18 @@ func (m *AuthMiddleware) Authorization() echo.MiddlewareFunc {
 }
 
 // parseAccessToken extracts the access token from the request context.
+// It checks both the Authorization header and the query parameter "token".
+// Query parameter is checked first to support WebSocket connections (browsers can't send custom headers).
 func (m *AuthMiddleware) parseAccessToken(c echo.Context) (string, error) {
+	// Check query parameter first (for WebSocket connections)
+	if token := c.QueryParam("token"); token != "" {
+		return token, nil
+	}
+
+	// Check Authorization header
 	accessToken := c.Request().Header.Get("Authorization")
 	if accessToken == "" {
-		return "", errors.New("missing Authorization header")
+		return "", errors.New("missing Authorization header or token query parameter")
 	}
 
 	splitToken := strings.Split(accessToken, " ")

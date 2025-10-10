@@ -44,6 +44,7 @@ type ResolverRoot interface {
 	Entity() EntityResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Subscription() SubscriptionResolver
 }
 
 type DirectiveRoot struct {
@@ -67,6 +68,13 @@ type ComplexityRoot struct {
 		Status           func(childComplexity int) int
 		Subject          func(childComplexity int) int
 		UpdatedAt        func(childComplexity int) int
+	}
+
+	DeliveryReceipt struct {
+		ConversationID func(childComplexity int) int
+		DeliveredAt    func(childComplexity int) int
+		MessageID      func(childComplexity int) int
+		RecipientID    func(childComplexity int) int
 	}
 
 	Entity struct {
@@ -104,6 +112,21 @@ type ComplexityRoot struct {
 		JoinConversation          func(childComplexity int, input JoinConversationInput) int
 		LeaveConversation         func(childComplexity int, conversationID string) int
 		RequestChatConnection     func(childComplexity int) int
+		SendDeliveryReceipt       func(childComplexity int, input SendDeliveryReceiptInput) int
+		SendMessage               func(childComplexity int, input SendMessageInput) int
+		SendReadReceipt           func(childComplexity int, input SendReadReceiptInput) int
+		SendTypingIndicator       func(childComplexity int, input TypingIndicatorInput) int
+		UpdatePresence            func(childComplexity int, status constant.PresenceStatus) int
+	}
+
+	NewMessage struct {
+		Content        func(childComplexity int) int
+		ConversationID func(childComplexity int) int
+		CreatedAt      func(childComplexity int) int
+		ID             func(childComplexity int) int
+		IsSystem       func(childComplexity int) int
+		MessageType    func(childComplexity int) int
+		SenderID       func(childComplexity int) int
 	}
 
 	OnlineStatus struct {
@@ -131,6 +154,12 @@ type ComplexityRoot struct {
 		UserType       func(childComplexity int) int
 	}
 
+	PresenceUpdate struct {
+		LastSeen func(childComplexity int) int
+		Status   func(childComplexity int) int
+		UserID   func(childComplexity int) int
+	}
+
 	Query struct {
 		Conversation             func(childComplexity int, id string) int
 		ConversationMessages     func(childComplexity int, conversationID string, first *int, after *string, last *int, before *string) int
@@ -140,6 +169,25 @@ type ComplexityRoot struct {
 		WaitingConversations     func(childComplexity int) int
 		__resolve__service       func(childComplexity int) int
 		__resolve_entities       func(childComplexity int, representations []map[string]any) int
+	}
+
+	ReadReceipt struct {
+		ConversationID func(childComplexity int) int
+		MessageID      func(childComplexity int) int
+		ReadAt         func(childComplexity int) int
+		ReaderID       func(childComplexity int) int
+	}
+
+	Subscription struct {
+		ConversationEvents func(childComplexity int, conversationID string) int
+		UserEvents         func(childComplexity int) int
+	}
+
+	TypingIndicator struct {
+		ConversationID func(childComplexity int) int
+		IsTyping       func(childComplexity int) int
+		Timestamp      func(childComplexity int) int
+		UserID         func(childComplexity int) int
 	}
 
 	User struct {
@@ -163,8 +211,13 @@ type MutationResolver interface {
 	CreateConversation(ctx context.Context, input CreateConversationInput) (*Conversation, error)
 	EndConversation(ctx context.Context, conversationID string) (*Conversation, error)
 	AssignConversationToAdmin(ctx context.Context, conversationID string, adminID string) (*Conversation, error)
+	SendMessage(ctx context.Context, input SendMessageInput) (*Message, error)
+	SendDeliveryReceipt(ctx context.Context, input SendDeliveryReceiptInput) (*DeliveryReceipt, error)
+	SendReadReceipt(ctx context.Context, input SendReadReceiptInput) (*ReadReceipt, error)
 	JoinConversation(ctx context.Context, input JoinConversationInput) (*Participant, error)
 	LeaveConversation(ctx context.Context, conversationID string) (bool, error)
+	UpdatePresence(ctx context.Context, status constant.PresenceStatus) (*PresenceUpdate, error)
+	SendTypingIndicator(ctx context.Context, input TypingIndicatorInput) (*TypingIndicator, error)
 }
 type QueryResolver interface {
 	OnlineUsers(ctx context.Context) ([]*User, error)
@@ -173,6 +226,10 @@ type QueryResolver interface {
 	WaitingConversations(ctx context.Context) ([]*Conversation, error)
 	ConversationMessages(ctx context.Context, conversationID string, first *int, after *string, last *int, before *string) (*MessageConnection, error)
 	ConversationParticipants(ctx context.Context, conversationID string) ([]*Participant, error)
+}
+type SubscriptionResolver interface {
+	ConversationEvents(ctx context.Context, conversationID string) (<-chan ConversationEvent, error)
+	UserEvents(ctx context.Context) (<-chan UserEvent, error)
 }
 
 type executableSchema struct {
@@ -278,6 +335,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Conversation.UpdatedAt(childComplexity), true
+
+	case "DeliveryReceipt.conversationId":
+		if e.complexity.DeliveryReceipt.ConversationID == nil {
+			break
+		}
+
+		return e.complexity.DeliveryReceipt.ConversationID(childComplexity), true
+	case "DeliveryReceipt.deliveredAt":
+		if e.complexity.DeliveryReceipt.DeliveredAt == nil {
+			break
+		}
+
+		return e.complexity.DeliveryReceipt.DeliveredAt(childComplexity), true
+	case "DeliveryReceipt.messageId":
+		if e.complexity.DeliveryReceipt.MessageID == nil {
+			break
+		}
+
+		return e.complexity.DeliveryReceipt.MessageID(childComplexity), true
+	case "DeliveryReceipt.recipientId":
+		if e.complexity.DeliveryReceipt.RecipientID == nil {
+			break
+		}
+
+		return e.complexity.DeliveryReceipt.RecipientID(childComplexity), true
 
 	case "Entity.findConversationByID":
 		if e.complexity.Entity.FindConversationByID == nil {
@@ -455,6 +537,104 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.RequestChatConnection(childComplexity), true
+	case "Mutation.sendDeliveryReceipt":
+		if e.complexity.Mutation.SendDeliveryReceipt == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendDeliveryReceipt_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendDeliveryReceipt(childComplexity, args["input"].(SendDeliveryReceiptInput)), true
+	case "Mutation.sendMessage":
+		if e.complexity.Mutation.SendMessage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendMessage_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendMessage(childComplexity, args["input"].(SendMessageInput)), true
+	case "Mutation.sendReadReceipt":
+		if e.complexity.Mutation.SendReadReceipt == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendReadReceipt_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendReadReceipt(childComplexity, args["input"].(SendReadReceiptInput)), true
+	case "Mutation.sendTypingIndicator":
+		if e.complexity.Mutation.SendTypingIndicator == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_sendTypingIndicator_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SendTypingIndicator(childComplexity, args["input"].(TypingIndicatorInput)), true
+	case "Mutation.updatePresence":
+		if e.complexity.Mutation.UpdatePresence == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updatePresence_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdatePresence(childComplexity, args["status"].(constant.PresenceStatus)), true
+
+	case "NewMessage.content":
+		if e.complexity.NewMessage.Content == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.Content(childComplexity), true
+	case "NewMessage.conversationId":
+		if e.complexity.NewMessage.ConversationID == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.ConversationID(childComplexity), true
+	case "NewMessage.createdAt":
+		if e.complexity.NewMessage.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.CreatedAt(childComplexity), true
+	case "NewMessage.id":
+		if e.complexity.NewMessage.ID == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.ID(childComplexity), true
+	case "NewMessage.isSystem":
+		if e.complexity.NewMessage.IsSystem == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.IsSystem(childComplexity), true
+	case "NewMessage.messageType":
+		if e.complexity.NewMessage.MessageType == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.MessageType(childComplexity), true
+	case "NewMessage.senderId":
+		if e.complexity.NewMessage.SenderID == nil {
+			break
+		}
+
+		return e.complexity.NewMessage.SenderID(childComplexity), true
 
 	case "OnlineStatus.isOnline":
 		if e.complexity.OnlineStatus.IsOnline == nil {
@@ -555,6 +735,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Participant.UserType(childComplexity), true
 
+	case "PresenceUpdate.lastSeen":
+		if e.complexity.PresenceUpdate.LastSeen == nil {
+			break
+		}
+
+		return e.complexity.PresenceUpdate.LastSeen(childComplexity), true
+	case "PresenceUpdate.status":
+		if e.complexity.PresenceUpdate.Status == nil {
+			break
+		}
+
+		return e.complexity.PresenceUpdate.Status(childComplexity), true
+	case "PresenceUpdate.userId":
+		if e.complexity.PresenceUpdate.UserID == nil {
+			break
+		}
+
+		return e.complexity.PresenceUpdate.UserID(childComplexity), true
+
 	case "Query.conversation":
 		if e.complexity.Query.Conversation == nil {
 			break
@@ -624,6 +823,74 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Query.__resolve_entities(childComplexity, args["representations"].([]map[string]any)), true
 
+	case "ReadReceipt.conversationId":
+		if e.complexity.ReadReceipt.ConversationID == nil {
+			break
+		}
+
+		return e.complexity.ReadReceipt.ConversationID(childComplexity), true
+	case "ReadReceipt.messageId":
+		if e.complexity.ReadReceipt.MessageID == nil {
+			break
+		}
+
+		return e.complexity.ReadReceipt.MessageID(childComplexity), true
+	case "ReadReceipt.readAt":
+		if e.complexity.ReadReceipt.ReadAt == nil {
+			break
+		}
+
+		return e.complexity.ReadReceipt.ReadAt(childComplexity), true
+	case "ReadReceipt.readerId":
+		if e.complexity.ReadReceipt.ReaderID == nil {
+			break
+		}
+
+		return e.complexity.ReadReceipt.ReaderID(childComplexity), true
+
+	case "Subscription.conversationEvents":
+		if e.complexity.Subscription.ConversationEvents == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_conversationEvents_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.ConversationEvents(childComplexity, args["conversationId"].(string)), true
+	case "Subscription.userEvents":
+		if e.complexity.Subscription.UserEvents == nil {
+			break
+		}
+
+		return e.complexity.Subscription.UserEvents(childComplexity), true
+
+	case "TypingIndicator.conversationId":
+		if e.complexity.TypingIndicator.ConversationID == nil {
+			break
+		}
+
+		return e.complexity.TypingIndicator.ConversationID(childComplexity), true
+	case "TypingIndicator.isTyping":
+		if e.complexity.TypingIndicator.IsTyping == nil {
+			break
+		}
+
+		return e.complexity.TypingIndicator.IsTyping(childComplexity), true
+	case "TypingIndicator.timestamp":
+		if e.complexity.TypingIndicator.Timestamp == nil {
+			break
+		}
+
+		return e.complexity.TypingIndicator.Timestamp(childComplexity), true
+	case "TypingIndicator.userId":
+		if e.complexity.TypingIndicator.UserID == nil {
+			break
+		}
+
+		return e.complexity.TypingIndicator.UserID(childComplexity), true
+
 	case "User.conversations":
 		if e.complexity.User.Conversations == nil {
 			break
@@ -660,6 +927,10 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCreateConversationInput,
 		ec.unmarshalInputJoinConversationInput,
+		ec.unmarshalInputSendDeliveryReceiptInput,
+		ec.unmarshalInputSendMessageInput,
+		ec.unmarshalInputSendReadReceiptInput,
+		ec.unmarshalInputTypingIndicatorInput,
 	)
 	first := true
 
@@ -703,6 +974,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, opCtx.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next(ctx)
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -756,7 +1044,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "schema/connection.graphql" "schema/conversation.graphql" "schema/message.graphql" "schema/participant.graphql" "schema/root.graphql"
+//go:embed "schema/connection.graphql" "schema/conversation.graphql" "schema/message.graphql" "schema/participant.graphql" "schema/root.graphql" "schema/subscription.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -773,6 +1061,7 @@ var sources = []*ast.Source{
 	{Name: "schema/message.graphql", Input: sourceData("schema/message.graphql"), BuiltIn: false},
 	{Name: "schema/participant.graphql", Input: sourceData("schema/participant.graphql"), BuiltIn: false},
 	{Name: "schema/root.graphql", Input: sourceData("schema/root.graphql"), BuiltIn: false},
+	{Name: "schema/subscription.graphql", Input: sourceData("schema/subscription.graphql"), BuiltIn: false},
 	{Name: "../federation/directives.graphql", Input: `
 	directive @authenticated on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
 	directive @composeDirective(name: String!) repeatable on SCHEMA
@@ -960,6 +1249,61 @@ func (ec *executionContext) field_Mutation_leaveConversation_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_sendDeliveryReceipt_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSendDeliveryReceiptInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendDeliveryReceiptInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendMessage_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSendMessageInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendMessageInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendReadReceipt_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNSendReadReceiptInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendReadReceiptInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_sendTypingIndicator_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNTypingIndicatorInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicatorInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_updatePresence_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "status", ec.unmarshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus)
+	if err != nil {
+		return nil, err
+	}
+	args["status"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1032,6 +1376,17 @@ func (ec *executionContext) field_Query_conversation_args(ctx context.Context, r
 		return nil, err
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_conversationEvents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["conversationId"] = arg0
 	return args, nil
 }
 
@@ -1493,6 +1848,122 @@ func (ec *executionContext) _Conversation_endedAt(ctx context.Context, field gra
 func (ec *executionContext) fieldContext_Conversation_endedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Conversation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeliveryReceipt_messageId(ctx context.Context, field graphql.CollectedField, obj *DeliveryReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DeliveryReceipt_messageId,
+		func(ctx context.Context) (any, error) {
+			return obj.MessageID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DeliveryReceipt_messageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeliveryReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeliveryReceipt_conversationId(ctx context.Context, field graphql.CollectedField, obj *DeliveryReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DeliveryReceipt_conversationId,
+		func(ctx context.Context) (any, error) {
+			return obj.ConversationID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DeliveryReceipt_conversationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeliveryReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeliveryReceipt_recipientId(ctx context.Context, field graphql.CollectedField, obj *DeliveryReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DeliveryReceipt_recipientId,
+		func(ctx context.Context) (any, error) {
+			return obj.RecipientID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DeliveryReceipt_recipientId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeliveryReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeliveryReceipt_deliveredAt(ctx context.Context, field graphql.CollectedField, obj *DeliveryReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DeliveryReceipt_deliveredAt,
+		func(ctx context.Context) (any, error) {
+			return obj.DeliveredAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DeliveryReceipt_deliveredAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeliveryReceipt",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -2345,6 +2816,169 @@ func (ec *executionContext) fieldContext_Mutation_assignConversationToAdmin(ctx 
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_sendMessage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_sendMessage,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SendMessage(ctx, fc.Args["input"].(SendMessageInput))
+		},
+		nil,
+		ec.marshalNMessage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessage,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_sendMessage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Message_id(ctx, field)
+			case "conversationId":
+				return ec.fieldContext_Message_conversationId(ctx, field)
+			case "conversation":
+				return ec.fieldContext_Message_conversation(ctx, field)
+			case "senderId":
+				return ec.fieldContext_Message_senderId(ctx, field)
+			case "sender":
+				return ec.fieldContext_Message_sender(ctx, field)
+			case "content":
+				return ec.fieldContext_Message_content(ctx, field)
+			case "messageType":
+				return ec.fieldContext_Message_messageType(ctx, field)
+			case "isSystem":
+				return ec.fieldContext_Message_isSystem(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Message_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Message", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_sendMessage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_sendDeliveryReceipt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_sendDeliveryReceipt,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SendDeliveryReceipt(ctx, fc.Args["input"].(SendDeliveryReceiptInput))
+		},
+		nil,
+		ec.marshalNDeliveryReceipt2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐDeliveryReceipt,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_sendDeliveryReceipt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "messageId":
+				return ec.fieldContext_DeliveryReceipt_messageId(ctx, field)
+			case "conversationId":
+				return ec.fieldContext_DeliveryReceipt_conversationId(ctx, field)
+			case "recipientId":
+				return ec.fieldContext_DeliveryReceipt_recipientId(ctx, field)
+			case "deliveredAt":
+				return ec.fieldContext_DeliveryReceipt_deliveredAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DeliveryReceipt", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_sendDeliveryReceipt_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_sendReadReceipt(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_sendReadReceipt,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SendReadReceipt(ctx, fc.Args["input"].(SendReadReceiptInput))
+		},
+		nil,
+		ec.marshalNReadReceipt2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐReadReceipt,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_sendReadReceipt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "messageId":
+				return ec.fieldContext_ReadReceipt_messageId(ctx, field)
+			case "conversationId":
+				return ec.fieldContext_ReadReceipt_conversationId(ctx, field)
+			case "readerId":
+				return ec.fieldContext_ReadReceipt_readerId(ctx, field)
+			case "readAt":
+				return ec.fieldContext_ReadReceipt_readAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReadReceipt", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_sendReadReceipt_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_joinConversation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2445,6 +3079,309 @@ func (ec *executionContext) fieldContext_Mutation_leaveConversation(ctx context.
 	if fc.Args, err = ec.field_Mutation_leaveConversation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updatePresence(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_updatePresence,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().UpdatePresence(ctx, fc.Args["status"].(constant.PresenceStatus))
+		},
+		nil,
+		ec.marshalNPresenceUpdate2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updatePresence(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_PresenceUpdate_userId(ctx, field)
+			case "status":
+				return ec.fieldContext_PresenceUpdate_status(ctx, field)
+			case "lastSeen":
+				return ec.fieldContext_PresenceUpdate_lastSeen(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PresenceUpdate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updatePresence_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_sendTypingIndicator(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_sendTypingIndicator,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().SendTypingIndicator(ctx, fc.Args["input"].(TypingIndicatorInput))
+		},
+		nil,
+		ec.marshalNTypingIndicator2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_sendTypingIndicator(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userId":
+				return ec.fieldContext_TypingIndicator_userId(ctx, field)
+			case "conversationId":
+				return ec.fieldContext_TypingIndicator_conversationId(ctx, field)
+			case "isTyping":
+				return ec.fieldContext_TypingIndicator_isTyping(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_TypingIndicator_timestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type TypingIndicator", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_sendTypingIndicator_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_id(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_conversationId(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_conversationId,
+		func(ctx context.Context) (any, error) {
+			return obj.ConversationID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_conversationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_senderId(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_senderId,
+		func(ctx context.Context) (any, error) {
+			return obj.SenderID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_senderId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_content(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_content,
+		func(ctx context.Context) (any, error) {
+			return obj.Content, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_content(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_messageType(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_messageType,
+		func(ctx context.Context) (any, error) {
+			return obj.MessageType, nil
+		},
+		nil,
+		ec.marshalNMessageType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_messageType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type MessageType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_isSystem(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_isSystem,
+		func(ctx context.Context) (any, error) {
+			return obj.IsSystem, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_isSystem(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NewMessage_createdAt(ctx context.Context, field graphql.CollectedField, obj *NewMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NewMessage_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NewMessage_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NewMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -2943,6 +3880,93 @@ func (ec *executionContext) fieldContext_Participant_isActive(_ context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _PresenceUpdate_userId(ctx context.Context, field graphql.CollectedField, obj *PresenceUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PresenceUpdate_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PresenceUpdate_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PresenceUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PresenceUpdate_status(ctx context.Context, field graphql.CollectedField, obj *PresenceUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PresenceUpdate_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PresenceUpdate_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PresenceUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type PresenceStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PresenceUpdate_lastSeen(ctx context.Context, field graphql.CollectedField, obj *PresenceUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PresenceUpdate_lastSeen,
+		func(ctx context.Context) (any, error) {
+			return obj.LastSeen, nil
+		},
+		nil,
+		ec.marshalOTime2ᚖtimeᚐTime,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PresenceUpdate_lastSeen(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PresenceUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_onlineUsers(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3432,6 +4456,308 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadReceipt_messageId(ctx context.Context, field graphql.CollectedField, obj *ReadReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ReadReceipt_messageId,
+		func(ctx context.Context) (any, error) {
+			return obj.MessageID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ReadReceipt_messageId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadReceipt_conversationId(ctx context.Context, field graphql.CollectedField, obj *ReadReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ReadReceipt_conversationId,
+		func(ctx context.Context) (any, error) {
+			return obj.ConversationID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ReadReceipt_conversationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadReceipt_readerId(ctx context.Context, field graphql.CollectedField, obj *ReadReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ReadReceipt_readerId,
+		func(ctx context.Context) (any, error) {
+			return obj.ReaderID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ReadReceipt_readerId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReadReceipt_readAt(ctx context.Context, field graphql.CollectedField, obj *ReadReceipt) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ReadReceipt_readAt,
+		func(ctx context.Context) (any, error) {
+			return obj.ReadAt, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ReadReceipt_readAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReadReceipt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_conversationEvents(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	return graphql.ResolveFieldStream(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Subscription_conversationEvents,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Subscription().ConversationEvents(ctx, fc.Args["conversationId"].(string))
+		},
+		nil,
+		ec.marshalNConversationEvent2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversationEvent,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Subscription_conversationEvents(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ConversationEvent does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Subscription_conversationEvents_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Subscription_userEvents(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	return graphql.ResolveFieldStream(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Subscription_userEvents,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Subscription().UserEvents(ctx)
+		},
+		nil,
+		ec.marshalNUserEvent2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUserEvent,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Subscription_userEvents(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type UserEvent does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TypingIndicator_userId(ctx context.Context, field graphql.CollectedField, obj *TypingIndicator) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TypingIndicator_userId,
+		func(ctx context.Context) (any, error) {
+			return obj.UserID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TypingIndicator_userId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypingIndicator",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TypingIndicator_conversationId(ctx context.Context, field graphql.CollectedField, obj *TypingIndicator) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TypingIndicator_conversationId,
+		func(ctx context.Context) (any, error) {
+			return obj.ConversationID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TypingIndicator_conversationId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypingIndicator",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TypingIndicator_isTyping(ctx context.Context, field graphql.CollectedField, obj *TypingIndicator) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TypingIndicator_isTyping,
+		func(ctx context.Context) (any, error) {
+			return obj.IsTyping, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TypingIndicator_isTyping(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypingIndicator",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _TypingIndicator_timestamp(ctx context.Context, field graphql.CollectedField, obj *TypingIndicator) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_TypingIndicator_timestamp,
+		func(ctx context.Context) (any, error) {
+			return obj.Timestamp, nil
+		},
+		nil,
+		ec.marshalNTime2timeᚐTime,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_TypingIndicator_timestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "TypingIndicator",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5102,9 +6428,216 @@ func (ec *executionContext) unmarshalInputJoinConversationInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSendDeliveryReceiptInput(ctx context.Context, obj any) (SendDeliveryReceiptInput, error) {
+	var it SendDeliveryReceiptInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"messageId", "conversationId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "messageId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageID = data
+		case "conversationId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConversationID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSendMessageInput(ctx context.Context, obj any) (SendMessageInput, error) {
+	var it SendMessageInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	if _, present := asMap["messageType"]; !present {
+		asMap["messageType"] = "TEXT"
+	}
+
+	fieldsInOrder := [...]string{"conversationId", "content", "messageType", "replyToId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "conversationId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConversationID = data
+		case "content":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Content = data
+		case "messageType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageType"))
+			data, err := ec.unmarshalOMessageType2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageType = data
+		case "replyToId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("replyToId"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ReplyToID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputSendReadReceiptInput(ctx context.Context, obj any) (SendReadReceiptInput, error) {
+	var it SendReadReceiptInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"messageId", "conversationId"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "messageId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.MessageID = data
+		case "conversationId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConversationID = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputTypingIndicatorInput(ctx context.Context, obj any) (TypingIndicatorInput, error) {
+	var it TypingIndicatorInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"conversationId", "isTyping"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "conversationId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ConversationID = data
+		case "isTyping":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("isTyping"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IsTyping = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
+
+func (ec *executionContext) _ConversationEvent(ctx context.Context, sel ast.SelectionSet, obj ConversationEvent) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case TypingIndicator:
+		return ec._TypingIndicator(ctx, sel, &obj)
+	case *TypingIndicator:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._TypingIndicator(ctx, sel, obj)
+	case ReadReceipt:
+		return ec._ReadReceipt(ctx, sel, &obj)
+	case *ReadReceipt:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ReadReceipt(ctx, sel, obj)
+	case NewMessage:
+		return ec._NewMessage(ctx, sel, &obj)
+	case *NewMessage:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NewMessage(ctx, sel, obj)
+	case DeliveryReceipt:
+		return ec._DeliveryReceipt(ctx, sel, &obj)
+	case *DeliveryReceipt:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._DeliveryReceipt(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
+func (ec *executionContext) _UserEvent(ctx context.Context, sel ast.SelectionSet, obj UserEvent) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case PresenceUpdate:
+		return ec._PresenceUpdate(ctx, sel, &obj)
+	case *PresenceUpdate:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._PresenceUpdate(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
 
 func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, obj fedruntime.Entity) graphql.Marshaler {
 	switch obj := (obj).(type) {
@@ -5244,6 +6777,60 @@ func (ec *executionContext) _Conversation(ctx context.Context, sel ast.Selection
 			}
 		case "endedAt":
 			out.Values[i] = ec._Conversation_endedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var deliveryReceiptImplementors = []string{"DeliveryReceipt", "ConversationEvent"}
+
+func (ec *executionContext) _DeliveryReceipt(ctx context.Context, sel ast.SelectionSet, obj *DeliveryReceipt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, deliveryReceiptImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("DeliveryReceipt")
+		case "messageId":
+			out.Values[i] = ec._DeliveryReceipt_messageId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "conversationId":
+			out.Values[i] = ec._DeliveryReceipt_conversationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recipientId":
+			out.Values[i] = ec._DeliveryReceipt_recipientId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deliveredAt":
+			out.Values[i] = ec._DeliveryReceipt_deliveredAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5583,6 +7170,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "sendMessage":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_sendMessage(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sendDeliveryReceipt":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_sendDeliveryReceipt(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sendReadReceipt":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_sendReadReceipt(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "joinConversation":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_joinConversation(ctx, field)
@@ -5594,6 +7202,89 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_leaveConversation(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatePresence":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updatePresence(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sendTypingIndicator":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_sendTypingIndicator(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var newMessageImplementors = []string{"NewMessage", "ConversationEvent"}
+
+func (ec *executionContext) _NewMessage(ctx context.Context, sel ast.SelectionSet, obj *NewMessage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, newMessageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NewMessage")
+		case "id":
+			out.Values[i] = ec._NewMessage_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "conversationId":
+			out.Values[i] = ec._NewMessage_conversationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "senderId":
+			out.Values[i] = ec._NewMessage_senderId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "content":
+			out.Values[i] = ec._NewMessage_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "messageType":
+			out.Values[i] = ec._NewMessage_messageType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isSystem":
+			out.Values[i] = ec._NewMessage_isSystem(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._NewMessage_createdAt(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5767,6 +7458,52 @@ func (ec *executionContext) _Participant(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var presenceUpdateImplementors = []string{"PresenceUpdate", "UserEvent"}
+
+func (ec *executionContext) _PresenceUpdate(ctx context.Context, sel ast.SelectionSet, obj *PresenceUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, presenceUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PresenceUpdate")
+		case "userId":
+			out.Values[i] = ec._PresenceUpdate_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._PresenceUpdate_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "lastSeen":
+			out.Values[i] = ec._PresenceUpdate_lastSeen(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5990,6 +7727,136 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var readReceiptImplementors = []string{"ReadReceipt", "ConversationEvent"}
+
+func (ec *executionContext) _ReadReceipt(ctx context.Context, sel ast.SelectionSet, obj *ReadReceipt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, readReceiptImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReadReceipt")
+		case "messageId":
+			out.Values[i] = ec._ReadReceipt_messageId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "conversationId":
+			out.Values[i] = ec._ReadReceipt_conversationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "readerId":
+			out.Values[i] = ec._ReadReceipt_readerId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "readAt":
+			out.Values[i] = ec._ReadReceipt_readAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func(ctx context.Context) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "conversationEvents":
+		return ec._Subscription_conversationEvents(ctx, fields[0])
+	case "userEvents":
+		return ec._Subscription_userEvents(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
+var typingIndicatorImplementors = []string{"TypingIndicator", "ConversationEvent"}
+
+func (ec *executionContext) _TypingIndicator(ctx context.Context, sel ast.SelectionSet, obj *TypingIndicator) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, typingIndicatorImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("TypingIndicator")
+		case "userId":
+			out.Values[i] = ec._TypingIndicator_userId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "conversationId":
+			out.Values[i] = ec._TypingIndicator_conversationId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "isTyping":
+			out.Values[i] = ec._TypingIndicator_isTyping(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timestamp":
+			out.Values[i] = ec._TypingIndicator_timestamp(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6518,6 +8385,16 @@ func (ec *executionContext) marshalNConversation2ᚖgithubᚗcomᚋraphaeldiscky
 	return ec._Conversation(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNConversationEvent2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversationEvent(ctx context.Context, sel ast.SelectionSet, v ConversationEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ConversationEvent(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNConversationStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐConversationStatus(ctx context.Context, v any) (constant.ConversationStatus, error) {
 	tmp, err := graphql.UnmarshalString(v)
 	res := constant.ConversationStatus(tmp)
@@ -6538,6 +8415,20 @@ func (ec *executionContext) marshalNConversationStatus2githubᚗcomᚋraphaeldis
 func (ec *executionContext) unmarshalNCreateConversationInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐCreateConversationInput(ctx context.Context, v any) (CreateConversationInput, error) {
 	res, err := ec.unmarshalInputCreateConversationInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDeliveryReceipt2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐDeliveryReceipt(ctx context.Context, sel ast.SelectionSet, v DeliveryReceipt) graphql.Marshaler {
+	return ec._DeliveryReceipt(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNDeliveryReceipt2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐDeliveryReceipt(ctx context.Context, sel ast.SelectionSet, v *DeliveryReceipt) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._DeliveryReceipt(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v any) (string, error) {
@@ -6777,6 +8668,66 @@ func (ec *executionContext) marshalNParticipantRole2githubᚗcomᚋraphaeldiscky
 	return res
 }
 
+func (ec *executionContext) unmarshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus(ctx context.Context, v any) (constant.PresenceStatus, error) {
+	tmp, err := graphql.UnmarshalString(v)
+	res := constant.PresenceStatus(tmp)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus(ctx context.Context, sel ast.SelectionSet, v constant.PresenceStatus) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalString(string(v))
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNPresenceUpdate2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate(ctx context.Context, sel ast.SelectionSet, v PresenceUpdate) graphql.Marshaler {
+	return ec._PresenceUpdate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPresenceUpdate2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate(ctx context.Context, sel ast.SelectionSet, v *PresenceUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PresenceUpdate(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNReadReceipt2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐReadReceipt(ctx context.Context, sel ast.SelectionSet, v ReadReceipt) graphql.Marshaler {
+	return ec._ReadReceipt(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNReadReceipt2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐReadReceipt(ctx context.Context, sel ast.SelectionSet, v *ReadReceipt) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReadReceipt(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNSendDeliveryReceiptInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendDeliveryReceiptInput(ctx context.Context, v any) (SendDeliveryReceiptInput, error) {
+	res, err := ec.unmarshalInputSendDeliveryReceiptInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSendMessageInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendMessageInput(ctx context.Context, v any) (SendMessageInput, error) {
+	res, err := ec.unmarshalInputSendMessageInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNSendReadReceiptInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐSendReadReceiptInput(ctx context.Context, v any) (SendReadReceiptInput, error) {
+	res, err := ec.unmarshalInputSendReadReceiptInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6807,6 +8758,25 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNTypingIndicator2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator(ctx context.Context, sel ast.SelectionSet, v TypingIndicator) graphql.Marshaler {
+	return ec._TypingIndicator(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNTypingIndicator2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicator(ctx context.Context, sel ast.SelectionSet, v *TypingIndicator) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._TypingIndicator(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNTypingIndicatorInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicatorInput(ctx context.Context, v any) (TypingIndicatorInput, error) {
+	res, err := ec.unmarshalInputTypingIndicatorInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {
@@ -6865,6 +8835,16 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑ
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNUserEvent2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUserEvent(ctx context.Context, sel ast.SelectionSet, v UserEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserEvent(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNUserType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐUserType(ctx context.Context, v any) (constant.UserType, error) {
@@ -7453,6 +9433,25 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	_ = sel
 	_ = ctx
 	res := graphql.MarshalInt(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOMessageType2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx context.Context, v any) (*constant.MessageType, error) {
+	if v == nil {
+		return nil, nil
+	}
+	tmp, err := graphql.UnmarshalString(v)
+	res := constant.MessageType(tmp)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOMessageType2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx context.Context, sel ast.SelectionSet, v *constant.MessageType) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalString(string(*v))
 	return res
 }
 

@@ -8,8 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -22,9 +21,10 @@ func (r *mutationResolver) JoinConversation(
 	ctx context.Context,
 	input graph.JoinConversationInput,
 ) (*graph.Participant, error) {
-	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
-	if !ok {
-		return nil, httperror.NewUnauthorizedError("user not authenticated")
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return nil, err
 	}
 
 	conversationID, err := uuid.Parse(input.ConversationID)
@@ -35,7 +35,7 @@ func (r *mutationResolver) JoinConversation(
 	participant, err := r.chatService.JoinConversation(
 		ctx,
 		conversationID,
-		userID,
+		user.UserID,
 		constant.UserTypeUser,
 		input.Role,
 	)
@@ -52,9 +52,10 @@ func (r *mutationResolver) LeaveConversation(
 	ctx context.Context,
 	conversationID string,
 ) (bool, error) {
-	userID, ok := ctx.Value(pkgconstant.CtxKeyUserID).(uuid.UUID)
-	if !ok {
-		return false, httperror.NewUnauthorizedError("user not authenticated")
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		r.logger.Error("Failed to get user from context", "error", err)
+		return false, err
 	}
 
 	convID, err := uuid.Parse(conversationID)
@@ -62,7 +63,7 @@ func (r *mutationResolver) LeaveConversation(
 		return false, httperror.NewBadRequestError("invalid conversation ID")
 	}
 
-	err = r.chatService.LeaveConversation(ctx, convID, userID)
+	err = r.chatService.LeaveConversation(ctx, convID, user.UserID)
 	if err != nil {
 		r.logger.Error("Failed to leave conversation", "error", err)
 		return false, err

@@ -22,6 +22,7 @@ type Providers struct {
 	ChatService          service.ChatService
 	ConnectionService    service.ConnectionService
 	WebSocketHub         *websocket.ChatHub
+	ChatPubSub           *pubsub.ChatPubSub
 	RedisPublisher       redis.Publisher
 	RedisSubscriber      redis.Subscriber
 }
@@ -85,6 +86,7 @@ func SetupGlobal(
 		ChatService:          nil, // Will be set in SetupChat
 		ConnectionService:    nil, // Will be set in SetupChat
 		WebSocketHub:         webSocketHub,
+		ChatPubSub:           chatPubSub,
 		RedisPublisher:       redisPublisher,
 		RedisSubscriber:      redisSubscriber,
 	}, nil

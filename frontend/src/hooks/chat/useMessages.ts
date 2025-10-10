@@ -1,9 +1,15 @@
-import { queryKeys } from '@/constants/query-key'
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
-import type { SendMessageRequest } from '@/lib/api'
-import { CONVERSATION_MESSAGES_QUERY, graphqlClient } from '@/lib/graphql'
+import { QUERY_KEY } from '@/constants/query-key'
+import {
+  CONVERSATION_MESSAGES_QUERY,
+  SEND_MESSAGE_MUTATION,
+  graphqlClient,
+} from '@/lib/graphql'
 import { generateTimestamp, generateUniqueId } from '@/lib/utils/date'
-import type { Message, MessageConnection } from '@/types/__generated__/graphql'
+import type {
+  Message,
+  MessageConnection,
+  SendMessageInput,
+} from '@/types/__generated__/graphql'
 import { ConversationStatus, MessageType } from '@/types/__generated__/graphql'
 import {
   useInfiniteQuery,
@@ -16,38 +22,64 @@ interface ConversationMessagesQueryResponse {
 }
 
 interface InfiniteQueryData {
-  pages: Array<Array<Message>>
+  pages: Array<ConversationMessagesQueryResponse>
   pageParams: Array<string | undefined>
 }
 
-/**
- * Helper hook to add real-time message to cache
- */
 export function useAddMessage(conversationId: string) {
   const queryClient = useQueryClient()
 
   return (message: Message) => {
     queryClient.setQueryData<InfiniteQueryData>(
-      queryKeys.chat.messages(conversationId),
+      QUERY_KEY.chat.messages(conversationId),
       (old) => {
         if (!old) return old
 
-        // Check if message already exists (prevent duplicates)
         const messageExists = old.pages.some((page) =>
-          page.some((msg) => msg.id === message.id),
+          page.conversationMessages.edges.some(
+            (edge) => edge.node.id === message.id,
+          ),
         )
 
         if (messageExists) return old
 
-        // Add message to the last page
         const updatedPages = [...old.pages]
         if (updatedPages.length > 0) {
-          updatedPages[updatedPages.length - 1] = [
-            ...updatedPages[updatedPages.length - 1],
-            message,
-          ]
+          const lastPage = updatedPages[updatedPages.length - 1]
+          updatedPages[updatedPages.length - 1] = {
+            ...lastPage,
+            conversationMessages: {
+              ...lastPage.conversationMessages,
+              edges: [
+                ...lastPage.conversationMessages.edges,
+                {
+                  __typename: 'MessageEdge',
+                  node: message,
+                  cursor: message.id,
+                },
+              ],
+            },
+          }
         } else {
-          updatedPages.push([message])
+          updatedPages.push({
+            conversationMessages: {
+              __typename: 'MessageConnection',
+              edges: [
+                {
+                  __typename: 'MessageEdge',
+                  node: message,
+                  cursor: message.id,
+                },
+              ],
+              pageInfo: {
+                __typename: 'PageInfo',
+                hasNextPage: false,
+                hasPreviousPage: false,
+                startCursor: message.id,
+                endCursor: message.id,
+              },
+            },
+          })
         }
 
         return {
@@ -57,18 +89,14 @@ export function useAddMessage(conversationId: string) {
       },
     )
 
-    // Update conversation list
-    queryClient.invalidateQueries({ queryKey: queryKeys.chat.conversations() })
+    queryClient.invalidateQueries({ queryKey: QUERY_KEY.chat.conversations() })
   }
 }
 
-/**
- * Hook for fetching messages with cursor-based infinite scroll pagination
- */
 export function useMessages(conversationId: string) {
   return useInfiniteQuery({
     enabled: !!conversationId,
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 5 * 60 * 1000,
     getNextPageParam: (lastPage: ConversationMessagesQueryResponse) => {
       const { pageInfo } = lastPage.conversationMessages
       return pageInfo.hasNextPage ? pageInfo.endCursor : undefined
@@ -86,58 +114,36 @@ export function useMessages(conversationId: string) {
         )
       return data
     },
-    queryKey: queryKeys.chat.messages(conversationId),
-    refetchOnWindowFocus: false, // Real-time updates handle this
-    staleTime: 30 * 1000, // 30 seconds - messages are real-time
-    select: (data) => ({
-      ...data,
-      pages: data.pages.map((page) =>
-        page.conversationMessages.edges.map((edge) => edge.node),
-      ),
-    }),
+    queryKey: QUERY_KEY.chat.messages(conversationId),
+    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000,
   })
 }
 
-/**
- * Hook for sending messages via WebSocket
- * Messages are sent through WebSocket connection for real-time delivery
- */
-export function useSendMessage(conversationId: string) {
+export function useSendMessage(conversationId: string, currentUserId: string) {
   const queryClient = useQueryClient()
-  const { sendMessage } = useChatWebSocket()
 
   return useMutation({
-    mutationFn: async (message: SendMessageRequest) => {
-      // Send message via WebSocket
-      sendMessage({
-        type: 'chat',
-        content: {
-          conversation_id: conversationId,
-          content: message.content,
-          message_type: message.message_type || 'text',
-          reply_to_id: message.reply_to_id,
+    mutationFn: async (input: SendMessageInput) => {
+      await graphqlClient.request(SEND_MESSAGE_MUTATION, {
+        input: {
+          ...input,
+          conversationId,
         },
       })
-
-      // Return a promise that resolves immediately
-      // The actual message will be received via WebSocket broadcast
-      return Promise.resolve()
     },
     onMutate: async (newMessage) => {
-      // Cancel outgoing refetches
       await queryClient.cancelQueries({
-        queryKey: queryKeys.chat.messages(conversationId),
+        queryKey: QUERY_KEY.chat.messages(conversationId),
       })
 
-      // Snapshot the previous value
       const previousMessages = queryClient.getQueryData<InfiniteQueryData>([
         'messages',
         conversationId,
       ])
 
-      // Optimistically update the cache
       queryClient.setQueryData<InfiniteQueryData>(
-        queryKeys.chat.messages(conversationId),
+        QUERY_KEY.chat.messages(conversationId),
         (old) => {
           if (!old) return old
 
@@ -171,25 +177,48 @@ export function useSendMessage(conversationId: string) {
             createdAt: generateTimestamp(),
             id: generateUniqueId('temp'),
             isSystem: false,
-            messageType:
-              newMessage.message_type === 'image'
-                ? MessageType.Image
-                : newMessage.message_type === 'file'
-                  ? MessageType.File
-                  : MessageType.Text,
+            messageType: newMessage.messageType || MessageType.Text,
             sender: null,
-            senderId: 'current-user', // Will be replaced by real user ID
+            senderId: currentUserId,
           }
 
-          // Add message to the last page
           const updatedPages = [...old.pages]
           if (updatedPages.length > 0) {
-            updatedPages[updatedPages.length - 1] = [
-              ...updatedPages[updatedPages.length - 1],
-              optimisticMessage,
-            ]
+            const lastPage = updatedPages[updatedPages.length - 1]
+            updatedPages[updatedPages.length - 1] = {
+              ...lastPage,
+              conversationMessages: {
+                ...lastPage.conversationMessages,
+                edges: [
+                  ...lastPage.conversationMessages.edges,
+                  {
+                    __typename: 'MessageEdge',
+                    node: optimisticMessage,
+                    cursor: optimisticMessage.id,
+                  },
+                ],
+              },
+            }
           } else {
-            updatedPages.push([optimisticMessage])
+            updatedPages.push({
+              conversationMessages: {
+                __typename: 'MessageConnection',
+                edges: [
+                  {
+                    __typename: 'MessageEdge',
+                    node: optimisticMessage,
+                    cursor: optimisticMessage.id,
+                  },
+                ],
+                pageInfo: {
+                  __typename: 'PageInfo',
+                  hasNextPage: false,
+                  hasPreviousPage: false,
+                  startCursor: optimisticMessage.id,
+                  endCursor: optimisticMessage.id,
+                },
+              },
+            })
           }
 
           return {
@@ -202,24 +231,16 @@ export function useSendMessage(conversationId: string) {
       return { previousMessages }
     },
     onError: (_err, _newMessage, context) => {
-      // Revert optimistic update on error
       if (context?.previousMessages) {
         queryClient.setQueryData<InfiniteQueryData>(
-          queryKeys.chat.messages(conversationId),
+          QUERY_KEY.chat.messages(conversationId),
           context.previousMessages,
         )
       }
     },
     onSuccess: () => {
-      // Refetch messages to get the real message from server
-      // WebSocket will have already added it to the backend
       queryClient.invalidateQueries({
-        queryKey: queryKeys.chat.messages(conversationId),
-      })
-
-      // Update conversation list to reflect new message
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.chat.conversations(),
+        queryKey: QUERY_KEY.chat.conversations(),
       })
     },
   })

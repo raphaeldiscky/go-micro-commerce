@@ -64,6 +64,12 @@ export type ConversationMessagesArgs = {
   offset?: InputMaybe<Scalars['Int']['input']>
 }
 
+export type ConversationEvent =
+  | DeliveryReceipt
+  | NewMessage
+  | ReadReceipt
+  | TypingIndicator
+
 export enum ConversationStatus {
   Active = 'ACTIVE',
   Ended = 'ENDED',
@@ -74,6 +80,14 @@ export type CreateConversationInput = {
   initialMessage?: InputMaybe<Scalars['String']['input']>
   priority: Scalars['Int']['input']
   subject?: InputMaybe<Scalars['String']['input']>
+}
+
+export type DeliveryReceipt = {
+  __typename?: 'DeliveryReceipt'
+  conversationId: Scalars['ID']['output']
+  deliveredAt: Scalars['Time']['output']
+  messageId: Scalars['ID']['output']
+  recipientId: Scalars['ID']['output']
 }
 
 export type JoinConversationInput = {
@@ -130,6 +144,11 @@ export type Mutation = {
   refreshToken: AuthPayload
   register: AuthPayload
   requestChatConnection: ChatConnection
+  sendDeliveryReceipt: DeliveryReceipt
+  sendMessage: Message
+  sendReadReceipt: ReadReceipt
+  sendTypingIndicator: TypingIndicator
+  updatePresence: PresenceUpdate
 }
 
 export type MutationAssignConversationToAdminArgs = {
@@ -159,6 +178,37 @@ export type MutationLoginArgs = {
 
 export type MutationRegisterArgs = {
   input: RegisterUserInput
+}
+
+export type MutationSendDeliveryReceiptArgs = {
+  input: SendDeliveryReceiptInput
+}
+
+export type MutationSendMessageArgs = {
+  input: SendMessageInput
+}
+
+export type MutationSendReadReceiptArgs = {
+  input: SendReadReceiptInput
+}
+
+export type MutationSendTypingIndicatorArgs = {
+  input: TypingIndicatorInput
+}
+
+export type MutationUpdatePresenceArgs = {
+  status: PresenceStatus
+}
+
+export type NewMessage = {
+  __typename?: 'NewMessage'
+  content: Scalars['String']['output']
+  conversationId: Scalars['ID']['output']
+  createdAt: Scalars['Time']['output']
+  id: Scalars['ID']['output']
+  isSystem: Scalars['Boolean']['output']
+  messageType: MessageType
+  senderId: Scalars['ID']['output']
 }
 
 export type OnlineStatus = {
@@ -195,6 +245,20 @@ export enum ParticipantRole {
   Owner = 'OWNER',
 }
 
+export enum PresenceStatus {
+  Away = 'AWAY',
+  Busy = 'BUSY',
+  Offline = 'OFFLINE',
+  Online = 'ONLINE',
+}
+
+export type PresenceUpdate = {
+  __typename?: 'PresenceUpdate'
+  lastSeen?: Maybe<Scalars['Time']['output']>
+  status: PresenceStatus
+  userId: Scalars['ID']['output']
+}
+
 export type Query = {
   __typename?: 'Query'
   conversation?: Maybe<Conversation>
@@ -227,12 +291,60 @@ export type QueryUserArgs = {
   id: Scalars['ID']['input']
 }
 
+export type ReadReceipt = {
+  __typename?: 'ReadReceipt'
+  conversationId: Scalars['ID']['output']
+  messageId: Scalars['ID']['output']
+  readAt: Scalars['Time']['output']
+  readerId: Scalars['ID']['output']
+}
+
 export type RegisterUserInput = {
   email: Scalars['String']['input']
   firstName: Scalars['String']['input']
   lastName: Scalars['String']['input']
   password: Scalars['String']['input']
   username: Scalars['String']['input']
+}
+
+export type SendDeliveryReceiptInput = {
+  conversationId: Scalars['ID']['input']
+  messageId: Scalars['ID']['input']
+}
+
+export type SendMessageInput = {
+  content: Scalars['String']['input']
+  conversationId: Scalars['ID']['input']
+  messageType?: InputMaybe<MessageType>
+  replyToId?: InputMaybe<Scalars['ID']['input']>
+}
+
+export type SendReadReceiptInput = {
+  conversationId: Scalars['ID']['input']
+  messageId: Scalars['ID']['input']
+}
+
+export type Subscription = {
+  __typename?: 'Subscription'
+  conversationEvents: ConversationEvent
+  userEvents: UserEvent
+}
+
+export type SubscriptionConversationEventsArgs = {
+  conversationId: Scalars['ID']['input']
+}
+
+export type TypingIndicator = {
+  __typename?: 'TypingIndicator'
+  conversationId: Scalars['ID']['output']
+  isTyping: Scalars['Boolean']['output']
+  timestamp: Scalars['Time']['output']
+  userId: Scalars['ID']['output']
+}
+
+export type TypingIndicatorInput = {
+  conversationId: Scalars['ID']['input']
+  isTyping: Scalars['Boolean']['input']
 }
 
 export type User = {
@@ -248,6 +360,8 @@ export type User = {
   onlineStatus?: Maybe<OnlineStatus>
   updatedAt: Scalars['Time']['output']
 }
+
+export type UserEvent = PresenceUpdate
 
 export enum UserType {
   Admin = 'ADMIN',

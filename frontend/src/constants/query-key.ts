@@ -10,22 +10,22 @@
  * Usage:
  * @example
  * // In hooks
- * queryKey: queryKeys.chat.messages(conversationId)
+ * queryKey: QUERY_KEY.chat.messages(conversationId)
  *
  * // Invalidate all chat queries
- * queryClient.invalidateQueries({ queryKey: queryKeys.chat.all })
+ * queryClient.invalidateQueries({ queryKey: QUERY_KEY.chat.all })
  *
  * // Invalidate specific messages
- * queryClient.invalidateQueries({ queryKey: queryKeys.chat.messages(conversationId) })
+ * queryClient.invalidateQueries({ queryKey: QUERY_KEY.chat.messages(conversationId) })
  */
 
-export const queryKeys = {
+export const QUERY_KEY = {
   /**
    * Authentication query keys
    */
   auth: {
     all: ['auth'] as const,
-    currentUser: () => [...queryKeys.auth.all, 'currentUser'] as const,
+    currentUser: () => [...QUERY_KEY.auth.all, 'currentUser'] as const,
   },
 
   /**
@@ -33,12 +33,12 @@ export const queryKeys = {
    */
   products: {
     all: ['products'] as const,
-    lists: () => [...queryKeys.products.all, 'list'] as const,
+    lists: () => [...QUERY_KEY.products.all, 'list'] as const,
     list: (limit?: string, cursor?: string) =>
-      [...queryKeys.products.lists(), { limit, cursor }] as const,
-    details: () => [...queryKeys.products.all, 'detail'] as const,
-    detail: (id: string) => [...queryKeys.products.details(), id] as const,
-    health: () => [...queryKeys.products.all, 'health'] as const,
+      [...QUERY_KEY.products.lists(), { limit, cursor }] as const,
+    details: () => [...QUERY_KEY.products.all, 'detail'] as const,
+    detail: (id: string) => [...QUERY_KEY.products.details(), id] as const,
+    health: () => [...QUERY_KEY.products.all, 'health'] as const,
   },
 
   /**
@@ -46,19 +46,26 @@ export const queryKeys = {
    */
   chat: {
     all: ['chat'] as const,
-    conversations: () => [...queryKeys.chat.all, 'conversations'] as const,
+    conversations: () => [...QUERY_KEY.chat.all, 'conversations'] as const,
     messages: (conversationId: string) =>
-      [...queryKeys.chat.all, 'messages', conversationId] as const,
+      [...QUERY_KEY.chat.all, 'messages', conversationId] as const,
     conversationDetails: (conversationId: string) =>
-      [...queryKeys.chat.all, 'conversation-details', conversationId] as const,
+      [...QUERY_KEY.chat.all, 'conversation-details', conversationId] as const,
     conversationParticipants: (conversationId: string) =>
       [
-        ...queryKeys.chat.all,
+        ...QUERY_KEY.chat.all,
         'conversation-participants',
         conversationId,
       ] as const,
-    onlineUsers: () => [...queryKeys.chat.all, 'online-users'] as const,
+    onlineUsers: () => [...QUERY_KEY.chat.all, 'online-users'] as const,
     ticket: (userId: string) =>
-      [...queryKeys.chat.all, 'ticket', userId] as const,
+      [...QUERY_KEY.chat.all, 'ticket', userId] as const,
+    typingIndicator: (conversationId: string, userId: string) =>
+      [
+        ...QUERY_KEY.chat.all,
+        'typing-indicator',
+        conversationId,
+        userId,
+      ] as const,
   },
 } as const

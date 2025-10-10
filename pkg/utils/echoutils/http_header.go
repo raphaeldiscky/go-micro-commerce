@@ -1,7 +1,6 @@
 package echoutils
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -50,21 +49,6 @@ func GetXRoles(ctx echo.Context) ([]string, bool) {
 	}
 
 	return roles, true
-}
-
-// GetXIsActive retrieves the X-Is-Active header from the context.
-func GetXIsActive(ctx echo.Context) (bool, bool) {
-	xIsActive := ctx.Request().Header.Get(constant.XIsActive)
-	if xIsActive == "" {
-		return false, false
-	}
-
-	isActive, err := strconv.ParseBool(xIsActive)
-	if err != nil {
-		return false, false
-	}
-
-	return isActive, true
 }
 
 // GetXRequestID retrieves the X-RequestID header from the context.

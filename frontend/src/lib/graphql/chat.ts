@@ -159,3 +159,107 @@ export const REQUEST_CHAT_CONNECTION_MUTATION = gql`
     }
   }
 `
+
+/**
+ * Subscribe to conversation events (messages, typing, receipts)
+ */
+export const CONVERSATION_EVENTS_SUBSCRIPTION = gql`
+  subscription ConversationEvents($conversationId: ID!) {
+    conversationEvents(conversationId: $conversationId) {
+      __typename
+      ... on NewMessage {
+        __typename
+        id
+        conversationId
+        senderId
+        content
+        messageType
+        isSystem
+        createdAt
+      }
+      ... on TypingIndicator {
+        __typename
+        userId
+        conversationId
+        isTyping
+        timestamp
+      }
+      ... on DeliveryReceipt {
+        __typename
+        messageId
+        conversationId
+        recipientId
+        deliveredAt
+      }
+      ... on ReadReceipt {
+        __typename
+        messageId
+        conversationId
+        readerId
+        readAt
+      }
+    }
+  }
+`
+
+/**
+ * Subscribe to user events (presence updates)
+ */
+export const USER_EVENTS_SUBSCRIPTION = gql`
+  subscription UserEvents {
+    userEvents {
+      __typename
+      ... on PresenceUpdate {
+        __typename
+        userId
+        status
+        lastSeen
+      }
+    }
+  }
+`
+
+/**
+ * Send a message to a conversation
+ */
+export const SEND_MESSAGE_MUTATION = gql`
+  mutation SendMessage($input: SendMessageInput!) {
+    sendMessage(input: $input) {
+      id
+      conversationId
+      senderId
+      content
+      messageType
+      isSystem
+      createdAt
+    }
+  }
+`
+
+/**
+ * Send delivery receipt for a message
+ */
+export const SEND_DELIVERY_RECEIPT_MUTATION = gql`
+  mutation SendDeliveryReceipt($input: SendDeliveryReceiptInput!) {
+    sendDeliveryReceipt(input: $input) {
+      messageId
+      conversationId
+      recipientId
+      deliveredAt
+    }
+  }
+`
+
+/**
+ * Send read receipt for a message
+ */
+export const SEND_READ_RECEIPT_MUTATION = gql`
+  mutation SendReadReceipt($input: SendReadReceiptInput!) {
+    sendReadReceipt(input: $input) {
+      messageId
+      conversationId
+      readerId
+      readAt
+    }
+  }
+`

@@ -8,6 +8,14 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
+type ConversationEvent interface {
+	IsConversationEvent()
+}
+
+type UserEvent interface {
+	IsUserEvent()
+}
+
 type ChatConnection struct {
 	NodeAddress string `json:"nodeAddress"`
 	UserID      string `json:"userId"`
@@ -34,6 +42,15 @@ type CreateConversationInput struct {
 	Priority       int     `json:"priority"`
 	InitialMessage *string `json:"initialMessage,omitempty"`
 }
+
+type DeliveryReceipt struct {
+	MessageID      string    `json:"messageId"`
+	ConversationID string    `json:"conversationId"`
+	RecipientID    string    `json:"recipientId"`
+	DeliveredAt    time.Time `json:"deliveredAt"`
+}
+
+func (DeliveryReceipt) IsConversationEvent() {}
 
 type JoinConversationInput struct {
 	ConversationID string                   `json:"conversationId"`
@@ -67,6 +84,18 @@ type MessageEdge struct {
 type Mutation struct {
 }
 
+type NewMessage struct {
+	ID             string               `json:"id"`
+	ConversationID string               `json:"conversationId"`
+	SenderID       string               `json:"senderId"`
+	Content        string               `json:"content"`
+	MessageType    constant.MessageType `json:"messageType"`
+	IsSystem       bool                 `json:"isSystem"`
+	CreatedAt      time.Time            `json:"createdAt"`
+}
+
+func (NewMessage) IsConversationEvent() {}
+
 type OnlineStatus struct {
 	IsOnline bool       `json:"isOnline"`
 	LastSeen *time.Time `json:"lastSeen,omitempty"`
@@ -92,7 +121,58 @@ type Participant struct {
 	IsActive       bool                     `json:"isActive"`
 }
 
+type PresenceUpdate struct {
+	UserID   string                  `json:"userId"`
+	Status   constant.PresenceStatus `json:"status"`
+	LastSeen *time.Time              `json:"lastSeen,omitempty"`
+}
+
+func (PresenceUpdate) IsUserEvent() {}
+
 type Query struct {
+}
+
+type ReadReceipt struct {
+	MessageID      string    `json:"messageId"`
+	ConversationID string    `json:"conversationId"`
+	ReaderID       string    `json:"readerId"`
+	ReadAt         time.Time `json:"readAt"`
+}
+
+func (ReadReceipt) IsConversationEvent() {}
+
+type SendDeliveryReceiptInput struct {
+	MessageID      string `json:"messageId"`
+	ConversationID string `json:"conversationId"`
+}
+
+type SendMessageInput struct {
+	ConversationID string                `json:"conversationId"`
+	Content        string                `json:"content"`
+	MessageType    *constant.MessageType `json:"messageType,omitempty"`
+	ReplyToID      *string               `json:"replyToId,omitempty"`
+}
+
+type SendReadReceiptInput struct {
+	MessageID      string `json:"messageId"`
+	ConversationID string `json:"conversationId"`
+}
+
+type Subscription struct {
+}
+
+type TypingIndicator struct {
+	UserID         string    `json:"userId"`
+	ConversationID string    `json:"conversationId"`
+	IsTyping       bool      `json:"isTyping"`
+	Timestamp      time.Time `json:"timestamp"`
+}
+
+func (TypingIndicator) IsConversationEvent() {}
+
+type TypingIndicatorInput struct {
+	ConversationID string `json:"conversationId"`
+	IsTyping       bool   `json:"isTyping"`
 }
 
 type User struct {

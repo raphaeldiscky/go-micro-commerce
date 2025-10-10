@@ -1,4 +1,4 @@
-import { queryKeys } from '@/constants/query-key'
+import { QUERY_KEY } from '@/constants/query-key'
 import {
   CONVERSATION_PARTICIPANTS_QUERY,
   CONVERSATION_QUERY,
@@ -29,7 +29,7 @@ export function useConversationDetails(conversationId: string) {
       )
       return data.conversation
     },
-    queryKey: queryKeys.chat.conversationDetails(conversationId),
+    queryKey: QUERY_KEY.chat.conversationDetails(conversationId),
     retry: 3,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
@@ -50,7 +50,7 @@ export function useConversationParticipants(conversationId: string) {
         )
       return data.conversationParticipants
     },
-    queryKey: queryKeys.chat.conversationParticipants(conversationId),
+    queryKey: QUERY_KEY.chat.conversationParticipants(conversationId),
     refetchOnWindowFocus: true, // Refetch to get latest online status
     retry: 3,
     staleTime: 2 * 60 * 1000, // 2 minutes - participants change more frequently

@@ -1,4 +1,4 @@
-import { queryKeys } from '@/constants/query-key'
+import { QUERY_KEY } from '@/constants/query-key'
 import { productApi } from '@/lib/api/product'
 import type { Product } from '@/proto/product/v1/product_pb'
 import {
@@ -19,7 +19,7 @@ import {
 // List products with cursor pagination using infinite query
 export function useProducts(limit: string = '10') {
   return useInfiniteQuery({
-    queryKey: queryKeys.products.list(limit, undefined),
+    queryKey: QUERY_KEY.products.list(limit, undefined),
     queryFn: async ({ pageParam }) => {
       const response = await productApi.listProducts(limit, pageParam)
       return {
@@ -59,11 +59,11 @@ export function useReserveProducts() {
     },
     onSuccess: (data) => {
       // Invalidate and refetch products
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY.products.all })
 
       // Update individual product cache if we have the data
       data.reservedProducts.forEach((product) => {
-        queryClient.setQueryData(queryKeys.products.detail(product.id), product)
+        queryClient.setQueryData(QUERY_KEY.products.detail(product.id), product)
       })
     },
   })
@@ -87,7 +87,7 @@ export function useReleaseProducts() {
     },
     onSuccess: () => {
       // Invalidate products cache
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY.products.all })
     },
   })
 }
@@ -110,11 +110,11 @@ export function useConfirmProductsDeduction() {
     },
     onSuccess: (data) => {
       // Invalidate and refetch products
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY.products.all })
 
       // Update individual product cache if we have the data
       data.updatedProducts.forEach((product) => {
-        queryClient.setQueryData(queryKeys.products.detail(product.id), product)
+        queryClient.setQueryData(QUERY_KEY.products.detail(product.id), product)
       })
     },
   })
@@ -140,11 +140,11 @@ export function useRestoreProducts() {
     },
     onSuccess: (data) => {
       // Invalidate and refetch products
-      queryClient.invalidateQueries({ queryKey: queryKeys.products.all })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY.products.all })
 
       // Update individual product cache if we have the data
       data.restoredProducts.forEach((product) => {
-        queryClient.setQueryData(queryKeys.products.detail(product.id), product)
+        queryClient.setQueryData(QUERY_KEY.products.detail(product.id), product)
       })
     },
   })
@@ -153,7 +153,7 @@ export function useRestoreProducts() {
 // Product service health check
 export function useProductHealth() {
   return useQuery({
-    queryKey: queryKeys.products.health(),
+    queryKey: QUERY_KEY.products.health(),
     queryFn: async () => {
       const request = create(HealthRequestSchema, {})
       return await productApi.health(request)

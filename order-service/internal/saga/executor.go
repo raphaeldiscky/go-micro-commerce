@@ -353,11 +353,6 @@ func (e *Executor) executeStepWithRetry(
 					pkgconstant.CtxKeyRoles,
 					metadata.UserAuth.Roles,
 				)
-				stepCtx = context.WithValue(
-					stepCtx,
-					pkgconstant.CtxKeyIsActive,
-					metadata.UserAuth.IsActive,
-				)
 			}
 
 			workflowCtx := NewWorkflowContext(
@@ -515,11 +510,6 @@ func (e *Executor) compensateStepWithRetry(
 			compensationCtx,
 			pkgconstant.CtxKeyRoles,
 			metadata.UserAuth.Roles,
-		)
-		compensationCtx = context.WithValue(
-			compensationCtx,
-			pkgconstant.CtxKeyIsActive,
-			metadata.UserAuth.IsActive,
 		)
 	}
 

@@ -1,25 +1,44 @@
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
-import type { TypingIndicator } from '@/lib/api'
+import { graphqlClient } from '@/lib/graphql'
+import type { TypingIndicator } from '@/types/__generated__/graphql'
+import { useMutation } from '@tanstack/react-query'
+import { gql } from 'graphql-request'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+const SEND_TYPING_INDICATOR_MUTATION = gql`
+  mutation SendTypingIndicator($input: TypingIndicatorInput!) {
+    sendTypingIndicator(input: $input) {
+      userId
+      conversationId
+      isTyping
+      timestamp
+    }
+  }
+`
+
 /**
- * Hook for managing typing indicators
+ * Hook for managing typing indicators via GraphQL
  */
-export function useTypingIndicator(_conversationId: string) {
+export function useTypingIndicator(conversationId: string) {
   const [typingUsers, setTypingUsers] = useState<Array<TypingIndicator>>([])
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const { sendMessage, isConnected } = useChatWebSocket()
+
+  // Mutation for sending typing indicators
+  const sendTypingMutation = useMutation({
+    mutationFn: async (isTyping: boolean) => {
+      return graphqlClient.request(SEND_TYPING_INDICATOR_MUTATION, {
+        input: {
+          conversationId,
+          isTyping,
+        },
+      })
+    },
+  })
 
   /**
    * Start typing indicator
    */
   const startTyping = useCallback(() => {
-    if (!isConnected) return
-
-    sendMessage({
-      type: 'typing',
-      content: { is_typing: true },
-    })
+    sendTypingMutation.mutate(true)
 
     // Stop typing after 3 seconds of inactivity
     if (typingTimeoutRef.current) {
@@ -27,43 +46,37 @@ export function useTypingIndicator(_conversationId: string) {
     }
 
     typingTimeoutRef.current = setTimeout(() => {
-      sendMessage({
-        type: 'typing',
-        content: { is_typing: false },
-      })
+      sendTypingMutation.mutate(false)
     }, 3000)
-  }, [sendMessage, isConnected])
+    // sendTypingMutation is stable from useMutation
+  }, [])
 
   /**
    * Stop typing indicator
    */
   const stopTyping = useCallback(() => {
-    if (!isConnected) return
-
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
       typingTimeoutRef.current = null
     }
 
-    sendMessage({
-      type: 'typing',
-      content: { is_typing: false },
-    })
-  }, [sendMessage, isConnected])
+    sendTypingMutation.mutate(false)
+    // sendTypingMutation is stable from useMutation
+  }, [])
 
   /**
-   * Add typing user from WebSocket
+   * Add typing user from GraphQL subscription
    */
   const addTypingUser = useCallback((user: TypingIndicator) => {
     setTypingUsers((prev) => {
-      const filtered = prev.filter((u) => u.user_id !== user.user_id)
-      return user.is_typing ? [...filtered, user] : filtered
+      const filtered = prev.filter((u) => u.userId !== user.userId)
+      return user.isTyping ? [...filtered, user] : filtered
     })
 
     // Auto-remove typing indicator after 5 seconds
-    if (user.is_typing) {
+    if (user.isTyping) {
       setTimeout(() => {
-        setTypingUsers((prev) => prev.filter((u) => u.user_id !== user.user_id))
+        setTypingUsers((prev) => prev.filter((u) => u.userId !== user.userId))
       }, 5000)
     }
   }, [])
@@ -75,12 +88,12 @@ export function useTypingIndicator(_conversationId: string) {
     setTypingUsers([])
   }, [])
 
-  // Cleanup on unmount - no dependency needed for cleanup functions
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopTyping()
     }
-  }, [])
+  }, [stopTyping])
 
   return {
     addTypingUser,

@@ -27,7 +27,7 @@ func initConnectionConfig() *ConnectionConfig {
 	viper.SetDefault("CONN_JWKS_CACHE_TTL", "1h")
 	viper.SetDefault("CONN_JWKS_REFRESH_INTERVAL", "15m")
 	viper.SetDefault("CONN_PUBLIC_KEY_PATH", "./keys/public.pem")
-	viper.SetDefault("CONN_DEFAULT_NODE_ADDRESS", "ws://localhost:9088")
+	viper.SetDefault("CONN_DEFAULT_NODE_ADDRESS", "ws://localhost:9098")
 	viper.SetDefault("CONN_MAX_CONNECTIONS", constant.ConnMaxConnections)
 	viper.SetDefault("CONN_CONSUL_ADDRESS", "localhost:8500")
 	viper.SetDefault("CONN_CHAT_SERVICE_NAME", "chat-service-websocket")

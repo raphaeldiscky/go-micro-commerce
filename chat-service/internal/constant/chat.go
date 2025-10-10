@@ -103,7 +103,8 @@ const (
 	// WebSocketPongWait defines the timeout for receiving pong messages.
 	WebSocketPongWait = 60 * time.Second
 	// WebSocketPingPeriod defines the interval for sending ping messages.
-	WebSocketPingPeriod = 60 * time.Second
+	// Must be shorter than WebSocketGracePeriod to ensure first ping arrives before timeout.
+	WebSocketPingPeriod = 20 * time.Second
 	// WebSocketGracePeriod defines the grace period for closing WebSocket connections.
 	WebSocketGracePeriod = 30 * time.Second
 	// WebSocketWriteWait defines the timeout for writing messages.

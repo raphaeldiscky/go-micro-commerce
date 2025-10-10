@@ -1,29 +1,49 @@
-import { queryKeys } from '@/constants/query-key'
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
+import { QUERY_KEY } from '@/constants/query-key'
 import { useUser } from '@/hooks/auth/useAuth'
-import type { PresenceUpdate } from '@/lib/api'
 import { ONLINE_USERS_QUERY, graphqlClient } from '@/lib/graphql'
 import type { User } from '@/types/__generated__/graphql'
-import { useQuery } from '@tanstack/react-query'
+import { PresenceStatus } from '@/types/__generated__/graphql'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { gql } from 'graphql-request'
 import { useCallback, useEffect, useState } from 'react'
-import { generateTimestamp } from '../../lib/utils/date'
 
 interface OnlineUsersQueryResponse {
   onlineUsers: Array<User>
 }
 
+const UPDATE_PRESENCE_MUTATION = gql`
+  mutation UpdatePresence($status: PresenceStatus!) {
+    updatePresence(status: $status) {
+      userId
+      status
+      lastSeen
+    }
+  }
+`
+
 /**
- * Hook for managing user presence
+ * Hook for managing user presence via GraphQL
  */
 export function usePresence() {
-  const [currentStatus, setCurrentStatus] =
-    useState<PresenceUpdate['status']>('online')
+  const [currentStatus, setCurrentStatus] = useState<PresenceStatus>(
+    PresenceStatus.Online,
+  )
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set())
-  const { sendMessage, isConnected } = useChatWebSocket()
   const user = useUser()
+
+  // Mutation for updating presence status
+  const updatePresenceMutation = useMutation({
+    mutationFn: async (status: PresenceStatus) => {
+      return graphqlClient.request(UPDATE_PRESENCE_MUTATION, { status })
+    },
+    onSuccess: (_, status) => {
+      setCurrentStatus(status)
+    },
+  })
 
   // Query for online users
   const { data: onlineUsersList, refetch: refetchOnlineUsers } = useQuery({
+    enabled: !!user, // Only fetch when user is authenticated
     queryFn: async () => {
       const data =
         await graphqlClient.request<OnlineUsersQueryResponse>(
@@ -31,8 +51,8 @@ export function usePresence() {
         )
       return data.onlineUsers
     },
-    queryKey: queryKeys.chat.onlineUsers(),
-    refetchInterval: 30 * 1000, // Refetch every 30 seconds
+    queryKey: QUERY_KEY.chat.onlineUsers(),
+    refetchInterval: user ? 30 * 1000 : false,
     staleTime: 15 * 1000, // Consider stale after 15 seconds
   })
 
@@ -40,21 +60,13 @@ export function usePresence() {
    * Update user's presence status
    */
   const setPresenceStatus = useCallback(
-    (status: PresenceUpdate['status']) => {
-      if (!isConnected || !user) return
+    (status: PresenceStatus) => {
+      if (!user) return
 
-      sendMessage({
-        type: 'presence',
-        content: {
-          user_id: user.id,
-          status,
-          event: 'status_change',
-        },
-      })
-
-      setCurrentStatus(status)
+      updatePresenceMutation.mutate(status)
     },
-    [sendMessage, isConnected, user],
+    // updatePresenceMutation is stable from useMutation, no need to include in deps
+    [user],
   )
 
   /**
@@ -105,28 +117,28 @@ export function usePresence() {
     }
   }, [onlineUsersList])
 
-  // Set user as online when component mounts - no dependency needed for one-time setup
+  // Set user as online when component mounts
   useEffect(() => {
-    // Initial setup
-    setPresenceStatus('online')
+    // Skip if not authenticated
+    if (!user) {
+      return
+    }
+
+    // Initial setup - set user as online
+    setPresenceStatus(PresenceStatus.Online)
 
     // Set user as away when window loses focus
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        setPresenceStatus('away')
+        setPresenceStatus(PresenceStatus.Away)
       } else {
-        setPresenceStatus('online')
+        setPresenceStatus(PresenceStatus.Online)
       }
     }
 
     // Set user as offline when window is closed
     const handleBeforeUnload = () => {
-      // Use navigator.sendBeacon for reliable offline status
-      const presenceData = JSON.stringify({
-        last_seen: generateTimestamp(),
-        status: 'offline',
-      })
-      navigator.sendBeacon('/api/chats/v1/presence', presenceData)
+      setPresenceStatus(PresenceStatus.Offline)
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -135,11 +147,9 @@ export function usePresence() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      // Set offline on unmount
-      setPresenceStatus('offline')
+      setPresenceStatus(PresenceStatus.Offline)
     }
-    // Only run on mount/unmount, not when setPresenceStatus changes
-  }, [])
+  }, [user, setPresenceStatus])
 
   return {
     addOnlineUser,

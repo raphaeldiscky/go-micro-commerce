@@ -282,7 +282,6 @@ func (o *orchestrator) addUserAuthToSagaContext(
 	ctx = context.WithValue(ctx, pkgconstant.CtxKeyUserID, userAuth.UserID)
 	ctx = context.WithValue(ctx, pkgconstant.CtxKeyEmail, userAuth.Email)
 	ctx = context.WithValue(ctx, pkgconstant.CtxKeyRoles, userAuth.Roles)
-	ctx = context.WithValue(ctx, pkgconstant.CtxKeyIsActive, userAuth.IsActive)
 
 	return ctx
 }

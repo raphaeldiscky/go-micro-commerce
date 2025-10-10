@@ -4,11 +4,13 @@ import { z } from 'zod'
 export const env = createEnv({
   client: {
     VITE_API_GATEWAY_URL: z.url().default('http://localhost:8080'),
-    VITE_GRAPHQL_GATEWAY_URL: z
+    VITE_GRAPHQL_GATEWAY_AUTH_URL: z
       .url()
-      .default('http://localhost:8080/graphql/auth'),
+      .default('http://localhost:8080/graph/auth'),
+    VITE_GRAPHQL_SUBSCRIPTION_URL: z
+      .url()
+      .default('ws://localhost:8080/graph/subscriptions'),
     VITE_APP_TITLE: z.string().min(1).optional(),
-    VITE_CHAT_SERVICE_WEBSOCKET_URL: z.url().default('ws://localhost:9088'),
   },
 
   /**

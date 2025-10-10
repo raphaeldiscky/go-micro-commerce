@@ -57,35 +57,35 @@ export function ChatPanel({
     }
   }
 
-  if (isFullscreen) {
-    return (
-      <Dialog open={isFullscreen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent
-          className="w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 bg-transparent"
-          showCloseButton={false}
-        >
-          <div className="w-full h-full">
+  return (
+    <>
+      {isFullscreen ? (
+        <Dialog open={isFullscreen} onOpenChange={handleDialogOpenChange}>
+          <DialogContent
+            className="w-screen h-screen max-w-none max-h-none m-0 p-0 border-0 bg-transparent"
+            showCloseButton={false}
+          >
+            <div className="w-full h-full">
+              <ConversationPage
+                conversationId={conversationId}
+                isFullscreen={true}
+                onToggleFullscreen={toggleFullscreen}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <Card className="h-[calc(100vh-8rem)] min-h-[500px] max-h-[800px] md:max-w-4xl mx-auto overflow-hidden w-full">
+          <div className="h-full flex-col">
             <ConversationPage
               conversationId={conversationId}
-              isFullscreen={true}
-              onToggleFullscreen={toggleFullscreen}
+              isFullscreen={false}
+              onToggleFullscreen={!isMobile ? toggleFullscreen : undefined}
+              showToggle={!isMobile}
             />
           </div>
-        </DialogContent>
-      </Dialog>
-    )
-  }
-
-  return (
-    <Card className="h-[calc(100vh-8rem)] min-h-[500px] max-h-[800px] md:max-w-4xl mx-auto overflow-hidden w-full">
-      <div className="h-full flex flex-col">
-        <ConversationPage
-          conversationId={conversationId}
-          isFullscreen={false}
-          onToggleFullscreen={!isMobile ? toggleFullscreen : undefined}
-          showToggle={!isMobile}
-        />
-      </div>
-    </Card>
+        </Card>
+      )}
+    </>
   )
 }

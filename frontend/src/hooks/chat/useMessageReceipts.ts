@@ -1,52 +1,57 @@
-import { useChatWebSocket } from '@/contexts/ChatWebSocketContext'
 import { useUser } from '@/hooks/auth/useAuth'
+import {
+  SEND_DELIVERY_RECEIPT_MUTATION,
+  SEND_READ_RECEIPT_MUTATION,
+  graphqlClient,
+} from '@/lib/graphql'
 import { useCallback } from 'react'
 
 /**
- * Hook for managing message receipts
+ * Hook for managing message receipts via GraphQL mutations
  */
 export function useMessageReceipts(conversationId: string) {
-  const { sendMessage, isConnected } = useChatWebSocket()
   const user = useUser()
 
   /**
-   * Send delivery receipt for a message
+   * Send delivery receipt for a message via GraphQL
    */
   const markAsDelivered = useCallback(
-    (messageId: string) => {
-      if (!isConnected || !user) return
+    async (messageId: string) => {
+      if (!user) return
 
-      sendMessage({
-        type: 'delivery_receipt',
-        content: {
-          message_id: messageId,
-          conversation_id: conversationId,
-          recipient_id: user.id,
-          delivered_at: Math.floor(Date.now() / 1000),
-        },
-      })
+      try {
+        await graphqlClient.request(SEND_DELIVERY_RECEIPT_MUTATION, {
+          input: {
+            messageId,
+            conversationId,
+          },
+        })
+      } catch (error) {
+        console.error('Failed to send delivery receipt:', error)
+      }
     },
-    [sendMessage, isConnected, conversationId, user],
+    [conversationId, user],
   )
 
   /**
-   * Send read receipt for a message
+   * Send read receipt for a message via GraphQL
    */
   const markAsRead = useCallback(
-    (messageId: string) => {
-      if (!isConnected || !user) return
+    async (messageId: string) => {
+      if (!user) return
 
-      sendMessage({
-        type: 'read_receipt',
-        content: {
-          message_id: messageId,
-          conversation_id: conversationId,
-          reader_id: user.id,
-          read_at: Math.floor(Date.now() / 1000),
-        },
-      })
+      try {
+        await graphqlClient.request(SEND_READ_RECEIPT_MUTATION, {
+          input: {
+            messageId,
+            conversationId,
+          },
+        })
+      } catch (error) {
+        console.error('Failed to send read receipt:', error)
+      }
     },
-    [sendMessage, isConnected, conversationId, user],
+    [conversationId, user],
   )
 
   /**

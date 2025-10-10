@@ -4,6 +4,7 @@ go 1.24.7
 
 require (
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/consul/api v1.32.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/prometheus/client_golang v1.20.4

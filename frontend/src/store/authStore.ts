@@ -42,12 +42,26 @@ export const useAuthStore = create<AuthStore>()(
           return
         }
 
-        set({ isLoading: true })
-
         // Check if we have an access token in memory
         const currentToken = getAccessToken()
 
-        // If no access token in memory, try refresh token first (e.g., after page refresh)
+        // If persisted state shows we're logged out AND no token in memory,
+        // skip refresh attempt (user is definitely logged out)
+        if (!state.isAuthenticated && !currentToken) {
+          set({
+            error: null,
+            hasInitialized: true,
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+          })
+          return
+        }
+
+        set({ isLoading: true })
+
+        // If no access token in memory but persisted state shows we were authenticated,
+        // try refresh token (e.g., after page refresh with valid refresh token cookie)
         if (!currentToken) {
           try {
             const refreshData = await handleGraphQLRequest(async () => {
@@ -164,7 +178,7 @@ export const useAuthStore = create<AuthStore>()(
         setAccessToken(null)
         set({
           error: null,
-          hasInitialized: false,
+          hasInitialized: true,
           isAuthenticated: false,
           isLoading: false,
           user: null,
