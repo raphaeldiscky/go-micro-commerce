@@ -29,6 +29,27 @@ export function getSubscriptionClient(): Client {
       retryAttempts: 5,
       shouldRetry: () => true,
       keepAlive: 10000, // 10 seconds
+      on: {
+        connected: () => {
+          console.log('✅ GraphQL WebSocket Connected', {
+            url,
+            timestamp: new Date().toISOString(),
+          })
+        },
+        closed: (event) => {
+          console.log('❌ GraphQL WebSocket Closed', {
+            code: (event as CloseEvent).code,
+            reason: (event as CloseEvent).reason,
+            timestamp: new Date().toISOString(),
+          })
+        },
+        error: (error) => {
+          console.error('❌ GraphQL WebSocket Error:', {
+            error,
+            timestamp: new Date().toISOString(),
+          })
+        },
+      },
     })
   }
 

@@ -96,13 +96,26 @@ func (r *mutationResolver) SendMessage(
 	wsMessage, err := chatwebsocket.NewChatMessage(convID, user.UserID, input.Content, messageType)
 	if err != nil {
 		r.logger.Error("Failed to create WebSocket message", "error", err)
-		// Don't fail the mutation - message is saved
 	} else {
 		err = r.subscriptionManager.Hub.BroadcastToConversation(convID, wsMessage, user.UserID)
 		if err != nil {
 			r.logger.Error("Failed to broadcast message", "error", err)
-			// Don't fail the mutation - message is saved
 		}
+
+		graphqlEvent := &graph.NewMessage{
+			ID:             savedMessage.ID.String(),
+			ConversationID: convID.String(),
+			SenderID:       user.UserID.String(),
+			Content:        savedMessage.Content,
+			MessageType:    savedMessage.MessageType,
+			IsSystem:       savedMessage.IsSystem,
+			CreatedAt:      savedMessage.CreatedAt,
+		}
+		r.subscriptionManager.NotifyLocalConversationSubscribers(convID, graphqlEvent)
+
+		r.logger.Debug("Notified local GraphQL subscribers",
+			"message_id", savedMessage.ID,
+			"conversation_id", convID)
 	}
 
 	// Map to GraphQL type

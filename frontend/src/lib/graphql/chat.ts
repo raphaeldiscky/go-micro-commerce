@@ -166,7 +166,9 @@ export const REQUEST_CHAT_CONNECTION_MUTATION = gql`
 export const CONVERSATION_EVENTS_SUBSCRIPTION = gql`
   subscription ConversationEvents($conversationId: ID!) {
     conversationEvents(conversationId: $conversationId) {
+      __typename
       ... on NewMessage {
+        __typename
         id
         conversationId
         senderId
@@ -176,18 +178,21 @@ export const CONVERSATION_EVENTS_SUBSCRIPTION = gql`
         createdAt
       }
       ... on TypingIndicator {
+        __typename
         userId
         conversationId
         isTyping
         timestamp
       }
       ... on DeliveryReceipt {
+        __typename
         messageId
         conversationId
         recipientId
         deliveredAt
       }
       ... on ReadReceipt {
+        __typename
         messageId
         conversationId
         readerId
@@ -203,7 +208,9 @@ export const CONVERSATION_EVENTS_SUBSCRIPTION = gql`
 export const USER_EVENTS_SUBSCRIPTION = gql`
   subscription UserEvents {
     userEvents {
+      __typename
       ... on PresenceUpdate {
+        __typename
         userId
         status
         lastSeen

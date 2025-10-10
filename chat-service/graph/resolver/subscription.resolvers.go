@@ -67,12 +67,18 @@ func (r *mutationResolver) UpdatePresence(
 		"user_id", user.UserID,
 		"status", status)
 
-	// Return the presence update response
-	return &graph.PresenceUpdate{
+	presenceEvent := &graph.PresenceUpdate{
 		UserID:   user.UserID.String(),
 		Status:   status,
 		LastSeen: &now,
-	}, nil
+	}
+
+	r.subscriptionManager.NotifyLocalUserSubscribers(user.UserID, presenceEvent)
+
+	r.logger.Debug("Notified local GraphQL subscribers for presence update",
+		"user_id", user.UserID)
+
+	return presenceEvent, nil
 }
 
 // SendTypingIndicator is the resolver for the sendTypingIndicator field.
@@ -131,13 +137,20 @@ func (r *mutationResolver) SendTypingIndicator(
 		"conversation_id", conversationID,
 		"is_typing", input.IsTyping)
 
-	// Return the typing indicator response
-	return &graph.TypingIndicator{
+	typingEvent := &graph.TypingIndicator{
 		UserID:         user.UserID.String(),
 		ConversationID: input.ConversationID,
 		IsTyping:       input.IsTyping,
 		Timestamp:      now,
-	}, nil
+	}
+
+	r.subscriptionManager.NotifyLocalConversationSubscribers(conversationID, typingEvent)
+
+	r.logger.Debug("Notified local GraphQL subscribers for typing indicator",
+		"user_id", user.UserID,
+		"conversation_id", conversationID)
+
+	return typingEvent, nil
 }
 
 // ConversationEvents is the resolver for the conversationEvents field.
@@ -145,9 +158,16 @@ func (r *subscriptionResolver) ConversationEvents(
 	ctx context.Context,
 	conversationID string,
 ) (<-chan graph.ConversationEvent, error) {
+	r.logger.Info("🔔 GraphQL subscription request received",
+		"conversation_id", conversationID)
+
 	// Validate conversation ID
 	convID, err := uuid.Parse(conversationID)
 	if err != nil {
+		r.logger.Error("Invalid conversation ID in subscription",
+			"error", err,
+			"conversation_id", conversationID)
+
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
 	}
 
@@ -161,8 +181,9 @@ func (r *subscriptionResolver) ConversationEvents(
 		return nil, err
 	}
 
-	r.logger.Info("GraphQL subscription started for conversation",
-		"conversation_id", conversationID)
+	r.logger.Info("✅ GraphQL subscription established",
+		"conversation_id", conversationID,
+		"channel_buffer", cap(eventChan))
 
 	return eventChan, nil
 }

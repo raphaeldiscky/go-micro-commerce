@@ -3,6 +3,8 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"reflect"
 	"sync"
 
 	"github.com/google/uuid"
@@ -111,6 +113,10 @@ func (m *Manager) SubscribeToConversation(
 		}
 		m.subscriptions[conversationID.String()] = convSub
 
+		m.logger.Info("📝 Created new conversation subscription group",
+			"conversation_id", conversationID,
+			"subscriber_id", subID)
+
 		// Start listening to ChatHub for this conversation
 		go m.listenToConversation(conversationID, convSub)
 	}
@@ -120,7 +126,13 @@ func (m *Manager) SubscribeToConversation(
 	// Add this subscriber
 	convSub.mu.Lock()
 	convSub.subscribers[subID] = ch
+	subscriberCount := len(convSub.subscribers)
 	convSub.mu.Unlock()
+
+	m.logger.Info("➕ Added GraphQL subscriber",
+		"conversation_id", conversationID,
+		"subscriber_id", subID,
+		"total_subscribers", subscriberCount)
 
 	// Handle cleanup when context is done
 	go func() {
@@ -382,4 +394,93 @@ func (m *Manager) unsubscribeFromUser(userID uuid.UUID, subID string) {
 	if subscriberCount == 0 {
 		delete(m.userSubs, userID)
 	}
+}
+
+// NotifyLocalConversationSubscribers directly notifies local GraphQL subscribers for a conversation.
+// This is used to notify subscribers on the same instance without going through Redis pub/sub.
+func (m *Manager) NotifyLocalConversationSubscribers(
+	conversationID uuid.UUID,
+	event graph.ConversationEvent,
+) {
+	m.mu.RLock()
+	convSub, exists := m.subscriptions[conversationID.String()]
+	m.mu.RUnlock()
+
+	if !exists {
+		m.logger.Warn("⚠️  No local subscribers found for conversation",
+			"conversation_id", conversationID,
+			"event_type", getEventTypeName(event))
+
+		return
+	}
+
+	convSub.mu.RLock()
+	defer convSub.mu.RUnlock()
+
+	m.logger.Info("📤 Notifying local GraphQL subscribers",
+		"conversation_id", conversationID,
+		"event_type", getEventTypeName(event),
+		"subscriber_count", len(convSub.subscribers))
+
+	sentCount := 0
+	droppedCount := 0
+
+	for _, sub := range convSub.subscribers {
+		select {
+		case sub <- event:
+			sentCount++
+		default:
+			droppedCount++
+
+			m.logger.Warn("Local subscriber channel full, dropping message",
+				"conversation_id", conversationID)
+		}
+	}
+
+	m.logger.Debug("✅ Local notification completed",
+		"conversation_id", conversationID,
+		"sent_count", sentCount,
+		"dropped_count", droppedCount)
+}
+
+// NotifyLocalUserSubscribers directly notifies local GraphQL subscribers for user events.
+// This is used to notify subscribers on the same instance without going through Redis pub/sub.
+func (m *Manager) NotifyLocalUserSubscribers(userID uuid.UUID, event graph.UserEvent) {
+	m.mu.RLock()
+	userSub, exists := m.userSubs[userID]
+	m.mu.RUnlock()
+
+	if !exists {
+		return
+	}
+
+	userSub.mu.RLock()
+	defer userSub.mu.RUnlock()
+
+	for _, sub := range userSub.subscribers {
+		select {
+		case sub <- event:
+		default:
+			m.logger.Warn("Local user subscriber channel full, dropping message",
+				"user_id", userID)
+		}
+	}
+
+	m.logger.Debug("Notified local user subscribers",
+		"user_id", userID,
+		"subscriber_count", len(userSub.subscribers))
+}
+
+// getEventTypeName extracts the type name from a GraphQL event interface for logging.
+func getEventTypeName(event any) string {
+	if event == nil {
+		return "nil"
+	}
+
+	t := reflect.TypeOf(event)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+
+	return fmt.Sprintf("%s.%s", t.PkgPath(), t.Name())
 }
