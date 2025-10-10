@@ -279,6 +279,14 @@ input RegisterUserInput
   lastName: String!
 }
 
+enum Role
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+{
+  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE)
+  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE)
+}
+
 input SendDeliveryReceiptInput
   @join__type(graph: CHAT_SERVICE)
 {

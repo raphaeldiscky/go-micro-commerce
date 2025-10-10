@@ -1,6 +1,6 @@
 import { QUERY_KEY } from '@/constants/query-key'
 import { useUser } from '@/hooks/auth/useAuth'
-import { ONLINE_USERS_QUERY, graphqlClient } from '@/lib/graphql'
+import { ONLINE_USERS_QUERY, graphClient } from '@/lib/graphql'
 import type { User } from '@/types/__generated__/graphql'
 import { PresenceStatus } from '@/types/__generated__/graphql'
 import { useMutation, useQuery } from '@tanstack/react-query'
@@ -34,7 +34,7 @@ export function usePresence() {
   // Mutation for updating presence status
   const updatePresenceMutation = useMutation({
     mutationFn: async (status: PresenceStatus) => {
-      return graphqlClient.request(UPDATE_PRESENCE_MUTATION, { status })
+      return graphClient.request(UPDATE_PRESENCE_MUTATION, { status })
     },
     onSuccess: (_, status) => {
       setCurrentStatus(status)
@@ -46,9 +46,7 @@ export function usePresence() {
     enabled: !!user, // Only fetch when user is authenticated
     queryFn: async () => {
       const data =
-        await graphqlClient.request<OnlineUsersQueryResponse>(
-          ONLINE_USERS_QUERY,
-        )
+        await graphClient.request<OnlineUsersQueryResponse>(ONLINE_USERS_QUERY)
       return data.onlineUsers
     },
     queryKey: QUERY_KEY.chat.onlineUsers(),

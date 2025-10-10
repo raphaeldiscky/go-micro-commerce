@@ -2,7 +2,7 @@ import { QUERY_KEY } from '@/constants/query-key'
 import {
   CONVERSATIONS_QUERY,
   JOIN_CONVERSATION_MUTATION,
-  graphqlClient,
+  graphClient,
 } from '@/lib/graphql'
 import type {
   Conversation,
@@ -32,7 +32,7 @@ export function useConversations() {
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       const data =
-        await graphqlClient.request<ConversationsQueryResponse>(
+        await graphClient.request<ConversationsQueryResponse>(
           CONVERSATIONS_QUERY,
         )
       return data.conversations
@@ -52,11 +52,10 @@ export function useJoinConversation() {
 
   return useMutation({
     mutationFn: async (input: JoinConversationInput) => {
-      const data =
-        await graphqlClient.request<JoinConversationMutationResponse>(
-          JOIN_CONVERSATION_MUTATION,
-          { input },
-        )
+      const data = await graphClient.request<JoinConversationMutationResponse>(
+        JOIN_CONVERSATION_MUTATION,
+        { input },
+      )
       return data.joinConversation
     },
     onError: (error) => {

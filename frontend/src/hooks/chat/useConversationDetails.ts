@@ -2,7 +2,7 @@ import { QUERY_KEY } from '@/constants/query-key'
 import {
   CONVERSATION_PARTICIPANTS_QUERY,
   CONVERSATION_QUERY,
-  graphqlClient,
+  graphClient,
 } from '@/lib/graphql'
 import type { Conversation, Participant } from '@/types/__generated__/graphql'
 import { useQuery } from '@tanstack/react-query'
@@ -23,7 +23,7 @@ export function useConversationDetails(conversationId: string) {
     enabled: !!conversationId,
     gcTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const data = await graphqlClient.request<ConversationQueryResponse>(
+      const data = await graphClient.request<ConversationQueryResponse>(
         CONVERSATION_QUERY,
         { id: conversationId },
       )
@@ -44,7 +44,7 @@ export function useConversationParticipants(conversationId: string) {
     gcTime: 5 * 60 * 1000, // 5 minutes
     queryFn: async () => {
       const data =
-        await graphqlClient.request<ConversationParticipantsQueryResponse>(
+        await graphClient.request<ConversationParticipantsQueryResponse>(
           CONVERSATION_PARTICIPANTS_QUERY,
           { conversationId },
         )

@@ -307,6 +307,11 @@ export type RegisterUserInput = {
   username: Scalars['String']['input']
 }
 
+export enum Role {
+  Admin = 'ADMIN',
+  User = 'USER',
+}
+
 export type SendDeliveryReceiptInput = {
   conversationId: Scalars['ID']['input']
   messageId: Scalars['ID']['input']

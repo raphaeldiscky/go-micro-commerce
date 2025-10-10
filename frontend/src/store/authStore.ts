@@ -3,7 +3,7 @@ import type { MeQuery, RefreshTokenMutation } from '@/lib/graphql'
 import {
   ME_QUERY,
   REFRESH_TOKEN_MUTATION,
-  graphqlClient,
+  graphClient,
   handleGraphQLRequest,
   mapGraphQLUserToApiUser,
 } from '@/lib/graphql'
@@ -66,7 +66,7 @@ export const useAuthStore = create<AuthStore>()(
           try {
             const refreshData = await handleGraphQLRequest(async () => {
               // Note: No refreshToken parameter needed - cookie is sent automatically
-              return await graphqlClient.request<RefreshTokenMutation>(
+              return await graphClient.request<RefreshTokenMutation>(
                 REFRESH_TOKEN_MUTATION,
                 {},
               )
@@ -76,7 +76,7 @@ export const useAuthStore = create<AuthStore>()(
             setAccessToken(refreshData.refreshToken.token)
 
             // Fetch user with new token
-            const userData = await graphqlClient.request<MeQuery>(ME_QUERY)
+            const userData = await graphClient.request<MeQuery>(ME_QUERY)
             const user = userData.me
               ? mapGraphQLUserToApiUser(userData.me)
               : null
@@ -104,7 +104,7 @@ export const useAuthStore = create<AuthStore>()(
 
         // We have a token, try to fetch user
         try {
-          const data = await graphqlClient.request<MeQuery>(ME_QUERY)
+          const data = await graphClient.request<MeQuery>(ME_QUERY)
           const user = data.me ? mapGraphQLUserToApiUser(data.me) : null
           set({
             error: null,
@@ -117,7 +117,7 @@ export const useAuthStore = create<AuthStore>()(
           // Access token might be expired, try to refresh
           try {
             const refreshData = await handleGraphQLRequest(async () => {
-              return await graphqlClient.request<RefreshTokenMutation>(
+              return await graphClient.request<RefreshTokenMutation>(
                 REFRESH_TOKEN_MUTATION,
                 {},
               )
@@ -127,7 +127,7 @@ export const useAuthStore = create<AuthStore>()(
             setAccessToken(refreshData.refreshToken.token)
 
             // Retry fetching user with new token
-            const userData = await graphqlClient.request<MeQuery>(ME_QUERY)
+            const userData = await graphClient.request<MeQuery>(ME_QUERY)
             const user = userData.me
               ? mapGraphQLUserToApiUser(userData.me)
               : null

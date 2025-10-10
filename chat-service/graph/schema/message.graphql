@@ -64,17 +64,17 @@ extend type Query {
     after: String
     last: Int
     before: String
-  ): MessageConnection!
+  ): MessageConnection! @requiresAuth
 }
 
 # Message mutations
 extend type Mutation {
   # Send a new message
-  sendMessage(input: SendMessageInput!): Message!
+  sendMessage(input: SendMessageInput!): Message! @requiresAuth
 
   # Send delivery receipt for a message
-  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt!
+  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt! @requiresAuth
 
   # Send read receipt for a message
-  sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt!
+  sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @requiresAuth
 }
