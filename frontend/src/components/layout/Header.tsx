@@ -23,6 +23,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
+import { NotificationBell } from '../notification/NotificationBell'
 import { Button } from '../ui/button'
 import {
   NavigationMenu,
@@ -177,6 +178,7 @@ export default function Header() {
                   <span className="text-sm text-muted-foreground">
                     Welcome, {user?.firstName}!
                   </span>
+                  <NotificationBell />
                   <Button
                     className="flex items-center space-x-1"
                     disabled={logoutMutation.isPending}
@@ -326,6 +328,9 @@ export default function Header() {
                     <div className="flex items-center px-3 py-2 text-sm text-muted-foreground">
                       <User className="mr-2 h-4 w-4" />
                       {user?.firstName} {user?.lastName}
+                    </div>
+                    <div className="flex items-center justify-center py-2">
+                      <NotificationBell />
                     </div>
                     <Button
                       className="w-full flex items-center justify-center space-x-1"
