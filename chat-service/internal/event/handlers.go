@@ -60,6 +60,34 @@ func (h *ChatEventHandler) SetReadReceiptHandler(
 	h.readReceiptFunc = handler
 }
 
+// eventHandler defines a generic event handler function signature.
+type eventHandler[T any] func(ctx context.Context, event T) error
+
+// handleEventType is a generic helper that handles the common pattern of:
+// 1. Checking if handler is registered
+// 2. Unmarshaling the event payload
+// 3. Calling the handler function.
+func handleEventType[T any](
+	ctx context.Context,
+	logger logger.Logger,
+	eventType string,
+	payload []byte,
+	handler eventHandler[T],
+	unmarshalFunc func([]byte) (T, error),
+) error {
+	if handler == nil {
+		logger.Warn("No handler registered", "event_type", eventType)
+		return nil
+	}
+
+	event, err := unmarshalFunc(payload)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal %s event: %w", eventType, err)
+	}
+
+	return handler(ctx, event)
+}
+
 // HandleEvent is the main event handler that routes events to specific handlers.
 func (h *ChatEventHandler) HandleEvent(ctx context.Context, event eventbus.Event) error {
 	baseEvent, ok := event.(*eventbus.BaseEvent)
@@ -69,69 +97,24 @@ func (h *ChatEventHandler) HandleEvent(ctx context.Context, event eventbus.Event
 
 	switch baseEvent.EventType {
 	case TypeChatMessage:
-		if h.chatMessageFunc == nil {
-			h.logger.Warn("No handler registered for chat message events")
-			return nil
-		}
-
-		chatEvent, err := UnmarshalChatMessageEvent(baseEvent.Payload)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal chat message event: %w", err)
-		}
-
-		return h.chatMessageFunc(ctx, chatEvent)
+		return handleEventType(ctx, h.logger, "chat message", baseEvent.Payload,
+			h.chatMessageFunc, UnmarshalChatMessageEvent)
 
 	case TypeTypingIndicator:
-		if h.typingFunc == nil {
-			h.logger.Warn("No handler registered for typing indicator events")
-			return nil
-		}
-
-		typingEvent, err := UnmarshalTypingIndicatorEvent(baseEvent.Payload)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal typing indicator event: %w", err)
-		}
-
-		return h.typingFunc(ctx, typingEvent)
+		return handleEventType(ctx, h.logger, "typing indicator", baseEvent.Payload,
+			h.typingFunc, UnmarshalTypingIndicatorEvent)
 
 	case TypePresenceUpdate:
-		if h.presenceFunc == nil {
-			h.logger.Warn("No handler registered for presence update events")
-			return nil
-		}
-
-		presenceEvent, err := UnmarshalPresenceUpdateEvent(baseEvent.Payload)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal presence update event: %w", err)
-		}
-
-		return h.presenceFunc(ctx, presenceEvent)
+		return handleEventType(ctx, h.logger, "presence update", baseEvent.Payload,
+			h.presenceFunc, UnmarshalPresenceUpdateEvent)
 
 	case TypeDeliveryReceipt:
-		if h.deliveryReceiptFunc == nil {
-			h.logger.Warn("No handler registered for delivery receipt events")
-			return nil
-		}
-
-		deliveryEvent, err := UnmarshalDeliveryReceiptEvent(baseEvent.Payload)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal delivery receipt event: %w", err)
-		}
-
-		return h.deliveryReceiptFunc(ctx, deliveryEvent)
+		return handleEventType(ctx, h.logger, "delivery receipt", baseEvent.Payload,
+			h.deliveryReceiptFunc, UnmarshalDeliveryReceiptEvent)
 
 	case TypeReadReceipt:
-		if h.readReceiptFunc == nil {
-			h.logger.Warn("No handler registered for read receipt events")
-			return nil
-		}
-
-		readEvent, err := UnmarshalReadReceiptEvent(baseEvent.Payload)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal read receipt event: %w", err)
-		}
-
-		return h.readReceiptFunc(ctx, readEvent)
+		return handleEventType(ctx, h.logger, "read receipt", baseEvent.Payload,
+			h.readReceiptFunc, UnmarshalReadReceiptEvent)
 
 	default:
 		h.logger.Warn("Unknown event type", "type", baseEvent.EventType)

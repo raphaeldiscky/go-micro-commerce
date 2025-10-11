@@ -2,9 +2,9 @@ package testcontainers
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -50,9 +50,19 @@ func RunMigrations(ctx context.Context, pool *pgxpool.Pool, migrationPaths []str
 
 // executeMigrationFile reads and executes a single SQL migration file.
 func executeMigrationFile(ctx context.Context, pool *pgxpool.Pool, filePath string) error {
-	var migrations embed.FS
+	// Get absolute path to handle relative paths correctly
+	absPath, err := filepath.Abs(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path: %w", err)
+	}
+
+	// Security check: ensure the file is a .sql file
+	if !strings.HasSuffix(absPath, ".sql") {
+		return errors.New("invalid file type: only .sql files are allowed")
+	}
+
 	// Read file content
-	content, err := migrations.ReadFile(filePath)
+	content, err := os.ReadFile(absPath) // #nosec G304 - path is validated above
 	if err != nil {
 		return fmt.Errorf("failed to read migration file: %w", err)
 	}

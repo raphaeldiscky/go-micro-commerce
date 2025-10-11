@@ -241,36 +241,74 @@ func (h *ChatHub) BroadcastToUserType(
 	return h.Broadcast(message, filter)
 }
 
+// subscribeToChannelIfNeeded subscribes to a Redis channel if this is the first connection.
+func (h *ChatHub) subscribeToChannelIfNeeded(channelName string, conversationID uuid.UUID) {
+	if h.eventBus == nil {
+		return
+	}
+
+	h.channelMutex.Lock()
+	defer h.channelMutex.Unlock()
+
+	// Subscribe to Redis if first connection for this conversation
+	if h.activeChannels[channelName] == 0 {
+		err := h.eventBus.Subscribe(channelName, h.eventHandler.HandleEvent)
+		if err != nil {
+			h.logger.Error("Failed to subscribe to channel",
+				"channel", channelName,
+				"conversation_id", conversationID,
+				"error", err)
+		} else {
+			h.logger.Info("Subscribed to conversation channel",
+				"channel", channelName,
+				"conversation_id", conversationID,
+				"instance_id", h.instanceID)
+		}
+	}
+
+	h.activeChannels[channelName]++
+}
+
 // JoinConversation adds a connection to a conversation channel with dynamic Redis subscription.
 func (h *ChatHub) JoinConversation(conn *ChatConnection, conversationID uuid.UUID) {
 	channelName := redispkg.ConversationChannel(conversationID)
 
 	// Handle Redis subscription with dynamic subscription
-	if h.eventBus != nil {
-		h.channelMutex.Lock()
-
-		// Subscribe to Redis if first connection for this conversation
-		if h.activeChannels[channelName] == 0 {
-			if err := h.eventBus.Subscribe(channelName, h.eventHandler.HandleEvent); err != nil {
-				h.logger.Error("Failed to subscribe to channel",
-					"channel", channelName,
-					"conversation_id", conversationID,
-					"error", err)
-			} else {
-				h.logger.Info("Subscribed to conversation channel",
-					"channel", channelName,
-					"conversation_id", conversationID,
-					"instance_id", h.instanceID)
-			}
-		}
-
-		h.activeChannels[channelName]++
-		h.channelMutex.Unlock()
-	}
+	h.subscribeToChannelIfNeeded(channelName, conversationID)
 
 	// Join local hub channel
 	h.JoinChannel(conn, channelName)
 	conn.JoinConversation(conversationID)
+}
+
+// unsubscribeFromChannelIfNeeded unsubscribes from a Redis channel if this is the last connection.
+func (h *ChatHub) unsubscribeFromChannelIfNeeded(channelName string, conversationID uuid.UUID) {
+	if h.eventBus == nil {
+		return
+	}
+
+	h.channelMutex.Lock()
+	defer h.channelMutex.Unlock()
+
+	h.activeChannels[channelName]--
+
+	// Unsubscribe from Redis if no more connections
+	if h.activeChannels[channelName] <= 0 {
+		err := h.eventBus.Unsubscribe(channelName)
+		if err != nil {
+			h.logger.Error("Failed to unsubscribe from channel",
+				"channel", channelName,
+				"conversation_id", conversationID,
+				"error", err)
+		} else {
+			h.logger.Info("Unsubscribed from conversation channel",
+				"channel", channelName,
+				"conversation_id", conversationID,
+				"instance_id", h.instanceID)
+		}
+
+		delete(h.activeChannels, channelName)
+	}
 }
 
 // LeaveConversation removes a connection from a conversation channel with dynamic Redis unsubscription.
@@ -278,30 +316,7 @@ func (h *ChatHub) LeaveConversation(conn *ChatConnection, conversationID uuid.UU
 	channelName := redispkg.ConversationChannel(conversationID)
 
 	// Handle Redis unsubscription
-	if h.eventBus != nil {
-		h.channelMutex.Lock()
-
-		h.activeChannels[channelName]--
-
-		// Unsubscribe from Redis if no more connections
-		if h.activeChannels[channelName] <= 0 {
-			if err := h.eventBus.Unsubscribe(channelName); err != nil {
-				h.logger.Error("Failed to unsubscribe from channel",
-					"channel", channelName,
-					"conversation_id", conversationID,
-					"error", err)
-			} else {
-				h.logger.Info("Unsubscribed from conversation channel",
-					"channel", channelName,
-					"conversation_id", conversationID,
-					"instance_id", h.instanceID)
-			}
-
-			delete(h.activeChannels, channelName)
-		}
-
-		h.channelMutex.Unlock()
-	}
+	h.unsubscribeFromChannelIfNeeded(channelName, conversationID)
 
 	// Leave local hub channel
 	h.LeaveChannel(conn, channelName)
@@ -395,7 +410,7 @@ func (h *ChatHub) publishEvent(
 	ctx context.Context,
 	channel string,
 	eventType string,
-	payload interface{},
+	payload any,
 ) error {
 	baseEvent, err := eventbus.NewBaseEvent(h.instanceID, eventType, payload)
 	if err != nil {
