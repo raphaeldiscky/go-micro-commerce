@@ -12,7 +12,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/testutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/testcontainers"
 	"github.com/stretchr/testify/suite"
 	"golang.org/x/time/rate"
 
@@ -85,7 +85,7 @@ func (s *TestSuite) SetupSuite() {
 		ProductService: s.productService, // Pre-initialize to avoid Kafka setup
 	}
 
-	port, err := testutils.GetFreePort()
+	port, err := testcontainers.GetFreePort()
 	s.Require().NoError(err)
 
 	// Create a test config

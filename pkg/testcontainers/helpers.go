@@ -1,5 +1,4 @@
-// Package testutils provides utility functions for testing.
-package testutils
+package testcontainers
 
 import (
 	"errors"

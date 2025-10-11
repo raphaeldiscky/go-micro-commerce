@@ -3,6 +3,7 @@ package websocket
 import (
 	"github.com/google/uuid"
 
+	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -82,7 +83,7 @@ func NewChatMessage(
 	}
 
 	// Set chat-specific fields
-	conversationChannel := ConversationChannel(conversationID)
+	conversationChannel := redispkg.ConversationChannel(conversationID)
 	msg.WithChannel(conversationChannel).WithSender(senderID)
 
 	return msg, nil
@@ -116,7 +117,7 @@ func NewTypingMessage(
 		return nil, err
 	}
 
-	conversationChannel := ConversationChannel(conversationID)
+	conversationChannel := redispkg.ConversationChannel(conversationID)
 	msg.WithChannel(conversationChannel).WithSender(senderID)
 
 	return msg, nil
@@ -139,7 +140,7 @@ func NewPresenceMessage(
 		return nil, err
 	}
 
-	userChannel := UserChannel(userID)
+	userChannel := redispkg.UserChannel(userID)
 	msg.WithChannel(userChannel).WithSender(userID)
 
 	return msg, nil
@@ -162,7 +163,7 @@ func NewDeliveryReceiptMessage(
 		return nil, err
 	}
 
-	conversationChannel := ConversationChannel(conversationID)
+	conversationChannel := redispkg.ConversationChannel(conversationID)
 	msg.WithChannel(conversationChannel).WithSender(recipientID)
 
 	return msg, nil
@@ -185,7 +186,7 @@ func NewReadReceiptMessage(
 		return nil, err
 	}
 
-	conversationChannel := ConversationChannel(conversationID)
+	conversationChannel := redispkg.ConversationChannel(conversationID)
 	msg.WithChannel(conversationChannel).WithSender(readerID)
 
 	return msg, nil

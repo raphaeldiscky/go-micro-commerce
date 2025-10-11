@@ -3,9 +3,9 @@ package provider
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
@@ -23,7 +23,7 @@ func SetupGlobal(
 	cfg *config.Config,
 	appLogger logger.Logger,
 ) (*Providers, error) {
-	pgPool, err := db.NewPostgresConnection(ctx, &db.PostgresConfig{
+	pgPool, err := pg.NewPostgresConnection(ctx, &pg.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
 		User:            cfg.Postgres.User,

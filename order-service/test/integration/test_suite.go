@@ -12,7 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/testutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/testcontainers"
 	"github.com/stretchr/testify/suite"
 
 	pkgDto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
@@ -50,7 +50,7 @@ func (s *TestSuite) SetupSuite() {
 	// Setup logger (not needed for basic HTTP testing)
 	_ = logger.NewLogrusLogger(debugLevel) // Debug level
 
-	port, err := testutils.GetFreePort()
+	port, err := testcontainers.GetFreePort()
 	s.Require().NoError(err)
 	s.baseURL = fmt.Sprintf("http://localhost:%d", port)
 

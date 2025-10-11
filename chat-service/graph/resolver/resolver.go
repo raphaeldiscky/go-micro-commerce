@@ -18,7 +18,7 @@ type Resolver struct {
 	chatService         service.ChatService
 	connectionService   service.ConnectionService
 	subscriptionManager *subscription.Manager
-	messagePublisher    websocket.MessagePublisher
+	hub                 *websocket.ChatHub
 	logger              logger.Logger
 }
 
@@ -27,14 +27,14 @@ func NewResolver(
 	chatService service.ChatService,
 	connectionService service.ConnectionService,
 	subscriptionManager *subscription.Manager,
-	messagePublisher websocket.MessagePublisher,
+	hub *websocket.ChatHub,
 	appLogger logger.Logger,
 ) *Resolver {
 	return &Resolver{
 		chatService:         chatService,
 		connectionService:   connectionService,
 		subscriptionManager: subscriptionManager,
-		messagePublisher:    messagePublisher,
+		hub:                 hub,
 		logger:              appLogger,
 	}
 }
