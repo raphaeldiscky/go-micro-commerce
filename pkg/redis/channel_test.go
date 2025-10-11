@@ -95,14 +95,6 @@ func TestUserPresenceChannel(t *testing.T) {
 	assert.Equal(t, expected, channel)
 }
 
-func TestNotificationChannel(t *testing.T) {
-	userID := uuid.New()
-	channel := redis.NotificationChannel(userID)
-
-	expected := "notification:user:" + userID.String()
-	assert.Equal(t, expected, channel)
-}
-
 func TestBroadcastChannel(t *testing.T) {
 	messageType := "maintenance"
 	channel := redis.BroadcastChannel(messageType)

@@ -3,19 +3,19 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	chathandler "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
-	chatmiddleware "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/middleware"
 )
 
 // SetupChatRoutes sets up all chat routes.
 func SetupChatRoutes(
 	e *echo.Echo,
-	h *chathandler.ChatHandler,
-	connHandler *chathandler.ConnectionHandler,
+	h *handler.ChatHandler,
+	connHandler *handler.ConnectionHandler,
 ) {
 	v1 := e.Group("/v1")
 	protected := v1.Group("")
-	protected.Use(chatmiddleware.AuthMiddleware)
+	protected.Use(middleware.AuthMiddleware)
 
 	// Connection management routes
 	protected.POST("/connect", connHandler.RequestConnection)

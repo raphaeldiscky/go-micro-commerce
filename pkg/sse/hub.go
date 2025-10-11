@@ -1,0 +1,399 @@
+package sse
+
+import (
+	"context"
+	"sync"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+)
+
+// Hub manages SSE connections and broadcasts messages.
+type Hub struct {
+	connections         map[uuid.UUID]*Connection               // All connections by ID
+	userConns           map[uuid.UUID]map[uuid.UUID]*Connection // User connections by user ID
+	register            chan *Connection
+	unregister          chan *Connection
+	broadcast           chan *BroadcastRequest
+	mutex               sync.RWMutex
+	logger              logger.Logger
+	done                chan struct{}
+	eventBus            eventbus.EventBus
+	instanceID          string
+	shardChannelBuilder func(int) string
+	shardCount          int
+}
+
+// BroadcastRequest represents a request to broadcast a message.
+type BroadcastRequest struct {
+	UserID  *uuid.UUID // If nil, broadcast to all users
+	Message *Message
+}
+
+// NewHub creates a new SSE hub.
+func NewHub(logger logger.Logger) *Hub {
+	return &Hub{
+		connections: make(map[uuid.UUID]*Connection),
+		userConns:   make(map[uuid.UUID]map[uuid.UUID]*Connection),
+		register:    make(chan *Connection),
+		unregister:  make(chan *Connection),
+		broadcast:   make(chan *BroadcastRequest, constant.SSEBroadcastBufferSize),
+		logger:      logger,
+		done:        make(chan struct{}),
+	}
+}
+
+// Register registers a new connection.
+func (h *Hub) Register(conn *Connection) {
+	select {
+	case h.register <- conn:
+	case <-h.done:
+		h.logger.Warn("Hub is shutting down, cannot register connection")
+	}
+}
+
+// Unregister unregisters a connection.
+func (h *Hub) Unregister(conn *Connection) {
+	select {
+	case h.unregister <- conn:
+	case <-h.done:
+		// Hub is shutting down, connection will be cleaned up
+	}
+}
+
+// BroadcastToUser broadcasts a message to a specific user.
+func (h *Hub) BroadcastToUser(userID uuid.UUID, message *Message) error {
+	request := &BroadcastRequest{
+		UserID:  &userID,
+		Message: message,
+	}
+
+	select {
+	case h.broadcast <- request:
+		return nil
+	case <-h.done:
+		return ErrHubShutdown
+	}
+}
+
+// BroadcastToAll broadcasts a message to all connected users.
+func (h *Hub) BroadcastToAll(message *Message) error {
+	request := &BroadcastRequest{
+		UserID:  nil,
+		Message: message,
+	}
+
+	select {
+	case h.broadcast <- request:
+		return nil
+	case <-h.done:
+		return ErrHubShutdown
+	}
+}
+
+// GetUserConnections retrieves all connections for a user.
+func (h *Hub) GetUserConnections(userID uuid.UUID) []*Connection {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	userMap, exists := h.userConns[userID]
+	if !exists {
+		return nil
+	}
+
+	connections := make([]*Connection, 0, len(userMap))
+	for _, conn := range userMap {
+		if conn.IsActive() {
+			connections = append(connections, conn)
+		}
+	}
+
+	return connections
+}
+
+// GetConnectionCount returns the total number of active connections.
+func (h *Hub) GetConnectionCount() int {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	return len(h.connections)
+}
+
+// GetUserCount returns the number of unique users connected.
+func (h *Hub) GetUserCount() int {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	return len(h.userConns)
+}
+
+// Run starts the hub and processes connection events.
+func (h *Hub) Run(ctx context.Context) {
+	cleanupTicker := time.NewTicker(constant.SSECleanupTicker)
+	defer cleanupTicker.Stop()
+
+	h.logger.Info("SSE Hub started")
+
+	for {
+		select {
+		case <-ctx.Done():
+			h.shutdown()
+			return
+
+		case conn := <-h.register:
+			h.handleRegister(conn)
+
+		case conn := <-h.unregister:
+			h.handleUnregister(conn)
+
+		case request := <-h.broadcast:
+			h.handleBroadcast(request)
+
+		case <-cleanupTicker.C:
+			h.cleanupStaleConnections()
+		}
+	}
+}
+
+// Shutdown gracefully shuts down the hub.
+func (h *Hub) Shutdown(ctx context.Context) error {
+	h.logger.Info("Shutting down SSE hub...")
+
+	// Signal shutdown
+	close(h.done)
+
+	// Close all connections
+	done := make(chan struct{})
+
+	go func() {
+		h.closeAllConnections()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		h.logger.Info("All SSE connections closed successfully")
+	case <-ctx.Done():
+		h.logger.Warn("Shutdown timeout reached, some connections may not have closed gracefully")
+	}
+
+	return nil
+}
+
+// handleRegister handles connection registration.
+func (h *Hub) handleRegister(conn *Connection) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	userID := conn.UserID()
+	connID := conn.ID()
+
+	// Add to connections map
+	h.connections[connID] = conn
+
+	// Add to user connections map
+	if h.userConns[userID] == nil {
+		h.userConns[userID] = make(map[uuid.UUID]*Connection)
+	}
+
+	h.userConns[userID][connID] = conn
+
+	h.logger.Info("SSE connection registered",
+		"connection_id", connID,
+		"user_id", userID,
+		"total_connections", len(h.connections))
+}
+
+// handleUnregister handles connection unregistration.
+func (h *Hub) handleUnregister(conn *Connection) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	userID := conn.UserID()
+	connID := conn.ID()
+
+	// Remove from connections map
+	delete(h.connections, connID)
+
+	// Remove from user connections map
+	if userMap, exists := h.userConns[userID]; exists {
+		delete(userMap, connID)
+
+		if len(userMap) == 0 {
+			delete(h.userConns, userID)
+		}
+	}
+
+	h.logger.Info("SSE connection unregistered",
+		"connection_id", connID,
+		"user_id", userID,
+		"total_connections", len(h.connections))
+}
+
+// handleBroadcast handles message broadcasting.
+func (h *Hub) handleBroadcast(request *BroadcastRequest) {
+	h.mutex.RLock()
+	defer h.mutex.RUnlock()
+
+	var targets []*Connection
+
+	if request.UserID != nil {
+		if userMap, exists := h.userConns[*request.UserID]; exists {
+			for _, conn := range userMap {
+				targets = append(targets, conn)
+			}
+		} else {
+			h.logger.Debug("No connections found for user",
+				"user_id", *request.UserID)
+
+			return
+		}
+	} else {
+		for _, conn := range h.connections {
+			targets = append(targets, conn)
+		}
+	}
+
+	sentCount := h.broadcastToTargets(targets, request.Message)
+
+	h.logger.Debug("SSE message broadcasted",
+		"message_id", request.Message.ID,
+		"event", request.Message.Event,
+		"recipients", sentCount)
+}
+
+// broadcastToTargets sends a message to multiple connections and returns the count of successful sends.
+func (h *Hub) broadcastToTargets(targets []*Connection, message *Message) int {
+	sentCount := 0
+
+	for _, conn := range targets {
+		if !conn.IsActive() {
+			continue
+		}
+
+		if err := conn.Send(message); err != nil {
+			h.logger.Warn("Failed to send message to connection",
+				"connection_id", conn.ID(),
+				"user_id", conn.UserID(),
+				"error", err)
+
+			continue
+		}
+
+		sentCount++
+	}
+
+	return sentCount
+}
+
+// cleanupStaleConnections removes inactive connections.
+func (h *Hub) cleanupStaleConnections() {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
+	staleThreshold := time.Now().Add(-5 * time.Minute)
+	staleConnections := make([]*Connection, 0)
+
+	for _, conn := range h.connections {
+		if !conn.IsActive() || conn.GetLastHeartbeat().Before(staleThreshold) {
+			staleConnections = append(staleConnections, conn)
+		}
+	}
+
+	for _, conn := range staleConnections {
+		h.logger.Info("Cleaning up stale SSE connection", "connection_id", conn.ID())
+
+		if err := conn.Close(); err != nil {
+			h.logger.Error("Failed to close connection", "connection_id", conn.ID(), "error", err)
+		}
+	}
+}
+
+// closeAllConnections closes all active connections.
+func (h *Hub) closeAllConnections() {
+	h.mutex.RLock()
+
+	connections := make([]*Connection, 0, len(h.connections))
+	for _, conn := range h.connections {
+		connections = append(connections, conn)
+	}
+
+	h.mutex.RUnlock()
+
+	for _, conn := range connections {
+		if err := conn.Close(); err != nil {
+			h.logger.Error("Failed to close connection", "connection_id", conn.ID(), "error", err)
+		}
+	}
+}
+
+// shutdown performs internal shutdown tasks.
+func (h *Hub) shutdown() {
+	h.logger.Info("SSE Hub shutdown initiated")
+	h.closeAllConnections()
+}
+
+// SetEventBus configures the hub to receive events from other instances via Redis pub/sub.
+// Uses shard-based channels with application-layer filtering.
+// The eventHandler function should parse service-specific events and call BroadcastToUser or BroadcastToAll.
+func (h *Hub) SetEventBus(
+	eventBus eventbus.EventBus,
+	instanceID string,
+	shardChannelBuilder func(int) string,
+	shardCount int,
+	eventHandler eventbus.EventHandler,
+) error {
+	h.eventBus = eventBus
+	h.instanceID = instanceID
+	h.shardChannelBuilder = shardChannelBuilder
+	h.shardCount = shardCount
+
+	// Subscribe to all shard channels at once with the custom handler
+	return h.subscribeToAllShards(eventHandler)
+}
+
+// subscribeToAllShards subscribes to all shard channels with a wrapper handler that filters by instance ID.
+func (h *Hub) subscribeToAllShards(eventHandler eventbus.EventHandler) error {
+	h.logger.Info("Subscribing to all shard channels", "shard_count", h.shardCount)
+
+	// Create a wrapper handler that filters by instance ID
+	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
+		// Skip events from our own instance
+		if event.GetSourceInstanceID() == h.instanceID {
+			h.logger.Debug("Skipping event from own instance",
+				"instance_id", h.instanceID,
+				"event_type", event.GetType())
+
+			return nil
+		}
+
+		h.logger.Debug("Received event from another instance",
+			"source_instance_id", event.GetSourceInstanceID(),
+			"event_type", event.GetType())
+
+		// Delegate to service-specific event handler
+		return eventHandler(ctx, event)
+	}
+
+	// Subscribe to all channels with the wrapped handler
+	for i := range h.shardCount {
+		channel := h.shardChannelBuilder(i)
+		if err := h.eventBus.Subscribe(channel, wrappedHandler); err != nil {
+			h.logger.Error("Failed to subscribe to shard channel",
+				"shard_id", i,
+				"channel", channel,
+				"error", err)
+
+			return err
+		}
+	}
+
+	h.logger.Info("Successfully subscribed to all shard channels",
+		"shard_count", h.shardCount)
+
+	return nil
+}

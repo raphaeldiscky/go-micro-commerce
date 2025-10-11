@@ -2,6 +2,7 @@ package redis
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -109,21 +110,22 @@ func UserChannel(userID uuid.UUID) string {
 	return UserPresenceChannel(userID)
 }
 
-// NotificationChannel creates a notification channel for a user.
-func NotificationChannel(userID uuid.UUID) string {
-	return NewChannelBuilder().
-		Service("notification").
-		Entity("user").
-		ID(userID).
-		Build()
-}
-
 // BroadcastChannel creates a broadcast channel for system-wide messages.
 func BroadcastChannel(messageType string) string {
 	return NewChannelBuilder().
 		Service("system").
 		Entity("broadcast").
 		Custom(messageType).
+		Build()
+}
+
+// NotificationShardChannel creates a shard-based notification channel.
+// Uses consistent hashing to distribute notifications across fixed shards.
+func NotificationShardChannel(shardID int) string {
+	return NewChannelBuilder().
+		Service("notification").
+		Entity("shard").
+		IDString(strconv.Itoa(shardID)).
 		Build()
 }
 
