@@ -11,4 +11,10 @@ const (
 	SSEBroadcastBufferSize = 256
 	// SSEMessageBufferSize is the buffer size for SSE messages.
 	SSEMessageBufferSize = 256
+	// SSEShardCount is the number of shards for distributing SSE notifications using consistent hashing.
+	SSEShardCount = 256
+	// DefaultReplicationFactor is the default replication factor for consistent hashing (virtual nodes).
+	DefaultReplicationFactor = 20
+	// DefaultLoadFactor is the default load factor for consistent hashing.
+	DefaultLoadFactor = 1.25
 )

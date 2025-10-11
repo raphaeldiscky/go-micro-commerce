@@ -1,5 +1,7 @@
 github.com/99designs/gqlgen v0.17.81 h1:kCkN/xVyRb5rEQpuwOHRTYq83i0IuTQg9vdIiwEerTs=
 github.com/99designs/gqlgen v0.17.81/go.mod h1:vgNcZlLwemsUhYim4dC1pvFP5FX0pr2Y+uYUoHFb1ig=
+github.com/ArchishmanSengupta/consistent-hashing v1.0.2 h1:DcPPQfFJ9j7BkOZ+vtbRHYyauCFkLGVa76wyOStZgNE=
+github.com/ArchishmanSengupta/consistent-hashing v1.0.2/go.mod h1:mBXmdIBjBK5SCTOJs7drI4pzew7mF7C8Nm7B2xfX4yE=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/DataDog/datadog-go v3.2.0+incompatible/go.mod h1:LButxg5PwREeZtORoXG3tL4fMGNddJ+vMq1mwgfaqoQ=
 github.com/IBM/sarama v1.45.2 h1:8m8LcMCu3REcwpa7fCP6v2fuPuzVwXDAM2DOv3CBrKw=

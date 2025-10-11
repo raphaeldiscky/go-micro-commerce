@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/99designs/gqlgen v0.17.81 // indirect
+	github.com/ArchishmanSengupta/consistent-hashing v1.0.2 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect

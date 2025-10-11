@@ -5,6 +5,7 @@ go 1.24.7
 require (
 	connectrpc.com/connect v1.19.0
 	github.com/99designs/gqlgen v0.17.81
+	github.com/ArchishmanSengupta/consistent-hashing v1.0.2
 	github.com/gorilla/websocket v1.5.3
 	github.com/hashicorp/consul/api v1.32.1
 	github.com/hibiken/asynq v0.25.1

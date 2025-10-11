@@ -13,6 +13,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/sharding"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -57,6 +59,7 @@ type notificationEventService struct {
 	sseHub           *sse.Hub
 	eventBus         eventbus.EventBus
 	instanceID       string
+	shardResolver    *sharding.ShardResolver
 	logger           logger.Logger
 }
 
@@ -67,6 +70,7 @@ func NewNotificationEventService(
 	sseHub *sse.Hub,
 	eventBus eventbus.EventBus,
 	instanceID string,
+	shardResolver *sharding.ShardResolver,
 	appLogger logger.Logger,
 ) NotificationEventService {
 	return &notificationEventService{
@@ -75,6 +79,7 @@ func NewNotificationEventService(
 		sseHub:           sseHub,
 		eventBus:         eventBus,
 		instanceID:       instanceID,
+		shardResolver:    shardResolver,
 		logger:           appLogger,
 	}
 }
@@ -664,42 +669,56 @@ func (s *notificationEventService) sendPushNotification(
 		// Don't return error - continue to publish to Redis
 	}
 
-	// Publish to Redis for other instances
+	// Publish to Redis if event bus is available
 	if s.eventBus != nil {
-		redisEvent := &notification.CreatedEvent{
-			UserID:  userID,
-			Message: sseMsg,
-		}
-
-		channelName := fmt.Sprintf("user:%s:notifications", userID.String())
-
-		baseEvent, errEvt := eventbus.NewBaseEvent(
-			s.instanceID,
-			notification.TypeNotificationCreated,
-			redisEvent,
-		)
-		if errEvt != nil {
-			s.logger.Error("Failed to create base event",
-				"user_id", userID,
-				"error", errEvt)
-
-			return fmt.Errorf("failed to create base event: %w", errEvt)
-		}
-
-		if err = s.eventBus.Publish(ctx, channelName, baseEvent); err != nil {
+		if err = s.publishToRedis(ctx, userID, sseMsg); err != nil {
 			s.logger.Error("Failed to publish notification to Redis",
 				"user_id", userID,
-				"channel", channelName,
 				"error", err)
 			// Don't return error - notification is already saved to DB
-		} else {
-			s.logger.Debug("Published notification to Redis",
-				"user_id", userID,
-				"channel", channelName)
 		}
 	}
 
 	s.logger.Infof("Successfully sent push notification to user %s", userID)
+
+	return nil
+}
+
+// publishToRedis handles Redis publishing logic.
+func (s *notificationEventService) publishToRedis(
+	ctx context.Context,
+	userID uuid.UUID,
+	sseMsg *sse.Message,
+) error {
+	redisEvent := &notification.CreatedEvent{
+		UserID:  userID,
+		Message: sseMsg,
+	}
+
+	// Use shard-based channel with consistent hashing
+	shardID, err := s.shardResolver.GetShardForUser(userID)
+	if err != nil {
+		return fmt.Errorf("failed to get shard for user: %w", err)
+	}
+
+	channelName := redis.NotificationShardChannel(shardID)
+
+	baseEvent, err := eventbus.NewBaseEvent(
+		s.instanceID,
+		notification.TypeNotificationCreated,
+		redisEvent,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create base event: %w", err)
+	}
+
+	if err = s.eventBus.Publish(ctx, channelName, baseEvent); err != nil {
+		return fmt.Errorf("failed to publish to channel %s: %w", channelName, err)
+	}
+
+	s.logger.Debug("Published notification to Redis",
+		"user_id", userID,
+		"channel", channelName)
 
 	return nil
 }

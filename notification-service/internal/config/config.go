@@ -14,6 +14,7 @@ type Config struct {
 	Redis          *RedisConfig
 	Consul         *ConsulConfig
 	InboxProcessor *InboxProcessorConfig
+	Sharding       *ShardingConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -36,6 +37,7 @@ func LoadConfig() (*Config, error) {
 		Kafka:          initKafkaConfig(),
 		Consul:         initConsulConfig(),
 		InboxProcessor: initInboxProcessorConfig(),
+		Sharding:       initShardingConfig(),
 	}
 
 	return cfg, nil
