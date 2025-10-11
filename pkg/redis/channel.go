@@ -88,6 +88,12 @@ func ChatChannel(conversationID uuid.UUID) string {
 		Build()
 }
 
+// ConversationChannel generates a channel name for a conversation.
+// Alias for ChatChannel for backward compatibility.
+func ConversationChannel(conversationID uuid.UUID) string {
+	return ChatChannel(conversationID)
+}
+
 // UserPresenceChannel creates a user presence channel.
 func UserPresenceChannel(userID uuid.UUID) string {
 	return NewChannelBuilder().
@@ -95,6 +101,12 @@ func UserPresenceChannel(userID uuid.UUID) string {
 		Entity("presence").
 		ID(userID).
 		Build()
+}
+
+// UserChannel generates a channel name for a user.
+// Alias for UserPresenceChannel for backward compatibility.
+func UserChannel(userID uuid.UUID) string {
+	return UserPresenceChannel(userID)
 }
 
 // NotificationChannel creates a notification channel for a user.

@@ -52,11 +52,9 @@ func NewWebSocketWorker(
 func (w *WebSocketWorker) Start(ctx context.Context) error {
 	w.logger.Info("Starting WebSocket worker...")
 
-	// Start Redis subscriber for cross-instance messages
-	if err := w.hub.StartRedisSubscriber(ctx); err != nil {
-		w.logger.Errorf("Failed to start Redis subscriber: %v", err)
-		return err
-	}
+	// EventBus is already initialized in provider, no need to start separately
+	w.logger.Info("EventBus configured for cross-instance messaging",
+		"active_subscriptions", w.hub.GetActiveChannelCount())
 
 	if err := w.server.Start(ctx); err != nil {
 		w.logger.Errorf("Failed to start WebSocket server: %v", err)

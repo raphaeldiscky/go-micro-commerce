@@ -165,6 +165,7 @@ func (h *ChatConnectionHandler) OnConnect(conn pkgwebsocket.Connection) error {
 }
 
 // autoJoinUserConversations automatically joins the user to all their active conversations.
+// Limits the number of auto-joined conversations to prevent performance issues for heavy users.
 func (h *ChatConnectionHandler) autoJoinUserConversations(chatConn *ChatConnection) error {
 	ctx := context.Background()
 
@@ -176,6 +177,19 @@ func (h *ChatConnectionHandler) autoJoinUserConversations(chatConn *ChatConnecti
 	)
 	if err != nil {
 		return err
+	}
+
+	// Limit auto-join to recent conversations for heavy users
+	const maxAutoJoin = 50
+
+	totalConversations := len(conversations)
+
+	if totalConversations > maxAutoJoin {
+		h.logger.Info("Limiting auto-join for heavy user",
+			"user_id", chatConn.UserID(),
+			"total_conversations", totalConversations,
+			"auto_join_limit", maxAutoJoin)
+		conversations = conversations[:maxAutoJoin]
 	}
 
 	// Join each conversation channel
@@ -205,8 +219,9 @@ func (h *ChatConnectionHandler) autoJoinUserConversations(chatConn *ChatConnecti
 
 	h.logger.Info("Auto-joined conversations",
 		"user_id", chatConn.UserID(),
-		"total_conversations", len(conversations),
-		"joined_count", joinCount)
+		"total_conversations", totalConversations,
+		"joined_count", joinCount,
+		"limited", totalConversations > maxAutoJoin)
 
 	return nil
 }

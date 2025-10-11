@@ -1,5 +1,5 @@
-// Package db provides a PostgreSQL connection pool implementation.
-package db
+// Package pg provides a PostgreSQL connection pool implementation.
+package pg
 
 import (
 	"context"

@@ -4,12 +4,13 @@ import (
 	"context"
 
 	"github.com/bsm/redislock"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/db"
+	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/pubsub"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
@@ -22,9 +23,8 @@ type Providers struct {
 	ChatService          service.ChatService
 	ConnectionService    service.ConnectionService
 	WebSocketHub         *websocket.ChatHub
-	ChatPubSub           *pubsub.ChatPubSub
-	RedisPublisher       redis.Publisher
-	RedisSubscriber      redis.Subscriber
+	EventBus             eventbus.EventBus
+	Logger               logger.Logger
 }
 
 // SetupGlobal initializes all providers.
@@ -33,7 +33,7 @@ func SetupGlobal(
 	cfg *config.Config,
 	appLogger logger.Logger,
 ) (*Providers, error) {
-	pgPool, err := db.NewPostgresConnection(ctx, &db.PostgresConfig{
+	pgPool, err := pg.NewPostgresConnection(ctx, &pg.PostgresConfig{
 		Host:            cfg.Postgres.Host,
 		Port:            cfg.Postgres.Port,
 		User:            cfg.Postgres.User,
@@ -66,19 +66,30 @@ func SetupGlobal(
 	lockClient := redislock.New(redisClusterClient)
 	dataStore := repository.NewDataStore(pgPool, lockClient, appLogger)
 
-	// Create Redis pub/sub clients for chat service
+	// Create Redis pub/sub clients for event bus
 	pubSubConfig := redis.DefaultPubSubConfig()
 	redisPublisher := redis.NewPublisher(redisClusterClient, pubSubConfig)
 	redisSubscriber := redis.NewSubscriber(redisClusterClient, pubSubConfig, appLogger)
 
-	// Initialize WebSocket hub here to avoid race condition
-	chatPubSub := initChatPubSub(redisPublisher, redisSubscriber, appLogger)
+	// Create EventBus for cross-instance messaging
+	instanceID := uuid.New().String()
+	eventBus := eventbus.NewRedisEventBus(
+		redisPublisher,
+		redisSubscriber,
+		instanceID,
+		appLogger,
+	)
+
+	// Initialize WebSocket hub
 	webSocketHub := initWebSocketHub(
 		dataStore.ConnectionRepository(),
 		dataStore.MessageRepository(),
 		appLogger,
-		chatPubSub,
+		instanceID,
 	)
+
+	// Set EventBus on hub (must be done after hub creation)
+	webSocketHub.SetEventBus(eventBus)
 
 	return &Providers{
 		DataStore:            dataStore,
@@ -86,19 +97,9 @@ func SetupGlobal(
 		ChatService:          nil, // Will be set in SetupChat
 		ConnectionService:    nil, // Will be set in SetupChat
 		WebSocketHub:         webSocketHub,
-		ChatPubSub:           chatPubSub,
-		RedisPublisher:       redisPublisher,
-		RedisSubscriber:      redisSubscriber,
+		EventBus:             eventBus,
+		Logger:               appLogger,
 	}, nil
-}
-
-// initChatPubSub initializes the chat pub/sub service.
-func initChatPubSub(
-	publisher redis.Publisher,
-	subscriber redis.Subscriber,
-	logger logger.Logger,
-) *pubsub.ChatPubSub {
-	return pubsub.NewChatPubSub(publisher, subscriber, logger)
 }
 
 // initWebSocketHub initializes the WebSocket hub.
@@ -106,7 +107,7 @@ func initWebSocketHub(
 	connectionRepo repository.ConnectionRepository,
 	messageRepo repository.MessageRepository,
 	logger logger.Logger,
-	chatPubSub *pubsub.ChatPubSub,
+	instanceID string,
 ) *websocket.ChatHub {
-	return websocket.NewChatHub(connectionRepo, messageRepo, logger, chatPubSub)
+	return websocket.NewChatHub(connectionRepo, messageRepo, logger, instanceID)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
+	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
@@ -54,13 +55,13 @@ func (r *mutationResolver) UpdatePresence(
 		Timestamp: now,
 	}
 
-	// Publish to Redis (will broadcast to all instances)
-	if err = r.messagePublisher.PublishMessage(ctx, uuid.Nil, wsMessage, nil); err != nil {
-		r.logger.Error("Failed to publish presence update",
+	// Broadcast presence update to all instances
+	if err = r.hub.BroadcastPresenceUpdate(user.UserID, wsMessage); err != nil {
+		r.logger.Error("Failed to broadcast presence update",
 			"error", err,
 			"user_id", user.UserID)
 
-		return nil, httperror.NewInternalServerError("failed to publish presence update")
+		return nil, httperror.NewInternalServerError("failed to broadcast presence update")
 	}
 
 	r.logger.Info("Presence update published",
@@ -112,7 +113,7 @@ func (r *mutationResolver) SendTypingIndicator(
 
 	// Create WebSocket message
 	now := time.Now()
-	channelName := websocket.ConversationChannel(conversationID)
+	channelName := redispkg.ConversationChannel(conversationID)
 	wsMessage := &pkgwebsocket.Message{
 		ID:        uuid.New(),
 		Type:      websocket.ChatMessageTypeTyping,
@@ -122,14 +123,14 @@ func (r *mutationResolver) SendTypingIndicator(
 		Timestamp: now,
 	}
 
-	// Publish to Redis (will broadcast to all instances)
-	if err = r.messagePublisher.PublishMessage(ctx, conversationID, wsMessage, &user.UserID); err != nil {
-		r.logger.Error("Failed to publish typing indicator",
+	// Broadcast typing indicator to all instances
+	if err = r.hub.BroadcastTypingIndicator(conversationID, wsMessage, user.UserID); err != nil {
+		r.logger.Error("Failed to broadcast typing indicator",
 			"error", err,
 			"user_id", user.UserID,
 			"conversation_id", conversationID)
 
-		return nil, httperror.NewInternalServerError("failed to publish typing indicator")
+		return nil, httperror.NewInternalServerError("failed to broadcast typing indicator")
 	}
 
 	r.logger.Info("Typing indicator published",
