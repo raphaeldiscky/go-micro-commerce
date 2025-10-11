@@ -11,6 +11,7 @@ type Config struct {
 	SMTP           *SMTPConfig
 	Kafka          *KafkaConfig
 	Postgres       *PostgresConfig
+	Redis          *RedisConfig
 	Consul         *ConsulConfig
 	InboxProcessor *InboxProcessorConfig
 }
@@ -31,6 +32,7 @@ func LoadConfig() (*Config, error) {
 		SMTP:           initSMTPConfig(),
 		HTTPServer:     initHTTPServerConfig(),
 		Postgres:       initPostgresConfig(),
+		Redis:          initRedisConfig(),
 		Kafka:          initKafkaConfig(),
 		Consul:         initConsulConfig(),
 		InboxProcessor: initInboxProcessorConfig(),

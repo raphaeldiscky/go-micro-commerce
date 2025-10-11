@@ -8,9 +8,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -18,6 +21,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
 )
 
 // NotificationRequestEvent is the envelope for notification request events.
@@ -47,18 +52,30 @@ type NotificationEventService interface {
 
 // notificationEventService implements notification business logic.
 type notificationEventService struct {
-	emailService EmailService
-	logger       logger.Logger
+	emailService     EmailService
+	notificationRepo repository.NotificationRepository
+	sseHub           *sse.Hub
+	eventBus         eventbus.EventBus
+	instanceID       string
+	logger           logger.Logger
 }
 
 // NewNotificationEventService creates a new notification service instance.
 func NewNotificationEventService(
 	emailService EmailService,
+	notificationRepo repository.NotificationRepository,
+	sseHub *sse.Hub,
+	eventBus eventbus.EventBus,
+	instanceID string,
 	appLogger logger.Logger,
 ) NotificationEventService {
 	return &notificationEventService{
-		emailService: emailService,
-		logger:       appLogger,
+		emailService:     emailService,
+		notificationRepo: notificationRepo,
+		sseHub:           sseHub,
+		eventBus:         eventBus,
+		instanceID:       instanceID,
+		logger:           appLogger,
 	}
 }
 
@@ -82,9 +99,7 @@ func (s *notificationEventService) ProcessNotificationRequest(
 
 		return nil
 	case event.NotificationTypePush:
-		s.logger.Info("Push notifications not yet implemented")
-
-		return nil
+		return s.sendPushNotification(ctx, &notificationEvent.Payload)
 	default:
 		return fmt.Errorf(
 			"unsupported notification type: %s",
@@ -593,4 +608,98 @@ func (s *notificationEventService) generateOrderPaymentExpiredEmail(
 	}
 
 	return s.emailService.RenderTemplate(constant.TemplateFileOrderPaymentExpired, templateData)
+}
+
+// sendPushNotification sends a push notification via SSE.
+func (s *notificationEventService) sendPushNotification(
+	ctx context.Context,
+	payload *event.NotificationRequestPayload,
+) error {
+	s.logger.Infof("Sending push notification to user %s with subject: %s",
+		payload.RecipientUserID, payload.Subject)
+
+	// Extract user ID
+	userID, err := uuid.Parse(payload.RecipientUserID)
+	if err != nil {
+		return fmt.Errorf("invalid recipient user ID: %w", err)
+	}
+
+	// Use message if provided, otherwise use subject
+	message := payload.Message
+	if message == "" {
+		message = payload.Subject
+	}
+
+	// Create notification entity
+	notif, err := entity.NewNotification(
+		userID,
+		string(payload.TemplateID),
+		payload.Subject,
+		message,
+		payload.Data,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create notification entity: %w", err)
+	}
+
+	// Save notification to database
+	savedNotif, err := s.notificationRepo.Create(ctx, notif)
+	if err != nil {
+		return fmt.Errorf("failed to save notification to database: %w", err)
+	}
+
+	s.logger.Infof("Saved notification to database: %s", savedNotif.ID)
+
+	// Create SSE message
+	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, savedNotif)
+	if err != nil {
+		return fmt.Errorf("failed to create SSE message: %w", err)
+	}
+
+	// Broadcast to local SSE connections
+	if err = s.sseHub.BroadcastToUser(userID, sseMsg); err != nil {
+		s.logger.Error("Failed to broadcast notification to local SSE connections",
+			"user_id", userID,
+			"error", err)
+		// Don't return error - continue to publish to Redis
+	}
+
+	// Publish to Redis for other instances
+	if s.eventBus != nil {
+		redisEvent := &notification.CreatedEvent{
+			UserID:  userID,
+			Message: sseMsg,
+		}
+
+		channelName := fmt.Sprintf("user:%s:notifications", userID.String())
+
+		baseEvent, errEvt := eventbus.NewBaseEvent(
+			s.instanceID,
+			notification.TypeNotificationCreated,
+			redisEvent,
+		)
+		if errEvt != nil {
+			s.logger.Error("Failed to create base event",
+				"user_id", userID,
+				"error", errEvt)
+
+			return fmt.Errorf("failed to create base event: %w", errEvt)
+		}
+
+		if err = s.eventBus.Publish(ctx, channelName, baseEvent); err != nil {
+			s.logger.Error("Failed to publish notification to Redis",
+				"user_id", userID,
+				"channel", channelName,
+				"error", err)
+			// Don't return error - notification is already saved to DB
+		} else {
+			s.logger.Debug("Published notification to Redis",
+				"user_id", userID,
+				"channel", channelName)
+		}
+	}
+
+	s.logger.Infof("Successfully sent push notification to user %s", userID)
+
+	return nil
 }

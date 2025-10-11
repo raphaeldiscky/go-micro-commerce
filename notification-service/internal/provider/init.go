@@ -3,9 +3,13 @@ package provider
 import (
 	"context"
 
+	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
@@ -15,6 +19,9 @@ import (
 type Providers struct {
 	DataStore  repository.DataStore
 	KafkaAdmin *kafka.Admin
+	SSEHub     *sse.Hub
+	EventBus   eventbus.EventBus
+	InstanceID string
 }
 
 // SetupGlobal initializes and returns the providers.
@@ -38,7 +45,23 @@ func SetupGlobal(
 		return nil, err
 	}
 
+	redisClusterClient, err := redis.NewRedisCluster(ctx, &redis.ClusterConfig{
+		Addrs:           cfg.Redis.Addrs,
+		Password:        cfg.Redis.Password,
+		DialTimeout:     cfg.Redis.DialTimeout,
+		ReadTimeout:     cfg.Redis.ReadTimeout,
+		WriteTimeout:    cfg.Redis.WriteTimeout,
+		MinIdleConn:     cfg.Redis.MinIdleConn,
+		MaxIdleConn:     cfg.Redis.MaxIdleConn,
+		MaxActiveConn:   cfg.Redis.MaxActiveConn,
+		MaxConnLifetime: cfg.Redis.MaxConnLifetime,
+	}, appLogger)
+	if err != nil {
+		return nil, err
+	}
+
 	dataStore := repository.NewDataStore(pgPool)
+
 	// Setup kafka admin
 	kafkaAdmin, err := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
@@ -49,8 +72,34 @@ func SetupGlobal(
 		return nil, err
 	}
 
+	// Initialize SSE Hub
+	sseHub := sse.NewHub(appLogger)
+
+	// Start SSE Hub
+	go sseHub.Run(ctx)
+
+	// Initialize Redis for event bus
+	pubSubConfig := redis.DefaultPubSubConfig()
+	redisPublisher := redis.NewPublisher(redisClusterClient, pubSubConfig)
+	redisSubscriber := redis.NewSubscriber(redisClusterClient, pubSubConfig, appLogger)
+
+	// Generate instance ID
+	instanceID := uuid.New().String()
+	eventBus := eventbus.NewRedisEventBus(
+		redisPublisher,
+		redisSubscriber,
+		instanceID,
+		appLogger,
+	)
+
+	appLogger.Info("EventBus initialized with Redis pub/sub",
+		"instance_id", instanceID)
+
 	return &Providers{
 		KafkaAdmin: kafkaAdmin,
 		DataStore:  dataStore,
+		SSEHub:     sseHub,
+		EventBus:   eventBus,
+		InstanceID: instanceID,
 	}, nil
 }

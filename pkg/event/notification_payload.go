@@ -14,9 +14,11 @@ type NotificationRequestPayload struct {
 	ID               uuid.UUID               `json:"id"`
 	RecipientEmail   string                  `json:"recipient_email"`
 	RecipientName    string                  `json:"recipient_name,omitempty"`
+	RecipientUserID  string                  `json:"recipient_user_id,omitempty"`
 	NotificationType NotificationType        `json:"notification_type"`
 	TemplateID       constant.TemplateIDType `json:"template_id"`
 	Subject          string                  `json:"subject"`
+	Message          string                  `json:"message,omitempty"`
 	Priority         NotificationPriority    `json:"priority"`
 	Data             map[string]any          `json:"data"`
 	ScheduledFor     *time.Time              `json:"scheduled_for,omitempty"`

@@ -20,6 +20,7 @@ type DBTX interface {
 type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	InboxRepository() InboxRepository
+	NotificationRepository() NotificationRepository
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -58,4 +59,9 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 // InboxRepository returns a new InboxRepository.
 func (s *dataStore) InboxRepository() InboxRepository {
 	return NewInboxRepository(s.db)
+}
+
+// NotificationRepository returns a new NotificationRepository.
+func (s *dataStore) NotificationRepository() NotificationRepository {
+	return NewNotificationRepository(s.db)
 }
