@@ -30,7 +30,7 @@ func NewNotification(
 	notificationType constant.NotificationType,
 	title string,
 	message string,
-	metadata map[string]interface{},
+	metadata map[string]any,
 ) (*Notification, error) {
 	var metadataJSON json.RawMessage
 	if metadata != nil {
@@ -42,7 +42,7 @@ func NewNotification(
 		metadataJSON = data
 	}
 
-	return &Notification{
+	notif := &Notification{
 		ID:        uuid.New(),
 		UserID:    userID,
 		Type:      notificationType,
@@ -52,7 +52,13 @@ func NewNotification(
 		IsRead:    false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	}, nil
+	}
+
+	if err := notif.validate(); err != nil {
+		return nil, err
+	}
+
+	return notif, nil
 }
 
 // MarkAsRead marks the notification as read.
@@ -61,6 +67,26 @@ func (n *Notification) MarkAsRead() {
 	now := time.Now()
 	n.ReadAt = &now
 	n.UpdatedAt = now
+}
+
+// Validate performs validation on the notification.
+func (n *Notification) validate() error {
+	switch n.Type {
+	case
+		constant.NotificationTypeNewMessage,
+		constant.NotificationTypeNewProduct,
+		constant.NotificationTypeOrderUpdate,
+		constant.NotificationTypeOrderConfirmed,
+		constant.NotificationTypeOrderShipped,
+		constant.NotificationTypeOrderDelivered,
+		constant.NotificationTypeOrderCancelled,
+		constant.NotificationTypePaymentSuccess,
+		constant.NotificationTypeSystemAlert:
+		// valid types → no error
+		return nil
+	default:
+		return errors.New("invalid notification type")
+	}
 }
 
 // GetMetadata unmarshals the metadata JSON into a map.

@@ -9,20 +9,24 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/service"
 )
 
 // NotificationHandler handles HTTP requests for notification operations.
 type NotificationHandler struct {
-	notificationService service.NotificationService
+	notificationService      service.NotificationService
+	notificationEventService service.NotificationEventService
 }
 
 // NewNotificationHandler creates a new instance of NotificationHandler.
 func NewNotificationHandler(
 	notificationService service.NotificationService,
+	notificationEventService service.NotificationEventService,
 ) *NotificationHandler {
 	return &NotificationHandler{
-		notificationService: notificationService,
+		notificationService:      notificationService,
+		notificationEventService: notificationEventService,
 	}
 }
 
@@ -156,40 +160,28 @@ func (h *NotificationHandler) MarkAllAsRead(c echo.Context) error {
 	return echoutils.ResponseOKPlain(c)
 }
 
-// DeleteNotification handles DELETE /notifications/:notificationID.
-func (h *NotificationHandler) DeleteNotification(c echo.Context) error {
-	notificationIDStr := c.Param("notificationID")
-
-	notificationID, err := uuid.Parse(notificationIDStr)
-	if err != nil {
+// CreateSystemNotification handles POST /notifications.
+func (h *NotificationHandler) CreateSystemNotification(c echo.Context) error {
+	var req dto.CreateNotificationRequest
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
 
-	userID := echoutils.GetUserIDFromContext(c)
+	if err := c.Validate(&req); err != nil {
+		return err
+	}
 
-	err = h.notificationService.DeleteNotification(
+	notification, err := h.notificationEventService.CreateAndBroadcastNotification(
 		c.Request().Context(),
-		notificationID,
-		userID,
+		req.UserID,
+		req.Type,
+		req.Title,
+		req.Message,
+		req.Metadata,
 	)
 	if err != nil {
 		return err
 	}
 
-	return echoutils.ResponseOKPlain(c)
-}
-
-// DeleteAllNotifications handles DELETE /notifications/all.
-func (h *NotificationHandler) DeleteAllNotifications(c echo.Context) error {
-	userID := echoutils.GetUserIDFromContext(c)
-
-	err := h.notificationService.DeleteAllNotifications(
-		c.Request().Context(),
-		userID,
-	)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseOKPlain(c)
+	return echoutils.ResponseOK(c, notification)
 }

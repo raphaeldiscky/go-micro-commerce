@@ -2,6 +2,9 @@
 package middleware
 
 import (
+	"net/http"
+	"slices"
+
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/httperror"
@@ -31,5 +34,22 @@ func AuthMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		ctx.Set(string(constant.CtxKeyRoles), roles)
 
 		return next(ctx)
+	}
+}
+
+// RequireAdminRole is a middleware that checks if the user has a specific role.
+func RequireAdminRole(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		roles := echoutils.GetRolesFromContext(c)
+
+		// Check if user has the admin role
+		if slices.Contains(roles, constant.RoleAdmin) {
+			return next(c)
+		}
+
+		return echo.NewHTTPError(
+			http.StatusForbidden,
+			"access denied: insufficient permissions",
+		)
 	}
 }

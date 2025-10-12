@@ -49,12 +49,6 @@ type NotificationRepository interface {
 
 	// MarkAllAsRead marks all notifications as read for a user
 	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
-
-	// Delete deletes a notification
-	Delete(ctx context.Context, id uuid.UUID, userID uuid.UUID) error
-
-	// DeleteAllByUserID deletes all notifications for a user
-	DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error
 }
 
 // notificationRepository implements the NotificationRepository.
@@ -284,38 +278,6 @@ func (r *notificationRepository) MarkAllAsRead(ctx context.Context, userID uuid.
 	_, err := r.db.Exec(ctx, query, userID)
 	if err != nil {
 		return fmt.Errorf("failed to mark all notifications as read: %w", err)
-	}
-
-	return nil
-}
-
-// Delete deletes a notification.
-func (r *notificationRepository) Delete(
-	ctx context.Context,
-	id uuid.UUID,
-	userID uuid.UUID,
-) error {
-	query := `DELETE FROM notifications WHERE id = $1 AND user_id = $2`
-
-	result, err := r.db.Exec(ctx, query, id, userID)
-	if err != nil {
-		return fmt.Errorf("failed to delete notification: %w", err)
-	}
-
-	if result.RowsAffected() == 0 {
-		return errors.New("notification not found")
-	}
-
-	return nil
-}
-
-// DeleteAllByUserID deletes all notifications for a user.
-func (r *notificationRepository) DeleteAllByUserID(ctx context.Context, userID uuid.UUID) error {
-	query := `DELETE FROM notifications WHERE user_id = $1`
-
-	_, err := r.db.Exec(ctx, query, userID)
-	if err != nil {
-		return fmt.Errorf("failed to delete all notifications: %w", err)
 	}
 
 	return nil

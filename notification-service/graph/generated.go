@@ -5575,20 +5575,13 @@ func (ec *executionContext) marshalNNotificationEvent2githubᚗcomᚋraphaeldisc
 }
 
 func (ec *executionContext) unmarshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType(ctx context.Context, v any) (constant.NotificationType, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.NotificationType(tmp)
+	var res constant.NotificationType
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType(ctx context.Context, sel ast.SelectionSet, v constant.NotificationType) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
