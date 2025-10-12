@@ -75,6 +75,27 @@ func MapToGraphQLNewNotification(notif *entity.Notification) *graph.NewNotificat
 	}
 }
 
+// MapToGraphQLNewNotificationFromDTO maps dto.NotificationResponse to graph.NewNotification (for events).
+func MapToGraphQLNewNotificationFromDTO(notif *dto.NotificationResponse) *graph.NewNotification {
+	var metadata *string
+
+	if notif.Metadata != nil {
+		metadataStr := string(notif.Metadata)
+		metadata = &metadataStr
+	}
+
+	return &graph.NewNotification{
+		ID:        notif.ID.String(),
+		UserID:    notif.UserID.String(),
+		Type:      notif.Type,
+		Title:     notif.Title,
+		Message:   notif.Message,
+		Metadata:  metadata,
+		IsRead:    notif.IsRead,
+		CreatedAt: notif.CreatedAt,
+	}
+}
+
 // MapToGraphQLNotificationConnection maps notification list to GraphQL connection.
 func MapToGraphQLNotificationConnection(
 	notifications []*entity.Notification,

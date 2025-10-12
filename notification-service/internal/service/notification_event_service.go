@@ -55,7 +55,7 @@ type NotificationEventService interface {
 	CreateAndBroadcastNotification(
 		ctx context.Context,
 		userID *uuid.UUID, // nil for system notifications to broadcast for all users
-		notificationType constant.NotificationType,
+		notificationType constant.PushNotificationType,
 		title string,
 		message string,
 		metadata map[string]any,
@@ -645,10 +645,10 @@ func (s *notificationEventService) sendPushNotification(
 		message = payload.Subject
 	}
 
-	// Create notification entity
-	notif, err := entity.NewNotification(
+	// Create push notification entity
+	notif, err := entity.NewPushNotification(
 		userID,
-		constant.NotificationType(payload.NotificationType),
+		constant.PushNotificationType(payload.NotificationType),
 		payload.Subject,
 		message,
 		payload.Data,
@@ -665,8 +665,11 @@ func (s *notificationEventService) sendPushNotification(
 
 	s.logger.Infof("Saved notification to database: %s", savedNotif.ID)
 
-	// Create SSE message
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, savedNotif)
+	// Map entity to DTO for proper JSON serialization
+	notifDTO := mapper.MapToNotificationResponse(savedNotif)
+
+	// Create SSE message with DTO (has proper json tags)
+	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return fmt.Errorf("failed to create SSE message: %w", err)
 	}
@@ -737,7 +740,7 @@ func (s *notificationEventService) publishToRedis(
 func (s *notificationEventService) CreateAndBroadcastNotification(
 	ctx context.Context,
 	userID *uuid.UUID,
-	notificationType constant.NotificationType,
+	notificationType constant.PushNotificationType,
 	title string,
 	message string,
 	metadata map[string]any,
@@ -751,7 +754,7 @@ func (s *notificationEventService) CreateAndBroadcastNotification(
 	}
 
 	// Create notification entity
-	notif, err := entity.NewNotification(
+	notif, err := entity.NewPushNotification(
 		*userID,
 		notificationType,
 		title,
@@ -770,8 +773,11 @@ func (s *notificationEventService) CreateAndBroadcastNotification(
 
 	s.logger.Infof("Saved notification to database: %s", savedNotif.ID)
 
-	// Create SSE message
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, savedNotif)
+	// Map entity to DTO for proper JSON serialization
+	notifDTO := mapper.MapToNotificationResponse(savedNotif)
+
+	// Create SSE message with DTO (has proper json tags)
+	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSE message: %w", err)
 	}

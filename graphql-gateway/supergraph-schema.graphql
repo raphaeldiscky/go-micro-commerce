@@ -199,7 +199,7 @@ type NewNotification
 {
   id: ID!
   userId: ID!
-  type: NotificationType!
+  type: PushNotificationType!
   title: String!
   message: String!
   metadata: String
@@ -212,7 +212,7 @@ type Notification
 {
   id: ID!
   userId: ID!
-  type: NotificationType!
+  type: PushNotificationType!
   title: String!
   message: String!
   metadata: String
@@ -256,20 +256,6 @@ type NotificationRead
   id: ID!
   userId: ID!
   readAt: Time!
-}
-
-enum NotificationType
-  @join__type(graph: NOTIFICATION_SERVICE)
-{
-  NEW_MESSAGE @join__enumValue(graph: NOTIFICATION_SERVICE)
-  NEW_PRODUCT @join__enumValue(graph: NOTIFICATION_SERVICE)
-  ORDER_UPDATE @join__enumValue(graph: NOTIFICATION_SERVICE)
-  ORDER_CONFIRMED @join__enumValue(graph: NOTIFICATION_SERVICE)
-  ORDER_SHIPPED @join__enumValue(graph: NOTIFICATION_SERVICE)
-  ORDER_DELIVERED @join__enumValue(graph: NOTIFICATION_SERVICE)
-  ORDER_CANCELLED @join__enumValue(graph: NOTIFICATION_SERVICE)
-  PAYMENT_SUCCESS @join__enumValue(graph: NOTIFICATION_SERVICE)
-  SYSTEM_ALERT @join__enumValue(graph: NOTIFICATION_SERVICE)
 }
 
 type OnlineStatus
@@ -327,6 +313,20 @@ type PresenceUpdate
   userId: ID!
   status: PresenceStatus!
   lastSeen: Time
+}
+
+enum PushNotificationType
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  NEW_MESSAGE @join__enumValue(graph: NOTIFICATION_SERVICE)
+  NEW_PRODUCT @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_UPDATE @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_CONFIRMED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_SHIPPED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_DELIVERED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_CANCELLED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  PAYMENT_SUCCESS @join__enumValue(graph: NOTIFICATION_SERVICE)
+  SYSTEM_ALERT @join__enumValue(graph: NOTIFICATION_SERVICE)
 }
 
 type Query

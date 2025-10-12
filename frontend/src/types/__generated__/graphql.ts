@@ -225,7 +225,7 @@ export type NewNotification = {
   message: Scalars['String']['output']
   metadata?: Maybe<Scalars['String']['output']>
   title: Scalars['String']['output']
-  type: NotificationType
+  type: PushNotificationType
   userId: Scalars['ID']['output']
 }
 
@@ -238,7 +238,7 @@ export type Notification = {
   metadata?: Maybe<Scalars['String']['output']>
   readAt?: Maybe<Scalars['Time']['output']>
   title: Scalars['String']['output']
-  type: NotificationType
+  type: PushNotificationType
   updatedAt: Scalars['Time']['output']
   userId: Scalars['ID']['output']
 }
@@ -271,18 +271,6 @@ export type NotificationRead = {
   id: Scalars['ID']['output']
   readAt: Scalars['Time']['output']
   userId: Scalars['ID']['output']
-}
-
-export enum NotificationType {
-  NewMessage = 'NEW_MESSAGE',
-  NewProduct = 'NEW_PRODUCT',
-  OrderCancelled = 'ORDER_CANCELLED',
-  OrderConfirmed = 'ORDER_CONFIRMED',
-  OrderDelivered = 'ORDER_DELIVERED',
-  OrderShipped = 'ORDER_SHIPPED',
-  OrderUpdate = 'ORDER_UPDATE',
-  PaymentSuccess = 'PAYMENT_SUCCESS',
-  SystemAlert = 'SYSTEM_ALERT',
 }
 
 export type OnlineStatus = {
@@ -331,6 +319,18 @@ export type PresenceUpdate = {
   lastSeen?: Maybe<Scalars['Time']['output']>
   status: PresenceStatus
   userId: Scalars['ID']['output']
+}
+
+export enum PushNotificationType {
+  NewMessage = 'NEW_MESSAGE',
+  NewProduct = 'NEW_PRODUCT',
+  OrderCancelled = 'ORDER_CANCELLED',
+  OrderConfirmed = 'ORDER_CONFIRMED',
+  OrderDelivered = 'ORDER_DELIVERED',
+  OrderShipped = 'ORDER_SHIPPED',
+  OrderUpdate = 'ORDER_UPDATE',
+  PaymentSuccess = 'PAYMENT_SUCCESS',
+  SystemAlert = 'SYSTEM_ALERT',
 }
 
 export type Query = {

@@ -32,4 +32,7 @@ type Event interface {
 
 	// Marshal serializes the event to bytes.
 	Marshal() ([]byte, error)
+
+	// UnmarshalPayload deserializes the event payload into the target.
+	UnmarshalPayload(target interface{}) error
 }

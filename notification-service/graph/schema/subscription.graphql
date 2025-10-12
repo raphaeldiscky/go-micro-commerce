@@ -16,7 +16,7 @@ union NotificationEvent =
 type NewNotification {
   id: ID!
   userId: ID!
-  type: NotificationType!
+  type: PushNotificationType!
   title: String!
   message: String!
   metadata: String

@@ -1,5 +1,5 @@
-# Notification type enum
-enum NotificationType {
+# PushNotification type enum
+enum PushNotificationType {
   NEW_MESSAGE
   NEW_PRODUCT
   ORDER_UPDATE
@@ -15,7 +15,7 @@ enum NotificationType {
 type Notification {
   id: ID!
   userId: ID!
-  type: NotificationType!
+  type: PushNotificationType!
   title: String!
   message: String!
   metadata: String

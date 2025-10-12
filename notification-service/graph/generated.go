@@ -1103,7 +1103,7 @@ func (ec *executionContext) _NewNotification_type(ctx context.Context, field gra
 			return obj.Type, nil
 		},
 		nil,
-		ec.marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType,
+		ec.marshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType,
 		true,
 		true,
 	)
@@ -1116,7 +1116,7 @@ func (ec *executionContext) fieldContext_NewNotification_type(_ context.Context,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type NotificationType does not have child fields")
+			return nil, errors.New("field of type PushNotificationType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1335,7 +1335,7 @@ func (ec *executionContext) _Notification_type(ctx context.Context, field graphq
 			return obj.Type, nil
 		},
 		nil,
-		ec.marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType,
+		ec.marshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType,
 		true,
 		true,
 	)
@@ -1348,7 +1348,7 @@ func (ec *executionContext) fieldContext_Notification_type(_ context.Context, fi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type NotificationType does not have child fields")
+			return nil, errors.New("field of type PushNotificationType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5574,16 +5574,6 @@ func (ec *executionContext) marshalNNotificationEvent2githubᚗcomᚋraphaeldisc
 	return ec._NotificationEvent(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType(ctx context.Context, v any) (constant.NotificationType, error) {
-	var res constant.NotificationType
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType(ctx context.Context, sel ast.SelectionSet, v constant.NotificationType) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -5592,6 +5582,16 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋg
 		return graphql.Null
 	}
 	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType(ctx context.Context, v any) (constant.PushNotificationType, error) {
+	var res constant.PushNotificationType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType(ctx context.Context, sel ast.SelectionSet, v constant.PushNotificationType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {

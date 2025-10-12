@@ -128,7 +128,7 @@ func SetupGlobal(
 	}
 
 	// Set up GraphQL subscription event handlers
-	if errSetup := setupGraphQLSubscriptions(subscriptionManager, eventBus, instanceID, appLogger); errSetup != nil {
+	if errSetup := setupGraphQLSubscriptions(subscriptionManager, eventBus, appLogger); errSetup != nil {
 		appLogger.Errorf("failed to set up GraphQL subscriptions: %v", errSetup)
 		return nil, errSetup
 	}
@@ -201,7 +201,6 @@ func setupSSEEventBus(
 func setupGraphQLSubscriptions(
 	subscriptionManager *subscription.Manager,
 	eventBus eventbus.EventBus,
-	instanceID string,
 	appLogger logger.Logger,
 ) error {
 	// Create event handler for GraphQL subscriptions
@@ -209,12 +208,10 @@ func setupGraphQLSubscriptions(
 
 	// Wrap the handler with eventbus.EventHandler signature
 	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
-		// Skip events from our own instance (already handled locally)
-		if event.GetSourceInstanceID() == instanceID {
-			return nil
-		}
-
-		// Handle cross-instance events
+		// Handle all events (including from same instance) because:
+		// - Notification creation only broadcasts to SSE Hub (local SSE connections)
+		// - GraphQL subscriptions use SubscriptionManager (separate from SSE Hub)
+		// - GraphQL subscriptions need Redis pub/sub events to receive notifications
 		return eventHandler.HandleEvent(ctx, event)
 	}
 
