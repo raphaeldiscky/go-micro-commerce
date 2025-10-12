@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils'
 import type {
   Notification,
-  NotificationType,
+  PushNotificationType,
 } from '@/types/__generated__/graphql'
 import { formatDistanceToNow } from 'date-fns'
 import {
@@ -19,7 +19,7 @@ interface NotificationRowProps {
   onClick: (id: string) => void
 }
 
-function getNotificationIcon(type: NotificationType) {
+function getNotificationIcon(type: PushNotificationType) {
   switch (type) {
     case 'NEW_MESSAGE':
       return MessageSquare
@@ -42,7 +42,7 @@ function getNotificationIcon(type: NotificationType) {
   }
 }
 
-function getIconColor(type: NotificationType): string {
+function getIconColor(type: PushNotificationType): string {
   switch (type) {
     case 'NEW_MESSAGE':
       return 'text-blue-500'
