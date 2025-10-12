@@ -42,20 +42,28 @@ func SetupGraphQLRoutes(
 
 	// Add middleware to extract user headers from Apollo Router (forwarded from JWT claims)
 	srv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
-
-	// Add logging middleware to log GraphQL operations
 	srv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
 
 	e.GET("/graph", echo.WrapHandler(srv))
 	e.POST("/graph", echo.WrapHandler(srv))
 
+	// SSE Subscription Server (separate from main GraphQL server)
 	sseSrv := handler.NewDefaultServer(executableSchema)
 	sseSrv.AddTransport(transport.SSE{
 		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
 	})
-	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
-	srv.AddTransport(transport.POST{})
+	sseSrv.AddTransport(transport.Options{})
+	sseSrv.AddTransport(transport.GET{})
+	sseSrv.AddTransport(transport.POST{})
+
+	sseSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
+	sseSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
+
+	// SSE endpoint supports both GET and POST methods
+	// GET: subscription query in URL parameters
+	// POST: subscription query in request body (used by graphql-sse client)
+	e.GET("/graph/subscriptions/sse", echo.WrapHandler(sseSrv))
+	e.POST("/graph/subscriptions/sse", echo.WrapHandler(sseSrv))
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")

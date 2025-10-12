@@ -43,9 +43,17 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 		"/graph/subscriptions/ws",
 		gw.ProxyWebSocket("chat-service", "/graph/subscriptions/ws"),
 	)
+	// GraphQL SSE Subscriptions (bypass Apollo Router, proxy directly to notification-service)
+	// SSE uses standard HTTP streaming (text/event-stream), not WebSocket protocol
+	// Supports both GET (query in URL) and POST (query in body) methods
+	// Uses ProxySSE for long-lived streaming without timeouts
+	optionalAuth.GET(
+		"/graph/subscriptions/sse",
+		gw.ProxySSE("notification-service", "/graph/subscriptions/sse"),
+	)
 	optionalAuth.POST(
 		"/graph/subscriptions/sse",
-		gw.ProxyWebSocket("notification-service", "/graph/subscriptions/sse"),
+		gw.ProxySSE("notification-service", "/graph/subscriptions/sse"),
 	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))

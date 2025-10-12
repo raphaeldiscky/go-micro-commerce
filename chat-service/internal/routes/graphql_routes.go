@@ -44,8 +44,6 @@ func SetupGraphQLRoutes(
 
 	// Add middleware to extract client metadata from headers
 	srv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
-
-	// Add logging middleware to log GraphQL operations
 	srv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
 
 	// GraphQL endpoint without auth (for introspection and public queries)
@@ -70,16 +68,15 @@ func SetupGraphQLRoutes(
 	wsSrv.AddTransport(transport.Options{})
 	wsSrv.AddTransport(transport.GET{})
 	wsSrv.AddTransport(transport.POST{})
+
 	// Add context middleware for subscriptions
 	wsSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
-
-	// Add logging middleware for subscriptions
 	wsSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
 
 	// WebSocket subscriptions endpoint
 	// Auth is handled by API Gateway which validates JWT and forwards X-User-* headers
 	// The WebSocketAuthMiddleware extracts these headers from HTTP upgrade request and adds to context
-	e.GET("/graph/subscriptions", echo.WrapHandler(wsSrv), pkgmiddleware.WebSocketAuthMiddleware())
+	e.GET("/graph/subscriptions/ws", echo.WrapHandler(wsSrv))
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
