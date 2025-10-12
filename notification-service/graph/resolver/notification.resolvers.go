@@ -81,10 +81,10 @@ func (r *queryResolver) ListNotifications(
 	}
 
 	// Convert DTO notifications to GraphQL notifications
-	notifications := make([]*graph.Notification, len(listResponse.Notifications))
+	notifications := make([]*graph.Notification, len(listResponse))
 
-	for i := range listResponse.Notifications {
-		notifications[i] = mapper.MapToGraphQLNotificationFromDTO(&listResponse.Notifications[i])
+	for i := range listResponse {
+		notifications[i] = mapper.MapToGraphQLNotificationFromDTO(&listResponse[i])
 	}
 
 	// Build connection
@@ -106,8 +106,10 @@ func (r *queryResolver) ListNotifications(
 	return &graph.NotificationConnection{
 		Edges: edges,
 		PageInfo: &graph.PageInfo{
-			HasNextPage: pagination.HasNext,
-			EndCursor:   endCursor,
+			HasNextPage:     pagination.HasNext,
+			HasPreviousPage: false,
+			StartCursor:     nil,
+			EndCursor:       endCursor,
 		},
 	}, nil
 }
@@ -140,9 +142,9 @@ func (r *queryResolver) ListUnreadNotifications(
 	}
 
 	// Convert DTO notifications to GraphQL notifications
-	notifications := make([]*graph.Notification, len(listResponse.Notifications))
+	notifications := make([]*graph.Notification, len(listResponse))
 
-	for i, notif := range listResponse.Notifications {
+	for i, notif := range listResponse {
 		notifications[i] = mapper.MapToGraphQLNotificationFromDTO(&notif)
 	}
 
@@ -165,8 +167,10 @@ func (r *queryResolver) ListUnreadNotifications(
 	return &graph.NotificationConnection{
 		Edges: edges,
 		PageInfo: &graph.PageInfo{
-			HasNextPage: pagination.HasNext,
-			EndCursor:   endCursor,
+			HasNextPage:     pagination.HasNext,
+			HasPreviousPage: false,
+			StartCursor:     nil,
+			EndCursor:       endCursor,
 		},
 	}, nil
 }

@@ -96,6 +96,29 @@ headers:
         - propagate:
             named: "user-agent"
             rename: "X-User-Agent"
+    notification-service:
+      request:
+        - propagate:
+            named: "authorization"
+        - propagate:
+            named: "cookie"
+        - propagate:
+            named: "X-User-ID"
+        - propagate:
+            named: "X-Email"
+        - propagate:
+            named: "X-Roles"
+        - propagate:
+            named: "X-Is-Active"
+        - insert:
+            name: "X-Gateway"
+            value: "graphql-gateway"
+        - insert:
+            name: "X-Client-IP"
+            from_context: "apollo_client_ip"
+        - propagate:
+            named: "user-agent"
+            rename: "X-User-Agent"
 
 # OpenTelemetry configuration
 telemetry:

@@ -90,6 +90,7 @@ scalar join__FieldSet
 enum join__Graph {
   AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
   CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
+  NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
 }
 
 input JoinConversationInput
@@ -160,6 +161,7 @@ enum MessageType
 type Mutation
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
 {
   register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
@@ -176,6 +178,8 @@ type Mutation
   leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
   updatePresence(status: PresenceStatus!): PresenceUpdate! @join__field(graph: CHAT_SERVICE)
   sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @join__field(graph: CHAT_SERVICE)
+  markAsRead(id: ID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
+  markAllAsRead: Boolean! @join__field(graph: NOTIFICATION_SERVICE)
 }
 
 type NewMessage
@@ -190,6 +194,70 @@ type NewMessage
   createdAt: Time!
 }
 
+type NewNotification
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  type: PushNotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  createdAt: Time!
+}
+
+type Notification
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  type: PushNotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  readAt: Time
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type NotificationConnection
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  edges: [NotificationEdge!]!
+  pageInfo: PageInfo!
+}
+
+type NotificationDeleted
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+}
+
+type NotificationEdge
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  node: Notification!
+  cursor: String!
+}
+
+union NotificationEvent
+  @join__type(graph: NOTIFICATION_SERVICE)
+  @join__unionMember(graph: NOTIFICATION_SERVICE, member: "NewNotification")
+  @join__unionMember(graph: NOTIFICATION_SERVICE, member: "NotificationRead")
+  @join__unionMember(graph: NOTIFICATION_SERVICE, member: "NotificationDeleted")
+ = NewNotification | NotificationRead | NotificationDeleted
+
+type NotificationRead
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  readAt: Time!
+}
+
 type OnlineStatus
   @join__type(graph: CHAT_SERVICE)
 {
@@ -199,6 +267,7 @@ type OnlineStatus
 
 type PageInfo
   @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
 {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -246,9 +315,24 @@ type PresenceUpdate
   lastSeen: Time
 }
 
+enum PushNotificationType
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  NEW_MESSAGE @join__enumValue(graph: NOTIFICATION_SERVICE)
+  NEW_PRODUCT @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_UPDATE @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_CONFIRMED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_SHIPPED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_DELIVERED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_CANCELLED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  PAYMENT_SUCCESS @join__enumValue(graph: NOTIFICATION_SERVICE)
+  SYSTEM_ALERT @join__enumValue(graph: NOTIFICATION_SERVICE)
+}
+
 type Query
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
 {
   me: User @join__field(graph: AUTH_SERVICE)
   user(id: ID!): User @join__field(graph: AUTH_SERVICE)
@@ -258,6 +342,10 @@ type Query
   waitingConversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   conversationMessages(conversationId: ID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
   conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
+  listNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
+  listUnreadNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
+  getUnreadCount: UnreadCount! @join__field(graph: NOTIFICATION_SERVICE)
+  getTabCounts: TabCounts! @join__field(graph: NOTIFICATION_SERVICE)
 }
 
 type ReadReceipt
@@ -282,9 +370,10 @@ input RegisterUserInput
 enum Role
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
 {
-  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE)
-  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE)
+  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE)
+  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE)
 }
 
 input SendDeliveryReceiptInput
@@ -312,14 +401,25 @@ input SendReadReceiptInput
 
 type Subscription
   @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
 {
-  conversationEvents(conversationId: ID!): ConversationEvent!
-  userEvents: UserEvent!
+  conversationEvents(conversationId: ID!): ConversationEvent! @join__field(graph: CHAT_SERVICE)
+  userEvents: UserEvent! @join__field(graph: CHAT_SERVICE)
+  notificationEvents: NotificationEvent! @join__field(graph: NOTIFICATION_SERVICE)
+}
+
+type TabCounts
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  all: Int!
+  unread: Int!
+  read: Int!
 }
 
 scalar Time
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
 
 type TypingIndicator
   @join__type(graph: CHAT_SERVICE)
@@ -337,9 +437,16 @@ input TypingIndicatorInput
   isTyping: Boolean!
 }
 
+type UnreadCount
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  count: Int!
+}
+
 type User
   @join__type(graph: AUTH_SERVICE, key: "id")
   @join__type(graph: CHAT_SERVICE, key: "id")
+  @join__type(graph: NOTIFICATION_SERVICE, key: "id")
 {
   id: ID!
   email: String! @join__field(graph: AUTH_SERVICE)
@@ -351,6 +458,8 @@ type User
   updatedAt: Time! @join__field(graph: AUTH_SERVICE)
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   onlineStatus: OnlineStatus @join__field(graph: CHAT_SERVICE)
+  notifications: [Notification!]! @join__field(graph: NOTIFICATION_SERVICE)
+  unreadCount: Int! @join__field(graph: NOTIFICATION_SERVICE)
 }
 
 union UserEvent

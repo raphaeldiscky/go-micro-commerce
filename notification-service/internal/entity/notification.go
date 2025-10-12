@@ -12,25 +12,25 @@ import (
 
 // Notification represents a user-facing notification entity.
 type Notification struct {
-	ID        uuid.UUID                 `db:"id"`
-	UserID    uuid.UUID                 `db:"user_id"`
-	Type      constant.NotificationType `db:"type"`
-	Title     string                    `db:"title"`
-	Message   string                    `db:"message"`
-	Metadata  json.RawMessage           `db:"metadata"`
-	IsRead    bool                      `db:"is_read"`
-	ReadAt    *time.Time                `db:"read_at"`
-	CreatedAt time.Time                 `db:"created_at"`
-	UpdatedAt time.Time                 `db:"updated_at"`
+	ID        uuid.UUID                     `db:"id"`
+	UserID    uuid.UUID                     `db:"user_id"`
+	Type      constant.PushNotificationType `db:"type"`
+	Title     string                        `db:"title"`
+	Message   string                        `db:"message"`
+	Metadata  json.RawMessage               `db:"metadata"`
+	IsRead    bool                          `db:"is_read"`
+	ReadAt    *time.Time                    `db:"read_at"`
+	CreatedAt time.Time                     `db:"created_at"`
+	UpdatedAt time.Time                     `db:"updated_at"`
 }
 
-// NewNotification creates a new notification entity.
-func NewNotification(
+// NewPushNotification creates a new notification entity.
+func NewPushNotification(
 	userID uuid.UUID,
-	notificationType constant.NotificationType,
+	notificationType constant.PushNotificationType,
 	title string,
 	message string,
-	metadata map[string]interface{},
+	metadata map[string]any,
 ) (*Notification, error) {
 	var metadataJSON json.RawMessage
 	if metadata != nil {
@@ -42,7 +42,7 @@ func NewNotification(
 		metadataJSON = data
 	}
 
-	return &Notification{
+	notif := &Notification{
 		ID:        uuid.New(),
 		UserID:    userID,
 		Type:      notificationType,
@@ -52,7 +52,13 @@ func NewNotification(
 		IsRead:    false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-	}, nil
+	}
+
+	if err := notif.validate(); err != nil {
+		return nil, err
+	}
+
+	return notif, nil
 }
 
 // MarkAsRead marks the notification as read.
@@ -61,6 +67,26 @@ func (n *Notification) MarkAsRead() {
 	now := time.Now()
 	n.ReadAt = &now
 	n.UpdatedAt = now
+}
+
+// Validate performs validation on the notification.
+func (n *Notification) validate() error {
+	switch n.Type {
+	case
+		constant.PushNotificationTypeNewMessage,
+		constant.PushNotificationTypeNewProduct,
+		constant.PushNotificationTypeOrderUpdate,
+		constant.PushNotificationTypeOrderConfirmed,
+		constant.PushNotificationTypeOrderShipped,
+		constant.PushNotificationTypeOrderDelivered,
+		constant.PushNotificationTypeOrderCancelled,
+		constant.PushNotificationTypePaymentSuccess,
+		constant.PushNotificationTypeSystemAlert:
+		// valid types → no error
+		return nil
+	default:
+		return errors.New("invalid notification type")
+	}
 }
 
 // GetMetadata unmarshals the metadata JSON into a map.

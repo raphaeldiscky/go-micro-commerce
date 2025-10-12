@@ -1,10 +1,12 @@
 import { PATH_AUTH, PATH_FEATURES } from '@/constants'
-import { useIsAuthenticated, useUser } from '@/hooks/auth/useAuth'
-import { useConversationDetails } from '@/hooks/chat/useConversationDetails'
-import { useConversationSubscription } from '@/hooks/chat/useConversationSubscription'
-import { useSendMessage } from '@/hooks/chat/useMessages'
-import { usePresence } from '@/hooks/chat/usePresence'
-import { useTypingIndicator } from '@/hooks/chat/useTypingIndicator'
+import { useIsAuthenticated, useUser } from '@/hooks/auth'
+import {
+  useConversationDetails,
+  useConversationSubscription,
+  usePresence,
+  useSendMessage,
+  useTypingIndicator,
+} from '@/hooks/chat'
 import type { Message, SendMessageInput } from '@/types/__generated__/graphql'
 import { MessageType } from '@/types/__generated__/graphql'
 import { Link, useNavigate } from '@tanstack/react-router'

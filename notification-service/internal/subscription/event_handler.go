@@ -10,7 +10,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 )
 
@@ -59,40 +60,24 @@ func (h *EventHandler) HandleEvent(_ context.Context, event eventbus.Event) erro
 
 // handleNotificationCreated processes notification created events.
 func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
-	// Marshal event to get raw data
-	data, err := event.Marshal()
-	if err != nil {
-		h.logger.Error("Failed to marshal notification created event", "error", err)
-		return err
-	}
-
-	// Parse the notification created event
+	// Parse the notification created event from payload
 	var createdEvent notification.CreatedEvent
 
-	if err = json.Unmarshal(data, &createdEvent); err != nil {
+	if err := event.UnmarshalPayload(&createdEvent); err != nil {
 		h.logger.Error("Failed to unmarshal notification created event", "error", err)
 		return err
 	}
 
-	// Extract notification data from the SSE message
-	var notifData map[string]interface{}
+	// Extract notification DTO from the SSE message
+	var notifDTO dto.NotificationResponse
 
-	if err = json.Unmarshal(createdEvent.Message.Data, &notifData); err != nil {
+	if err := json.Unmarshal(createdEvent.Message.Data, &notifDTO); err != nil {
 		h.logger.Error("Failed to unmarshal notification data", "error", err)
 		return err
 	}
 
-	// Convert to GraphQL NewNotification event
-	graphQLEvent := &graph.NewNotification{
-		ID:        getString(notifData, "id"),
-		UserID:    createdEvent.UserID.String(),
-		Type:      getNotificationType(notifData),
-		Title:     getString(notifData, "title"),
-		Message:   getString(notifData, "message"),
-		Metadata:  getStringPtr(notifData, "metadata"),
-		IsRead:    false,
-		CreatedAt: createdEvent.Message.CreatedAt,
-	}
+	// Convert to GraphQL NewNotification event using mapper
+	graphQLEvent := mapper.MapToGraphQLNewNotificationFromDTO(&notifDTO)
 
 	// Notify local subscribers
 	h.manager.NotifyLocalSubscribers(createdEvent.UserID, graphQLEvent)
@@ -106,15 +91,9 @@ func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
 
 // handleNotificationRead processes notification read events.
 func (h *EventHandler) handleNotificationRead(event eventbus.Event) error {
-	data, err := event.Marshal()
-	if err != nil {
-		h.logger.Error("Failed to marshal notification read event", "error", err)
-		return err
-	}
-
 	var readEvent notification.ReadEvent
 
-	if err = json.Unmarshal(data, &readEvent); err != nil {
+	if err := event.UnmarshalPayload(&readEvent); err != nil {
 		h.logger.Error("Failed to unmarshal notification read event", "error", err)
 		return err
 	}
@@ -138,15 +117,9 @@ func (h *EventHandler) handleNotificationRead(event eventbus.Event) error {
 
 // handleNotificationDeleted processes notification deleted events.
 func (h *EventHandler) handleNotificationDeleted(event eventbus.Event) error {
-	data, err := event.Marshal()
-	if err != nil {
-		h.logger.Error("Failed to marshal notification deleted event", "error", err)
-		return err
-	}
-
 	var deletedEvent notification.DeletedEvent
 
-	if err = json.Unmarshal(data, &deletedEvent); err != nil {
+	if err := event.UnmarshalPayload(&deletedEvent); err != nil {
 		h.logger.Error("Failed to unmarshal notification deleted event", "error", err)
 		return err
 	}
@@ -165,28 +138,4 @@ func (h *EventHandler) handleNotificationDeleted(event eventbus.Event) error {
 		"notification_id", deletedEvent.NotificationID)
 
 	return nil
-}
-
-// Helper functions to safely extract data from notification payload.
-
-func getString(data map[string]interface{}, key string) string {
-	if val, ok := data[key].(string); ok {
-		return val
-	}
-
-	return ""
-}
-
-func getStringPtr(data map[string]interface{}, key string) *string {
-	if val, ok := data[key].(string); ok {
-		return &val
-	}
-
-	return nil
-}
-
-func getNotificationType(data map[string]interface{}) constant.NotificationType {
-	typeStr := getString(data, "type")
-
-	return constant.NotificationType(typeStr)
 }

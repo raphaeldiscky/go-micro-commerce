@@ -1,5 +1,5 @@
 import { ScrollArea } from '@/components/ui/scroll-area'
-import type { Notification } from '@/types/notification'
+import type { Notification } from '@/types/__generated__/graphql'
 import { BellOff, CheckCircle2, Inbox } from 'lucide-react'
 import { NotificationRow } from './NotificationRow'
 

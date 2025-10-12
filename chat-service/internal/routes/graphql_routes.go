@@ -79,7 +79,11 @@ func SetupGraphQLRoutes(
 	// WebSocket subscriptions endpoint
 	// Auth is handled by API Gateway which validates JWT and forwards X-User-* headers
 	// The WebSocketAuthMiddleware extracts these headers from HTTP upgrade request and adds to context
-	e.GET("/graph/subscriptions", echo.WrapHandler(wsSrv), pkgmiddleware.WebSocketAuthMiddleware())
+	e.GET(
+		"/graph/subscriptions/ws",
+		echo.WrapHandler(wsSrv),
+		pkgmiddleware.WebSocketAuthMiddleware(),
+	)
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")

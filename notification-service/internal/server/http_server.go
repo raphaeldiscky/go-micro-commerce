@@ -128,9 +128,7 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	e.Use(
 		middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(cfg.HTTPServer.RateLimiter)),
 	) // 1000 req/sec
-	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
-		Timeout: cfg.HTTPServer.IdleTimeout,
-	}))
+
 	e.Use(middleware.BodyLimit("10M"))
 	e.Use(custommiddleware.ErrorHandler())
 }

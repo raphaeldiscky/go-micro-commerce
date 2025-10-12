@@ -1,5 +1,4 @@
-import { useMessageReceipts } from '@/hooks/chat/useMessageReceipts'
-import { useMessages } from '@/hooks/chat/useMessages'
+import { useMessageReceipts, useMessages } from '@/hooks/chat'
 import { areMessagesConsecutive } from '@/lib/utils/date'
 import type {
   Message,

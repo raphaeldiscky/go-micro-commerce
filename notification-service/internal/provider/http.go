@@ -2,8 +2,13 @@
 package provider
 
 import (
+	"path/filepath"
+
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
+
+	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
@@ -25,8 +30,31 @@ func SetupHTTP(
 		appLogger,
 	)
 
+	// Initialize email service for notification event service
+	mailer := smtputils.NewMailer(&pkgconfig.SMTPConfig{
+		Host:  cfg.SMTP.Host,
+		Email: cfg.SMTP.Email,
+		Port:  cfg.SMTP.Port,
+	})
+	templatesPath := filepath.Join("internal", "template")
+	emailService := service.NewEmailService(templatesPath, mailer)
+
+	// Initialize notification event service
+	notificationEventService := service.NewNotificationEventService(
+		emailService,
+		providers.DataStore.NotificationRepository(),
+		providers.SSEHub,
+		providers.EventBus,
+		providers.InstanceID,
+		providers.Sharder,
+		appLogger,
+	)
+
 	// Initialize handlers
-	notificationHandler := handler.NewNotificationHandler(notificationService)
+	notificationHandler := handler.NewNotificationHandler(
+		notificationService,
+		notificationEventService,
+	)
 	sseHandler := handler.NewNotificationSSEHandler(providers.SSEHub, appLogger)
 	appHandler := handler.NewAppHandler()
 

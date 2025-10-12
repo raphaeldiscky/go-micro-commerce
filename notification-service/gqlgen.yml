@@ -41,7 +41,7 @@ models:
       - github.com/99designs/gqlgen/graphql.Time
 
   # Map enum to existing constant
-  NotificationType:
-    model: github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant.NotificationType
+  PushNotificationType:
+    model: github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant.PushNotificationType
 
 skip_mod_tidy: true

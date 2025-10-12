@@ -108,8 +108,10 @@ type ComplexityRoot struct {
 	}
 
 	PageInfo struct {
-		EndCursor   func(childComplexity int) int
-		HasNextPage func(childComplexity int) int
+		EndCursor       func(childComplexity int) int
+		HasNextPage     func(childComplexity int) int
+		HasPreviousPage func(childComplexity int) int
+		StartCursor     func(childComplexity int) int
 	}
 
 	Query struct {
@@ -392,6 +394,18 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.PageInfo.HasNextPage(childComplexity), true
+	case "PageInfo.hasPreviousPage":
+		if e.complexity.PageInfo.HasPreviousPage == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.HasPreviousPage(childComplexity), true
+	case "PageInfo.startCursor":
+		if e.complexity.PageInfo.StartCursor == nil {
+			break
+		}
+
+		return e.complexity.PageInfo.StartCursor(childComplexity), true
 
 	case "Query.getTabCounts":
 		if e.complexity.Query.GetTabCounts == nil {
@@ -1089,7 +1103,7 @@ func (ec *executionContext) _NewNotification_type(ctx context.Context, field gra
 			return obj.Type, nil
 		},
 		nil,
-		ec.marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType,
+		ec.marshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType,
 		true,
 		true,
 	)
@@ -1102,7 +1116,7 @@ func (ec *executionContext) fieldContext_NewNotification_type(_ context.Context,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type NotificationType does not have child fields")
+			return nil, errors.New("field of type PushNotificationType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1321,7 +1335,7 @@ func (ec *executionContext) _Notification_type(ctx context.Context, field graphq
 			return obj.Type, nil
 		},
 		nil,
-		ec.marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType,
+		ec.marshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType,
 		true,
 		true,
 	)
@@ -1334,7 +1348,7 @@ func (ec *executionContext) fieldContext_Notification_type(_ context.Context, fi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type NotificationType does not have child fields")
+			return nil, errors.New("field of type PushNotificationType does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1604,6 +1618,10 @@ func (ec *executionContext) fieldContext_NotificationConnection_pageInfo(_ conte
 			switch field.Name {
 			case "hasNextPage":
 				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			case "hasPreviousPage":
+				return ec.fieldContext_PageInfo_hasPreviousPage(ctx, field)
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
 			case "endCursor":
 				return ec.fieldContext_PageInfo_endCursor(ctx, field)
 			}
@@ -1862,6 +1880,64 @@ func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_hasPreviousPage,
+		func(ctx context.Context) (any, error) {
+			return obj.HasPreviousPage, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PageInfo_startCursor,
+		func(ctx context.Context) (any, error) {
+			return obj.StartCursor, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PageInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4556,6 +4632,13 @@ func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "hasPreviousPage":
+			out.Values[i] = ec._PageInfo_hasPreviousPage(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startCursor":
+			out.Values[i] = ec._PageInfo_startCursor(ctx, field, obj)
 		case "endCursor":
 			out.Values[i] = ec._PageInfo_endCursor(ctx, field, obj)
 		default:
@@ -5491,23 +5574,6 @@ func (ec *executionContext) marshalNNotificationEvent2githubᚗcomᚋraphaeldisc
 	return ec._NotificationEvent(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType(ctx context.Context, v any) (constant.NotificationType, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.NotificationType(tmp)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐNotificationType(ctx context.Context, sel ast.SelectionSet, v constant.NotificationType) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -5516,6 +5582,16 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋg
 		return graphql.Null
 	}
 	return ec._PageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType(ctx context.Context, v any) (constant.PushNotificationType, error) {
+	var res constant.PushNotificationType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPushNotificationType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋinternalᚋconstantᚐPushNotificationType(ctx context.Context, sel ast.SelectionSet, v constant.PushNotificationType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {

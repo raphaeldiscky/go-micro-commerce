@@ -20,29 +20,29 @@ type Mutation struct {
 }
 
 type NewNotification struct {
-	ID        string                    `json:"id"`
-	UserID    string                    `json:"userId"`
-	Type      constant.NotificationType `json:"type"`
-	Title     string                    `json:"title"`
-	Message   string                    `json:"message"`
-	Metadata  *string                   `json:"metadata,omitempty"`
-	IsRead    bool                      `json:"isRead"`
-	CreatedAt time.Time                 `json:"createdAt"`
+	ID        string                        `json:"id"`
+	UserID    string                        `json:"userId"`
+	Type      constant.PushNotificationType `json:"type"`
+	Title     string                        `json:"title"`
+	Message   string                        `json:"message"`
+	Metadata  *string                       `json:"metadata,omitempty"`
+	IsRead    bool                          `json:"isRead"`
+	CreatedAt time.Time                     `json:"createdAt"`
 }
 
 func (NewNotification) IsNotificationEvent() {}
 
 type Notification struct {
-	ID        string                    `json:"id"`
-	UserID    string                    `json:"userId"`
-	Type      constant.NotificationType `json:"type"`
-	Title     string                    `json:"title"`
-	Message   string                    `json:"message"`
-	Metadata  *string                   `json:"metadata,omitempty"`
-	IsRead    bool                      `json:"isRead"`
-	ReadAt    *time.Time                `json:"readAt,omitempty"`
-	CreatedAt time.Time                 `json:"createdAt"`
-	UpdatedAt time.Time                 `json:"updatedAt"`
+	ID        string                        `json:"id"`
+	UserID    string                        `json:"userId"`
+	Type      constant.PushNotificationType `json:"type"`
+	Title     string                        `json:"title"`
+	Message   string                        `json:"message"`
+	Metadata  *string                       `json:"metadata,omitempty"`
+	IsRead    bool                          `json:"isRead"`
+	ReadAt    *time.Time                    `json:"readAt,omitempty"`
+	CreatedAt time.Time                     `json:"createdAt"`
+	UpdatedAt time.Time                     `json:"updatedAt"`
 }
 
 type NotificationConnection struct {
@@ -71,8 +71,10 @@ type NotificationRead struct {
 func (NotificationRead) IsNotificationEvent() {}
 
 type PageInfo struct {
-	HasNextPage bool    `json:"hasNextPage"`
-	EndCursor   *string `json:"endCursor,omitempty"`
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor,omitempty"`
+	EndCursor       *string `json:"endCursor,omitempty"`
 }
 
 type Query struct {

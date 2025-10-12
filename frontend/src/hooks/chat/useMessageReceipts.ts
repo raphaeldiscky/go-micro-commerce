@@ -1,4 +1,4 @@
-import { useUser } from '@/hooks/auth/useAuth'
+import { useUser } from '@/hooks/auth'
 import {
   SEND_DELIVERY_RECEIPT_MUTATION,
   SEND_READ_RECEIPT_MUTATION,

@@ -50,6 +50,16 @@ type NotificationEventService interface {
 	ProcessNotificationRequest(ctx context.Context, inboxEvent *entity.InboxEvent) error
 	ProcessEmailVerificationRequest(ctx context.Context, inboxEvent *entity.InboxEvent) error
 	ProcessEmailUserVerified(ctx context.Context, inboxEvent *entity.InboxEvent) error
+
+	// CreateAndBroadcastNotification creates a notification and broadcasts it via SSE/Redis
+	CreateAndBroadcastNotification(
+		ctx context.Context,
+		userID *uuid.UUID, // nil for system notifications to broadcast for all users
+		notificationType constant.PushNotificationType,
+		title string,
+		message string,
+		metadata map[string]any,
+	) (*dto.NotificationResponse, error)
 }
 
 // notificationEventService implements notification business logic.
@@ -635,10 +645,10 @@ func (s *notificationEventService) sendPushNotification(
 		message = payload.Subject
 	}
 
-	// Create notification entity
-	notif, err := entity.NewNotification(
+	// Create push notification entity
+	notif, err := entity.NewPushNotification(
 		userID,
-		constant.NotificationType(payload.NotificationType),
+		constant.PushNotificationType(payload.NotificationType),
 		payload.Subject,
 		message,
 		payload.Data,
@@ -655,8 +665,11 @@ func (s *notificationEventService) sendPushNotification(
 
 	s.logger.Infof("Saved notification to database: %s", savedNotif.ID)
 
-	// Create SSE message
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, savedNotif)
+	// Map entity to DTO for proper JSON serialization
+	notifDTO := mapper.MapToNotificationResponse(savedNotif)
+
+	// Create SSE message with DTO (has proper json tags)
+	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return fmt.Errorf("failed to create SSE message: %w", err)
 	}
@@ -721,4 +734,74 @@ func (s *notificationEventService) publishToRedis(
 		"channel", channelName)
 
 	return nil
+}
+
+// CreateAndBroadcastNotification creates a notification and broadcasts it via SSE/Redis.
+func (s *notificationEventService) CreateAndBroadcastNotification(
+	ctx context.Context,
+	userID *uuid.UUID,
+	notificationType constant.PushNotificationType,
+	title string,
+	message string,
+	metadata map[string]any,
+) (*dto.NotificationResponse, error) {
+	// Validate required fields
+	if userID != nil {
+		s.logger.Infof("Creating notification for user %s with title: %s", *userID, title)
+	} else {
+		s.logger.Infof("Creating broadcast notification with title: %s", title)
+		return nil, errors.New("broadcast to all users not yet implemented")
+	}
+
+	// Create notification entity
+	notif, err := entity.NewPushNotification(
+		*userID,
+		notificationType,
+		title,
+		message,
+		metadata,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create notification entity: %w", err)
+	}
+
+	// Save notification to database
+	savedNotif, err := s.notificationRepo.Create(ctx, notif)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save notification to database: %w", err)
+	}
+
+	s.logger.Infof("Saved notification to database: %s", savedNotif.ID)
+
+	// Map entity to DTO for proper JSON serialization
+	notifDTO := mapper.MapToNotificationResponse(savedNotif)
+
+	// Create SSE message with DTO (has proper json tags)
+	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create SSE message: %w", err)
+	}
+
+	// Broadcast to local SSE connections
+	if err = s.sseHub.BroadcastToUser(*userID, sseMsg); err != nil {
+		s.logger.Error("Failed to broadcast notification to local SSE connections",
+			"user_id", *userID,
+			"error", err)
+		// Don't return error - continue to publish to Redis
+	}
+
+	// Publish to Redis if event bus is available
+	if s.eventBus != nil {
+		if err = s.publishToRedis(ctx, *userID, sseMsg); err != nil {
+			s.logger.Error("Failed to publish notification to Redis",
+				"user_id", *userID,
+				"error", err)
+			// Don't return error - notification is already saved to DB
+		}
+	}
+
+	s.logger.Infof("Successfully created and broadcast notification to user %s", *userID)
+
+	// Map to response DTO
+	return mapper.MapToNotificationResponse(savedNotif), nil
 }

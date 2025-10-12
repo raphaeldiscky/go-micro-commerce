@@ -795,8 +795,159 @@ func (gw *Gateway) handleBackendDialFailure(
 		),
 	)
 	if closeErr != nil {
-		gw.logger.Warn("Failed to send close message to client", "error", closeErr)
+		gw.logger.Warn("Failed to close message to client", "error", closeErr)
 	}
 
 	return echo.NewHTTPError(statusCode, "failed to connect to backend")
+}
+
+// ProxySSE creates a handler that proxies Server-Sent Events (SSE) to a service.
+// SSE requires streaming without buffering and no timeouts.
+func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		start := time.Now()
+
+		// Get service endpoint
+		endpoint, err := gw.serviceDiscovery.GetServiceEndpoint(serviceName)
+		if err != nil {
+			gw.logger.Errorf("failed to get service endpoint for service %s: %v",
+				serviceName, err)
+
+			return echo.NewHTTPError(http.StatusServiceUnavailable, "service unavailable")
+		}
+
+		// Build target URL
+		targetURL, err := url.Parse(endpoint)
+		if err != nil {
+			gw.logger.Errorf("invalid endpoint URL: %v", err)
+
+			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		}
+
+		// Determine final path
+		finalPath := path
+		if finalPath == "" {
+			incomingPath := c.Request().URL.Path
+			routePattern := c.Path()
+			basePrefix := strings.TrimSuffix(routePattern, "*")
+			trimmedPrefix := strings.TrimRight(basePrefix, "/")
+			suffix := strings.TrimPrefix(incomingPath, trimmedPrefix)
+
+			switch suffix {
+			case "", "/":
+				finalPath = "/"
+			default:
+				if !strings.HasPrefix(suffix, "/") {
+					finalPath = "/" + suffix
+				} else {
+					finalPath = suffix
+				}
+			}
+		} else {
+			finalPath = gw.replacePath(path, c)
+		}
+
+		targetURL.Path = finalPath
+		targetURL.RawQuery = c.Request().URL.RawQuery
+
+		// Create request with no timeout (SSE is long-lived)
+		req, err := http.NewRequestWithContext(
+			c.Request().Context(),
+			c.Request().Method,
+			targetURL.String(),
+			c.Request().Body,
+		)
+		if err != nil {
+			gw.logger.Errorf("failed to create request: %v", err)
+
+			return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		}
+
+		// Copy headers
+		gw.copyHeaders(c.Request().Header, req.Header)
+
+		// Add user headers
+		gw.addUserHeaders(c, req)
+
+		// Add tracing headers
+		headers := make(map[string]string)
+		tracing.InjectHeaders(c.Request().Context(), headers)
+
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
+
+		// Add gateway identification
+		req.Header.Set("X-Gateway", "api-gateway")
+		req.Header.Set("X-Forwarded-For", c.RealIP())
+		req.Header.Set("X-Forwarded-Proto", c.Scheme())
+		req.Header.Set("X-Forwarded-Host", c.Request().Host)
+
+		// Create HTTP client with no timeout for SSE streaming
+		client := &http.Client{
+			Timeout: 0, // No timeout for long-lived SSE connections
+		}
+
+		// Perform request
+		resp, err := client.Do(req)
+		if err != nil {
+			gw.logger.Errorf("failed to connect to backend for SSE: %v", err)
+
+			duration := time.Since(start)
+			gw.metrics.RecordGatewayRequest(
+				serviceName,
+				c.Request().Method,
+				http.StatusBadGateway,
+				duration,
+			)
+
+			return echo.NewHTTPError(http.StatusBadGateway, "failed to connect to backend")
+		}
+
+		defer func() {
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				gw.logger.Warn("Failed to close SSE response body", "error", closeErr)
+			}
+		}()
+
+		// Record initial connection metrics
+		duration := time.Since(start)
+		gw.metrics.RecordGatewayRequest(
+			serviceName,
+			c.Request().Method,
+			resp.StatusCode,
+			duration,
+		)
+
+		// Copy response headers (including Content-Type: text/event-stream)
+		for key, values := range resp.Header {
+			for _, value := range values {
+				c.Response().Header().Add(key, value)
+			}
+		}
+
+		// Disable buffering for SSE streaming
+		c.Response().Header().Set("X-Accel-Buffering", "no")
+		c.Response().Header().Set("Cache-Control", "no-cache")
+		c.Response().Header().Set("Connection", "keep-alive")
+
+		// Write status code
+		c.Response().WriteHeader(resp.StatusCode)
+
+		// Flush headers immediately
+		if flusher, ok := c.Response().Writer.(http.Flusher); ok {
+			flusher.Flush()
+		}
+
+		// Stream response body directly to client
+		_, err = io.Copy(c.Response().Writer, resp.Body)
+		if err != nil {
+			// Connection closed by client or backend is normal for SSE
+			gw.logger.Debug("SSE connection closed", "error", err)
+
+			return nil
+		}
+
+		return nil
+	}
 }

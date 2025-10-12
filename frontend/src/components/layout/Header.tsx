@@ -6,7 +6,7 @@ import {
   PATH_ROOT,
   PROFILE_IMAGE_URL,
 } from '@/constants'
-import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth/useAuth'
+import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth'
 import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {

@@ -1,5 +1,5 @@
 import { PATH_AUTH } from '@/constants/routes'
-import { useRegister } from '@/hooks/auth/useAuth'
+import { useRegister } from '@/hooks/auth'
 import { useForm } from '@tanstack/react-form'
 import { Link } from '@tanstack/react-router'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'

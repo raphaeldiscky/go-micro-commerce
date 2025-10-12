@@ -1,6 +1,6 @@
 import { PATH_AUTH, PATH_FEATURES } from '@/constants/routes'
-import { useIsAuthenticated } from '@/hooks/auth/useAuth'
-import { useConversations } from '@/hooks/chat/useConversations'
+import { useIsAuthenticated } from '@/hooks/auth'
+import { useConversations } from '@/hooks/chat'
 import { formatRelativeTime } from '@/lib/utils/date'
 import type { Conversation } from '@/types/__generated__/graphql'
 import { Link } from '@tanstack/react-router'

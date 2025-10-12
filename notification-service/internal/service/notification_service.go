@@ -24,7 +24,7 @@ type NotificationService interface {
 		userID uuid.UUID,
 		limit int64,
 		cursor string,
-	) (*dto.NotificationListResponse, *pkgdto.CursorPagination, error)
+	) ([]dto.NotificationResponse, *pkgdto.CursorPagination, error)
 
 	// ListUnreadNotifications retrieves unread notifications for a user with cursor pagination
 	ListUnreadNotifications(
@@ -32,7 +32,7 @@ type NotificationService interface {
 		userID uuid.UUID,
 		limit int64,
 		cursor string,
-	) (*dto.NotificationListResponse, *pkgdto.CursorPagination, error)
+	) ([]dto.NotificationResponse, *pkgdto.CursorPagination, error)
 
 	// GetNotification retrieves a notification by ID
 	GetNotification(
@@ -53,16 +53,6 @@ type NotificationService interface {
 
 	// MarkAllAsRead marks all notifications as read for a user
 	MarkAllAsRead(ctx context.Context, userID uuid.UUID) error
-
-	// DeleteNotification deletes a notification
-	DeleteNotification(
-		ctx context.Context,
-		notificationID uuid.UUID,
-		userID uuid.UUID,
-	) error
-
-	// DeleteAllNotifications deletes all notifications for a user
-	DeleteAllNotifications(ctx context.Context, userID uuid.UUID) error
 
 	// GetTotalCount retrieves the total count of notifications for a user
 	GetTotalCount(ctx context.Context, userID uuid.UUID) (int64, error)
@@ -91,7 +81,7 @@ func (s *notificationService) ListNotifications(
 	userID uuid.UUID,
 	limit int64,
 	cursor string,
-) (*dto.NotificationListResponse, *pkgdto.CursorPagination, error) {
+) ([]dto.NotificationResponse, *pkgdto.CursorPagination, error) {
 	notificationRepo := s.dataStore.NotificationRepository()
 
 	var (
@@ -131,7 +121,10 @@ func (s *notificationService) ListNotifications(
 		notifications = notifications[:limit]
 	}
 
-	listResponse := mapper.MapToNotificationListResponse(notifications)
+	res := make([]dto.NotificationResponse, len(notifications))
+	for i, notification := range notifications {
+		res[i] = *mapper.MapToNotificationResponse(notification)
+	}
 
 	var nextCursor string
 
@@ -150,7 +143,7 @@ func (s *notificationService) ListNotifications(
 
 	pagination := pageutils.NewCursorPagination(nextCursor, "", hasNext, false, limit)
 
-	return listResponse, pagination, nil
+	return res, pagination, nil
 }
 
 // ListUnreadNotifications retrieves unread notifications for a user with cursor pagination.
@@ -159,7 +152,7 @@ func (s *notificationService) ListUnreadNotifications(
 	userID uuid.UUID,
 	limit int64,
 	cursor string,
-) (*dto.NotificationListResponse, *pkgdto.CursorPagination, error) {
+) ([]dto.NotificationResponse, *pkgdto.CursorPagination, error) {
 	notificationRepo := s.dataStore.NotificationRepository()
 
 	var (
@@ -199,7 +192,10 @@ func (s *notificationService) ListUnreadNotifications(
 		notifications = notifications[:limit]
 	}
 
-	listResponse := mapper.MapToNotificationListResponse(notifications)
+	res := make([]dto.NotificationResponse, len(notifications))
+	for i, notif := range notifications {
+		res[i] = *mapper.MapToNotificationResponse(notif)
+	}
 
 	var nextCursor string
 
@@ -218,7 +214,7 @@ func (s *notificationService) ListUnreadNotifications(
 
 	pagination := pageutils.NewCursorPagination(nextCursor, "", hasNext, false, limit)
 
-	return listResponse, pagination, nil
+	return res, pagination, nil
 }
 
 // GetNotification retrieves a notification by ID.
@@ -302,46 +298,6 @@ func (s *notificationService) MarkAllAsRead(
 			"error", err)
 
 		return httperror.NewInternalServerError("failed to mark all notifications as read")
-	}
-
-	return nil
-}
-
-// DeleteNotification deletes a notification.
-func (s *notificationService) DeleteNotification(
-	ctx context.Context,
-	notificationID uuid.UUID,
-	userID uuid.UUID,
-) error {
-	notificationRepo := s.dataStore.NotificationRepository()
-
-	err := notificationRepo.Delete(ctx, notificationID, userID)
-	if err != nil {
-		s.logger.Error("Failed to delete notification",
-			"notification_id", notificationID,
-			"user_id", userID,
-			"error", err)
-
-		return httperror.NewInternalServerError("failed to delete notification")
-	}
-
-	return nil
-}
-
-// DeleteAllNotifications deletes all notifications for a user.
-func (s *notificationService) DeleteAllNotifications(
-	ctx context.Context,
-	userID uuid.UUID,
-) error {
-	notificationRepo := s.dataStore.NotificationRepository()
-
-	err := notificationRepo.DeleteAllByUserID(ctx, userID)
-	if err != nil {
-		s.logger.Error("Failed to delete all notifications",
-			"user_id", userID,
-			"error", err)
-
-		return httperror.NewInternalServerError("failed to delete all notifications")
 	}
 
 	return nil

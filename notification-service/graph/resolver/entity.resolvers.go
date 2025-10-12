@@ -38,10 +38,10 @@ func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*graph.Us
 	}
 
 	// Convert notifications to GraphQL format
-	notifications := make([]*graph.Notification, len(listResponse.Notifications))
+	notifications := make([]*graph.Notification, len(listResponse))
 
-	for i := range listResponse.Notifications {
-		notifications[i] = mapper.MapToGraphQLNotificationFromDTO(&listResponse.Notifications[i])
+	for i := range listResponse {
+		notifications[i] = mapper.MapToGraphQLNotificationFromDTO(&listResponse[i])
 	}
 
 	return &graph.User{

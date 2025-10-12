@@ -191,16 +191,8 @@ func (b *redisEventBus) handleRedisMessage(
 		return fmt.Errorf("failed to unmarshal event: %w", err)
 	}
 
-	// Skip events from our own instance to avoid loops
-	if event.SourceInstanceID == b.instanceID {
-		b.logger.Debug("Skipping event from own instance",
-			"channel", channel,
-			"event_type", event.EventType)
-
-		return nil
-	}
-
-	b.logger.Debug("Received event from another instance",
+	// Note: Not filtering by instance ID - application handlers decide whether to process
+	b.logger.Debug("Received event",
 		"channel", channel,
 		"event_type", event.EventType,
 		"source_instance", event.SourceInstanceID,

@@ -1,6 +1,8 @@
 import { cn } from '@/lib/utils'
-import { useLocalReadIds } from '@/store/notificationStore'
-import type { Notification, NotificationType } from '@/types/notification'
+import type {
+  Notification,
+  PushNotificationType,
+} from '@/types/__generated__/graphql'
 import { formatDistanceToNow } from 'date-fns'
 import {
   Bell,
@@ -17,7 +19,7 @@ interface NotificationRowProps {
   onClick: (id: string) => void
 }
 
-function getNotificationIcon(type: NotificationType) {
+function getNotificationIcon(type: PushNotificationType) {
   switch (type) {
     case 'NEW_MESSAGE':
       return MessageSquare
@@ -40,7 +42,7 @@ function getNotificationIcon(type: NotificationType) {
   }
 }
 
-function getIconColor(type: NotificationType): string {
+function getIconColor(type: PushNotificationType): string {
   switch (type) {
     case 'NEW_MESSAGE':
       return 'text-blue-500'
@@ -67,12 +69,10 @@ export function NotificationRow({
   notification,
   onClick,
 }: NotificationRowProps) {
-  const localReadIds = useLocalReadIds()
   const Icon = getNotificationIcon(notification.type)
   const iconColor = getIconColor(notification.type)
 
-  const isLocallyRead = localReadIds.has(notification.id)
-  const isUnread = !notification.isRead && !isLocallyRead
+  const isUnread = !notification.isRead
 
   const handleClick = () => {
     if (!notification.isRead) {
@@ -89,8 +89,7 @@ export function NotificationRow({
         'focus:outline-none focus:ring-2 focus:ring-ring',
         isUnread &&
           'bg-blue-50/50 dark:bg-blue-950/20 border-l-4 border-l-blue-500',
-        isLocallyRead && 'bg-muted/30',
-        notification.isRead && !isLocallyRead && 'bg-transparent',
+        notification.isRead && 'bg-transparent',
       )}
       onClick={handleClick}
       type="button"
