@@ -159,7 +159,7 @@ func (r *subscriptionResolver) ConversationEvents(
 	ctx context.Context,
 	conversationID string,
 ) (<-chan graph.ConversationEvent, error) {
-	r.logger.Info("🔔 GraphQL subscription request received",
+	r.logger.Info("GraphQL subscription request received",
 		"conversation_id", conversationID)
 
 	// Validate conversation ID
@@ -182,7 +182,7 @@ func (r *subscriptionResolver) ConversationEvents(
 		return nil, err
 	}
 
-	r.logger.Info("✅ GraphQL subscription established",
+	r.logger.Info("GraphQL subscription established",
 		"conversation_id", conversationID,
 		"channel_buffer", cap(eventChan))
 

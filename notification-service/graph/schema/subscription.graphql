@@ -1,0 +1,38 @@
+# Real-time subscription types for notification events
+
+# Subscription root type
+extend type Subscription {
+  # Subscribe to notification events for the authenticated user
+  notificationEvents: NotificationEvent! @requiresAuth
+}
+
+# Union type for notification events
+union NotificationEvent =
+  | NewNotification
+  | NotificationRead
+  | NotificationDeleted
+
+# New notification event (real-time delivery)
+type NewNotification {
+  id: ID!
+  userId: ID!
+  type: NotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  createdAt: Time!
+}
+
+# Notification read event
+type NotificationRead {
+  id: ID!
+  userId: ID!
+  readAt: Time!
+}
+
+# Notification deleted event
+type NotificationDeleted {
+  id: ID!
+  userId: ID!
+}

@@ -1,4 +1,4 @@
-package sharding
+package shard
 
 // Config holds configuration for the shard resolver.
 type Config struct {

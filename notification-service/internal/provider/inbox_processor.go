@@ -35,7 +35,7 @@ func SetupInboxProcessor(
 		providers.SSEHub,
 		providers.EventBus,
 		providers.InstanceID,
-		providers.ShardResolver,
+		providers.Sharder,
 		appLogger,
 	)
 

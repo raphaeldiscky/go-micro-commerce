@@ -107,7 +107,10 @@ export function NotificationDrawer() {
                     </div>
                   )}
                 </TabsTrigger>
-                <TabsTrigger className="flex items-center gap-1.5" value="unread">
+                <TabsTrigger
+                  className="flex items-center gap-1.5"
+                  value="unread"
+                >
                   Unread
                   {unreadCount > 0 && (
                     <div className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-medium">

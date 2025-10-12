@@ -5,20 +5,22 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 )
 
 // NotificationResponse represents the response for notification operations.
 type NotificationResponse struct {
-	ID        uuid.UUID       `json:"id"`
-	UserID    uuid.UUID       `json:"user_id"`
-	Type      string          `json:"type"`
-	Title     string          `json:"title"`
-	Message   string          `json:"message"`
-	Metadata  json.RawMessage `json:"metadata,omitempty"`
-	IsRead    bool            `json:"is_read"`
-	ReadAt    *time.Time      `json:"read_at,omitempty"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID        uuid.UUID                 `json:"id"`
+	UserID    uuid.UUID                 `json:"user_id"`
+	Type      constant.NotificationType `json:"type"`
+	Title     string                    `json:"title"`
+	Message   string                    `json:"message"`
+	Metadata  json.RawMessage           `json:"metadata,omitempty"`
+	IsRead    bool                      `json:"is_read"`
+	ReadAt    *time.Time                `json:"read_at,omitempty"`
+	CreatedAt time.Time                 `json:"created_at"`
+	UpdatedAt time.Time                 `json:"updated_at"`
 }
 
 // NotificationListResponse represents a cursor-paginated list of notifications.

@@ -6,26 +6,28 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 )
 
 // Notification represents a user-facing notification entity.
 type Notification struct {
-	ID        uuid.UUID       `db:"id"`
-	UserID    uuid.UUID       `db:"user_id"`
-	Type      string          `db:"type"`
-	Title     string          `db:"title"`
-	Message   string          `db:"message"`
-	Metadata  json.RawMessage `db:"metadata"`
-	IsRead    bool            `db:"is_read"`
-	ReadAt    *time.Time      `db:"read_at"`
-	CreatedAt time.Time       `db:"created_at"`
-	UpdatedAt time.Time       `db:"updated_at"`
+	ID        uuid.UUID                 `db:"id"`
+	UserID    uuid.UUID                 `db:"user_id"`
+	Type      constant.NotificationType `db:"type"`
+	Title     string                    `db:"title"`
+	Message   string                    `db:"message"`
+	Metadata  json.RawMessage           `db:"metadata"`
+	IsRead    bool                      `db:"is_read"`
+	ReadAt    *time.Time                `db:"read_at"`
+	CreatedAt time.Time                 `db:"created_at"`
+	UpdatedAt time.Time                 `db:"updated_at"`
 }
 
 // NewNotification creates a new notification entity.
 func NewNotification(
 	userID uuid.UUID,
-	notificationType string,
+	notificationType constant.NotificationType,
 	title string,
 	message string,
 	metadata map[string]interface{},

@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/routes"
@@ -13,7 +14,7 @@ import (
 
 // SetupHTTP initializes the HTTP server routes and middleware.
 func SetupHTTP(
-	_ *config.Config,
+	cfg *config.Config,
 	e *echo.Echo,
 	appLogger logger.Logger,
 	providers *Providers,
@@ -29,7 +30,15 @@ func SetupHTTP(
 	sseHandler := handler.NewNotificationSSEHandler(providers.SSEHub, appLogger)
 	appHandler := handler.NewAppHandler()
 
+	// Initialize GraphQL resolver
+	graphResolver := resolver.NewResolver(
+		notificationService,
+		providers.SubscriptionManager,
+		appLogger,
+	)
+
 	// Register routes
 	routes.SetupAppRoutes(e, appHandler)
 	routes.SetupNotificationRoutes(e, notificationHandler, sseHandler)
+	routes.SetupGraphQLRoutes(e, cfg, graphResolver, appLogger)
 }

@@ -1,0 +1,27 @@
+# Scalars
+scalar Time
+
+# Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
+directive @requiresAuth on FIELD_DEFINITION | OBJECT
+directive @requiresRole(role: Role!) on FIELD_DEFINITION | OBJECT
+
+# Role enum for authorization
+enum Role {
+  ADMIN
+  USER
+}
+
+# Note: Apollo Federation directives (@key, @external, etc.) are automatically
+# included by gqlgen when federation is enabled in gqlgen.yml
+
+# Extend User entity from auth-service (we reference it but don't own it)
+extend type User @key(fields: "id") {
+  id: ID! @external
+  notifications: [Notification!]!
+  unreadCount: Int!
+}
+
+# Root query, mutation, and subscription types
+type Query
+type Mutation
+type Subscription
