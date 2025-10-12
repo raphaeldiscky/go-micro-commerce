@@ -10,11 +10,13 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
+
+	pkgmiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 )
 
 // SetupGraphQLRoutes sets up all GraphQL routes.
@@ -24,29 +26,31 @@ func SetupGraphQLRoutes(
 	graphResolver *resolver.Resolver,
 	appLogger logger.Logger,
 ) {
-	// Create GraphQL handler with context middleware and custom directives
-	srv := handler.NewDefaultServer(
-		graph.NewExecutableSchema(graph.Config{
-			Resolvers: graphResolver,
-			Directives: graph.DirectiveRoot{
-				RequiresAuth: middleware.RequiresAuthDirective,
-				RequiresRole: func(ctx context.Context, obj any, next graphql.Resolver, role graph.Role) (any, error) {
-					// Convert graph.Role enum to string for middleware
-					return middleware.RequiresRoleDirective(ctx, obj, next, string(role))
-				},
+	executableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: graphResolver,
+		Directives: graph.DirectiveRoot{
+			RequiresAuth: pkgmiddleware.RequiresAuthDirective,
+			RequiresRole: func(ctx context.Context, obj any, next graphql.Resolver, role graph.Role) (any, error) {
+				// Convert graph.Role enum to string for middleware
+				return pkgmiddleware.RequiresRoleDirective(ctx, obj, next, string(role))
 			},
-		}),
-	)
-	srv.AddTransport(transport.SSE{})
+		},
+	})
+
+	// Create GraphQL handler with context middleware
+	srv := handler.NewDefaultServer(executableSchema)
+	srv.AddTransport(transport.SSE{
+		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
+	})
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
 
 	// Add middleware to extract user headers from Apollo Router (forwarded from JWT claims)
-	srv.AroundOperations(middleware.GraphQLContextMiddleware())
+	srv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 
 	// Add logging middleware to log GraphQL operations
-	srv.AroundOperations(middleware.GraphQLLoggingMiddleware(appLogger))
+	srv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
 
 	e.GET("/graph", echo.WrapHandler(srv))
 	e.POST("/graph", echo.WrapHandler(srv))
