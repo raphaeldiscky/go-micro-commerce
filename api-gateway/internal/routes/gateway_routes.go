@@ -40,8 +40,12 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	// Note: Use chat-service (port 8085) NOT chat-service-websocket (port 9098)
 	// GraphQL subscriptions are on the HTTP server, not the native WebSocket server
 	optionalAuth.GET(
-		"/graph/subscriptions",
-		gw.ProxyWebSocket("chat-service", "/graph/subscriptions"),
+		"/graph/subscriptions/ws",
+		gw.ProxyWebSocket("chat-service", "/graph/subscriptions/ws"),
+	)
+	optionalAuth.POST(
+		"/graph/subscriptions/sse",
+		gw.ProxyWebSocket("notification-service", "/graph/subscriptions/sse"),
 	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))

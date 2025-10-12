@@ -39,12 +39,6 @@ func SetupGraphQLRoutes(
 
 	// Create GraphQL handler with context middleware
 	srv := handler.NewDefaultServer(executableSchema)
-	srv.AddTransport(transport.SSE{
-		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
-	})
-	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
-	srv.AddTransport(transport.POST{})
 
 	// Add middleware to extract user headers from Apollo Router (forwarded from JWT claims)
 	srv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
@@ -54,6 +48,14 @@ func SetupGraphQLRoutes(
 
 	e.GET("/graph", echo.WrapHandler(srv))
 	e.POST("/graph", echo.WrapHandler(srv))
+
+	sseSrv := handler.NewDefaultServer(executableSchema)
+	sseSrv.AddTransport(transport.SSE{
+		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
+	})
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")

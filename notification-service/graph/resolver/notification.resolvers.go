@@ -106,8 +106,10 @@ func (r *queryResolver) ListNotifications(
 	return &graph.NotificationConnection{
 		Edges: edges,
 		PageInfo: &graph.PageInfo{
-			HasNextPage: pagination.HasNext,
-			EndCursor:   endCursor,
+			HasNextPage:     pagination.HasNext,
+			HasPreviousPage: false,
+			StartCursor:     nil,
+			EndCursor:       endCursor,
 		},
 	}, nil
 }
@@ -165,8 +167,10 @@ func (r *queryResolver) ListUnreadNotifications(
 	return &graph.NotificationConnection{
 		Edges: edges,
 		PageInfo: &graph.PageInfo{
-			HasNextPage: pagination.HasNext,
-			EndCursor:   endCursor,
+			HasNextPage:     pagination.HasNext,
+			HasPreviousPage: false,
+			StartCursor:     nil,
+			EndCursor:       endCursor,
 		},
 	}, nil
 }

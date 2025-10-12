@@ -68,4 +68,20 @@ export const QUERY_KEY = {
         userId,
       ] as const,
   },
+
+  /**
+   * Notification service query keys
+   */
+  notifications: {
+    all: ['notifications'] as const,
+    lists: () => [...QUERY_KEY.notifications.all, 'list'] as const,
+    list: (limit: number, cursor?: string) =>
+      [...QUERY_KEY.notifications.lists(), { limit, cursor }] as const,
+    unreadLists: () => [...QUERY_KEY.notifications.all, 'unread-list'] as const,
+    unreadList: (limit: number, cursor?: string) =>
+      [...QUERY_KEY.notifications.unreadLists(), { limit, cursor }] as const,
+    unreadCount: () =>
+      [...QUERY_KEY.notifications.all, 'unread-count'] as const,
+    tabCounts: () => [...QUERY_KEY.notifications.all, 'tab-counts'] as const,
+  },
 } as const

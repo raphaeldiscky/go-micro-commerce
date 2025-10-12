@@ -263,3 +263,30 @@ export const SEND_READ_RECEIPT_MUTATION = gql`
     }
   }
 `
+
+/**
+ * Send typing indicator for a conversation
+ */
+export const SEND_TYPING_INDICATOR_MUTATION = gql`
+  mutation SendTypingIndicator($input: TypingIndicatorInput!) {
+    sendTypingIndicator(input: $input) {
+      userId
+      conversationId
+      isTyping
+      timestamp
+    }
+  }
+`
+
+/**
+ * Update user presence
+ */
+export const UPDATE_PRESENCE_MUTATION = gql`
+  mutation UpdatePresence($status: PresenceStatus!) {
+    updatePresence(status: $status) {
+      userId
+      status
+      lastSeen
+    }
+  }
+`

@@ -141,6 +141,8 @@ export type Mutation = {
   leaveConversation: Scalars['Boolean']['output']
   login: AuthPayload
   logout: Scalars['Boolean']['output']
+  markAllAsRead: Scalars['Boolean']['output']
+  markAsRead: Notification
   refreshToken: AuthPayload
   register: AuthPayload
   requestChatConnection: ChatConnection
@@ -176,6 +178,10 @@ export type MutationLoginArgs = {
   input: LoginInput
 }
 
+export type MutationMarkAsReadArgs = {
+  id: Scalars['ID']['input']
+}
+
 export type MutationRegisterArgs = {
   input: RegisterUserInput
 }
@@ -209,6 +215,74 @@ export type NewMessage = {
   isSystem: Scalars['Boolean']['output']
   messageType: MessageType
   senderId: Scalars['ID']['output']
+}
+
+export type NewNotification = {
+  __typename?: 'NewNotification'
+  createdAt: Scalars['Time']['output']
+  id: Scalars['ID']['output']
+  isRead: Scalars['Boolean']['output']
+  message: Scalars['String']['output']
+  metadata?: Maybe<Scalars['String']['output']>
+  title: Scalars['String']['output']
+  type: NotificationType
+  userId: Scalars['ID']['output']
+}
+
+export type Notification = {
+  __typename?: 'Notification'
+  createdAt: Scalars['Time']['output']
+  id: Scalars['ID']['output']
+  isRead: Scalars['Boolean']['output']
+  message: Scalars['String']['output']
+  metadata?: Maybe<Scalars['String']['output']>
+  readAt?: Maybe<Scalars['Time']['output']>
+  title: Scalars['String']['output']
+  type: NotificationType
+  updatedAt: Scalars['Time']['output']
+  userId: Scalars['ID']['output']
+}
+
+export type NotificationConnection = {
+  __typename?: 'NotificationConnection'
+  edges: Array<NotificationEdge>
+  pageInfo: PageInfo
+}
+
+export type NotificationDeleted = {
+  __typename?: 'NotificationDeleted'
+  id: Scalars['ID']['output']
+  userId: Scalars['ID']['output']
+}
+
+export type NotificationEdge = {
+  __typename?: 'NotificationEdge'
+  cursor: Scalars['String']['output']
+  node: Notification
+}
+
+export type NotificationEvent =
+  | NewNotification
+  | NotificationDeleted
+  | NotificationRead
+
+export type NotificationRead = {
+  __typename?: 'NotificationRead'
+  id: Scalars['ID']['output']
+  readAt: Scalars['Time']['output']
+  userId: Scalars['ID']['output']
+}
+
+export enum NotificationType {
+  NewMessage = 'NEW_MESSAGE',
+  NewProduct = 'NEW_PRODUCT',
+  OrderCancelled = 'ORDER_CANCELLED',
+  OrderConfirmed = 'ORDER_CONFIRMED',
+  OrderDelivered = 'ORDER_DELIVERED',
+  OrderShipped = 'ORDER_SHIPPED',
+  OrderUpdate = 'ORDER_UPDATE',
+  PaymentSuccess = 'PAYMENT_SUCCESS',
+  SystemAlert = 'SYSTEM_ALERT',
 }
 
 export type OnlineStatus = {
@@ -265,6 +339,10 @@ export type Query = {
   conversationMessages: MessageConnection
   conversationParticipants: Array<Participant>
   conversations: Array<Conversation>
+  getTabCounts: TabCounts
+  getUnreadCount: UnreadCount
+  listNotifications: NotificationConnection
+  listUnreadNotifications: NotificationConnection
   me?: Maybe<User>
   onlineUsers: Array<User>
   user?: Maybe<User>
@@ -285,6 +363,16 @@ export type QueryConversationMessagesArgs = {
 
 export type QueryConversationParticipantsArgs = {
   conversationId: Scalars['ID']['input']
+}
+
+export type QueryListNotificationsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>
+  limit: Scalars['Int']['input']
+}
+
+export type QueryListUnreadNotificationsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>
+  limit: Scalars['Int']['input']
 }
 
 export type QueryUserArgs = {
@@ -332,11 +420,19 @@ export type SendReadReceiptInput = {
 export type Subscription = {
   __typename?: 'Subscription'
   conversationEvents: ConversationEvent
+  notificationEvents: NotificationEvent
   userEvents: UserEvent
 }
 
 export type SubscriptionConversationEventsArgs = {
   conversationId: Scalars['ID']['input']
+}
+
+export type TabCounts = {
+  __typename?: 'TabCounts'
+  all: Scalars['Int']['output']
+  read: Scalars['Int']['output']
+  unread: Scalars['Int']['output']
 }
 
 export type TypingIndicator = {
@@ -352,6 +448,11 @@ export type TypingIndicatorInput = {
   isTyping: Scalars['Boolean']['input']
 }
 
+export type UnreadCount = {
+  __typename?: 'UnreadCount'
+  count: Scalars['Int']['output']
+}
+
 export type User = {
   __typename?: 'User'
   conversations: Array<Conversation>
@@ -362,7 +463,9 @@ export type User = {
   id: Scalars['ID']['output']
   isActive: Scalars['Boolean']['output']
   lastName: Scalars['String']['output']
+  notifications: Array<Notification>
   onlineStatus?: Maybe<OnlineStatus>
+  unreadCount: Scalars['Int']['output']
   updatedAt: Scalars['Time']['output']
 }
 
@@ -376,6 +479,7 @@ export enum UserType {
 export enum Join__Graph {
   AuthService = 'AUTH_SERVICE',
   ChatService = 'CHAT_SERVICE',
+  NotificationService = 'NOTIFICATION_SERVICE',
 }
 
 export enum Link__Purpose {

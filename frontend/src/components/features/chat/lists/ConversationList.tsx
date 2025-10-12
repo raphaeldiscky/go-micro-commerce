@@ -1,7 +1,4 @@
-import {
-  useConversations,
-  useJoinConversation,
-} from '@/hooks/chat/useConversations'
+import { useConversations, useJoinConversation } from '@/hooks/chat'
 import { formatRelativeTime } from '@/lib/utils/date'
 import type { ParticipantRole } from '@/types/__generated__/graphql'
 import { MessageCircle } from 'lucide-react'

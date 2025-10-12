@@ -1,25 +1,18 @@
 import { QUERY_KEY } from '@/constants/query-key'
-import { useUser } from '@/hooks/auth/useAuth'
-import { ONLINE_USERS_QUERY, graphClient } from '@/lib/graphql'
+import { useUser } from '@/hooks/auth'
+import {
+  graphClient,
+  ONLINE_USERS_QUERY,
+  UPDATE_PRESENCE_MUTATION,
+} from '@/lib/graphql'
 import type { User } from '@/types/__generated__/graphql'
 import { PresenceStatus } from '@/types/__generated__/graphql'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { gql } from 'graphql-request'
 import { useCallback, useEffect, useState } from 'react'
 
 interface OnlineUsersQueryResponse {
   onlineUsers: Array<User>
 }
-
-const UPDATE_PRESENCE_MUTATION = gql`
-  mutation UpdatePresence($status: PresenceStatus!) {
-    updatePresence(status: $status) {
-      userId
-      status
-      lastSeen
-    }
-  }
-`
 
 /**
  * Hook for managing user presence via GraphQL

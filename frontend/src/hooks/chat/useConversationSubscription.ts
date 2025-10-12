@@ -1,7 +1,7 @@
 import { QUERY_KEY } from '@/constants/query-key'
 import { CONVERSATION_EVENTS_SUBSCRIPTION } from '@/lib/graphql/chat'
 import type { ConversationEventsSubscription } from '@/lib/graphql/chat.generated'
-import { getSubscriptionClient } from '@/lib/graphql/subscription-client'
+import { getWsSubscriptionClient } from '@/lib/graphql/subscription-client'
 import type { Message, MessageConnection } from '@/types/__generated__/graphql'
 import { ConversationStatus } from '@/types/__generated__/graphql'
 import { useQueryClient } from '@tanstack/react-query'
@@ -28,7 +28,7 @@ export function useConversationSubscription(conversationId: string) {
       timestamp: new Date().toISOString(),
     })
 
-    const client = getSubscriptionClient()
+    const client = getWsSubscriptionClient()
 
     unsubscribeRef.current = client.subscribe<ConversationEventsSubscription>(
       {

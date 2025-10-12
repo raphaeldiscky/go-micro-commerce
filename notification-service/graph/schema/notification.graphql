@@ -52,6 +52,8 @@ type NotificationEdge {
 # Page info for cursor pagination
 type PageInfo {
   hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
   endCursor: String
 }
 

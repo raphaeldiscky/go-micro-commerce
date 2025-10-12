@@ -1,19 +1,7 @@
-import { graphClient } from '@/lib/graphql'
+import { graphClient, SEND_TYPING_INDICATOR_MUTATION } from '@/lib/graphql'
 import type { TypingIndicator } from '@/types/__generated__/graphql'
 import { useMutation } from '@tanstack/react-query'
-import { gql } from 'graphql-request'
 import { useCallback, useEffect, useRef, useState } from 'react'
-
-const SEND_TYPING_INDICATOR_MUTATION = gql`
-  mutation SendTypingIndicator($input: TypingIndicatorInput!) {
-    sendTypingIndicator(input: $input) {
-      userId
-      conversationId
-      isTyping
-      timestamp
-    }
-  }
-`
 
 /**
  * Hook for managing typing indicators via GraphQL

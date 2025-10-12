@@ -1,5 +1,5 @@
 import { PATH_AUTH } from '@/constants/routes'
-import { useLogin } from '@/hooks/auth/useAuth'
+import { useLogin } from '@/hooks/auth'
 import { useForm } from '@tanstack/react-form'
 import { Link } from '@tanstack/react-router'
 import { Eye, EyeOff, LogIn } from 'lucide-react'

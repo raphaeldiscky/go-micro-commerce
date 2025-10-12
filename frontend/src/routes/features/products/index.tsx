@@ -1,7 +1,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH_FEATURES } from '@/constants'
-import { useProducts } from '@/hooks/products/useProducts'
+import { useProducts } from '@/hooks/products'
 import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
 import { AlertCircle, Package } from 'lucide-react'
