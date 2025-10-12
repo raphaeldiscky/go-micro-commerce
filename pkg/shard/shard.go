@@ -1,5 +1,5 @@
-// Package sharding provides sharding utilities for the application.
-package sharding
+// Package shard provides sharding utilities for the application.
+package shard
 
 import (
 	"context"
@@ -12,14 +12,14 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
-// ShardResolver provides consistent hashing for shard distribution.
-type ShardResolver struct {
+// Sharder provides consistent hashing for shard distribution.
+type Sharder struct {
 	consistent *ch.ConsistentHashing
 	logger     logger.Logger
 }
 
-// NewShardResolver creates a new shard resolver with consistent hashing.
-func NewShardResolver(config Config, appLogger logger.Logger) (*ShardResolver, error) {
+// NewSharder creates a new shard resolver with consistent hashing.
+func NewSharder(config Config, appLogger logger.Logger) (*Sharder, error) {
 	chConfig := ch.Config{
 		ReplicationFactor: config.ReplicationFactor,
 		LoadFactor:        config.LoadFactor,
@@ -30,7 +30,7 @@ func NewShardResolver(config Config, appLogger logger.Logger) (*ShardResolver, e
 		return nil, fmt.Errorf("failed to create consistent hashing: %w", err)
 	}
 
-	resolver := &ShardResolver{
+	resolver := &Sharder{
 		consistent: consistent,
 		logger:     appLogger,
 	}
@@ -49,7 +49,7 @@ func NewShardResolver(config Config, appLogger logger.Logger) (*ShardResolver, e
 }
 
 // GetShardForUser returns the shard ID for a given user UUID.
-func (s *ShardResolver) GetShardForUser(userID uuid.UUID) (int, error) {
+func (s *Sharder) GetShardForUser(userID uuid.UUID) (int, error) {
 	ctx := context.Background()
 
 	shardName, err := s.consistent.GetLeast(ctx, userID.String())
@@ -67,7 +67,7 @@ func (s *ShardResolver) GetShardForUser(userID uuid.UUID) (int, error) {
 }
 
 // GetShardForString returns the shard ID for any string identifier.
-func (s *ShardResolver) GetShardForString(id string) (int, error) {
+func (s *Sharder) GetShardForString(id string) (int, error) {
 	ctx := context.Background()
 
 	shardName, err := s.consistent.GetLeast(ctx, id)
@@ -84,23 +84,23 @@ func (s *ShardResolver) GetShardForString(id string) (int, error) {
 }
 
 // GetShardLoads returns current load distribution across shards.
-func (s *ShardResolver) GetShardLoads() map[string]int64 {
+func (s *Sharder) GetShardLoads() map[string]int64 {
 	return s.consistent.GetLoads()
 }
 
 // GetAllShards returns list of all active shards.
-func (s *ShardResolver) GetAllShards() []string {
+func (s *Sharder) GetAllShards() []string {
 	return s.consistent.Hosts()
 }
 
 // RemoveShard removes a shard from the ring (for maintenance).
-func (s *ShardResolver) RemoveShard(shardID int) error {
+func (s *Sharder) RemoveShard(shardID int) error {
 	ctx := context.Background()
 	return s.consistent.Remove(ctx, shardKey(shardID))
 }
 
 // AddShard adds a shard back to the ring.
-func (s *ShardResolver) AddShard(shardID int) error {
+func (s *Sharder) AddShard(shardID int) error {
 	ctx := context.Background()
 	return s.consistent.Add(ctx, shardKey(shardID))
 }

@@ -63,6 +63,9 @@ type NotificationService interface {
 
 	// DeleteAllNotifications deletes all notifications for a user
 	DeleteAllNotifications(ctx context.Context, userID uuid.UUID) error
+
+	// GetTotalCount retrieves the total count of notifications for a user
+	GetTotalCount(ctx context.Context, userID uuid.UUID) (int64, error)
 }
 
 // notificationService implements the NotificationService interface.
@@ -342,4 +345,23 @@ func (s *notificationService) DeleteAllNotifications(
 	}
 
 	return nil
+}
+
+// GetTotalCount retrieves the total count of notifications for a user.
+func (s *notificationService) GetTotalCount(
+	ctx context.Context,
+	userID uuid.UUID,
+) (int64, error) {
+	notificationRepo := s.dataStore.NotificationRepository()
+
+	count, err := notificationRepo.CountByUserID(ctx, userID)
+	if err != nil {
+		s.logger.Error("Failed to count total notifications",
+			"user_id", userID,
+			"error", err)
+
+		return 0, httperror.NewInternalServerError("failed to count notifications")
+	}
+
+	return count, nil
 }

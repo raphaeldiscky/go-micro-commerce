@@ -1,0 +1,82 @@
+# Notification type enum
+enum NotificationType {
+  NEW_MESSAGE
+  NEW_PRODUCT
+  ORDER_UPDATE
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  PAYMENT_SUCCESS
+  SYSTEM_ALERT
+}
+
+# Notification entity
+type Notification {
+  id: ID!
+  userId: ID!
+  type: NotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  readAt: Time
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Unread count response
+type UnreadCount {
+  count: Int!
+}
+
+# Tab counts for notification drawer
+type TabCounts {
+  all: Int!
+  unread: Int!
+  read: Int!
+}
+
+# Notification connection for cursor-based pagination
+type NotificationConnection {
+  edges: [NotificationEdge!]!
+  pageInfo: PageInfo!
+}
+
+# Notification edge
+type NotificationEdge {
+  node: Notification!
+  cursor: String!
+}
+
+# Page info for cursor pagination
+type PageInfo {
+  hasNextPage: Boolean!
+  endCursor: String
+}
+
+# Notification queries
+extend type Query {
+  # List all notifications with cursor pagination
+  listNotifications(limit: Int!, cursor: String): NotificationConnection!
+    @requiresAuth
+
+  # List unread notifications with cursor pagination
+  listUnreadNotifications(limit: Int!, cursor: String): NotificationConnection!
+    @requiresAuth
+
+  # Get unread notification count
+  getUnreadCount: UnreadCount! @requiresAuth
+
+  # Get notification counts for all tabs
+  getTabCounts: TabCounts! @requiresAuth
+}
+
+# Notification mutations
+extend type Mutation {
+  # Mark a notification as read
+  markAsRead(id: ID!): Notification! @requiresAuth
+
+  # Mark all notifications as read
+  markAllAsRead: Boolean! @requiresAuth
+}

@@ -14,7 +14,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/sharding"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/shard"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -59,7 +59,7 @@ type notificationEventService struct {
 	sseHub           *sse.Hub
 	eventBus         eventbus.EventBus
 	instanceID       string
-	shardResolver    *sharding.ShardResolver
+	sharder          *shard.Sharder
 	logger           logger.Logger
 }
 
@@ -70,7 +70,7 @@ func NewNotificationEventService(
 	sseHub *sse.Hub,
 	eventBus eventbus.EventBus,
 	instanceID string,
-	shardResolver *sharding.ShardResolver,
+	sharder *shard.Sharder,
 	appLogger logger.Logger,
 ) NotificationEventService {
 	return &notificationEventService{
@@ -79,7 +79,7 @@ func NewNotificationEventService(
 		sseHub:           sseHub,
 		eventBus:         eventBus,
 		instanceID:       instanceID,
-		shardResolver:    shardResolver,
+		sharder:          sharder,
 		logger:           appLogger,
 	}
 }
@@ -638,7 +638,7 @@ func (s *notificationEventService) sendPushNotification(
 	// Create notification entity
 	notif, err := entity.NewNotification(
 		userID,
-		string(payload.TemplateID),
+		constant.NotificationType(payload.NotificationType),
 		payload.Subject,
 		message,
 		payload.Data,
@@ -696,7 +696,7 @@ func (s *notificationEventService) publishToRedis(
 	}
 
 	// Use shard-based channel with consistent hashing
-	shardID, err := s.shardResolver.GetShardForUser(userID)
+	shardID, err := s.sharder.GetShardForUser(userID)
 	if err != nil {
 		return fmt.Errorf("failed to get shard for user: %w", err)
 	}

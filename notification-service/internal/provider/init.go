@@ -9,7 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/sharding"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/shard"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -17,16 +17,18 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/subscription"
 )
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore     repository.DataStore
-	KafkaAdmin    *kafka.Admin
-	SSEHub        *sse.Hub
-	EventBus      eventbus.EventBus
-	InstanceID    string
-	ShardResolver *sharding.ShardResolver
+	DataStore           repository.DataStore
+	KafkaAdmin          *kafka.Admin
+	SSEHub              *sse.Hub
+	EventBus            eventbus.EventBus
+	InstanceID          string
+	Sharder             *shard.Sharder
+	SubscriptionManager *subscription.Manager
 }
 
 // SetupGlobal initializes and returns the providers.
@@ -100,21 +102,24 @@ func SetupGlobal(
 	appLogger.Info("EventBus initialized with Redis pub/sub",
 		"instance_id", instanceID)
 
-	// Initialize ShardResolver with consistent hashing
-	shardResolver, err := sharding.NewShardResolver(sharding.Config{
+	// Initialize Sharder with consistent hashing
+	sharder, err := shard.NewSharder(shard.Config{
 		ShardCount:        cfg.Sharding.ShardCount,
 		ReplicationFactor: cfg.Sharding.ReplicationFactor,
 		LoadFactor:        cfg.Sharding.LoadFactor,
 	}, appLogger)
 	if err != nil {
-		appLogger.Errorf("failed to create shard resolver: %v", err)
+		appLogger.Errorf("failed to create shard: %v", err)
 		return nil, err
 	}
 
-	appLogger.Info("ShardResolver initialized with consistent hashing",
+	appLogger.Info("Sharder initialized with consistent hashing",
 		"shard_count", cfg.Sharding.ShardCount,
 		"replication_factor", cfg.Sharding.ReplicationFactor,
 		"load_factor", cfg.Sharding.LoadFactor)
+
+	// Initialize SubscriptionManager for GraphQL subscriptions
+	subscriptionManager := subscription.NewManager(eventBus, appLogger)
 
 	// Set up SSE Hub with EventBus for cross-instance notifications
 	if errSetup := setupSSEEventBus(sseHub, eventBus, instanceID, appLogger); errSetup != nil {
@@ -122,13 +127,20 @@ func SetupGlobal(
 		return nil, errSetup
 	}
 
+	// Set up GraphQL subscription event handlers
+	if errSetup := setupGraphQLSubscriptions(subscriptionManager, eventBus, instanceID, appLogger); errSetup != nil {
+		appLogger.Errorf("failed to set up GraphQL subscriptions: %v", errSetup)
+		return nil, errSetup
+	}
+
 	return &Providers{
-		KafkaAdmin:    kafkaAdmin,
-		DataStore:     dataStore,
-		SSEHub:        sseHub,
-		EventBus:      eventBus,
-		InstanceID:    instanceID,
-		ShardResolver: shardResolver,
+		KafkaAdmin:          kafkaAdmin,
+		DataStore:           dataStore,
+		SSEHub:              sseHub,
+		EventBus:            eventBus,
+		InstanceID:          instanceID,
+		Sharder:             sharder,
+		SubscriptionManager: subscriptionManager,
 	}, nil
 }
 
@@ -180,6 +192,46 @@ func setupSSEEventBus(
 	}
 
 	appLogger.Info("SSE Hub configured with EventBus for cross-instance notifications",
+		"shard_count", pkgconstant.SSEShardCount)
+
+	return nil
+}
+
+// setupGraphQLSubscriptions configures GraphQL subscriptions to receive notification events.
+func setupGraphQLSubscriptions(
+	subscriptionManager *subscription.Manager,
+	eventBus eventbus.EventBus,
+	instanceID string,
+	appLogger logger.Logger,
+) error {
+	// Create event handler for GraphQL subscriptions
+	eventHandler := subscription.NewEventHandler(subscriptionManager, appLogger)
+
+	// Wrap the handler with eventbus.EventHandler signature
+	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
+		// Skip events from our own instance (already handled locally)
+		if event.GetSourceInstanceID() == instanceID {
+			return nil
+		}
+
+		// Handle cross-instance events
+		return eventHandler.HandleEvent(ctx, event)
+	}
+
+	// Subscribe to all notification shards
+	for i := range pkgconstant.SSEShardCount {
+		channel := redis.NotificationShardChannel(i)
+		if err := eventBus.Subscribe(channel, wrappedHandler); err != nil {
+			appLogger.Error("Failed to subscribe to notification shard for GraphQL",
+				"shard_id", i,
+				"channel", channel,
+				"error", err)
+
+			return err
+		}
+	}
+
+	appLogger.Info("GraphQL subscriptions configured with EventBus",
 		"shard_count", pkgconstant.SSEShardCount)
 
 	return nil
