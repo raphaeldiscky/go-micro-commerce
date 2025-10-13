@@ -50,8 +50,14 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
+	// Register HTTP server
 	if err = consulClient.RegisterHTTP(cfg.App.Name, cfg.HTTPServer.Host, cfg.HTTPServer.Port); err != nil {
-		return func() {}
+		appLogger.Errorf("Failed to register HTTP server with Consul: %v", err)
+	}
+
+	// Register SSE server
+	if err = consulClient.RegisterSSE(cfg.App.Name+"-sse", cfg.SSEServer.Host, cfg.SSEServer.Port); err != nil {
+		appLogger.Errorf("Failed to register SSE server with Consul: %v", err)
 	}
 
 	return func() {

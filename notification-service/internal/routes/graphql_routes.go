@@ -17,6 +17,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph/resolver"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/middleware"
 )
 
 // SetupGraphQLRoutes sets up all GraphQL routes.
@@ -47,28 +48,6 @@ func SetupGraphQLRoutes(
 	e.GET("/graph", echo.WrapHandler(srv))
 	e.POST("/graph", echo.WrapHandler(srv))
 
-	// SSE Subscription Server (separate from main GraphQL server)
-	// Use handler.New() instead of NewDefaultServer() to support SSE transport
-	// NewDefaultServer() is deprecated and doesn't include SSE transport
-	sseSrv := handler.New(executableSchema)
-	// SSE transport handles both GET and POST methods when Accept: text/event-stream is present
-	sseSrv.AddTransport(transport.SSE{
-		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
-	})
-	// Options transport for CORS preflight requests
-	sseSrv.AddTransport(transport.Options{})
-	// DO NOT add GET/POST transports - they conflict with SSE and cause "transport not supported"
-	// The SSE transport itself handles both GET and POST methods for the SSE protocol
-
-	sseSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
-	sseSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
-
-	// SSE endpoint supports both GET and POST methods
-	// GET: subscription query in URL parameters
-	// POST: subscription query in request body (used by graphql-sse client)
-	e.GET("/graph/subscriptions/sse", echo.WrapHandler(sseSrv))
-	e.POST("/graph/subscriptions/sse", echo.WrapHandler(sseSrv))
-
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
 
@@ -84,4 +63,47 @@ func SetupGraphQLRoutes(
 			return nil
 		})
 	}
+}
+
+// SetupGraphQLSSERoutes sets up GraphQL SSE routes for the dedicated SSE server.
+func SetupGraphQLSSERoutes(
+	e *echo.Echo,
+	cfg *config.Config,
+	graphResolver *resolver.Resolver,
+	appLogger logger.Logger,
+) {
+	executableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: graphResolver,
+		Directives: graph.DirectiveRoot{
+			RequiresAuth: pkgmiddleware.RequiresAuthDirective,
+			RequiresRole: func(ctx context.Context, obj any, next graphql.Resolver, role graph.Role) (any, error) {
+				// Convert graph.Role enum to string for middleware
+				return pkgmiddleware.RequiresRoleDirective(ctx, obj, next, string(role))
+			},
+		},
+	})
+
+	// SSE Subscription Server (dedicated server for SSE connections)
+	// Use handler.New() instead of NewDefaultServer() to support SSE transport
+	// NewDefaultServer() is deprecated and doesn't include SSE transport
+	sseSrv := handler.New(executableSchema)
+	// SSE transport handles both GET and POST methods when Accept: text/event-stream is present
+	sseSrv.AddTransport(transport.SSE{
+		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
+	})
+	// Options transport for CORS preflight requests
+	sseSrv.AddTransport(transport.Options{})
+	sseSrv.AddTransport(transport.GET{})
+	sseSrv.AddTransport(transport.POST{})
+	sseSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
+	sseSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
+
+	// SSE endpoint supports both GET and POST methods
+	// GET: subscription query in URL parameters
+	// POST: subscription query in request body (used by graphql-sse client)
+	// Apply SSE timeout middleware for extended connection timeout
+	sseGroup := e.Group("/graph/subscriptions/sse")
+	sseGroup.Use(middleware.SSETimeout(cfg))
+	sseGroup.GET("", echo.WrapHandler(sseSrv))
+	sseGroup.POST("", echo.WrapHandler(sseSrv))
 }

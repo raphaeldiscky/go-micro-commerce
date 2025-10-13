@@ -17,6 +17,8 @@ const (
 	HTTPServerReadTimeout = 30 * time.Second
 	// HTTPServerWriteTimeout is the write timeout for the HTTP server.
 	HTTPServerWriteTimeout = 30 * time.Second
+	// HTTPServerSSETimeout is the timeout for Server-Sent Events (SSE) connections.
+	HTTPServerSSETimeout = 300 * time.Second // 5 minutes for streaming connections
 	// HTTPServerIdleTimeout is the idle timeout for the HTTP server.
 	HTTPServerIdleTimeout = 120 * time.Second
 	// HTTPServerReadHeaderTimeout is the read header timeout for the HTTP server.

@@ -17,6 +17,7 @@ type HTTPServerConfig struct {
 	RequestTimeoutPeriod time.Duration `mapstructure:"HTTP_SERVER_REQUEST_TIMEOUT_PERIOD"`
 	ReadTimeout          time.Duration `mapstructure:"HTTP_SERVER_READ_TIMEOUT"`
 	WriteTimeout         time.Duration `mapstructure:"HTTP_SERVER_WRITE_TIMEOUT"`
+	SSETimeout           time.Duration `mapstructure:"HTTP_SERVER_SSE_TIMEOUT"`
 	IdleTimeout          time.Duration `mapstructure:"HTTP_SERVER_IDLE_TIMEOUT"`
 	ReadHeaderTimeout    time.Duration `mapstructure:"HTTP_SERVER_READ_HEADER_TIMEOUT"`
 	MaxHeaderBytes       int           `mapstructure:"HTTP_SERVER_MAX_HEADER_BYTES"`
@@ -33,6 +34,7 @@ func initHTTPServerConfig() *HTTPServerConfig {
 	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", constant.HTTPServerRequestTimeoutPeriod)
 	viper.SetDefault("HTTP_SERVER_READ_TIMEOUT", constant.HTTPServerReadTimeout)
 	viper.SetDefault("HTTP_SERVER_WRITE_TIMEOUT", constant.HTTPServerWriteTimeout)
+	viper.SetDefault("HTTP_SERVER_SSE_TIMEOUT", constant.HTTPServerSSETimeout)
 	viper.SetDefault("HTTP_SERVER_IDLE_TIMEOUT", constant.HTTPServerIdleTimeout)
 	viper.SetDefault("HTTP_SERVER_READ_HEADER_TIMEOUT", constant.HTTPServerReadHeaderTimeout)
 	viper.SetDefault("HTTP_SERVER_MAX_HEADER_BYTES", constant.HTTPServerMaxHeaderBytes)

@@ -52,6 +52,38 @@ func SetupGraphQLRoutes(
 	e.GET("/graph", graphQLEchoHandler(srv))
 	e.POST("/graph", graphQLEchoHandler(srv))
 
+	if cfg.App.Environment == "development" {
+		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
+
+		e.GET("/graph/playground", func(c echo.Context) error {
+			// Relax CSP for GraphQL Playground
+			c.Response().Header().Set("Content-Security-Policy",
+				"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net https://unpkg.com;")
+			c.Response().Header().Set("X-Frame-Options", "SAMEORIGIN")
+			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
+			c.Response().Header().Set("X-XSS-Protection", "1; mode=block")
+			playgroundHandler.ServeHTTP(c.Response(), c.Request())
+
+			return nil
+		})
+	}
+}
+
+// SetupGraphQLWsRoutes sets up WebSocket routes.
+func SetupGraphQLWsRoutes(e *echo.Echo, graphResolver *resolver.Resolver,
+	appLogger logger.Logger,
+) {
+	executableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: graphResolver,
+		Directives: graph.DirectiveRoot{
+			RequiresAuth: pkgmiddleware.RequiresAuthDirective,
+			RequiresRole: func(ctx context.Context, obj any, next graphql.Resolver, role graph.Role) (any, error) {
+				// Convert graph.Role enum to string for middleware
+				return pkgmiddleware.RequiresRoleDirective(ctx, obj, next, string(role))
+			},
+		},
+	})
+
 	// WebSocket handler for GraphQL subscriptions with graphql-transport-ws protocol
 	wsSrv := handler.New(executableSchema)
 
@@ -84,22 +116,6 @@ func SetupGraphQLRoutes(
 		echo.WrapHandler(wsSrv),
 		pkgmiddleware.WebSocketAuthMiddleware(),
 	)
-
-	if cfg.App.Environment == "development" {
-		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
-
-		e.GET("/graph/playground", func(c echo.Context) error {
-			// Relax CSP for GraphQL Playground
-			c.Response().Header().Set("Content-Security-Policy",
-				"default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdn.jsdelivr.net https://unpkg.com;")
-			c.Response().Header().Set("X-Frame-Options", "SAMEORIGIN")
-			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
-			c.Response().Header().Set("X-XSS-Protection", "1; mode=block")
-			playgroundHandler.ServeHTTP(c.Response(), c.Request())
-
-			return nil
-		})
-	}
 }
 
 // graphQLEchoHandler wraps GraphQL handler to pass Echo context through to resolvers.

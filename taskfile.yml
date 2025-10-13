@@ -349,6 +349,11 @@ tasks:
   start_graphql_gateway:
     desc: Start GraphQL Gateway
     cmds:
+      - docker compose -f {{.INFRA_DC_FILE}} up -d --force-recreate graphql-gateway graphql-gateway-consul-sidecar
+
+  build_graphql_gateway:
+    desc: Build GraphQL Gateway
+    cmds:
       - task: supergraph
       - bash ./scripts/build.sh --no-cache graphql-gateway
       - docker compose -f {{.INFRA_DC_FILE}} up -d --force-recreate graphql-gateway graphql-gateway-consul-sidecar

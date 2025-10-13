@@ -55,7 +55,7 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
-	if err = consulClient.RegisterWebSocket(cfg.WebSocketServer.ServiceName, cfg.WebSocketServer.Host, cfg.WebSocketServer.Port); err != nil {
+	if err = consulClient.RegisterWebSocket(cfg.App.Name+"-ws", cfg.WebSocketServer.Host, cfg.WebSocketServer.Port); err != nil {
 		appLogger.Errorf("Failed to register WebSocket service with Consul: %v", err)
 	}
 

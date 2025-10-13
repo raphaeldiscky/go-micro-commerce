@@ -14,12 +14,6 @@ type ConnectionStatsResponse struct {
 	UniqueUsers      int `json:"unique_users"`
 }
 
-// HealthStatusResponse represents the health status response.
-type HealthStatusResponse struct {
-	Status  string `json:"status"`
-	Service string `json:"service"`
-}
-
 // PresenceUpdateResponse represents a presence update response.
 type PresenceUpdateResponse struct {
 	UserID  uuid.UUID               `json:"user_id"`

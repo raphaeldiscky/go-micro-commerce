@@ -10,6 +10,6 @@ import (
 func SetupWebSocketRoutes(e *echo.Echo, wsHandler *handler.WebSocketHandler) {
 	ws := e.Group("/ws")
 	ws.GET("", wsHandler.HandleWebSocket)
-	ws.GET("/health", wsHandler.WebSocketHealth)
+	ws.GET("/health", wsHandler.Health)
 	ws.GET("/stats", wsHandler.GetConnectionStats)
 }

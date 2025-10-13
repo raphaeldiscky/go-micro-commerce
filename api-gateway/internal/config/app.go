@@ -11,11 +11,12 @@ import (
 
 // AppConfig holds the application configuration.
 type AppConfig struct {
-	Name                string        `mapstructure:"APP_NAME"`
-	Environment         string        `mapstructure:"APP_ENVIRONMENT"`
-	LoggerLevel         int           `mapstructure:"APP_LOGGER_LEVEL"`
-	TimeoutShutdown     time.Duration `mapstructure:"APP_TIMEOUT_SHUTDOWN"`
-	TimeoutProxyRequest time.Duration `mapstructure:"APP_TIMEOUT_PROXY_REQUEST"`
+	Name                 string        `mapstructure:"APP_NAME"`
+	Environment          string        `mapstructure:"APP_ENVIRONMENT"`
+	LoggerLevel          int           `mapstructure:"APP_LOGGER_LEVEL"`
+	TimeoutShutdown      time.Duration `mapstructure:"APP_TIMEOUT_SHUTDOWN"`
+	TimeoutProxyRequest  time.Duration `mapstructure:"APP_TIMEOUT_PROXY_REQUEST"`
+	TimeoutSSEConnection time.Duration `mapstructure:"APP_TIMEOUT_SSE_CONNECTION"`
 }
 
 // initAppConfig initializes the application configuration from environment variables.
@@ -25,6 +26,7 @@ func initAppConfig() *AppConfig {
 	viper.SetDefault("APP_ENVIRONMENT", "development")
 	viper.SetDefault("APP_TIMEOUT_SHUTDOWN", constant.AppTimeoutShutdown)
 	viper.SetDefault("APP_TIMEOUT_PROXY_REQUEST", constant.AppTimeoutProxyRequest)
+	viper.SetDefault("APP_TIMEOUT_SSE_CONNECTION", constant.AppTimeoutSSEConnection)
 
 	appConfig := &AppConfig{}
 	if err := viper.Unmarshal(appConfig); err != nil {

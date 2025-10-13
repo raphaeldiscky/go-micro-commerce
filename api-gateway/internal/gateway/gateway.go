@@ -883,9 +883,9 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 		req.Header.Set("X-Forwarded-Proto", c.Scheme())
 		req.Header.Set("X-Forwarded-Host", c.Request().Host)
 
-		// Create HTTP client with no timeout for SSE streaming
+		// Create HTTP client with SSE-specific timeout for streaming
 		client := &http.Client{
-			Timeout: 0, // No timeout for long-lived SSE connections
+			Timeout: gw.config.App.TimeoutSSEConnection,
 		}
 
 		// Perform request

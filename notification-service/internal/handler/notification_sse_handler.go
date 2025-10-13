@@ -2,10 +2,14 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 )
 
 // NotificationSSEHandler handles SSE connections for real-time notifications.
@@ -51,4 +55,15 @@ func (h *NotificationSSEHandler) StreamNotifications(c echo.Context) error {
 		"connection_id", conn.ID())
 
 	return nil
+}
+
+// Health handles sse health check.
+func (h *NotificationSSEHandler) Health(e echo.Context) error {
+	return e.JSON(http.StatusOK, pkgdto.WebResponse[any, any]{
+		Data: map[string]any{
+			"status":  "healthy",
+			"service": "notification-service-sse",
+		},
+		Message: "service is healthy",
+	})
 }
