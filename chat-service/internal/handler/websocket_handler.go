@@ -7,9 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+	pkglogger "github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
@@ -22,7 +23,7 @@ import (
 // WebSocketHandler handles WebSocket connections for the chat service.
 type WebSocketHandler struct {
 	hub               *chatwebsocket.ChatHub
-	logger            logger.Logger
+	logger            pkglogger.Logger
 	config            *config.WebSocketServerConfig
 	connectionService service.ConnectionService
 	chatService       service.ChatService
@@ -31,7 +32,7 @@ type WebSocketHandler struct {
 // NewWebSocketHandler creates a new WebSocket handler.
 func NewWebSocketHandler(
 	hub *chatwebsocket.ChatHub,
-	logger logger.Logger,
+	logger pkglogger.Logger,
 	config *config.WebSocketServerConfig,
 	connectionService service.ConnectionService,
 	chatService service.ChatService,
@@ -117,17 +118,30 @@ func (h *WebSocketHandler) createConnectionFromAuthToken(
 
 // determineUserTypeFromRoles determines user type from JWT roles.
 func (h *WebSocketHandler) determineUserTypeFromRoles(roles []string) constant.UserType {
-	// Prioritize admin role
+	// Log the roles for debugging
+	h.logger.Debug("Determining user type from roles", "roles", roles)
+
+	// Prioritize admin role - check against both string and pkg constant
 	for _, role := range roles {
-		if role == string(constant.UserTypeAdmin) {
+		if role == string(constant.UserTypeAdmin) || role == pkgconstant.RoleAdmin {
+			h.logger.Debug("User identified as admin", "matched_role", role)
 			return constant.UserTypeAdmin
 		}
 	}
 
-	// Fall back to first role or user
-	if len(roles) > 0 {
-		return constant.UserType(roles[0])
+	// Check for user role - check against both string and pkg constant
+	for _, role := range roles {
+		if role == string(constant.UserTypeUser) || role == pkgconstant.RoleUser {
+			h.logger.Debug("User identified as regular user", "matched_role", role)
+			return constant.UserTypeUser
+		}
 	}
+
+	// If we reach here, the roles contain unexpected values
+	// Default to 'user' for safety, but log a warning
+	h.logger.Warn("Unexpected user roles in JWT, defaulting to user type",
+		"roles", roles,
+		"default_type", constant.UserTypeUser)
 
 	return constant.UserTypeUser
 }

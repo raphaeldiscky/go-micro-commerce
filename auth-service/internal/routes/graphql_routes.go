@@ -3,11 +3,13 @@ package routes
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
@@ -43,8 +45,8 @@ func SetupGraphQLRoutes(
 	// Add logging middleware to log GraphQL operations
 	srv.AroundOperations(middleware.GraphQLLoggingMiddleware(appLogger))
 
-	e.GET("/graph", echo.WrapHandler(srv))
-	e.POST("/graph", echo.WrapHandler(srv))
+	e.GET("/graph", graphQLEchoHandler(srv))
+	e.POST("/graph", graphQLEchoHandler(srv))
 
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
@@ -60,5 +62,21 @@ func SetupGraphQLRoutes(
 
 			return nil
 		})
+	}
+}
+
+// graphQLEchoHandler wraps GraphQL handler to pass Echo context through to resolvers.
+func graphQLEchoHandler(h http.Handler) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		req := c.Request()
+		res := c.Response()
+
+		// Add response writer to context so resolvers can set cookies
+		ctx := context.WithValue(req.Context(), constant.CtxKeyResponseWriter, res.Writer)
+		req = req.WithContext(ctx)
+
+		h.ServeHTTP(res, req)
+
+		return nil
 	}
 }

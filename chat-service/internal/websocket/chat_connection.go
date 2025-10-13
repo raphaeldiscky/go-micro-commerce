@@ -3,6 +3,7 @@ package websocket
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -504,15 +505,47 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 	userType constant.UserType,
 	conversationID uuid.UUID,
 ) error {
+	h.logger.Debug("Validating user participation in conversation",
+		"user_id", userID,
+		"user_type", userType,
+		"user_type_string", string(userType),
+		"conversation_id", conversationID)
+
 	// Get user's conversations to validate participation
 	conversations, err := h.conversationGetter(ctx, userID, userType)
 	if err != nil {
 		h.logger.Error("Failed to get user conversations for validation",
 			"error", err,
 			"user_id", userID,
+			"user_type", userType,
+			"user_type_string", string(userType),
 			"conversation_id", conversationID)
 
-		return err
+		return fmt.Errorf("failed to validate user participation: %w", err)
+	}
+
+	h.logger.Debug("Retrieved user conversations for validation",
+		"user_id", userID,
+		"conversation_id", conversationID,
+		"retrieved_conversations", len(conversations))
+
+	// Log conversation IDs for debugging
+	if len(conversations) == 0 {
+		h.logger.Warn("No conversations found for user",
+			"user_id", userID,
+			"user_type", userType,
+			"user_type_string", string(userType),
+			"target_conversation_id", conversationID)
+	} else {
+		convIDs := make([]string, len(conversations))
+		for i, conv := range conversations {
+			convIDs[i] = conv.ID.String()
+		}
+
+		h.logger.Debug("User conversation IDs",
+			"user_id", userID,
+			"conversation_ids", convIDs,
+			"target_conversation_id", conversationID.String())
 	}
 
 	// Check if the user is a participant in the specified conversation
@@ -520,16 +553,22 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 		if conv.ID.String() == conversationID.String() {
 			h.logger.Debug("User participation validated",
 				"user_id", userID,
+				"user_type", userType,
 				"conversation_id", conversationID)
 
 			return nil
 		}
 	}
 
+	// Create a more descriptive error message
 	h.logger.Warn("User not a participant in conversation",
 		"user_id", userID,
+		"user_type", userType,
+		"user_type_string", string(userType),
 		"conversation_id", conversationID,
-		"user_conversations", len(conversations))
+		"user_conversation_count", len(conversations))
 
-	return pkgwebsocket.ErrInvalidMessage
+	// Return a more specific error
+	return fmt.Errorf("user %s with type %s is not an active participant in conversation %s",
+		userID, userType, conversationID)
 }
