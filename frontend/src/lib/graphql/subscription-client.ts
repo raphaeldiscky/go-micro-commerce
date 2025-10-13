@@ -73,12 +73,22 @@ export function getSseSubscriptionClient(): SseClient {
       url: baseUrl,
       headers: () => {
         const currentToken = getAccessToken()
+        console.log('🔑 SSE Client - Getting auth token', {
+          hasToken: !!currentToken,
+          tokenLength: currentToken?.length || 0,
+          timestamp: new Date().toISOString(),
+        })
         return {
           ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         }
       },
       retryAttempts: 5,
       retry: async (retries) => {
+        console.log('🔄 SSE Client - Retrying connection', {
+          attempt: retries + 1,
+          maxAttempts: 5,
+          timestamp: new Date().toISOString(),
+        })
         // Exponential backoff: 1s, 2s, 4s, 8s, 16s
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * Math.pow(2, retries)),
@@ -87,6 +97,7 @@ export function getSseSubscriptionClient(): SseClient {
       onMessage: (message) => {
         console.log('📨 SSE Message Received:', {
           event: message.event,
+          data: message.data,
           timestamp: new Date().toISOString(),
         })
       },

@@ -35,9 +35,16 @@ func (r *subscriptionResolver) NotificationEvents(
 		return nil, err
 	}
 
-	r.logger.Info("GraphQL notification subscription established",
+	r.logger.Info("GraphQL notification subscription established successfully",
 		"user_id", user.UserID,
 		"channel_buffer", cap(eventChan))
+
+	// Start a goroutine to log when events are sent through the channel
+	go func() {
+		<-ctx.Done()
+		r.logger.Info("GraphQL notification subscription context done",
+			"user_id", user.UserID)
+	}()
 
 	return eventChan, nil
 }

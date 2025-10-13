@@ -23,6 +23,8 @@ const (
 	ServiceTypeConnectRPC ServiceType = "connectrpc"
 	// ServiceTypeWebSocket represents WebSocket service type for Consul registration.
 	ServiceTypeWebSocket ServiceType = "websocket"
+	// ServiceTypeSSE represents Server-Sent Events service type for Consul registration.
+	ServiceTypeSSE ServiceType = "sse"
 )
 
 // ServiceRegistration defines the interface for service registration.
@@ -31,6 +33,7 @@ type ServiceRegistration interface {
 	RegisterGRPC(serviceName, address string, port int) error
 	RegisterConnectRPC(serviceName, address string, port int) error
 	RegisterWebSocket(serviceName, address string, port int) error
+	RegisterSSE(serviceName, address string, port int) error
 	Deregister() error
 }
 
@@ -87,6 +90,11 @@ func (s *serviceRegistration) RegisterWebSocket(serviceName, address string, por
 	return s.register(serviceName, address, port, ServiceTypeWebSocket)
 }
 
+// RegisterSSE registers a Server-Sent Events service with Consul.
+func (s *serviceRegistration) RegisterSSE(serviceName, address string, port int) error {
+	return s.register(serviceName, address, port, ServiceTypeSSE)
+}
+
 // register registers a service with Consul based on service type.
 func (s *serviceRegistration) register(
 	serviceName, host string,
@@ -104,7 +112,7 @@ func (s *serviceRegistration) register(
 
 	switch serviceType {
 	case ServiceTypeHTTP:
-		tags = []string{"http", "api", "microservice"}
+		tags = []string{"http"}
 		check = &api.AgentServiceCheck{
 			HTTP: fmt.Sprintf(
 				"http://%s/health",
@@ -115,7 +123,7 @@ func (s *serviceRegistration) register(
 			DeregisterCriticalServiceAfter: "30s",
 		}
 	case ServiceTypeGRPC:
-		tags = []string{"grpc", "api", "microservice"}
+		tags = []string{"grpc"}
 		// For gRPC health checks, use TCP check since we have custom health method
 		check = &api.AgentServiceCheck{
 			TCP:                            fmt.Sprintf("%s:%d", host, port),
@@ -124,7 +132,7 @@ func (s *serviceRegistration) register(
 			DeregisterCriticalServiceAfter: "30s",
 		}
 	case ServiceTypeConnectRPC:
-		tags = []string{"connectrpc", "grpc", "http", "api", "microservice"}
+		tags = []string{"connectrpc", "grpc", "http"}
 		// Connect-RPC supports gRPC, HTTP, and gRPC-Web protocols over HTTP
 		// Use HTTP health check since Connect-RPC serves over HTTP
 		check = &api.AgentServiceCheck{
@@ -137,10 +145,22 @@ func (s *serviceRegistration) register(
 			DeregisterCriticalServiceAfter: "30s",
 		}
 	case ServiceTypeWebSocket:
-		tags = []string{"websocket", "realtime", "microservice"}
+		tags = []string{"websocket"}
 		check = &api.AgentServiceCheck{
 			HTTP: fmt.Sprintf(
 				"http://%s/ws/health",
+				net.JoinHostPort(host, strconv.Itoa(port)),
+			),
+			Interval:                       "10s",
+			Timeout:                        "5s",
+			DeregisterCriticalServiceAfter: "30s",
+		}
+	case ServiceTypeSSE:
+		tags = []string{"sse", "http"}
+		// SSE services use the same health endpoint as HTTP since they're built on Echo
+		check = &api.AgentServiceCheck{
+			HTTP: fmt.Sprintf(
+				"http://%s/sse/health",
 				net.JoinHostPort(host, strconv.Itoa(port)),
 			),
 			Interval:                       "10s",

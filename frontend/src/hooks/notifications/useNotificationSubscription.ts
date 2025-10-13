@@ -25,6 +25,10 @@ export function useNotificationSubscription(enabled = true) {
 
     const client = getSseSubscriptionClient()
 
+    console.log('🔌 Starting notification subscription...', {
+      timestamp: new Date().toISOString(),
+    })
+
     // Subscribe to notification events
     unsubscribeRef.current = client.subscribe<SubscriptionData>(
       {
@@ -32,8 +36,17 @@ export function useNotificationSubscription(enabled = true) {
       },
       {
         next: (result) => {
+          console.log('📬 Notification subscription - received data:', {
+            hasData: !!result.data,
+            hasEvent: !!result.data?.notificationEvents,
+            timestamp: new Date().toISOString(),
+          })
+
           const event = result.data?.notificationEvents
-          if (!event) return
+          if (!event) {
+            console.warn('⚠️ Received subscription data without event')
+            return
+          }
 
           console.log('📬 Notification Event Received:', event)
 

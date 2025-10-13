@@ -47,24 +47,6 @@ func SetupGraphQLRoutes(
 	e.GET("/graph", echo.WrapHandler(srv))
 	e.POST("/graph", echo.WrapHandler(srv))
 
-	// SSE Subscription Server (separate from main GraphQL server)
-	sseSrv := handler.NewDefaultServer(executableSchema)
-	sseSrv.AddTransport(transport.SSE{
-		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
-	})
-	sseSrv.AddTransport(transport.Options{})
-	sseSrv.AddTransport(transport.GET{})
-	sseSrv.AddTransport(transport.POST{})
-
-	sseSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
-	sseSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
-
-	// SSE endpoint supports both GET and POST methods
-	// GET: subscription query in URL parameters
-	// POST: subscription query in request body (used by graphql-sse client)
-	e.GET("/graph/subscriptions/sse", echo.WrapHandler(sseSrv))
-	e.POST("/graph/subscriptions/sse", echo.WrapHandler(sseSrv))
-
 	if cfg.App.Environment == "development" {
 		playgroundHandler := playground.Handler("GraphQL Playground", "/graph")
 
@@ -80,4 +62,75 @@ func SetupGraphQLRoutes(
 			return nil
 		})
 	}
+}
+
+// SetupGraphQLSSERoutes sets up GraphQL SSE routes for the dedicated SSE server.
+func SetupGraphQLSSERoutes(
+	e *echo.Echo,
+	_ *config.Config,
+	graphResolver *resolver.Resolver,
+	appLogger logger.Logger,
+) {
+	executableSchema := graph.NewExecutableSchema(graph.Config{
+		Resolvers: graphResolver,
+		Directives: graph.DirectiveRoot{
+			RequiresAuth: pkgmiddleware.RequiresAuthDirective,
+			RequiresRole: func(ctx context.Context, obj any, next graphql.Resolver, role graph.Role) (any, error) {
+				// Convert graph.Role enum to string for middleware
+				return pkgmiddleware.RequiresRoleDirective(ctx, obj, next, string(role))
+			},
+		},
+	})
+
+	// SSE Subscription Server (dedicated server for SSE connections)
+	// Use handler.New() instead of NewDefaultServer() to support SSE transport
+	// NewDefaultServer() is deprecated and doesn't include SSE transport
+	sseSrv := handler.New(executableSchema)
+
+	// Configure SSE transport with keep-alive to maintain connection
+	// This ensures the connection stays open and events are streamed properly
+	sseSrv.AddTransport(transport.SSE{
+		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
+	})
+
+	// Options transport for CORS preflight requests
+	sseSrv.AddTransport(transport.Options{})
+
+	// GET and POST transports for non-SSE queries
+	sseSrv.AddTransport(transport.GET{})
+	sseSrv.AddTransport(transport.POST{})
+
+	// Apply GraphQL middleware
+	sseSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
+	sseSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
+
+	// Log when subscriptions are active
+	sseSrv.AroundResponses(
+		func(ctx context.Context, next graphql.ResponseHandler) *graphql.Response {
+			appLogger.Debug("GraphQL SSE response handler called")
+
+			resp := next(ctx)
+			if resp != nil {
+				appLogger.Debug("GraphQL SSE response generated",
+					"has_data", resp.Data != nil,
+					"has_errors", len(resp.Errors) > 0)
+			}
+
+			return resp
+		},
+	)
+
+	// SSE endpoint supports both GET and POST methods
+	// GET: subscription query in URL parameters
+	// POST: subscription query in request body (used by graphql-sse client)
+	sseGroup := e.Group("/graph/subscriptions/sse")
+	sseGroup.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			c.Response().Header().Set("X-Accel-Buffering", "no")
+			return next(c)
+		}
+	})
+
+	sseGroup.GET("", echo.WrapHandler(sseSrv))
+	sseGroup.POST("", echo.WrapHandler(sseSrv))
 }

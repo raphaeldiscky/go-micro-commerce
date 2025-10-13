@@ -8,6 +8,7 @@ import (
 type Config struct {
 	App            *AppConfig
 	HTTPServer     *HTTPServerConfig
+	SSEServer      *SSEServerConfig
 	SMTP           *SMTPConfig
 	Kafka          *KafkaConfig
 	Postgres       *PostgresConfig
@@ -32,6 +33,7 @@ func LoadConfig() (*Config, error) {
 		App:            initAppConfig(),
 		SMTP:           initSMTPConfig(),
 		HTTPServer:     initHTTPServerConfig(),
+		SSEServer:      initSSEServerConfig(),
 		Postgres:       initPostgresConfig(),
 		Redis:          initRedisConfig(),
 		Kafka:          initKafkaConfig(),

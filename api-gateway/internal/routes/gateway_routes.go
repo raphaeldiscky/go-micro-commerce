@@ -29,6 +29,14 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 		"/chats/ws/health",
 		gw.ProxyToService("chat-service-ws", "/ws/health"),
 	) // use native websocket, not GraphQL subscriptions
+	public.GET(
+		"/notifications/sse/health",
+		gw.ProxyToService("notification-service-sse", "/sse/health"),
+	)
+	public.GET(
+		"/notifications/sse/debug/subscriptions",
+		gw.ProxyToService("notification-service-sse", "/sse/debug/subscriptions"),
+	)
 
 	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
 	// This allows both authenticated and unauthenticated queries to work
@@ -51,11 +59,11 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	// Uses ProxySSE for long-lived streaming without timeouts
 	optionalAuth.GET(
 		"/graph/subscriptions/sse",
-		gw.ProxySSE("notification-service", "/graph/subscriptions/sse"),
+		gw.ProxySSE("notification-service-sse", "/graph/subscriptions/sse"),
 	)
 	optionalAuth.POST(
 		"/graph/subscriptions/sse",
-		gw.ProxySSE("notification-service", "/graph/subscriptions/sse"),
+		gw.ProxySSE("notification-service-sse", "/graph/subscriptions/sse"),
 	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))

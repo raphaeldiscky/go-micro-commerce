@@ -137,24 +137,31 @@ func (m *Manager) NotifyLocalSubscribers(userID uuid.UUID, event graph.Notificat
 	sentCount := 0
 	droppedCount := 0
 
-	for _, sub := range userSub.subscribers {
+	for subID, sub := range userSub.subscribers {
 		select {
 		case sub <- event:
 			sentCount++
+
+			m.logger.Debug("Event sent to GraphQL subscriber channel",
+				"user_id", userID,
+				"subscriber_id", subID,
+				"event_type", getEventTypeName(event))
 		default:
 			droppedCount++
 
 			m.logger.Warn("Local notification subscriber channel full, dropping message",
-				"user_id", userID)
+				"user_id", userID,
+				"subscriber_id", subID)
 		}
 	}
 
 	if sentCount > 0 || droppedCount > 0 {
-		m.logger.Debug("Notified local notification subscribers",
+		m.logger.Info("Notified local notification subscribers",
 			"user_id", userID,
 			"subscriber_count", len(userSub.subscribers),
 			"sent_count", sentCount,
-			"dropped_count", droppedCount)
+			"dropped_count", droppedCount,
+			"event_type", getEventTypeName(event))
 	}
 }
 
@@ -172,4 +179,34 @@ func (m *Manager) GetSubscriberCount(userID uuid.UUID) int {
 	defer userSub.mu.RUnlock()
 
 	return len(userSub.subscribers)
+}
+
+// getEventTypeName returns a human-readable name for the event type.
+func getEventTypeName(event graph.NotificationEvent) string {
+	switch event.(type) {
+	case *graph.NewNotification:
+		return "NewNotification"
+	case *graph.NotificationRead:
+		return "NotificationRead"
+	case *graph.NotificationDeleted:
+		return "NotificationDeleted"
+	default:
+		return "Unknown"
+	}
+}
+
+// GetAllSubscriptions returns a map of all active subscriptions by user ID.
+func (m *Manager) GetAllSubscriptions() map[uuid.UUID]int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	result := make(map[uuid.UUID]int)
+
+	for userID, userSub := range m.userSubs {
+		userSub.mu.RLock()
+		result[userID] = len(userSub.subscribers)
+		userSub.mu.RUnlock()
+	}
+
+	return result
 }
