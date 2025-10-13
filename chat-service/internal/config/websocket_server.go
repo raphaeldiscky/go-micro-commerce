@@ -11,7 +11,6 @@ import (
 
 // WebSocketServerConfig holds the configuration for the WebSocket server.
 type WebSocketServerConfig struct {
-	ServiceName          string        `mapstructure:"WS_SERVER_SERVICE_NAME"`
 	Host                 string        `mapstructure:"WS_SERVER_HOST"`
 	Port                 int           `mapstructure:"WS_SERVER_PORT"`
 	GracePeriod          time.Duration `mapstructure:"WS_SERVER_GRACE_PERIOD"`
@@ -30,7 +29,6 @@ type WebSocketServerConfig struct {
 // initWebSocketServerConfig initializes the WebSocket server configuration from environment variables.
 func initWebSocketServerConfig() *WebSocketServerConfig {
 	// Set defaults
-	viper.SetDefault("WS_SERVER_SERVICE_NAME", "chat-service-websocket")
 	viper.SetDefault("WS_SERVER_HOST", "localhost")
 	viper.SetDefault("WS_SERVER_PORT", constant.WsServerPort)
 	viper.SetDefault("WS_SERVER_GRACE_PERIOD", constant.WsServerGracePeriod)

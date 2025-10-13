@@ -25,9 +25,10 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
 	public.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
 	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
-
-	// Public WebSocket routes
-	public.GET("/chats/ws", gw.ProxyWebSocket("chat-service-websocket", "/ws"))
+	public.GET(
+		"/chats/ws/health",
+		gw.ProxyToService("chat-service-ws", "/ws/health"),
+	) // use native websocket, not GraphQL subscriptions
 
 	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
 	// This allows both authenticated and unauthenticated queries to work
@@ -35,9 +36,10 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	optionalAuth.Use(h.OptionalAuthorization())
 	optionalAuth.GET("/graph", gw.ProxyToService("graphql-gateway", "/"))
 	optionalAuth.POST("/graph", gw.ProxyToService("graphql-gateway", "/"))
+
 	// GraphQL Subscriptions WebSocket (bypass Apollo Router, proxy directly to chat-service)
 	// Apollo Router doesn't support WebSocket subscriptions, so we route directly
-	// Note: Use chat-service (port 8085) NOT chat-service-websocket (port 9098)
+	// Note: Use chat-service (port 8085) NOT chat-service-ws (port 9095)
 	// GraphQL subscriptions are on the HTTP server, not the native WebSocket server
 	optionalAuth.GET(
 		"/graph/subscriptions/ws",

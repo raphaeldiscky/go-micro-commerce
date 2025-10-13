@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
@@ -182,12 +183,13 @@ func (h *WebSocketHandler) GetConnectionStats(c echo.Context) error {
 	return echoutils.ResponseOK(c, stats)
 }
 
-// WebSocketHealth handles websocket health check.
-func (h *WebSocketHandler) WebSocketHealth(c echo.Context) error {
-	healthStatus := dto.HealthStatusResponse{
-		Status:  "healthy",
-		Service: "chat-websocket",
-	}
-
-	return echoutils.ResponseOK(c, healthStatus)
+// Health handles websocket health check.
+func (h *WebSocketHandler) Health(c echo.Context) error {
+	return c.JSON(http.StatusOK, pkgdto.WebResponse[any, any]{
+		Data: map[string]any{
+			"status":  "healthy",
+			"service": "chat-service-ws",
+		},
+		Message: "service is healthy",
+	})
 }

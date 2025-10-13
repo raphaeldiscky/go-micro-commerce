@@ -14,9 +14,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/handler"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/routes"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/provider"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
 )
 
@@ -30,29 +28,19 @@ type WebSocketServer struct {
 
 // NewWebSocketServer creates a new WebSocket server instance.
 func NewWebSocketServer(
-	hub *websocket.ChatHub,
 	cfg *config.Config,
 	appLogger logger.Logger,
-	connectionService service.ConnectionService,
-	chatService service.ChatService,
+	providers *provider.Providers,
 ) *WebSocketServer {
 	e := echo.New()
 
 	registerWebSocketMiddlewares(e, cfg)
 
-	wsHandler := handler.NewWebSocketHandler(
-		hub,
-		appLogger,
-		cfg.WebSocketServer,
-		connectionService,
-		chatService,
-	)
-
-	routes.SetupWebSocketRoutes(e, wsHandler)
+	provider.SetupNativeWebsocket(cfg, e, appLogger, providers)
 
 	return &WebSocketServer{
 		echo:   e,
-		hub:    hub,
+		hub:    providers.WebSocketHub,
 		config: cfg,
 		logger: appLogger,
 	}
