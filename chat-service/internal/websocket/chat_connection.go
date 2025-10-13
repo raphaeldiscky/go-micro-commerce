@@ -504,12 +504,6 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 	userType constant.UserType,
 	conversationID uuid.UUID,
 ) error {
-	h.logger.Debug("Validating user participation in conversation",
-		"user_id", userID,
-		"user_type", userType,
-		"user_type_string", string(userType),
-		"conversation_id", conversationID)
-
 	// Get user's conversations to validate participation
 	conversations, err := h.conversationGetter(ctx, userID)
 	if err != nil {
@@ -517,34 +511,9 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 			"error", err,
 			"user_id", userID,
 			"user_type", userType,
-			"user_type_string", string(userType),
 			"conversation_id", conversationID)
 
 		return fmt.Errorf("failed to validate user participation: %w", err)
-	}
-
-	h.logger.Debug("Retrieved user conversations for validation",
-		"user_id", userID,
-		"conversation_id", conversationID,
-		"retrieved_conversations", len(conversations))
-
-	// Log conversation IDs for debugging
-	if len(conversations) == 0 {
-		h.logger.Warn("No conversations found for user",
-			"user_id", userID,
-			"user_type", userType,
-			"user_type_string", string(userType),
-			"target_conversation_id", conversationID)
-	} else {
-		convIDs := make([]string, len(conversations))
-		for i, conv := range conversations {
-			convIDs[i] = conv.ID.String()
-		}
-
-		h.logger.Debug("User conversation IDs",
-			"user_id", userID,
-			"conversation_ids", convIDs,
-			"target_conversation_id", conversationID.String())
 	}
 
 	// Check if the user is a participant in the specified conversation
@@ -559,15 +528,5 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 		}
 	}
 
-	// Create a more descriptive error message
-	h.logger.Warn("User not a participant in conversation",
-		"user_id", userID,
-		"user_type", userType,
-		"user_type_string", string(userType),
-		"conversation_id", conversationID,
-		"user_conversation_count", len(conversations))
-
-	// Return a more specific error
-	return fmt.Errorf("user %s with type %s is not an active participant in conversation %s",
-		userID, userType, conversationID)
+	return pkgwebsocket.ErrInvalidMessage
 }
