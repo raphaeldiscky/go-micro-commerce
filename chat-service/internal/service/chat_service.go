@@ -40,7 +40,6 @@ type ChatService interface {
 	GetUserConversations(
 		ctx context.Context,
 		userID uuid.UUID,
-		userType constant.UserType,
 	) ([]dto.ConversationResponse, error)
 	GetUserConversationsWithCursor(
 		ctx context.Context,
@@ -229,30 +228,14 @@ func (s *chatService) GetConversationByID(
 func (s *chatService) GetUserConversations(
 	ctx context.Context,
 	userID uuid.UUID,
-	userType constant.UserType,
 ) ([]dto.ConversationResponse, error) {
 	participantRepo := s.dataStore.ParticipantRepository()
 	conversationRepo := s.dataStore.ConversationRepository()
 
-	// Get user's active participations
-	s.logger.Debug("Getting user conversations",
-		"user_id", userID,
-		"user_type", userType)
-
-	participants, err := participantRepo.FindActiveByUserID(ctx, userID, userType)
+	participants, err := participantRepo.FindActiveByUserID(ctx, userID)
 	if err != nil {
-		s.logger.Error("Failed to find active participants",
-			"user_id", userID,
-			"user_type", userType,
-			"error", err)
-
 		return nil, httperror.NewInternalServerError("failed to get user conversations")
 	}
-
-	s.logger.Debug("Found participants for user",
-		"user_id", userID,
-		"user_type", userType,
-		"participant_count", len(participants))
 
 	var conversations []dto.ConversationResponse
 
@@ -297,11 +280,6 @@ func (s *chatService) GetUserConversationsWithCursor(
 		beforeCursor,
 	)
 	if err != nil {
-		s.logger.Error("Failed to find conversations with cursor",
-			"user_id", userID,
-			"user_type", userType,
-			"error", err)
-
 		return nil, nil, httperror.NewInternalServerError("failed to get user conversations")
 	}
 

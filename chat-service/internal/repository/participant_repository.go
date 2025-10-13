@@ -44,7 +44,6 @@ type ParticipantRepository interface {
 	FindActiveByUserID(
 		ctx context.Context,
 		userID uuid.UUID,
-		userType constant.UserType,
 	) ([]*entity.Participant, error)
 
 	// Update updates an existing participant
@@ -180,16 +179,15 @@ func (r *participantRepository) FindByUserID(
 func (r *participantRepository) FindActiveByUserID(
 	ctx context.Context,
 	userID uuid.UUID,
-	userType constant.UserType,
 ) ([]*entity.Participant, error) {
 	query := `
 		SELECT id, conversation_id, user_id, user_type, role, joined_at, left_at, is_active
 		FROM participants
-		WHERE user_id = $1 AND user_type = $2 AND is_active = TRUE
+		WHERE user_id = $1 AND is_active = TRUE
 		ORDER BY joined_at DESC
 	`
 
-	rows, err := r.db.Query(ctx, query, userID, userType)
+	rows, err := r.db.Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query active participants by user: %w", err)
 	}

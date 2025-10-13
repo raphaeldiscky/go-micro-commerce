@@ -124,7 +124,6 @@ func (r *queryResolver) Conversations(ctx context.Context) ([]*graph.Conversatio
 	conversations, err := r.chatService.GetUserConversations(
 		ctx,
 		user.UserID,
-		constant.UserTypeUser,
 	)
 	if err != nil {
 		r.logger.Error("Failed to get conversations", "error", err)

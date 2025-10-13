@@ -28,7 +28,7 @@ type ChatConnection struct {
 }
 
 // ConversationGetter is a function type for getting user conversations.
-type ConversationGetter func(ctx context.Context, userID uuid.UUID, userType constant.UserType) ([]dto.ConversationResponse, error)
+type ConversationGetter func(ctx context.Context, userID uuid.UUID) ([]dto.ConversationResponse, error)
 
 // ChatConnectionHandler implements the universal ConnectionHandler interface for chat.
 type ChatConnectionHandler struct {
@@ -173,7 +173,6 @@ func (h *ChatConnectionHandler) autoJoinUserConversations(chatConn *ChatConnecti
 	conversations, err := h.conversationGetter(
 		ctx,
 		chatConn.UserID(),
-		chatConn.UserType(),
 	)
 	if err != nil {
 		return err
@@ -505,11 +504,12 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 	conversationID uuid.UUID,
 ) error {
 	// Get user's conversations to validate participation
-	conversations, err := h.conversationGetter(ctx, userID, userType)
+	conversations, err := h.conversationGetter(ctx, userID)
 	if err != nil {
 		h.logger.Error("Failed to get user conversations for validation",
 			"error", err,
 			"user_id", userID,
+			"user_type", userType,
 			"conversation_id", conversationID)
 
 		return err
@@ -520,16 +520,12 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 		if conv.ID.String() == conversationID.String() {
 			h.logger.Debug("User participation validated",
 				"user_id", userID,
+				"user_type", userType,
 				"conversation_id", conversationID)
 
 			return nil
 		}
 	}
-
-	h.logger.Warn("User not a participant in conversation",
-		"user_id", userID,
-		"conversation_id", conversationID,
-		"user_conversations", len(conversations))
 
 	return pkgwebsocket.ErrInvalidMessage
 }

@@ -11,8 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/entity"
@@ -37,17 +35,8 @@ func (r *mutationResolver) SendMessage(
 		return nil, httperror.NewBadRequestError("invalid conversation ID")
 	}
 
-	userType := constant.UserTypeUser
-
-	for _, role := range user.Roles {
-		if role == pkgconstant.RoleAdmin {
-			userType = constant.UserTypeAdmin
-			break
-		}
-	}
-
 	// Validate user is a participant in the conversation
-	conversations, err := r.chatService.GetUserConversations(ctx, user.UserID, userType)
+	conversations, err := r.chatService.GetUserConversations(ctx, user.UserID)
 	if err != nil {
 		r.logger.Error("Failed to get user conversations", "error", err)
 		return nil, err
