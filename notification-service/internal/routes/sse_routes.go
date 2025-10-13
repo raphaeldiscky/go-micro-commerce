@@ -14,5 +14,5 @@ func SetupSSERoutes(e *echo.Echo, h *handler.NotificationSSEHandler) {
 
 	protected := sse.Group("")
 	protected.Use(middleware.AuthMiddleware)
-	protected.GET("/sse", h.StreamNotifications)
+	protected.GET("/stream", h.StreamNotifications)
 }

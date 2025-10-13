@@ -175,7 +175,7 @@ func (h *WebSocketHandler) Health(e echo.Context) error {
 	return e.JSON(http.StatusOK, pkgdto.WebResponse[any, any]{
 		Data: map[string]any{
 			"status":  "healthy",
-			"service": "chat-service-websocket",
+			"service": "chat-service-ws",
 		},
 		Message: "service is healthy",
 	})

@@ -30,7 +30,7 @@ func initConnectionConfig() *ConnectionConfig {
 	viper.SetDefault("CONN_DEFAULT_NODE_ADDRESS", "ws://localhost:9098")
 	viper.SetDefault("CONN_MAX_CONNECTIONS", constant.ConnMaxConnections)
 	viper.SetDefault("CONN_CONSUL_ADDRESS", "localhost:8500")
-	viper.SetDefault("CONN_CHAT_SERVICE_NAME", "chat-service-websocket")
+	viper.SetDefault("CONN_CHAT_SERVICE_NAME", constant.ConnChatServiceName)
 
 	connectionConfig := &ConnectionConfig{}
 	if err := viper.Unmarshal(connectionConfig); err != nil {

@@ -25,9 +25,11 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
 	public.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
 	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
-
-	// Public WebSocket routes
-	public.GET("/chats/ws", gw.ProxyWebSocket("chat-service-websocket", "/ws"))
+	public.GET(
+		"/notifications/sse/health",
+		gw.ProxyToService("notification-service-sse", "/sse/health"),
+	)
+	public.GET("/chats/ws/health", gw.ProxyToService("chat-service-ws", "/ws/health"))
 
 	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
 	// This allows both authenticated and unauthenticated queries to work
@@ -37,11 +39,11 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	optionalAuth.POST("/graph", gw.ProxyToService("graphql-gateway", "/"))
 	// GraphQL Subscriptions WebSocket (bypass Apollo Router, proxy directly to chat-service)
 	// Apollo Router doesn't support WebSocket subscriptions, so we route directly
-	// Note: Use chat-service (port 8085) NOT chat-service-websocket (port 9098)
+	// Note: Use chat-service (port 8085) NOT chat-service-ws (port 9098)
 	// GraphQL subscriptions are on the HTTP server, not the native WebSocket server
 	optionalAuth.GET(
 		"/graph/subscriptions/ws",
-		gw.ProxyWebSocket("chat-service", "/graph/subscriptions/ws"),
+		gw.ProxyWebSocket("chat-service-ws", "/graph/subscriptions/ws"),
 	)
 	// GraphQL SSE Subscriptions (bypass Apollo Router, proxy directly to notification-service)
 	// SSE uses standard HTTP streaming (text/event-stream), not WebSocket protocol
@@ -49,11 +51,11 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	// Uses ProxySSE for long-lived streaming without timeouts
 	optionalAuth.GET(
 		"/graph/subscriptions/sse",
-		gw.ProxySSE("notification-service", "/graph/subscriptions/sse"),
+		gw.ProxySSE("notification-service-sse", "/graph/subscriptions/sse"),
 	)
 	optionalAuth.POST(
 		"/graph/subscriptions/sse",
-		gw.ProxySSE("notification-service", "/graph/subscriptions/sse"),
+		gw.ProxySSE("notification-service-sse", "/graph/subscriptions/sse"),
 	)
 
 	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))

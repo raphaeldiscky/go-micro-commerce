@@ -7,4 +7,6 @@ const (
 	ConnTicketExpiration = 10 * time.Minute
 	// ConnMaxConnections is the default maximum number of connections.
 	ConnMaxConnections = 1000
+	// ConnChatServiceName is the name of the chat service.
+	ConnChatServiceName = "chat-service-ws"
 )
