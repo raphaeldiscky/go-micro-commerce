@@ -7,10 +7,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	pkglogger "github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
@@ -23,7 +23,7 @@ import (
 // WebSocketHandler handles WebSocket connections for the chat service.
 type WebSocketHandler struct {
 	hub               *chatwebsocket.ChatHub
-	logger            pkglogger.Logger
+	logger            logger.Logger
 	config            *config.WebSocketServerConfig
 	connectionService service.ConnectionService
 	chatService       service.ChatService
@@ -32,7 +32,7 @@ type WebSocketHandler struct {
 // NewWebSocketHandler creates a new WebSocket handler.
 func NewWebSocketHandler(
 	hub *chatwebsocket.ChatHub,
-	logger pkglogger.Logger,
+	logger logger.Logger,
 	config *config.WebSocketServerConfig,
 	connectionService service.ConnectionService,
 	chatService service.ChatService,
