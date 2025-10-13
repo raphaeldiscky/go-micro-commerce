@@ -29,7 +29,7 @@ type ChatConnection struct {
 }
 
 // ConversationGetter is a function type for getting user conversations.
-type ConversationGetter func(ctx context.Context, userID uuid.UUID, userType constant.UserType) ([]dto.ConversationResponse, error)
+type ConversationGetter func(ctx context.Context, userID uuid.UUID) ([]dto.ConversationResponse, error)
 
 // ChatConnectionHandler implements the universal ConnectionHandler interface for chat.
 type ChatConnectionHandler struct {
@@ -174,7 +174,6 @@ func (h *ChatConnectionHandler) autoJoinUserConversations(chatConn *ChatConnecti
 	conversations, err := h.conversationGetter(
 		ctx,
 		chatConn.UserID(),
-		chatConn.UserType(),
 	)
 	if err != nil {
 		return err
@@ -512,7 +511,7 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 		"conversation_id", conversationID)
 
 	// Get user's conversations to validate participation
-	conversations, err := h.conversationGetter(ctx, userID, userType)
+	conversations, err := h.conversationGetter(ctx, userID)
 	if err != nil {
 		h.logger.Error("Failed to get user conversations for validation",
 			"error", err,

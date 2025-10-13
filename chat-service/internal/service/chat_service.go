@@ -40,7 +40,6 @@ type ChatService interface {
 	GetUserConversations(
 		ctx context.Context,
 		userID uuid.UUID,
-		userType constant.UserType,
 	) ([]dto.ConversationResponse, error)
 	GetUserConversationsWithCursor(
 		ctx context.Context,
@@ -229,44 +228,13 @@ func (s *chatService) GetConversationByID(
 func (s *chatService) GetUserConversations(
 	ctx context.Context,
 	userID uuid.UUID,
-	userType constant.UserType,
 ) ([]dto.ConversationResponse, error) {
 	participantRepo := s.dataStore.ParticipantRepository()
 	conversationRepo := s.dataStore.ConversationRepository()
 
-	// Get user's active participations with detailed logging
-	s.logger.Info("Getting user conversations",
-		"user_id", userID,
-		"user_type", userType,
-		"user_type_string", string(userType))
-
 	participants, err := participantRepo.FindActiveByUserID(ctx, userID)
 	if err != nil {
-		s.logger.Error("Failed to find active participants",
-			"user_id", userID,
-			"user_type", userType,
-			"user_type_string", string(userType),
-			"error", err)
-
 		return nil, httperror.NewInternalServerError("failed to get user conversations")
-	}
-
-	s.logger.Info("Found participants for user",
-		"user_id", userID,
-		"user_type", userType,
-		"user_type_string", string(userType),
-		"participant_count", len(participants))
-
-	// Log participant details for debugging
-	for i, participant := range participants {
-		s.logger.Debug("Participant details",
-			"index", i,
-			"participant_id", participant.ID,
-			"conversation_id", participant.ConversationID,
-			"participant_user_id", participant.UserID,
-			"participant_user_type", participant.UserType,
-			"participant_user_type_string", string(participant.UserType),
-			"is_active", participant.IsActive)
 	}
 
 	var conversations []dto.ConversationResponse
@@ -287,11 +255,6 @@ func (s *chatService) GetUserConversations(
 			conversations = append(conversations, *mapper.MapToConversationResponse(conversation))
 		}
 	}
-
-	s.logger.Info("Returning conversations for user",
-		"user_id", userID,
-		"user_type", userType,
-		"conversation_count", len(conversations))
 
 	return conversations, nil
 }
@@ -317,11 +280,6 @@ func (s *chatService) GetUserConversationsWithCursor(
 		beforeCursor,
 	)
 	if err != nil {
-		s.logger.Error("Failed to find conversations with cursor",
-			"user_id", userID,
-			"user_type", userType,
-			"error", err)
-
 		return nil, nil, httperror.NewInternalServerError("failed to get user conversations")
 	}
 
