@@ -3,7 +3,6 @@ package websocket
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -513,7 +512,7 @@ func (h *ChatConnectionHandler) validateUserParticipation(
 			"user_type", userType,
 			"conversation_id", conversationID)
 
-		return fmt.Errorf("failed to validate user participation: %w", err)
+		return err
 	}
 
 	// Check if the user is a participant in the specified conversation
