@@ -168,7 +168,7 @@ func (s *connectionService) GetNodeHealth(_ context.Context) ([]dto.NodeHealthRe
 	// Query Consul for healthy chat service instances
 	serviceName := s.nodeConfig.ChatServiceName
 	if serviceName == "" {
-		serviceName = "chat-service-websocket" // Default service name
+		s.logger.Error("missing node service name")
 	}
 
 	healthyServices, _, err := s.consulClient.Health().Service(serviceName, "", true, nil)

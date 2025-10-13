@@ -20,7 +20,7 @@ type AppConfig struct {
 // initAppConfig initializes the application configuration from environment variables.
 func initAppConfig() *AppConfig {
 	// Set defaults
-	viper.SetDefault("APP_NAME", "chat-service")
+	viper.SetDefault("APP_NAME", constant.AppName)
 	viper.SetDefault("APP_ENVIRONMENT", "development")
 	viper.SetDefault("APP_LOGGER_LEVEL", constant.AppLoggerLevel)
 	viper.SetDefault("APP_TIMEOUT_SHUTDOWN", constant.AppTimeoutShutdown)
