@@ -10,7 +10,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
@@ -123,15 +122,15 @@ func (h *WebSocketHandler) determineUserTypeFromRoles(roles []string) constant.U
 
 	// Prioritize admin role - check against both string and pkg constant
 	for _, role := range roles {
-		if role == string(constant.UserTypeAdmin) || role == pkgconstant.RoleAdmin {
+		if role == string(constant.UserTypeAdmin) {
 			h.logger.Debug("User identified as admin", "matched_role", role)
 			return constant.UserTypeAdmin
 		}
 	}
 
-	// Check for user role - check against both string and pkg constant
+	// Check for user role
 	for _, role := range roles {
-		if role == string(constant.UserTypeUser) || role == pkgconstant.RoleUser {
+		if role == string(constant.UserTypeUser) {
 			h.logger.Debug("User identified as regular user", "matched_role", role)
 			return constant.UserTypeUser
 		}
