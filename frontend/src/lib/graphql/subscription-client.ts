@@ -1,9 +1,9 @@
 import { env } from '@/env'
 import { getAccessToken } from '@/lib/api/client'
-import { createClient as createSseClient } from 'graphql-sse'
 import type { ClientOptions, Client as SseClient } from 'graphql-sse'
-import { createClient as createWsClient } from 'graphql-ws'
+import { createClient as createSseClient } from 'graphql-sse'
 import type { Client as WsClient } from 'graphql-ws'
+import { createClient as createWsClient } from 'graphql-ws'
 
 let wsSubscriptionClient: WsClient | null = null
 let sseSubscriptionClient: SseClient | null = null
@@ -87,6 +87,7 @@ export function getSseSubscriptionClient(): SseClient {
       onMessage: (message) => {
         console.log('📨 SSE Message Received:', {
           event: message.event,
+          data: message.data,
           timestamp: new Date().toISOString(),
         })
       },

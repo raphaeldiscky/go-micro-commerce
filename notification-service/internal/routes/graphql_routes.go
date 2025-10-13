@@ -48,13 +48,17 @@ func SetupGraphQLRoutes(
 	e.POST("/graph", echo.WrapHandler(srv))
 
 	// SSE Subscription Server (separate from main GraphQL server)
-	sseSrv := handler.NewDefaultServer(executableSchema)
+	// Use handler.New() instead of NewDefaultServer() to support SSE transport
+	// NewDefaultServer() is deprecated and doesn't include SSE transport
+	sseSrv := handler.New(executableSchema)
+	// SSE transport handles both GET and POST methods when Accept: text/event-stream is present
 	sseSrv.AddTransport(transport.SSE{
 		KeepAlivePingInterval: constant.SubscriptionKeepAlivePingInterval,
 	})
+	// Options transport for CORS preflight requests
 	sseSrv.AddTransport(transport.Options{})
-	sseSrv.AddTransport(transport.GET{})
-	sseSrv.AddTransport(transport.POST{})
+	// DO NOT add GET/POST transports - they conflict with SSE and cause "transport not supported"
+	// The SSE transport itself handles both GET and POST methods for the SSE protocol
 
 	sseSrv.AroundOperations(pkgmiddleware.GraphQLContextMiddleware())
 	sseSrv.AroundOperations(pkgmiddleware.GraphQLLoggingMiddleware(appLogger))
