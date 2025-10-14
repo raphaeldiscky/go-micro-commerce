@@ -2,20 +2,27 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 CREATE TABLE IF NOT EXISTS checkout_sessions(
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cart_id UUID NOT NULL REFERENCES carts (id) ON DELETE CASCADE,
     customer_id UUID NOT NULL,
-    selected_item_ids UUID[] NOT NULL,
-    note TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, placed, canceled
+    cart_id UUID NOT NULL REFERENCES carts (id) ON DELETE CASCADE,
+    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, order_placed, canceled
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 ALTER TABLE checkout_sessions
 ADD CONSTRAINT chk_checkout_session_status
-CHECK (status IN ('pending', 'placed', 'canceled'));
+CHECK (status IN ('pending', 'order_placed', 'canceled'));
 
-ALTER TABLE checkout_sessions
-ADD CONSTRAINT chk_checkout_session_currency
-CHECK (currency ~ '^[A-Z]{3}$');
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_checkout_sessions_updated_at 
+    BEFORE UPDATE ON checkout_sessions 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
 
