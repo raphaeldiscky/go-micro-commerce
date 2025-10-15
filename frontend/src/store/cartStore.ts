@@ -18,32 +18,6 @@ const generateId = () =>
 const generateCartId = () =>
   `cart-${Date.now()}-${Math.random().toString(36).substring(7)}`
 
-// Helper function to compute derived state
-const computeDerivedState = (
-  items: Array<CartItem>,
-  selectedShippingOption: ShippingOption | null
-) => {
-  const selectedItems = items.filter((item) => item.selected_for_checkout)
-  const totalItemCount = items.reduce((total, item) => total + item.quantity, 0)
-  const subtotal = selectedItems.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0,
-  )
-  const shipping = selectedShippingOption?.price || 0
-  const total = subtotal + shipping
-
-  return {
-    selectedItems,
-    totalItemCount,
-    orderSummary: {
-      subtotal,
-      shipping,
-      discount: 0,
-      total,
-    },
-  }
-}
-
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -61,16 +35,6 @@ export const useCartStore = create<CartStore>()(
       },
       selectedShippingOption: null,
       selectedPaymentMethod: null,
-
-      // Computed state (cached to prevent infinite loops)
-      selectedItems: [],
-      orderSummary: {
-        subtotal: 0,
-        shipping: 0,
-        discount: 0,
-        total: 0,
-      },
-      totalItemCount: 0,
 
       // Cart and item management
       initializeCart: (customerId: string) => {
@@ -144,15 +108,9 @@ export const useCartStore = create<CartStore>()(
           updatedItems = [...state.items, newItem]
         }
 
-        const derivedState = computeDerivedState(updatedItems, state.selectedShippingOption)
-
         set({
           items: updatedItems,
-          ...derivedState,
-          cart: {
-            ...state.cart,
-            updated_at: new Date().toISOString(),
-          },
+          cart: state.cart,
         })
 
         toast.success(`Added ${product.name} to cart`)
@@ -165,11 +123,9 @@ export const useCartStore = create<CartStore>()(
         if (!itemToRemove) return
 
         const updatedItems = state.items.filter((item) => item.id !== itemId)
-        const derivedState = computeDerivedState(updatedItems, state.selectedShippingOption)
 
         set({
           items: updatedItems,
-          ...derivedState,
           cart: state.cart
             ? {
                 ...state.cart,
@@ -204,11 +160,9 @@ export const useCartStore = create<CartStore>()(
         const updatedItems = state.items.map((x) =>
           x.id === itemId ? { ...x, quantity } : x,
         )
-        const derivedState = computeDerivedState(updatedItems, state.selectedShippingOption)
 
         set({
           items: updatedItems,
-          ...derivedState,
           cart: state.cart
             ? {
                 ...state.cart,
@@ -225,9 +179,7 @@ export const useCartStore = create<CartStore>()(
             ? { ...item, selected_for_checkout: !item.selected_for_checkout }
             : item,
         )
-        const derivedState = computeDerivedState(updatedItems, state.selectedShippingOption)
-
-        set({ items: updatedItems, ...derivedState })
+        set({ items: updatedItems })
       },
 
       selectAll: () => {
@@ -236,9 +188,7 @@ export const useCartStore = create<CartStore>()(
           ...item,
           selected_for_checkout: true,
         }))
-        const derivedState = computeDerivedState(updatedItems, state.selectedShippingOption)
-
-        set({ items: updatedItems, ...derivedState })
+        set({ items: updatedItems })
       },
 
       deselectAll: () => {
@@ -247,23 +197,13 @@ export const useCartStore = create<CartStore>()(
           ...item,
           selected_for_checkout: false,
         }))
-        const derivedState = computeDerivedState(updatedItems, state.selectedShippingOption)
-
-        set({ items: updatedItems, ...derivedState })
+        set({ items: updatedItems })
       },
 
       clearCart: () => {
         const state = get()
         set({
           items: [],
-          selectedItems: [],
-          totalItemCount: 0,
-          orderSummary: {
-            subtotal: 0,
-            shipping: 0,
-            discount: 0,
-            total: 0,
-          },
           cart: state.cart
             ? {
                 ...state.cart,
@@ -320,14 +260,10 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
-      
       setShippingMethod: (method: ShippingOption) => {
         const state = get()
-        const derivedState = computeDerivedState(state.items, method)
-
         set({
           selectedShippingOption: method,
-          ...derivedState,
           checkoutData: {
             ...state.checkoutData,
             shippingMethod: method.id,
@@ -470,9 +406,6 @@ export const useCartStore = create<CartStore>()(
       partialize: (state) => ({
         cart: state.cart,
         items: state.items,
-        selectedItems: state.selectedItems,
-        orderSummary: state.orderSummary,
-        totalItemCount: state.totalItemCount,
         checkoutSession: state.checkoutSession,
         checkoutData: state.checkoutData,
         selectedShippingOption: state.selectedShippingOption,
@@ -482,11 +415,29 @@ export const useCartStore = create<CartStore>()(
   ),
 )
 
-// Selectors for easier access (using cached computed state to prevent infinite loops)
+// Selectors for easier access
 export const useCartItems = () => useCartStore((state) => state.items)
-export const useCartItemCount = () => useCartStore((state) => state.totalItemCount)
-export const useSelectedItems = () => useCartStore((state) => state.selectedItems)
-export const useCartTotal = () => useCartStore((state) => state.orderSummary)
+export const useCartItemCount = () =>
+  useCartStore((state) =>
+    state.items.reduce((total, item) => total + item.quantity, 0),
+  )
+export const useSelectedItems = () =>
+  useCartStore((state) =>
+    state.items.filter((item) => item.selected_for_checkout),
+  )
+export const useCartTotal = () =>
+  useCartStore((state) => {
+    const subtotal = state.items
+      .filter((item) => item.selected_for_checkout)
+      .reduce((total, item) => total + item.product.price * item.quantity, 0)
+    const shipping = state.selectedShippingOption?.price || 0
+    return {
+      subtotal,
+      shipping,
+      discount: 0,
+      total: subtotal + shipping,
+    }
+  })
 export const useIsCartDrawerOpen = () =>
   useCartStore((state) => state.isDrawerOpen)
 export const useIsCheckoutLoading = () =>

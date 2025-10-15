@@ -11,16 +11,16 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as R404RouteImport } from './routes/404'
+import { Route as CatchAllRouteImport } from './routes/$catchAll'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as FeaturesProductsIndexRouteImport } from './routes/features/products/index'
-import { Route as FeaturesCheckoutIndexRouteImport } from './routes/features/checkout/index'
 import { Route as FeaturesChatIndexRouteImport } from './routes/features/chat/index'
 import { Route as FeaturesAccountIndexRouteImport } from './routes/features/account/index'
 import { Route as FeaturesCheckoutCheckoutIdRouteImport } from './routes/features/checkout/$checkoutId'
 import { Route as FeaturesChatConversationIdRouteImport } from './routes/features/chat/$conversationId'
-import { Route as FeaturesAccountAccountIdRouteImport } from './routes/features/account/$accountId'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -30,6 +30,16 @@ const ServicesRoute = ServicesRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const R404Route = R404RouteImport.update({
+  id: '/404',
+  path: '/404',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CatchAllRoute = CatchAllRouteImport.update({
+  id: '/$catchAll',
+  path: '/$catchAll',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -50,11 +60,6 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
 const FeaturesProductsIndexRoute = FeaturesProductsIndexRouteImport.update({
   id: '/features/products/',
   path: '/features/products/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesCheckoutIndexRoute = FeaturesCheckoutIndexRouteImport.update({
-  id: '/features/checkout/',
-  path: '/features/checkout/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FeaturesChatIndexRoute = FeaturesChatIndexRouteImport.update({
@@ -79,113 +84,107 @@ const FeaturesChatConversationIdRoute =
     path: '/features/chat/$conversationId',
     getParentRoute: () => rootRouteImport,
   } as any)
-const FeaturesAccountAccountIdRoute =
-  FeaturesAccountAccountIdRouteImport.update({
-    id: '/features/account/$accountId',
-    path: '/features/account/$accountId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$catchAll': typeof CatchAllRoute
+  '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/features/account/$accountId': typeof FeaturesAccountAccountIdRoute
   '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
   '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
   '/features/account': typeof FeaturesAccountIndexRoute
   '/features/chat': typeof FeaturesChatIndexRoute
-  '/features/checkout': typeof FeaturesCheckoutIndexRoute
   '/features/products': typeof FeaturesProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$catchAll': typeof CatchAllRoute
+  '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/features/account/$accountId': typeof FeaturesAccountAccountIdRoute
   '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
   '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
   '/features/account': typeof FeaturesAccountIndexRoute
   '/features/chat': typeof FeaturesChatIndexRoute
-  '/features/checkout': typeof FeaturesCheckoutIndexRoute
   '/features/products': typeof FeaturesProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$catchAll': typeof CatchAllRoute
+  '/404': typeof R404Route
   '/about': typeof AboutRoute
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/features/account/$accountId': typeof FeaturesAccountAccountIdRoute
   '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
   '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
   '/features/account/': typeof FeaturesAccountIndexRoute
   '/features/chat/': typeof FeaturesChatIndexRoute
-  '/features/checkout/': typeof FeaturesCheckoutIndexRoute
   '/features/products/': typeof FeaturesProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$catchAll'
+    | '/404'
     | '/about'
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/features/account/$accountId'
     | '/features/chat/$conversationId'
     | '/features/checkout/$checkoutId'
     | '/features/account'
     | '/features/chat'
-    | '/features/checkout'
     | '/features/products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$catchAll'
+    | '/404'
     | '/about'
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/features/account/$accountId'
     | '/features/chat/$conversationId'
     | '/features/checkout/$checkoutId'
     | '/features/account'
     | '/features/chat'
-    | '/features/checkout'
     | '/features/products'
   id:
     | '__root__'
     | '/'
+    | '/$catchAll'
+    | '/404'
     | '/about'
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/features/account/$accountId'
     | '/features/chat/$conversationId'
     | '/features/checkout/$checkoutId'
     | '/features/account/'
     | '/features/chat/'
-    | '/features/checkout/'
     | '/features/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CatchAllRoute: typeof CatchAllRoute
+  R404Route: typeof R404Route
   AboutRoute: typeof AboutRoute
   ServicesRoute: typeof ServicesRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
-  FeaturesAccountAccountIdRoute: typeof FeaturesAccountAccountIdRoute
   FeaturesChatConversationIdRoute: typeof FeaturesChatConversationIdRoute
   FeaturesCheckoutCheckoutIdRoute: typeof FeaturesCheckoutCheckoutIdRoute
   FeaturesAccountIndexRoute: typeof FeaturesAccountIndexRoute
   FeaturesChatIndexRoute: typeof FeaturesChatIndexRoute
-  FeaturesCheckoutIndexRoute: typeof FeaturesCheckoutIndexRoute
   FeaturesProductsIndexRoute: typeof FeaturesProductsIndexRoute
 }
 
@@ -203,6 +202,20 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/404': {
+      id: '/404'
+      path: '/404'
+      fullPath: '/404'
+      preLoaderRoute: typeof R404RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$catchAll': {
+      id: '/$catchAll'
+      path: '/$catchAll'
+      fullPath: '/$catchAll'
+      preLoaderRoute: typeof CatchAllRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -233,13 +246,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/features/checkout/': {
-      id: '/features/checkout/'
-      path: '/features/checkout'
-      fullPath: '/features/checkout'
-      preLoaderRoute: typeof FeaturesCheckoutIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/features/chat/': {
       id: '/features/chat/'
       path: '/features/chat'
@@ -268,28 +274,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesChatConversationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/features/account/$accountId': {
-      id: '/features/account/$accountId'
-      path: '/features/account/$accountId'
-      fullPath: '/features/account/$accountId'
-      preLoaderRoute: typeof FeaturesAccountAccountIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CatchAllRoute: CatchAllRoute,
+  R404Route: R404Route,
   AboutRoute: AboutRoute,
   ServicesRoute: ServicesRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
-  FeaturesAccountAccountIdRoute: FeaturesAccountAccountIdRoute,
   FeaturesChatConversationIdRoute: FeaturesChatConversationIdRoute,
   FeaturesCheckoutCheckoutIdRoute: FeaturesCheckoutCheckoutIdRoute,
   FeaturesAccountIndexRoute: FeaturesAccountIndexRoute,
   FeaturesChatIndexRoute: FeaturesChatIndexRoute,
-  FeaturesCheckoutIndexRoute: FeaturesCheckoutIndexRoute,
   FeaturesProductsIndexRoute: FeaturesProductsIndexRoute,
 }
 export const routeTree = rootRouteImport

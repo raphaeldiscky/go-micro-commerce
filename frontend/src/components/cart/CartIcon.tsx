@@ -1,7 +1,11 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils/index'
-import { useCartItemCount, useIsCartDrawerOpen, useCartStore } from '@/store/cartStore'
+import {
+  useCartItemCount,
+  useCartStore,
+  useIsCartDrawerOpen,
+} from '@/store/cartStore'
 import { ShoppingBag } from 'lucide-react'
 import { forwardRef } from 'react'
 
@@ -24,13 +28,13 @@ export const CartIcon = forwardRef<HTMLButtonElement, CartIconProps>(
         ref={ref}
         aria-label={`Shopping cart with ${itemCount} items`}
         className={cn(
-          'relative h-10 w-10 rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95',
+          'relative h-10 w-10 rounded-full transition-all duration-200 hover:scale-105 active:scale-95',
           isDrawerOpen && 'ring-2 ring-primary ring-offset-2',
           className,
         )}
         onClick={handleToggleCart}
         size="icon"
-        variant="outline"
+        variant="ghost"
       >
         <ShoppingBag className="h-5 w-5" />
 
@@ -38,11 +42,16 @@ export const CartIcon = forwardRef<HTMLButtonElement, CartIconProps>(
         {itemCount > 0 && (
           <Badge
             className={cn(
-              'absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full p-0 text-xs font-medium',
-              'bg-destructive text-destructive-foreground border-2 border-background',
+              'absolute -right-1 -top-1 z-10',
+              // Shape and alignment
+              'flex h-5 w-5 items-center justify-center rounded-full',
+              // Remove default padding and line-height issues
+              'p-0 leading-none',
+              // Visual styles
+              'bg-red-500 text-white text-[10px] font-bold',
+              // Optional animation
               'animate-pulse',
             )}
-            variant="destructive"
           >
             {itemCount > 99 ? '99+' : itemCount}
           </Badge>

@@ -93,11 +93,6 @@ export interface CartState {
   checkoutData: CheckoutFormData
   selectedShippingOption: ShippingOption | null
   selectedPaymentMethod: PaymentMethod | null
-
-  // Computed state (cached to prevent infinite loops)
-  selectedItems: Array<CartItem>
-  orderSummary: OrderSummary
-  totalItemCount: number
 }
 
 // Cart store actions interface

@@ -180,8 +180,10 @@ export default function Header() {
             <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
-                  <NotificationBell />
-                  <CartIcon />
+                  <div className="flex items-center gap-1">
+                    <NotificationBell />
+                    <CartIcon />
+                  </div>
 
                   {/* Profile Dropdown */}
                   <DropdownMenu>
@@ -387,7 +389,7 @@ export default function Header() {
                       <span>Account</span>
                     </Link>
 
-                    <div className="flex items-center justify-center py-3 space-x-4 border-t">
+                    <div className="flex items-center justify-center py-3 gap-1 border-t">
                       <NotificationBell />
                       <CartIcon />
                     </div>

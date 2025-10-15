@@ -5,7 +5,7 @@ import { formatCurrency } from '@/data/mockData'
 import { cn } from '@/lib/utils/index'
 import { useCartStore } from '@/store/cartStore'
 import type { CartItem } from '@/types/cart'
-import { Minus, Plus, Trash2, Package } from 'lucide-react'
+import { Minus, Package, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 interface CartItemRowProps {
@@ -15,13 +15,10 @@ interface CartItemRowProps {
 
 export function CartItemRow({ item, className }: CartItemRowProps) {
   const [isRemoving, setIsRemoving] = useState(false)
-  const {
-    updateQuantity,
-    removeItem,
-    toggleSelection,
-  } = useCartStore()
+  const { updateQuantity, removeItem, toggleSelection } = useCartStore()
 
-  const availableQuantity = item.product.quantity - item.product.reservedQuantity
+  const availableQuantity =
+    item.product.quantity - item.product.reservedQuantity
   const isLowStock = availableQuantity < 10 && availableQuantity > 0
   const isOutOfStock = availableQuantity === 0
 
@@ -140,13 +137,10 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
               <Plus className="h-3 w-3" />
             </Button>
           </div>
-
           {/* Available quantity indicator */}
-          {!isOutOfStock && (
-            <span className="text-xs text-muted-foreground">
-              ({availableQuantity} available)
-            </span>
-          )}
+          <span className="text-xs text-muted-foreground">
+            ({availableQuantity} available)
+          </span>
         </div>
 
         {/* Item Subtotal */}
@@ -158,6 +152,7 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
       </div>
 
       {/* Remove Button */}
+
       <Button
         disabled={isRemoving}
         onClick={handleRemove}

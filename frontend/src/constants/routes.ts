@@ -41,6 +41,5 @@ export const PATH_FEATURES = {
   account: {
     root: path(ROOTS_FEATURES, '/account'),
     detail: (id: string) => path(ROOTS_FEATURES, `/account/${id}`),
-    $accountId: '/features/account/$accountId' as const,
   },
 }
