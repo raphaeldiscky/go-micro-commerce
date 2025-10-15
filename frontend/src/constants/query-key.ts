@@ -84,4 +84,41 @@ export const QUERY_KEY = {
       [...QUERY_KEY.notifications.all, 'unread-count'] as const,
     tabCounts: () => [...QUERY_KEY.notifications.all, 'tab-counts'] as const,
   },
+
+  /**
+   * Cart and checkout query keys
+   */
+  cart: {
+    all: ['cart'] as const,
+    current: () => [...QUERY_KEY.cart.all, 'current'] as const,
+    items: () => [...QUERY_KEY.cart.all, 'items'] as const,
+    item: (itemId: string) => [...QUERY_KEY.cart.items(), itemId] as const,
+    addItem: () => [...QUERY_KEY.cart.all, 'add-item'] as const,
+    removeItem: () => [...QUERY_KEY.cart.all, 'remove-item'] as const,
+    updateQuantity: () => [...QUERY_KEY.cart.all, 'update-quantity'] as const,
+    clearCart: () => [...QUERY_KEY.cart.all, 'clear-cart'] as const,
+  },
+
+  /**
+   * Checkout query keys
+   */
+  checkout: {
+    all: ['checkout'] as const,
+    session: () => [...QUERY_KEY.checkout.all, 'session'] as const,
+    placeOrder: () => [...QUERY_KEY.checkout.all, 'place-order'] as const,
+    orderHistory: () => [...QUERY_KEY.checkout.all, 'order-history'] as const,
+    orderDetails: (orderId: string) =>
+      [...QUERY_KEY.checkout.all, 'order-details', orderId] as const,
+    shipping: {
+      all: () => [...QUERY_KEY.checkout.all, 'shipping'] as const,
+      options: () => [...QUERY_KEY.checkout.shipping.all(), 'options'] as const,
+      calculate: () =>
+        [...QUERY_KEY.checkout.shipping.all(), 'calculate'] as const,
+    },
+    payment: {
+      all: () => [...QUERY_KEY.checkout.all, 'payment'] as const,
+      methods: () => [...QUERY_KEY.checkout.payment.all(), 'methods'] as const,
+      process: () => [...QUERY_KEY.checkout.payment.all(), 'process'] as const,
+    },
+  },
 } as const

@@ -33,4 +33,13 @@ export const PATH_FEATURES = {
     detail: (id: string) => path(ROOTS_FEATURES, `/chat/${id}`),
     $conversationId: '/features/chat/$conversationId' as const,
   },
+  checkout: {
+    root: path(ROOTS_FEATURES, '/checkout'),
+    detail: (id: string) => path(ROOTS_FEATURES, `/checkout/${id}`),
+    $checkoutId: '/features/checkout/$checkoutId' as const,
+  },
+  account: {
+    root: path(ROOTS_FEATURES, '/account'),
+    detail: (id: string) => path(ROOTS_FEATURES, `/account/${id}`),
+  },
 }
