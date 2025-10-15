@@ -16,6 +16,3 @@ export const TECH_URLS = {
   REACT: 'https://reactjs.org',
   REDIS: 'https://redis.io',
 } as const
-
-// Asset URLs
-export const PROFILE_IMAGE_URL = '/profile.png'

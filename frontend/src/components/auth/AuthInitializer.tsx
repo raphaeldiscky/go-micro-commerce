@@ -3,6 +3,7 @@ import {
   useAuthLoading,
   useAuthStore,
 } from '@/store/authStore'
+import { useCartStore } from '@/store/cartStore'
 import { useEffect, useRef } from 'react'
 
 export default function AuthInitializer({
@@ -11,9 +12,12 @@ export default function AuthInitializer({
   children: React.ReactNode
 }) {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus)
+  const user = useAuthStore((state) => state.user)
   const hasInitialized = useAuthInitialized()
   const isLoading = useAuthLoading()
+  const initializeCart = useCartStore((state) => state.initializeCart)
   const hasChecked = useRef(false)
+  const cartInitialized = useRef(false)
 
   useEffect(() => {
     if (!hasChecked.current) {
@@ -21,6 +25,15 @@ export default function AuthInitializer({
       checkAuthStatus()
     }
   }, [checkAuthStatus])
+
+  // Initialize cart when user is authenticated and cart hasn't been initialized yet
+  useEffect(() => {
+    if (user && !cartInitialized.current) {
+      cartInitialized.current = true
+      initializeCart(user.id)
+      console.log('Cart initialized for user:', user.id)
+    }
+  }, [user, initializeCart])
 
   // Show loading state while auth is being initialized
   // This prevents queries from executing before the access token is available

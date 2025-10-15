@@ -1,16 +1,15 @@
 import {
   APP_CONFIG,
   FEATURES_ITEMS,
-  GITHUB_REPO_URL,
   PATH_AUTH,
+  PATH_FEATURES,
   PATH_ROOT,
-  PROFILE_IMAGE_URL,
 } from '@/constants'
 import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth'
 import { cn } from '@/lib/utils'
 import { Link, useRouterState } from '@tanstack/react-router'
 import {
-  Github,
+  ChevronDown,
   Home,
   Info,
   LogIn,
@@ -23,8 +22,19 @@ import {
   Zap,
 } from 'lucide-react'
 import { useState } from 'react'
+import { CartDrawer } from '../cart/CartDrawer'
+import { CartIcon } from '../cart/CartIcon'
 import { NotificationBell } from '../notification/NotificationBell'
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '../ui/dropdown-menu'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -59,11 +69,6 @@ export default function Header() {
               className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
               to={PATH_ROOT.home}
             >
-              <img
-                alt={APP_CONFIG.BRAND.LOGO_ALT}
-                className="h-8 w-8 rounded-lg object-cover"
-                src={PROFILE_IMAGE_URL}
-              />
               <span className="hidden font-bold sm:inline-block">
                 {APP_CONFIG.NAME}
               </span>
@@ -175,20 +180,61 @@ export default function Header() {
             <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
-                  <span className="text-sm text-muted-foreground">
-                    Welcome, {user?.firstName}!
-                  </span>
                   <NotificationBell />
-                  <Button
-                    className="flex items-center space-x-1"
-                    disabled={logoutMutation.isPending}
-                    onClick={handleLogout}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </Button>
+                  <CartIcon />
+
+                  {/* Profile Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        className="flex items-center space-x-2 h-10 px-3"
+                        variant="ghost"
+                      >
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage alt={user?.firstName} />
+                          <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                            {user?.firstName.charAt(0).toUpperCase() || 'U'}
+                          </AvatarFallback>
+                        </Avatar>
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-56"
+                      align="end"
+                      forceMount
+                    >
+                      <DropdownMenuLabel className="font-normal">
+                        <div className="flex flex-col space-y-1">
+                          <p className="text-sm font-medium leading-none">
+                            {user?.firstName} {user?.lastName}
+                          </p>
+                          <p className="text-xs leading-none text-muted-foreground">
+                            {user?.email}
+                          </p>
+                        </div>
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link
+                          className="flex items-center cursor-pointer"
+                          to={PATH_FEATURES.account.root}
+                        >
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Account</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer text-red-600 focus:text-red-600"
+                        disabled={logoutMutation.isPending}
+                        onClick={handleLogout}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        <span>Log out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               ) : (
                 <>
@@ -212,18 +258,6 @@ export default function Header() {
                   </Button>
                 </>
               )}
-
-              <Button asChild size="sm" variant="outline">
-                <a
-                  className="flex items-center space-x-1"
-                  href={GITHUB_REPO_URL}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  <Github className="h-4 w-4" />
-                  <span>GitHub</span>
-                </a>
-              </Button>
             </div>
 
             {/* Mobile menu button */}
@@ -325,22 +359,48 @@ export default function Header() {
               <div className="px-3 py-2 space-y-2">
                 {isAuthenticated ? (
                   <>
-                    <div className="flex items-center px-3 py-2 text-sm text-muted-foreground">
+                    {/* Mobile Profile */}
+                    <div className="flex items-center px-3 py-3 space-x-3 border-b">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage alt={user?.firstName} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                          {user?.firstName.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Mobile Menu Items */}
+                    <Link
+                      className="flex items-center px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      to={PATH_FEATURES.account.root}
+                    >
                       <User className="mr-2 h-4 w-4" />
-                      {user?.firstName} {user?.lastName}
-                    </div>
-                    <div className="flex items-center justify-center py-2">
+                      <span>Account</span>
+                    </Link>
+
+                    <div className="flex items-center justify-center py-3 space-x-4 border-t">
                       <NotificationBell />
+                      <CartIcon />
                     </div>
+
                     <Button
-                      className="w-full flex items-center justify-center space-x-1"
+                      className="w-full flex items-center justify-center space-x-1 text-red-600 hover:text-red-700 hover:bg-red-50"
                       disabled={logoutMutation.isPending}
                       onClick={handleLogout}
                       size="sm"
-                      variant="outline"
+                      variant="ghost"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span>Logout</span>
+                      <span>Log out</span>
                     </Button>
                   </>
                 ) : (
@@ -377,23 +437,14 @@ export default function Header() {
                     </Button>
                   </>
                 )}
-
-                <Button asChild className="w-full" size="sm" variant="outline">
-                  <a
-                    className="flex items-center justify-center space-x-1"
-                    href={GITHUB_REPO_URL}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    <Github className="h-4 w-4" />
-                    <span>GitHub</span>
-                  </a>
-                </Button>
               </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Cart Drawer */}
+      <CartDrawer />
     </header>
   )
 }

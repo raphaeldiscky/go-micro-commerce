@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -8,17 +9,71 @@ import {
 } from '@/components/ui/card'
 import { timestampToDate } from '@/lib/utils/date'
 import type { Product } from '@/proto/product/v1/product_pb'
+import { useCartStore } from '@/store/cartStore'
 import { format } from 'date-fns'
-import { Package } from 'lucide-react'
+import { Loader2, Minus, Package, Plus, ShoppingCart } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
 
 interface ProductCardProps {
   product: Product
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const [quantity, setQuantity] = useState(1)
+  const [isAdding, setIsAdding] = useState(false)
+  const { addItem, cart } = useCartStore()
+
   const availableQuantity = Number(product.quantity - product.reservedQuantity)
   const isLowStock = availableQuantity < 10 && availableQuantity > 0
   const isOutOfStock = availableQuantity === 0
+
+  const handleAddToCart = () => {
+    if (isOutOfStock || quantity > availableQuantity) return
+
+    // Check if cart is initialized
+    if (!cart) {
+      toast.error('Cart is not initialized. Please refresh the page.')
+      return
+    }
+
+    setIsAdding(true)
+    try {
+      // Convert Product to MockProduct format
+      const mockProduct = {
+        id: product.id,
+        name: product.name,
+        description: 'desc',
+        price: Number(product.price),
+        quantity: Number(product.quantity),
+        reservedQuantity: Number(product.reservedQuantity),
+        category: 'Electronics', // Default category
+        sku: product.id.slice(0, 8), // Use first 8 chars as SKU
+        version: Number(product.version),
+        createdAt: product.createdAt
+          ? timestampToDate(product.createdAt)
+          : undefined,
+        updatedAt: product.updatedAt
+          ? timestampToDate(product.updatedAt)
+          : undefined,
+      }
+
+      addItem(mockProduct, quantity)
+      setQuantity(1)
+      console.log('Product added to cart:', mockProduct.name, 'Quantity:', quantity)
+    } catch (error) {
+      console.error('Failed to add to cart:', error)
+      toast.error('Failed to add item to cart. Please try again.')
+    } finally {
+      setIsAdding(false)
+    }
+  }
+
+  const handleQuantityChange = (newQuantity: number) => {
+    if (newQuantity > 0 && newQuantity <= availableQuantity) {
+      setQuantity(newQuantity)
+    }
+  }
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
@@ -74,6 +129,72 @@ export function ProductCard({ product }: ProductCardProps) {
               {availableQuantity}
             </span>
           </div>
+        </div>
+
+        {/* Add to Cart Section */}
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+          {isOutOfStock ? (
+            <Button disabled className="w-full" variant="outline">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Out of Stock
+            </Button>
+          ) : (
+            <div className="space-y-3">
+              {/* Quantity Selector */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Quantity:</span>
+                <div className="flex items-center border rounded-md">
+                  <Button
+                    disabled={quantity <= 1}
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <div className="w-12 text-center text-sm font-medium">
+                    {quantity}
+                  </div>
+                  <Button
+                    disabled={quantity >= availableQuantity}
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Add to Cart Button */}
+              <Button
+                disabled={isAdding || isOutOfStock}
+                onClick={handleAddToCart}
+                className="w-full"
+                size="lg"
+              >
+                {isAdding ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </>
+                )}
+              </Button>
+
+              {isLowStock && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 text-center">
+                  Only {availableQuantity} items available
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Metadata */}
