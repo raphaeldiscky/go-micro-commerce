@@ -29,7 +29,6 @@ export const CartIcon = forwardRef<HTMLButtonElement, CartIconProps>(
         aria-label={`Shopping cart with ${itemCount} items`}
         className={cn(
           'relative h-10 w-10 rounded-full transition-all duration-200 hover:scale-105 active:scale-95',
-          isDrawerOpen && 'ring-2 ring-primary ring-offset-2',
           className,
         )}
         onClick={handleToggleCart}

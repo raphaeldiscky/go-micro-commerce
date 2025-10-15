@@ -25,7 +25,7 @@ export function NotificationBell() {
       <Button
         aria-label={`Notifications with ${unreadCount} unread items`}
         className={cn(
-          'relative h-10 w-10 rounded-full transition-all duration-200 hover:scale-105 active:scale-95'
+          'relative h-10 w-10 rounded-full transition-all duration-200 hover:scale-105 active:scale-95',
         )}
         onClick={handleClick}
         size="icon"
