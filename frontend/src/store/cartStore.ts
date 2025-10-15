@@ -11,6 +11,7 @@ import type {
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { useShallow } from 'zustand/shallow'
 
 const generateId = () =>
   `cart-${Date.now()}-${Math.random().toString(36).substring(7)}`
@@ -422,22 +423,26 @@ export const useCartItemCount = () =>
     state.items.reduce((total, item) => total + item.quantity, 0),
   )
 export const useSelectedItems = () =>
-  useCartStore((state) =>
-    state.items.filter((item) => item.selected_for_checkout),
+  useCartStore(
+    useShallow((state) =>
+      state.items.filter((item) => item.selected_for_checkout),
+    ),
   )
 export const useCartTotal = () =>
-  useCartStore((state) => {
-    const subtotal = state.items
-      .filter((item) => item.selected_for_checkout)
-      .reduce((total, item) => total + item.product.price * item.quantity, 0)
-    const shipping = state.selectedShippingOption?.price || 0
-    return {
-      subtotal,
-      shipping,
-      discount: 0,
-      total: subtotal + shipping,
-    }
-  })
+  useCartStore(
+    useShallow((state) => {
+      const subtotal = state.items
+        .filter((item) => item.selected_for_checkout)
+        .reduce((total, item) => total + item.product.price * item.quantity, 0)
+      const shipping = state.selectedShippingOption?.price || 0
+      return {
+        subtotal,
+        shipping,
+        discount: 0,
+        total: subtotal + shipping,
+      }
+    }),
+  )
 export const useIsCartDrawerOpen = () =>
   useCartStore((state) => state.isDrawerOpen)
 export const useIsCheckoutLoading = () =>
@@ -448,3 +453,17 @@ export const useSelectedPaymentMethod = () =>
   useCartStore((state) => state.selectedPaymentMethod)
 export const useCheckoutSession = () =>
   useCartStore((state) => state.checkoutSession)
+export const useOrderSummary = () =>
+  useCartStore(
+    useShallow((state) => {
+      const subtotal = state.getSelectedTotal()
+      const shipping = state.selectedShippingOption?.price || 0
+      const total = subtotal + shipping
+      return {
+        subtotal,
+        shipping,
+        discount: 0,
+        total,
+      }
+    }),
+  )

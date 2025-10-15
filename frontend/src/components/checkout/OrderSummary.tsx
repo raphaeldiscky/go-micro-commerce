@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency } from '@/data/mockData'
-import { useCartStore } from '@/store/cartStore'
+import { useOrderSummary } from '@/store/cartStore'
 import { Receipt, ShoppingCart, Truck } from 'lucide-react'
 
 export function OrderSummary() {
-  const orderSummary = useCartStore((state) => state.getOrderSummary())
+  const orderSummary = useOrderSummary()
 
   return (
     <Card>
@@ -43,7 +43,6 @@ export function OrderSummary() {
             </span>
           </div>
 
-          
           <Separator />
 
           {/* Total */}
@@ -53,7 +52,6 @@ export function OrderSummary() {
           </div>
         </div>
 
-        
         {orderSummary.shipping === 0 && orderSummary.subtotal >= 100 && (
           <div className="text-xs text-green-600 bg-green-50 dark:bg-green-950 p-3 rounded-lg">
             <p>🎉 Free shipping applied! (Orders over $100)</p>
