@@ -7,11 +7,19 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 import { timestampToDate } from '@/lib/utils/date'
 import type { Product } from '@/proto/product/v1/product_pb'
 import { useCartStore } from '@/store/cartStore'
 import { format } from 'date-fns'
-import { Loader2, Minus, Package, Plus, ShoppingCart } from 'lucide-react'
+import {
+  Check,
+  Loader2,
+  Minus,
+  Package,
+  Plus,
+  ShoppingCart,
+} from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -22,6 +30,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
   const { addItem, cart } = useCartStore()
 
   const availableQuantity = Number(product.quantity - product.reservedQuantity)
@@ -29,7 +38,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const isOutOfStock = availableQuantity === 0
 
   const handleAddToCart = () => {
-    if (isOutOfStock || quantity > availableQuantity) return
+    if (isOutOfStock || quantity > availableQuantity || availableQuantity <= 0)
+      return
 
     // Check if cart is initialized
     if (!cart) {
@@ -60,7 +70,20 @@ export function ProductCard({ product }: ProductCardProps) {
 
       addItem(mockProduct, quantity)
       setQuantity(1)
-      console.log('Product added to cart:', mockProduct.name, 'Quantity:', quantity)
+      console.log(
+        'Product added to cart:',
+        mockProduct.name,
+        'Quantity:',
+        quantity,
+      )
+
+      // Show success animation
+      setShowSuccess(true)
+
+      // Reset success state after animation
+      setTimeout(() => {
+        setShowSuccess(false)
+      }, 2000)
     } catch (error) {
       console.error('Failed to add to cart:', error)
       toast.error('Failed to add item to cart. Please try again.')
@@ -170,15 +193,24 @@ export function ProductCard({ product }: ProductCardProps) {
 
               {/* Add to Cart Button */}
               <Button
-                disabled={isAdding || isOutOfStock}
+                disabled={isAdding || availableQuantity <= 0}
                 onClick={handleAddToCart}
-                className="w-full"
+                className={cn(
+                  'w-full transition-all duration-300',
+                  showSuccess &&
+                    'bg-green-600 hover:bg-green-700 border-green-600',
+                )}
                 size="lg"
               >
                 {isAdding ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Adding...
+                  </>
+                ) : showSuccess ? (
+                  <>
+                    <Check className="h-4 w-4" />
+                    Added!
                   </>
                 ) : (
                   <>
