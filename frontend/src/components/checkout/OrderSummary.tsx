@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency } from '@/data/mockData'
-import { useCartStore } from '@/store/cartStore'
+import { useOrderSummary } from '@/store/cartStore'
 import { Receipt, ShoppingCart, Truck } from 'lucide-react'
 
 export function OrderSummary() {
-  const orderSummary = useCartStore((state) => state.getOrderSummary())
+  const orderSummary = useOrderSummary()
 
   return (
     <Card>
