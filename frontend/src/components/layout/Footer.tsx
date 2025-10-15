@@ -1,7 +1,6 @@
 import {
   APP_CONFIG,
   FOOTER_CONTENT,
-  PROFILE_IMAGE_URL,
   QUICK_LINKS,
   SOCIAL_LINKS,
   TECHNOLOGY_LINKS,
@@ -22,11 +21,6 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <img
-                alt={APP_CONFIG.BRAND.LOGO_ALT}
-                className="h-8 w-8 rounded-lg object-cover"
-                src={PROFILE_IMAGE_URL}
-              />
               <span className="font-bold text-xl">{APP_CONFIG.NAME}</span>
             </div>
             <p className="text-gray-300 mb-4 max-w-md">

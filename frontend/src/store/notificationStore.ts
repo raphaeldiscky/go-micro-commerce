@@ -5,24 +5,22 @@ import { create } from 'zustand'
  * Data management is handled by TanStack Query via hooks
  */
 
-interface NotificationUIState {
+interface NotificationState {
   isDrawerOpen: boolean
   activeTab: 'all' | 'unread' | 'read'
 }
 
-interface NotificationUIActions {
+interface NotificationActions {
   toggleDrawer: (open?: boolean) => void
   setActiveTab: (tab: 'all' | 'unread' | 'read') => void
 }
 
-type NotificationUIStore = NotificationUIState & NotificationUIActions
+type NotificationStore = NotificationState & NotificationActions
 
-export const useNotificationStore = create<NotificationUIStore>((set) => ({
-  // UI State
+export const useNotificationStore = create<NotificationStore>((set) => ({
   isDrawerOpen: false,
   activeTab: 'all',
 
-  // UI Actions
   toggleDrawer: (open) =>
     set((state) => ({
       isDrawerOpen: open !== undefined ? open : !state.isDrawerOpen,
