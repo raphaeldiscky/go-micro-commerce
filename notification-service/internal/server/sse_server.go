@@ -15,6 +15,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/validation"
 )
 
 // SSEServer represents the dedicated SSE server for GraphQL subscriptions.
@@ -31,6 +32,8 @@ func NewSSEServer(
 	providers *provider.Providers,
 ) *SSEServer {
 	e := echo.New()
+
+	e.Validator = validation.NewValidator()
 
 	// Middlewares optimized for SSE connections
 	registerSSEMiddlewares(e, cfg)

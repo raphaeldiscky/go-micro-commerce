@@ -33,10 +33,6 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 		"/notifications/sse/health",
 		gw.ProxyToService("notification-service-sse", "/sse/health"),
 	)
-	public.GET(
-		"/notifications/sse/debug/subscriptions",
-		gw.ProxyToService("notification-service-sse", "/sse/debug/subscriptions"),
-	)
 
 	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
 	// This allows both authenticated and unauthenticated queries to work
@@ -84,6 +80,10 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	protected.Any("/auth/v1/users/whoami", gw.ProxyToService("auth-service", "/v1/users/whoami"))
 	protected.Any("/auth/v1/users/*", gw.ProxyToService("auth-service", "/v1/users"))
 	protected.Any("/orders/*", gw.ProxyToService("order-service", ""))
+	protected.GET(
+		"/notifications/sse/debug/subscriptions",
+		gw.ProxyToService("notification-service-sse", "/sse/debug/subscriptions"),
+	)
 	protected.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
 	protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
 	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))

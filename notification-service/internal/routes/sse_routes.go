@@ -16,11 +16,11 @@ func SetupSSERoutes(
 	sse := e.Group("/sse")
 	sse.GET("/health", h.Health)
 
-	// Debug endpoints (should be protected in production)
-	debug := sse.Group("/debug")
-	debug.GET("/subscriptions", debugHandler.GetActiveSubscriptions)
-
 	protected := sse.Group("")
 	protected.Use(middleware.AuthMiddleware)
 	protected.GET("/stream", h.StreamNotifications)
+
+	admin := protected.Group("")
+	admin.Use(middleware.RequireAdminRole)
+	admin.GET("/debug/subscriptions", debugHandler.GetActiveSubscriptions)
 }
