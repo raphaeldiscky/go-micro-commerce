@@ -12,7 +12,6 @@ import (
 func SetupNotificationRoutes(
 	e *echo.Echo,
 	notificationHandler *handler.NotificationHandler,
-	sseHandler *handler.NotificationSSEHandler,
 ) {
 	v1 := e.Group("/v1")
 	protected := v1.Group("")

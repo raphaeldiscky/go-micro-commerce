@@ -74,6 +74,7 @@ func (m *Manager) SubscribeToNotifications(
 
 	// Subscribe to Redis sharded channel if this is the first subscriber for this user
 	isFirstSubscriber := !exists
+
 	m.mu.Unlock()
 
 	// Add this subscriber
@@ -269,11 +270,13 @@ func (m *Manager) subscribeToRedis(userID uuid.UUID) error {
 // unsubscribeFromRedis unsubscribes from the Redis sharded channel for a user.
 func (m *Manager) unsubscribeFromRedis(userID uuid.UUID) error {
 	m.mu.Lock()
+
 	channel, exists := m.redisChannels[userID]
 	if !exists {
 		m.mu.Unlock()
 		return nil
 	}
+
 	delete(m.redisChannels, userID)
 	m.mu.Unlock()
 
