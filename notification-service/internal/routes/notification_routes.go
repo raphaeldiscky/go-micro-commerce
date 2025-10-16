@@ -17,8 +17,6 @@ func SetupNotificationRoutes(
 	v1 := e.Group("/v1")
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
-	// SSE stream endpoint (requires authentication)
-	protected.GET("/sse", sseHandler.StreamNotifications)
 	// GET /v1 - List notifications with cursor pagination
 	protected.GET("", notificationHandler.ListNotifications)
 	// GET /v1/unread - List unread notifications with cursor pagination

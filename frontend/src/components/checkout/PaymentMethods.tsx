@@ -23,13 +23,10 @@ const getPaymentIcon = (type: PaymentMethod['type']) => {
 }
 
 export function PaymentMethods() {
-  const {
-    selectedPaymentMethod,
-    setPaymentMethod,
-  } = useCartStore()
+  const { selectedPaymentMethod, setPaymentMethod } = useCartStore()
 
   const handlePaymentChange = (methodId: string) => {
-    const method = mockPaymentMethods.find(m => m.id === methodId)
+    const method = mockPaymentMethods.find((m) => m.id === methodId)
     if (method) {
       setPaymentMethod(method)
     }
@@ -53,7 +50,11 @@ export function PaymentMethods() {
             return (
               <div key={method.id} className="space-y-2">
                 <div className="flex items-start space-x-3">
-                  <RadioGroupItem id={method.id} value={method.id} className="mt-1" />
+                  <RadioGroupItem
+                    id={method.id}
+                    value={method.id}
+                    className="mt-1"
+                  />
                   <div className="flex-1 space-y-1">
                     <Label
                       htmlFor={method.id}

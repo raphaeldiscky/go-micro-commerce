@@ -16,7 +16,6 @@ require (
 )
 
 require (
-	github.com/ArchishmanSengupta/consistent-hashing v1.0.2 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect

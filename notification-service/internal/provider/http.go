@@ -46,7 +46,6 @@ func SetupHTTP(
 		providers.SSEHub,
 		providers.EventBus,
 		providers.InstanceID,
-		providers.Sharder,
 		appLogger,
 	)
 

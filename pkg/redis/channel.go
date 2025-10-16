@@ -2,7 +2,6 @@ package redis
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -119,14 +118,11 @@ func BroadcastChannel(messageType string) string {
 		Build()
 }
 
-// NotificationShardChannel creates a shard-based notification channel.
-// Uses consistent hashing to distribute notifications across fixed shards.
-func NotificationShardChannel(shardID int) string {
-	return NewChannelBuilder().
-		Service("notification").
-		Entity("shard").
-		IDString(strconv.Itoa(shardID)).
-		Build()
+// NotificationUserChannel creates a user-based notification channel for sharded pub/sub.
+// Uses Redis native sharded pub/sub with slot-based distribution (Redis 7.0+).
+// The {userID} hash tag ensures slot-based routing in Redis Cluster.
+func NotificationUserChannel(userID uuid.UUID) string {
+	return fmt.Sprintf("notification:user:{%s}", userID.String())
 }
 
 // OrderChannel creates an order-related channel.

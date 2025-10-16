@@ -7,23 +7,20 @@ import type { ShippingOption } from '@/types/cart'
 import { Truck, Clock } from 'lucide-react'
 
 export function ShippingOptions() {
-  const {
-    selectedShippingOption,
-    setShippingMethod,
-    getSubtotal,
-  } = useCartStore()
+  const { selectedShippingOption, setShippingMethod, getSubtotal } =
+    useCartStore()
 
   const subtotal = getSubtotal()
 
   const handleShippingChange = (optionId: string) => {
-    const option = mockShippingOptions.find(opt => opt.id === optionId)
+    const option = mockShippingOptions.find((opt) => opt.id === optionId)
     if (option) {
       setShippingMethod(option)
     }
   }
 
   // Filter shipping options based on cart total
-  const availableShippingOptions = mockShippingOptions.filter(option => {
+  const availableShippingOptions = mockShippingOptions.filter((option) => {
     if (option.price === 0 && subtotal >= 100) {
       return true // Free shipping available for orders over $100
     }
@@ -46,7 +43,11 @@ export function ShippingOptions() {
           {availableShippingOptions.map((option: ShippingOption) => (
             <div key={option.id} className="space-y-2">
               <div className="flex items-start space-x-3">
-                <RadioGroupItem id={option.id} value={option.id} className="mt-1" />
+                <RadioGroupItem
+                  id={option.id}
+                  value={option.id}
+                  className="mt-1"
+                />
                 <div className="flex-1 space-y-1">
                   <Label
                     htmlFor={option.id}

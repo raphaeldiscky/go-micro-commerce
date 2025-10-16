@@ -14,20 +14,35 @@ interface SubscriptionData {
  * Hook for subscribing to real-time notification events via SSE
  * Automatically handles new notifications, read events, and deleted events
  *
+ * NOTE: In development with React StrictMode enabled, you may see the subscription
+ * start, stop, and restart. This is expected behavior - StrictMode intentionally
+ * double-mounts components to help detect side effects. The subscription will
+ * work correctly in production.
+ *
  * @param enabled - Whether the subscription is active (default: true)
  */
 export function useNotificationSubscription(enabled = true) {
   const queryClient = useQueryClient()
   const unsubscribeRef = useRef<(() => void) | null>(null)
+  const isSubscribedRef = useRef(false)
 
   useEffect(() => {
     if (!enabled) return
+
+    // Prevent duplicate subscriptions during React StrictMode double-mounting
+    if (isSubscribedRef.current) {
+      console.log('⚠️ Subscription already active, skipping duplicate mount')
+      return
+    }
 
     const client = getSseSubscriptionClient()
 
     console.log('🔌 Starting notification subscription...', {
       timestamp: new Date().toISOString(),
     })
+
+    // Mark as subscribed before creating the subscription
+    isSubscribedRef.current = true
 
     // Subscribe to notification events
     unsubscribeRef.current = client.subscribe<SubscriptionData>(
@@ -87,22 +102,29 @@ export function useNotificationSubscription(enabled = true) {
         },
         error: (error) => {
           console.error('❌ Notification subscription error:', error)
+          // Reset subscription flag on error to allow reconnection
+          isSubscribedRef.current = false
         },
         complete: () => {
-          console.log('✅ Notification subscription completed')
+          console.log('✅ Notification subscription completed normally')
+          // Reset subscription flag on completion
+          isSubscribedRef.current = false
         },
       },
     )
 
     console.log('🔔 Notification subscription started')
 
-    // Cleanup on unmount
+    // Cleanup on unmount or when enabled changes
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current()
         unsubscribeRef.current = null
-        console.log('🔕 Notification subscription stopped')
+        isSubscribedRef.current = false
+        console.log('🔕 Notification subscription cleanup (component unmount)')
       }
     }
-  }, [enabled, queryClient])
+    // Only depend on 'enabled', not 'queryClient'
+    // queryClient is stable from useQueryClient() and doesn't need to be a dependency
+  }, [enabled])
 }

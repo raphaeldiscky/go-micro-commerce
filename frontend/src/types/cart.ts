@@ -43,7 +43,6 @@ export interface MockProduct {
   updatedAt?: Date | null
 }
 
-
 // Shipping options
 export interface ShippingOption {
   id: string

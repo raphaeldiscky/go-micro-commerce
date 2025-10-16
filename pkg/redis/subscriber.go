@@ -190,6 +190,52 @@ func (s *subscriber) handleMessage(
 	return nil
 }
 
+// SSubscribe subscribes to one or more sharded channels (Redis 7.0+).
+// Sharded subscriptions use slot-based distribution for better scalability in Redis Cluster.
+func (s *subscriber) SSubscribe(
+	ctx context.Context,
+	handler MessageHandler,
+	channels ...string,
+) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Store handler for each channel
+	for _, channel := range channels {
+		s.handlers[channel] = handler
+	}
+
+	if s.running {
+		// Add channels to existing subscription
+		if s.pubsub == nil {
+			return errors.New("subscriber is running but pubsub is nil")
+		}
+
+		if err := s.pubsub.SSubscribe(ctx, channels...); err != nil {
+			// Remove handlers on error
+			for _, channel := range channels {
+				delete(s.handlers, channel)
+			}
+
+			return fmt.Errorf("failed to add sharded channels to existing subscription: %w", err)
+		}
+
+		s.logger.Infof("Added sharded channels to existing subscription: %v", channels)
+
+		return nil
+	}
+
+	// Create new sharded subscription
+	s.pubsub = s.client.SSubscribe(ctx, channels...)
+	s.running = true
+
+	go s.processMessages(ctx)
+
+	s.logger.Infof("Subscribed to sharded channels: %v", channels)
+
+	return nil
+}
+
 // Unsubscribe unsubscribes from specified channels.
 func (s *subscriber) Unsubscribe(channels ...string) error {
 	s.mu.Lock()
@@ -210,6 +256,30 @@ func (s *subscriber) Unsubscribe(channels ...string) error {
 	}
 
 	s.logger.Infof("Unsubscribed from channels: %v", channels)
+
+	return nil
+}
+
+// SUnsubscribe unsubscribes from specified sharded channels.
+func (s *subscriber) SUnsubscribe(channels ...string) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.pubsub == nil {
+		return errors.New("not subscribed to any sharded channels")
+	}
+
+	err := s.pubsub.SUnsubscribe(context.Background(), channels...)
+	if err != nil {
+		return fmt.Errorf("failed to unsubscribe from sharded channels %v: %w", channels, err)
+	}
+
+	// Remove handlers for unsubscribed channels
+	for _, channel := range channels {
+		delete(s.handlers, channel)
+	}
+
+	s.logger.Infof("Unsubscribed from sharded channels: %v", channels)
 
 	return nil
 }

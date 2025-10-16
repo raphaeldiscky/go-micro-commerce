@@ -125,6 +125,114 @@ func (b *redisEventBus) Publish(ctx context.Context, channel string, event Event
 	return nil
 }
 
+// SSubscribe subscribes to a sharded channel with an event handler (Redis 7.0+).
+// Sharded subscriptions use slot-based distribution for better scalability in Redis Cluster.
+func (b *redisEventBus) SSubscribe(channel string, handler EventHandler) error {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	// Add handler to subscriptions
+	b.subscriptions[channel] = append(b.subscriptions[channel], handler)
+
+	// Subscribe to Redis sharded channel if first subscription
+	if len(b.subscriptions[channel]) == 1 {
+		if err := b.ssubscribeToRedis(channel); err != nil {
+			// Remove handler on error
+			b.subscriptions[channel] = b.subscriptions[channel][:len(b.subscriptions[channel])-1]
+			if len(b.subscriptions[channel]) == 0 {
+				delete(b.subscriptions, channel)
+			}
+
+			return fmt.Errorf("failed to subscribe to Redis sharded channel %s: %w", channel, err)
+		}
+
+		b.activeChannels[channel] = true
+		b.logger.Info("Subscribed to sharded channel", "channel", channel)
+	}
+
+	return nil
+}
+
+// SUnsubscribe unsubscribes from a sharded channel.
+func (b *redisEventBus) SUnsubscribe(channel string) error {
+	b.mutex.Lock()
+	defer b.mutex.Unlock()
+
+	// Remove all handlers for this channel
+	delete(b.subscriptions, channel)
+
+	// Unsubscribe from Redis if active
+	if b.activeChannels[channel] {
+		if err := b.sunsubscribeFromRedis(channel); err != nil {
+			b.logger.Error("Failed to unsubscribe from Redis sharded channel",
+				"channel", channel,
+				"error", err)
+			// Continue even on error to clean up local state
+		}
+
+		delete(b.activeChannels, channel)
+		b.logger.Info("Unsubscribed from sharded channel", "channel", channel)
+	}
+
+	return nil
+}
+
+// SPublish publishes an event to a sharded channel (Redis 7.0+).
+// Sharded pub/sub uses slot-based distribution for better scalability in Redis Cluster.
+func (b *redisEventBus) SPublish(ctx context.Context, channel string, event Event) error {
+	// Serialize event
+	data, err := event.Marshal()
+	if err != nil {
+		return fmt.Errorf("failed to marshal event: %w", err)
+	}
+
+	// Create Redis message
+	metadata := redispkg.NewMessageMetadata("eventbus")
+
+	redisMsg, err := redispkg.NewMessage(metadata, json.RawMessage(data))
+	if err != nil {
+		return fmt.Errorf("failed to create Redis message: %w", err)
+	}
+
+	// Publish to Redis sharded channel
+	if err = b.publisher.SPublish(ctx, channel, redisMsg); err != nil {
+		return fmt.Errorf("failed to publish to sharded channel %s: %w", channel, err)
+	}
+
+	b.logger.Debug("Published event to sharded channel",
+		"channel", channel,
+		"event_type", event.GetType(),
+		"instance_id", event.GetSourceInstanceID())
+
+	return nil
+}
+
+// ssubscribeToRedis subscribes to a Redis sharded channel (must be called with lock held).
+func (b *redisEventBus) ssubscribeToRedis(channel string) error {
+	b.subscriberMutex.Lock()
+	defer b.subscriberMutex.Unlock()
+
+	// Create a handler that routes to registered handlers
+	redisHandler := func(ctx context.Context, redisMsg *redispkg.Message) error {
+		return b.handleRedisMessage(ctx, channel, redisMsg)
+	}
+
+	// Subscribe to Redis sharded channel
+	if err := b.subscriber.SSubscribe(b.ctx, redisHandler, channel); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// sunsubscribeFromRedis unsubscribes from a Redis sharded channel (must be called with lock held).
+func (b *redisEventBus) sunsubscribeFromRedis(channel string) error {
+	b.subscriberMutex.Lock()
+	defer b.subscriberMutex.Unlock()
+
+	return b.subscriber.SUnsubscribe(channel)
+}
+
 // Close closes the event bus and releases resources.
 func (b *redisEventBus) Close() error {
 	b.cancel()
