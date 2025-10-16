@@ -136,7 +136,30 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 	}
 
 	// Determine final path to forward
-	finalPath := gw.replacePath(path, c)
+	// If a path template is provided, replace parameters.
+	// Otherwise, derive from the incoming request by removing the route prefix.
+	finalPath := path
+	if finalPath == "" {
+		incomingPath := c.Request().URL.Path // e.g., /products/health
+		routePattern := c.Path()             // e.g., /products/*
+		basePrefix := strings.TrimSuffix(routePattern, "*")
+		trimmedPrefix := strings.TrimRight(basePrefix, "/")
+		suffix := strings.TrimPrefix(incomingPath, trimmedPrefix)
+
+		switch suffix {
+		case "", "/":
+			finalPath = "/"
+		default:
+			if !strings.HasPrefix(suffix, "/") {
+				finalPath = "/" + suffix
+			} else {
+				finalPath = suffix
+			}
+		}
+	} else {
+		finalPath = gw.replacePath(path, c)
+	}
+
 	targetURL.Path = finalPath
 	targetURL.RawQuery = c.Request().URL.RawQuery
 
@@ -551,9 +574,27 @@ func (gw *Gateway) buildBackendWebSocketURL(endpoint, path string, c echo.Contex
 	}
 
 	// Determine final path
-	finalPath := gw.replacePath(path, c)
-	targetURL.Path = finalPath
-	targetURL.RawQuery = c.Request().URL.RawQuery
+	finalPath := path
+	if finalPath == "" {
+		incomingPath := c.Request().URL.Path
+		routePattern := c.Path()
+		basePrefix := strings.TrimSuffix(routePattern, "*")
+		trimmedPrefix := strings.TrimRight(basePrefix, "/")
+		suffix := strings.TrimPrefix(incomingPath, trimmedPrefix)
+
+		switch suffix {
+		case "", "/":
+			finalPath = "/"
+		default:
+			if !strings.HasPrefix(suffix, "/") {
+				finalPath = "/" + suffix
+			} else {
+				finalPath = suffix
+			}
+		}
+	} else {
+		finalPath = gw.replacePath(path, c)
+	}
 
 	// Build WebSocket URL
 	wsURL := fmt.Sprintf("%s://%s%s", scheme, targetURL.Host, finalPath)
@@ -784,7 +825,28 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 		}
 
 		// Determine final path
-		finalPath := gw.replacePath(path, c)
+		finalPath := path
+		if finalPath == "" {
+			incomingPath := c.Request().URL.Path
+			routePattern := c.Path()
+			basePrefix := strings.TrimSuffix(routePattern, "*")
+			trimmedPrefix := strings.TrimRight(basePrefix, "/")
+			suffix := strings.TrimPrefix(incomingPath, trimmedPrefix)
+
+			switch suffix {
+			case "", "/":
+				finalPath = "/"
+			default:
+				if !strings.HasPrefix(suffix, "/") {
+					finalPath = "/" + suffix
+				} else {
+					finalPath = suffix
+				}
+			}
+		} else {
+			finalPath = gw.replacePath(path, c)
+		}
+
 		targetURL.Path = finalPath
 		targetURL.RawQuery = c.Request().URL.RawQuery
 
@@ -818,11 +880,12 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 		// Add gateway identification
 		req.Header.Set("X-Gateway", "api-gateway")
 		req.Header.Set("X-Forwarded-For", c.RealIP())
+		req.Header.Set("X-Forwarded-Proto", c.Scheme())
 		req.Header.Set("X-Forwarded-Host", c.Request().Host)
 
-		// Create HTTP client with SSE-specific timeout for streaming
+		// Create HTTP client with no timeout for SSE streaming
 		client := &http.Client{
-			Timeout: 0,
+			Timeout: 0, // No timeout for long-lived SSE connections
 		}
 
 		// Perform request
