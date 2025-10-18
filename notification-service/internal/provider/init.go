@@ -13,6 +13,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/subscription"
 )
@@ -117,6 +118,47 @@ func SetupGlobal(
 
 	// Initialize SubscriptionManager for GraphQL subscriptions
 	subscriptionManager := subscription.NewManager(eventBus, sseHub, appLogger)
+
+	// Configure SSE Hub with EventBus for cross-instance messaging
+	// Set up notification event handler for cross-instance events
+	notificationEventHandler := notification.NewEventHandler(appLogger)
+
+	// Handle notification created events from other instances
+	notificationEventHandler.SetNotificationCreatedHandler(
+		func(_ context.Context, event *notification.CreatedEvent) error {
+			// Broadcast to local SSE connections
+			if err = sseHub.BroadcastToUser(event.UserID, event.Message); err != nil {
+				appLogger.Error(
+					"Failed to broadcast cross-instance notification to local SSE connections",
+					"user_id",
+					event.UserID,
+					"error",
+					err,
+				)
+
+				return err
+			}
+
+			appLogger.Debug(
+				"Successfully broadcasted cross-instance notification to local SSE connections",
+				"user_id",
+				event.UserID,
+			)
+
+			return nil
+		},
+	)
+
+	// Configure SSE Hub with EventBus
+	sseHub.SetEventBus(
+		eventBus,
+		instanceID,
+		redis.NotificationUserChannel,
+		notificationEventHandler.HandleEvent,
+	)
+
+	appLogger.Info("SSE Hub configured with EventBus for cross-instance messaging",
+		"instance_id", instanceID)
 
 	return &Providers{
 		KafkaAdmin:          kafkaAdmin,
