@@ -12,7 +12,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 )
 
 // EventHandler handles EventBus notifications and converts them to GraphQL events.
@@ -41,13 +40,13 @@ func (h *EventHandler) HandleEvent(_ context.Context, event eventbus.Event) erro
 		"source_instance", event.GetSourceInstanceID())
 
 	switch eventType {
-	case notification.TypeNotificationCreated:
+	case TypeNotificationCreated:
 		return h.handleNotificationCreated(event)
 
-	case notification.TypeNotificationRead:
+	case TypeNotificationRead:
 		return h.handleNotificationRead(event)
 
-	case notification.TypeNotificationDeleted:
+	case TypeNotificationDeleted:
 		return h.handleNotificationDeleted(event)
 
 	default:
@@ -61,7 +60,7 @@ func (h *EventHandler) HandleEvent(_ context.Context, event eventbus.Event) erro
 // handleNotificationCreated processes notification created events.
 func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
 	// Parse the notification created event from payload
-	var createdEvent notification.CreatedEvent
+	var createdEvent NotificationCreatedEvent
 
 	if err := event.UnmarshalPayload(&createdEvent); err != nil {
 		h.logger.Error("Failed to unmarshal notification created event", "error", err)
@@ -100,7 +99,7 @@ func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
 
 // handleNotificationRead processes notification read events.
 func (h *EventHandler) handleNotificationRead(event eventbus.Event) error {
-	var readEvent notification.ReadEvent
+	var readEvent NotificationReadEvent
 
 	if err := event.UnmarshalPayload(&readEvent); err != nil {
 		h.logger.Error("Failed to unmarshal notification read event", "error", err)
@@ -126,7 +125,7 @@ func (h *EventHandler) handleNotificationRead(event eventbus.Event) error {
 
 // handleNotificationDeleted processes notification deleted events.
 func (h *EventHandler) handleNotificationDeleted(event eventbus.Event) error {
-	var deletedEvent notification.DeletedEvent
+	var deletedEvent NotificationDeletedEvent
 
 	if err := event.UnmarshalPayload(&deletedEvent); err != nil {
 		h.logger.Error("Failed to unmarshal notification deleted event", "error", err)
