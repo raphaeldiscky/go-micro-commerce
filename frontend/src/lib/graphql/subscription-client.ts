@@ -120,13 +120,21 @@ export function getSseSubscriptionClient(): SseClient {
  * Call this when logging out or when token changes
  */
 export function closeSubscriptionClient(): void {
+  console.log('🔌 Closing subscription clients...', {
+    hasWsClient: wsSubscriptionClient !== null,
+    hasSseClient: sseSubscriptionClient !== null,
+    timestamp: new Date().toISOString(),
+  })
+
   if (wsSubscriptionClient) {
     wsSubscriptionClient.dispose()
     wsSubscriptionClient = null
+    console.log('✅ WebSocket client disposed')
   }
   if (sseSubscriptionClient) {
     sseSubscriptionClient.dispose()
     sseSubscriptionClient = null
+    console.log('✅ SSE client disposed')
   }
 }
 
@@ -135,6 +143,20 @@ export function closeSubscriptionClient(): void {
  * Useful when token changes (e.g., after refresh)
  */
 export function resetSubscriptionClient(): void {
+  console.log('🔄 Resetting subscription clients...', {
+    hadWsClient: wsSubscriptionClient !== null,
+    hadSseClient: sseSubscriptionClient !== null,
+    timestamp: new Date().toISOString(),
+  })
   closeSubscriptionClient()
+  console.log('✅ Subscription clients reset complete')
   // Next call to get*SubscriptionClient() will create new clients with updated token
+}
+
+/**
+ * Check if any subscription clients are currently active
+ * Useful for debugging and monitoring connection state
+ */
+export function hasActiveClients(): boolean {
+  return wsSubscriptionClient !== null || sseSubscriptionClient !== null
 }

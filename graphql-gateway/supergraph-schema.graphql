@@ -1,0 +1,475 @@
+schema
+  @link(url: "https://specs.apollo.dev/link/v1.0")
+  @link(url: "https://specs.apollo.dev/join/v0.3", for: EXECUTION)
+{
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+directive @join__enumValue(graph: join__Graph!) repeatable on ENUM_VALUE
+
+directive @join__field(graph: join__Graph, requires: join__FieldSet, provides: join__FieldSet, type: String, external: Boolean, override: String, usedOverridden: Boolean) repeatable on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+directive @join__graph(name: String!, url: String!) on ENUM_VALUE
+
+directive @join__implements(graph: join__Graph!, interface: String!) repeatable on OBJECT | INTERFACE
+
+directive @join__type(graph: join__Graph!, key: join__FieldSet, extension: Boolean! = false, resolvable: Boolean! = true, isInterfaceObject: Boolean! = false) repeatable on OBJECT | INTERFACE | UNION | ENUM | INPUT_OBJECT | SCALAR
+
+directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on UNION
+
+directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
+
+type AuthPayload
+  @join__type(graph: AUTH_SERVICE)
+{
+  token: String!
+  refreshToken: String!
+  user: User!
+}
+
+type ChatConnection
+  @join__type(graph: CHAT_SERVICE)
+{
+  nodeAddress: String!
+  userId: ID!
+  userType: String!
+}
+
+type Conversation
+  @join__type(graph: CHAT_SERVICE, key: "id")
+{
+  id: ID!
+  subject: String
+  status: ConversationStatus!
+  priority: Int!
+  participants: [Participant!]!
+  participantCount: Int!
+  messages(limit: Int = 50, offset: Int = 0): MessageConnection!
+  createdAt: Time!
+  updatedAt: Time!
+  endedAt: Time
+}
+
+union ConversationEvent
+  @join__type(graph: CHAT_SERVICE)
+  @join__unionMember(graph: CHAT_SERVICE, member: "NewMessage")
+  @join__unionMember(graph: CHAT_SERVICE, member: "TypingIndicator")
+  @join__unionMember(graph: CHAT_SERVICE, member: "DeliveryReceipt")
+  @join__unionMember(graph: CHAT_SERVICE, member: "ReadReceipt")
+ = NewMessage | TypingIndicator | DeliveryReceipt | ReadReceipt
+
+enum ConversationStatus
+  @join__type(graph: CHAT_SERVICE)
+{
+  WAITING @join__enumValue(graph: CHAT_SERVICE)
+  ACTIVE @join__enumValue(graph: CHAT_SERVICE)
+  ENDED @join__enumValue(graph: CHAT_SERVICE)
+}
+
+input CreateConversationInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  subject: String
+  priority: Int!
+  initialMessage: String
+}
+
+type DeliveryReceipt
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+  recipientId: ID!
+  deliveredAt: Time!
+}
+
+scalar join__FieldSet
+
+enum join__Graph {
+  AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
+  CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
+  NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
+}
+
+input JoinConversationInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  conversationId: ID!
+  role: ParticipantRole!
+}
+
+scalar link__Import
+
+enum link__Purpose {
+  """
+  `SECURITY` features provide metadata necessary to securely resolve fields.
+  """
+  SECURITY
+
+  """
+  `EXECUTION` features provide metadata necessary for operation execution.
+  """
+  EXECUTION
+}
+
+input LoginInput
+  @join__type(graph: AUTH_SERVICE)
+{
+  email: String!
+  password: String!
+}
+
+type Message
+  @join__type(graph: CHAT_SERVICE, key: "id")
+{
+  id: ID!
+  conversationId: ID!
+  conversation: Conversation!
+  senderId: ID
+  sender: User
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
+type MessageConnection
+  @join__type(graph: CHAT_SERVICE)
+{
+  edges: [MessageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type MessageEdge
+  @join__type(graph: CHAT_SERVICE)
+{
+  cursor: String!
+  node: Message!
+}
+
+enum MessageType
+  @join__type(graph: CHAT_SERVICE)
+{
+  TEXT @join__enumValue(graph: CHAT_SERVICE)
+  IMAGE @join__enumValue(graph: CHAT_SERVICE)
+  FILE @join__enumValue(graph: CHAT_SERVICE)
+  SYSTEM @join__enumValue(graph: CHAT_SERVICE)
+}
+
+type Mutation
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
+  login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
+  refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
+  logout: Boolean! @join__field(graph: AUTH_SERVICE)
+  requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
+  createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
+  endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  sendMessage(input: SendMessageInput!): Message! @join__field(graph: CHAT_SERVICE)
+  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt! @join__field(graph: CHAT_SERVICE)
+  sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @join__field(graph: CHAT_SERVICE)
+  joinConversation(input: JoinConversationInput!): Participant! @join__field(graph: CHAT_SERVICE)
+  leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
+  updatePresence(status: PresenceStatus!): PresenceUpdate! @join__field(graph: CHAT_SERVICE)
+  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @join__field(graph: CHAT_SERVICE)
+  markAsRead(id: ID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
+  markAllAsRead: Boolean! @join__field(graph: NOTIFICATION_SERVICE)
+}
+
+type NewMessage
+  @join__type(graph: CHAT_SERVICE)
+{
+  id: ID!
+  conversationId: ID!
+  senderId: ID!
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
+type NewNotification
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  type: PushNotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  createdAt: Time!
+}
+
+type Notification
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  type: PushNotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  readAt: Time
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type NotificationConnection
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  edges: [NotificationEdge!]!
+  pageInfo: PageInfo!
+}
+
+type NotificationDeleted
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+}
+
+type NotificationEdge
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  node: Notification!
+  cursor: String!
+}
+
+union NotificationEvent
+  @join__type(graph: NOTIFICATION_SERVICE)
+  @join__unionMember(graph: NOTIFICATION_SERVICE, member: "NewNotification")
+  @join__unionMember(graph: NOTIFICATION_SERVICE, member: "NotificationRead")
+  @join__unionMember(graph: NOTIFICATION_SERVICE, member: "NotificationDeleted")
+ = NewNotification | NotificationRead | NotificationDeleted
+
+type NotificationRead
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  readAt: Time!
+}
+
+type OnlineStatus
+  @join__type(graph: CHAT_SERVICE)
+{
+  isOnline: Boolean!
+  lastSeen: Time
+}
+
+type PageInfo
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Participant
+  @join__type(graph: CHAT_SERVICE)
+{
+  id: ID!
+  conversationId: ID!
+  conversation: Conversation!
+  userId: ID!
+  user: User!
+  userType: UserType!
+  role: ParticipantRole!
+  joinedAt: Time!
+  leftAt: Time
+  isActive: Boolean!
+}
+
+enum ParticipantRole
+  @join__type(graph: CHAT_SERVICE)
+{
+  MEMBER @join__enumValue(graph: CHAT_SERVICE)
+  OWNER @join__enumValue(graph: CHAT_SERVICE)
+  MODERATOR @join__enumValue(graph: CHAT_SERVICE)
+}
+
+enum PresenceStatus
+  @join__type(graph: CHAT_SERVICE)
+{
+  ONLINE @join__enumValue(graph: CHAT_SERVICE)
+  AWAY @join__enumValue(graph: CHAT_SERVICE)
+  BUSY @join__enumValue(graph: CHAT_SERVICE)
+  OFFLINE @join__enumValue(graph: CHAT_SERVICE)
+}
+
+type PresenceUpdate
+  @join__type(graph: CHAT_SERVICE)
+{
+  userId: ID!
+  status: PresenceStatus!
+  lastSeen: Time
+}
+
+enum PushNotificationType
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  NEW_MESSAGE @join__enumValue(graph: NOTIFICATION_SERVICE)
+  NEW_PRODUCT @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_UPDATE @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_CONFIRMED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_SHIPPED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_DELIVERED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ORDER_CANCELLED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  PAYMENT_SUCCESS @join__enumValue(graph: NOTIFICATION_SERVICE)
+  SYSTEM_ALERT @join__enumValue(graph: NOTIFICATION_SERVICE)
+}
+
+type Query
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  me: User @join__field(graph: AUTH_SERVICE)
+  user(id: ID!): User @join__field(graph: AUTH_SERVICE)
+  onlineUsers: [User!]! @join__field(graph: CHAT_SERVICE)
+  conversation(id: ID!): Conversation @join__field(graph: CHAT_SERVICE)
+  conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
+  waitingConversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
+  conversationMessages(conversationId: ID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
+  conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
+  listNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
+  listUnreadNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
+  getUnreadCount: UnreadCount! @join__field(graph: NOTIFICATION_SERVICE)
+  getTabCounts: TabCounts! @join__field(graph: NOTIFICATION_SERVICE)
+}
+
+type ReadReceipt
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+  readerId: ID!
+  readAt: Time!
+}
+
+input RegisterUserInput
+  @join__type(graph: AUTH_SERVICE)
+{
+  email: String!
+  password: String!
+  username: String!
+  firstName: String!
+  lastName: String!
+}
+
+enum Role
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE)
+  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE)
+}
+
+input SendDeliveryReceiptInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+}
+
+input SendMessageInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  conversationId: ID!
+  content: String!
+  messageType: MessageType = TEXT
+  replyToId: ID
+}
+
+input SendReadReceiptInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  messageId: ID!
+  conversationId: ID!
+}
+
+type Subscription
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  conversationEvents(conversationId: ID!): ConversationEvent! @join__field(graph: CHAT_SERVICE)
+  userEvents: UserEvent! @join__field(graph: CHAT_SERVICE)
+  notificationEvents: NotificationEvent! @join__field(graph: NOTIFICATION_SERVICE)
+}
+
+type TabCounts
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  all: Int!
+  unread: Int!
+  read: Int!
+}
+
+scalar Time
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+
+type TypingIndicator
+  @join__type(graph: CHAT_SERVICE)
+{
+  userId: ID!
+  conversationId: ID!
+  isTyping: Boolean!
+  timestamp: Time!
+}
+
+input TypingIndicatorInput
+  @join__type(graph: CHAT_SERVICE)
+{
+  conversationId: ID!
+  isTyping: Boolean!
+}
+
+type UnreadCount
+  @join__type(graph: NOTIFICATION_SERVICE)
+{
+  count: Int!
+}
+
+type User
+  @join__type(graph: AUTH_SERVICE, key: "id")
+  @join__type(graph: CHAT_SERVICE, key: "id")
+  @join__type(graph: NOTIFICATION_SERVICE, key: "id")
+{
+  id: ID!
+  email: String! @join__field(graph: AUTH_SERVICE)
+  firstName: String! @join__field(graph: AUTH_SERVICE)
+  lastName: String! @join__field(graph: AUTH_SERVICE)
+  isActive: Boolean! @join__field(graph: AUTH_SERVICE)
+  emailVerified: Boolean! @join__field(graph: AUTH_SERVICE)
+  createdAt: Time! @join__field(graph: AUTH_SERVICE)
+  updatedAt: Time! @join__field(graph: AUTH_SERVICE)
+  conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
+  onlineStatus: OnlineStatus @join__field(graph: CHAT_SERVICE)
+  notifications: [Notification!]! @join__field(graph: NOTIFICATION_SERVICE)
+  unreadCount: Int! @join__field(graph: NOTIFICATION_SERVICE)
+}
+
+union UserEvent
+  @join__type(graph: CHAT_SERVICE)
+  @join__unionMember(graph: CHAT_SERVICE, member: "PresenceUpdate")
+ = PresenceUpdate
+
+enum UserType
+  @join__type(graph: CHAT_SERVICE)
+{
+  USER @join__enumValue(graph: CHAT_SERVICE)
+  ADMIN @join__enumValue(graph: CHAT_SERVICE)
+}
