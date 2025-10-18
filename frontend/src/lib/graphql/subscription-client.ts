@@ -73,12 +73,22 @@ export function getSseSubscriptionClient(): SseClient {
       url: baseUrl,
       headers: () => {
         const currentToken = getAccessToken()
+        console.log('🔑 SSE Client - Getting auth token', {
+          hasToken: !!currentToken,
+          tokenLength: currentToken?.length || 0,
+          timestamp: new Date().toISOString(),
+        })
         return {
           ...(currentToken ? { Authorization: `Bearer ${currentToken}` } : {}),
         }
       },
       retryAttempts: 5,
       retry: async (retries) => {
+        console.log('🔄 SSE Client - Retrying connection', {
+          attempt: retries + 1,
+          maxAttempts: 5,
+          timestamp: new Date().toISOString(),
+        })
         // Exponential backoff: 1s, 2s, 4s, 8s, 16s
         await new Promise((resolve) =>
           setTimeout(resolve, 1000 * Math.pow(2, retries)),
@@ -87,6 +97,7 @@ export function getSseSubscriptionClient(): SseClient {
       onMessage: (message) => {
         console.log('📨 SSE Message Received:', {
           event: message.event,
+          data: message.data,
           timestamp: new Date().toISOString(),
         })
       },
@@ -109,13 +120,21 @@ export function getSseSubscriptionClient(): SseClient {
  * Call this when logging out or when token changes
  */
 export function closeSubscriptionClient(): void {
+  console.log('🔌 Closing subscription clients...', {
+    hasWsClient: wsSubscriptionClient !== null,
+    hasSseClient: sseSubscriptionClient !== null,
+    timestamp: new Date().toISOString(),
+  })
+
   if (wsSubscriptionClient) {
     wsSubscriptionClient.dispose()
     wsSubscriptionClient = null
+    console.log('✅ WebSocket client disposed')
   }
   if (sseSubscriptionClient) {
     sseSubscriptionClient.dispose()
     sseSubscriptionClient = null
+    console.log('✅ SSE client disposed')
   }
 }
 
@@ -124,6 +143,20 @@ export function closeSubscriptionClient(): void {
  * Useful when token changes (e.g., after refresh)
  */
 export function resetSubscriptionClient(): void {
+  console.log('🔄 Resetting subscription clients...', {
+    hadWsClient: wsSubscriptionClient !== null,
+    hadSseClient: sseSubscriptionClient !== null,
+    timestamp: new Date().toISOString(),
+  })
   closeSubscriptionClient()
+  console.log('✅ Subscription clients reset complete')
   // Next call to get*SubscriptionClient() will create new clients with updated token
+}
+
+/**
+ * Check if any subscription clients are currently active
+ * Useful for debugging and monitoring connection state
+ */
+export function hasActiveClients(): boolean {
+  return wsSubscriptionClient !== null || sseSubscriptionClient !== null
 }

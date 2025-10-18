@@ -62,7 +62,7 @@ tasks:
           echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
           bash ./scripts/format.sh {{.SERVICE}}
-          bash ./scripts/build.sh{{.SERVICE}}
+          bash ./scripts/build.sh {{.SERVICE}}
         fi
   push:
     desc: Push all services to the container registry
@@ -345,6 +345,7 @@ tasks:
       - bash ./scripts/compose-supergraph.sh
       - cd frontend && pnpm codegen
       - task: deps
+      - task: lint
 
   start_graphql_gateway:
     desc: Start GraphQL Gateway

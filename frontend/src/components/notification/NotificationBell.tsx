@@ -1,9 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  useNotificationSubscription,
-  useUnreadCount,
-} from '@/hooks/notifications'
+import { useUnreadCount } from '@/hooks/notifications'
 import { cn } from '@/lib/utils'
 import { useNotificationStore } from '@/store/notificationStore'
 import { Bell } from 'lucide-react'
@@ -12,9 +9,6 @@ import { NotificationDrawer } from './NotificationDrawer'
 export function NotificationBell() {
   const { data: unreadCount = 0 } = useUnreadCount()
   const toggleDrawer = useNotificationStore((state) => state.toggleDrawer)
-
-  // Subscribe to real-time notification events
-  useNotificationSubscription()
 
   const handleClick = () => {
     toggleDrawer(true)

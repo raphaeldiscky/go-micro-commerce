@@ -14,7 +14,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/shard"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -69,7 +68,6 @@ type notificationEventService struct {
 	sseHub           *sse.Hub
 	eventBus         eventbus.EventBus
 	instanceID       string
-	sharder          *shard.Sharder
 	logger           logger.Logger
 }
 
@@ -80,7 +78,6 @@ func NewNotificationEventService(
 	sseHub *sse.Hub,
 	eventBus eventbus.EventBus,
 	instanceID string,
-	sharder *shard.Sharder,
 	appLogger logger.Logger,
 ) NotificationEventService {
 	return &notificationEventService{
@@ -89,7 +86,6 @@ func NewNotificationEventService(
 		sseHub:           sseHub,
 		eventBus:         eventBus,
 		instanceID:       instanceID,
-		sharder:          sharder,
 		logger:           appLogger,
 	}
 }
@@ -697,7 +693,7 @@ func (s *notificationEventService) sendPushNotification(
 	return nil
 }
 
-// publishToRedis handles Redis publishing logic.
+// publishToRedis handles Redis publishing logic using sharded pub/sub.
 func (s *notificationEventService) publishToRedis(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -708,13 +704,8 @@ func (s *notificationEventService) publishToRedis(
 		Message: sseMsg,
 	}
 
-	// Use shard-based channel with consistent hashing
-	shardID, err := s.sharder.GetShardForUser(userID)
-	if err != nil {
-		return fmt.Errorf("failed to get shard for user: %w", err)
-	}
-
-	channelName := redis.NotificationShardChannel(shardID)
+	// Use user-based sharded channel for native Redis slot-based distribution
+	channelName := redis.NotificationUserChannel(userID)
 
 	baseEvent, err := eventbus.NewBaseEvent(
 		s.instanceID,
@@ -725,11 +716,12 @@ func (s *notificationEventService) publishToRedis(
 		return fmt.Errorf("failed to create base event: %w", err)
 	}
 
-	if err = s.eventBus.Publish(ctx, channelName, baseEvent); err != nil {
-		return fmt.Errorf("failed to publish to channel %s: %w", channelName, err)
+	// Use SPublish for sharded pub/sub (Redis 7.0+)
+	if err = s.eventBus.SPublish(ctx, channelName, baseEvent); err != nil {
+		return fmt.Errorf("failed to publish to sharded channel %s: %w", channelName, err)
 	}
 
-	s.logger.Debug("Published notification to Redis",
+	s.logger.Debug("Published notification to Redis sharded channel",
 		"user_id", userID,
 		"channel", channelName)
 

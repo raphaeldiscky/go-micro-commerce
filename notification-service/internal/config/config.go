@@ -8,13 +8,13 @@ import (
 type Config struct {
 	App            *AppConfig
 	HTTPServer     *HTTPServerConfig
+	SSEServer      *SSEServerConfig
 	SMTP           *SMTPConfig
 	Kafka          *KafkaConfig
 	Postgres       *PostgresConfig
 	Redis          *RedisConfig
 	Consul         *ConsulConfig
 	InboxProcessor *InboxProcessorConfig
-	Sharding       *ShardingConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -32,12 +32,12 @@ func LoadConfig() (*Config, error) {
 		App:            initAppConfig(),
 		SMTP:           initSMTPConfig(),
 		HTTPServer:     initHTTPServerConfig(),
+		SSEServer:      initSSEServerConfig(),
 		Postgres:       initPostgresConfig(),
 		Redis:          initRedisConfig(),
 		Kafka:          initKafkaConfig(),
 		Consul:         initConsulConfig(),
 		InboxProcessor: initInboxProcessorConfig(),
-		Sharding:       initShardingConfig(),
 	}
 
 	return cfg, nil

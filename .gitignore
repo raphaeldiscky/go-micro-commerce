@@ -32,6 +32,7 @@ BIN
 .env
 .env.local
 CLAUDE.md
+AGENTS.md
 
 # RSA keys for JWT signing
 **/keys/*.pem

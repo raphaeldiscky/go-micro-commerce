@@ -15,6 +15,17 @@ type EventBus interface {
 	// Publish publishes an event to a channel.
 	Publish(ctx context.Context, channel string, event Event) error
 
+	// SSubscribe subscribes to a specific sharded channel with a handler (Redis 7.0+).
+	// Sharded subscriptions use slot-based distribution for better scalability.
+	SSubscribe(channel string, handler EventHandler) error
+
+	// SUnsubscribe unsubscribes from a specific sharded channel.
+	SUnsubscribe(channel string) error
+
+	// SPublish publishes an event to a sharded channel (Redis 7.0+).
+	// Sharded pub/sub uses slot-based distribution for better scalability.
+	SPublish(ctx context.Context, channel string, event Event) error
+
 	// Close closes the event bus and releases resources.
 	Close() error
 }

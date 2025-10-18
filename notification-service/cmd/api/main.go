@@ -54,6 +54,10 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
+	if err = consulClient.RegisterSSE(cfg.App.Name+"-sse", cfg.SSEServer.Host, cfg.SSEServer.Port); err != nil {
+		appLogger.Errorf("Failed to register SSE server with Consul: %v", err)
+	}
+
 	return func() {
 		if deregErr := consulClient.Deregister(); deregErr != nil {
 			appLogger.Errorf("Failed to deregister from Consul: %v", deregErr)

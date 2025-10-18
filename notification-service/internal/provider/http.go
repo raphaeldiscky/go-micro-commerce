@@ -46,7 +46,6 @@ func SetupHTTP(
 		providers.SSEHub,
 		providers.EventBus,
 		providers.InstanceID,
-		providers.Sharder,
 		appLogger,
 	)
 
@@ -55,7 +54,7 @@ func SetupHTTP(
 		notificationService,
 		notificationEventService,
 	)
-	sseHandler := handler.NewNotificationSSEHandler(providers.SSEHub, appLogger)
+
 	appHandler := handler.NewAppHandler()
 
 	// Initialize GraphQL resolver
@@ -67,6 +66,6 @@ func SetupHTTP(
 
 	// Register routes
 	routes.SetupAppRoutes(e, appHandler)
-	routes.SetupNotificationRoutes(e, notificationHandler, sseHandler)
+	routes.SetupNotificationRoutes(e, notificationHandler)
 	routes.SetupGraphQLRoutes(e, cfg, graphResolver, appLogger)
 }

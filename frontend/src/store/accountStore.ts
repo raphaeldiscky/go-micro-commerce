@@ -9,7 +9,8 @@ import type {
 import { toast } from 'sonner'
 import { create } from 'zustand'
 
-const generateId = () => `address-${Date.now()}-${Math.random().toString(36).substring(7)}`
+const generateId = () =>
+  `address-${Date.now()}-${Math.random().toString(36).substring(7)}`
 
 // Mock data for demonstration
 const mockStats: AccountStats = {
@@ -68,7 +69,7 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
       // In a real app, this would call the API
       console.log('Updating profile:', data)
@@ -76,7 +77,8 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
       set({ isUpdating: false })
       toast.success('Profile updated successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update profile'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update profile'
       set({ isUpdating: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -87,7 +89,7 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500))
 
       // In a real app, this would call the API
       console.log('Changing password:', data)
@@ -95,7 +97,8 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
       set({ isUpdating: false })
       toast.success('Password changed successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to change password'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to change password'
       set({ isUpdating: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -107,12 +110,13 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       // Use mock data for now
       set({ addresses: mockAddresses, isLoading: false })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load addresses'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to load addresses'
       set({ isLoading: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -123,7 +127,7 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await new Promise((resolve) => setTimeout(resolve, 800))
 
       const newAddress: CustomerAddress = {
         id: generateId(),
@@ -138,7 +142,7 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
       let updatedAddresses = currentAddresses
 
       if (data.isDefault) {
-        updatedAddresses = currentAddresses.map(addr => ({
+        updatedAddresses = currentAddresses.map((addr) => ({
           ...addr,
           isDefault: false,
         }))
@@ -149,7 +153,8 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
       set({ addresses: updatedAddresses, isUpdating: false })
       toast.success('Address added successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add address'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to add address'
       set({ isUpdating: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -160,33 +165,34 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await new Promise((resolve) => setTimeout(resolve, 800))
 
       const currentAddresses = get().addresses
 
       // If this is set as default, unset other defaults
       let updatedAddresses = currentAddresses
       if (data.isDefault) {
-        updatedAddresses = currentAddresses.map(addr => ({
+        updatedAddresses = currentAddresses.map((addr) => ({
           ...addr,
           isDefault: false,
         }))
       }
 
-      updatedAddresses = updatedAddresses.map(addr =>
+      updatedAddresses = updatedAddresses.map((addr) =>
         addr.id === id
           ? {
               ...addr,
               ...data,
               updatedAt: new Date().toISOString(),
             }
-          : addr
+          : addr,
       )
 
       set({ addresses: updatedAddresses, isUpdating: false })
       toast.success('Address updated successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update address'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to update address'
       set({ isUpdating: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -197,21 +203,22 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500))
+      await new Promise((resolve) => setTimeout(resolve, 500))
 
       const currentAddresses = get().addresses
-      const addressToDelete = currentAddresses.find(addr => addr.id === id)
+      const addressToDelete = currentAddresses.find((addr) => addr.id === id)
 
       if (addressToDelete?.isDefault) {
         throw new Error('Cannot delete default address')
       }
 
-      const updatedAddresses = currentAddresses.filter(addr => addr.id !== id)
+      const updatedAddresses = currentAddresses.filter((addr) => addr.id !== id)
 
       set({ addresses: updatedAddresses, isUpdating: false })
       toast.success('Address deleted successfully')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to delete address'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to delete address'
       set({ isUpdating: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -222,10 +229,10 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600))
+      await new Promise((resolve) => setTimeout(resolve, 600))
 
       const currentAddresses = get().addresses
-      const updatedAddresses = currentAddresses.map(addr => ({
+      const updatedAddresses = currentAddresses.map((addr) => ({
         ...addr,
         isDefault: addr.id === id,
         updatedAt: new Date().toISOString(),
@@ -234,7 +241,8 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
       set({ addresses: updatedAddresses, isUpdating: false })
       toast.success('Default address updated')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to set default address'
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to set default address'
       set({ isUpdating: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -246,12 +254,15 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 400))
+      await new Promise((resolve) => setTimeout(resolve, 400))
 
       // Use mock data for now
       set({ stats: mockStats, isLoading: false })
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to load account statistics'
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to load account statistics'
       set({ isLoading: false, error: errorMessage })
       toast.error(errorMessage)
     }
@@ -264,7 +275,10 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
 // Selectors for easier access
 export const useAccountStats = () => useAccountStore((state) => state.stats)
-export const useAccountAddresses = () => useAccountStore((state) => state.addresses)
-export const useAccountLoading = () => useAccountStore((state) => state.isLoading)
-export const useAccountUpdating = () => useAccountStore((state) => state.isUpdating)
+export const useAccountAddresses = () =>
+  useAccountStore((state) => state.addresses)
+export const useAccountLoading = () =>
+  useAccountStore((state) => state.isLoading)
+export const useAccountUpdating = () =>
+  useAccountStore((state) => state.isUpdating)
 export const useAccountError = () => useAccountStore((state) => state.error)

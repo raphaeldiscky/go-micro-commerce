@@ -4,6 +4,7 @@ package middleware
 import (
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -147,10 +148,8 @@ func (m *AuthMiddleware) RequireRole(requiredRole string) echo.MiddlewareFunc {
 			roles := echoutils.GetRolesFromContext(c)
 
 			// Check if user has the required role
-			for _, role := range roles {
-				if role == requiredRole {
-					return next(c)
-				}
+			if slices.Contains(roles, requiredRole) {
+				return next(c)
 			}
 
 			return echo.NewHTTPError(

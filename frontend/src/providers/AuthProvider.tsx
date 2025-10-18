@@ -6,11 +6,7 @@ import {
 import { useCartStore } from '@/store/cartStore'
 import { useEffect, useRef } from 'react'
 
-export default function AuthInitializer({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuthStatus = useAuthStore((state) => state.checkAuthStatus)
   const user = useAuthStore((state) => state.user)
   const hasInitialized = useAuthInitialized()

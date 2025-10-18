@@ -1,8 +1,4 @@
-import type {
-  MockProduct,
-  PaymentMethod,
-  ShippingOption,
-} from '@/types/cart'
+import type { MockProduct, PaymentMethod, ShippingOption } from '@/types/cart'
 
 // Mock products that match the existing Product structure
 export const mockProducts: Array<MockProduct> = [
@@ -234,7 +230,6 @@ export const findProductById = (id: string): MockProduct | undefined => {
   return mockProducts.find((product) => product.id === id)
 }
 
-
 export const findShippingOptionById = (
   id: string,
 ): ShippingOption | undefined => {
@@ -266,4 +261,3 @@ export const formatCurrency = (amount: number): string => {
     currency: 'USD',
   }).format(amount)
 }
-

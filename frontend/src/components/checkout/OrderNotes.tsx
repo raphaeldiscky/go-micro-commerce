@@ -34,7 +34,8 @@ export function OrderNotes() {
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Any special requests or delivery instructions you'd like us to know about.
+          Any special requests or delivery instructions you'd like us to know
+          about.
         </p>
       </CardContent>
     </Card>
