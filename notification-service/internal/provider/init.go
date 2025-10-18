@@ -116,7 +116,7 @@ func SetupGlobal(
 		"using_cluster", true)
 
 	// Initialize SubscriptionManager for GraphQL subscriptions
-	subscriptionManager := subscription.NewManager(eventBus, appLogger)
+	subscriptionManager := subscription.NewManager(eventBus, sseHub, appLogger)
 
 	return &Providers{
 		KafkaAdmin:          kafkaAdmin,

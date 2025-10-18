@@ -8,24 +8,19 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
 
 // Hub manages SSE connections and broadcasts messages.
 type Hub struct {
-	connections         map[uuid.UUID]*Connection               // All connections by ID
-	userConns           map[uuid.UUID]map[uuid.UUID]*Connection // User connections by user ID
-	register            chan *Connection
-	unregister          chan *Connection
-	broadcast           chan *BroadcastRequest
-	mutex               sync.RWMutex
-	logger              logger.Logger
-	done                chan struct{}
-	eventBus            eventbus.EventBus
-	instanceID          string
-	shardChannelBuilder func(int) string
-	shardCount          int
+	connections map[uuid.UUID]*Connection               // All connections by ID
+	userConns   map[uuid.UUID]map[uuid.UUID]*Connection // User connections by user ID
+	register    chan *Connection
+	unregister  chan *Connection
+	broadcast   chan *BroadcastRequest
+	mutex       sync.RWMutex
+	logger      logger.Logger
+	done        chan struct{}
 }
 
 // BroadcastRequest represents a request to broadcast a message.
@@ -335,65 +330,4 @@ func (h *Hub) closeAllConnections() {
 func (h *Hub) shutdown() {
 	h.logger.Info("SSE Hub shutdown initiated")
 	h.closeAllConnections()
-}
-
-// SetEventBus configures the hub to receive events from other instances via Redis pub/sub.
-// Uses shard-based channels with application-layer filtering.
-// The eventHandler function should parse service-specific events and call BroadcastToUser or BroadcastToAll.
-func (h *Hub) SetEventBus(
-	eventBus eventbus.EventBus,
-	instanceID string,
-	shardChannelBuilder func(int) string,
-	shardCount int,
-	eventHandler eventbus.EventHandler,
-) error {
-	h.eventBus = eventBus
-	h.instanceID = instanceID
-	h.shardChannelBuilder = shardChannelBuilder
-	h.shardCount = shardCount
-
-	// Subscribe to all shard channels at once with the custom handler
-	return h.subscribeToAllShards(eventHandler)
-}
-
-// subscribeToAllShards subscribes to all shard channels with a wrapper handler that filters by instance ID.
-func (h *Hub) subscribeToAllShards(eventHandler eventbus.EventHandler) error {
-	h.logger.Info("Subscribing to all shard channels", "shard_count", h.shardCount)
-
-	// Create a wrapper handler that filters by instance ID
-	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
-		// Skip events from our own instance
-		if event.GetSourceInstanceID() == h.instanceID {
-			h.logger.Debug("Skipping event from own instance",
-				"instance_id", h.instanceID,
-				"event_type", event.GetType())
-
-			return nil
-		}
-
-		h.logger.Debug("Received event from another instance",
-			"source_instance_id", event.GetSourceInstanceID(),
-			"event_type", event.GetType())
-
-		// Delegate to service-specific event handler
-		return eventHandler(ctx, event)
-	}
-
-	// Subscribe to all channels with the wrapped handler
-	for i := range h.shardCount {
-		channel := h.shardChannelBuilder(i)
-		if err := h.eventBus.Subscribe(channel, wrappedHandler); err != nil {
-			h.logger.Error("Failed to subscribe to shard channel",
-				"shard_id", i,
-				"channel", channel,
-				"error", err)
-
-			return err
-		}
-	}
-
-	h.logger.Info("Successfully subscribed to all shard channels",
-		"shard_count", h.shardCount)
-
-	return nil
 }

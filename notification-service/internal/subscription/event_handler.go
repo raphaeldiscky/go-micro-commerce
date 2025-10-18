@@ -79,8 +79,17 @@ func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
 	// Convert to GraphQL NewNotification event using mapper
 	graphQLEvent := mapper.MapToGraphQLNewNotificationFromDTO(&notifDTO)
 
-	// Notify local subscribers
+	// Notify GraphQL local subscribers
 	h.manager.NotifyLocalSubscribers(createdEvent.UserID, graphQLEvent)
+
+	// Broadcast to SSE connections if SSE hub is available
+	if h.manager.sseHub != nil {
+		if err := h.manager.sseHub.BroadcastToUser(createdEvent.UserID, createdEvent.Message); err != nil {
+			h.logger.Warn("Failed to broadcast to SSE connections",
+				"user_id", createdEvent.UserID,
+				"error", err)
+		}
+	}
 
 	h.logger.Debug("Processed notification created event",
 		"user_id", createdEvent.UserID,
