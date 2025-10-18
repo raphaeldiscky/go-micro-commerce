@@ -130,6 +130,9 @@ func (s *subscriber) processMessages(ctx context.Context) {
 
 	ch := s.pubsub.Channel(redis.WithChannelSize(s.config.ChannelBufferSize))
 
+	s.logger.Info("Redis subscriber message processing started",
+		"buffer_size", s.config.ChannelBufferSize)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -137,12 +140,21 @@ func (s *subscriber) processMessages(ctx context.Context) {
 			return
 		case msg, ok := <-ch:
 			if !ok {
-				s.logger.Info("Channel closed, stopping message processing")
+				s.logger.Warn(
+					"Redis pubsub channel closed unexpectedly, stopping message processing",
+				)
+
 				return
 			}
 
+			s.logger.Debug("Received message from Redis",
+				"channel", msg.Channel,
+				"pattern", msg.Pattern,
+				"payload_size", len(msg.Payload))
+
 			if err := s.handleMessage(ctx, msg); err != nil {
-				s.logger.Errorf("Failed to handle message: %v", err)
+				s.logger.Errorf("Failed to handle message from Redis channel %s: %v",
+					msg.Channel, err)
 			}
 		}
 	}
@@ -174,18 +186,32 @@ func (s *subscriber) handleMessage(
 		s.mu.RUnlock()
 
 		if !exists {
+			s.logger.Error("No handler found for Redis channel",
+				"channel", redisMsg.Channel,
+				"pattern", redisMsg.Pattern)
+
 			return fmt.Errorf("no handler found for channel: %s", redisMsg.Channel)
 		}
 	}
+
+	s.logger.Debug("Parsing Redis message", "channel", redisMsg.Channel)
 
 	message, err := FromJSON([]byte(redisMsg.Payload))
 	if err != nil {
 		return fmt.Errorf("failed to parse message: %w", err)
 	}
 
+	s.logger.Debug("Calling message handler",
+		"channel", redisMsg.Channel,
+		"message_id", message.GetMessageID())
+
 	if handlerErr := handler(ctx, message); handlerErr != nil {
 		return fmt.Errorf("handler failed for message %s: %w", message.GetMessageID(), handlerErr)
 	}
+
+	s.logger.Debug("Successfully processed Redis message",
+		"channel", redisMsg.Channel,
+		"message_id", message.GetMessageID())
 
 	return nil
 }
@@ -228,6 +254,10 @@ func (s *subscriber) SSubscribe(
 	// Create new sharded subscription
 	s.pubsub = s.client.SSubscribe(ctx, channels...)
 	s.running = true
+
+	s.logger.Info("Created new Redis sharded subscription",
+		"channels", channels,
+		"handler_count", len(s.handlers))
 
 	go s.processMessages(ctx)
 

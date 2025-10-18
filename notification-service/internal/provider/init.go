@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
@@ -62,6 +63,19 @@ func SetupGlobal(
 		return nil, err
 	}
 
+	appLogger.Info("Redis Cluster connection established",
+		"addrs", cfg.Redis.Addrs,
+		"cluster_mode", true)
+
+	// Verify Redis connection with ping
+	if err = redisClusterClient.Ping(ctx).Err(); err != nil {
+		appLogger.Error("Redis Cluster ping failed", "error", err)
+
+		return nil, fmt.Errorf("redis cluster ping failed: %w", err)
+	}
+
+	appLogger.Info("Redis Cluster health check passed")
+
 	dataStore := repository.NewDataStore(pgPool)
 
 	// Setup kafka admin
@@ -85,6 +99,9 @@ func SetupGlobal(
 	redisPublisher := redis.NewPublisher(redisClusterClient, pubSubConfig)
 	redisSubscriber := redis.NewSubscriber(redisClusterClient, pubSubConfig, appLogger)
 
+	appLogger.Info("Redis Pub/Sub components initialized",
+		"buffer_size", pubSubConfig.ChannelBufferSize)
+
 	// Generate instance ID
 	instanceID := uuid.New().String()
 	eventBus := eventbus.NewRedisEventBus(
@@ -95,7 +112,8 @@ func SetupGlobal(
 	)
 
 	appLogger.Info("EventBus initialized with Redis sharded pub/sub",
-		"instance_id", instanceID)
+		"instance_id", instanceID,
+		"using_cluster", true)
 
 	// Initialize SubscriptionManager for GraphQL subscriptions
 	subscriptionManager := subscription.NewManager(eventBus, appLogger)
