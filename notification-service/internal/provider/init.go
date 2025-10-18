@@ -116,7 +116,12 @@ func SetupGlobal(
 		"using_cluster", true)
 
 	// Initialize SubscriptionManager for GraphQL subscriptions
-	subscriptionManager := subscription.NewManager(eventBus, appLogger)
+	// Note: Subscription manager handles both GraphQL subscriptions AND SSE broadcasting
+	// via its event handler (subscription/event_handler.go), eliminating duplicate Redis subscriptions
+	subscriptionManager := subscription.NewManager(eventBus, sseHub, appLogger)
+
+	appLogger.Info("Subscription manager initialized for GraphQL and SSE cross-instance messaging",
+		"instance_id", instanceID)
 
 	return &Providers{
 		KafkaAdmin:          kafkaAdmin,

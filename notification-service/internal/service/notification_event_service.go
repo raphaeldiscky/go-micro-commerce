@@ -22,8 +22,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/subscription"
 )
 
 // NotificationRequestEvent is the envelope for notification request events.
@@ -665,7 +665,7 @@ func (s *notificationEventService) sendPushNotification(
 	notifDTO := mapper.MapToNotificationResponse(savedNotif)
 
 	// Create SSE message with DTO (has proper json tags)
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
+	sseMsg, err := sse.NewMessage(subscription.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return fmt.Errorf("failed to create SSE message: %w", err)
 	}
@@ -699,7 +699,7 @@ func (s *notificationEventService) publishToRedis(
 	userID uuid.UUID,
 	sseMsg *sse.Message,
 ) error {
-	redisEvent := &notification.CreatedEvent{
+	redisEvent := &subscription.NotificationCreatedEvent{
 		UserID:  userID,
 		Message: sseMsg,
 	}
@@ -709,7 +709,7 @@ func (s *notificationEventService) publishToRedis(
 
 	baseEvent, err := eventbus.NewBaseEvent(
 		s.instanceID,
-		notification.TypeNotificationCreated,
+		subscription.TypeNotificationCreated,
 		redisEvent,
 	)
 	if err != nil {
@@ -769,7 +769,7 @@ func (s *notificationEventService) CreateAndBroadcastNotification(
 	notifDTO := mapper.MapToNotificationResponse(savedNotif)
 
 	// Create SSE message with DTO (has proper json tags)
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
+	sseMsg, err := sse.NewMessage(subscription.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSE message: %w", err)
 	}
