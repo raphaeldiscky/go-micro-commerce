@@ -289,6 +289,7 @@ func (s *subscriber) processShardedMessages(
 				"channel",
 				channel,
 			)
+
 			return
 		case msg, ok := <-ch:
 			if !ok {
