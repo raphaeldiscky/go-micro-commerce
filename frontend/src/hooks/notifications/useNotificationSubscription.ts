@@ -1,6 +1,9 @@
 import { QUERY_KEY } from '@/constants/query-key'
 import { NOTIFICATION_EVENTS_SUBSCRIPTION } from '@/lib/graphql'
-import { getSseSubscriptionClient } from '@/lib/graphql/subscription-client'
+import {
+  closeSubscriptionClient,
+  getSseSubscriptionClient,
+} from '@/lib/graphql/subscription-client'
 import type { NotificationEvent } from '@/types/__generated__/graphql'
 import { useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
@@ -122,6 +125,10 @@ export function useNotificationSubscription(enabled = true) {
         unsubscribeRef.current = null
         isSubscribedRef.current = false
         console.log('🔕 Notification subscription cleanup (component unmount)')
+
+        // Force client recreation on next mount by disposing the singleton
+        // This ensures fresh connection after page refresh/navigation
+        closeSubscriptionClient()
       }
     }
     // Only depend on 'enabled', not 'queryClient'

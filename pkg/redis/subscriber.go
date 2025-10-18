@@ -287,6 +287,21 @@ func (s *subscriber) Unsubscribe(channels ...string) error {
 
 	s.logger.Infof("Unsubscribed from channels: %v", channels)
 
+	// If no more channels subscribed, close the connection to prevent stale state
+	// This ensures fresh connections when resubscribing after all users disconnect
+	if len(s.handlers) == 0 {
+		s.logger.Info("No more active subscriptions, closing pubsub connection")
+
+		if closeErr := s.pubsub.Close(); closeErr != nil {
+			s.logger.Error("Failed to close pubsub connection", "error", closeErr)
+		}
+
+		s.pubsub = nil
+		s.running = false
+
+		s.logger.Info("Pubsub connection closed, ready for fresh subscription")
+	}
+
 	return nil
 }
 
@@ -310,6 +325,21 @@ func (s *subscriber) SUnsubscribe(channels ...string) error {
 	}
 
 	s.logger.Infof("Unsubscribed from sharded channels: %v", channels)
+
+	// If no more channels subscribed, close the connection to prevent stale state
+	// This ensures fresh connections when resubscribing after all users disconnect
+	if len(s.handlers) == 0 {
+		s.logger.Info("No more active subscriptions, closing pubsub connection")
+
+		if closeErr := s.pubsub.Close(); closeErr != nil {
+			s.logger.Error("Failed to close pubsub connection", "error", closeErr)
+		}
+
+		s.pubsub = nil
+		s.running = false
+
+		s.logger.Info("Pubsub connection closed, ready for fresh subscription")
+	}
 
 	return nil
 }

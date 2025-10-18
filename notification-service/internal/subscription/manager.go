@@ -116,10 +116,10 @@ func (m *Manager) SubscribeToNotifications(
 // unsubscribeFromUser removes a subscriber from user notification events.
 func (m *Manager) unsubscribeFromUser(userID uuid.UUID, subID string) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	userSub, exists := m.userSubs[userID]
 	if !exists {
+		m.mu.Unlock()
 		return
 	}
 
@@ -139,8 +139,14 @@ func (m *Manager) unsubscribeFromUser(userID uuid.UUID, subID string) {
 
 		m.logger.Info("Removed user notification subscription group (no subscribers left)",
 			"user_id", userID)
+	}
 
-		// Unsubscribe from Redis
+	// Unlock before calling unsubscribeFromRedis to avoid deadlock
+	// (unsubscribeFromRedis needs to acquire the same lock)
+	m.mu.Unlock()
+
+	// Unsubscribe from Redis after releasing the lock
+	if subscriberCount == 0 {
 		if err := m.unsubscribeFromRedis(userID); err != nil {
 			m.logger.Error("Failed to unsubscribe from Redis for user",
 				"user_id", userID,
