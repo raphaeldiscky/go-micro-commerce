@@ -4,6 +4,7 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
+import { Toaster } from '../components/ui/sonner'
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { AuthProvider, NotificationProvider } from '../providers'
 
@@ -33,6 +34,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
               TanStackQueryDevtools,
             ]}
           />
+          <Toaster />
         </div>
       </NotificationProvider>
     </AuthProvider>

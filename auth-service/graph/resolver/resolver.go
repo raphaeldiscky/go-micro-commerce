@@ -2,6 +2,7 @@
 package resolver
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/service"
@@ -13,14 +14,22 @@ import (
 
 // Resolver is the root resolver for GraphQL queries and mutations.
 type Resolver struct {
-	authService service.AuthService
-	logger      logger.Logger
+	authService    service.AuthService
+	addressService service.AddressService
+	validator      *validator.Validate
+	logger         logger.Logger
 }
 
 // NewResolver creates a new GraphQL resolver instance with the required dependencies.
-func NewResolver(authService service.AuthService, appLogger logger.Logger) *Resolver {
+func NewResolver(
+	authService service.AuthService,
+	addressService service.AddressService,
+	appLogger logger.Logger,
+) *Resolver {
 	return &Resolver{
-		authService: authService,
-		logger:      appLogger,
+		authService:    authService,
+		addressService: addressService,
+		validator:      validator.New(),
+		logger:         appLogger,
 	}
 }

@@ -1,12 +1,12 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import type { CustomerAddress } from '@/types/account'
 import { Edit, MapPin, Trash2 } from 'lucide-react'
+import type { Address } from '../../types/__generated__/graphql'
 
 interface AddressCardProps {
-  address: CustomerAddress
-  onEdit: (address: CustomerAddress) => void
+  address: Address
+  onEdit: (address: Address) => void
   onDelete: (id: string) => void
   onSetDefault: (id: string) => void
   isUpdating: boolean
@@ -57,27 +57,20 @@ export function AddressCard({
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="font-medium">{address.recipientName}</p>
+          <p className="font-medium">{address.receiverName}</p>
           <p className="text-sm text-muted-foreground">
-            {address.street}
-            {address.apartment && `, ${address.apartment}`}
+            {address.addressLine1}
+            {address.addressLine2 && `, ${address.addressLine2}`}
           </p>
           <p className="text-sm text-muted-foreground">
             {address.city}, {address.state} {address.postalCode}
           </p>
-          <p className="text-sm text-muted-foreground">{address.country}</p>
+          <p className="text-sm text-muted-foreground">{address.countryCode}</p>
         </div>
 
-        {address.phone && (
+        {address.note && (
           <div className="text-sm">
-            <span className="font-medium">Phone:</span> {address.phone}
-          </div>
-        )}
-
-        {address.instructions && (
-          <div className="text-sm">
-            <span className="font-medium">Instructions:</span>{' '}
-            {address.instructions}
+            <span className="font-medium">Note:</span> {address.note}
           </div>
         )}
 

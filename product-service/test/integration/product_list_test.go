@@ -47,14 +47,13 @@ func (s *ProductListTestSuite) TestGetProducts() {
 
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	var productList dto.WebResponse[[]productDto.ProductResponse, dto.OffsetPagination]
+	var productList dto.WebResponse[[]productDto.ProductResponse, dto.CursorPagination]
 
 	err = s.parseResponse(resp, &productList)
 	s.Require().NoError(err)
 
 	s.Equal("success", productList.Message)
 	s.NotNil(productList.Pagination)
-	s.Equal(int64(3), productList.Pagination.TotalItem)
 	s.Len(productList.Data, 3)
 }
 
@@ -75,29 +74,48 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 		}
 	}
 
-	// Test pagination - using limit=2&page=2 (second page with 2 items)
-	resp, err := s.makeRequest("GET", "/v1?limit=2&page=2", nil)
+	// First page - get first 2 items
+	resp, err := s.makeRequest("GET", "/v1?limit=2", nil)
+	s.Require().NoError(err)
+
+	var firstPage dto.WebResponse[[]productDto.ProductResponse, dto.CursorPagination]
+
+	err = s.parseResponse(resp, &firstPage)
+	s.Require().NoError(err)
+
+	if err = resp.Body.Close(); err != nil {
+		s.T().Errorf("failed to close response body: %v", err)
+	}
+
+	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Equal("success", firstPage.Message)
+	s.NotNil(firstPage.Pagination)
+	s.Len(firstPage.Data, 2)
+	s.True(firstPage.Pagination.HasNext)
+	s.NotEmpty(firstPage.Pagination.NextCursor)
+
+	// Second page - use cursor from first page
+	nextCursor := firstPage.Pagination.NextCursor
+	resp2, err := s.makeRequest("GET", fmt.Sprintf("/v1?limit=2&next_cursor=%s", nextCursor), nil)
 	s.Require().NoError(err)
 
 	defer func() {
-		if cerr := resp.Body.Close(); cerr != nil {
+		if cerr := resp2.Body.Close(); cerr != nil {
 			s.T().Errorf("failed to close response body: %v", cerr)
 		}
 	}()
 
-	s.Equal(http.StatusOK, resp.StatusCode)
+	s.Equal(http.StatusOK, resp2.StatusCode)
 
-	var productList dto.WebResponse[[]productDto.ProductResponse, dto.OffsetPagination]
+	var secondPage dto.WebResponse[[]productDto.ProductResponse, dto.CursorPagination]
 
-	err = s.parseResponse(resp, &productList)
+	err = s.parseResponse(resp2, &secondPage)
 	s.Require().NoError(err)
 
-	s.Equal("success", productList.Message)
-	s.NotNil(productList.Pagination)
-	s.Equal(int64(5), productList.Pagination.TotalItem)
-	s.Equal(int64(2), productList.Pagination.Size)
-	s.Equal(int64(2), productList.Pagination.Page)
-	s.Len(productList.Data, 2)
+	s.Equal("success", secondPage.Message)
+	s.NotNil(secondPage.Pagination)
+	s.Equal(int64(2), secondPage.Pagination.Limit)
+	s.Len(secondPage.Data, 2)
 }
 
 // TestProductListSuite runs the product listing test suite.

@@ -11,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import type { ProfileFormValues } from '@/schemas/account'
+import { passwordSchema, profileSchema } from '@/schemas/account'
 import { useAccountStore } from '@/store/accountStore'
 import { useUser } from '@/store/authStore'
 import { useForm } from '@tanstack/react-form'
@@ -26,12 +28,15 @@ export function ProfileSection() {
 
   const [activeTab, setActiveTab] = useState('profile')
 
-  // Profile form
+  const defaultValues: ProfileFormValues = {
+    firstName: user?.firstName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+  }
   const profileForm = useForm({
-    defaultValues: {
-      firstName: user?.firstName || '',
-      lastName: user?.lastName || '',
-      email: user?.email || '',
+    defaultValues,
+    validators: {
+      onChange: profileSchema,
     },
     onSubmit: async ({ value }) => {
       try {
@@ -50,6 +55,9 @@ export function ProfileSection() {
       currentPassword: '',
       newPassword: '',
       confirmPassword: '',
+    },
+    validators: {
+      onChange: passwordSchema,
     },
     onSubmit: async ({ value }) => {
       try {

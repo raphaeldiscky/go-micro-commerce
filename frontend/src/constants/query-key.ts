@@ -121,4 +121,17 @@ export const QUERY_KEY = {
       process: () => [...QUERY_KEY.checkout.payment.all(), 'process'] as const,
     },
   },
+
+  /**
+   * Address query keys
+   */
+  address: {
+    all: ['address'] as const,
+    lists: () => [...QUERY_KEY.address.all, 'list'] as const,
+    list: (limit: number, cursor?: string) =>
+      [...QUERY_KEY.address.lists(), { limit, cursor }] as const,
+    details: () => [...QUERY_KEY.address.all, 'detail'] as const,
+    detail: (id: string) => [...QUERY_KEY.address.details(), id] as const,
+    default: () => [...QUERY_KEY.address.all, 'default'] as const,
+  },
 } as const

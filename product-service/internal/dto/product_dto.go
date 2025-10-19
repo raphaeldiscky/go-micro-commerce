@@ -38,6 +38,6 @@ type ProductResponse struct {
 
 // GetProductsRequest represents pagination and filtering parameters.
 type GetProductsRequest struct {
-	Limit int64 `json:"limit" validate:"min=1,max=100"`
-	Page  int64 `json:"page"  validate:"min=1"`
+	Limit      int64  `json:"limit"                 validate:"min=1,max=100"`
+	NextCursor string `json:"next_cursor,omitempty"`
 }

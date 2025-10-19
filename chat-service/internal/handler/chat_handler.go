@@ -95,16 +95,16 @@ func (h *ChatHandler) GetUserConversations(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	))
 
-	afterCursor := c.QueryParam("after")
-	beforeCursor := c.QueryParam("before")
+	nextCursor := c.QueryParam("next_cursor")
+	prevCursor := c.QueryParam("prev_cursor")
 
 	result, paging, err := h.chatService.GetUserConversationsWithCursor(
 		c.Request().Context(),
 		userID,
 		userType,
 		limit,
-		afterCursor,
-		beforeCursor,
+		nextCursor,
+		prevCursor,
 	)
 	if err != nil {
 		return err
@@ -132,16 +132,16 @@ func (h *ChatHandler) GetMessages(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	))
 
-	afterCursor := c.QueryParam("after")
-	beforeCursor := c.QueryParam("before")
+	nextCursor := c.QueryParam("next_cursor")
+	prevCursor := c.QueryParam("prev_cursor")
 
 	messages, paging, err := h.chatService.GetConversationMessagesWithCursor(
 		c.Request().Context(),
 		conversationID,
 		userID,
 		limit,
-		afterCursor,
-		beforeCursor,
+		nextCursor,
+		prevCursor,
 	)
 	if err != nil {
 		return err

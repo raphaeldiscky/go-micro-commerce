@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { DialogFooter } from '@/components/ui/dialog'
+import { FormField } from '@/components/ui/form-field'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -10,12 +10,14 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import type { AddressRequest, CustomerAddress } from '@/types/account'
+import type { AddressFormValues } from '@/schemas/account'
+import { addressSchema } from '@/schemas/account'
+import type { Address, CreateAddressInput } from '@/types/__generated__/graphql'
 import { useForm } from '@tanstack/react-form'
 
 interface AddressFormProps {
-  address?: CustomerAddress
-  onSubmit: (data: AddressRequest) => void
+  address?: Address
+  onSubmit: (data: CreateAddressInput) => void
   onCancel: () => void
   isSubmitting: boolean
 }
@@ -26,18 +28,22 @@ export function AddressForm({
   onCancel,
   isSubmitting,
 }: AddressFormProps) {
+  const defaultValues: AddressFormValues = {
+    receiverName: address?.receiverName || '',
+    addressLine1: address?.addressLine1 || '',
+    addressLine2: address?.addressLine2 || '',
+    city: address?.city || '',
+    state: address?.state || '',
+    postalCode: address?.postalCode || '',
+    countryCode: address?.countryCode || 'US',
+    note: address?.note || '',
+    isDefault: address?.isDefault || false,
+  }
+
   const form = useForm({
-    defaultValues: {
-      recipientName: address?.recipientName || '',
-      street: address?.street || '',
-      apartment: address?.apartment || '',
-      city: address?.city || '',
-      state: address?.state || '',
-      postalCode: address?.postalCode || '',
-      country: address?.country || 'United States',
-      phone: address?.phone || '',
-      instructions: address?.instructions || '',
-      isDefault: address?.isDefault || false,
+    defaultValues,
+    validators: {
+      onChange: addressSchema,
     },
     onSubmit: ({ value }) => {
       onSubmit(value)
@@ -53,74 +59,99 @@ export function AddressForm({
       }}
       className="space-y-4"
     >
-      <form.Field name="recipientName">
+      <form.Field name="receiverName">
         {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor="recipientName">Recipient Name</Label>
-            <Input
-              id="recipientName"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Full name"
-            />
-          </div>
+          <FormField field={field} label="Receiver Name" required>
+            {(f) => (
+              <Input
+                id={f.name}
+                value={f.state.value}
+                onChange={(e) => f.handleChange(e.target.value)}
+                onBlur={f.handleBlur}
+                placeholder="Full name"
+                className={
+                  f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                }
+              />
+            )}
+          </FormField>
         )}
       </form.Field>
 
-      <form.Field name="street">
+      <form.Field name="addressLine1">
         {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor="street">Street Address</Label>
-            <Input
-              id="street"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="123 Main Street"
-            />
-          </div>
+          <FormField field={field} label="Address Line 1" required>
+            {(f) => (
+              <Input
+                id={f.name}
+                value={f.state.value}
+                onChange={(e) => f.handleChange(e.target.value)}
+                onBlur={f.handleBlur}
+                placeholder="123 Main Street"
+                className={
+                  f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                }
+              />
+            )}
+          </FormField>
         )}
       </form.Field>
 
-      <form.Field name="apartment">
+      <form.Field name="addressLine2">
         {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor="apartment">Apartment, Suite, Unit (Optional)</Label>
-            <Input
-              id="apartment"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Apt 4B, Suite 200"
-            />
-          </div>
+          <FormField field={field} label="Apartment, Suite, Unit">
+            {(f) => (
+              <Input
+                id={f.name}
+                value={f.state.value}
+                onChange={(e) => f.handleChange(e.target.value)}
+                onBlur={f.handleBlur}
+                placeholder="Apt 4B, Suite 200"
+                className={
+                  f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                }
+              />
+            )}
+          </FormField>
         )}
       </form.Field>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <form.Field name="city">
           {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor="city">City</Label>
-              <Input
-                id="city"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="New York"
-              />
-            </div>
+            <FormField field={field} label="City" required>
+              {(f) => (
+                <Input
+                  id={f.name}
+                  value={f.state.value}
+                  onChange={(e) => f.handleChange(e.target.value)}
+                  onBlur={f.handleBlur}
+                  placeholder="New York"
+                  className={
+                    f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                  }
+                />
+              )}
+            </FormField>
           )}
         </form.Field>
 
         <form.Field name="state">
           {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor="state">State/Province</Label>
-              <Input
-                id="state"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="NY"
-              />
-            </div>
+            <FormField field={field} label="State/Province">
+              {(f) => (
+                <Input
+                  id={f.name}
+                  value={f.state.value}
+                  onChange={(e) => f.handleChange(e.target.value)}
+                  onBlur={f.handleBlur}
+                  placeholder="NY"
+                  className={
+                    f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                  }
+                />
+              )}
+            </FormField>
           )}
         </form.Field>
       </div>
@@ -128,88 +159,71 @@ export function AddressForm({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <form.Field name="postalCode">
           {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor="postalCode">Postal Code</Label>
-              <Input
-                id="postalCode"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="10001"
-              />
-            </div>
+            <FormField field={field} label="Postal Code" required>
+              {(f) => (
+                <Input
+                  id={f.name}
+                  value={f.state.value}
+                  onChange={(e) => f.handleChange(e.target.value)}
+                  onBlur={f.handleBlur}
+                  placeholder="10001"
+                  className={
+                    f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                  }
+                />
+              )}
+            </FormField>
           )}
         </form.Field>
 
-        <form.Field name="country">
+        <form.Field name="countryCode">
           {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Select
-                value={field.state.value}
-                onValueChange={(value) => field.handleChange(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="United States">United States</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                  <SelectItem value="Australia">Australia</SelectItem>
-                  <SelectItem value="Germany">Germany</SelectItem>
-                  <SelectItem value="France">France</SelectItem>
-                  <SelectItem value="Japan">Japan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <FormField field={field} label="Country" required>
+              {(f) => (
+                <Select
+                  value={f.state.value}
+                  onValueChange={(value) => f.handleChange(value)}
+                >
+                  <SelectTrigger
+                    className={
+                      f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                    }
+                  >
+                    <SelectValue placeholder="Select country code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="US">United States</SelectItem>
+                    <SelectItem value="CA">Canada</SelectItem>
+                    <SelectItem value="UK">United Kingdom</SelectItem>
+                    <SelectItem value="AU">Australia</SelectItem>
+                    <SelectItem value="GM">Germany</SelectItem>
+                    <SelectItem value="FR">France</SelectItem>
+                    <SelectItem value="JP">Japan</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
           )}
         </form.Field>
       </div>
 
-      <form.Field name="phone">
+      <form.Field name="note">
         {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number (Optional)</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="+1 (555) 123-4567"
-            />
-          </div>
-        )}
-      </form.Field>
-
-      <form.Field name="instructions">
-        {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor="instructions">
-              Delivery Instructions (Optional)
-            </Label>
-            <Textarea
-              id="instructions"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Ring doorbell twice, leave at front door, etc."
-              rows={3}
-            />
-          </div>
-        )}
-      </form.Field>
-
-      <form.Field name="isDefault">
-        {(field) => (
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="isDefault"
-              checked={field.state.value}
-              onChange={(e) => field.handleChange(e.target.checked)}
-              className="rounded border-gray-300"
-            />
-            <Label htmlFor="isDefault">Set as default address</Label>
-          </div>
+          <FormField field={field} label="Notes">
+            {(f) => (
+              <Textarea
+                id={f.name}
+                value={f.state.value}
+                onChange={(e) => f.handleChange(e.target.value)}
+                onBlur={f.handleBlur}
+                placeholder="Ring doorbell twice, leave at front door, etc."
+                rows={3}
+                className={
+                  f.state.meta.errors.length > 0 ? 'border-destructive' : ''
+                }
+              />
+            )}
+          </FormField>
         )}
       </form.Field>
 
@@ -222,7 +236,7 @@ export function AddressForm({
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
+        <Button type="submit" disabled={isSubmitting || !form.state.canSubmit}>
           {isSubmitting
             ? 'Saving...'
             : address

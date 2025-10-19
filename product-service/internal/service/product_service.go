@@ -26,10 +26,6 @@ import (
 type ProductService interface {
 	CreateProduct(ctx context.Context, req dto.CreateProductRequest) (*dto.ProductResponse, error)
 	GetProduct(ctx context.Context, id uuid.UUID) (*dto.ProductResponse, error)
-	GetProducts(
-		ctx context.Context,
-		req dto.GetProductsRequest,
-	) ([]dto.ProductResponse, *pkgdto.OffsetPagination, error)
 	ListProducts(
 		ctx context.Context,
 		limit int64,
@@ -170,62 +166,6 @@ func (s *productService) GetProduct(
 	return mapper.MapToProductResponse(product), nil
 }
 
-// GetProducts retrieves products with pagination and caching.
-func (s *productService) GetProducts(
-	ctx context.Context,
-	req dto.GetProductsRequest,
-) ([]dto.ProductResponse, *pkgdto.OffsetPagination, error) {
-	cacheRepo := s.dataStore.CacheRepository()
-	productRepo := s.dataStore.ProductRepository()
-
-	// Try cache first if available
-	cachedProducts, err := cacheRepo.GetProducts(ctx, req.Page, req.Limit)
-	if err == nil && cachedProducts != nil {
-		res := make([]dto.ProductResponse, len(cachedProducts))
-		for i, product := range cachedProducts {
-			res[i] = *mapper.MapToProductResponse(product)
-		}
-
-		// Still need to get total count for pagination (could be cached separately)
-		total, errCount := productRepo.Count(ctx)
-		if errCount != nil {
-			return nil, nil, httperror.NewInternalServerError("failed to count products")
-		}
-
-		pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
-
-		return res, pagination, nil
-	}
-
-	// Cache miss or unavailable, get from database
-	offset := pageutils.GetOffset(req.Page, req.Limit)
-
-	products, err := productRepo.FindAll(ctx, req.Limit, offset)
-	if err != nil {
-		return nil, nil, httperror.NewInternalServerError("failed to get products")
-	}
-
-	res := make([]dto.ProductResponse, len(products))
-	for i, product := range products {
-		res[i] = *mapper.MapToProductResponse(product)
-	}
-
-	total, err := productRepo.Count(ctx)
-	if err != nil {
-		return nil, nil, httperror.NewInternalServerError("failed to count products")
-	}
-
-	// Store in cache for future requests if cache is available
-	err = cacheRepo.SetProducts(ctx, req.Page, req.Limit, products, defaultProductExpiration)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	pagination := pageutils.NewOffsetPagination(total, req.Page, req.Limit)
-
-	return res, pagination, nil
-}
-
 // ListProducts retrieves products with cursor-based pagination.
 func (s *productService) ListProducts(
 	ctx context.Context,
@@ -273,7 +213,7 @@ func (s *productService) ListProducts(
 
 		nextCursor, err = pageutils.GenerateNextCursor(
 			lastProduct.ID.String(),
-			lastProduct.CreatedAt.Unix(),
+			lastProduct.CreatedAt.UnixMilli(),
 			"",
 		)
 		if err != nil {

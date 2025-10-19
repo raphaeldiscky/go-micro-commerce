@@ -21,6 +21,41 @@ directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on
 
 directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
+type Address
+  @join__type(graph: AUTH_SERVICE)
+{
+  id: ID!
+  userId: ID!
+  receiverName: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String
+  postalCode: String!
+  countryCode: String!
+  latitude: Float
+  longitude: Float
+  isDefault: Boolean!
+  note: String
+  fullAddress: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type AddressConnection
+  @join__type(graph: AUTH_SERVICE)
+{
+  edges: [AddressEdge!]!
+  pageInfo: PageInfo!
+}
+
+type AddressEdge
+  @join__type(graph: AUTH_SERVICE)
+{
+  node: Address!
+  cursor: String!
+}
+
 type AuthPayload
   @join__type(graph: AUTH_SERVICE)
 {
@@ -66,6 +101,22 @@ enum ConversationStatus
   WAITING @join__enumValue(graph: CHAT_SERVICE)
   ACTIVE @join__enumValue(graph: CHAT_SERVICE)
   ENDED @join__enumValue(graph: CHAT_SERVICE)
+}
+
+input CreateAddressInput
+  @join__type(graph: AUTH_SERVICE)
+{
+  receiverName: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String
+  postalCode: String!
+  countryCode: String!
+  latitude: Float
+  longitude: Float
+  isDefault: Boolean!
+  note: String
 }
 
 input CreateConversationInput
@@ -163,6 +214,10 @@ type Mutation
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
 {
+  createAddress(input: CreateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
+  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
+  deleteAddress(id: ID!): Boolean! @join__field(graph: AUTH_SERVICE)
+  setDefaultAddress(id: ID!): Address! @join__field(graph: AUTH_SERVICE)
   register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
@@ -266,6 +321,7 @@ type OnlineStatus
 }
 
 type PageInfo
+  @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
 {
@@ -334,6 +390,9 @@ type Query
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
 {
+  listAddresses(limit: Int!, cursor: String): AddressConnection! @join__field(graph: AUTH_SERVICE)
+  getAddress(id: ID!): Address! @join__field(graph: AUTH_SERVICE)
+  getDefaultAddress: Address! @join__field(graph: AUTH_SERVICE)
   me: User @join__field(graph: AUTH_SERVICE)
   user(id: ID!): User @join__field(graph: AUTH_SERVICE)
   onlineUsers: [User!]! @join__field(graph: CHAT_SERVICE)
@@ -441,6 +500,21 @@ type UnreadCount
   @join__type(graph: NOTIFICATION_SERVICE)
 {
   count: Int!
+}
+
+input UpdateAddressInput
+  @join__type(graph: AUTH_SERVICE)
+{
+  receiverName: String
+  addressLine1: String
+  addressLine2: String
+  city: String
+  state: String
+  postalCode: String
+  countryCode: String
+  latitude: Float
+  longitude: Float
+  note: String
 }
 
 type User

@@ -1,22 +1,5 @@
 import { z } from 'zod'
 
-// Customer address interface
-export interface CustomerAddress {
-  id: string
-  customerId: string
-  isDefault: boolean
-  recipientName: string
-  street: string
-  apartment?: string // Unit, apartment, suite number
-  city: string
-  state: string
-  postalCode: string
-  country: string
-  phone?: string
-  instructions?: string // Delivery instructions
-  createdAt: string
-  updatedAt: string
-}
 export const profileSchema = z.object({
   firstName: z
     .string()
@@ -26,7 +9,7 @@ export const profileSchema = z.object({
     .string()
     .min(2, 'Last name must be at least 2 characters')
     .max(50, 'Last name must be less than 50 characters'),
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   phone: z
     .string()
     .regex(/^\+?[\d\s\-()]*$/, 'Please enter a valid phone number')
@@ -35,15 +18,19 @@ export const profileSchema = z.object({
 })
 
 export const addressSchema = z.object({
-  recipientName: z
+  receiverName: z
     .string()
-    .min(2, 'Recipient name must be at least 2 characters')
-    .max(100, 'Recipient name must be less than 100 characters'),
-  street: z
+    .min(2, 'Receiver name must be at least 2 characters')
+    .max(100, 'Receiver name must be less than 100 characters'),
+  addressLine1: z
     .string()
     .min(5, 'Please enter a complete street address')
     .max(200, 'Street address is too long'),
-  apartment: z.string().max(50, 'Apartment number is too long').optional(),
+  addressLine2: z
+    .string()
+    .min(5, 'Please enter a complete street address')
+    .max(200, 'Street address is too long')
+    .optional(),
   city: z
     .string()
     .min(2, 'City must be at least 2 characters')
@@ -51,25 +38,23 @@ export const addressSchema = z.object({
   state: z
     .string()
     .min(1, 'State/Province is required')
-    .max(50, 'State name is too long'),
+    .max(50, 'State name is too long')
+    .optional(),
   postalCode: z
     .string()
     .min(1, 'Postal code is required')
     .max(20, 'Postal code is too long'),
-  country: z
+  countryCode: z
     .string()
-    .min(1, 'Country is required')
-    .max(50, 'Country name is too long'),
-  phone: z
-    .string()
-    .regex(/^\+?[\d\s\-()]*$/, 'Please enter a valid phone number')
-    .max(20, 'Phone number is too long')
-    .optional(),
-  instructions: z
+    .min(1, 'Country code is required')
+    .max(2, 'Country code name is too long'),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  note: z
     .string()
     .max(500, 'Delivery instructions must be less than 500 characters')
     .optional(),
-  isDefault: z.boolean().default(false),
+  isDefault: z.boolean(),
 })
 
 export const passwordSchema = z
@@ -101,50 +86,14 @@ export type ProfileFormValues = z.infer<typeof profileSchema>
 export type AddressFormValues = z.infer<typeof addressSchema>
 export type PasswordFormValues = z.infer<typeof passwordSchema>
 
-// Interface types for store
+// Interface types for form data
 export interface ProfileUpdateRequest extends ProfileFormValues {}
 export interface PasswordChangeRequest extends PasswordFormValues {}
-export interface AddressRequest extends AddressFormValues {}
 
-// Account statistics
-export interface AccountStats {
+export type AccountStats = {
   totalOrders: number
   totalSpent: number
   averageOrderValue: number
-  lastOrderDate?: string
+  lastOrderDate: string
   memberSince: string
 }
-
-// Account store state
-export interface AccountState {
-  user: any // From auth store
-  addresses: Array<CustomerAddress>
-  stats: AccountStats | null
-  isLoading: boolean
-  isUpdating: boolean
-  error: string | null
-}
-
-// Account store actions
-export interface AccountActions {
-  // Profile management
-  updateProfile: (data: ProfileUpdateRequest) => Promise<void>
-  changePassword: (data: PasswordChangeRequest) => Promise<void>
-
-  // Address management
-  loadAddresses: () => Promise<void>
-  addAddress: (data: AddressRequest) => Promise<void>
-  updateAddress: (id: string, data: AddressRequest) => Promise<void>
-  deleteAddress: (id: string) => Promise<void>
-  setDefaultAddress: (id: string) => Promise<void>
-
-  // Stats
-  loadStats: () => Promise<void>
-
-  // State management
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-}
-
-// Account store type
-export type AccountStore = AccountState & AccountActions
