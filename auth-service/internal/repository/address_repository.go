@@ -313,41 +313,35 @@ func (r *addressRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// SetDefault atomically sets an address as default and unsets all other defaults for the user.
-// Uses a single UPDATE with CASE to ensure atomicity without explicit transaction handling.
+// SetDefault sets an address as default and unsets all other defaults for the user.
+// First unsets any existing default, then sets the target address as default.
 func (r *addressRepository) SetDefault(ctx context.Context, userID, addressID uuid.UUID) error {
 	now := time.Now()
 
-	// Use a single UPDATE with CASE to atomically set/unset defaults
-	// This is atomic because it's a single query
-	query := `
+	// Step 1: Unset current default address (if any)
+	unsetQuery := `
 		UPDATE user_addresses
-		SET is_default = CASE WHEN id = $1 THEN true ELSE false END,
-		    updated_at = $2
-		WHERE user_id = $3
-		RETURNING id`
+		SET is_default = false, updated_at = $1
+		WHERE user_id = $2 AND is_default = true`
 
-	rows, err := r.db.Query(ctx, query, addressID, now, userID)
+	_, err := r.db.Exec(ctx, unsetQuery, now, userID)
 	if err != nil {
 		return err
 	}
-	defer rows.Close()
 
-	// Check if the target address was found and updated
-	found := false
+	// Step 2: Set the target address as default
+	setQuery := `
+		UPDATE user_addresses
+		SET is_default = true, updated_at = $1
+		WHERE id = $2 AND user_id = $3`
 
-	for rows.Next() {
-		var id uuid.UUID
-		if err = rows.Scan(&id); err != nil {
-			return err
-		}
-
-		if id == addressID {
-			found = true
-		}
+	result, err := r.db.Exec(ctx, setQuery, now, addressID, userID)
+	if err != nil {
+		return err
 	}
 
-	if !found {
+	// Check if the target address was found and updated
+	if result.RowsAffected() == 0 {
 		return sql.ErrNoRows
 	}
 

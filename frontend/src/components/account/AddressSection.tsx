@@ -21,7 +21,11 @@ import {
   useSetDefaultAddress,
   useUpdateAddress,
 } from '@/hooks/address'
-import type { Address, CreateAddressInput } from '@/types/__generated__/graphql'
+import type {
+  Address,
+  CreateAddressInput,
+  UpdateAddressInput,
+} from '@/types/__generated__/graphql'
 import { MapPin, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -57,9 +61,10 @@ export function AddressSection() {
     if (!editingAddress) return
 
     try {
+      const { isDefault: _, ...updateData } = data
       await updateAddressMutation.mutateAsync({
         id: editingAddress.id,
-        input: data,
+        input: updateData,
       })
       setEditingAddress(null)
       toast.success('Address updated successfully')
