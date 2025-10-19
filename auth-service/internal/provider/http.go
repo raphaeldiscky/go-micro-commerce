@@ -23,4 +23,5 @@ func SetupHTTP(
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
 	SetupAuth(ctx, cfg, e, appLogger, providers)
+	SetupAddress(ctx, cfg, e, appLogger, providers)
 }

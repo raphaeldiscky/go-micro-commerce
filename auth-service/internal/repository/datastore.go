@@ -20,6 +20,7 @@ type DataStore interface {
 	Atomic(ctx context.Context, fn func(DataStore) error) error
 	UserRepository() UserRepository
 	SessionRepository() SessionRepository
+	AddressRepository() AddressRepository
 }
 
 // dataStore is a struct that implements the DataStore interface.
@@ -63,4 +64,9 @@ func (s *dataStore) UserRepository() UserRepository {
 // SessionRepository returns a new SessionRepository.
 func (s *dataStore) SessionRepository() SessionRepository {
 	return NewSessionRepository(s.db)
+}
+
+// AddressRepository returns a new AddressRepository.
+func (s *dataStore) AddressRepository() AddressRepository {
+	return NewAddressRepository(s.db)
 }

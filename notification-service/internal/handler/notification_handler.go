@@ -42,13 +42,13 @@ func (h *NotificationHandler) ListNotifications(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	)
 
-	cursor := c.QueryParam("cursor")
+	nextCursor := c.QueryParam("next_cursor")
 
 	notifications, pagination, err := h.notificationService.ListNotifications(
 		c.Request().Context(),
 		userID,
 		limit,
-		cursor,
+		nextCursor,
 	)
 	if err != nil {
 		return err
@@ -69,13 +69,13 @@ func (h *NotificationHandler) ListUnreadNotifications(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	)
 
-	cursor := c.QueryParam("cursor")
+	nextCursor := c.QueryParam("next_cursor")
 
 	notifications, pagination, err := h.notificationService.ListUnreadNotifications(
 		c.Request().Context(),
 		userID,
 		limit,
-		cursor,
+		nextCursor,
 	)
 	if err != nil {
 		return err

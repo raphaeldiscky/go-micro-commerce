@@ -24,3 +24,27 @@ const (
 	// InternalServerErrorMessage is returned for internal server errors.
 	InternalServerErrorMessage = "internal server error"
 )
+
+// Address error messages used throughout the auth service for address operations.
+const (
+	// AddressNotFoundErrorMessage is returned when an address is not found.
+	AddressNotFoundErrorMessage = "address not found"
+
+	// AddressAccessDeniedErrorMessage is returned when a user tries to access an address they don't own.
+	AddressAccessDeniedErrorMessage = "access denied: you do not have permission to access this address"
+
+	// CannotDeleteDefaultAddressErrorMessage is returned when trying to delete the default address.
+	CannotDeleteDefaultAddressErrorMessage = "cannot delete default address, please set another address as default first"
+
+	// CannotDeleteLastAddressErrorMessage is returned when trying to delete the only address.
+	CannotDeleteLastAddressErrorMessage = "cannot delete your only address"
+
+	// InvalidCoordinatesErrorMessage is returned when coordinates are out of valid range.
+	InvalidCoordinatesErrorMessage = "invalid coordinates: latitude must be between -90 and 90, longitude must be between -180 and 180"
+
+	// InvalidCountryCodeErrorMessage is returned when country code is not 2 characters.
+	InvalidCountryCodeErrorMessage = "invalid country code: must be a 2-character ISO 3166-1 alpha-2 code"
+
+	// MaxAddressesReachedErrorMessage is returned when user tries to create more addresses than allowed.
+	MaxAddressesReachedErrorMessage = "maximum number of addresses reached"
+)
