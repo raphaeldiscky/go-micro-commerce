@@ -63,8 +63,8 @@ func (h *ProductHandler) GetProduct(c echo.Context) error {
 	return echoutils.ResponseOK(c, product)
 }
 
-// GetProducts handles GET /products.
-func (h *ProductHandler) GetProducts(c echo.Context) error {
+// ListProducts handles GET /products.
+func (h *ProductHandler) ListProducts(c echo.Context) error {
 	var req dto.GetProductsRequest
 
 	req.Limit = pageutils.ParseQueryInt64(
@@ -74,24 +74,22 @@ func (h *ProductHandler) GetProducts(c echo.Context) error {
 		pkgconstant.DefaultMinLimit,
 		pkgconstant.DefaultMaxLimit,
 	)
-	req.Page = pageutils.ParseQueryInt64(
-		c,
-		"page",
-		pkgconstant.DefaultPage,
-		pkgconstant.DefaultMinPage,
-		pkgconstant.DefaultMaxPage,
-	)
 
+	req.NextCursor = c.QueryParam("next_cursor")
 	if err := c.Validate(&req); err != nil {
 		return err
 	}
 
-	products, pagination, err := h.productService.GetProducts(c.Request().Context(), req)
+	products, pagination, err := h.productService.ListProducts(
+		c.Request().Context(),
+		req.Limit,
+		req.NextCursor,
+	)
 	if err != nil {
 		return err
 	}
 
-	return echoutils.ResponseOKOffsetPagination(c, products, pagination)
+	return echoutils.ResponseOKCursorPagination(c, products, pagination)
 }
 
 // UpdateProduct handles PUT /products/:productID.

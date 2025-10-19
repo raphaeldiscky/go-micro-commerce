@@ -14,7 +14,7 @@ func SetupProductRoutes(e *echo.Echo, h *handler.ProductHandler) {
 
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
-	protected.GET("", h.GetProducts)
+	protected.GET("", h.ListProducts)
 	protected.GET("/:productID", h.GetProduct)
 
 	admin := protected.Group("")
