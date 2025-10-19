@@ -222,7 +222,7 @@ func (s *addressService) ListUserAddresses(
 
 		nextCursor, err = pageutils.GenerateNextCursor(
 			lastAddress.ID.String(),
-			lastAddress.CreatedAt.Unix(),
+			lastAddress.CreatedAt.UnixMilli(),
 			isDefaultStr,
 		)
 		if err != nil {

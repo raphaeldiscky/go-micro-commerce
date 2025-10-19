@@ -457,8 +457,8 @@ func (r *productRepository) FindAllWithCursor(
 		query = `
 			SELECT id, name, price, quantity, version, reserved_quantity, created_at, updated_at
 			FROM products
-			WHERE created_at < to_timestamp($2)
-			   OR (created_at = to_timestamp($2) AND id < $3)
+			WHERE created_at < to_timestamp($2 / 1000.0)
+			   OR (created_at = to_timestamp($2 / 1000.0) AND id < $3)
 			ORDER BY created_at DESC, id DESC
 			LIMIT $1
 		`

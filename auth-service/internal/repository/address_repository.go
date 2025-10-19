@@ -185,8 +185,8 @@ func (r *addressRepository) GetByUserIDWithCursor(
 			WHERE user_id = $1
 			  AND (
 			    is_default < $2
-			    OR (is_default = $2 AND created_at < to_timestamp($3))
-			    OR (is_default = $2 AND created_at = to_timestamp($3) AND id < $4)
+			    OR (is_default = $2 AND created_at < to_timestamp($3 / 1000.0))
+			    OR (is_default = $2 AND created_at = to_timestamp($3 / 1000.0) AND id < $4)
 			  )
 			ORDER BY is_default DESC, created_at DESC, id DESC
 			LIMIT $5`

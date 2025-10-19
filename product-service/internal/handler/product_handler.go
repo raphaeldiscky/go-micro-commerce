@@ -75,7 +75,7 @@ func (h *ProductHandler) ListProducts(c echo.Context) error {
 		pkgconstant.DefaultMaxLimit,
 	)
 
-	nextCursor := c.QueryParam("next_cursor")
+	req.NextCursor = c.QueryParam("next_cursor")
 	if err := c.Validate(&req); err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (h *ProductHandler) ListProducts(c echo.Context) error {
 	products, pagination, err := h.productService.ListProducts(
 		c.Request().Context(),
 		req.Limit,
-		nextCursor,
+		req.NextCursor,
 	)
 	if err != nil {
 		return err
