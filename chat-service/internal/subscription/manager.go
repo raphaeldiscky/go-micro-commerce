@@ -7,8 +7,8 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
 	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
@@ -26,8 +26,8 @@ type Manager struct {
 	userChannels         map[uuid.UUID]string // userID → Redis channel name
 	mu                   sync.RWMutex
 	Hub                  *websocket.ChatHub
-	EventBus             eventbus.EventBus
-	eventHandlerFunc     eventbus.EventHandler
+	EventBus             rediseventbus.EventBus
+	eventHandlerFunc     rediseventbus.EventHandler
 }
 
 // conversationSubscription represents a subscription to conversation events.
@@ -45,7 +45,7 @@ type userSubscription struct {
 // NewManager creates a new subscription manager.
 func NewManager(
 	hub *websocket.ChatHub,
-	eventBus eventbus.EventBus,
+	eventBus rediseventbus.EventBus,
 	logger logger.Logger,
 ) *Manager {
 	m := &Manager{
@@ -59,7 +59,7 @@ func NewManager(
 	}
 
 	// Create event handler function that routes Redis events to local subscribers
-	m.eventHandlerFunc = func(ctx context.Context, event eventbus.Event) error {
+	m.eventHandlerFunc = func(ctx context.Context, event rediseventbus.Event) error {
 		return NewEventHandler(m, logger).HandleEvent(ctx, event)
 	}
 

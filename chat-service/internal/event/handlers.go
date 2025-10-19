@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 )
 
 // ChatEventHandler handles chat-related events from other instances.
@@ -89,8 +89,8 @@ func handleEventType[T any](
 }
 
 // HandleEvent is the main event handler that routes events to specific handlers.
-func (h *ChatEventHandler) HandleEvent(ctx context.Context, event eventbus.Event) error {
-	baseEvent, ok := event.(*eventbus.BaseEvent)
+func (h *ChatEventHandler) HandleEvent(ctx context.Context, event rediseventbus.Event) error {
+	baseEvent, ok := event.(*rediseventbus.BaseEvent)
 	if !ok {
 		return fmt.Errorf("invalid event type: %T", event)
 	}

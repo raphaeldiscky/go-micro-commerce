@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -25,8 +25,8 @@ import (
 
 // FulfillmentLifecycleEvent is the envelope for all Fulfillment events.
 type FulfillmentLifecycleEvent struct {
-	Metadata event.Metadata                    `json:"metadata"`
-	Payload  event.FulfillmentLifecyclePayload `json:"payload"`
+	Metadata kafkaevent.Metadata                    `json:"metadata"`
+	Payload  kafkaevent.FulfillmentLifecyclePayload `json:"payload"`
 }
 
 // FulfillmentLifecycleConsumer handles the logic for processing fulfillment lifecycle events.
@@ -53,7 +53,7 @@ func NewFulfillmentLifecycleConsumer(
 func (c *FulfillmentLifecycleConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
-		Metadata event.Metadata `json:"metadata"`
+		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
 	if err := json.Unmarshal(body, &meta); err != nil {

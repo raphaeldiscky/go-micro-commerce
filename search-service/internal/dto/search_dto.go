@@ -9,7 +9,7 @@ import (
 )
 
 // ProductIndexRequest represents a request to index/update a product.
-// Matches ProductCreatedPayload and ProductUpdatedPayload from pkg/event.
+// Matches ProductCreatedPayload and ProductUpdatedPayload from pkg/kafkaevent.
 type ProductIndexRequest struct {
 	ProductID uuid.UUID       `json:"product_id" validate:"required"`
 	Name      string          `json:"name"       validate:"required,min=1,max=255"`

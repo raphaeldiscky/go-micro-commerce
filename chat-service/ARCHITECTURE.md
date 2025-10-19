@@ -57,7 +57,7 @@ The chat service follows a **layered architecture** with clear separation of con
 - **Components**: BaseHub, BaseConnection, Message envelope
 - **Features**: Connection management, broadcasting, heartbeat, cleanup
 
-### 2. EventBus Abstraction Layer (`pkg/eventbus`)
+### 2. EventBus Abstraction Layer (`pkg/rediseventbus`)
 
 - **Responsibility**: Pub/sub abstraction for cross-instance communication
 - **Implementation**: Redis-based event bus with handler routing
@@ -457,7 +457,7 @@ case ChatMessageTypeReadReceipt:
 
 ## Redis Pub/Sub Strategy
 
-### EventBus (`pkg/eventbus/redis_eventbus.go`)
+### EventBus (`pkg/rediseventbus/eventbus.go`)
 
 The **EventBus** provides a high-level abstraction over Redis pub/sub.
 

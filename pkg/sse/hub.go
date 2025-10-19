@@ -8,8 +8,8 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 )
 
 // Hub manages SSE connections and broadcasts messages.
@@ -22,11 +22,11 @@ type Hub struct {
 	mutex              sync.RWMutex
 	logger             logger.Logger
 	done               chan struct{}
-	eventBus           eventbus.EventBus
+	eventBus           rediseventbus.EventBus
 	instanceID         string
-	userChannelBuilder func(uuid.UUID) string // Function to build channel name for a user
-	eventHandler       eventbus.EventHandler  // Handler for cross-instance events
-	subscribedUsers    map[uuid.UUID]int      // userID → connection count (for subscription tracking)
+	userChannelBuilder func(uuid.UUID) string     // Function to build channel name for a user
+	eventHandler       rediseventbus.EventHandler // Handler for cross-instance events
+	subscribedUsers    map[uuid.UUID]int          // userID → connection count (for subscription tracking)
 }
 
 // BroadcastRequest represents a request to broadcast a message.
@@ -362,10 +362,10 @@ func (h *Hub) shutdown() {
 // Channels are subscribed/unsubscribed dynamically as users connect/disconnect.
 // The eventHandler will be called for all cross-instance events (should call BroadcastToUser).
 func (h *Hub) SetEventBus(
-	eventBus eventbus.EventBus,
+	eventBus rediseventbus.EventBus,
 	instanceID string,
 	userChannelBuilder func(uuid.UUID) string,
-	eventHandler eventbus.EventHandler,
+	eventHandler rediseventbus.EventHandler,
 ) {
 	h.mutex.Lock()
 	defer h.mutex.Unlock()
@@ -390,7 +390,7 @@ func (h *Hub) subscribeToUserChannel(userID uuid.UUID) error {
 	channel := h.userChannelBuilder(userID)
 
 	// Create wrapper handler that filters by instance ID
-	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
+	wrappedHandler := func(ctx context.Context, event rediseventbus.Event) error {
 		// Skip events from our own instance to avoid duplicate delivery
 		if event.GetSourceInstanceID() == h.instanceID {
 			h.logger.Debug("Skipping event from own instance",

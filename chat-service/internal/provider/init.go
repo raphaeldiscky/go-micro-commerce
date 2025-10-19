@@ -5,10 +5,10 @@ import (
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/repository"
@@ -23,7 +23,7 @@ type Providers struct {
 	ChatService          service.ChatService
 	ConnectionService    service.ConnectionService
 	WebSocketHub         *websocket.ChatHub
-	EventBus             eventbus.EventBus
+	EventBus             rediseventbus.EventBus
 	Logger               logger.Logger
 }
 
@@ -73,7 +73,7 @@ func SetupGlobal(
 
 	// Create EventBus for cross-instance messaging
 	instanceID := uuid.New().String()
-	eventBus := eventbus.NewRedisEventBus(
+	eventBus := rediseventbus.NewRedisEventBus(
 		redisPublisher,
 		redisSubscriber,
 		instanceID,

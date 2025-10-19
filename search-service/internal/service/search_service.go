@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 
@@ -259,8 +259,8 @@ func (s *searchService) ProcessProductCreated(
 
 	// Parse the full event envelope
 	var eventEnvelope struct {
-		Metadata event.Metadata              `json:"metadata"`
-		Payload  event.ProductCreatedPayload `json:"payload"`
+		Metadata kafkaevent.Metadata              `json:"metadata"`
+		Payload  kafkaevent.ProductCreatedPayload `json:"payload"`
 	}
 	if err := json.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
 		return fmt.Errorf("failed to unmarshal product created event envelope: %w", err)
@@ -298,8 +298,8 @@ func (s *searchService) ProcessProductUpdated(
 
 	// Parse the full event envelope
 	var eventEnvelope struct {
-		Metadata event.Metadata              `json:"metadata"`
-		Payload  event.ProductUpdatedPayload `json:"payload"`
+		Metadata kafkaevent.Metadata              `json:"metadata"`
+		Payload  kafkaevent.ProductUpdatedPayload `json:"payload"`
 	}
 	if err := json.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
 		return fmt.Errorf("failed to unmarshal product updated event envelope: %w", err)
@@ -335,7 +335,7 @@ func (s *searchService) ProcessProductDeleted(
 ) error {
 	s.logger.Infof("Processing product deleted event from inbox: %s", inboxEvent.ID)
 
-	var payload event.ProductDeletedPayload
+	var payload kafkaevent.ProductDeletedPayload
 	if err := json.Unmarshal(inboxEvent.Payload, &payload); err != nil {
 		return fmt.Errorf("failed to unmarshal product deleted payload: %w", err)
 	}

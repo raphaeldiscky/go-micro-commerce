@@ -5,9 +5,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
@@ -20,8 +20,8 @@ type Manager struct {
 	userSubs         map[uuid.UUID]*userSubscription
 	redisChannels    map[uuid.UUID]string // userID → Redis channel name
 	mu               sync.RWMutex
-	EventBus         eventbus.EventBus
-	eventHandlerFunc eventbus.EventHandler
+	EventBus         rediseventbus.EventBus
+	eventHandlerFunc rediseventbus.EventHandler
 	sseHub           *sse.Hub
 }
 
@@ -33,7 +33,7 @@ type userSubscription struct {
 
 // NewManager creates a new subscription manager.
 func NewManager(
-	eventBus eventbus.EventBus,
+	eventBus rediseventbus.EventBus,
 	sseHub *sse.Hub,
 	appLogger logger.Logger,
 ) *Manager {
@@ -46,7 +46,7 @@ func NewManager(
 	}
 
 	// Create event handler function that routes Redis events to local subscribers
-	m.eventHandlerFunc = func(ctx context.Context, event eventbus.Event) error {
+	m.eventHandlerFunc = func(ctx context.Context, event rediseventbus.Event) error {
 		return NewEventHandler(m, appLogger).HandleEvent(ctx, event)
 	}
 

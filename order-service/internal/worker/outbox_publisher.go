@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -235,7 +235,7 @@ func (p *OutboxPublisher) handleProcessingError(
 	// Move to DLQ - route to appropriate DLQ based on topic
 	var dlqProducer kafka.Producer
 
-	var evt event.BaseEvent
+	var evt kafkaevent.BaseEvent
 
 	switch outboxEvent.Topic {
 	case kafka.OrderLifecycleTopic:

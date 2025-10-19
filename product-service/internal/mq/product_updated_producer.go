@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -14,8 +14,8 @@ import (
 
 // ProductUpdatedEvent is the envelope for product update events.
 type ProductUpdatedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.ProductUpdatedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.ProductUpdatedPayload `json:"payload"`
 }
 
 // NewProductUpdatedEvent creates a new ProductUpdatedEvent.
@@ -26,14 +26,14 @@ func NewProductUpdatedEvent(
 	quantity int64,
 ) *ProductUpdatedEvent {
 	return &ProductUpdatedEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.ProductUpdatedEventType,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.ProductServiceName,
 		},
-		Payload: event.ProductUpdatedPayload{
+		Payload: kafkaevent.ProductUpdatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
@@ -48,7 +48,7 @@ func (e *ProductUpdatedEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the ProductUpdatedEvent.
-func (e *ProductUpdatedEvent) GetMetadata() event.Metadata {
+func (e *ProductUpdatedEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -67,7 +67,7 @@ func NewProductUpdatedProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *ProductUpdatedProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *ProductUpdatedProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

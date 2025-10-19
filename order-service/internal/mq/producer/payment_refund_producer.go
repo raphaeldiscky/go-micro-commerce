@@ -4,8 +4,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -13,8 +13,8 @@ import (
 
 // PaymentRefundEvent is the envelope for payment refund events.
 type PaymentRefundEvent struct {
-	Metadata event.Metadata             `json:"metadata"`
-	Payload  event.PaymentRefundPayload `json:"payload"`
+	Metadata kafkaevent.Metadata             `json:"metadata"`
+	Payload  kafkaevent.PaymentRefundPayload `json:"payload"`
 }
 
 // NewPaymentRefundEvent creates a new PaymentRefundEvent.
@@ -25,14 +25,14 @@ func NewPaymentRefundEvent(
 	currency string,
 ) *PaymentRefundEvent {
 	return &PaymentRefundEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.PaymentRefundedEventType,
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: event.PaymentRefundPayload{
+		Payload: kafkaevent.PaymentRefundPayload{
 			OrderID:    orderID,
 			CustomerID: customerID,
 			Amount:     totalPrice,
@@ -49,6 +49,6 @@ func (e *PaymentRefundEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the PaymentRefundEvent.
-func (e *PaymentRefundEvent) GetMetadata() event.Metadata {
+func (e *PaymentRefundEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }

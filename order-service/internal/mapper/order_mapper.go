@@ -2,8 +2,8 @@
 package mapper
 
 import (
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1"
 
@@ -76,12 +76,12 @@ func MapStatusToEventType(status constant.OrderStatus) string {
 }
 
 // MapOrderItemsToPayload maps order items to their payload representation.
-func MapOrderItemsToPayload(items []entity.OrderItem) []event.OrderItemPayload {
-	payloadItems := make([]event.OrderItemPayload, len(items))
+func MapOrderItemsToPayload(items []entity.OrderItem) []kafkaevent.OrderItemPayload {
+	payloadItems := make([]kafkaevent.OrderItemPayload, len(items))
 
 	for i := range items {
 		item := &items[i]
-		payloadItems[i] = event.OrderItemPayload{
+		payloadItems[i] = kafkaevent.OrderItemPayload{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
 		}
@@ -91,23 +91,23 @@ func MapOrderItemsToPayload(items []entity.OrderItem) []event.OrderItemPayload {
 }
 
 // MapShippingDtoToEventPayload maps shipping details to their payload representation.
-func MapShippingDtoToEventPayload(shipping *dto.Shipping) event.Shipping {
-	return event.Shipping{
+func MapShippingDtoToEventPayload(shipping *dto.Shipping) kafkaevent.Shipping {
+	return kafkaevent.Shipping{
 		CarrierID: shipping.CarrierID,
-		FromAddress: event.FromAddressPayload{
+		FromAddress: kafkaevent.FromAddressPayload{
 			City:       shipping.FromAddress.City,
 			State:      shipping.FromAddress.State,
 			PostalCode: shipping.FromAddress.PostalCode,
 			Country:    shipping.FromAddress.Country,
 		},
-		ToAddress: event.ToAddressPayload{
+		ToAddress: kafkaevent.ToAddressPayload{
 			City:       shipping.ToAddress.City,
 			State:      shipping.ToAddress.State,
 			PostalCode: shipping.ToAddress.PostalCode,
 			Country:    shipping.ToAddress.Country,
 		},
 		WeightKG: shipping.WeightKG,
-		Dimensions: event.Dimensions{
+		Dimensions: kafkaevent.Dimensions{
 			Width:  shipping.Dimensions.Width,
 			Height: shipping.Dimensions.Height,
 			Length: shipping.Dimensions.Length,

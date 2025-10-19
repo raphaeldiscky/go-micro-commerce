@@ -1,5 +1,5 @@
-// Package event provides the commont event definitions for microservices.
-package event
+// Package kafkaevent provides the commont event definitions for microservices.
+package kafkaevent
 
 import (
 	"encoding/json"

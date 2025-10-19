@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -17,8 +17,8 @@ import (
 
 // FulfillmentRequestEvent is the envelope for fulfillment request events.
 type FulfillmentRequestEvent struct {
-	Metadata event.Metadata                  `json:"metadata"`
-	Payload  event.FulfillmentRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                  `json:"metadata"`
+	Payload  kafkaevent.FulfillmentRequestPayload `json:"payload"`
 }
 
 // FulfillmentRequestProducer is responsible for producing Fulfillment Request events.
@@ -33,23 +33,23 @@ func NewFulfillmentRequestEvent(
 	shipping *dto.Shipping,
 ) *FulfillmentRequestEvent {
 	// Convert order items to fulfillment items
-	fulfillmentItems := make([]event.FulfillmentItemPayload, len(order.Items))
+	fulfillmentItems := make([]kafkaevent.FulfillmentItemPayload, len(order.Items))
 	for i := range order.Items {
-		fulfillmentItems[i] = event.FulfillmentItemPayload{
+		fulfillmentItems[i] = kafkaevent.FulfillmentItemPayload{
 			ProductID: order.Items[i].ProductID,
 			Quantity:  order.Items[i].Quantity,
 		}
 	}
 
 	return &FulfillmentRequestEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.FulfillmentRequestedEventType,
 			AggregateID: order.ID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: event.FulfillmentRequestPayload{
+		Payload: kafkaevent.FulfillmentRequestPayload{
 			OrderID:    order.ID,
 			CustomerID: order.CustomerID,
 			Currency:   order.Currency,
@@ -65,7 +65,7 @@ func (e *FulfillmentRequestEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the FulfillmentRequestEvent.
-func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
+func (e *FulfillmentRequestEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -78,7 +78,7 @@ func NewFulfillmentRequestProducer(producer *kafka.AsyncProducer) kafka.Producer
 }
 
 // Send implements the KafkaProducer interface.
-func (p *FulfillmentRequestProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *FulfillmentRequestProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
@@ -22,7 +22,7 @@ type Providers struct {
 	DataStore           repository.DataStore
 	KafkaAdmin          *kafka.Admin
 	SSEHub              *sse.Hub
-	EventBus            eventbus.EventBus
+	EventBus            rediseventbus.EventBus
 	InstanceID          string
 	SubscriptionManager *subscription.Manager
 }
@@ -104,7 +104,7 @@ func SetupGlobal(
 
 	// Generate instance ID
 	instanceID := uuid.New().String()
-	eventBus := eventbus.NewRedisEventBus(
+	eventBus := rediseventbus.NewRedisEventBus(
 		redisPublisher,
 		redisSubscriber,
 		instanceID,
@@ -116,8 +116,6 @@ func SetupGlobal(
 		"using_cluster", true)
 
 	// Initialize SubscriptionManager for GraphQL subscriptions
-	// Note: Subscription manager handles both GraphQL subscriptions AND SSE broadcasting
-	// via its event handler (subscription/event_handler.go), eliminating duplicate Redis subscriptions
 	subscriptionManager := subscription.NewManager(eventBus, sseHub, appLogger)
 
 	appLogger.Info("Subscription manager initialized for GraphQL and SSE cross-instance messaging",
