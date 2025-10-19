@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"go.temporal.io/sdk/activity"
 
@@ -801,14 +801,14 @@ func (ta *orderActivities) RefundPayment(
 
 		// Create refund request event using proper structure (similar to saga implementation)
 		refundEvent := &producer.PaymentRefundEvent{
-			Metadata: event.Metadata{
+			Metadata: kafkaevent.Metadata{
 				EventID:     uuid.New(),
 				EventType:   kafka.PaymentRefundedEventType,
 				AggregateID: req.Order.ID,
 				OccurredAt:  time.Now().UTC(),
 				Source:      pkgconstant.OrderServiceName,
 			},
-			Payload: event.PaymentRefundPayload{
+			Payload: kafkaevent.PaymentRefundPayload{
 				OrderID:    req.Order.ID,
 				CustomerID: req.Order.CustomerID,
 				Amount:     req.Order.TotalPrice,

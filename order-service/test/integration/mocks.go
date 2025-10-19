@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
@@ -95,7 +95,7 @@ func (m *MockProductGRPCClient) Close() error {
 type MockKafkaProducer struct{}
 
 // Send simulates successful message send.
-func (m *MockKafkaProducer) Send(_ context.Context, _ event.BaseEvent) error {
+func (m *MockKafkaProducer) Send(_ context.Context, _ kafkaevent.BaseEvent) error {
 	// Do nothing - just simulate successful send for testing
 	return nil
 }

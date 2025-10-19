@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/event"
@@ -30,7 +30,7 @@ func NewEventHandler(
 }
 
 // HandleEvent processes events from the EventBus and notifies GraphQL subscribers.
-func (h *EventHandler) HandleEvent(_ context.Context, evt eventbus.Event) error {
+func (h *EventHandler) HandleEvent(_ context.Context, evt rediseventbus.Event) error {
 	eventType := evt.GetType()
 
 	h.logger.Debug("Received chat event",
@@ -62,7 +62,7 @@ func (h *EventHandler) HandleEvent(_ context.Context, evt eventbus.Event) error 
 }
 
 // handleChatMessage processes chat message events.
-func (h *EventHandler) handleChatMessage(evt eventbus.Event) error {
+func (h *EventHandler) handleChatMessage(evt rediseventbus.Event) error {
 	var chatEvent event.ChatMessageEvent
 
 	if err := evt.UnmarshalPayload(&chatEvent); err != nil {
@@ -98,7 +98,7 @@ func (h *EventHandler) handleChatMessage(evt eventbus.Event) error {
 }
 
 // handleTypingIndicator processes typing indicator events.
-func (h *EventHandler) handleTypingIndicator(evt eventbus.Event) error {
+func (h *EventHandler) handleTypingIndicator(evt rediseventbus.Event) error {
 	var typingEvent event.TypingIndicatorEvent
 
 	if err := evt.UnmarshalPayload(&typingEvent); err != nil {
@@ -137,7 +137,7 @@ func (h *EventHandler) handleTypingIndicator(evt eventbus.Event) error {
 }
 
 // handlePresenceUpdate processes presence update events.
-func (h *EventHandler) handlePresenceUpdate(evt eventbus.Event) error {
+func (h *EventHandler) handlePresenceUpdate(evt rediseventbus.Event) error {
 	var presenceEvent event.PresenceUpdateEvent
 
 	if err := evt.UnmarshalPayload(&presenceEvent); err != nil {
@@ -173,7 +173,7 @@ func (h *EventHandler) handlePresenceUpdate(evt eventbus.Event) error {
 }
 
 // handleDeliveryReceipt processes delivery receipt events.
-func (h *EventHandler) handleDeliveryReceipt(evt eventbus.Event) error {
+func (h *EventHandler) handleDeliveryReceipt(evt rediseventbus.Event) error {
 	var receiptEvent event.DeliveryReceiptEvent
 
 	if err := evt.UnmarshalPayload(&receiptEvent); err != nil {
@@ -212,7 +212,7 @@ func (h *EventHandler) handleDeliveryReceipt(evt eventbus.Event) error {
 }
 
 // handleReadReceipt processes read receipt events.
-func (h *EventHandler) handleReadReceipt(evt eventbus.Event) error {
+func (h *EventHandler) handleReadReceipt(evt rediseventbus.Event) error {
 	var receiptEvent event.ReadReceiptEvent
 
 	if err := evt.UnmarshalPayload(&receiptEvent); err != nil {

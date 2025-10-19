@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/bytedance/sonic"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
@@ -18,14 +18,14 @@ import (
 
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.OrderLifecyclePayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.OrderLifecyclePayload `json:"payload"`
 }
 
 // OrderPaymentRequestEvent is the envelope for payment request events.
 type OrderPaymentRequestEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.PaymentRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.PaymentRequestPayload `json:"payload"`
 }
 
 // OrderLifecycleConsumer handles the logic for processing product created events.
@@ -49,7 +49,7 @@ func NewOrderLifecycleConsumer(
 func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
-		Metadata event.Metadata `json:"metadata"`
+		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

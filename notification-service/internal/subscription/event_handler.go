@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
@@ -32,7 +32,7 @@ func NewEventHandler(
 }
 
 // HandleEvent processes events from the EventBus and notifies GraphQL subscribers.
-func (h *EventHandler) HandleEvent(_ context.Context, event eventbus.Event) error {
+func (h *EventHandler) HandleEvent(_ context.Context, event rediseventbus.Event) error {
 	eventType := event.GetType()
 
 	h.logger.Debug("Received notification event",
@@ -58,7 +58,7 @@ func (h *EventHandler) HandleEvent(_ context.Context, event eventbus.Event) erro
 }
 
 // handleNotificationCreated processes notification created events.
-func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
+func (h *EventHandler) handleNotificationCreated(event rediseventbus.Event) error {
 	// Parse the notification created event from payload
 	var createdEvent NotificationCreatedEvent
 
@@ -98,7 +98,7 @@ func (h *EventHandler) handleNotificationCreated(event eventbus.Event) error {
 }
 
 // handleNotificationRead processes notification read events.
-func (h *EventHandler) handleNotificationRead(event eventbus.Event) error {
+func (h *EventHandler) handleNotificationRead(event rediseventbus.Event) error {
 	var readEvent NotificationReadEvent
 
 	if err := event.UnmarshalPayload(&readEvent); err != nil {
@@ -124,7 +124,7 @@ func (h *EventHandler) handleNotificationRead(event eventbus.Event) error {
 }
 
 // handleNotificationDeleted processes notification deleted events.
-func (h *EventHandler) handleNotificationDeleted(event eventbus.Event) error {
+func (h *EventHandler) handleNotificationDeleted(event rediseventbus.Event) error {
 	var deletedEvent NotificationDeletedEvent
 
 	if err := event.UnmarshalPayload(&deletedEvent); err != nil {

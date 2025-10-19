@@ -1,5 +1,5 @@
-// Package eventbus provides a universal event bus abstraction for pub/sub messaging.
-package eventbus
+// Package rediseventbus provides a universal event bus abstraction for pub/sub messaging.
+package rediseventbus
 
 import "context"
 

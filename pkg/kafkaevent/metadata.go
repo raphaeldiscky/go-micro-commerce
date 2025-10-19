@@ -1,5 +1,4 @@
-// Package event contains event definitions.
-package event
+package kafkaevent
 
 import (
 	"encoding/json"

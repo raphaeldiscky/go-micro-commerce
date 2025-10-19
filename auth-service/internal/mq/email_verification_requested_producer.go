@@ -6,16 +6,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata event.Metadata                          `json:"metadata"`
-	Payload  event.EmailVerificationRequestedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                          `json:"metadata"`
+	Payload  kafkaevent.EmailVerificationRequestedPayload `json:"payload"`
 }
 
 // NewEmailVerificationRequestedEvent creates a new EmailVerificationRequestedEvent.
@@ -26,14 +26,14 @@ func NewEmailVerificationRequestedEvent(
 	tokenExpiresAt time.Time,
 ) *EmailVerificationRequestedEvent {
 	return &EmailVerificationRequestedEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.EmailVerificationRequestedEventType,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.AuthServiceName,
 		},
-		Payload: event.EmailVerificationRequestedPayload{
+		Payload: kafkaevent.EmailVerificationRequestedPayload{
 			UserID:         userID,
 			Email:          email,
 			Token:          token,
@@ -48,7 +48,7 @@ func (e *EmailVerificationRequestedEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the EmailVerificationRequestedEvent.
-func (e *EmailVerificationRequestedEvent) GetMetadata() event.Metadata {
+func (e *EmailVerificationRequestedEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -71,7 +71,7 @@ func NewEmailVerificationRequestedProducer(
 // Send implements the KafkaProducer interface.
 func (p *EmailVerificationRequestedProducer) Send(
 	ctx context.Context,
-	evt event.BaseEvent,
+	evt kafkaevent.BaseEvent,
 ) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }

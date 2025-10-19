@@ -7,8 +7,8 @@ import (
 	"fmt"
 
 	"github.com/bytedance/sonic"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
@@ -17,14 +17,14 @@ import (
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata event.Metadata            `json:"metadata"`
-	Payload  event.UserVerifiedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata            `json:"metadata"`
+	Payload  kafkaevent.UserVerifiedPayload `json:"payload"`
 }
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata event.Metadata                          `json:"metadata"`
-	Payload  event.EmailVerificationRequestedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                          `json:"metadata"`
+	Payload  kafkaevent.EmailVerificationRequestedPayload `json:"payload"`
 }
 
 // UserVerificationConsumer handles storing user verification events in inbox for exactly-once processing.
@@ -47,7 +47,7 @@ func NewUserVerificationConsumer(
 // Handler processes user verification events by storing them in inbox for exactly-once processing.
 func (c *UserVerificationConsumer) Handler(ctx context.Context, body []byte) error {
 	var meta struct {
-		Metadata event.Metadata `json:"metadata"`
+		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

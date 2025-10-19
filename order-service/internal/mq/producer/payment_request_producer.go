@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -16,8 +16,8 @@ import (
 
 // PaymentRequestEvent is the envelope for payment request events.
 type PaymentRequestEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.PaymentRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.PaymentRequestPayload `json:"payload"`
 }
 
 // PaymentRequestProducer is responsible for producing Payment Lifecycle events.
@@ -35,14 +35,14 @@ func NewPaymentRequestEvent(
 	paymentMethod constant.PaymentMethod,
 ) *PaymentRequestEvent {
 	return &PaymentRequestEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.PaymentRequestedEventType,
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: event.PaymentRequestPayload{
+		Payload: kafkaevent.PaymentRequestPayload{
 			PaymentID:     uuid.New(),
 			OrderID:       orderID,
 			CustomerID:    customerID,
@@ -59,7 +59,7 @@ func (e *PaymentRequestEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the PaymentRequestEvent.
-func (e *PaymentRequestEvent) GetMetadata() event.Metadata {
+func (e *PaymentRequestEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -72,7 +72,7 @@ func NewPaymentRequestProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentRequestProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *PaymentRequestProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

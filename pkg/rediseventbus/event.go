@@ -1,4 +1,4 @@
-package eventbus
+package rediseventbus
 
 import (
 	"encoding/json"

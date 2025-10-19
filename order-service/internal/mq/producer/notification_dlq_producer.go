@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -16,8 +16,8 @@ import (
 
 // NotificationDLQEvent is the envelope for all Fulfillment DLQ events.
 type NotificationDLQEvent struct {
-	Metadata event.Metadata   `json:"metadata"`
-	Payload  event.DLQPayload `json:"payload"`
+	Metadata kafkaevent.Metadata   `json:"metadata"`
+	Payload  kafkaevent.DLQPayload `json:"payload"`
 }
 
 // NotificationDLQProducer is responsible for producing Fulfillment DLQ events.
@@ -32,14 +32,14 @@ func NewNotificationDLQEvent(
 	reason pkgconstant.DLQReason,
 ) *NotificationDLQEvent {
 	return &NotificationDLQEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.NotificationDLQEventType,
 			AggregateID: outboxEvent.AggregateID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: event.DLQPayload{
+		Payload: kafkaevent.DLQPayload{
 			OutboxEventID:   outboxEvent.ID,
 			AggregateType:   outboxEvent.AggregateType,
 			AggregateID:     outboxEvent.AggregateID,
@@ -61,7 +61,7 @@ func (e *NotificationDLQEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the NotificationDLQEvent.
-func (e *NotificationDLQEvent) GetMetadata() event.Metadata {
+func (e *NotificationDLQEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -74,7 +74,7 @@ func NewNotificationDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *NotificationDLQProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *NotificationDLQProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 
