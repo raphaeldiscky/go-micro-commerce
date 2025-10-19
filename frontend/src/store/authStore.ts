@@ -7,6 +7,10 @@ import {
   handleGraphQLRequest,
   mapGraphQLUserToApiUser,
 } from '@/lib/graphql'
+import {
+  closeSubscriptionClient,
+  resetSubscriptionClient,
+} from '@/lib/graphql/subscription-client'
 import type { User } from '@/types/__generated__/graphql'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -75,6 +79,10 @@ export const useAuthStore = create<AuthStore>()(
             // Store new access token in memory
             setAccessToken(refreshData.refreshToken.token)
 
+            // Reset subscription clients to reconnect with new token
+            // This ensures subscriptions use the fresh token
+            resetSubscriptionClient()
+
             // Fetch user with new token
             const userData = await graphClient.request<MeQuery>(ME_QUERY)
             const user = userData.me
@@ -126,6 +134,10 @@ export const useAuthStore = create<AuthStore>()(
             // Store new access token in memory
             setAccessToken(refreshData.refreshToken.token)
 
+            // Reset subscription clients to reconnect with new token
+            // This ensures subscriptions use the fresh token
+            resetSubscriptionClient()
+
             // Retry fetching user with new token
             const userData = await graphClient.request<MeQuery>(ME_QUERY)
             const user = userData.me
@@ -176,6 +188,11 @@ export const useAuthStore = create<AuthStore>()(
         // Clear access token from memory
         // Note: Server clears HTTP-only refresh token cookie
         setAccessToken(null)
+
+        // Close all active subscription connections
+        // This prevents memory leaks and orphaned connections with stale tokens
+        closeSubscriptionClient()
+
         set({
           error: null,
           hasInitialized: true,

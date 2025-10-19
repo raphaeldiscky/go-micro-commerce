@@ -4,7 +4,7 @@ package mapper
 import (
 	"github.com/shopspring/decimal"
 
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"

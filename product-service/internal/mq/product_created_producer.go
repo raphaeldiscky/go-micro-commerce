@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -15,8 +15,8 @@ import (
 
 // ProductCreatedEvent is the envelope for all product events.
 type ProductCreatedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.ProductCreatedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.ProductCreatedPayload `json:"payload"`
 }
 
 // NewProductCreatedEvent creates a new ProductCreatedEvent.
@@ -27,14 +27,14 @@ func NewProductCreatedEvent(
 	quantity int64,
 ) *ProductCreatedEvent {
 	return &ProductCreatedEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.ProductCreatedEventType,
 			AggregateID: productID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.ProductServiceName,
 		},
-		Payload: event.ProductCreatedPayload{
+		Payload: kafkaevent.ProductCreatedPayload{
 			ProductID: productID,
 			Name:      name,
 			Price:     price,
@@ -49,7 +49,7 @@ func (e *ProductCreatedEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the ProductCreatedEvent.
-func (e *ProductCreatedEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+func (e *ProductCreatedEvent) GetMetadata() kafkaevent.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
@@ -68,7 +68,7 @@ func NewProductCreatedProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *ProductCreatedProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *ProductCreatedProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

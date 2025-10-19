@@ -8,24 +8,25 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 )
 
 // Hub manages SSE connections and broadcasts messages.
 type Hub struct {
-	connections         map[uuid.UUID]*Connection               // All connections by ID
-	userConns           map[uuid.UUID]map[uuid.UUID]*Connection // User connections by user ID
-	register            chan *Connection
-	unregister          chan *Connection
-	broadcast           chan *BroadcastRequest
-	mutex               sync.RWMutex
-	logger              logger.Logger
-	done                chan struct{}
-	eventBus            eventbus.EventBus
-	instanceID          string
-	shardChannelBuilder func(int) string
-	shardCount          int
+	connections        map[uuid.UUID]*Connection               // All connections by ID
+	userConns          map[uuid.UUID]map[uuid.UUID]*Connection // User connections by user ID
+	register           chan *Connection
+	unregister         chan *Connection
+	broadcast          chan *BroadcastRequest
+	mutex              sync.RWMutex
+	logger             logger.Logger
+	done               chan struct{}
+	eventBus           rediseventbus.EventBus
+	instanceID         string
+	userChannelBuilder func(uuid.UUID) string     // Function to build channel name for a user
+	eventHandler       rediseventbus.EventHandler // Handler for cross-instance events
+	subscribedUsers    map[uuid.UUID]int          // userID → connection count (for subscription tracking)
 }
 
 // BroadcastRequest represents a request to broadcast a message.
@@ -37,13 +38,14 @@ type BroadcastRequest struct {
 // NewHub creates a new SSE hub.
 func NewHub(logger logger.Logger) *Hub {
 	return &Hub{
-		connections: make(map[uuid.UUID]*Connection),
-		userConns:   make(map[uuid.UUID]map[uuid.UUID]*Connection),
-		register:    make(chan *Connection),
-		unregister:  make(chan *Connection),
-		broadcast:   make(chan *BroadcastRequest, constant.SSEBroadcastBufferSize),
-		logger:      logger,
-		done:        make(chan struct{}),
+		connections:     make(map[uuid.UUID]*Connection),
+		userConns:       make(map[uuid.UUID]map[uuid.UUID]*Connection),
+		register:        make(chan *Connection),
+		unregister:      make(chan *Connection),
+		broadcast:       make(chan *BroadcastRequest, constant.SSEBroadcastBufferSize),
+		logger:          logger,
+		done:            make(chan struct{}),
+		subscribedUsers: make(map[uuid.UUID]int),
 	}
 }
 
@@ -202,10 +204,24 @@ func (h *Hub) handleRegister(conn *Connection) {
 
 	h.userConns[userID][connID] = conn
 
+	// Subscribe to user's Redis channel if this is their first connection
+	if h.eventBus != nil && h.userChannelBuilder != nil {
+		if h.subscribedUsers[userID] == 0 {
+			if err := h.subscribeToUserChannel(userID); err != nil {
+				h.logger.Error("Failed to subscribe to user channel",
+					"user_id", userID,
+					"error", err)
+			}
+		}
+
+		h.subscribedUsers[userID]++
+	}
+
 	h.logger.Info("SSE connection registered",
 		"connection_id", connID,
 		"user_id", userID,
-		"total_connections", len(h.connections))
+		"total_connections", len(h.connections),
+		"subscribed_users", len(h.subscribedUsers))
 }
 
 // handleUnregister handles connection unregistration.
@@ -228,10 +244,14 @@ func (h *Hub) handleUnregister(conn *Connection) {
 		}
 	}
 
+	// Unsubscribe from user's Redis channel if this was their last connection
+	h.handleRedisUnsubscription(userID)
+
 	h.logger.Info("SSE connection unregistered",
 		"connection_id", connID,
 		"user_id", userID,
-		"total_connections", len(h.connections))
+		"total_connections", len(h.connections),
+		"subscribed_users", len(h.subscribedUsers))
 }
 
 // handleBroadcast handles message broadcasting.
@@ -337,63 +357,118 @@ func (h *Hub) shutdown() {
 	h.closeAllConnections()
 }
 
-// SetEventBus configures the hub to receive events from other instances via Redis pub/sub.
-// Uses shard-based channels with application-layer filtering.
-// The eventHandler function should parse service-specific events and call BroadcastToUser or BroadcastToAll.
+// SetEventBus configures the hub to receive events from other instances via Redis sharded pub/sub.
+// Uses per-user channels with Redis 7.0+ native sharded pub/sub (SSUBSCRIBE).
+// Channels are subscribed/unsubscribed dynamically as users connect/disconnect.
+// The eventHandler will be called for all cross-instance events (should call BroadcastToUser).
 func (h *Hub) SetEventBus(
-	eventBus eventbus.EventBus,
+	eventBus rediseventbus.EventBus,
 	instanceID string,
-	shardChannelBuilder func(int) string,
-	shardCount int,
-	eventHandler eventbus.EventHandler,
-) error {
+	userChannelBuilder func(uuid.UUID) string,
+	eventHandler rediseventbus.EventHandler,
+) {
+	h.mutex.Lock()
+	defer h.mutex.Unlock()
+
 	h.eventBus = eventBus
 	h.instanceID = instanceID
-	h.shardChannelBuilder = shardChannelBuilder
-	h.shardCount = shardCount
+	h.userChannelBuilder = userChannelBuilder
+	h.eventHandler = eventHandler
 
-	// Subscribe to all shard channels at once with the custom handler
-	return h.subscribeToAllShards(eventHandler)
+	h.logger.Info("EventBus configured for SSE Hub",
+		"instance_id", instanceID,
+		"using_sharded_pubsub", true)
 }
 
-// subscribeToAllShards subscribes to all shard channels with a wrapper handler that filters by instance ID.
-func (h *Hub) subscribeToAllShards(eventHandler eventbus.EventHandler) error {
-	h.logger.Info("Subscribing to all shard channels", "shard_count", h.shardCount)
+// subscribeToUserChannel subscribes to a user's Redis sharded channel.
+// Must be called with hub mutex locked.
+func (h *Hub) subscribeToUserChannel(userID uuid.UUID) error {
+	if h.eventBus == nil || h.userChannelBuilder == nil || h.eventHandler == nil {
+		return nil
+	}
 
-	// Create a wrapper handler that filters by instance ID
-	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
-		// Skip events from our own instance
+	channel := h.userChannelBuilder(userID)
+
+	// Create wrapper handler that filters by instance ID
+	wrappedHandler := func(ctx context.Context, event rediseventbus.Event) error {
+		// Skip events from our own instance to avoid duplicate delivery
 		if event.GetSourceInstanceID() == h.instanceID {
 			h.logger.Debug("Skipping event from own instance",
 				"instance_id", h.instanceID,
+				"user_id", userID,
 				"event_type", event.GetType())
 
 			return nil
 		}
 
-		h.logger.Debug("Received event from another instance",
+		h.logger.Debug("Received cross-instance event",
 			"source_instance_id", event.GetSourceInstanceID(),
+			"user_id", userID,
 			"event_type", event.GetType())
 
 		// Delegate to service-specific event handler
-		return eventHandler(ctx, event)
+		return h.eventHandler(ctx, event)
 	}
 
-	// Subscribe to all channels with the wrapped handler
-	for i := range h.shardCount {
-		channel := h.shardChannelBuilder(i)
-		if err := h.eventBus.Subscribe(channel, wrappedHandler); err != nil {
-			h.logger.Error("Failed to subscribe to shard channel",
-				"shard_id", i,
-				"channel", channel,
-				"error", err)
+	// Use SSubscribe for Redis 7.0+ sharded pub/sub
+	if err := h.eventBus.SSubscribe(channel, wrappedHandler); err != nil {
+		return err
+	}
 
-			return err
+	h.logger.Info("Subscribed to user channel",
+		"user_id", userID,
+		"channel", channel)
+
+	return nil
+}
+
+// unsubscribeFromUserChannel unsubscribes from a user's Redis sharded channel.
+// Must be called with hub mutex locked.
+func (h *Hub) unsubscribeFromUserChannel(userID uuid.UUID) error {
+	if h.eventBus == nil || h.userChannelBuilder == nil {
+		return nil
+	}
+
+	channel := h.userChannelBuilder(userID)
+
+	// Use SUnsubscribe for Redis 7.0+ sharded pub/sub
+	if err := h.eventBus.SUnsubscribe(channel); err != nil {
+		return err
+	}
+
+	h.logger.Info("Unsubscribed from user channel",
+		"user_id", userID,
+		"channel", channel)
+
+	return nil
+}
+
+// handleRedisUnsubscription handles Redis unsubscription when a user connection is removed.
+// Must be called with hub mutex locked.
+func (h *Hub) handleRedisUnsubscription(userID uuid.UUID) {
+	if h.eventBus == nil || h.userChannelBuilder == nil {
+		return
+	}
+
+	count, exists := h.subscribedUsers[userID]
+	if !exists {
+		return
+	}
+
+	h.subscribedUsers[userID]--
+
+	if h.subscribedUsers[userID] == 0 {
+		delete(h.subscribedUsers, userID)
+
+		if err := h.unsubscribeFromUserChannel(userID); err != nil {
+			h.logger.Error("Failed to unsubscribe from user channel",
+				"user_id", userID,
+				"error", err)
 		}
 	}
 
-	h.logger.Info("Successfully subscribed to all shard channels",
-		"shard_count", h.shardCount)
-
-	return nil
+	h.logger.Debug("Decremented user subscription count",
+		"user_id", userID,
+		"previous_count", count,
+		"new_count", h.subscribedUsers[userID])
 }

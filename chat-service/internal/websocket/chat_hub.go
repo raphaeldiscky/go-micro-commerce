@@ -5,8 +5,8 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
 	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
@@ -23,7 +23,7 @@ type ChatHub struct {
 	logger         logger.Logger
 	ConnectionRepo repository.ConnectionRepository
 	MessageRepo    repository.MessageRepository
-	eventBus       eventbus.EventBus
+	eventBus       rediseventbus.EventBus
 	eventHandler   *event.ChatEventHandler
 	instanceID     string
 	activeChannels map[string]int // channel → connection count
@@ -52,7 +52,7 @@ func NewChatHub(
 }
 
 // SetEventBus sets the event bus and initializes event handlers.
-func (h *ChatHub) SetEventBus(bus eventbus.EventBus) {
+func (h *ChatHub) SetEventBus(bus rediseventbus.EventBus) {
 	h.eventBus = bus
 
 	if bus == nil {
@@ -412,7 +412,7 @@ func (h *ChatHub) publishEvent(
 	eventType string,
 	payload any,
 ) error {
-	baseEvent, err := eventbus.NewBaseEvent(h.instanceID, eventType, payload)
+	baseEvent, err := rediseventbus.NewBaseEvent(h.instanceID, eventType, payload)
 	if err != nil {
 		return err
 	}

@@ -9,12 +9,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/shard"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -23,26 +22,26 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/subscription"
 )
 
 // NotificationRequestEvent is the envelope for notification request events.
 type NotificationRequestEvent struct {
-	Metadata event.Metadata                   `json:"metadata"`
-	Payload  event.NotificationRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                   `json:"metadata"`
+	Payload  kafkaevent.NotificationRequestPayload `json:"payload"`
 }
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata event.Metadata            `json:"metadata"`
-	Payload  event.UserVerifiedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata            `json:"metadata"`
+	Payload  kafkaevent.UserVerifiedPayload `json:"payload"`
 }
 
 // EmailVerificationRequestedEvent is the envelope for all email verification requested events.
 type EmailVerificationRequestedEvent struct {
-	Metadata event.Metadata                          `json:"metadata"`
-	Payload  event.EmailVerificationRequestedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                          `json:"metadata"`
+	Payload  kafkaevent.EmailVerificationRequestedPayload `json:"payload"`
 }
 
 // NotificationEventService handles all notification business logic.
@@ -67,9 +66,8 @@ type notificationEventService struct {
 	emailService     EmailService
 	notificationRepo repository.NotificationRepository
 	sseHub           *sse.Hub
-	eventBus         eventbus.EventBus
+	eventBus         rediseventbus.EventBus
 	instanceID       string
-	sharder          *shard.Sharder
 	logger           logger.Logger
 }
 
@@ -78,9 +76,8 @@ func NewNotificationEventService(
 	emailService EmailService,
 	notificationRepo repository.NotificationRepository,
 	sseHub *sse.Hub,
-	eventBus eventbus.EventBus,
+	eventBus rediseventbus.EventBus,
 	instanceID string,
-	sharder *shard.Sharder,
 	appLogger logger.Logger,
 ) NotificationEventService {
 	return &notificationEventService{
@@ -89,7 +86,6 @@ func NewNotificationEventService(
 		sseHub:           sseHub,
 		eventBus:         eventBus,
 		instanceID:       instanceID,
-		sharder:          sharder,
 		logger:           appLogger,
 	}
 }
@@ -107,13 +103,13 @@ func (s *notificationEventService) ProcessNotificationRequest(
 	}
 
 	switch notificationEvent.Payload.NotificationType {
-	case event.NotificationTypeEmail:
+	case kafkaevent.NotificationTypeEmail:
 		return s.sendEmailNotification(ctx, &notificationEvent.Payload)
-	case event.NotificationTypeSMS:
+	case kafkaevent.NotificationTypeSMS:
 		s.logger.Info("SMS notifications not yet implemented")
 
 		return nil
-	case event.NotificationTypePush:
+	case kafkaevent.NotificationTypePush:
 		return s.sendPushNotification(ctx, &notificationEvent.Payload)
 	default:
 		return fmt.Errorf(
@@ -211,7 +207,7 @@ func (s *notificationEventService) ProcessEmailUserVerified(
 
 // generateVerificationEmail creates an email verification email body.
 func (s *notificationEventService) generateVerificationEmail(
-	payload *event.EmailVerificationRequestedPayload,
+	payload *kafkaevent.EmailVerificationRequestedPayload,
 ) (string, error) {
 	verificationURL := fmt.Sprintf("http://localhost:8080/auth/v1/verify?token=%s", payload.Token)
 
@@ -226,7 +222,7 @@ func (s *notificationEventService) generateVerificationEmail(
 
 // generateWelcomeEmail creates a welcome email body.
 func (s *notificationEventService) generateWelcomeEmail(
-	payload *event.UserVerifiedPayload,
+	payload *kafkaevent.UserVerifiedPayload,
 ) (string, error) {
 	templateData := &dto.UserVerifiedTemplateData{
 		RecipientName: payload.Email,
@@ -238,7 +234,7 @@ func (s *notificationEventService) generateWelcomeEmail(
 // sendEmailNotification sends an email notification.
 func (s *notificationEventService) sendEmailNotification(
 	ctx context.Context,
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) error {
 	s.logger.Infof("Sending email to %s with subject: %s", payload.RecipientEmail, payload.Subject)
 
@@ -260,7 +256,7 @@ func (s *notificationEventService) sendEmailNotification(
 
 // generateEmailBody generates the email body based on template ID and data.
 func (s *notificationEventService) generateEmailBody(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	s.logger.Infof(
 		"Processing template ID: '%s' for email: %s",
@@ -292,7 +288,7 @@ func (s *notificationEventService) generateEmailBody(
 
 // generateOrderConfirmedEmail generates HTML email for order confirmation.
 func (s *notificationEventService) generateOrderConfirmedEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
@@ -304,7 +300,7 @@ func (s *notificationEventService) generateOrderConfirmedEmail(
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
-	var order event.OrderConfirmedData
+	var order kafkaevent.OrderConfirmedData
 	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
@@ -342,7 +338,7 @@ func (s *notificationEventService) generateOrderConfirmedEmail(
 
 // generateOrderDeliveredEmail generates HTML email for order delivered notification.
 func (s *notificationEventService) generateOrderDeliveredEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
@@ -354,7 +350,7 @@ func (s *notificationEventService) generateOrderDeliveredEmail(
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
-	var order event.OrderConfirmedData
+	var order kafkaevent.OrderConfirmedData
 	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
@@ -393,7 +389,7 @@ func (s *notificationEventService) generateOrderDeliveredEmail(
 
 // generateOrderShippedEmail generates HTML email for order shipped notification.
 func (s *notificationEventService) generateOrderShippedEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	recipientName := payload.RecipientName
 	orderNumber := ""
@@ -422,7 +418,7 @@ func (s *notificationEventService) generateOrderShippedEmail(
 
 // generateOrderCancelledEmail generates HTML email for order cancellation.
 func (s *notificationEventService) generateOrderCancelledEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	recipientName := payload.RecipientName
 	orderNumber := ""
@@ -443,7 +439,7 @@ func (s *notificationEventService) generateOrderCancelledEmail(
 
 // generateOrderPaymentRequiredEmail generates HTML email for payment required notification.
 func (s *notificationEventService) generateOrderPaymentRequiredEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
@@ -455,7 +451,7 @@ func (s *notificationEventService) generateOrderPaymentRequiredEmail(
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
-	var order event.OrderConfirmedData
+	var order kafkaevent.OrderConfirmedData
 	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
 	}
@@ -513,7 +509,7 @@ func (s *notificationEventService) generateOrderPaymentRequiredEmail(
 
 // generateOrderPaymentReminderEmail generates HTML email for payment required notification.
 func (s *notificationEventService) generateOrderPaymentReminderEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	orderData, exists := payload.Data["order"]
 	if !exists {
@@ -525,7 +521,7 @@ func (s *notificationEventService) generateOrderPaymentReminderEmail(
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
-	var order event.OrderConfirmedData
+	var order kafkaevent.OrderConfirmedData
 	if err = json.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
 	}
@@ -578,7 +574,7 @@ func (s *notificationEventService) generateOrderPaymentReminderEmail(
 
 // generateOrderPaymentExpiredEmail generates HTML email for order payment expired notification.
 func (s *notificationEventService) generateOrderPaymentExpiredEmail(
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) (string, error) {
 	recipientName := payload.RecipientName
 	orderNumber := ""
@@ -628,7 +624,7 @@ func (s *notificationEventService) generateOrderPaymentExpiredEmail(
 // sendPushNotification sends a push notification via SSE.
 func (s *notificationEventService) sendPushNotification(
 	ctx context.Context,
-	payload *event.NotificationRequestPayload,
+	payload *kafkaevent.NotificationRequestPayload,
 ) error {
 	s.logger.Infof("Sending push notification to user %s with subject: %s",
 		payload.RecipientUserID, payload.Subject)
@@ -669,7 +665,7 @@ func (s *notificationEventService) sendPushNotification(
 	notifDTO := mapper.MapToNotificationResponse(savedNotif)
 
 	// Create SSE message with DTO (has proper json tags)
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
+	sseMsg, err := sse.NewMessage(subscription.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return fmt.Errorf("failed to create SSE message: %w", err)
 	}
@@ -697,39 +693,35 @@ func (s *notificationEventService) sendPushNotification(
 	return nil
 }
 
-// publishToRedis handles Redis publishing logic.
+// publishToRedis handles Redis publishing logic using sharded pub/sub.
 func (s *notificationEventService) publishToRedis(
 	ctx context.Context,
 	userID uuid.UUID,
 	sseMsg *sse.Message,
 ) error {
-	redisEvent := &notification.CreatedEvent{
+	redisEvent := &subscription.NotificationCreatedEvent{
 		UserID:  userID,
 		Message: sseMsg,
 	}
 
-	// Use shard-based channel with consistent hashing
-	shardID, err := s.sharder.GetShardForUser(userID)
-	if err != nil {
-		return fmt.Errorf("failed to get shard for user: %w", err)
-	}
+	// Use user-based sharded channel for native Redis slot-based distribution
+	channelName := redis.NotificationUserChannel(userID)
 
-	channelName := redis.NotificationShardChannel(shardID)
-
-	baseEvent, err := eventbus.NewBaseEvent(
+	baseEvent, err := rediseventbus.NewBaseEvent(
 		s.instanceID,
-		notification.TypeNotificationCreated,
+		subscription.TypeNotificationCreated,
 		redisEvent,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create base event: %w", err)
 	}
 
-	if err = s.eventBus.Publish(ctx, channelName, baseEvent); err != nil {
-		return fmt.Errorf("failed to publish to channel %s: %w", channelName, err)
+	// Use SPublish for sharded pub/sub (Redis 7.0+)
+	if err = s.eventBus.SPublish(ctx, channelName, baseEvent); err != nil {
+		return fmt.Errorf("failed to publish to sharded channel %s: %w", channelName, err)
 	}
 
-	s.logger.Debug("Published notification to Redis",
+	s.logger.Debug("Published notification to Redis sharded channel",
 		"user_id", userID,
 		"channel", channelName)
 
@@ -777,7 +769,7 @@ func (s *notificationEventService) CreateAndBroadcastNotification(
 	notifDTO := mapper.MapToNotificationResponse(savedNotif)
 
 	// Create SSE message with DTO (has proper json tags)
-	sseMsg, err := sse.NewMessage(notification.TypeNotificationCreated, notifDTO)
+	sseMsg, err := sse.NewMessage(subscription.TypeNotificationCreated, notifDTO)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSE message: %w", err)
 	}

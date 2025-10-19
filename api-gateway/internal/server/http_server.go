@@ -55,13 +55,13 @@ func (s *HTTPServer) Start() error {
 		Addr:              ":" + port,
 		Handler:           s.echo,
 		ReadTimeout:       s.config.HTTPServer.ReadTimeout,
-		WriteTimeout:      s.config.HTTPServer.WriteTimeout,
+		WriteTimeout:      0, // Disabled for SSE streaming; timeout middleware handles regular requests
 		IdleTimeout:       s.config.HTTPServer.IdleTimeout,
 		ReadHeaderTimeout: s.config.HTTPServer.ReadHeaderTimeout,
 		MaxHeaderBytes:    s.config.HTTPServer.MaxHeaderBytes,
 	}
 
-	s.echo.Logger.Infof("Starting HTTP server on port %s", port)
+	s.echo.Logger.Infof("Starting HTTP server on port %s (WriteTimeout disabled for SSE)", port)
 
 	return s.echo.StartServer(server)
 }
@@ -137,9 +137,16 @@ func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
 	e.Use(middleware.TimeoutWithConfig(middleware.TimeoutConfig{
 		Timeout: cfg.HTTPServer.IdleTimeout,
 		Skipper: func(c echo.Context) bool {
-			// Skip timeout middleware for WebSocket connections
-			// Timeout middleware wraps ResponseWriter, breaking http.Hijacker needed for WS upgrade
-			return c.Request().Header.Get("Upgrade") == "websocket"
+			req := c.Request()
+
+			// Skip timeout for WebSocket and SSE (Server-Sent Events)
+			if req.Header.Get("Upgrade") == "websocket" {
+				return true
+			}
+			if req.Header.Get("Accept") == "text/event-stream" {
+				return true
+			}
+			return false
 		},
 	}))
 	e.Use(middleware.BodyLimit("10M"))

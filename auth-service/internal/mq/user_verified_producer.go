@@ -5,16 +5,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 )
 
 // UserVerifiedEvent is the envelope for all user verified events.
 type UserVerifiedEvent struct {
-	Metadata event.Metadata            `json:"metadata"`
-	Payload  event.UserVerifiedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata            `json:"metadata"`
+	Payload  kafkaevent.UserVerifiedPayload `json:"payload"`
 }
 
 // NewUserVerifiedEvent creates a new UserVerifiedEvent.
@@ -23,14 +23,14 @@ func NewUserVerifiedEvent(
 	email string,
 ) *UserVerifiedEvent {
 	return &UserVerifiedEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.UserVerifiedEventType,
 			AggregateID: userID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.AuthServiceName,
 		},
-		Payload: event.UserVerifiedPayload{
+		Payload: kafkaevent.UserVerifiedPayload{
 			UserID: userID,
 			Email:  email,
 		},
@@ -43,7 +43,7 @@ func (e *UserVerifiedEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the UserVerifiedEvent.
-func (e *UserVerifiedEvent) GetMetadata() event.Metadata {
+func (e *UserVerifiedEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -62,7 +62,7 @@ func NewUserVerifiedProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *UserVerifiedProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *UserVerifiedProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

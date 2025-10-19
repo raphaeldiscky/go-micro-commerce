@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -15,8 +15,8 @@ import (
 
 // FulfillmentDLQEvent is the envelope for all Fulfillment DLQ events.
 type FulfillmentDLQEvent struct {
-	Metadata event.Metadata   `json:"metadata"`
-	Payload  event.DLQPayload `json:"payload"`
+	Metadata kafkaevent.Metadata   `json:"metadata"`
+	Payload  kafkaevent.DLQPayload `json:"payload"`
 }
 
 // FulfillmentDLQProducer is responsible for producing fulfillment events to the Dead Letter Queue.
@@ -31,14 +31,14 @@ func NewFulfillmentDLQEvent(
 	reason pkgconstant.DLQReason,
 ) *FulfillmentDLQEvent {
 	return &FulfillmentDLQEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.FulfillmentDLQEventType,
 			AggregateID: outboxEvent.AggregateID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.FulfillmentServiceName,
 		},
-		Payload: event.DLQPayload{
+		Payload: kafkaevent.DLQPayload{
 			OutboxEventID:   outboxEvent.ID,
 			AggregateType:   outboxEvent.AggregateType,
 			AggregateID:     outboxEvent.AggregateID,
@@ -60,7 +60,7 @@ func (e *FulfillmentDLQEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the FulfillmentDLQEvent.
-func (e *FulfillmentDLQEvent) GetMetadata() event.Metadata {
+func (e *FulfillmentDLQEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -73,7 +73,7 @@ func NewFulfillmentDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *FulfillmentDLQProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *FulfillmentDLQProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

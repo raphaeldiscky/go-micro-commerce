@@ -7,8 +7,10 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
+
+	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -17,12 +19,15 @@ import (
 
 // Manager manages GraphQL subscriptions by bridging WebSocket events to GraphQL channels.
 type Manager struct {
-	logger        logger.Logger
-	subscriptions map[string]*conversationSubscription
-	userSubs      map[uuid.UUID]*userSubscription
-	mu            sync.RWMutex
-	Hub           *websocket.ChatHub
-	EventBus      eventbus.EventBus
+	logger               logger.Logger
+	subscriptions        map[string]*conversationSubscription
+	userSubs             map[uuid.UUID]*userSubscription
+	conversationChannels map[uuid.UUID]string // conversationID → Redis channel name
+	userChannels         map[uuid.UUID]string // userID → Redis channel name
+	mu                   sync.RWMutex
+	Hub                  *websocket.ChatHub
+	EventBus             rediseventbus.EventBus
+	eventHandlerFunc     rediseventbus.EventHandler
 }
 
 // conversationSubscription represents a subscription to conversation events.
@@ -40,16 +45,25 @@ type userSubscription struct {
 // NewManager creates a new subscription manager.
 func NewManager(
 	hub *websocket.ChatHub,
-	eventBus eventbus.EventBus,
+	eventBus rediseventbus.EventBus,
 	logger logger.Logger,
 ) *Manager {
-	return &Manager{
-		logger:        logger,
-		subscriptions: make(map[string]*conversationSubscription),
-		userSubs:      make(map[uuid.UUID]*userSubscription),
-		Hub:           hub,
-		EventBus:      eventBus,
+	m := &Manager{
+		logger:               logger,
+		subscriptions:        make(map[string]*conversationSubscription),
+		userSubs:             make(map[uuid.UUID]*userSubscription),
+		conversationChannels: make(map[uuid.UUID]string),
+		userChannels:         make(map[uuid.UUID]string),
+		Hub:                  hub,
+		EventBus:             eventBus,
 	}
+
+	// Create event handler function that routes Redis events to local subscribers
+	m.eventHandlerFunc = func(ctx context.Context, event rediseventbus.Event) error {
+		return NewEventHandler(m, logger).HandleEvent(ctx, event)
+	}
+
+	return m
 }
 
 // SubscribeToConversation creates a new subscription to conversation events.
@@ -75,6 +89,9 @@ func (m *Manager) SubscribeToConversation(
 			"subscriber_id", subID)
 	}
 
+	// Subscribe to Redis sharded channel if this is the first subscriber for this conversation
+	isFirstSubscriber := !exists
+
 	m.mu.Unlock()
 
 	// Add this subscriber
@@ -83,10 +100,21 @@ func (m *Manager) SubscribeToConversation(
 	subscriberCount := len(convSub.subscribers)
 	convSub.mu.Unlock()
 
+	// Subscribe to Redis if this is the first subscriber for this conversation
+	if isFirstSubscriber {
+		if err := m.subscribeToConversationRedis(conversationID); err != nil {
+			m.logger.Error("Failed to subscribe to Redis for conversation",
+				"conversation_id", conversationID,
+				"error", err)
+			// Don't fail the subscription, local notifications will still work
+		}
+	}
+
 	m.logger.Info("Added GraphQL subscriber",
 		"conversation_id", conversationID,
 		"subscriber_id", subID,
-		"total_subscribers", subscriberCount)
+		"total_subscribers", subscriberCount,
+		"redis_subscribed", isFirstSubscriber)
 
 	// Handle cleanup when context is done
 	go func() {
@@ -115,14 +143,38 @@ func (m *Manager) SubscribeToUserEvents(
 			subscribers: make(map[string]chan<- graph.UserEvent),
 		}
 		m.userSubs[userID] = userSub
+
+		m.logger.Info("Created new user event subscription group",
+			"user_id", userID,
+			"subscriber_id", subID)
 	}
+
+	// Subscribe to Redis sharded channel if this is the first subscriber for this user
+	isFirstSubscriber := !exists
 
 	m.mu.Unlock()
 
 	// Add this subscriber
 	userSub.mu.Lock()
 	userSub.subscribers[subID] = ch
+	subscriberCount := len(userSub.subscribers)
 	userSub.mu.Unlock()
+
+	// Subscribe to Redis if this is the first subscriber for this user
+	if isFirstSubscriber {
+		if err := m.subscribeToUserRedis(userID); err != nil {
+			m.logger.Error("Failed to subscribe to Redis for user",
+				"user_id", userID,
+				"error", err)
+			// Don't fail the subscription, local notifications will still work
+		}
+	}
+
+	m.logger.Info("Added GraphQL user event subscriber",
+		"user_id", userID,
+		"subscriber_id", subID,
+		"total_subscribers", subscriberCount,
+		"redis_subscribed", isFirstSubscriber)
 
 	// Handle cleanup when context is done
 	go func() {
@@ -137,10 +189,10 @@ func (m *Manager) SubscribeToUserEvents(
 // unsubscribeFromConversation removes a subscriber from a conversation.
 func (m *Manager) unsubscribeFromConversation(conversationID uuid.UUID, subID string) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	convSub, exists := m.subscriptions[conversationID.String()]
 	if !exists {
+		m.mu.Unlock()
 		return
 	}
 
@@ -160,15 +212,27 @@ func (m *Manager) unsubscribeFromConversation(conversationID uuid.UUID, subID st
 		m.logger.Info("Removed conversation subscription group (no subscribers left)",
 			"conversation_id", conversationID)
 	}
+
+	// Unlock before calling unsubscribeFromConversationRedis to avoid deadlock
+	m.mu.Unlock()
+
+	// Unsubscribe from Redis after releasing the lock
+	if subscriberCount == 0 {
+		if err := m.unsubscribeFromConversationRedis(conversationID); err != nil {
+			m.logger.Error("Failed to unsubscribe from Redis for conversation",
+				"conversation_id", conversationID,
+				"error", err)
+		}
+	}
 }
 
 // unsubscribeFromUser removes a subscriber from user events.
 func (m *Manager) unsubscribeFromUser(userID uuid.UUID, subID string) {
 	m.mu.Lock()
-	defer m.mu.Unlock()
 
 	userSub, exists := m.userSubs[userID]
 	if !exists {
+		m.mu.Unlock()
 		return
 	}
 
@@ -177,9 +241,28 @@ func (m *Manager) unsubscribeFromUser(userID uuid.UUID, subID string) {
 	subscriberCount := len(userSub.subscribers)
 	userSub.mu.Unlock()
 
+	m.logger.Info("Removed GraphQL user event subscriber",
+		"user_id", userID,
+		"subscriber_id", subID,
+		"remaining_subscribers", subscriberCount)
+
 	// If no more subscribers, remove the user subscription
 	if subscriberCount == 0 {
 		delete(m.userSubs, userID)
+		m.logger.Info("Removed user event subscription group (no subscribers left)",
+			"user_id", userID)
+	}
+
+	// Unlock before calling unsubscribeFromUserRedis to avoid deadlock
+	m.mu.Unlock()
+
+	// Unsubscribe from Redis after releasing the lock
+	if subscriberCount == 0 {
+		if err := m.unsubscribeFromUserRedis(userID); err != nil {
+			m.logger.Error("Failed to unsubscribe from Redis for user",
+				"user_id", userID,
+				"error", err)
+		}
 	}
 }
 
@@ -273,4 +356,102 @@ func getEventTypeName(event any) string {
 	}
 
 	return fmt.Sprintf("%s.%s", t.PkgPath(), t.Name())
+}
+
+// subscribeToConversationRedis subscribes to the Redis sharded channel for a conversation.
+func (m *Manager) subscribeToConversationRedis(conversationID uuid.UUID) error {
+	channel := redispkg.ConversationChannel(conversationID)
+
+	m.mu.Lock()
+	m.conversationChannels[conversationID] = channel
+	m.mu.Unlock()
+
+	// Subscribe to Redis sharded channel
+	if err := m.EventBus.SSubscribe(channel, m.eventHandlerFunc); err != nil {
+		m.mu.Lock()
+		delete(m.conversationChannels, conversationID)
+		m.mu.Unlock()
+
+		return err
+	}
+
+	m.logger.Info("Subscribed to Redis sharded channel for conversation",
+		"conversation_id", conversationID,
+		"channel", channel)
+
+	return nil
+}
+
+// unsubscribeFromConversationRedis unsubscribes from the Redis sharded channel for a conversation.
+func (m *Manager) unsubscribeFromConversationRedis(conversationID uuid.UUID) error {
+	m.mu.Lock()
+
+	channel, exists := m.conversationChannels[conversationID]
+	if !exists {
+		m.mu.Unlock()
+		return nil
+	}
+
+	delete(m.conversationChannels, conversationID)
+	m.mu.Unlock()
+
+	// Unsubscribe from Redis sharded channel
+	if err := m.EventBus.SUnsubscribe(channel); err != nil {
+		return err
+	}
+
+	m.logger.Info("Unsubscribed from Redis sharded channel for conversation",
+		"conversation_id", conversationID,
+		"channel", channel)
+
+	return nil
+}
+
+// subscribeToUserRedis subscribes to the Redis sharded channel for a user.
+func (m *Manager) subscribeToUserRedis(userID uuid.UUID) error {
+	channel := redispkg.UserPresenceChannel(userID)
+
+	m.mu.Lock()
+	m.userChannels[userID] = channel
+	m.mu.Unlock()
+
+	// Subscribe to Redis sharded channel
+	if err := m.EventBus.SSubscribe(channel, m.eventHandlerFunc); err != nil {
+		m.mu.Lock()
+		delete(m.userChannels, userID)
+		m.mu.Unlock()
+
+		return err
+	}
+
+	m.logger.Info("Subscribed to Redis sharded channel for user",
+		"user_id", userID,
+		"channel", channel)
+
+	return nil
+}
+
+// unsubscribeFromUserRedis unsubscribes from the Redis sharded channel for a user.
+func (m *Manager) unsubscribeFromUserRedis(userID uuid.UUID) error {
+	m.mu.Lock()
+
+	channel, exists := m.userChannels[userID]
+	if !exists {
+		m.mu.Unlock()
+		return nil
+	}
+
+	delete(m.userChannels, userID)
+	m.mu.Unlock()
+
+	// Unsubscribe from Redis sharded channel
+	if err := m.EventBus.SUnsubscribe(channel); err != nil {
+		return err
+	}
+
+	m.logger.Info("Unsubscribed from Redis sharded channel for user",
+		"user_id", userID,
+		"channel", channel)
+
+	return nil
 }

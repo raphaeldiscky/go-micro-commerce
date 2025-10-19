@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -15,8 +15,8 @@ import (
 
 // PaymentDLQEvent is the envelope for all Payment events.
 type PaymentDLQEvent struct {
-	Payload  event.DLQPayload `json:"payload"`
-	Metadata event.Metadata   `json:"metadata"`
+	Payload  kafkaevent.DLQPayload `json:"payload"`
+	Metadata kafkaevent.Metadata   `json:"metadata"`
 }
 
 // PaymentDLQProducer is responsible for producing Payment DLQ events.
@@ -31,14 +31,14 @@ func NewPaymentDLQEvent(
 	reason pkgconstant.DLQReason,
 ) *PaymentDLQEvent {
 	return &PaymentDLQEvent{
-		Metadata: event.Metadata{ // Use the correct type from mq package
+		Metadata: kafkaevent.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   kafka.PaymentDLQEventType,
 			AggregateID: outboxEvent.AggregateID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.PaymentServiceName,
 		},
-		Payload: event.DLQPayload{
+		Payload: kafkaevent.DLQPayload{
 			OutboxEventID:   outboxEvent.ID,
 			AggregateType:   outboxEvent.AggregateType,
 			AggregateID:     outboxEvent.AggregateID,
@@ -60,7 +60,7 @@ func (e *PaymentDLQEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the PaymentDLQEvent.
-func (e *PaymentDLQEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+func (e *PaymentDLQEvent) GetMetadata() kafkaevent.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
@@ -73,7 +73,7 @@ func NewPaymentDLQProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentDLQProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *PaymentDLQProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

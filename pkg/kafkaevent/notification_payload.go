@@ -1,0 +1,81 @@
+package kafkaevent
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
+
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+)
+
+// NotificationRequestPayload represents a notification request event payload.
+type NotificationRequestPayload struct {
+	ID               uuid.UUID               `json:"id"`
+	RecipientEmail   string                  `json:"recipient_email"`
+	RecipientName    string                  `json:"recipient_name,omitempty"`
+	RecipientUserID  string                  `json:"recipient_user_id,omitempty"`
+	NotificationType NotificationType        `json:"notification_type"`
+	TemplateID       constant.TemplateIDType `json:"template_id"`
+	Subject          string                  `json:"subject"`
+	Message          string                  `json:"message,omitempty"`
+	Priority         NotificationPriority    `json:"priority"`
+	Data             map[string]any          `json:"data"`
+	ScheduledFor     *time.Time              `json:"scheduled_for,omitempty"`
+	ExpiresAt        *time.Time              `json:"expires_at,omitempty"`
+	CreatedAt        time.Time               `json:"created_at"`
+}
+
+// NotificationType represents the type of notification.
+type NotificationType string
+
+const (
+	// NotificationTypeEmail represents email notification type.
+	NotificationTypeEmail NotificationType = "email"
+	// NotificationTypeSMS represents SMS notification type.
+	NotificationTypeSMS NotificationType = "sms"
+	// NotificationTypePush represents push notification type.
+	NotificationTypePush NotificationType = "push"
+)
+
+// NotificationPriority represents the priority of notification.
+type NotificationPriority string
+
+const (
+	// NotificationPriorityLow represents low priority notification.
+	NotificationPriorityLow NotificationPriority = "low"
+	// NotificationPriorityNormal represents normal priority notification.
+	NotificationPriorityNormal NotificationPriority = "normal"
+	// NotificationPriorityHigh represents high priority notification.
+	NotificationPriorityHigh NotificationPriority = "high"
+)
+
+//
+
+// OrderConfirmedData represents data for order already paid and confirmed, and will be preparing to be shipped.
+type OrderConfirmedData struct {
+	OrderID           uuid.UUID       `json:"order_id"`
+	CustomerName      string          `json:"customer_name"`
+	CustomerEmail     string          `json:"customer_email"`
+	Items             []OrderItemData `json:"items,omitempty"`
+	Subtotal          decimal.Decimal `json:"subtotal"`
+	ShippingCost      decimal.Decimal `json:"shipping_cost"`
+	TotalTax          decimal.Decimal `json:"total_tax"`
+	TotalDiscount     decimal.Decimal `json:"total_discount"`
+	TotalPrice        decimal.Decimal `json:"total_price"`
+	Currency          string          `json:"currency"`
+	OrderDate         time.Time       `json:"order_date"`
+	TrackingNumber    *string         `json:"tracking_number,omitempty"`
+	EstimatedDelivery *time.Time      `json:"estimated_delivery,omitempty"`
+}
+
+// OrderItemData represents an order item for email template.
+type OrderItemData struct {
+	ProductName   string          `json:"product_name"`
+	Quantity      int64           `json:"quantity"`
+	UnitPrice     decimal.Decimal `json:"unit_price"`
+	TaxRate       decimal.Decimal `json:"tax_rate"`
+	TotalTax      decimal.Decimal `json:"total_tax"`
+	TotalDiscount decimal.Decimal `json:"total_discount"`
+	TotalPrice    decimal.Decimal `json:"total_price"`
+}

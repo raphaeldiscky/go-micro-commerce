@@ -15,6 +15,11 @@ type Publisher interface {
 	Publish(ctx context.Context, channel string, message *Message) error
 	// PublishWithRetry publishes a message with retry logic.
 	PublishWithRetry(ctx context.Context, channel string, message *Message, maxRetries int) error
+	// SPublish publishes a message to the specified sharded channel (Redis 7.0+).
+	// Sharded pub/sub uses slot-based distribution for better scalability in Redis Cluster.
+	SPublish(ctx context.Context, channel string, message *Message) error
+	// SPublishWithRetry publishes a message to a sharded channel with retry logic.
+	SPublishWithRetry(ctx context.Context, channel string, message *Message, maxRetries int) error
 	// Close closes the publisher and releases resources.
 	Close() error
 }
@@ -25,8 +30,13 @@ type Subscriber interface {
 	Subscribe(ctx context.Context, handler MessageHandler, channels ...string) error
 	// SubscribePattern subscribes to channels matching a pattern.
 	SubscribePattern(ctx context.Context, handler MessageHandler, pattern string) error
+	// SSubscribe subscribes to one or more sharded channels (Redis 7.0+).
+	// Sharded subscriptions use slot-based distribution for better scalability in Redis Cluster.
+	SSubscribe(ctx context.Context, handler MessageHandler, channels ...string) error
 	// Unsubscribe unsubscribes from specified channels.
 	Unsubscribe(channels ...string) error
+	// SUnsubscribe unsubscribes from specified sharded channels.
+	SUnsubscribe(channels ...string) error
 	// Close closes the subscriber and releases resources.
 	Close() error
 }
@@ -39,6 +49,8 @@ type PubSubClient interface {
 	Publish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
 	Subscribe(ctx context.Context, channels ...string) *redis.PubSub
 	PSubscribe(ctx context.Context, patterns ...string) *redis.PubSub
+	SPublish(ctx context.Context, channel string, message interface{}) *redis.IntCmd
+	SSubscribe(ctx context.Context, channels ...string) *redis.PubSub
 }
 
 // PubSubConfig holds configuration for Redis pub/sub.

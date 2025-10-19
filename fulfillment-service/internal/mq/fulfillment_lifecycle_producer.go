@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -16,8 +16,8 @@ import (
 
 // FulfillmentLifecycleEvent is the envelope for all Fulfillment events.
 type FulfillmentLifecycleEvent struct {
-	Metadata event.Metadata                    `json:"metadata"`
-	Payload  event.FulfillmentLifecyclePayload `json:"payload"`
+	Metadata kafkaevent.Metadata                    `json:"metadata"`
+	Payload  kafkaevent.FulfillmentLifecyclePayload `json:"payload"`
 }
 
 // FulfillmentLifecycleProducer is responsible for producing Fulfillment Lifecycle events.
@@ -31,14 +31,14 @@ func NewFulfillmentLifecycleEvent(
 	fulfillment *entity.Fulfillment,
 ) *FulfillmentLifecycleEvent {
 	return &FulfillmentLifecycleEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   getEventTypeFromStatus(fulfillment.Status),
 			AggregateID: fulfillment.ID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.FulfillmentServiceName,
 		},
-		Payload: event.FulfillmentLifecyclePayload{
+		Payload: kafkaevent.FulfillmentLifecyclePayload{
 			FulfillmentID:       fulfillment.ID,
 			OrderID:             fulfillment.OrderID,
 			Status:              string(fulfillment.Status),
@@ -55,7 +55,7 @@ func (e *FulfillmentLifecycleEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the FulfillmentLifecycleEvent.
-func (e *FulfillmentLifecycleEvent) GetMetadata() event.Metadata {
+func (e *FulfillmentLifecycleEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -68,7 +68,7 @@ func NewFulfillmentLifecycleProducer(producer *kafka.AsyncProducer) kafka.Produc
 }
 
 // Send implements the KafkaProducer interface.
-func (p *FulfillmentLifecycleProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *FulfillmentLifecycleProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

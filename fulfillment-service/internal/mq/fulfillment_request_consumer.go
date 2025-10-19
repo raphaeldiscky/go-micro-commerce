@@ -9,8 +9,8 @@ import (
 
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/client"
@@ -22,12 +22,12 @@ import (
 
 // FulfillmentRequestEvent is the envelope for fulfillment request events.
 type FulfillmentRequestEvent struct {
-	Metadata event.Metadata                  `json:"metadata"`
-	Payload  event.FulfillmentRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                  `json:"metadata"`
+	Payload  kafkaevent.FulfillmentRequestPayload `json:"payload"`
 }
 
 // GetMetadata returns the metadata associated with the FulfillmentRequestEvent.
-func (e *FulfillmentRequestEvent) GetMetadata() event.Metadata {
+func (e *FulfillmentRequestEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -61,7 +61,7 @@ func (c *FulfillmentRequestConsumer) Handler(ctx context.Context, body []byte) e
 	c.logger.Infof("Received fulfillment request event: %s", string(body))
 	// First, extract metadata to understand the event
 	var meta struct {
-		Metadata event.Metadata `json:"metadata"`
+		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {
@@ -259,7 +259,7 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 	return fulfillment, nil
 }
 
-// saveFulfillmentAndPublishEvent saves the fulfillment to database and publishes the created event.
+// saveFulfillmentAndPublishEvent saves the fulfillment to database and publishes the created kafkaevent.
 func (c *FulfillmentRequestConsumer) saveFulfillmentAndPublishEvent(
 	ctx context.Context,
 	ds repository.DataStore,

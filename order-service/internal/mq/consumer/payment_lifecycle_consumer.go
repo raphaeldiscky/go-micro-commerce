@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
@@ -19,8 +19,8 @@ import (
 
 // PaymentLifecycleEvent is the envelope for payment lifecycle events.
 type PaymentLifecycleEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  event.PaymentLifecyclePayload `json:"payload"`
+	Metadata kafkaevent.Metadata                `json:"metadata"`
+	Payload  kafkaevent.PaymentLifecyclePayload `json:"payload"`
 }
 
 // PaymentLifecycleConsumer handles the logic for processing payment lifecycle events.
@@ -47,7 +47,7 @@ func NewPaymentLifecycleConsumer(
 func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) error {
 	// First, extract metadata to understand the event
 	var meta struct {
-		Metadata event.Metadata `json:"metadata"`
+		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
 	if err := json.Unmarshal(body, &meta); err != nil {

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/testcontainers"
 	"github.com/stretchr/testify/suite"
@@ -26,7 +26,7 @@ import (
 // mockKafkaProducer is a mock implementation of KafkaProducerInterface for testing.
 type mockKafkaProducer struct{}
 
-func (m *mockKafkaProducer) Send(_ context.Context, _ event.BaseEvent) error {
+func (m *mockKafkaProducer) Send(_ context.Context, _ kafkaevent.BaseEvent) error {
 	// Do nothing - just simulate successful send for testing
 	return nil
 }

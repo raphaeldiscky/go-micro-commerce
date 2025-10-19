@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -18,8 +18,8 @@ import (
 
 // PaymentLifecycleEvent is the envelope for all Payment events.
 type PaymentLifecycleEvent struct {
-	Metadata event.Metadata                `json:"metadata"`
-	Payload  event.PaymentLifecyclePayload `json:"payload"`
+	Metadata kafkaevent.Metadata                `json:"metadata"`
+	Payload  kafkaevent.PaymentLifecyclePayload `json:"payload"`
 }
 
 // PaymentLifecycleProducer is responsible for producing Payment Lifecycle events.
@@ -36,14 +36,14 @@ func NewPaymentLifecycleEvent(
 	totalPrice decimal.Decimal,
 ) *PaymentLifecycleEvent {
 	return &PaymentLifecycleEvent{
-		Metadata: event.Metadata{ // Use the correct type from mq package
+		Metadata: kafkaevent.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   mapper.MapStatusToEventType(newStatus),
 			AggregateID: paymentID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.PaymentServiceName,
 		},
-		Payload: event.PaymentLifecyclePayload{
+		Payload: kafkaevent.PaymentLifecyclePayload{
 			PaymentID:  paymentID,
 			OrderID:    orderID,
 			Status:     string(newStatus),
@@ -58,7 +58,7 @@ func (e *PaymentLifecycleEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the PaymentLifecycleEvent.
-func (e *PaymentLifecycleEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+func (e *PaymentLifecycleEvent) GetMetadata() kafkaevent.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
@@ -71,7 +71,7 @@ func NewPaymentLifecycleProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *PaymentLifecycleProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *PaymentLifecycleProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

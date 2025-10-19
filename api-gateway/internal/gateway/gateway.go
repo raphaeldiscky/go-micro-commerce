@@ -803,6 +803,8 @@ func (gw *Gateway) handleBackendDialFailure(
 
 // ProxySSE creates a handler that proxies Server-Sent Events (SSE) to a service.
 // SSE requires streaming without buffering and no timeouts.
+//
+//nolint:gocyclo,cyclop // TODO fix this later.
 func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		start := time.Now()
@@ -919,14 +921,20 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 			duration,
 		)
 
-		// Copy response headers (including Content-Type: text/event-stream)
+		// Copy response headers from backend (except problematic ones)
+		// Essential headers like Content-Type: text/event-stream must be copied
 		for key, values := range resp.Header {
+			// Skip headers that break streaming or are managed by Gateway
+			if shouldSkipHeaderForSSE(key) {
+				continue
+			}
+
 			for _, value := range values {
 				c.Response().Header().Add(key, value)
 			}
 		}
 
-		// Disable buffering for SSE streaming
+		// Disable buffering for SSE streaming (override if backend set it)
 		c.Response().Header().Set("X-Accel-Buffering", "no")
 		c.Response().Header().Set("Cache-Control", "no-cache")
 		c.Response().Header().Set("Connection", "keep-alive")
@@ -934,13 +942,20 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 		// Write status code
 		c.Response().WriteHeader(resp.StatusCode)
 
-		// Flush headers immediately
-		if flusher, ok := c.Response().Writer.(http.Flusher); ok {
+		// Flush headers immediately and get flusher for streaming
+		flusher, ok := c.Response().Writer.(http.Flusher)
+		if ok && flusher != nil {
 			flusher.Flush()
 		}
 
-		// Stream response body directly to client
-		_, err = io.Copy(c.Response().Writer, resp.Body)
+		// Stream response body with automatic flushing after each write
+		// This ensures SSE events are sent immediately to the client
+		fw := &flushWriter{
+			w:       c.Response().Writer,
+			flusher: flusher,
+		}
+
+		_, err = io.Copy(fw, resp.Body)
 		if err != nil {
 			// Connection closed by client or backend is normal for SSE
 			gw.logger.Debug("SSE connection closed", "error", err)
@@ -950,4 +965,48 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 
 		return nil
 	}
+}
+
+// flushWriter wraps http.ResponseWriter and flushes after each write.
+// This is essential for SSE streaming to ensure events reach the client immediately.
+type flushWriter struct {
+	w       http.ResponseWriter
+	flusher http.Flusher
+}
+
+// Write writes data and immediately flushes it to the client.
+func (fw *flushWriter) Write(p []byte) (int, error) {
+	n, err := fw.w.Write(p)
+	if err != nil {
+		return n, err
+	}
+
+	// Flush after every write to ensure SSE events are sent immediately
+	if fw.flusher != nil {
+		fw.flusher.Flush()
+	}
+
+	return n, nil
+}
+
+// shouldSkipHeaderForSSE returns true for headers that should not be copied for SSE streaming.
+// These headers either break chunked encoding or conflict with Gateway settings.
+func shouldSkipHeaderForSSE(key string) bool {
+	// Transfer-Encoding and Content-Length break streaming when copied
+	// Connection is managed by the Gateway
+	// Access-Control-* headers are set by Gateway CORS middleware
+	skipHeaders := []string{
+		"Transfer-Encoding",
+		"Content-Length",
+		"Connection",
+		"Access-Control-",
+	}
+
+	for _, skip := range skipHeaders {
+		if strings.EqualFold(key, skip) || strings.HasPrefix(key, skip) {
+			return true
+		}
+	}
+
+	return false
 }

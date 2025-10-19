@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
@@ -18,8 +18,8 @@ import (
 
 // OrderLifecycleEvent is the envelope for all Order events.
 type OrderLifecycleEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.OrderLifecyclePayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.OrderLifecyclePayload `json:"payload"`
 }
 
 // OrderLifecycleProducer is responsible for producing Order Lifecycle events.
@@ -37,14 +37,14 @@ func NewOrderLifecycleEvent(
 	items []entity.OrderItem,
 ) *OrderLifecycleEvent {
 	return &OrderLifecycleEvent{
-		Metadata: event.Metadata{ // Use the correct type from mq package
+		Metadata: kafkaevent.Metadata{ // Use the correct type from mq package
 			EventID:     uuid.New(),
 			EventType:   mapper.MapStatusToEventType(newStatus),
 			AggregateID: orderID,
 			OccurredAt:  time.Now().UTC(),
 			Source:      pkgconstant.OrderServiceName,
 		},
-		Payload: event.OrderLifecyclePayload{
+		Payload: kafkaevent.OrderLifecyclePayload{
 			OrderID:    orderID,
 			UserID:     userID,
 			Status:     string(newStatus),
@@ -60,7 +60,7 @@ func (e *OrderLifecycleEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the OrderLifecycleEvent.
-func (e *OrderLifecycleEvent) GetMetadata() event.Metadata { // Use the correct type from mq package
+func (e *OrderLifecycleEvent) GetMetadata() kafkaevent.Metadata { // Use the correct type from mq package
 	return e.Metadata
 }
 
@@ -73,7 +73,7 @@ func NewOrderLifecycleProducer(producer *kafka.AsyncProducer) kafka.Producer {
 }
 
 // Send implements the KafkaProducer interface.
-func (p *OrderLifecycleProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *OrderLifecycleProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

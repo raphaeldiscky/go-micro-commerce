@@ -2,20 +2,17 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/eventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/shard"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/sse"
 
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/notification"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/subscription"
 )
@@ -25,9 +22,8 @@ type Providers struct {
 	DataStore           repository.DataStore
 	KafkaAdmin          *kafka.Admin
 	SSEHub              *sse.Hub
-	EventBus            eventbus.EventBus
+	EventBus            rediseventbus.EventBus
 	InstanceID          string
-	Sharder             *shard.Sharder
 	SubscriptionManager *subscription.Manager
 }
 
@@ -67,6 +63,19 @@ func SetupGlobal(
 		return nil, err
 	}
 
+	appLogger.Info("Redis Cluster connection established",
+		"addrs", cfg.Redis.Addrs,
+		"cluster_mode", true)
+
+	// Verify Redis connection with ping
+	if err = redisClusterClient.Ping(ctx).Err(); err != nil {
+		appLogger.Error("Redis Cluster ping failed", "error", err)
+
+		return nil, fmt.Errorf("redis cluster ping failed: %w", err)
+	}
+
+	appLogger.Info("Redis Cluster health check passed")
+
 	dataStore := repository.NewDataStore(pgPool)
 
 	// Setup kafka admin
@@ -90,48 +99,27 @@ func SetupGlobal(
 	redisPublisher := redis.NewPublisher(redisClusterClient, pubSubConfig)
 	redisSubscriber := redis.NewSubscriber(redisClusterClient, pubSubConfig, appLogger)
 
+	appLogger.Info("Redis Pub/Sub components initialized",
+		"buffer_size", pubSubConfig.ChannelBufferSize)
+
 	// Generate instance ID
 	instanceID := uuid.New().String()
-	eventBus := eventbus.NewRedisEventBus(
+	eventBus := rediseventbus.NewRedisEventBus(
 		redisPublisher,
 		redisSubscriber,
 		instanceID,
 		appLogger,
 	)
 
-	appLogger.Info("EventBus initialized with Redis pub/sub",
-		"instance_id", instanceID)
-
-	// Initialize Sharder with consistent hashing
-	sharder, err := shard.NewSharder(shard.Config{
-		ShardCount:        cfg.Sharding.ShardCount,
-		ReplicationFactor: cfg.Sharding.ReplicationFactor,
-		LoadFactor:        cfg.Sharding.LoadFactor,
-	}, appLogger)
-	if err != nil {
-		appLogger.Errorf("failed to create shard: %v", err)
-		return nil, err
-	}
-
-	appLogger.Info("Sharder initialized with consistent hashing",
-		"shard_count", cfg.Sharding.ShardCount,
-		"replication_factor", cfg.Sharding.ReplicationFactor,
-		"load_factor", cfg.Sharding.LoadFactor)
+	appLogger.Info("EventBus initialized with Redis sharded pub/sub",
+		"instance_id", instanceID,
+		"using_cluster", true)
 
 	// Initialize SubscriptionManager for GraphQL subscriptions
-	subscriptionManager := subscription.NewManager(eventBus, appLogger)
+	subscriptionManager := subscription.NewManager(eventBus, sseHub, appLogger)
 
-	// Set up SSE Hub with EventBus for cross-instance notifications
-	if errSetup := setupSSEEventBus(sseHub, eventBus, instanceID, appLogger); errSetup != nil {
-		appLogger.Errorf("failed to set up SSE EventBus: %v", errSetup)
-		return nil, errSetup
-	}
-
-	// Set up GraphQL subscription event handlers
-	if errSetup := setupGraphQLSubscriptions(subscriptionManager, eventBus, appLogger); errSetup != nil {
-		appLogger.Errorf("failed to set up GraphQL subscriptions: %v", errSetup)
-		return nil, errSetup
-	}
+	appLogger.Info("Subscription manager initialized for GraphQL and SSE cross-instance messaging",
+		"instance_id", instanceID)
 
 	return &Providers{
 		KafkaAdmin:          kafkaAdmin,
@@ -139,97 +127,6 @@ func SetupGlobal(
 		SSEHub:              sseHub,
 		EventBus:            eventBus,
 		InstanceID:          instanceID,
-		Sharder:             sharder,
 		SubscriptionManager: subscriptionManager,
 	}, nil
-}
-
-// setupSSEEventBus configures the SSE Hub to receive cross-instance notifications via Redis.
-func setupSSEEventBus(
-	sseHub *sse.Hub,
-	eventBus eventbus.EventBus,
-	instanceID string,
-	appLogger logger.Logger,
-) error {
-	// Create notification event handler
-	notificationEventHandler := notification.NewEventHandler(appLogger)
-
-	// Register handler for notification created events
-	notificationEventHandler.SetNotificationCreatedHandler(
-		func(_ context.Context, event *notification.CreatedEvent) error {
-			// Application-layer filtering: check if user is connected to this instance
-			connections := sseHub.GetUserConnections(event.UserID)
-			if len(connections) == 0 {
-				appLogger.Debug("User not connected to this instance, skipping",
-					"user_id", event.UserID)
-
-				return nil
-			}
-
-			appLogger.Debug("Broadcasting notification to user connections",
-				"user_id", event.UserID,
-				"connection_count", len(connections))
-
-			// Broadcast to all user connections on this instance
-			return sseHub.BroadcastToUser(event.UserID, event.Message)
-		},
-	)
-
-	// Wrap the notification handler with eventbus.EventHandler signature
-	eventHandler := func(ctx context.Context, event eventbus.Event) error {
-		return notificationEventHandler.HandleEvent(ctx, event)
-	}
-
-	// Configure SSE Hub with EventBus
-	if err := sseHub.SetEventBus(
-		eventBus,
-		instanceID,
-		redis.NotificationShardChannel,
-		pkgconstant.SSEShardCount,
-		eventHandler,
-	); err != nil {
-		return err
-	}
-
-	appLogger.Info("SSE Hub configured with EventBus for cross-instance notifications",
-		"shard_count", pkgconstant.SSEShardCount)
-
-	return nil
-}
-
-// setupGraphQLSubscriptions configures GraphQL subscriptions to receive notification events.
-func setupGraphQLSubscriptions(
-	subscriptionManager *subscription.Manager,
-	eventBus eventbus.EventBus,
-	appLogger logger.Logger,
-) error {
-	// Create event handler for GraphQL subscriptions
-	eventHandler := subscription.NewEventHandler(subscriptionManager, appLogger)
-
-	// Wrap the handler with eventbus.EventHandler signature
-	wrappedHandler := func(ctx context.Context, event eventbus.Event) error {
-		// Handle all events (including from same instance) because:
-		// - Notification creation only broadcasts to SSE Hub (local SSE connections)
-		// - GraphQL subscriptions use SubscriptionManager (separate from SSE Hub)
-		// - GraphQL subscriptions need Redis pub/sub events to receive notifications
-		return eventHandler.HandleEvent(ctx, event)
-	}
-
-	// Subscribe to all notification shards
-	for i := range pkgconstant.SSEShardCount {
-		channel := redis.NotificationShardChannel(i)
-		if err := eventBus.Subscribe(channel, wrappedHandler); err != nil {
-			appLogger.Error("Failed to subscribe to notification shard for GraphQL",
-				"shard_id", i,
-				"channel", channel,
-				"error", err)
-
-			return err
-		}
-	}
-
-	appLogger.Info("GraphQL subscriptions configured with EventBus",
-		"shard_count", pkgconstant.SSEShardCount)
-
-	return nil
 }

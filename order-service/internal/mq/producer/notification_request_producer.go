@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -15,8 +15,8 @@ import (
 
 // NotificationRequestEvent is the envelope for notification request events.
 type NotificationRequestEvent struct {
-	Metadata event.Metadata                   `json:"metadata"`
-	Payload  event.NotificationRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                   `json:"metadata"`
+	Payload  kafkaevent.NotificationRequestPayload `json:"payload"`
 }
 
 // NotificationRequestProducer is responsible for producing Notification Request events.
@@ -25,7 +25,7 @@ type NotificationRequestProducer struct {
 	topic    string
 }
 
-// NewNotificationRequestEvent creates a new order notification event.
+// NewNotificationRequestEvent creates a new order notification kafkaevent.
 func NewNotificationRequestEvent(
 	order *entity.Order,
 	products []entity.Product,
@@ -35,7 +35,7 @@ func NewNotificationRequestEvent(
 	subject string,
 ) *NotificationRequestEvent {
 	// Prepare order items data for email template
-	var items []event.OrderItemData
+	var items []kafkaevent.OrderItemData
 
 	// Only include items if we have matching products data
 	if len(products) > 0 {
@@ -43,7 +43,7 @@ func NewNotificationRequestEvent(
 			if i < len(products) {
 				item := &order.Items[i]
 				product := &products[i]
-				items = append(items, event.OrderItemData{
+				items = append(items, kafkaevent.OrderItemData{
 					ProductName: product.Name,
 					Quantity:    item.Quantity,
 					UnitPrice:   item.UnitPrice,
@@ -54,7 +54,7 @@ func NewNotificationRequestEvent(
 	}
 
 	// Create order confirmation data
-	orderData := event.OrderConfirmedData{
+	orderData := kafkaevent.OrderConfirmedData{
 		OrderID:        order.ID,
 		CustomerName:   customerName,
 		CustomerEmail:  customerEmail,
@@ -97,20 +97,20 @@ func NewNotificationRequestEvent(
 		// No additional data needed
 	}
 
-	payload := event.NotificationRequestPayload{
+	payload := kafkaevent.NotificationRequestPayload{
 		ID:               uuid.New(),
 		RecipientEmail:   customerEmail,
 		RecipientName:    customerName,
-		NotificationType: event.NotificationTypeEmail,
+		NotificationType: kafkaevent.NotificationTypeEmail,
 		TemplateID:       templateID,
 		Subject:          subject,
-		Priority:         event.NotificationPriorityNormal,
+		Priority:         kafkaevent.NotificationPriorityNormal,
 		Data:             templateData,
 		CreatedAt:        time.Now().UTC(),
 	}
 
 	return &NotificationRequestEvent{
-		Metadata: event.Metadata{
+		Metadata: kafkaevent.Metadata{
 			EventID:     uuid.New(),
 			EventType:   kafka.NotificationRequestedEventType,
 			AggregateID: order.ID,
@@ -127,7 +127,7 @@ func (e *NotificationRequestEvent) GetPayload() any {
 }
 
 // GetMetadata returns the metadata associated with the NotificationRequestEvent.
-func (e *NotificationRequestEvent) GetMetadata() event.Metadata {
+func (e *NotificationRequestEvent) GetMetadata() kafkaevent.Metadata {
 	return e.Metadata
 }
 
@@ -140,7 +140,7 @@ func NewNotificationRequestProducer(producer *kafka.AsyncProducer) kafka.Produce
 }
 
 // Send implements the KafkaProducer interface.
-func (p *NotificationRequestProducer) Send(ctx context.Context, evt event.BaseEvent) error {
+func (p *NotificationRequestProducer) Send(ctx context.Context, evt kafkaevent.BaseEvent) error {
 	return p.Producer.ProduceAsync(ctx, p.topic, evt)
 }
 

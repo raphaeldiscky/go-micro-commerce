@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/bytedance/sonic"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/entity"
@@ -16,8 +16,8 @@ import (
 
 // NotificationRequestEvent is the envelope for notification request events.
 type NotificationRequestEvent struct {
-	Metadata event.Metadata                   `json:"metadata"`
-	Payload  event.NotificationRequestPayload `json:"payload"`
+	Metadata kafkaevent.Metadata                   `json:"metadata"`
+	Payload  kafkaevent.NotificationRequestPayload `json:"payload"`
 }
 
 // NotificationRequestConsumer handles storing notification request events in inbox for exactly-once processing.
@@ -40,7 +40,7 @@ func NewNotificationRequestConsumer(
 // Handler processes notification request events by storing them in inbox for exactly-once processing.
 func (c *NotificationRequestConsumer) Handler(ctx context.Context, body []byte) error {
 	var meta struct {
-		Metadata event.Metadata `json:"metadata"`
+		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
 	if err := sonic.Unmarshal(body, &meta); err != nil {

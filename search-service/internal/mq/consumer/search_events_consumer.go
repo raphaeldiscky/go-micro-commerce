@@ -5,8 +5,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/search-service/internal/entity"
@@ -15,20 +15,20 @@ import (
 
 // ProductCreatedEvent is the envelope for product created events.
 type ProductCreatedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.ProductCreatedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.ProductCreatedPayload `json:"payload"`
 }
 
 // ProductUpdatedEvent is the envelope for product updated events.
 type ProductUpdatedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.ProductUpdatedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.ProductUpdatedPayload `json:"payload"`
 }
 
 // ProductDeletedEvent is the envelope for product deleted events.
 type ProductDeletedEvent struct {
-	Metadata event.Metadata              `json:"metadata"`
-	Payload  event.ProductDeletedPayload `json:"payload"`
+	Metadata kafkaevent.Metadata              `json:"metadata"`
+	Payload  kafkaevent.ProductDeletedPayload `json:"payload"`
 }
 
 // SearchEventsConsumer handles storing search-related events in inbox for exactly-once processing.
@@ -55,7 +55,7 @@ func (c *SearchEventsConsumer) Handler(ctx context.Context, body []byte) error {
 
 // storeEventInInbox stores an event in the inbox for reliable processing.
 func (c *SearchEventsConsumer) storeEventInInbox(ctx context.Context, body []byte) error {
-	var genericEvent event.GenericEvent
+	var genericEvent kafkaevent.GenericEvent
 	if err := json.Unmarshal(body, &genericEvent); err != nil {
 		c.logger.Errorf("Failed to unmarshal generic event: %v", err)
 
