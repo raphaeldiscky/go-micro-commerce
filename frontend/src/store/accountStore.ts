@@ -1,10 +1,10 @@
 import type {
+  AccountStats,
   AccountStore,
   AddressRequest,
   CustomerAddress,
   PasswordChangeRequest,
   ProfileUpdateRequest,
-  AccountStats,
 } from '@/types/account'
 import { toast } from 'sonner'
 import { create } from 'zustand'
@@ -24,31 +24,31 @@ const mockStats: AccountStats = {
 const mockAddresses: Array<CustomerAddress> = [
   {
     id: generateId(),
-    customerId: 'user-123',
+    userId: 'user-123',
     isDefault: true,
-    recipientName: 'John Doe',
-    street: '123 Main Street',
-    apartment: 'Apt 4B',
+    receiverName: 'John Doe',
+    addressLine1: '123 Main Street',
+    addressLine2: 'Apt 4B',
     city: 'New York',
     state: 'NY',
     postalCode: '10001',
-    country: 'United States',
-    phone: '+1 (555) 123-4567',
-    instructions: 'Ring doorbell twice',
+    countryCode: 'US',
+    note: 'Ring doorbell twice',
     createdAt: '2023-06-15T14:22:00Z',
     updatedAt: '2023-06-15T14:22:00Z',
   },
   {
     id: generateId(),
-    customerId: 'user-123',
+    userId: 'user-123',
     isDefault: false,
-    recipientName: 'John Doe',
-    street: '456 Business Ave',
+    receiverName: 'John Doe',
+    addressLine1: '456 Business Ave',
+    addressLine2: '',
     city: 'New York',
     state: 'NY',
     postalCode: '10002',
-    country: 'United States',
-    phone: '+1 (555) 987-6543',
+    countryCode: 'US',
+    note: '',
     createdAt: '2023-08-20T09:15:00Z',
     updatedAt: '2023-08-20T09:15:00Z',
   },
@@ -131,7 +131,7 @@ export const useAccountStore = create<AccountStore>()((set, get) => ({
 
       const newAddress: CustomerAddress = {
         id: generateId(),
-        customerId: 'user-123', // Would come from auth store
+        userId: 'user-123', // Would come from auth store
         ...data,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

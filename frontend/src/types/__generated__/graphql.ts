@@ -31,6 +31,38 @@ export type Scalars = {
   link__Import: { input: any; output: any }
 }
 
+export type Address = {
+  __typename?: 'Address'
+  addressLine1: Scalars['String']['output']
+  addressLine2?: Maybe<Scalars['String']['output']>
+  city: Scalars['String']['output']
+  countryCode: Scalars['String']['output']
+  createdAt: Scalars['Time']['output']
+  fullAddress: Scalars['String']['output']
+  id: Scalars['ID']['output']
+  isDefault: Scalars['Boolean']['output']
+  latitude?: Maybe<Scalars['Float']['output']>
+  longitude?: Maybe<Scalars['Float']['output']>
+  note?: Maybe<Scalars['String']['output']>
+  postalCode: Scalars['String']['output']
+  receiverName: Scalars['String']['output']
+  state?: Maybe<Scalars['String']['output']>
+  updatedAt: Scalars['Time']['output']
+  userId: Scalars['ID']['output']
+}
+
+export type AddressConnection = {
+  __typename?: 'AddressConnection'
+  edges: Array<AddressEdge>
+  pageInfo: PageInfo
+}
+
+export type AddressEdge = {
+  __typename?: 'AddressEdge'
+  cursor: Scalars['String']['output']
+  node: Address
+}
+
 export type AuthPayload = {
   __typename?: 'AuthPayload'
   refreshToken: Scalars['String']['output']
@@ -74,6 +106,20 @@ export enum ConversationStatus {
   Active = 'ACTIVE',
   Ended = 'ENDED',
   Waiting = 'WAITING',
+}
+
+export type CreateAddressInput = {
+  addressLine1: Scalars['String']['input']
+  addressLine2?: InputMaybe<Scalars['String']['input']>
+  city: Scalars['String']['input']
+  countryCode: Scalars['String']['input']
+  isDefault: Scalars['Boolean']['input']
+  latitude?: InputMaybe<Scalars['Float']['input']>
+  longitude?: InputMaybe<Scalars['Float']['input']>
+  note?: InputMaybe<Scalars['String']['input']>
+  postalCode: Scalars['String']['input']
+  receiverName: Scalars['String']['input']
+  state?: InputMaybe<Scalars['String']['input']>
 }
 
 export type CreateConversationInput = {
@@ -135,7 +181,9 @@ export enum MessageType {
 export type Mutation = {
   __typename?: 'Mutation'
   assignConversationToAdmin: Conversation
+  createAddress: Address
   createConversation: Conversation
+  deleteAddress: Scalars['Boolean']['output']
   endConversation: Conversation
   joinConversation: Participant
   leaveConversation: Scalars['Boolean']['output']
@@ -150,6 +198,8 @@ export type Mutation = {
   sendMessage: Message
   sendReadReceipt: ReadReceipt
   sendTypingIndicator: TypingIndicator
+  setDefaultAddress: Address
+  updateAddress: Address
   updatePresence: PresenceUpdate
 }
 
@@ -158,8 +208,16 @@ export type MutationAssignConversationToAdminArgs = {
   conversationId: Scalars['ID']['input']
 }
 
+export type MutationCreateAddressArgs = {
+  input: CreateAddressInput
+}
+
 export type MutationCreateConversationArgs = {
   input: CreateConversationInput
+}
+
+export type MutationDeleteAddressArgs = {
+  id: Scalars['ID']['input']
 }
 
 export type MutationEndConversationArgs = {
@@ -200,6 +258,15 @@ export type MutationSendReadReceiptArgs = {
 
 export type MutationSendTypingIndicatorArgs = {
   input: TypingIndicatorInput
+}
+
+export type MutationSetDefaultAddressArgs = {
+  id: Scalars['ID']['input']
+}
+
+export type MutationUpdateAddressArgs = {
+  id: Scalars['ID']['input']
+  input: UpdateAddressInput
 }
 
 export type MutationUpdatePresenceArgs = {
@@ -339,8 +406,11 @@ export type Query = {
   conversationMessages: MessageConnection
   conversationParticipants: Array<Participant>
   conversations: Array<Conversation>
+  getAddress: Address
+  getDefaultAddress: Address
   getTabCounts: TabCounts
   getUnreadCount: UnreadCount
+  listAddresses: AddressConnection
   listNotifications: NotificationConnection
   listUnreadNotifications: NotificationConnection
   me?: Maybe<User>
@@ -363,6 +433,15 @@ export type QueryConversationMessagesArgs = {
 
 export type QueryConversationParticipantsArgs = {
   conversationId: Scalars['ID']['input']
+}
+
+export type QueryGetAddressArgs = {
+  id: Scalars['ID']['input']
+}
+
+export type QueryListAddressesArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>
+  limit: Scalars['Int']['input']
 }
 
 export type QueryListNotificationsArgs = {
@@ -451,6 +530,19 @@ export type TypingIndicatorInput = {
 export type UnreadCount = {
   __typename?: 'UnreadCount'
   count: Scalars['Int']['output']
+}
+
+export type UpdateAddressInput = {
+  addressLine1?: InputMaybe<Scalars['String']['input']>
+  addressLine2?: InputMaybe<Scalars['String']['input']>
+  city?: InputMaybe<Scalars['String']['input']>
+  countryCode?: InputMaybe<Scalars['String']['input']>
+  latitude?: InputMaybe<Scalars['Float']['input']>
+  longitude?: InputMaybe<Scalars['Float']['input']>
+  note?: InputMaybe<Scalars['String']['input']>
+  postalCode?: InputMaybe<Scalars['String']['input']>
+  receiverName?: InputMaybe<Scalars['String']['input']>
+  state?: InputMaybe<Scalars['String']['input']>
 }
 
 export type User = {

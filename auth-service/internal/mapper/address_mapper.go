@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 )
@@ -118,4 +119,106 @@ func MapUpdateRequestToEntity(
 	existing.UpdatedAt = time.Now()
 
 	return existing
+}
+
+// MapToGraphQLAddress converts entity.Address to graph.Address.
+func MapToGraphQLAddress(address *entity.Address) *graph.Address {
+	graphAddress := &graph.Address{
+		ID:           address.ID.String(),
+		UserID:       address.UserID.String(),
+		ReceiverName: address.ReceiverName,
+		AddressLine1: address.AddressLine1,
+		City:         address.City,
+		PostalCode:   address.PostalCode,
+		CountryCode:  address.CountryCode,
+		IsDefault:    address.IsDefault,
+		CreatedAt:    address.CreatedAt,
+		UpdatedAt:    address.UpdatedAt,
+	}
+
+	// Handle optional fields
+	if address.AddressLine2 != nil {
+		graphAddress.AddressLine2 = address.AddressLine2
+	}
+
+	if address.State != nil {
+		graphAddress.State = address.State
+	}
+
+	if address.Latitude != nil {
+		graphAddress.Latitude = address.Latitude
+	}
+
+	if address.Longitude != nil {
+		graphAddress.Longitude = address.Longitude
+	}
+
+	if address.Note != nil {
+		graphAddress.Note = address.Note
+	}
+
+	return graphAddress
+}
+
+// MapToGraphQLAddressList converts a slice of entity.Address to a slice of graph.Address.
+func MapToGraphQLAddressList(addresses []*entity.Address) []*graph.Address {
+	graphAddresses := make([]*graph.Address, len(addresses))
+	for i, address := range addresses {
+		graphAddresses[i] = MapToGraphQLAddress(address)
+	}
+
+	return graphAddresses
+}
+
+// MapGraphQLInputToCreateRequest converts graph.CreateAddressInput to dto.CreateAddressRequest.
+func MapGraphQLInputToCreateRequest(input graph.CreateAddressInput) *dto.CreateAddressRequest {
+	req := &dto.CreateAddressRequest{
+		ReceiverName: input.ReceiverName,
+		AddressLine1: input.AddressLine1,
+		City:         input.City,
+		PostalCode:   input.PostalCode,
+		CountryCode:  input.CountryCode,
+		IsDefault:    input.IsDefault,
+	}
+
+	// Handle optional fields
+	if input.AddressLine2 != nil {
+		req.AddressLine2 = input.AddressLine2
+	}
+
+	if input.State != nil {
+		req.State = input.State
+	}
+
+	if input.Latitude != nil {
+		req.Latitude = input.Latitude
+	}
+
+	if input.Longitude != nil {
+		req.Longitude = input.Longitude
+	}
+
+	if input.Note != nil {
+		req.Note = input.Note
+	}
+
+	return req
+}
+
+// MapGraphQLInputToUpdateRequest converts graph.UpdateAddressInput to dto.UpdateAddressRequest.
+func MapGraphQLInputToUpdateRequest(input graph.UpdateAddressInput) *dto.UpdateAddressRequest {
+	req := &dto.UpdateAddressRequest{
+		ReceiverName: input.ReceiverName,
+		AddressLine1: input.AddressLine1,
+		AddressLine2: input.AddressLine2,
+		City:         input.City,
+		State:        input.State,
+		PostalCode:   input.PostalCode,
+		CountryCode:  input.CountryCode,
+		Latitude:     input.Latitude,
+		Longitude:    input.Longitude,
+		Note:         input.Note,
+	}
+
+	return req
 }
