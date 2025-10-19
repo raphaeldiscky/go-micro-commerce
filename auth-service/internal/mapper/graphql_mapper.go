@@ -27,3 +27,24 @@ func MapAuthResponseToGraphQL(auth *dto.AuthResponse) *graph.AuthPayload {
 		User:         MapUserToGraphQL(auth.User),
 	}
 }
+
+// MapAddressDTOToGraphQL maps an AddressResponse DTO to a GraphQL Address type.
+func MapAddressDTOToGraphQL(addressDTO *dto.AddressResponse) *graph.Address {
+	return &graph.Address{
+		ID:           addressDTO.ID.String(),
+		UserID:       addressDTO.UserID.String(),
+		ReceiverName: addressDTO.ReceiverName,
+		AddressLine1: addressDTO.AddressLine1,
+		AddressLine2: addressDTO.AddressLine2,
+		City:         addressDTO.City,
+		State:        addressDTO.State,
+		PostalCode:   addressDTO.PostalCode,
+		CountryCode:  addressDTO.CountryCode,
+		Latitude:     addressDTO.Latitude,
+		Longitude:    addressDTO.Longitude,
+		IsDefault:    addressDTO.IsDefault,
+		Note:         addressDTO.Note,
+		CreatedAt:    addressDTO.CreatedAt,
+		UpdatedAt:    addressDTO.UpdatedAt,
+	}
+}

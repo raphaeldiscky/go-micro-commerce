@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import type { AddressRequest, CustomerAddress } from '@/types/account'
+import { addressSchema } from '@/types/account'
 import { useForm } from '@tanstack/react-form'
 
 interface AddressFormProps {
@@ -28,16 +29,18 @@ export function AddressForm({
 }: AddressFormProps) {
   const form = useForm({
     defaultValues: {
-      recipientName: address?.recipientName || '',
-      street: address?.street || '',
-      apartment: address?.apartment || '',
+      receiverName: address?.receiverName || '',
+      addressLine1: address?.addressLine1 || '',
+      addressLine2: address?.addressLine2 || '',
       city: address?.city || '',
       state: address?.state || '',
       postalCode: address?.postalCode || '',
-      country: address?.country || 'United States',
-      phone: address?.phone || '',
-      instructions: address?.instructions || '',
+      countryCode: address?.countryCode || 'US',
+      note: address?.note || '',
       isDefault: address?.isDefault || false,
+    },
+    validators: {
+      onChange: addressSchema,
     },
     onSubmit: ({ value }) => {
       onSubmit(value)
@@ -53,12 +56,12 @@ export function AddressForm({
       }}
       className="space-y-4"
     >
-      <form.Field name="recipientName">
+      <form.Field name="receiverName">
         {(field) => (
           <div className="space-y-2">
-            <Label htmlFor="recipientName">Recipient Name</Label>
+            <Label htmlFor="receiverName">Receiver Name</Label>
             <Input
-              id="recipientName"
+              id="receiverName"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               placeholder="Full name"
@@ -67,12 +70,12 @@ export function AddressForm({
         )}
       </form.Field>
 
-      <form.Field name="street">
+      <form.Field name="addressLine1">
         {(field) => (
           <div className="space-y-2">
-            <Label htmlFor="street">Street Address</Label>
+            <Label htmlFor="addressLine1">Address Line 1</Label>
             <Input
-              id="street"
+              id="addressLine1"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               placeholder="123 Main Street"
@@ -81,12 +84,14 @@ export function AddressForm({
         )}
       </form.Field>
 
-      <form.Field name="apartment">
+      <form.Field name="addressLine2">
         {(field) => (
           <div className="space-y-2">
-            <Label htmlFor="apartment">Apartment, Suite, Unit (Optional)</Label>
+            <Label htmlFor="addressLine2">
+              Apartment, Suite, Unit (Optional)
+            </Label>
             <Input
-              id="apartment"
+              id="addressLine2"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               placeholder="Apt 4B, Suite 200"
@@ -140,25 +145,25 @@ export function AddressForm({
           )}
         </form.Field>
 
-        <form.Field name="country">
+        <form.Field name="countryCode">
           {(field) => (
             <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
+              <Label htmlFor="countryCode">Country</Label>
               <Select
                 value={field.state.value}
                 onValueChange={(value) => field.handleChange(value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select country" />
+                  <SelectValue placeholder="Select country code" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="United States">United States</SelectItem>
-                  <SelectItem value="Canada">Canada</SelectItem>
-                  <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                  <SelectItem value="Australia">Australia</SelectItem>
-                  <SelectItem value="Germany">Germany</SelectItem>
-                  <SelectItem value="France">France</SelectItem>
-                  <SelectItem value="Japan">Japan</SelectItem>
+                  <SelectItem value="US">United States</SelectItem>
+                  <SelectItem value="CA">Canada</SelectItem>
+                  <SelectItem value="UK">United Kingdom</SelectItem>
+                  <SelectItem value="AU">Australia</SelectItem>
+                  <SelectItem value="GM">Germany</SelectItem>
+                  <SelectItem value="FR">France</SelectItem>
+                  <SelectItem value="JP">Japan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -166,29 +171,12 @@ export function AddressForm({
         </form.Field>
       </div>
 
-      <form.Field name="phone">
+      <form.Field name="note">
         {(field) => (
           <div className="space-y-2">
-            <Label htmlFor="phone">Phone Number (Optional)</Label>
-            <Input
-              id="phone"
-              type="tel"
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="+1 (555) 123-4567"
-            />
-          </div>
-        )}
-      </form.Field>
-
-      <form.Field name="instructions">
-        {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor="instructions">
-              Delivery Instructions (Optional)
-            </Label>
+            <Label htmlFor="note">Delivery Instructions (Optional)</Label>
             <Textarea
-              id="instructions"
+              id="note"
               value={field.state.value}
               onChange={(e) => field.handleChange(e.target.value)}
               placeholder="Ring doorbell twice, leave at front door, etc."

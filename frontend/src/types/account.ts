@@ -3,17 +3,18 @@ import { z } from 'zod'
 // Customer address interface
 export interface CustomerAddress {
   id: string
-  customerId: string
+  userId: string
   isDefault: boolean
-  recipientName: string
-  street: string
-  apartment?: string // Unit, apartment, suite number
+  receiverName: string
+  addressLine1: string
+  addressLine2: string
   city: string
   state: string
   postalCode: string
-  country: string
-  phone?: string
-  instructions?: string // Delivery instructions
+  countryCode: string
+  latitude: number
+  longitude: number
+  note: string
   createdAt: string
   updatedAt: string
 }
@@ -26,7 +27,7 @@ export const profileSchema = z.object({
     .string()
     .min(2, 'Last name must be at least 2 characters')
     .max(50, 'Last name must be less than 50 characters'),
-  email: z.string().email('Please enter a valid email address'),
+  email: z.email('Please enter a valid email address'),
   phone: z
     .string()
     .regex(/^\+?[\d\s\-()]*$/, 'Please enter a valid phone number')
@@ -35,15 +36,18 @@ export const profileSchema = z.object({
 })
 
 export const addressSchema = z.object({
-  recipientName: z
+  receiverName: z
     .string()
-    .min(2, 'Recipient name must be at least 2 characters')
-    .max(100, 'Recipient name must be less than 100 characters'),
-  street: z
+    .min(2, 'Receiver name must be at least 2 characters')
+    .max(100, 'Receiver name must be less than 100 characters'),
+  addressLine1: z
     .string()
     .min(5, 'Please enter a complete street address')
     .max(200, 'Street address is too long'),
-  apartment: z.string().max(50, 'Apartment number is too long').optional(),
+  addressLine2: z
+    .string()
+    .min(5, 'Please enter a complete street address')
+    .max(200, 'Street address is too long'),
   city: z
     .string()
     .min(2, 'City must be at least 2 characters')
@@ -56,20 +60,14 @@ export const addressSchema = z.object({
     .string()
     .min(1, 'Postal code is required')
     .max(20, 'Postal code is too long'),
-  country: z
+  countryCode: z
     .string()
-    .min(1, 'Country is required')
-    .max(50, 'Country name is too long'),
-  phone: z
+    .min(1, 'Country code is required')
+    .max(2, 'Country code name is too long'),
+  note: z
     .string()
-    .regex(/^\+?[\d\s\-()]*$/, 'Please enter a valid phone number')
-    .max(20, 'Phone number is too long')
-    .optional(),
-  instructions: z
-    .string()
-    .max(500, 'Delivery instructions must be less than 500 characters')
-    .optional(),
-  isDefault: z.boolean().default(false),
+    .max(500, 'Delivery instructions must be less than 500 characters'),
+  isDefault: z.boolean(),
 })
 
 export const passwordSchema = z

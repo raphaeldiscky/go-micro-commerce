@@ -10,10 +10,53 @@ import (
 	"time"
 )
 
+type Address struct {
+	ID           string    `json:"id"`
+	UserID       string    `json:"userId"`
+	ReceiverName string    `json:"receiverName"`
+	AddressLine1 string    `json:"addressLine1"`
+	AddressLine2 *string   `json:"addressLine2,omitempty"`
+	City         string    `json:"city"`
+	State        *string   `json:"state,omitempty"`
+	PostalCode   string    `json:"postalCode"`
+	CountryCode  string    `json:"countryCode"`
+	Latitude     *float64  `json:"latitude,omitempty"`
+	Longitude    *float64  `json:"longitude,omitempty"`
+	IsDefault    bool      `json:"isDefault"`
+	Note         *string   `json:"note,omitempty"`
+	FullAddress  string    `json:"fullAddress"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+type AddressConnection struct {
+	Edges    []*AddressEdge `json:"edges"`
+	PageInfo *PageInfo      `json:"pageInfo"`
+}
+
+type AddressEdge struct {
+	Node   *Address `json:"node"`
+	Cursor string   `json:"cursor"`
+}
+
 type AuthPayload struct {
 	Token        string `json:"token"`
 	RefreshToken string `json:"refreshToken"`
 	User         *User  `json:"user"`
+}
+
+type CreateAddressInput struct {
+	ReceiverName string   `json:"receiverName"`
+	AddressLine1 string   `json:"addressLine1"`
+	AddressLine2 *string  `json:"addressLine2,omitempty"`
+	City         string   `json:"city"`
+	State        *string  `json:"state,omitempty"`
+	PostalCode   string   `json:"postalCode"`
+	CountryCode  string   `json:"countryCode"`
+	Latitude     *float64 `json:"latitude,omitempty"`
+	Longitude    *float64 `json:"longitude,omitempty"`
+	IsDefault    bool     `json:"isDefault"`
+	Note         *string  `json:"note,omitempty"`
 }
 
 type LoginInput struct {
@@ -22,6 +65,13 @@ type LoginInput struct {
 }
 
 type Mutation struct {
+}
+
+type PageInfo struct {
+	HasNextPage     bool    `json:"hasNextPage"`
+	HasPreviousPage bool    `json:"hasPreviousPage"`
+	StartCursor     *string `json:"startCursor,omitempty"`
+	EndCursor       *string `json:"endCursor,omitempty"`
 }
 
 type Query struct {
@@ -33,6 +83,19 @@ type RegisterUserInput struct {
 	Username  string `json:"username"`
 	FirstName string `json:"firstName"`
 	LastName  string `json:"lastName"`
+}
+
+type UpdateAddressInput struct {
+	ReceiverName *string  `json:"receiverName,omitempty"`
+	AddressLine1 *string  `json:"addressLine1,omitempty"`
+	AddressLine2 *string  `json:"addressLine2,omitempty"`
+	City         *string  `json:"city,omitempty"`
+	State        *string  `json:"state,omitempty"`
+	PostalCode   *string  `json:"postalCode,omitempty"`
+	CountryCode  *string  `json:"countryCode,omitempty"`
+	Latitude     *float64 `json:"latitude,omitempty"`
+	Longitude    *float64 `json:"longitude,omitempty"`
+	Note         *string  `json:"note,omitempty"`
 }
 
 type User struct {

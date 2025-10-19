@@ -1,0 +1,95 @@
+# Address entity
+type Address {
+  id: ID!
+  userId: ID!
+  receiverName: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String
+  postalCode: String!
+  countryCode: String!
+  latitude: Float
+  longitude: Float
+  isDefault: Boolean!
+  note: String
+  fullAddress: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Input type for creating a new address
+input CreateAddressInput {
+  receiverName: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String
+  postalCode: String!
+  countryCode: String!
+  latitude: Float
+  longitude: Float
+  isDefault: Boolean!
+  note: String
+}
+
+# Input type for updating an existing address
+input UpdateAddressInput {
+  receiverName: String
+  addressLine1: String
+  addressLine2: String
+  city: String
+  state: String
+  postalCode: String
+  countryCode: String
+  latitude: Float
+  longitude: Float
+  note: String
+}
+
+# Address connection for cursor-based pagination
+type AddressConnection {
+  edges: [AddressEdge!]!
+  pageInfo: PageInfo!
+}
+
+# Address edge
+type AddressEdge {
+  node: Address!
+  cursor: String!
+}
+
+# Page info for cursor pagination
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Address queries
+extend type Query {
+  # List all addresses for the authenticated user with cursor pagination
+  listAddresses(limit: Int!, cursor: String): AddressConnection! @requiresAuth
+
+  # Get a specific address by ID
+  getAddress(id: ID!): Address! @requiresAuth
+
+  # Get the default address for the authenticated user
+  getDefaultAddress: Address! @requiresAuth
+}
+
+# Address mutations
+extend type Mutation {
+  # Create a new address
+  createAddress(input: CreateAddressInput!): Address! @requiresAuth
+
+  # Update an existing address
+  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @requiresAuth
+
+  # Delete an address
+  deleteAddress(id: ID!): Boolean! @requiresAuth
+
+  # Set an address as the default
+  setDefaultAddress(id: ID!): Address! @requiresAuth
+}

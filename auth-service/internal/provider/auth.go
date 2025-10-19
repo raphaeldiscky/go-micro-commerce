@@ -59,6 +59,10 @@ func SetupAuth(
 		emailVerificationRequestedProducer,
 		userVerifiedProducer,
 	)
+	addressService := service.NewAddressService(
+		providers.DataStore,
+		appLogger,
+	)
 	authHandler := handler.NewAuthHandler(authService)
 	jwksHandler := handler.NewJWKSHandler(providers.JWTUtils)
 
@@ -66,6 +70,6 @@ func SetupAuth(
 	routes.SetupAuthRoutes(e, authHandler, jwksHandler)
 
 	// Setup GraphQL routes
-	graphqlResolver := resolver.NewResolver(authService, appLogger)
+	graphqlResolver := resolver.NewResolver(authService, addressService, appLogger)
 	routes.SetupGraphQLRoutes(e, cfg, graphqlResolver, appLogger)
 }
