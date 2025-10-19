@@ -11,7 +11,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mock"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/gateway"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
@@ -20,7 +20,6 @@ import (
 type Providers struct {
 	DataStore            repository.DataStore
 	KafkaAdmin           *kafka.Admin
-	BankingClient        client.BankingClient
 	PaymentGatewayClient client.PaymentGatewayClient
 	PaymentService       service.PaymentService
 }
@@ -63,6 +62,7 @@ func SetupGlobal(
 
 	lockClient := redislock.New(redisClusterClient)
 	dataStore := repository.NewDataStore(pgPool, lockClient, appLogger)
+
 	// Setup kafka admin
 	kafkaAdmin, err := kafka.NewAdmin(&kafka.AdminConfig{
 		Brokers: cfg.Kafka.Brokers,
@@ -73,14 +73,19 @@ func SetupGlobal(
 		return nil, err
 	}
 
-	// Initialize mock clients
-	bankingClient := mock.NewFakeBankingClient()
-	paymentGatewayClient := mock.NewFakePaymentGatewayClient()
+	// Setup payment gateway client using factory
+	gatewayFactory := gateway.NewFactory(cfg.PaymentGateway, appLogger)
+
+	paymentGatewayClient, err := gatewayFactory.CreateGateway(cfg.PaymentGateway.Provider)
+	if err != nil {
+		appLogger.Errorf("failed to create payment gateway client: %v", err)
+
+		return nil, err
+	}
 
 	return &Providers{
 		DataStore:            dataStore,
 		KafkaAdmin:           kafkaAdmin,
-		BankingClient:        bankingClient,
 		PaymentGatewayClient: paymentGatewayClient,
 	}, nil
 }

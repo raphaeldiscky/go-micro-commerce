@@ -1,3 +1,4 @@
+// Package client provides external service clients for the payment service.
 package client
 
 import (

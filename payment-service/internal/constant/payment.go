@@ -64,8 +64,8 @@ const (
 	PaymentGatewayStatusSucceeded PaymentGatewayStatus = "succeeded"
 	// PaymentGatewayStatusFailed indicates the payment failed.
 	PaymentGatewayStatusFailed PaymentGatewayStatus = "failed"
-	// PaymentGatewayStatusCancelled indicates the payment was canceled.
-	PaymentGatewayStatusCancelled PaymentGatewayStatus = "canceled"
+	// PaymentGatewayStatusCanceled indicates the payment was canceled.
+	PaymentGatewayStatusCanceled PaymentGatewayStatus = "canceled"
 	// PaymentGatewayStatusRequiresAction indicates the payment requires additional action.
 	PaymentGatewayStatusRequiresAction PaymentGatewayStatus = "requires_action"
 )
@@ -106,6 +106,6 @@ const (
 	RefundStatusSucceeded RefundStatus = "succeeded"
 	// RefundStatusFailed indicates the refund failed.
 	RefundStatusFailed RefundStatus = "failed"
-	// RefundStatusCancelled indicates the refund was canceled.
-	RefundStatusCancelled RefundStatus = "canceled"
+	// RefundStatusCanceled indicates the refund was canceled.
+	RefundStatusCanceled RefundStatus = "canceled"
 )

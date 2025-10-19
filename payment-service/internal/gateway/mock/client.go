@@ -1,3 +1,4 @@
+// Package mock provides a mock payment gateway client for testing.
 package mock
 
 import (
@@ -17,30 +18,24 @@ const (
 	fakeGatewayDelay             = time.Millisecond * 100
 	fakeGatewayFailPaymentAmount = 1000000 // Fail payments > 1M IDR
 	fakeGatewayFee               = 0.029   // 2.9% fee
-
 )
 
-// fakePaymentGatewayClient provides a simple mock implementation of PaymentGatewayClient.
-type fakePaymentGatewayClient struct {
+// mockClient provides a simple mock implementation of PaymentGatewayClient.
+type mockClient struct {
 	shouldFail bool
 	delay      time.Duration
 }
 
-// NewFakePaymentGatewayClient creates a new instance of fakePaymentGatewayClient with test utilities.
-func NewFakePaymentGatewayClient() client.PaymentGatewayClient {
-	return &fakePaymentGatewayClient{
+// NewMockClient creates a new instance of mockClient with test utilities.
+func NewMockClient() client.PaymentGatewayClient {
+	return &mockClient{
 		shouldFail: false,
 		delay:      fakeGatewayDelay,
 	}
 }
 
-// SetShouldFail configures the client to simulate failures.
-func (c *fakePaymentGatewayClient) SetShouldFail(shouldFail bool) {
-	c.shouldFail = shouldFail
-}
-
 // ProcessPayment processes a payment through the gateway.
-func (c *fakePaymentGatewayClient) ProcessPayment(
+func (c *mockClient) ProcessPayment(
 	_ context.Context,
 	req *dto.PaymentGatewayRequest,
 ) (*dto.PaymentGatewayResponse, error) {
@@ -74,7 +69,7 @@ func (c *fakePaymentGatewayClient) ProcessPayment(
 }
 
 // GetPaymentStatus retrieves payment status.
-func (c *fakePaymentGatewayClient) GetPaymentStatus(
+func (c *mockClient) GetPaymentStatus(
 	_ context.Context,
 	gatewayID string,
 ) (*dto.PaymentGatewayResponse, error) {
@@ -88,7 +83,7 @@ func (c *fakePaymentGatewayClient) GetPaymentStatus(
 }
 
 // CapturePayment captures an authorized payment.
-func (c *fakePaymentGatewayClient) CapturePayment(
+func (c *mockClient) CapturePayment(
 	_ context.Context,
 	gatewayID string,
 	amount decimal.Decimal,
@@ -104,14 +99,14 @@ func (c *fakePaymentGatewayClient) CapturePayment(
 }
 
 // CancelPayment cancels a payment.
-func (c *fakePaymentGatewayClient) CancelPayment(_ context.Context, _ string) error {
+func (c *mockClient) CancelPayment(_ context.Context, _ string) error {
 	time.Sleep(c.delay)
 
 	return nil
 }
 
 // RefundPayment refunds a payment.
-func (c *fakePaymentGatewayClient) RefundPayment(
+func (c *mockClient) RefundPayment(
 	_ context.Context,
 	req *dto.RefundRequest,
 ) (*dto.RefundResponse, error) {
@@ -129,7 +124,7 @@ func (c *fakePaymentGatewayClient) RefundPayment(
 }
 
 // GetRefundStatus retrieves refund status.
-func (c *fakePaymentGatewayClient) GetRefundStatus(
+func (c *mockClient) GetRefundStatus(
 	_ context.Context,
 	gatewayRefundID string,
 ) (*dto.RefundResponse, error) {
@@ -143,7 +138,7 @@ func (c *fakePaymentGatewayClient) GetRefundStatus(
 }
 
 // ValidateCard validates a payment card.
-func (c *fakePaymentGatewayClient) ValidateCard(_ context.Context, _ *dto.PaymentCard) error {
+func (c *mockClient) ValidateCard(_ context.Context, _ *dto.PaymentCard) error {
 	time.Sleep(c.delay)
 
 	return nil
