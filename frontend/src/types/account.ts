@@ -12,8 +12,8 @@ export interface CustomerAddress {
   state: string
   postalCode: string
   countryCode: string
-  latitude: number
-  longitude: number
+  latitude?: number
+  longitude?: number
   note: string
   createdAt: string
   updatedAt: string
