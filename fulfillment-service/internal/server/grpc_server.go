@@ -3,32 +3,33 @@ package server
 import (
 	"context"
 	"fmt"
-	"net"
+	"net/http"
 
+	"connectrpc.com/connect"
+	"connectrpc.com/grpchealth"
+	"connectrpc.com/grpcreflect"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
-	"google.golang.org/protobuf/types/known/emptypb"
+	"github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1/fulfillmentv1connect"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
-	grpcauth "github.com/raphaeldiscky/go-micro-commerce/pkg/grpc"
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
+	connectauth "github.com/raphaeldiscky/go-micro-commerce/pkg/connect"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/service"
 )
 
-// GRPCServer is the gRPC server for fulfillment service.
+// GRPCServer is the Connect-RPC server for fulfillment service.
 type GRPCServer struct {
-	pb.UnimplementedFulfillmentServiceServer
-
 	cfg                *config.Config
 	fulfillmentService service.FulfillmentService
 	logger             logger.Logger
-	grpcServer         *grpc.Server
+	httpServer         *http.Server
 }
 
-// NewGRPCServer creates a new gRPC server for fulfillment service.
+// NewGRPCServer creates a new Connect-RPC server for fulfillment service.
 func NewGRPCServer(
 	fulfillmentService service.FulfillmentService,
 	appLogger logger.Logger,
@@ -37,79 +38,108 @@ func NewGRPCServer(
 	return &GRPCServer{cfg: cfg, fulfillmentService: fulfillmentService, logger: appLogger}
 }
 
-// GetShippingCost gets the shipping cost for the order.
+// GetShippingCost gets the shipping cost for the order via Connect-RPC.
 func (s *GRPCServer) GetShippingCost(
 	ctx context.Context,
-	req *pb.GetShippingCostRequest,
-) (*pb.GetShippingCostResponse, error) {
-	calculateShippingReq := mapper.MapToCalculateShippingRateRequest(req)
+	req *connect.Request[pb.GetShippingCostRequest],
+) (*connect.Response[pb.GetShippingCostResponse], error) {
+	calculateShippingReq := mapper.MapToCalculateShippingRateRequest(req.Msg)
 
 	res, err := s.fulfillmentService.CalculateShippingRate(ctx, calculateShippingReq)
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return &pb.GetShippingCostResponse{ShippingCost: res.ShippingCost.InexactFloat64()}, nil
+	resp := &pb.GetShippingCostResponse{
+		Success:      true,
+		ShippingCost: res.ShippingCost.InexactFloat64(),
+		Currency:     calculateShippingReq.Currency,
+	}
+
+	return connect.NewResponse(resp), nil
 }
 
-// Health returns the health status of the product service.
-func (s *GRPCServer) Health(_ context.Context, _ *emptypb.Empty) (*pb.HealthResponse, error) {
-	return &pb.HealthResponse{Status: pb.HealthStatus_SERVING}, nil
+// Health returns the health status of the fulfillment service.
+func (s *GRPCServer) Health(
+	_ context.Context,
+	_ *connect.Request[pb.HealthRequest],
+) (*connect.Response[pb.HealthResponse], error) {
+	resp := &pb.HealthResponse{
+		Status: pb.HealthStatus_HEALTH_STATUS_SERVING,
+	}
+
+	return connect.NewResponse(resp), nil
 }
 
-// Start runs the gRPC server.
-func (s *GRPCServer) Start(ctx context.Context) error {
+// Start runs the Connect-RPC server.
+func (s *GRPCServer) Start(_ context.Context) error {
 	address := fmt.Sprintf("%s:%d", s.cfg.GRPCServer.Host, s.cfg.GRPCServer.Port)
-	lc := &net.ListenConfig{}
-
-	lis, err := lc.Listen(ctx, "tcp", address)
-	if err != nil {
-		return fmt.Errorf("failed to listen on %s: %w", address, err)
-	}
 
 	// Create authentication interceptor
-	authInterceptor := grpcauth.NewAuthInterceptor()
+	authInterceptor := connectauth.NewAuthInterceptor()
 
-	// Create gRPC server with authentication interceptor
-	s.grpcServer = grpc.NewServer(
-		grpc.UnaryInterceptor(authInterceptor.ServiceToServiceAuth()),
+	// Create Connect-RPC handler with auth interceptor
+	path, handler := fulfillmentv1connect.NewFulfillmentServiceHandler(
+		s,
+		connect.WithInterceptors(authInterceptor.ServiceToServiceAuth()),
 	)
-	pb.RegisterFulfillmentServiceServer(s.grpcServer, s)
 
-	// Enable gRPC reflection for development
-	reflection.Register(s.grpcServer)
+	// Create HTTP mux and register the handler
+	mux := http.NewServeMux()
+	mux.Handle(path, handler)
 
-	s.logger.Infof("gRPC server listening on %s", address)
+	// Add gRPC reflection support for Connect-RPC
+	reflector := grpcreflect.NewStaticReflector(
+		fulfillmentv1connect.FulfillmentServiceName,
+	)
+	mux.Handle(grpcreflect.NewHandlerV1(reflector))
+	mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 
-	return s.grpcServer.Serve(lis)
+	// Add gRPC health check
+	checker := grpchealth.NewStaticChecker(
+		fulfillmentv1connect.FulfillmentServiceName,
+	)
+	mux.Handle(grpchealth.NewHandler(checker))
+
+	// Add simple health endpoint for Consul health checks
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+
+		_, err := w.Write([]byte(`{"status":"healthy"}`))
+		if err != nil {
+			s.logger.Errorf("Failed to write health check response: %v", err)
+		}
+	})
+
+	// Create HTTP server with h2c support for gRPC compatibility
+	s.httpServer = &http.Server{
+		Addr:              address,
+		Handler:           h2c.NewHandler(mux, &http2.Server{}),
+		ReadHeaderTimeout: s.cfg.GRPCServer.ReadHeaderTimeout,
+	}
+
+	s.logger.Infof("Connect-RPC server listening on %s", address)
+
+	return s.httpServer.ListenAndServe()
 }
 
-// Shutdown gracefully shuts down the gRPC server.
+// Shutdown gracefully shuts down the Connect-RPC server.
 func (s *GRPCServer) Shutdown(ctx context.Context) error {
-	s.logger.Info("Attempting to shut down the gRPC server...")
+	s.logger.Info("Attempting to shut down the Connect-RPC server...")
 
-	if s.grpcServer == nil {
-		s.logger.Info("gRPC server was not started, nothing to shut down")
-
+	if s.httpServer == nil {
+		s.logger.Info("Connect-RPC server was not started, nothing to shut down")
 		return nil
 	}
 
-	stopped := make(chan struct{})
-
-	go func() {
-		s.grpcServer.GracefulStop()
-		close(stopped)
-	}()
-
-	select {
-	case <-ctx.Done():
-		s.logger.Warn("Graceful shutdown timed out, forcing stop...")
-		s.grpcServer.Stop()
-
-		return ctx.Err()
-	case <-stopped:
-		s.logger.Info("gRPC server shut down gracefully")
-
-		return nil
+	err := s.httpServer.Shutdown(ctx)
+	if err != nil {
+		s.logger.Warn("Connect-RPC server shutdown error: %v", err)
+		return err
 	}
+
+	s.logger.Info("Connect-RPC server shut down gracefully")
+
+	return nil
 }

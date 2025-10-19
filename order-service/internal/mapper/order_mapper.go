@@ -5,7 +5,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/event"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment"
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
