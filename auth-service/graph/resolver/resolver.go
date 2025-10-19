@@ -2,6 +2,7 @@
 package resolver
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/service"
@@ -15,6 +16,7 @@ import (
 type Resolver struct {
 	authService    service.AuthService
 	addressService service.AddressService
+	validator      *validator.Validate
 	logger         logger.Logger
 }
 
@@ -27,6 +29,7 @@ func NewResolver(
 	return &Resolver{
 		authService:    authService,
 		addressService: addressService,
+		validator:      validator.New(),
 		logger:         appLogger,
 	}
 }

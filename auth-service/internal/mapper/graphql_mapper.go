@@ -44,6 +44,7 @@ func MapAddressDTOToGraphQL(addressDTO *dto.AddressResponse) *graph.Address {
 		Longitude:    addressDTO.Longitude,
 		IsDefault:    addressDTO.IsDefault,
 		Note:         addressDTO.Note,
+		FullAddress:  addressDTO.FullAddress,
 		CreatedAt:    addressDTO.CreatedAt,
 		UpdatedAt:    addressDTO.UpdatedAt,
 	}

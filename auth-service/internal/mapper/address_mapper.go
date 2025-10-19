@@ -132,6 +132,7 @@ func MapToGraphQLAddress(address *entity.Address) *graph.Address {
 		PostalCode:   address.PostalCode,
 		CountryCode:  address.CountryCode,
 		IsDefault:    address.IsDefault,
+		FullAddress:  address.GetFullAddress(),
 		CreatedAt:    address.CreatedAt,
 		UpdatedAt:    address.UpdatedAt,
 	}

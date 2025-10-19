@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/dto"
+	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/repository"
@@ -372,52 +374,52 @@ func (s *addressService) SetDefaultAddress(
 	ctx context.Context,
 	userID, addressID uuid.UUID,
 ) (*dto.AddressResponse, error) {
-	addressRepo := s.dataStore.AddressRepository()
+	var existing *entity.Address
 
-	// Get existing address to verify ownership
-	existing, err := addressRepo.GetByID(ctx, addressID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, httperror.NewNotFoundError(constant.AddressNotFoundErrorMessage)
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		addressRepo := ds.AddressRepository()
+
+		// Verify address exists and belongs to user
+		found, err := addressRepo.GetByID(ctx, addressID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return httperror.NewNotFoundError(constant.AddressNotFoundErrorMessage)
+			}
+
+			s.logger.Error("failed to get address", "address_id", addressID, "error", err)
+
+			return httperror.NewInternalServerError("failed to get address")
 		}
 
-		s.logger.Error("failed to get address", "address_id", addressID, "error", err)
-
-		return nil, httperror.NewInternalServerError("failed to get address")
-	}
-
-	// Verify ownership
-	if existing.UserID != userID {
-		return nil, httperror.NewForbiddenError(constant.AddressAccessDeniedErrorMessage)
-	}
-
-	// If already default, just return it
-	if existing.IsDefault {
-		return mapper.MapToAddressResponse(existing), nil
-	}
-
-	// Set as default (atomically unsets other defaults)
-	if err = addressRepo.SetDefault(ctx, userID, addressID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, httperror.NewNotFoundError(constant.AddressNotFoundErrorMessage)
+		existing = found
+		// Verify ownership
+		if existing.UserID != userID {
+			return httperror.NewForbiddenError(constant.AddressAccessDeniedErrorMessage)
 		}
 
-		s.logger.Error("failed to set default address", "address_id", addressID, "error", err)
+		if err = addressRepo.SetDefault(ctx, userID, addressID); err != nil {
+			s.logger.Error("failed to set default address", "address_id", addressID, "error", err)
 
-		return nil, httperror.NewInternalServerError("failed to set default address")
-	}
+			return httperror.NewInternalServerError("failed to set default address")
+		}
 
-	// Get updated address
-	updatedAddress, err := addressRepo.GetByID(ctx, addressID)
+		// Update the local copy and return it (avoid extra DB query)
+		existing.IsDefault = true
+		existing.UpdatedAt = time.Now()
+
+		s.logger.Info(
+			"address set as default successfully",
+			"user_id",
+			userID,
+			"address_id",
+			addressID,
+		)
+
+		return nil
+	})
 	if err != nil {
-		s.logger.Error("failed to get updated address", "address_id", addressID, "error", err)
-
-		return nil, httperror.NewInternalServerError("failed to get updated address")
+		return nil, err
 	}
 
-	s.logger.Info("default address set successfully",
-		"user_id", userID,
-		"address_id", addressID)
-
-	return mapper.MapToAddressResponse(updatedAddress), nil
+	return mapper.MapToAddressResponse(existing), nil
 }
