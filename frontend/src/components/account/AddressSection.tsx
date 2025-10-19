@@ -21,11 +21,7 @@ import {
   useSetDefaultAddress,
   useUpdateAddress,
 } from '@/hooks/address'
-import type {
-  Address,
-  CreateAddressInput,
-  UpdateAddressInput,
-} from '@/types/__generated__/graphql'
+import type { Address, CreateAddressInput } from '@/types/__generated__/graphql'
 import { MapPin, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
