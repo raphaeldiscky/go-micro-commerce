@@ -1,23 +1,5 @@
 import { z } from 'zod'
 
-// Customer address interface
-export interface CustomerAddress {
-  id: string
-  userId: string
-  isDefault: boolean
-  receiverName: string
-  addressLine1: string
-  addressLine2: string
-  city: string
-  state: string
-  postalCode: string
-  countryCode: string
-  latitude?: number
-  longitude?: number
-  note: string
-  createdAt: string
-  updatedAt: string
-}
 export const profileSchema = z.object({
   firstName: z
     .string()
@@ -47,7 +29,8 @@ export const addressSchema = z.object({
   addressLine2: z
     .string()
     .min(5, 'Please enter a complete street address')
-    .max(200, 'Street address is too long'),
+    .max(200, 'Street address is too long')
+    .optional(),
   city: z
     .string()
     .min(2, 'City must be at least 2 characters')
@@ -55,7 +38,8 @@ export const addressSchema = z.object({
   state: z
     .string()
     .min(1, 'State/Province is required')
-    .max(50, 'State name is too long'),
+    .max(50, 'State name is too long')
+    .optional(),
   postalCode: z
     .string()
     .min(1, 'Postal code is required')
@@ -64,9 +48,12 @@ export const addressSchema = z.object({
     .string()
     .min(1, 'Country code is required')
     .max(2, 'Country code name is too long'),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
   note: z
     .string()
-    .max(500, 'Delivery instructions must be less than 500 characters'),
+    .max(500, 'Delivery instructions must be less than 500 characters')
+    .optional(),
   isDefault: z.boolean(),
 })
 
@@ -99,50 +86,14 @@ export type ProfileFormValues = z.infer<typeof profileSchema>
 export type AddressFormValues = z.infer<typeof addressSchema>
 export type PasswordFormValues = z.infer<typeof passwordSchema>
 
-// Interface types for store
+// Interface types for form data
 export interface ProfileUpdateRequest extends ProfileFormValues {}
 export interface PasswordChangeRequest extends PasswordFormValues {}
-export interface AddressRequest extends AddressFormValues {}
 
-// Account statistics
-export interface AccountStats {
+export type AccountStats = {
   totalOrders: number
   totalSpent: number
   averageOrderValue: number
-  lastOrderDate?: string
+  lastOrderDate: string
   memberSince: string
 }
-
-// Account store state
-export interface AccountState {
-  user: any // From auth store
-  addresses: Array<CustomerAddress>
-  stats: AccountStats | null
-  isLoading: boolean
-  isUpdating: boolean
-  error: string | null
-}
-
-// Account store actions
-export interface AccountActions {
-  // Profile management
-  updateProfile: (data: ProfileUpdateRequest) => Promise<void>
-  changePassword: (data: PasswordChangeRequest) => Promise<void>
-
-  // Address management
-  loadAddresses: () => Promise<void>
-  addAddress: (data: AddressRequest) => Promise<void>
-  updateAddress: (id: string, data: AddressRequest) => Promise<void>
-  deleteAddress: (id: string) => Promise<void>
-  setDefaultAddress: (id: string) => Promise<void>
-
-  // Stats
-  loadStats: () => Promise<void>
-
-  // State management
-  setLoading: (loading: boolean) => void
-  setError: (error: string | null) => void
-}
-
-// Account store type
-export type AccountStore = AccountState & AccountActions

@@ -14,39 +14,37 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useAccountStore } from '@/store/accountStore'
-import type { AddressRequest, CustomerAddress } from '@/types/account'
+import {
+  useAddresses,
+  useCreateAddress,
+  useDeleteAddress,
+  useSetDefaultAddress,
+  useUpdateAddress,
+} from '@/hooks/address'
+import type { Address, CreateAddressInput } from '@/types/__generated__/graphql'
 import { MapPin, Plus } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { AddressCard } from './AddressCard'
 import { AddressForm } from './AddressForm'
 
 export function AddressSection() {
-  const addresses = useAccountStore((state) => state.addresses)
-  const addAddress = useAccountStore((state) => state.addAddress)
-  const updateAddress = useAccountStore((state) => state.updateAddress)
-  const deleteAddress = useAccountStore((state) => state.deleteAddress)
-  const setDefaultAddress = useAccountStore((state) => state.setDefaultAddress)
-  const loadAddresses = useAccountStore((state) => state.loadAddresses)
-  const isLoading = useAccountStore((state) => state.isLoading)
-  const isUpdating = useAccountStore((state) => state.isUpdating)
+  // GraphQL hooks
+  const { data: addressData, isLoading } = useAddresses(20)
+  const createAddressMutation = useCreateAddress()
+  const updateAddressMutation = useUpdateAddress()
+  const deleteAddressMutation = useDeleteAddress()
+  const setDefaultMutation = useSetDefaultAddress()
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(
-    null,
-  )
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null)
 
-  // Load addresses on component mount
-  useEffect(() => {
-    if (addresses.length === 0) {
-      loadAddresses()
-    }
-  }, [addresses.length, loadAddresses])
+  // Extract addresses from edges
+  const addresses = addressData?.edges.map((edge) => edge.node) ?? []
 
-  const handleAddAddress = async (data: AddressRequest) => {
+  const handleAddAddress = async (data: CreateAddressInput) => {
     try {
-      await addAddress(data)
+      await createAddressMutation.mutateAsync(data)
       setIsAddDialogOpen(false)
       toast.success('Address added successfully')
     } catch (error) {
@@ -55,11 +53,14 @@ export function AddressSection() {
     }
   }
 
-  const handleUpdateAddress = async (data: AddressRequest) => {
+  const handleUpdateAddress = async (data: CreateAddressInput) => {
     if (!editingAddress) return
 
     try {
-      await updateAddress(editingAddress.id, data)
+      await updateAddressMutation.mutateAsync({
+        id: editingAddress.id,
+        input: data,
+      })
       setEditingAddress(null)
       toast.success('Address updated successfully')
     } catch (error) {
@@ -71,7 +72,7 @@ export function AddressSection() {
   const handleDeleteAddress = async (id: string) => {
     if (confirm('Are you sure you want to delete this address?')) {
       try {
-        await deleteAddress(id)
+        await deleteAddressMutation.mutateAsync(id)
         toast.success('Address deleted successfully')
       } catch (error) {
         console.error('Failed to delete address:', error)
@@ -82,13 +83,19 @@ export function AddressSection() {
 
   const handleSetDefault = async (id: string) => {
     try {
-      await setDefaultAddress(id)
+      await setDefaultMutation.mutateAsync(id)
       toast.success('Default address updated successfully')
     } catch (error) {
       console.error('Failed to set default address:', error)
       toast.error('Failed to set default address')
     }
   }
+
+  const isUpdating =
+    createAddressMutation.isPending ||
+    updateAddressMutation.isPending ||
+    deleteAddressMutation.isPending ||
+    setDefaultMutation.isPending
 
   if (isLoading && addresses.length === 0) {
     return (

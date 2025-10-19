@@ -31,6 +31,12 @@ func (r *mutationResolver) CreateAddress(
 	// Map GraphQL input to DTO
 	req := mapper.MapGraphQLInputToCreateRequest(input)
 
+	// Validate the DTO
+	if err = r.validator.Struct(req); err != nil {
+		r.logger.Error("Validation failed for create address request", "error", err)
+		return nil, httperror.NewBadRequestError(err.Error())
+	}
+
 	// Call service to create address
 	addressDTO, err := r.addressService.CreateAddress(ctx, user.UserID, req)
 	if err != nil {
@@ -62,6 +68,12 @@ func (r *mutationResolver) UpdateAddress(
 
 	// Map GraphQL input to DTO
 	req := mapper.MapGraphQLInputToUpdateRequest(input)
+
+	// Validate the DTO
+	if err = r.validator.Struct(req); err != nil {
+		r.logger.Error("Validation failed for update address request", "error", err)
+		return nil, httperror.NewBadRequestError(err.Error())
+	}
 
 	// Call service to update address
 	addressDTO, err := r.addressService.UpdateAddress(ctx, user.UserID, addressID, req)
@@ -114,6 +126,8 @@ func (r *mutationResolver) SetDefaultAddress(
 	if err != nil {
 		return nil, httperror.NewBadRequestError("invalid address ID")
 	}
+
+	r.logger.Info("SetDefaultAddress called", "user_id", user.UserID.String(), "address_id", id)
 
 	// Call service to set default address
 	addressDTO, err := r.addressService.SetDefaultAddress(ctx, user.UserID, addressID)
