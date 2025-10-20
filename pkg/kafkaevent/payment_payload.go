@@ -7,12 +7,13 @@ import (
 
 // PaymentRequestPayload holds the data for payment request events.
 type PaymentRequestPayload struct {
-	PaymentID     uuid.UUID       `json:"payment_id"`
-	OrderID       uuid.UUID       `json:"order_id"`
-	CustomerID    uuid.UUID       `json:"customer_id"`
-	TotalPrice    decimal.Decimal `json:"total_price"`
-	Currency      string          `json:"currency"`
-	PaymentMethod string          `json:"payment_method"`
+	PaymentID      uuid.UUID       `json:"payment_id"`
+	OrderID        uuid.UUID       `json:"order_id"`
+	CustomerID     uuid.UUID       `json:"customer_id"`
+	TotalPrice     decimal.Decimal `json:"total_price"`
+	Currency       string          `json:"currency"`
+	PaymentMethod  string          `json:"payment_method"`
+	PaymentGateway string          `json:"payment_gateway"`
 }
 
 // PaymentRefundPayload holds the data for payment refund events.

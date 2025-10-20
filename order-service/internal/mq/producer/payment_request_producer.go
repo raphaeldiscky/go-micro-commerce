@@ -33,6 +33,7 @@ func NewPaymentRequestEvent(
 	totalPrice decimal.Decimal,
 	currency string,
 	paymentMethod constant.PaymentMethod,
+	paymentGateway constant.PaymentGateway,
 ) *PaymentRequestEvent {
 	return &PaymentRequestEvent{
 		Metadata: kafkaevent.Metadata{
@@ -43,12 +44,13 @@ func NewPaymentRequestEvent(
 			Source:      pkgconstant.OrderServiceName,
 		},
 		Payload: kafkaevent.PaymentRequestPayload{
-			PaymentID:     uuid.New(),
-			OrderID:       orderID,
-			CustomerID:    customerID,
-			TotalPrice:    totalPrice,
-			Currency:      currency,
-			PaymentMethod: string(paymentMethod),
+			PaymentID:      uuid.New(),
+			OrderID:        orderID,
+			CustomerID:     customerID,
+			TotalPrice:     totalPrice,
+			Currency:       currency,
+			PaymentMethod:  string(paymentMethod),
+			PaymentGateway: string(paymentGateway),
 		},
 	}
 }

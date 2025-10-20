@@ -161,12 +161,19 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 	if err != nil {
 		return err
 	}
+
+	paymentGateway, err := mapper.MapStringToPaymentGateway(evt.Payload.PaymentGateway)
+	if err != nil {
+		return err
+	}
+
 	// Create new payment entity
 	payment, err := entity.NewPayment(
 		evt.Payload.OrderID,
 		evt.Payload.TotalPrice,
 		evt.Payload.Currency,
 		paymentMethod,
+		paymentGateway,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create payment entity: %w", err)

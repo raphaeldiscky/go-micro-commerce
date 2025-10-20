@@ -19,6 +19,8 @@ type Order struct {
 	CustomerID     uuid.UUID
 	Status         constant.OrderStatus
 	Reason         *string
+	PaymentGateway constant.PaymentGateway
+	PaymentMethod  constant.PaymentMethod
 	Currency       string
 	ShippingCost   decimal.Decimal // generated from fulfillment-service
 	Subtotal       decimal.Decimal // SUM(unit_price * quantity) for all items

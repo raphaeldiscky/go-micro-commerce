@@ -1,3 +1,4 @@
+// Package client provides external service clients for the payment service.
 package client
 
 import (
@@ -35,6 +36,25 @@ type PaymentGatewayClient interface {
 	// GetRefundStatus retrieves the status of a refund
 	GetRefundStatus(ctx context.Context, gatewayRefundID string) (*dto.RefundResponse, error)
 
-	// ValidateCard validates a payment card without charging
-	ValidateCard(ctx context.Context, card *dto.PaymentCard) error
+	// CreateSetupIntent creates a SetupIntent for collecting payment method without charging
+	// Used for delayed payment confirmation pattern (save now, charge later)
+	CreateSetupIntent(
+		ctx context.Context,
+		req *dto.SetupIntentRequest,
+	) (*dto.SetupIntentResponse, error)
+
+	// ChargeOffSession charges a saved payment method without customer present
+	// Used after SetupIntent to charge the card when order status changes
+	ChargeOffSession(
+		ctx context.Context,
+		req *dto.ChargeOffSessionRequest,
+	) (*dto.PaymentGatewayResponse, error)
+
+	// CreateOrRetrieveCustomer ensures a Stripe Customer exists for the given customer ID
+	// Returns the Stripe Customer ID (cus_xxx)
+	CreateOrRetrieveCustomer(
+		ctx context.Context,
+		customerID string,
+		email string,
+	) (string, error)
 }

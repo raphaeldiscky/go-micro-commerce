@@ -24,6 +24,8 @@ const (
 	// OrderCanceledEventType is when canceled by system or customer (canceled)
 	// Needed by: inventory release, refund, analytics.
 	OrderCanceledEventType = "OrderCanceled"
+	// OrderPaymentPendingEventType is when order payment is pending and need to be paid (payment_pending).
+	OrderPaymentPendingEventType = "OrderPaymentPending"
 	// OrderPaymentExpiredEventType is when order payment expired (payment_expired).
 	// Needed by: inventory release, no refund needed, analytics.
 	OrderPaymentExpiredEventType = "OrderPaymentExpired"
