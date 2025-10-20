@@ -23,12 +23,6 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/shallow'
 
-const generateId = () =>
-  `cart-${Date.now()}-${Math.random().toString(36).substring(7)}`
-
-const generateCartId = () =>
-  `cart-${Date.now()}-${Math.random().toString(36).substring(7)}`
-
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -56,7 +50,7 @@ export const useCartStore = create<CartStore>()(
         // Initialize cart if it doesn't exist
         if (!state.cart) {
           const newCart: Cart = {
-            id: generateCartId(),
+            id: crypto.randomUUID(),
             customer_id: customerId,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -109,7 +103,7 @@ export const useCartStore = create<CartStore>()(
         } else {
           // Add new item
           const newItem: CartItem = {
-            id: generateId(),
+            id: crypto.randomUUID(),
             cart_id: state.cart.id,
             product_id: product.id,
             quantity,
@@ -256,7 +250,7 @@ export const useCartStore = create<CartStore>()(
 
         // Create checkout session
         const checkoutSession: CheckoutSession = {
-          id: generateId(),
+          id: crypto.randomUUID(),
           customer_id: state.cart?.customer_id || '',
           cart_id: state.cart?.id || '',
           status: 'pending',
@@ -343,12 +337,9 @@ export const useCartStore = create<CartStore>()(
         set({ isCheckoutLoading: true })
 
         try {
-          // Generate idempotency key
-          const idempotencyKey = `${state.cart?.id}-${Date.now()}`
-
           // Build PlaceOrderRequest
           const orderRequest: PlaceOrderRequest = {
-            idempotencyKey,
+            idempotencyKey: crypto.randomUUID(),
             items: selectedItems.map((item) => ({
               productId: item.product_id,
               quantity: item.quantity,
