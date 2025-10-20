@@ -527,6 +527,7 @@ func (s *orderService) RequestPaymentOrder(
 			updatedOrder.TotalPrice,
 			"IDR", // Default currency
 			req.PaymentMethod,
+			req.PaymentGateway,
 		)
 
 		payload, marshalErr := json.Marshal(evt)

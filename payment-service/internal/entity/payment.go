@@ -15,7 +15,7 @@ import (
 type Payment struct {
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
-	PaymentGateway     *string
+	PaymentGateway     constant.PaymentGateway
 	GatewayReferenceID *string
 	GatewayResponse    map[string]any
 	CompletedAt        *time.Time
@@ -26,6 +26,8 @@ type Payment struct {
 	Amount             decimal.Decimal
 	ID                 uuid.UUID
 	OrderID            uuid.UUID
+	PaymentMethodID    *string // Stripe PaymentMethod ID (pm_xxx) for off-session charging
+	StripeCustomerID   *string // Stripe Customer ID (cus_xxx) for payment method attachment
 }
 
 // NewPayment creates a new payment with validation.
@@ -34,17 +36,19 @@ func NewPayment(
 	amount decimal.Decimal,
 	currency string,
 	paymentMethod constant.PaymentMethod,
+	paymentGateway constant.PaymentGateway,
 ) (*Payment, error) {
 	now := time.Now()
 	payment := &Payment{
-		ID:            uuid.New(),
-		OrderID:       orderID,
-		Amount:        amount.Round(constant.DefaultPricingScale),
-		Currency:      currency,
-		Status:        constant.PaymentStatusPending,
-		PaymentMethod: paymentMethod,
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		ID:             uuid.New(),
+		OrderID:        orderID,
+		Amount:         amount.Round(constant.DefaultPricingScale),
+		Currency:       currency,
+		Status:         constant.PaymentStatusPending,
+		PaymentMethod:  paymentMethod,
+		PaymentGateway: paymentGateway,
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 
 	if err := payment.validate(); err != nil {
@@ -81,12 +85,23 @@ func (p *Payment) UpdateStatus(status constant.PaymentStatus) error {
 
 // SetGatewayReference sets the payment gateway reference information.
 func (p *Payment) SetGatewayReference(
-	gateway, referenceID string,
+	gateway constant.PaymentGateway,
+	referenceID string,
 	response map[string]any,
 ) error {
-	p.PaymentGateway = &gateway
+	p.PaymentGateway = gateway
 	p.GatewayReferenceID = &referenceID
 	p.GatewayResponse = response
+	p.UpdatedAt = time.Now()
+
+	return p.validate()
+}
+
+// SetPaymentMethodInfo sets the Stripe payment method and customer IDs.
+// Used for storing payment method during SetupIntent flow for later off-session charging.
+func (p *Payment) SetPaymentMethodInfo(paymentMethodID, stripeCustomerID string) error {
+	p.PaymentMethodID = &paymentMethodID
+	p.StripeCustomerID = &stripeCustomerID
 	p.UpdatedAt = time.Now()
 
 	return p.validate()

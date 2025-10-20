@@ -2,8 +2,6 @@
 package gateway
 
 import (
-	"fmt"
-
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
@@ -26,16 +24,20 @@ func NewFactory(cfg *config.PaymentGatewayConfig, appLogger logger.Logger) *Fact
 	}
 }
 
-// CreateGateway creates a payment gateway client based on the provider type.
-func (f *Factory) CreateGateway(provider string) (client.PaymentGatewayClient, error) {
-	switch provider {
-	case "stripe":
-		f.logger.Info("Creating Stripe payment gateway client")
-		return stripe.NewStripeClient(f.config, f.logger), nil
-	case "mock":
-		f.logger.Info("Creating mock payment gateway client")
-		return mock.NewMockClient(), nil
-	default:
-		return nil, fmt.Errorf("unsupported payment gateway provider: %s", provider)
-	}
+// CreateGateways creates all available payment gateway clients.
+func (f *Factory) CreateGateways() map[string]client.PaymentGatewayClient {
+	f.logger.Info("Initializing all available payment gateway clients")
+
+	gateways := make(map[string]client.PaymentGatewayClient)
+
+	// Initialize Stripe gateway
+	gateways["stripe"] = stripe.NewStripeClient(f.config, f.logger)
+	f.logger.Info("Stripe payment gateway client initialized")
+
+	// Initialize Mock gateway
+	gateways["mock"] = mock.NewMockClient()
+
+	f.logger.Info("Mock payment gateway client initialized")
+
+	return gateways
 }

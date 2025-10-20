@@ -50,12 +50,14 @@ func (r *paymentRepositoryPostgres) Create(
 ) (*entity.Payment, error) {
 	query := `
 		INSERT INTO payments (
-			id, order_id, amount, currency, status, payment_method, 
+			id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
+			payment_method_id, stripe_customer_id,
 			created_at, updated_at, completed_at, failed_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 		RETURNING id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
+			payment_method_id, stripe_customer_id,
 			created_at, updated_at, completed_at, failed_at
 	`
 
@@ -71,6 +73,8 @@ func (r *paymentRepositoryPostgres) Create(
 		payment.PaymentGateway,
 		payment.GatewayReferenceID,
 		payment.GatewayResponse,
+		payment.PaymentMethodID,
+		payment.StripeCustomerID,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.CompletedAt,
@@ -89,6 +93,8 @@ func (r *paymentRepositoryPostgres) Create(
 		&createdPayment.PaymentGateway,
 		&createdPayment.GatewayReferenceID,
 		&createdPayment.GatewayResponse,
+		&createdPayment.PaymentMethodID,
+		&createdPayment.StripeCustomerID,
 		&createdPayment.CreatedAt,
 		&createdPayment.UpdatedAt,
 		&createdPayment.CompletedAt,
@@ -109,6 +115,7 @@ func (r *paymentRepositoryPostgres) FindByID(
 	query := `
 		SELECT id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
+			payment_method_id, stripe_customer_id,
 			created_at, updated_at, completed_at, failed_at
 		FROM payments
 		WHERE id = $1
@@ -128,6 +135,8 @@ func (r *paymentRepositoryPostgres) FindByID(
 		&payment.PaymentGateway,
 		&payment.GatewayReferenceID,
 		&payment.GatewayResponse,
+		&payment.PaymentMethodID,
+		&payment.StripeCustomerID,
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
 		&payment.CompletedAt,
@@ -152,6 +161,7 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 	query := `
 		SELECT id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
+			payment_method_id, stripe_customer_id,
 			created_at, updated_at, completed_at, failed_at
 		FROM payments
 		WHERE order_id = $1
@@ -171,6 +181,8 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 		&payment.PaymentGateway,
 		&payment.GatewayReferenceID,
 		&payment.GatewayResponse,
+		&payment.PaymentMethodID,
+		&payment.StripeCustomerID,
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
 		&payment.CompletedAt,
@@ -202,12 +214,15 @@ func (r *paymentRepositoryPostgres) Update(
 			payment_gateway = $7,
 			gateway_reference_id = $8,
 			gateway_response = $9,
-			updated_at = $10,
-			completed_at = $11,
-			failed_at = $12
+			payment_method_id = $10,
+			stripe_customer_id = $11,
+			updated_at = $12,
+			completed_at = $13,
+			failed_at = $14
 		WHERE id = $1
 		RETURNING id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
+			payment_method_id, stripe_customer_id,
 			created_at, updated_at, completed_at, failed_at
 	`
 
@@ -223,6 +238,8 @@ func (r *paymentRepositoryPostgres) Update(
 		payment.PaymentGateway,
 		payment.GatewayReferenceID,
 		payment.GatewayResponse,
+		payment.PaymentMethodID,
+		payment.StripeCustomerID,
 		payment.UpdatedAt,
 		payment.CompletedAt,
 		payment.FailedAt,
@@ -240,6 +257,8 @@ func (r *paymentRepositoryPostgres) Update(
 		&updatedPayment.PaymentGateway,
 		&updatedPayment.GatewayReferenceID,
 		&updatedPayment.GatewayResponse,
+		&updatedPayment.PaymentMethodID,
+		&updatedPayment.StripeCustomerID,
 		&updatedPayment.CreatedAt,
 		&updatedPayment.UpdatedAt,
 		&updatedPayment.CompletedAt,

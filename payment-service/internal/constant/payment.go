@@ -22,18 +22,20 @@ const (
 type PaymentMethod string
 
 const (
-	// PaymentMethodCreditCard represents the credit card payment method.
-	PaymentMethodCreditCard PaymentMethod = "credit_card"
-	// PaymentMethodDebitCard represents the debit card payment method.
-	PaymentMethodDebitCard PaymentMethod = "debit_card"
+	// PaymentMethodCard represents the card payment method.
+	PaymentMethodCard PaymentMethod = "card"
 	// PaymentMethodBankTransfer represents the bank transfer payment method.
 	PaymentMethodBankTransfer PaymentMethod = "bank_transfer"
-	// PaymentMethodApplePay represents the Apple Pay payment method.
-	PaymentMethodApplePay PaymentMethod = "apple_pay"
-	// PaymentMethodGooglePay represents the Google Pay payment method.
-	PaymentMethodGooglePay PaymentMethod = "google_pay"
-	// PaymentMethodPayPal represents the PayPal payment method.
-	PaymentMethodPayPal PaymentMethod = "paypal"
+)
+
+// PaymentGateway represents the different payment gateways available.
+type PaymentGateway string
+
+const (
+	// PaymentGatewayStripe represents the Stripe payment gateway.
+	PaymentGatewayStripe PaymentGateway = "stripe"
+	// PaymentGatewayMock represents the Mock payment gateway for testing.
+	PaymentGatewayMock PaymentGateway = "mock"
 )
 
 // BankTransferStatus represents the status of a bank transfer.

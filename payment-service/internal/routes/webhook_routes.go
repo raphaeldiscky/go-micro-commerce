@@ -11,9 +11,7 @@ import (
 func SetupWebhookRoutes(e *echo.Echo, h *handler.WebhookHandler) {
 	webhook := e.Group("/webhooks")
 
-	// Stripe webhook endpoint
+	// Stripe webhook endpoint - POST /webhooks/stripe
+	// This endpoint receives webhook events from Stripe after client-side payment confirmation
 	webhook.POST("/stripe", h.HandleStripeWebhook)
-
-	// Health check for webhook handler
-	webhook.GET("/health", h.HealthCheck)
 }

@@ -3,7 +3,6 @@ package provider
 import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/stripe/stripe-go/v83"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/handler"
@@ -18,23 +17,24 @@ func SetupPayment(
 	appLogger logger.Logger,
 	providers *Providers,
 ) {
+	// Initialize payment service
 	paymentService := service.NewPaymentService(
 		providers.DataStore,
 		appLogger,
-		providers.PaymentGatewayClient,
+		providers.PaymentGatewayClients,
 	)
 	providers.PaymentService = paymentService
-	paymentHandler := handler.NewPaymentHandler(paymentService)
 
+	// Initialize payment handler and routes
+	paymentHandler := handler.NewPaymentHandler(paymentService)
 	routes.SetupPaymentRoutes(e, paymentHandler)
 
-	// Setup webhook handler and routes
-	// Create Stripe client for webhook signature verification and event fetching
-	stripeClient := stripe.NewClient(cfg.PaymentGateway.StripeAPIKey)
-	webhookHandler := handler.NewWebhookHandler(
-		cfg.PaymentGateway,
+	// Initialize webhook service and handler
+	webhookService := service.NewWebhookService(
+		providers.DataStore,
 		appLogger,
-		stripeClient,
+		cfg.PaymentGateway.StripeWebhookSecret,
 	)
+	webhookHandler := handler.NewWebhookHandler(webhookService, appLogger)
 	routes.SetupWebhookRoutes(e, webhookHandler)
 }

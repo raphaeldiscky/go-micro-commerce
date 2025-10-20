@@ -8,8 +8,10 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 	"github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v83/customer"
 	"github.com/stripe/stripe-go/v83/paymentintent"
 	"github.com/stripe/stripe-go/v83/refund"
+	"github.com/stripe/stripe-go/v83/setupintent"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
@@ -39,35 +41,37 @@ const (
 	multiplyAmount = 100
 )
 
-// ProcessPayment creates a Stripe PaymentIntent and processes the payment.
+// ProcessPayment creates a Stripe PaymentIntent with the payment method attached.
+// For PCI compliance, this does NOT confirm the payment - confirmation happens client-side
+// with Stripe.js using the returned client_secret. This eliminates raw card data from our servers.
 func (c *stripeClient) ProcessPayment(
 	_ context.Context,
 	req *dto.PaymentGatewayRequest,
 ) (*dto.PaymentGatewayResponse, error) {
 	c.logger.Infof(
-		"Processing Stripe payment for transaction %s, amount: %s %s",
+		"Creating Stripe PaymentIntent for transaction %s, amount: %s %s, payment_method: %s",
 		req.TransactionID,
 		req.Amount.String(),
 		req.Currency,
+		req.PaymentMethodID,
 	)
 
-	// Convert amount to smallest currency unit (cents for USD, etc.)
-	// Multiply amount by 100 to convert to cents (smallest currency unit)
-	// 100 is used because Stripe uses cents for USD and other currencies
-	// that have a decimal place of 2.
+	// Convert amount to smallest currency unit (cents for USD, yen for JPY, etc.)
 	amountInCents := req.Amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
 
 	params := &stripe.PaymentIntentParams{
-		Amount:      stripe.Int64(amountInCents),
-		Currency:    stripe.String(req.Currency),
-		Description: stripe.String(req.Description),
+		Amount:        stripe.Int64(amountInCents),
+		Currency:      stripe.String(req.Currency),
+		Description:   stripe.String(req.Description),
+		PaymentMethod: stripe.String(req.PaymentMethodID), // PM ID tokenized client-side
+		Confirm:       stripe.Bool(false),                 // Client confirms with Stripe.js
 		Metadata: map[string]string{
 			"transaction_id": req.TransactionID.String(),
 			"customer_id":    req.CustomerID.String(),
 		},
 	}
 
-	// Set customer email
+	// Set customer email for receipts
 	if req.CustomerEmail != "" {
 		params.ReceiptEmail = stripe.String(req.CustomerEmail)
 	}
@@ -75,17 +79,34 @@ func (c *stripeClient) ProcessPayment(
 	// Set idempotency key for safe retries
 	params.IdempotencyKey = stripe.String(req.IdempotencyKey)
 
-	// Add payment method types based on request
-	params.PaymentMethodTypes = stripe.StringSlice([]string{"card"})
+	// Support multiple payment method types (cards, wallets, regional methods)
+	params.PaymentMethodTypes = stripe.StringSlice([]string{
+		"card",
+		"link",       // Stripe Link
+		"apple_pay",  // Apple Pay
+		"google_pay", // Google Pay
+	})
 
-	// Create PaymentIntent
+	// Enable automatic payment methods based on customer's location and currency
+	params.AutomaticPaymentMethods = &stripe.PaymentIntentAutomaticPaymentMethodsParams{
+		Enabled:        stripe.Bool(true),
+		AllowRedirects: stripe.String("always"), // Allow redirect-based methods (iDEAL, etc.)
+	}
+
+	// Create PaymentIntent (not confirmed yet - client will confirm)
 	pi, err := paymentintent.New(params)
 	if err != nil {
 		c.logger.Errorf("Failed to create Stripe PaymentIntent: %v", err)
 		return nil, fmt.Errorf("failed to create payment intent: %w", err)
 	}
 
-	c.logger.Infof("Stripe PaymentIntent created: %s, status: %s", pi.ID, pi.Status)
+	c.logger.Infof(
+		"Stripe PaymentIntent created: %s, status: %s, requires_action: %v",
+		pi.ID,
+		pi.Status,
+		pi.Status == stripe.PaymentIntentStatusRequiresAction ||
+			pi.Status == stripe.PaymentIntentStatusRequiresPaymentMethod,
+	)
 
 	return MapPaymentIntentToResponse(pi, req.TransactionID)
 }
@@ -222,15 +243,146 @@ func (c *stripeClient) GetRefundStatus(
 	return MapRefundToResponse(r, refundID, transactionID)
 }
 
-// ValidateCard validates a payment card using Stripe's token API.
-func (c *stripeClient) ValidateCard(_ context.Context, card *dto.PaymentCard) error {
-	c.logger.Info("Validating payment card with Stripe")
+// CreateSetupIntent creates a SetupIntent for collecting payment method without charging.
+// Used for delayed payment confirmation pattern (save now, charge later).
+func (c *stripeClient) CreateSetupIntent(
+	ctx context.Context,
+	req *dto.SetupIntentRequest,
+) (*dto.SetupIntentResponse, error) {
+	c.logger.Infof("Creating SetupIntent for customer: %s, order: %s", req.CustomerID, req.OrderID)
 
-	// Stripe validates cards when creating payment methods or tokens
-	// For now, just validate basic card info format
-	if err := validateCardInfo(card); err != nil {
-		return fmt.Errorf("invalid card information: %w", err)
+	// 1. Create or retrieve Stripe Customer
+	customerID, err := c.CreateOrRetrieveCustomer(ctx, req.CustomerID.String(), req.CustomerEmail)
+	if err != nil {
+		c.logger.Errorf("Failed to create/retrieve customer: %v", err)
+		return nil, fmt.Errorf("failed to create customer: %w", err)
 	}
 
-	return nil
+	// 2. Create SetupIntent
+	params := &stripe.SetupIntentParams{
+		Customer: stripe.String(customerID),
+		PaymentMethodTypes: stripe.StringSlice([]string{
+			"card",
+			"link",       // Stripe Link
+			"apple_pay",  // Apple Pay (if available)
+			"google_pay", // Google Pay (if available)
+		}),
+		Usage: stripe.String("off_session"), // Critical: allows charging without customer present
+		Metadata: map[string]string{
+			"order_id":    req.OrderID.String(),
+			"customer_id": req.CustomerID.String(),
+		},
+	}
+
+	si, err := setupintent.New(params)
+	if err != nil {
+		c.logger.Errorf("Failed to create SetupIntent: %v", err)
+		return nil, fmt.Errorf("failed to create setup intent: %w", err)
+	}
+
+	c.logger.Infof("SetupIntent created: %s for customer: %s", si.ID, customerID)
+
+	return &dto.SetupIntentResponse{
+		SetupIntentID:    si.ID,
+		ClientSecret:     si.ClientSecret,
+		StripeCustomerID: customerID,
+	}, nil
+}
+
+// ChargeOffSession charges a saved payment method without customer present.
+// Used for delayed payment confirmation when customer already provided payment details.
+func (c *stripeClient) ChargeOffSession(
+	_ context.Context,
+	req *dto.ChargeOffSessionRequest,
+) (*dto.PaymentGatewayResponse, error) {
+	c.logger.Infof(
+		"Charging off-session: PM=%s, Customer=%s, Amount=%s %s",
+		req.PaymentMethodID,
+		req.StripeCustomerID,
+		req.Amount.String(),
+		req.Currency,
+	)
+
+	// Convert amount to smallest currency unit (cents)
+	amountInCents := req.Amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
+
+	params := &stripe.PaymentIntentParams{
+		Amount:        stripe.Int64(amountInCents),
+		Currency:      stripe.String(req.Currency),
+		Customer:      stripe.String(req.StripeCustomerID),
+		PaymentMethod: stripe.String(req.PaymentMethodID),
+		Confirm:       stripe.Bool(true), // Charge immediately on creation
+		OffSession:    stripe.Bool(true), // Critical: charge without customer present
+		Description:   stripe.String(req.Description),
+		Metadata: map[string]string{
+			"transaction_id": req.TransactionID.String(),
+			"order_id":       req.OrderID.String(),
+		},
+	}
+
+	// Create and confirm PaymentIntent in one call
+	pi, err := paymentintent.New(params)
+	if err != nil {
+		c.logger.Errorf("Off-session charge failed: %v", err)
+		return nil, fmt.Errorf("failed to charge off-session: %w", err)
+	}
+
+	c.logger.Infof(
+		"Off-session charge successful: %s, status: %s",
+		pi.ID,
+		pi.Status,
+	)
+
+	return MapPaymentIntentToResponse(pi, req.TransactionID)
+}
+
+// CreateOrRetrieveCustomer ensures a Stripe Customer exists for the given customer ID.
+// Searches for existing customer by metadata, creates new one if not found.
+func (c *stripeClient) CreateOrRetrieveCustomer(
+	_ context.Context,
+	customerID string,
+	email string,
+) (string, error) {
+	c.logger.Infof("Creating/retrieving Stripe Customer for: %s (%s)", customerID, email)
+
+	// Search for existing customer by metadata
+	searchParams := &stripe.CustomerSearchParams{
+		SearchParams: stripe.SearchParams{
+			Query: fmt.Sprintf("metadata['customer_id']:'%s'", customerID),
+		},
+	}
+
+	iter := customer.Search(searchParams)
+	if iter.Next() {
+		cust := iter.Customer()
+		c.logger.Infof("Found existing Stripe Customer: %s", cust.ID)
+
+		return cust.ID, nil
+	}
+
+	// Check for search errors
+	if iter.Err() != nil {
+		c.logger.Warnf("Error searching for customer: %v", iter.Err())
+		// Continue to create new customer
+	}
+
+	// Create new customer
+	c.logger.Infof("Creating new Stripe Customer for: %s", customerID)
+
+	createParams := &stripe.CustomerParams{
+		Email: stripe.String(email),
+		Metadata: map[string]string{
+			"customer_id": customerID,
+		},
+	}
+
+	cust, err := customer.New(createParams)
+	if err != nil {
+		c.logger.Errorf("Failed to create Stripe Customer: %v", err)
+		return "", fmt.Errorf("failed to create customer: %w", err)
+	}
+
+	c.logger.Infof("Created new Stripe Customer: %s for customer_id: %s", cust.ID, customerID)
+
+	return cust.ID, nil
 }

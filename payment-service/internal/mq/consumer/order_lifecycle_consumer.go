@@ -97,6 +97,8 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		switch meta.Metadata.EventType {
 		case kafka.OrderCreatedEventType:
 			processingErr = c.processCreatedOrder(ctx, ds, body)
+		case kafka.OrderProcessingEventType:
+			processingErr = c.processOrderProcessing(ctx, c.paymentService, body)
 		case kafka.OrderPaymentExpiredEventType:
 			processingErr = c.processPaymentExpiredOrder(ctx, c.paymentService, body)
 		default:
@@ -173,6 +175,45 @@ func (c *OrderLifecycleConsumer) processPaymentExpiredOrder(
 	}
 
 	c.logger.Infof("Successfully processed order cancellation for order: %s", evt.Payload.OrderID)
+
+	return nil
+}
+
+// processOrderProcessing handles order processing events to trigger delayed payment charging.
+// When order status changes to "processing", charge the saved payment method.
+func (c *OrderLifecycleConsumer) processOrderProcessing(
+	ctx context.Context,
+	paymentService service.PaymentService,
+	body []byte,
+) error {
+	var evt OrderLifecycleEvent
+	if err := sonic.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal order processing event: %w", err)
+	}
+
+	c.logger.Infof(
+		"Handling order processing event for order: %s - triggering delayed payment charge",
+		evt.Payload.OrderID,
+	)
+
+	// Charge the stored payment method
+	payment, err := paymentService.ChargeStoredPaymentMethod(ctx, evt.Payload.OrderID)
+	if err != nil {
+		c.logger.Errorf(
+			"Failed to charge stored payment method for order %s: %v",
+			evt.Payload.OrderID,
+			err,
+		)
+
+		return fmt.Errorf("failed to charge payment: %w", err)
+	}
+
+	c.logger.Infof(
+		"Successfully charged payment %s for order %s, status: %s",
+		payment.ID,
+		evt.Payload.OrderID,
+		payment.Status,
+	)
 
 	return nil
 }

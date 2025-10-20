@@ -4,12 +4,18 @@ package constant
 type PaymentMethod string
 
 const (
-	// PaymentMethodCreditCard represents the credit card payment method.
-	PaymentMethodCreditCard PaymentMethod = "credit_card"
-	// PaymentMethodDebitCard represents the debit card payment method.
-	PaymentMethodDebitCard PaymentMethod = "debit_card"
-	// PaymentMethodPayPal represents the PayPal payment method.
-	PaymentMethodPayPal PaymentMethod = "paypal"
+	// PaymentMethodCard represents the debit card payment method.
+	PaymentMethodCard PaymentMethod = "card"
 	// PaymentMethodBankTransfer represents the bank transfer payment method.
 	PaymentMethodBankTransfer PaymentMethod = "bank_transfer"
+)
+
+// PaymentGateway represents the different payment gateways available.
+type PaymentGateway string
+
+const (
+	// PaymentGatewayStripe represents the Stripe payment gateway.
+	PaymentGatewayStripe PaymentGateway = "stripe"
+	// PaymentGatewayMock represents the mock payment gateway.
+	PaymentGatewayMock PaymentGateway = "mock"
 )

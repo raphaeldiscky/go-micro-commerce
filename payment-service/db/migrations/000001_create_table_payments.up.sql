@@ -8,7 +8,7 @@ CREATE TABLE payments (
     amount DECIMAL(12, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed, refunded
-    payment_method VARCHAR(50) NOT NULL, -- credit_card, bank_transfer, paypal, etc.
+    payment_method VARCHAR(50) NOT NULL, -- credit_card, bank_transfer, etc.
     payment_gateway VARCHAR(50), -- stripe, midtrans, xendit, etc.
     gateway_reference_id VARCHAR(255), -- Reference ID from payment gateway
     gateway_response JSONB, -- Raw response from payment gateway

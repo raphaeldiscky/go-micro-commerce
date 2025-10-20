@@ -18,10 +18,10 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore            repository.DataStore
-	KafkaAdmin           *kafka.Admin
-	PaymentGatewayClient client.PaymentGatewayClient
-	PaymentService       service.PaymentService
+	DataStore             repository.DataStore
+	KafkaAdmin            *kafka.Admin
+	PaymentGatewayClients map[string]client.PaymentGatewayClient
+	PaymentService        service.PaymentService
 }
 
 // SetupGlobal initializes all providers.
@@ -73,19 +73,13 @@ func SetupGlobal(
 		return nil, err
 	}
 
-	// Setup payment gateway client using factory
+	// Setup payment gateway clients using factory
 	gatewayFactory := gateway.NewFactory(cfg.PaymentGateway, appLogger)
-
-	paymentGatewayClient, err := gatewayFactory.CreateGateway(cfg.PaymentGateway.Provider)
-	if err != nil {
-		appLogger.Errorf("failed to create payment gateway client: %v", err)
-
-		return nil, err
-	}
+	paymentGatewayClients := gatewayFactory.CreateGateways()
 
 	return &Providers{
-		DataStore:            dataStore,
-		KafkaAdmin:           kafkaAdmin,
-		PaymentGatewayClient: paymentGatewayClient,
+		DataStore:             dataStore,
+		KafkaAdmin:            kafkaAdmin,
+		PaymentGatewayClients: paymentGatewayClients,
 	}, nil
 }

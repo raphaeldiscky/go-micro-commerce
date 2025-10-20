@@ -276,8 +276,9 @@ func (a *orderActivities) CreatePayment(
 			order.ID,
 			order.CustomerID,
 			order.TotalPrice,
-			"IDR",                            // Default currency
-			constant.PaymentMethodCreditCard, // Default payment method for saga
+			order.Currency,
+			order.PaymentMethod,  // Default payment method for saga
+			order.PaymentGateway, // Default payment gateway for saga
 		)
 
 		payload, err := json.Marshal(paymentEvent)

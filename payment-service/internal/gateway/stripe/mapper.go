@@ -24,6 +24,9 @@ func MapPaymentIntentToResponse(
 	// Map Stripe status to our internal status
 	status := mapStripeStatusToGatewayStatus(string(pi.Status))
 
+	// Set client_secret for frontend to confirm payment with Stripe.js
+	clientSecret := pi.ClientSecret
+
 	response := &dto.PaymentGatewayResponse{
 		TransactionID: transactionID,
 		GatewayID:     pi.ID,
@@ -31,6 +34,7 @@ func MapPaymentIntentToResponse(
 		Amount:        amount,
 		Currency:      string(pi.Currency),
 		ProcessedAt:   time.Unix(pi.Created, 0),
+		ClientSecret:  &clientSecret, // For stripe.confirmCardPayment() on frontend
 		GatewayResponse: map[string]any{
 			"status":         string(pi.Status),
 			"client_secret":  pi.ClientSecret,
@@ -171,39 +175,4 @@ func parseRefundMetadata(
 	}
 
 	return refundID, transactionID, nil
-}
-
-// validateCardInfo performs basic validation on card information.
-func validateCardInfo(card *dto.PaymentCard) error {
-	if card == nil {
-		return errors.New("card information is required")
-	}
-
-	if card.Number == "" {
-		return errors.New("card number is required")
-	}
-
-	if card.ExpiryMonth == 0 {
-		return errors.New("expiration month is required")
-	}
-
-	if card.ExpiryYear == 0 {
-		return errors.New("expiration year is required")
-	}
-
-	if card.CVV == "" {
-		return errors.New("CVV is required")
-	}
-
-	// Basic expiration check
-	now := time.Now()
-	currentYear := now.Year()
-	currentMonth := int(now.Month())
-
-	if card.ExpiryYear < currentYear ||
-		(card.ExpiryYear == currentYear && card.ExpiryMonth < currentMonth) {
-		return errors.New("card has expired")
-	}
-
-	return nil
 }
