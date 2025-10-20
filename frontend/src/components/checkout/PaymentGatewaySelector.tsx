@@ -1,40 +1,38 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { mockPaymentMethods } from '@/data/mockData'
+import { mockPaymentGateways } from '@/data/mockData'
 import { useCartStore } from '@/store/cartStore'
-import type { PaymentMethod } from '@/types/cart'
-import { Building, CreditCard, Package, Smartphone, Wallet } from 'lucide-react'
+import type { PaymentGateway } from '@/types/cart'
+import { Building2, CreditCard } from 'lucide-react'
 
-const getPaymentIcon = (type: PaymentMethod['type']) => {
+const getGatewayIcon = (type: PaymentGateway['type']) => {
   switch (type) {
-    case 'card':
+    case 'stripe':
       return CreditCard
-    case 'ewallet':
-      return Smartphone
-    case 'bank_transfer':
-      return Building
-    case 'cod':
-      return Package
+    case 'paypal':
+      return CreditCard
     default:
-      return Wallet
+      return Building2
   }
 }
 
-export function PaymentMethods() {
+export function PaymentGatewaySelector() {
   const {
     selectedAddress,
     selectedShippingOption,
     selectedPaymentMethod,
-    setPaymentMethod,
+    selectedPaymentGateway,
+    setPaymentGateway,
   } = useCartStore()
 
-  const isDisabled = !selectedAddress || !selectedShippingOption
+  const isDisabled =
+    !selectedAddress || !selectedShippingOption || !selectedPaymentMethod
 
-  const handlePaymentChange = (methodId: string) => {
-    const method = mockPaymentMethods.find((m) => m.id === methodId)
-    if (method) {
-      setPaymentMethod(method)
+  const handleGatewayChange = (gatewayId: string) => {
+    const gateway = mockPaymentGateways.find((g) => g.id === gatewayId)
+    if (gateway) {
+      setPaymentGateway(gateway)
     }
   }
 
@@ -42,46 +40,42 @@ export function PaymentMethods() {
     <Card className={isDisabled ? 'opacity-60' : ''}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          Payment Method
+          <Building2 className="h-5 w-5" />
+          Payment Gateway
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {isDisabled && (
           <p className="text-sm text-muted-foreground mb-4">
-            Please select an address and shipping method first
+            Please complete previous steps first
           </p>
         )}
         <RadioGroup
-          value={selectedPaymentMethod?.id || ''}
-          onValueChange={handlePaymentChange}
+          value={selectedPaymentGateway?.id || ''}
+          onValueChange={handleGatewayChange}
           disabled={isDisabled}
         >
-          {mockPaymentMethods.map((method: PaymentMethod) => {
-            const Icon = getPaymentIcon(method.type)
+          {mockPaymentGateways.map((gateway: PaymentGateway) => {
+            const Icon = getGatewayIcon(gateway.type)
             return (
-              <div key={method.id} className="space-y-2">
+              <div key={gateway.id} className="space-y-2">
                 <div className="flex items-start space-x-3">
                   <RadioGroupItem
-                    id={method.id}
-                    value={method.id}
+                    id={gateway.id}
+                    value={gateway.id}
                     className="mt-1"
+                    disabled={isDisabled}
                   />
                   <div className="flex-1 space-y-1">
                     <Label
-                      htmlFor={method.id}
+                      htmlFor={gateway.id}
                       className="flex items-center justify-between font-medium cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4" />
-                        <span>{method.name}</span>
+                        <span>{gateway.name}</span>
                       </div>
                     </Label>
-                    {method.description && (
-                      <p className="text-sm text-muted-foreground ml-6">
-                        {method.description}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>
@@ -89,9 +83,9 @@ export function PaymentMethods() {
           })}
         </RadioGroup>
 
-        {!selectedPaymentMethod && (
+        {!isDisabled && !selectedPaymentGateway && (
           <p className="text-sm text-muted-foreground">
-            Please select a payment method to continue
+            Please select a payment gateway to continue
           </p>
         )}
       </CardContent>

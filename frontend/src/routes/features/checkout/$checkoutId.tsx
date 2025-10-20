@@ -1,7 +1,9 @@
 import {
+  AddressSelector,
   OrderNotes,
   OrderReview,
   OrderSummary,
+  PaymentGatewaySelector,
   PaymentMethods,
   ShippingOptions,
 } from '@/components/checkout'
@@ -10,14 +12,16 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PATH_FEATURES } from '@/constants/routes'
 import { formatCurrency } from '@/data/mockData'
 import { useCartStore } from '@/store/cartStore'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircle,
   ArrowLeft,
   CheckCircle,
   Clock,
+  MapPin,
   Package,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -28,11 +32,14 @@ export const Route = createFileRoute('/features/checkout/$checkoutId')({
 
 function RouteComponent() {
   const { checkoutId } = Route.useParams()
+  const navigate = useNavigate()
   const {
     checkoutSession,
     getSelectedItems,
+    selectedAddress,
     selectedShippingOption,
     selectedPaymentMethod,
+    selectedPaymentGateway,
     isCheckoutLoading,
     placeOrder,
   } = useCartStore()
@@ -46,8 +53,10 @@ function RouteComponent() {
   // Check if checkout is ready
   const isCheckoutReady =
     selectedItems.length > 0 &&
+    selectedAddress &&
     selectedShippingOption &&
     selectedPaymentMethod &&
+    selectedPaymentGateway &&
     !isSessionExpired
 
   const handlePlaceOrder = async () => {
@@ -59,9 +68,12 @@ function RouteComponent() {
     try {
       const result = await placeOrder()
 
-      if (result.success) {
+      if (result.success && result.paymentId) {
         toast.success('Order placed successfully!')
-        // TODO: Navigate to order confirmation page
+        // Navigate to pending payment page
+        navigate({
+          to: PATH_FEATURES.order.pendingPayment(result.paymentId),
+        })
       } else {
         toast.error(result.error || 'Failed to place order')
       }
@@ -186,26 +198,30 @@ function RouteComponent() {
 
           {/* Progress Steps */}
           <div className="mt-6 flex items-center justify-center">
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 lg:space-x-4">
+              {/* Address Step */}
               <div className="flex items-center">
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    selectedItems.length > 0
+                    selectedAddress
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {selectedItems.length > 0 ? (
+                  {selectedAddress ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <Package className="h-4 w-4" />
+                    <MapPin className="h-4 w-4" />
                   )}
                 </div>
-                <span className="ml-2 text-sm font-medium">Cart</span>
+                <span className="ml-2 text-sm font-medium hidden sm:inline">
+                  Address
+                </span>
               </div>
 
-              <div className="h-px w-8 bg-gray-300" />
+              <div className="h-px w-4 lg:w-8 bg-gray-300" />
 
+              {/* Shipping Step */}
               <div className="flex items-center">
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -217,14 +233,17 @@ function RouteComponent() {
                   {selectedShippingOption ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <span>2</span>
+                    <Package className="h-4 w-4" />
                   )}
                 </div>
-                <span className="ml-2 text-sm font-medium">Shipping</span>
+                <span className="ml-2 text-sm font-medium hidden sm:inline">
+                  Shipping
+                </span>
               </div>
 
-              <div className="h-px w-8 bg-gray-300" />
+              <div className="h-px w-4 lg:w-8 bg-gray-300" />
 
+              {/* Payment Method Step */}
               <div className="flex items-center">
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -239,7 +258,53 @@ function RouteComponent() {
                     <span>3</span>
                   )}
                 </div>
-                <span className="ml-2 text-sm font-medium">Payment</span>
+                <span className="ml-2 text-sm font-medium hidden lg:inline">
+                  Payment
+                </span>
+              </div>
+
+              <div className="h-px w-4 lg:w-8 bg-gray-300" />
+
+              {/* Payment Gateway Step */}
+              <div className="flex items-center">
+                <div
+                  className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    selectedPaymentGateway
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {selectedPaymentGateway ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <span>4</span>
+                  )}
+                </div>
+                <span className="ml-2 text-sm font-medium hidden lg:inline">
+                  Gateway
+                </span>
+              </div>
+
+              <div className="h-px w-4 lg:w-8 bg-gray-300" />
+
+              {/* Review Step */}
+              <div className="flex items-center">
+                <div
+                  className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    isCheckoutReady
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 text-gray-500'
+                  }`}
+                >
+                  {isCheckoutReady ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : (
+                    <span>5</span>
+                  )}
+                </div>
+                <span className="ml-2 text-sm font-medium hidden lg:inline">
+                  Review
+                </span>
               </div>
             </div>
           </div>
@@ -263,11 +328,17 @@ function RouteComponent() {
               {/* Order Review */}
               <OrderReview />
 
+              {/* Address Selection */}
+              <AddressSelector />
+
               {/* Shipping Options */}
               <ShippingOptions />
 
               {/* Payment Methods */}
               <PaymentMethods />
+
+              {/* Payment Gateway */}
+              <PaymentGatewaySelector />
 
               {/* Order Notes */}
               <OrderNotes />
@@ -308,11 +379,17 @@ function RouteComponent() {
 
                   {!isCheckoutReady && (
                     <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                      {!selectedAddress && (
+                        <p>• Please select a delivery address</p>
+                      )}
                       {!selectedShippingOption && (
                         <p>• Please select a shipping method</p>
                       )}
                       {!selectedPaymentMethod && (
                         <p>• Please select a payment method</p>
+                      )}
+                      {!selectedPaymentGateway && (
+                        <p>• Please select a payment gateway</p>
                       )}
                     </div>
                   )}
