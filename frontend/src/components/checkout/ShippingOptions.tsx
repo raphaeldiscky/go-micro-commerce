@@ -7,10 +7,15 @@ import type { ShippingOption } from '@/types/cart'
 import { Truck, Clock } from 'lucide-react'
 
 export function ShippingOptions() {
-  const { selectedShippingOption, setShippingMethod, getSubtotal } =
-    useCartStore()
+  const {
+    selectedAddress,
+    selectedShippingOption,
+    setShippingMethod,
+    getSubtotal,
+  } = useCartStore()
 
   const subtotal = getSubtotal()
+  const isDisabled = !selectedAddress
 
   const handleShippingChange = (optionId: string) => {
     const option = mockShippingOptions.find((opt) => opt.id === optionId)
@@ -28,7 +33,7 @@ export function ShippingOptions() {
   })
 
   return (
-    <Card>
+    <Card className={isDisabled ? 'opacity-60' : ''}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Truck className="h-5 w-5" />
@@ -36,9 +41,15 @@ export function ShippingOptions() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {isDisabled && (
+          <p className="text-sm text-muted-foreground mb-4">
+            Please select a delivery address first
+          </p>
+        )}
         <RadioGroup
           value={selectedShippingOption?.id || ''}
           onValueChange={handleShippingChange}
+          disabled={isDisabled}
         >
           {availableShippingOptions.map((option: ShippingOption) => (
             <div key={option.id} className="space-y-2">
@@ -47,6 +58,7 @@ export function ShippingOptions() {
                   id={option.id}
                   value={option.id}
                   className="mt-1"
+                  disabled={isDisabled}
                 />
                 <div className="flex-1 space-y-1">
                   <Label
@@ -81,7 +93,7 @@ export function ShippingOptions() {
           ))}
         </RadioGroup>
 
-        {!selectedShippingOption && (
+        {!isDisabled && !selectedShippingOption && (
           <p className="text-sm text-muted-foreground">
             Please select a shipping method to continue
           </p>

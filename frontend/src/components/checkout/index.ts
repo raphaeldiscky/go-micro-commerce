@@ -1,5 +1,7 @@
+export { AddressSelector } from './AddressSelector'
 export { OrderNotes } from './OrderNotes'
 export { OrderReview } from './OrderReview'
 export { OrderSummary } from './OrderSummary'
+export { PaymentGatewaySelector } from './PaymentGatewaySelector'
 export { PaymentMethods } from './PaymentMethods'
 export { ShippingOptions } from './ShippingOptions'

@@ -21,6 +21,7 @@ import { Route as FeaturesChatIndexRouteImport } from './routes/features/chat/in
 import { Route as FeaturesAccountIndexRouteImport } from './routes/features/account/index'
 import { Route as FeaturesCheckoutCheckoutIdRouteImport } from './routes/features/checkout/$checkoutId'
 import { Route as FeaturesChatConversationIdRouteImport } from './routes/features/chat/$conversationId'
+import { Route as FeaturesOrderPendingPaymentPaymentIdRouteImport } from './routes/features/order/pending-payment/$paymentId'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -84,6 +85,12 @@ const FeaturesChatConversationIdRoute =
     path: '/features/chat/$conversationId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const FeaturesOrderPendingPaymentPaymentIdRoute =
+  FeaturesOrderPendingPaymentPaymentIdRouteImport.update({
+    id: '/features/order/pending-payment/$paymentId',
+    path: '/features/order/pending-payment/$paymentId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/features/account': typeof FeaturesAccountIndexRoute
   '/features/chat': typeof FeaturesChatIndexRoute
   '/features/products': typeof FeaturesProductsIndexRoute
+  '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -112,6 +120,7 @@ export interface FileRoutesByTo {
   '/features/account': typeof FeaturesAccountIndexRoute
   '/features/chat': typeof FeaturesChatIndexRoute
   '/features/products': typeof FeaturesProductsIndexRoute
+  '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -127,6 +136,7 @@ export interface FileRoutesById {
   '/features/account/': typeof FeaturesAccountIndexRoute
   '/features/chat/': typeof FeaturesChatIndexRoute
   '/features/products/': typeof FeaturesProductsIndexRoute
+  '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -143,6 +153,7 @@ export interface FileRouteTypes {
     | '/features/account'
     | '/features/chat'
     | '/features/products'
+    | '/features/order/pending-payment/$paymentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/features/account'
     | '/features/chat'
     | '/features/products'
+    | '/features/order/pending-payment/$paymentId'
   id:
     | '__root__'
     | '/'
@@ -171,6 +183,7 @@ export interface FileRouteTypes {
     | '/features/account/'
     | '/features/chat/'
     | '/features/products/'
+    | '/features/order/pending-payment/$paymentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -186,6 +199,7 @@ export interface RootRouteChildren {
   FeaturesAccountIndexRoute: typeof FeaturesAccountIndexRoute
   FeaturesChatIndexRoute: typeof FeaturesChatIndexRoute
   FeaturesProductsIndexRoute: typeof FeaturesProductsIndexRoute
+  FeaturesOrderPendingPaymentPaymentIdRoute: typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -274,6 +288,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesChatConversationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/features/order/pending-payment/$paymentId': {
+      id: '/features/order/pending-payment/$paymentId'
+      path: '/features/order/pending-payment/$paymentId'
+      fullPath: '/features/order/pending-payment/$paymentId'
+      preLoaderRoute: typeof FeaturesOrderPendingPaymentPaymentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -290,6 +311,8 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturesAccountIndexRoute: FeaturesAccountIndexRoute,
   FeaturesChatIndexRoute: FeaturesChatIndexRoute,
   FeaturesProductsIndexRoute: FeaturesProductsIndexRoute,
+  FeaturesOrderPendingPaymentPaymentIdRoute:
+    FeaturesOrderPendingPaymentPaymentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -16,7 +16,6 @@ import (
 func MapStringToPaymentMethod(s string) (constant.PaymentMethod, error) {
 	constants := []constant.PaymentMethod{
 		constant.PaymentMethodCard,
-		constant.PaymentMethodBankTransfer,
 	}
 
 	for _, c := range constants {

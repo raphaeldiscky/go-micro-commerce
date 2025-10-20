@@ -24,8 +24,6 @@ type PaymentMethod string
 const (
 	// PaymentMethodCard represents the card payment method.
 	PaymentMethodCard PaymentMethod = "card"
-	// PaymentMethodBankTransfer represents the bank transfer payment method.
-	PaymentMethodBankTransfer PaymentMethod = "bank_transfer"
 )
 
 // PaymentGateway represents the different payment gateways available.
