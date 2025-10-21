@@ -155,10 +155,10 @@ export const PAGE_CONTENT = {
           'Discover the technical concepts and implementation details',
         TITLE: 'Learn More',
       },
-      LIVE_DEMO: {
-        CTA: 'Try Chat Demo',
-        DESCRIPTION: 'Try the real-time chat with WebSocket connections',
-        TITLE: 'Live Demo',
+      PRODUCT: {
+        CTA: 'Browse Products',
+        DESCRIPTION: 'View available products and place your orders',
+        TITLE: 'Products',
       },
       TITLE: 'Get Started',
     },

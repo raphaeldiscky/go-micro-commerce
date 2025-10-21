@@ -15,6 +15,7 @@ import {
   LogIn,
   LogOut,
   Menu,
+  MessageCircle,
   Settings,
   User,
   UserPlus,
@@ -148,6 +149,25 @@ export default function Header() {
                     >
                       <Settings className="mr-1 h-4 w-4" />
                       Services
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+
+                {/* Chat Demo */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link
+                      className={cn(
+                        navigationMenuTriggerStyle(),
+                        'inline-flex items-center',
+                        isActive(PATH.chat.root)
+                          ? 'bg-accent text-accent-foreground'
+                          : '',
+                      )}
+                      to={PATH.chat.root}
+                    >
+                      <MessageCircle className="mr-1 h-4 w-4" />
+                      Chat Demo
                     </Link>
                   </NavigationMenuLink>
                 </NavigationMenuItem>
@@ -341,6 +361,21 @@ export default function Header() {
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Services
+              </Link>
+
+              {/* Chat Demo */}
+              <Link
+                className={cn(
+                  'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
+                  isActive(PATH.chat.root)
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                )}
+                onClick={() => setIsMobileMenuOpen(false)}
+                to={PATH.chat.root}
+              >
+                <MessageCircle className="mr-2 h-4 w-4" />
+                Chat Demo
               </Link>
 
               {/* About */}

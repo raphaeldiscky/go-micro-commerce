@@ -1,11 +1,4 @@
-import {
-  Home,
-  Info,
-  MessageCircle,
-  Package,
-  Receipt,
-  Settings,
-} from 'lucide-react'
+import { Home, Info, Package, Receipt, Settings } from 'lucide-react'
 import { PATH, PATH_ROOT } from './routes'
 import type { NavigationItem } from './types'
 
@@ -14,7 +7,6 @@ export const NAVIGATION_ITEMS: Array<NavigationItem> = [
   { icon: Home, name: 'Home', path: PATH_ROOT.home },
   { icon: Package, name: 'Products', path: PATH.products.root },
   { icon: Receipt, name: 'Orders', path: PATH.orders.root },
-  { icon: MessageCircle, name: 'Chat Demo', path: PATH.chat.root },
   { icon: Settings, name: 'Services', path: PATH_ROOT.services },
   { icon: Info, name: 'About', path: PATH_ROOT.about },
 ]
@@ -33,12 +25,6 @@ export const FEATURES_ITEMS: Array<NavigationItem> = [
     name: 'Orders',
     path: PATH.orders.root,
   },
-  {
-    description: 'Real-time messaging with WebSocket',
-    icon: MessageCircle,
-    name: 'Chat Demo',
-    path: PATH.chat.root,
-  },
 ]
 
 // Quick links for footer (subset of navigation)
@@ -46,7 +32,5 @@ export const QUICK_LINKS: Array<NavigationItem> = [
   { icon: Home, name: 'Home', path: PATH_ROOT.home },
   { icon: Package, name: 'Products', path: PATH.products.root },
   { icon: Receipt, name: 'Orders', path: PATH.orders.root },
-  { icon: Settings, name: 'Services', path: PATH_ROOT.services },
-  { icon: MessageCircle, name: 'Chat Demo', path: PATH.chat.root },
   { icon: Info, name: 'About', path: PATH_ROOT.about },
 ]

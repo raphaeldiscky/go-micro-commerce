@@ -48,7 +48,10 @@ function HomePage() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link className="flex items-center gap-2" to={PATH.chat.root}>
+                <Link
+                  className="flex items-center gap-2"
+                  to={PATH.products.root}
+                >
                   <MessageCircle className="h-5 w-5" />
                   {HERO_CONTENT.SECONDARY_CTA}
                 </Link>
@@ -197,16 +200,16 @@ function HomePage() {
                     <MessageCircle className="h-10 w-10 mx-auto" />
                   </div>
                   <CardTitle>
-                    {PAGE_CONTENT.HOME.GET_STARTED.LIVE_DEMO.TITLE}
+                    {PAGE_CONTENT.HOME.GET_STARTED.PRODUCT.TITLE}
                   </CardTitle>
                   <CardDescription>
-                    {PAGE_CONTENT.HOME.GET_STARTED.LIVE_DEMO.DESCRIPTION}
+                    {PAGE_CONTENT.HOME.GET_STARTED.PRODUCT.DESCRIPTION}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Button asChild className="w-full">
                     <Link to={PATH.chat.root}>
-                      {PAGE_CONTENT.HOME.GET_STARTED.LIVE_DEMO.CTA}
+                      {PAGE_CONTENT.HOME.GET_STARTED.PRODUCT.CTA}
                     </Link>
                   </Button>
                 </CardContent>

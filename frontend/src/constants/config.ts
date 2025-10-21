@@ -16,7 +16,7 @@ export const HERO_CONTENT = {
   DESCRIPTION:
     'A modern distributed systems architecture built with Go microservices, demonstrating advanced patterns like saga orchestration, event-driven communication, and scalable design.',
   PRIMARY_CTA: 'Explore Services',
-  SECONDARY_CTA: 'Try Chat Demo',
+  SECONDARY_CTA: 'Browse Products',
   TITLE: 'Go Micro Commerce',
 } as const
 
