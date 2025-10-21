@@ -13,6 +13,7 @@ jobs:
               with:
                   python-version: "3.13.5"
             - name: Install SQLFluff
-              run: "pip install sqlfluff"
-            - name: Lint models
-              run: "sqlfluff lint"
+              run: pip install sqlfluff
+
+            - name: Lint SQL files
+              run: sqlfluff lint
