@@ -255,7 +255,8 @@ tasks:
 
   lint_sql:
     desc: Run SQL linters
-    cmds: sqlfluff lint
+    cmds:
+      - sqlfluff lint
 
   deadcode:
     desc: Check deadcode

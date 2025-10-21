@@ -1,4 +1,4 @@
-name: Lint SQL
+name: sql
 
 on: [pull_request]
 

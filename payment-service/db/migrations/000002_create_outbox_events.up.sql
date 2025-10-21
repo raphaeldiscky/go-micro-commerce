@@ -42,7 +42,7 @@ CHECK (scheduled_for >= created_at);
 
 COMMENT ON TABLE outbox_events IS 'Stores events to be published to message brokers using the outbox pattern';
 COMMENT ON COLUMN outbox_events.id IS 'Unique identifier for the outbox event';
-COMMENT ON COLUMN outbox_events.aggregate_type IS 'Type of aggregate that generated the event (order, product, payment, etc.)';
+COMMENT ON COLUMN outbox_events.aggregate_type IS 'Type of aggregate that generated the event (order, product, etc.)';
 COMMENT ON COLUMN outbox_events.aggregate_id IS 'ID of the aggregate that generated the event';
 COMMENT ON COLUMN outbox_events.event_type IS 'Type of event (PaymentCreated, PaymentUpdated, etc.)';
 COMMENT ON COLUMN outbox_events.topic IS 'Kafka topic (payment.lifecycle, etc.) where the event should be published';

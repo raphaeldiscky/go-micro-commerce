@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     first_name VARCHAR(100) NOT NULL,
     last_name VARCHAR(100) NOT NULL,
-    roles TEXT [] DEFAULT ARRAY['user'],
+    roles TEXT [] DEFAULT ARRAY['user'],  -- noqa: RF04
     is_active BOOLEAN DEFAULT true,
     is_email_verified BOOLEAN DEFAULT false,
     email_verification_token VARCHAR(255) NULL,

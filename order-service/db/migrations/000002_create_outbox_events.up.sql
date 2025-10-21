@@ -46,7 +46,7 @@ COMMENT ON COLUMN outbox_events.id IS 'Unique identifier for the outbox event';
 COMMENT ON COLUMN outbox_events.aggregate_type IS 'Type of aggregate that generated the event (order, product, payment, etc.)';
 COMMENT ON COLUMN outbox_events.aggregate_id IS 'ID of the aggregate that generated the event';
 COMMENT ON COLUMN outbox_events.event_type IS 'Type of event (OrderCreated, ProductUpdated, etc.)';
-COMMENT ON COLUMN outbox_events.topic IS 'Kafka topic (order.lifecycle, product.lifecycle, user.verification, etc.) where the event should be published';
+COMMENT ON COLUMN outbox_events.topic IS 'Topic (order.lifecycle, product.lifecycle, etc.) where the event should be published';
 COMMENT ON COLUMN outbox_events.payload IS 'Complete event payload in JSON format';
 COMMENT ON COLUMN outbox_events.status IS 'Current processing status of the event';
 COMMENT ON COLUMN outbox_events.created_at IS 'When the event was first created';

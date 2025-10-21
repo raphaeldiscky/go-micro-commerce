@@ -5,7 +5,7 @@ CREATE TABLE participants (
     ) ON DELETE CASCADE,
     user_id UUID NOT NULL,
     user_type TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'participant',
+    role TEXT NOT NULL DEFAULT 'participant',  -- noqa: RF04
     joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     left_at TIMESTAMPTZ,
     is_active BOOLEAN NOT NULL DEFAULT TRUE

@@ -4,10 +4,10 @@ CREATE TABLE IF NOT EXISTS saga_states (
     order_id UUID NOT NULL,
     status VARCHAR(50) NOT NULL,
     current_step BIGINT NOT NULL DEFAULT 0,
-    version BIGINT NOT NULL DEFAULT 1,
+    version BIGINT NOT NULL DEFAULT 1,  -- noqa: RF04
     executed_steps JSONB NOT NULL DEFAULT '[]'::JSONB,
     compensated_steps JSONB NOT NULL DEFAULT '[]'::JSONB,
-    data JSONB NOT NULL DEFAULT '{}'::JSONB,
+    data JSONB NOT NULL DEFAULT '{}'::JSONB,  -- noqa: RF04
     error TEXT,
     retry_count BIGINT NOT NULL DEFAULT 0,
     last_retry_at TIMESTAMPTZ,
@@ -51,7 +51,7 @@ WHERE status IN ('completed', 'compensated');
 COMMENT ON TABLE saga_states IS 'Stores the execution state of order processing sagas';
 COMMENT ON COLUMN saga_states.id IS 'Unique identifier for the saga instance';
 COMMENT ON COLUMN saga_states.order_id IS 'Reference to the order being processed';
-COMMENT ON COLUMN saga_states.status IS 'Current status of the saga (pending, executing, compensating, completed, failed, compensated)';
+COMMENT ON COLUMN saga_states.status IS 'Current status of the saga';
 COMMENT ON COLUMN saga_states.current_step IS 'Index of the current/last executed step';
 COMMENT ON COLUMN saga_states.executed_steps IS 'Array of step names that have been successfully executed';
 COMMENT ON COLUMN saga_states.compensated_steps IS 'Array of step names that have been compensated';

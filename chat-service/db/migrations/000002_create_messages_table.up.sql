@@ -4,7 +4,7 @@ CREATE TABLE messages (
         id
     ) ON DELETE CASCADE,
     sender_id UUID, -- NULL for system messages
-    content TEXT NOT NULL,
+    content TEXT NOT NULL,  -- noqa: RF04
     message_type TEXT NOT NULL DEFAULT 'text',
     metadata JSONB DEFAULT '{}',
     is_system BOOLEAN NOT NULL DEFAULT FALSE,
