@@ -157,10 +157,16 @@ export const QUERY_KEY = {
    */
   dashboard: {
     all: ['dashboard'] as const,
-    orders: (filters: { searchQuery: string; status: string; cursor?: string }) =>
-      [...QUERY_KEY.dashboard.all, 'orders', filters] as const,
-    products: (filters: { searchQuery: string; status: string; cursor?: string }) =>
-      [...QUERY_KEY.dashboard.all, 'products', filters] as const,
+    orders: (filters: {
+      searchQuery: string
+      status: string
+      cursor?: string
+    }) => [...QUERY_KEY.dashboard.all, 'orders', filters] as const,
+    products: (filters: {
+      searchQuery: string
+      status: string
+      cursor?: string
+    }) => [...QUERY_KEY.dashboard.all, 'products', filters] as const,
     users: (filters: { searchQuery: string; role: string; cursor?: string }) =>
       [...QUERY_KEY.dashboard.all, 'users', filters] as const,
   },

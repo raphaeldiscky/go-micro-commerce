@@ -50,6 +50,17 @@ type OrderService interface {
 		ctx context.Context,
 		req dto.GetOrdersRequest,
 	) ([]dto.OrderResponse, *pkgdto.OffsetPagination, error)
+	ListOrdersByCustomer(
+		ctx context.Context,
+		customerID uuid.UUID,
+		limit int64,
+		cursor string,
+	) ([]dto.OrderResponse, *pkgdto.CursorPagination, error)
+	ListOrders(
+		ctx context.Context,
+		limit int64,
+		cursor string,
+	) ([]dto.OrderResponse, *pkgdto.CursorPagination, error)
 	UpdateOrderStatus(
 		ctx context.Context,
 		id uuid.UUID,
@@ -561,6 +572,142 @@ func (s *orderService) RequestPaymentOrder(
 	}
 
 	return res, nil
+}
+
+// ListOrdersByCustomer retrieves orders for a customer with cursor pagination.
+func (s *orderService) ListOrdersByCustomer(
+	ctx context.Context,
+	customerID uuid.UUID,
+	limit int64,
+	cursor string,
+) ([]dto.OrderResponse, *pkgdto.CursorPagination, error) {
+	orderRepo := s.dataStore.OrderRepository()
+
+	var (
+		cursorID        string
+		cursorTimestamp int64
+	)
+
+	if cursor != "" {
+		cursorData, err := pageutils.DecodeCursor(cursor)
+		if err != nil {
+			return nil, nil, httperror.NewBadRequestError("invalid cursor")
+		}
+
+		cursorID = cursorData.ID
+		cursorTimestamp = cursorData.Timestamp
+	}
+
+	// Fetch one extra to check if there's a next page
+	orders, err := orderRepo.FindByCustomerIDWithCursor(
+		ctx,
+		customerID,
+		limit+1,
+		cursorID,
+		cursorTimestamp,
+	)
+	if err != nil {
+		return nil, nil, httperror.NewInternalServerError("failed to list customer orders")
+	}
+
+	hasNext := len(orders) > int(limit)
+
+	if hasNext {
+		orders = orders[:limit]
+	}
+
+	res := make([]dto.OrderResponse, len(orders))
+	for i := range orders {
+		res[i] = *mapper.MapToOrderResponse(orders[i])
+	}
+
+	var nextCursor string
+
+	if hasNext && len(orders) > 0 {
+		lastOrder := orders[len(orders)-1]
+
+		encodedCursor, encErr := pageutils.GenerateNextCursor(
+			lastOrder.ID.String(),
+			lastOrder.CreatedAt.Unix(),
+			"",
+		)
+		if encErr != nil {
+			return nil, nil, httperror.NewInternalServerError("failed to generate cursor")
+		}
+
+		nextCursor = encodedCursor
+	}
+
+	pagination := pageutils.NewCursorPagination(nextCursor, "", hasNext, false, limit)
+
+	return res, pagination, nil
+}
+
+// ListOrders retrieves all orders with cursor pagination.
+func (s *orderService) ListOrders(
+	ctx context.Context,
+	limit int64,
+	cursor string,
+) ([]dto.OrderResponse, *pkgdto.CursorPagination, error) {
+	orderRepo := s.dataStore.OrderRepository()
+
+	var (
+		cursorID        string
+		cursorTimestamp int64
+	)
+
+	if cursor != "" {
+		cursorData, err := pageutils.DecodeCursor(cursor)
+		if err != nil {
+			return nil, nil, httperror.NewBadRequestError("invalid cursor")
+		}
+
+		cursorID = cursorData.ID
+		cursorTimestamp = cursorData.Timestamp
+	}
+
+	// Fetch one extra to check if there's a next page
+	orders, err := orderRepo.FindAllWithCursor(
+		ctx,
+		limit+1,
+		cursorID,
+		cursorTimestamp,
+	)
+	if err != nil {
+		return nil, nil, httperror.NewInternalServerError("failed to list orders")
+	}
+
+	hasNext := len(orders) > int(limit)
+
+	if hasNext {
+		orders = orders[:limit]
+	}
+
+	res := make([]dto.OrderResponse, len(orders))
+	for i := range orders {
+		res[i] = *mapper.MapToOrderResponse(orders[i])
+	}
+
+	var nextCursor string
+
+	if hasNext && len(orders) > 0 {
+		lastOrder := orders[len(orders)-1]
+
+		encodedCursor, encErr := pageutils.GenerateNextCursor(
+			lastOrder.ID.String(),
+			lastOrder.CreatedAt.Unix(),
+			"",
+		)
+		if encErr != nil {
+			return nil, nil, httperror.NewInternalServerError("failed to generate cursor")
+		}
+
+		nextCursor = encodedCursor
+	}
+
+	pagination := pageutils.NewCursorPagination(nextCursor, "", hasNext, false, limit)
+
+	return res, pagination, nil
 }
 
 // NotifyOrderFailure updates the order status to failed and logs the reason.

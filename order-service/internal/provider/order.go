@@ -98,4 +98,8 @@ func SetupOrder(
 	orderHandler := handler.NewOrderHandler(orderService)
 
 	routes.SetupOrderRoutes(e, orderHandler)
+
+	// Setup GraphQL routes
+	graphResolver := SetupGraphQLResolver(orderService)
+	routes.SetupGraphQLRoutes(e, cfg, graphResolver, appLogger)
 }

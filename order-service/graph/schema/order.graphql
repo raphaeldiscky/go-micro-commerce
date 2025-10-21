@@ -1,0 +1,141 @@
+# OrderStatus enum
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PAYMENT_PENDING
+  PAYMENT_EXPIRED
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELED
+  FAILED
+}
+
+# PaymentMethod enum
+enum PaymentMethod {
+  CARD
+}
+
+# PaymentGateway enum
+enum PaymentGateway {
+  STRIPE
+  MOCK
+}
+
+# Order entity
+type Order {
+  id: ID!
+  idempotencyKey: ID!
+  customerId: ID!
+  status: OrderStatus!
+  currency: String!
+  paymentGateway: PaymentGateway!
+  paymentMethod: PaymentMethod!
+  shippingCost: String!
+  subtotal: String!
+  totalPrice: String!
+  totalTax: String!
+  totalDiscount: String!
+  items: [OrderItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# OrderItem entity
+type OrderItem {
+  id: ID!
+  orderId: ID!
+  productId: ID!
+  quantity: Int!
+  unitPrice: String!
+  totalPrice: String!
+  taxRate: String!
+  totalTax: String!
+  totalDiscount: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Order connection for cursor-based pagination
+type OrderConnection {
+  edges: [OrderEdge!]!
+  pageInfo: PageInfo!
+}
+
+# Order edge
+type OrderEdge {
+  node: Order!
+  cursor: String!
+}
+
+# Page info for cursor pagination
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Input type for creating order items
+input CreateOrderItemInput {
+  productId: ID!
+  quantity: Int!
+}
+
+# Input type for shipping dimensions
+input DimensionsInput {
+  length: String!
+  height: String!
+  width: String!
+  unit: String!
+}
+
+# Input type for from address
+input FromAddressInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+}
+
+# Input type for to address
+input ToAddressInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+}
+
+# Input type for shipping
+input ShippingInput {
+  carrierId: String!
+  fromAddress: FromAddressInput!
+  toAddress: ToAddressInput!
+  weightKg: String!
+  dimensions: DimensionsInput!
+}
+
+# Input type for creating a new order
+input CreateOrderInput {
+  idempotencyKey: ID!
+  items: [CreateOrderItemInput!]!
+  shipping: ShippingInput!
+  paymentMethod: PaymentMethod!
+  paymentGateway: PaymentGateway!
+  currency: String!
+}
+
+# Order queries
+extend type Query {
+  # List all orders with cursor pagination (admin only)
+  listOrders(limit: Int!, cursor: String): OrderConnection! @requiresRole(role: ADMIN)
+
+  # List authenticated user's orders with cursor pagination
+  listMyOrders(limit: Int!, cursor: String): OrderConnection! @requiresAuth
+}
+
+# Order mutations
+extend type Mutation {
+  # Create a new order using saga workflow
+  createOrder(input: CreateOrderInput!): Order! @requiresAuth
+}

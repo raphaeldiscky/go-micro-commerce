@@ -33,8 +33,7 @@ export function useUsers(filters: UserFilters, limit = 10) {
             .includes(filters.searchQuery.toLowerCase()) ||
           user.email.toLowerCase().includes(filters.searchQuery.toLowerCase())
 
-        const matchesRole =
-          filters.role === 'all' || user.role === filters.role
+        const matchesRole = filters.role === 'all' || user.role === filters.role
 
         return matchesSearch && matchesRole
       })
