@@ -1,8 +1,8 @@
 import {
   APP_CONFIG,
   FEATURES_ITEMS,
+  PATH,
   PATH_AUTH,
-  PATH_FEATURES,
   PATH_ROOT,
 } from '@/constants'
 import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth'
@@ -220,7 +220,7 @@ export default function Header() {
                       <DropdownMenuItem asChild>
                         <Link
                           className="flex items-center cursor-pointer"
-                          to={PATH_FEATURES.account.root}
+                          to={PATH.account.root}
                         >
                           <User className="mr-2 h-4 w-4" />
                           <span>Account</span>
@@ -383,7 +383,7 @@ export default function Header() {
                     <Link
                       className="flex items-center px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      to={PATH_FEATURES.account.root}
+                      to={PATH.account.root}
                     >
                       <User className="mr-2 h-4 w-4" />
                       <span>Account</span>

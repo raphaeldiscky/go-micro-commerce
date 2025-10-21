@@ -3,7 +3,7 @@ function path(root: string, sublink: string) {
 }
 
 const ROOTS_AUTH = '/auth'
-const ROOTS_FEATURES = '/features'
+const ROOTS = ''
 
 export const PATH_ROOT = {
   home: '/',
@@ -22,33 +22,33 @@ export const PATH_AUTH = {
   register: path(ROOTS_AUTH, '/register'),
 }
 
-export const PATH_FEATURES = {
-  root: ROOTS_FEATURES,
+export const PATH = {
+  root: ROOTS,
   products: {
-    root: path(ROOTS_FEATURES, '/products'),
-    detail: (id: string) => path(ROOTS_FEATURES, `/products/${id}`),
+    root: path(ROOTS, '/products'),
+    detail: (id: string) => path(ROOTS, `/products/${id}`),
   },
   chat: {
-    root: path(ROOTS_FEATURES, '/chat'),
-    detail: (id: string) => path(ROOTS_FEATURES, `/chat/${id}`),
-    $conversationId: '/features/chat/$conversationId' as const,
+    root: path(ROOTS, '/chat'),
+    detail: (id: string) => path(ROOTS, `/chat/${id}`),
+    $conversationId: '/chat/$conversationId' as const,
   },
   checkout: {
-    root: path(ROOTS_FEATURES, '/checkout'),
-    detail: (id: string) => path(ROOTS_FEATURES, `/checkout/${id}`),
-    $checkoutId: '/features/checkout/$checkoutId' as const,
+    root: path(ROOTS, '/checkout'),
+    detail: (id: string) => path(ROOTS, `/checkout/${id}`),
+    $checkoutId: '/checkout/$checkoutId' as const,
   },
   account: {
-    root: path(ROOTS_FEATURES, '/account'),
-    detail: (id: string) => path(ROOTS_FEATURES, `/account/${id}`),
+    root: path(ROOTS, '/account'),
+    detail: (id: string) => path(ROOTS, `/account/${id}`),
   },
   orders: {
-    root: path(ROOTS_FEATURES, '/orders'),
+    root: path(ROOTS, '/orders'),
   },
   order: {
-    root: path(ROOTS_FEATURES, '/order'),
+    root: path(ROOTS, '/order'),
     pendingPayment: (paymentId: string) =>
-      path(ROOTS_FEATURES, `/order/pending-payment/${paymentId}`),
-    $pendingPayment: '/features/order/pending-payment/$paymentId' as const,
+      path(ROOTS, `/order/pending-payment/${paymentId}`),
+    $pendingPayment: '/order/pending-payment/$paymentId' as const,
   },
 }

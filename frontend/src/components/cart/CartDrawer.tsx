@@ -8,7 +8,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { PATH_FEATURES } from '@/constants/routes'
+import { PATH } from '@/constants/routes'
 import { formatCurrency } from '@/data/mockData'
 import { useCartStore } from '@/store/cartStore'
 import { useNavigate } from '@tanstack/react-router'
@@ -61,7 +61,7 @@ export function CartDrawer() {
 
     // Navigate to checkout with ID
     const navigateToCheckout = (checkoutId: string) => {
-      navigate({ to: PATH_FEATURES.checkout.detail(checkoutId) })
+      navigate({ to: PATH.checkout.detail(checkoutId) })
     }
 
     startCheckout(navigateToCheckout)
