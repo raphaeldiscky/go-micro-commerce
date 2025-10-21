@@ -15,9 +15,7 @@ type Resolver struct {
 }
 
 // NewResolver creates a new Resolver with dependencies.
-func NewResolver(
-	orderService service.OrderService,
-) *Resolver {
+func NewResolver(orderService service.OrderService) *Resolver {
 	return &Resolver{
 		orderService: orderService,
 	}

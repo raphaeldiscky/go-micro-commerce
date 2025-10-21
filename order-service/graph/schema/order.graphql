@@ -24,9 +24,9 @@ enum PaymentGateway {
 
 # Order entity
 type Order {
-  id: ID!
-  idempotencyKey: ID!
-  customerId: ID!
+  id: UUID!
+  idempotencyKey: UUID!
+  customerId: UUID!
   status: OrderStatus!
   currency: String!
   paymentGateway: PaymentGateway!
@@ -43,9 +43,9 @@ type Order {
 
 # OrderItem entity
 type OrderItem {
-  id: ID!
-  orderId: ID!
-  productId: ID!
+  id: UUID!
+  orderId: UUID!
+  productId: UUID!
   quantity: Int!
   unitPrice: String!
   totalPrice: String!
@@ -78,7 +78,7 @@ type PageInfo {
 
 # Input type for creating order items
 input CreateOrderItemInput {
-  productId: ID!
+  productId: UUID!
   quantity: Int!
 }
 
@@ -117,7 +117,7 @@ input ShippingInput {
 
 # Input type for creating a new order
 input CreateOrderInput {
-  idempotencyKey: ID!
+  idempotencyKey: UUID!
   items: [CreateOrderItemInput!]!
   shipping: ShippingInput!
   paymentMethod: PaymentMethod!
@@ -128,7 +128,8 @@ input CreateOrderInput {
 # Order queries
 extend type Query {
   # List all orders with cursor pagination (admin only)
-  listOrders(limit: Int!, cursor: String): OrderConnection! @requiresRole(role: ADMIN)
+  listOrders(limit: Int!, cursor: String): OrderConnection!
+    @requiresRole(role: ADMIN)
 
   # List authenticated user's orders with cursor pagination
   listMyOrders(limit: Int!, cursor: String): OrderConnection! @requiresAuth

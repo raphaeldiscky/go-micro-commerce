@@ -9,11 +9,12 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 )
 
 type CreateOrderInput struct {
-	IdempotencyKey string                  `json:"idempotencyKey"`
+	IdempotencyKey uuid.UUID               `json:"idempotencyKey"`
 	Items          []*CreateOrderItemInput `json:"items"`
 	Shipping       *ShippingInput          `json:"shipping"`
 	PaymentMethod  constant.PaymentMethod  `json:"paymentMethod"`
@@ -22,8 +23,8 @@ type CreateOrderInput struct {
 }
 
 type CreateOrderItemInput struct {
-	ProductID string `json:"productId"`
-	Quantity  int    `json:"quantity"`
+	ProductID uuid.UUID `json:"productId"`
+	Quantity  int       `json:"quantity"`
 }
 
 type DimensionsInput struct {
@@ -44,9 +45,9 @@ type Mutation struct {
 }
 
 type Order struct {
-	ID             string                  `json:"id"`
-	IdempotencyKey string                  `json:"idempotencyKey"`
-	CustomerID     string                  `json:"customerId"`
+	ID             uuid.UUID               `json:"id"`
+	IdempotencyKey uuid.UUID               `json:"idempotencyKey"`
+	CustomerID     uuid.UUID               `json:"customerId"`
 	Status         constant.OrderStatus    `json:"status"`
 	Currency       string                  `json:"currency"`
 	PaymentGateway constant.PaymentGateway `json:"paymentGateway"`
@@ -72,9 +73,9 @@ type OrderEdge struct {
 }
 
 type OrderItem struct {
-	ID            string    `json:"id"`
-	OrderID       string    `json:"orderId"`
-	ProductID     string    `json:"productId"`
+	ID            uuid.UUID `json:"id"`
+	OrderID       uuid.UUID `json:"orderId"`
+	ProductID     uuid.UUID `json:"productId"`
 	Quantity      int       `json:"quantity"`
 	UnitPrice     string    `json:"unitPrice"`
 	TotalPrice    string    `json:"totalPrice"`

@@ -19,9 +19,9 @@ func MapToGraphQLOrder(order *entity.Order) *graph.Order {
 	}
 
 	return &graph.Order{
-		ID:             order.ID.String(),
-		IdempotencyKey: order.IdempotencyKey.String(),
-		CustomerID:     order.CustomerID.String(),
+		ID:             order.ID,
+		IdempotencyKey: order.IdempotencyKey,
+		CustomerID:     order.CustomerID,
 		Status:         order.Status,
 		Currency:       order.Currency,
 		PaymentGateway: order.PaymentGateway,
@@ -45,8 +45,8 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 	}
 
 	return &graph.Order{
-		ID:             order.ID.String(),
-		CustomerID:     order.CustomerID.String(),
+		ID:             order.ID,
+		CustomerID:     order.CustomerID,
 		Status:         order.Status,
 		Currency:       order.Currency,
 		PaymentGateway: order.PaymentGateway,
@@ -65,9 +65,9 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 // MapToGraphQLOrderItem maps entity.OrderItem to graph.OrderItem.
 func MapToGraphQLOrderItem(item *entity.OrderItem) *graph.OrderItem {
 	return &graph.OrderItem{
-		ID:            item.ID.String(),
-		OrderID:       item.OrderID.String(),
-		ProductID:     item.ProductID.String(),
+		ID:            item.ID,
+		OrderID:       item.OrderID,
+		ProductID:     item.ProductID,
 		Quantity:      int(item.Quantity),
 		UnitPrice:     item.UnitPrice.String(),
 		TotalPrice:    item.TotalPrice.String(),
@@ -82,8 +82,8 @@ func MapToGraphQLOrderItem(item *entity.OrderItem) *graph.OrderItem {
 // MapToGraphQLOrderItemFromDTO maps dto.OrderItemResponse to graph.OrderItem.
 func MapToGraphQLOrderItemFromDTO(item *dto.OrderItemResponse) *graph.OrderItem {
 	return &graph.OrderItem{
-		ID:            item.ID.String(),
-		ProductID:     item.ProductID.String(),
+		ID:            item.ID,
+		ProductID:     item.ProductID,
 		Quantity:      int(item.Quantity),
 		UnitPrice:     item.UnitPrice.String(),
 		TotalPrice:    item.TotalPrice.String(),
@@ -137,26 +137,16 @@ func MapToCreateOrderRequest(
 	customerID uuid.UUID,
 	customerEmail string,
 ) (*dto.CreateOrderRequest, error) {
-	idempotencyKey, err := uuid.Parse(input.IdempotencyKey)
-	if err != nil {
-		return nil, fmt.Errorf("invalid idempotency key: %w", err)
-	}
-
 	items := make([]dto.CreateOrderItemRequest, len(input.Items))
 
 	for i, item := range input.Items {
-		productID, parseErr := uuid.Parse(item.ProductID)
-		if parseErr != nil {
-			return nil, fmt.Errorf("invalid product ID at index %d: %w", i, parseErr)
-		}
-
 		items[i] = dto.CreateOrderItemRequest{
-			ProductID: productID,
+			ProductID: item.ProductID,
 			Quantity:  int64(item.Quantity),
 		}
 	}
 
-	// Parse shipping dimensions
+	// Parse shipping dimensions from string to decimal
 	length, err := decimal.NewFromString(input.Shipping.Dimensions.Length)
 	if err != nil {
 		return nil, fmt.Errorf("invalid shipping dimension length: %w", err)
@@ -180,7 +170,7 @@ func MapToCreateOrderRequest(
 	return &dto.CreateOrderRequest{
 		CustomerID:     customerID,
 		CustomerEmail:  customerEmail,
-		IdempotencyKey: idempotencyKey,
+		IdempotencyKey: input.IdempotencyKey,
 		Items:          items,
 		Shipping: dto.Shipping{
 			CarrierID: input.Shipping.CarrierID,
