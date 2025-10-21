@@ -272,8 +272,9 @@ func (ta *orderActivities) CreatePayment(
 			order.ID,
 			order.CustomerID,
 			order.TotalPrice,
-			"IDR",
-			constant.PaymentMethodCreditCard,
+			order.Currency,
+			order.PaymentMethod,
+			order.PaymentGateway,
 		)
 
 		payload, err := json.Marshal(paymentEvent)

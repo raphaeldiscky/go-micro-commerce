@@ -126,6 +126,7 @@ type ComplexityRoot struct {
 		ID            func(childComplexity int) int
 		IsActive      func(childComplexity int) int
 		LastName      func(childComplexity int) int
+		Roles         func(childComplexity int) int
 		UpdatedAt     func(childComplexity int) int
 	}
 
@@ -537,6 +538,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.User.LastName(childComplexity), true
+	case "User.roles":
+		if e.complexity.User.Roles == nil {
+			break
+		}
+
+		return e.complexity.User.Roles(childComplexity), true
 	case "User.updatedAt":
 		if e.complexity.User.UpdatedAt == nil {
 			break
@@ -1677,6 +1684,8 @@ func (ec *executionContext) fieldContext_AuthPayload_user(_ context.Context, fie
 				return ec.fieldContext_User_lastName(ctx, field)
 			case "isActive":
 				return ec.fieldContext_User_isActive(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
 			case "emailVerified":
 				return ec.fieldContext_User_emailVerified(ctx, field)
 			case "createdAt":
@@ -1725,6 +1734,8 @@ func (ec *executionContext) fieldContext_Entity_findUserByID(ctx context.Context
 				return ec.fieldContext_User_lastName(ctx, field)
 			case "isActive":
 				return ec.fieldContext_User_isActive(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
 			case "emailVerified":
 				return ec.fieldContext_User_emailVerified(ctx, field)
 			case "createdAt":
@@ -2631,6 +2642,8 @@ func (ec *executionContext) fieldContext_Query_me(_ context.Context, field graph
 				return ec.fieldContext_User_lastName(ctx, field)
 			case "isActive":
 				return ec.fieldContext_User_isActive(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
 			case "emailVerified":
 				return ec.fieldContext_User_emailVerified(ctx, field)
 			case "createdAt":
@@ -2692,6 +2705,8 @@ func (ec *executionContext) fieldContext_Query_user(ctx context.Context, field g
 				return ec.fieldContext_User_lastName(ctx, field)
 			case "isActive":
 				return ec.fieldContext_User_isActive(ctx, field)
+			case "roles":
+				return ec.fieldContext_User_roles(ctx, field)
 			case "emailVerified":
 				return ec.fieldContext_User_emailVerified(ctx, field)
 			case "createdAt":
@@ -3038,6 +3053,35 @@ func (ec *executionContext) fieldContext_User_isActive(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_roles(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_User_roles,
+		func(ctx context.Context) (any, error) {
+			return obj.Roles, nil
+		},
+		nil,
+		ec.marshalNString2ᚕstringᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_User_roles(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5585,6 +5629,11 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "roles":
+			out.Values[i] = ec._User_roles(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "emailVerified":
 			out.Values[i] = ec._User_emailVerified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -6203,6 +6252,36 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {

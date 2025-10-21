@@ -1,8 +1,9 @@
 import {
   APP_CONFIG,
-  FEATURES_ITEMS,
+  EXPLORE_ITEMS,
+  PATH,
   PATH_AUTH,
-  PATH_FEATURES,
+  PATH_DASHBOARD,
   PATH_ROOT,
 } from '@/constants'
 import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth'
@@ -12,6 +13,7 @@ import {
   ChevronDown,
   Home,
   Info,
+  LayoutDashboardIcon,
   LogIn,
   LogOut,
   Menu,
@@ -19,11 +21,11 @@ import {
   User,
   UserPlus,
   X,
-  Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 import { CartDrawer } from '../cart/CartDrawer'
 import { CartIcon } from '../cart/CartIcon'
+import { ChatIcon } from '../chat/ChatIcon'
 import { NotificationBell } from '../notification/NotificationBell'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
@@ -54,7 +56,7 @@ export default function Header() {
   const logoutMutation = useLogout()
 
   const isActive = (path: string) => currentPath === path
-
+  const isAdmin = user?.roles.includes('admin')
   const handleLogout = () => {
     logoutMutation.mutate()
   }
@@ -76,7 +78,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex justify-self-center">
+          <div className="hidden md:flex items-center justify-center space-x-6">
             <NavigationMenu viewport={false}>
               <NavigationMenuList>
                 {/* Home */}
@@ -98,15 +100,14 @@ export default function Header() {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {/* Features Dropdown */}
+                {/* Explore Dropdown */}
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="inline-flex items-center mt-3">
-                    <Zap className="mr-1 h-4 w-4" />
-                    Features
+                    Explore
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {FEATURES_ITEMS.map((feature) => (
+                      {EXPLORE_ITEMS.map((feature) => (
                         <li key={feature.path}>
                           <NavigationMenuLink asChild>
                             <Link
@@ -182,6 +183,7 @@ export default function Header() {
                 <>
                   <div className="flex items-center gap-1">
                     <NotificationBell />
+                    <ChatIcon />
                     <CartIcon />
                   </div>
 
@@ -220,12 +222,25 @@ export default function Header() {
                       <DropdownMenuItem asChild>
                         <Link
                           className="flex items-center cursor-pointer"
-                          to={PATH_FEATURES.account.root}
+                          to={PATH.account.root}
                         >
                           <User className="mr-2 h-4 w-4" />
                           <span>Account</span>
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+
+                      {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            className="flex items-center cursor-pointer"
+                            to={PATH_DASHBOARD.root}
+                          >
+                            <LayoutDashboardIcon className="mr-2 h-4 w-4" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="cursor-pointer text-red-600 focus:text-red-600"
@@ -297,14 +312,13 @@ export default function Header() {
                 Home
               </Link>
 
-              {/* Features Section */}
+              {/* Explore Section */}
               <div className="px-3 py-2">
                 <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  <Zap className="mr-1 h-3 w-3" />
-                  Features
+                  Explore
                 </div>
                 <div className="space-y-1 ml-4">
-                  {FEATURES_ITEMS.map((feature) => (
+                  {EXPLORE_ITEMS.map((feature) => (
                     <Link
                       className={cn(
                         'flex items-start px-3 py-2 rounded-md text-sm font-medium transition-colors',
@@ -383,7 +397,7 @@ export default function Header() {
                     <Link
                       className="flex items-center px-3 py-2 text-sm hover:bg-accent rounded-md transition-colors"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      to={PATH_FEATURES.account.root}
+                      to={PATH.account.root}
                     >
                       <User className="mr-2 h-4 w-4" />
                       <span>Account</span>
@@ -391,6 +405,7 @@ export default function Header() {
 
                     <div className="flex items-center justify-center py-3 gap-1 border-t">
                       <NotificationBell />
+                      <ChatIcon />
                       <CartIcon />
                     </div>
 

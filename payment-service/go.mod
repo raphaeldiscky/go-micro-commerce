@@ -16,6 +16,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
+	github.com/stripe/stripe-go/v83 v83.0.1
 	golang.org/x/time v0.11.0
 )
 

@@ -527,6 +527,7 @@ type User
   firstName: String! @join__field(graph: AUTH_SERVICE)
   lastName: String! @join__field(graph: AUTH_SERVICE)
   isActive: Boolean! @join__field(graph: AUTH_SERVICE)
+  roles: [String!]! @join__field(graph: AUTH_SERVICE)
   emailVerified: Boolean! @join__field(graph: AUTH_SERVICE)
   createdAt: Time! @join__field(graph: AUTH_SERVICE)
   updatedAt: Time! @join__field(graph: AUTH_SERVICE)

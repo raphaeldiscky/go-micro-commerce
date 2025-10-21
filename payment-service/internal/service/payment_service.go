@@ -40,26 +40,50 @@ type PaymentService interface {
 	TimeoutPayment(ctx context.Context, orderID uuid.UUID) error
 	// GetPaymentByOrderID retrieves payment by order ID
 	GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*dto.PaymentResponse, error)
+	// CreateSetupIntent creates a SetupIntent for collecting payment method without charging
+	CreateSetupIntent(
+		ctx context.Context,
+		req dto.CreateSetupIntentRequest,
+	) (*dto.SetupIntentResponse, error)
+	// ChargeStoredPaymentMethod charges a saved payment method (delayed payment flow)
+	ChargeStoredPaymentMethod(
+		ctx context.Context,
+		orderID uuid.UUID,
+	) (*dto.PaymentResponse, error)
 }
 
 // paymentService implements the PaymentService.
 type paymentService struct {
-	dataStore            repository.DataStore
-	logger               logger.Logger
-	paymentGatewayClient client.PaymentGatewayClient
+	dataStore             repository.DataStore
+	logger                logger.Logger
+	paymentGatewayClients map[string]client.PaymentGatewayClient
 }
 
 // NewPaymentService creates a new instance of paymentService.
 func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentGatewayClient client.PaymentGatewayClient,
+	paymentGatewayClients map[string]client.PaymentGatewayClient,
 ) PaymentService {
 	return &paymentService{
-		dataStore:            dataStore,
-		logger:               appLogger,
-		paymentGatewayClient: paymentGatewayClient,
+		dataStore:             dataStore,
+		logger:                appLogger,
+		paymentGatewayClients: paymentGatewayClients,
 	}
+}
+
+// getGatewayClient retrieves the payment gateway client for the specified provider.
+func (s *paymentService) getGatewayClient(
+	provider constant.PaymentGateway,
+) (client.PaymentGatewayClient, error) {
+	gatewayClient, ok := s.paymentGatewayClients[string(provider)]
+	if !ok {
+		return nil, httperror.NewBadRequestError(
+			fmt.Sprintf("unsupported payment gateway: %s", provider),
+		)
+	}
+
+	return gatewayClient, nil
 }
 
 // CreatePayment creates a new payment record from order information.
@@ -87,9 +111,29 @@ func (s *paymentService) CreatePayment(
 		}
 
 		// Create new payment entity
-		payment, err := entity.NewPayment(req.OrderID, req.Amount, req.Currency, req.PaymentMethod)
+		payment, err := entity.NewPayment(
+			req.OrderID,
+			req.Amount,
+			req.Currency,
+			req.PaymentMethod,
+			req.PaymentGateway,
+		)
 		if err != nil {
 			return httperror.NewBadRequestError(fmt.Sprintf("failed to create payment: %v", err))
+		}
+
+		// Store payment method info if provided (for delayed payment confirmation)
+		if req.PaymentMethodID != "" && req.StripeCustomerID != "" {
+			s.logger.Infof(
+				"Storing payment method info for order %s: PM=%s, Customer=%s",
+				req.OrderID,
+				req.PaymentMethodID,
+				req.StripeCustomerID,
+			)
+
+			if err = payment.SetPaymentMethodInfo(req.PaymentMethodID, req.StripeCustomerID); err != nil {
+				return httperror.NewBadRequestError("failed to set payment method info")
+			}
 		}
 
 		// Save payment
@@ -199,24 +243,33 @@ func (s *paymentService) ProcessPayment(
 		// Process payment with payment gateway
 		paymentResult, errProcess := s.processWithPaymentGateway(ctx, payment, req)
 		if errProcess != nil {
+			// If gateway call fails, mark payment as failed
+			if err = payment.UpdateStatus(constant.PaymentStatusFailed); err != nil {
+				s.logger.Errorf("failed to update payment status to failed: %v", err)
+			}
+
 			return httperror.NewInternalServerError("failed to process payment with gateway")
 		}
 
-		var finalStatus constant.PaymentStatus
-		if paymentResult.Status == constant.PaymentGatewayStatusSucceeded {
-			finalStatus = constant.PaymentStatusCompleted
-		} else {
-			finalStatus = constant.PaymentStatusFailed
-		}
-
 		// Set gateway reference
-		if err = payment.SetGatewayReference("stripe", paymentResult.GatewayID, paymentResult.GatewayResponse); err != nil {
+		if err = payment.SetGatewayReference(
+			payment.PaymentGateway,
+			paymentResult.GatewayID,
+			paymentResult.GatewayResponse,
+		); err != nil {
 			return httperror.NewInternalServerError("failed to set gateway reference")
 		}
 
-		// Update final status
-		if err = payment.UpdateStatus(finalStatus); err != nil {
-			return httperror.NewBadRequestError("failed to update final payment status")
+		// For client-side confirmation flow (Stripe.js):
+		// - Payment stays in PROCESSING status
+		// - Client receives ClientSecret to complete payment
+		// - Webhooks will update to COMPLETED/FAILED after client confirmation
+		//
+		// Exception: If gateway immediately returns succeeded (rare), complete now
+		if paymentResult.Status == constant.PaymentGatewayStatusSucceeded {
+			if err = payment.UpdateStatus(constant.PaymentStatusCompleted); err != nil {
+				return httperror.NewBadRequestError("failed to update payment status to completed")
+			}
 		}
 
 		// Save updated payment
@@ -225,22 +278,25 @@ func (s *paymentService) ProcessPayment(
 			return httperror.NewInternalServerError("failed to update payment")
 		}
 
-		// Publish payment completion event
+		// Determine event type based on status
+		var eventType string
+		if updatedPayment.Status == constant.PaymentStatusCompleted {
+			eventType = kafka.PaymentCompletedEventType
+		} else {
+			eventType = kafka.PaymentProcessingEventType
+		}
+
+		// Publish payment event
 		evt := producer.NewPaymentLifecycleEvent(
 			updatedPayment.ID,
 			updatedPayment.OrderID,
-			finalStatus,
+			updatedPayment.Status,
 			updatedPayment.Amount,
 		)
 
 		payload, errMarshal := json.Marshal(evt)
 		if errMarshal != nil {
 			return httperror.NewInternalServerError("failed to marshal payment event")
-		}
-
-		eventType := kafka.PaymentCompletedEventType
-		if finalStatus == constant.PaymentStatusFailed {
-			eventType = kafka.PaymentFailedEventType
 		}
 
 		outboxEvent := &entity.OutboxEvent{
@@ -257,10 +313,18 @@ func (s *paymentService) ProcessPayment(
 		}
 
 		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
-			return httperror.NewInternalServerError("failed to create payment completion event")
+			return httperror.NewInternalServerError("failed to create payment event")
 		}
 
+		// Build response with gateway data for client-side confirmation
 		res = mapper.MapToPaymentResponse(updatedPayment)
+		res.ClientSecret = paymentResult.ClientSecret
+		res.RequiresAction = paymentResult.RequiresAction
+
+		if paymentResult.NextAction != nil {
+			actionType := string(paymentResult.NextAction.Type)
+			res.NextActionType = &actionType
+		}
 
 		return nil
 	})
@@ -301,23 +365,31 @@ func (s *paymentService) processWithPaymentGateway(
 	req dto.ProcessPaymentRequest,
 ) (*dto.PaymentGatewayResponse, error) {
 	s.logger.Infof(
-		"Processing payment %s with method %s and amount %s",
+		"Processing payment %s with gateway %s, method %s and amount %s",
 		payment.ID,
+		payment.PaymentGateway,
 		req.PaymentMethod,
 		payment.Amount,
 	)
 
-	paymentRequest := &dto.PaymentGatewayRequest{
-		TransactionID:  payment.ID,
-		Amount:         payment.Amount,
-		Currency:       payment.Currency,
-		PaymentMethod:  req.PaymentMethod,
-		CustomerID:     req.CustomerID,
-		CustomerEmail:  req.CustomerEmail,
-		IdempotencyKey: req.IdempotencyKey.String(),
+	// Get the appropriate gateway client based on payment's gateway
+	gatewayClient, err := s.getGatewayClient(payment.PaymentGateway)
+	if err != nil {
+		return nil, err
 	}
 
-	return s.paymentGatewayClient.ProcessPayment(ctx, paymentRequest)
+	paymentRequest := &dto.PaymentGatewayRequest{
+		TransactionID:   payment.ID,
+		Amount:          payment.Amount,
+		Currency:        payment.Currency,
+		PaymentMethod:   req.PaymentMethod,
+		PaymentMethodID: req.PaymentMethodID, // Stripe PM ID from client
+		CustomerID:      req.CustomerID,
+		CustomerEmail:   req.CustomerEmail,
+		IdempotencyKey:  req.IdempotencyKey.String(),
+	}
+
+	return gatewayClient.ProcessPayment(ctx, paymentRequest)
 }
 
 // TimeoutPayment times out a payment transaction.
@@ -399,4 +471,266 @@ func (s *paymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) 
 
 		return nil
 	})
+}
+
+// CreateSetupIntent creates a SetupIntent for collecting payment method without charging.
+// Used for delayed payment confirmation pattern.
+func (s *paymentService) CreateSetupIntent(
+	ctx context.Context,
+	req dto.CreateSetupIntentRequest,
+) (*dto.SetupIntentResponse, error) {
+	s.logger.Infof(
+		"Creating SetupIntent for order: %s, customer: %s",
+		req.OrderID,
+		req.CustomerID,
+	)
+
+	// Get Stripe gateway client (SetupIntent only supported by Stripe)
+	gatewayClient, err := s.getGatewayClient(constant.PaymentGatewayStripe)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create SetupIntent request
+	setupIntentReq := &dto.SetupIntentRequest{
+		CustomerID:    req.CustomerID,
+		CustomerEmail: req.CustomerEmail,
+		OrderID:       req.OrderID,
+	}
+
+	// Call gateway to create SetupIntent
+	response, err := gatewayClient.CreateSetupIntent(ctx, setupIntentReq)
+	if err != nil {
+		s.logger.Errorf("Failed to create SetupIntent: %v", err)
+		return nil, httperror.NewInternalServerError("failed to create setup intent")
+	}
+
+	s.logger.Infof(
+		"SetupIntent created successfully: %s for order: %s",
+		response.SetupIntentID,
+		req.OrderID,
+	)
+
+	return response, nil
+}
+
+// ChargeStoredPaymentMethod charges a saved payment method without customer present.
+// Used for delayed payment confirmation when order status changes.
+//
+//nolint:gocyclo,revive,cyclop,nolintlint,gocognit,funlen // ignore complexity, ChargeStoredPaymentMethod is large but intentional.
+func (s *paymentService) ChargeStoredPaymentMethod(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (*dto.PaymentResponse, error) {
+	s.logger.Infof("Charging stored payment method for order: %s", orderID)
+
+	res := new(dto.PaymentResponse)
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		paymentRepo := ds.PaymentRepository()
+		outboxRepo := ds.OutboxRepository()
+
+		// 1. Get payment record
+		payment, errFind := paymentRepo.FindByOrderID(ctx, orderID)
+		if errFind != nil {
+			if errFind.Error() == constant.PaymentNotFoundErrorMessage {
+				return httperror.NewNotFoundError("payment not found for order")
+			}
+
+			return httperror.NewInternalServerError("failed to get payment")
+		}
+
+		if payment == nil {
+			return httperror.NewPaymentNotFoundError()
+		}
+
+		// 2. Validate payment can be charged
+		if payment.Status != constant.PaymentStatusPending {
+			s.logger.Warnf(
+				"Payment for order %s is in status %s, cannot charge",
+				orderID,
+				payment.Status,
+			)
+
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("payment already processed (status: %s)", payment.Status),
+			)
+		}
+
+		// 3. Validate payment method info is stored
+		if payment.PaymentMethodID == nil || *payment.PaymentMethodID == "" {
+			s.logger.Errorf("Payment method ID not found for order: %s", orderID)
+			return httperror.NewBadRequestError("payment method not saved")
+		}
+
+		if payment.StripeCustomerID == nil || *payment.StripeCustomerID == "" {
+			s.logger.Errorf("Stripe customer ID not found for order: %s", orderID)
+			return httperror.NewBadRequestError("stripe customer not saved")
+		}
+
+		// 4. Update status to processing
+		if err := payment.UpdateStatus(constant.PaymentStatusProcessing); err != nil {
+			return httperror.NewBadRequestError("failed to update payment status")
+		}
+
+		// 5. Get gateway client
+		gatewayClient, errGateway := s.getGatewayClient(payment.PaymentGateway)
+		if errGateway != nil {
+			return errGateway
+		}
+
+		// 6. Charge off-session
+		chargeReq := &dto.ChargeOffSessionRequest{
+			PaymentMethodID:  *payment.PaymentMethodID,
+			StripeCustomerID: *payment.StripeCustomerID,
+			Amount:           payment.Amount,
+			Currency:         payment.Currency,
+			TransactionID:    payment.ID,
+			OrderID:          orderID,
+			Description:      fmt.Sprintf("Order %s", orderID),
+		}
+
+		result, errCharge := gatewayClient.ChargeOffSession(ctx, chargeReq)
+
+		//nolint:nestif // ignore complexity
+		if errCharge != nil {
+			s.logger.Errorf("Off-session charge failed for order %s: %v", orderID, errCharge)
+
+			// Mark payment as failed
+			if err := payment.UpdateStatus(constant.PaymentStatusFailed); err != nil {
+				s.logger.Errorf("Failed to update payment status to failed: %v", err)
+			}
+
+			_, err := paymentRepo.Update(ctx, payment)
+			if err != nil {
+				s.logger.Errorf("Failed to update payment: %v", err)
+				return err
+			}
+
+			// Publish failed event
+			evt := producer.NewPaymentLifecycleEvent(
+				payment.ID,
+				payment.OrderID,
+				constant.PaymentStatusFailed,
+				payment.Amount,
+			)
+
+			payload, err := json.Marshal(evt)
+			if err != nil {
+				return err
+			}
+
+			outboxEvent := &entity.OutboxEvent{
+				ID:            uuid.New(),
+				AggregateType: "payment",
+				AggregateID:   payment.ID,
+				EventType:     kafka.PaymentFailedEventType,
+				Topic:         kafka.PaymentLifecycleTopic,
+				Payload:       payload,
+				Status:        constant.OutboxStatusPending,
+				CreatedAt:     time.Now().UTC(),
+				ScheduledFor:  time.Now().UTC(),
+				Attempts:      0,
+			}
+
+			err = outboxRepo.Create(ctx, outboxEvent)
+			if err != nil {
+				return err
+			}
+
+			return httperror.NewInternalServerError("charge failed")
+		}
+
+		// 7. Update payment with gateway info
+		if err := payment.SetGatewayReference(
+			payment.PaymentGateway,
+			result.GatewayID,
+			result.GatewayResponse,
+		); err != nil {
+			return httperror.NewInternalServerError("failed to set gateway reference")
+		}
+
+		// 8. Determine final status based on gateway response
+		var finalStatus constant.PaymentStatus
+		if result.Status == constant.PaymentGatewayStatusSucceeded {
+			finalStatus = constant.PaymentStatusCompleted
+		} else {
+			// Off-session charges should succeed or fail immediately
+			// If still pending, we'll rely on webhooks to update
+			finalStatus = constant.PaymentStatusProcessing
+		}
+
+		if err := payment.UpdateStatus(finalStatus); err != nil {
+			return httperror.NewBadRequestError("failed to update final payment status")
+		}
+
+		// 9. Save updated payment
+		updatedPayment, errUpdate := paymentRepo.Update(ctx, payment)
+		if errUpdate != nil {
+			return httperror.NewInternalServerError("failed to update payment")
+		}
+
+		// 10. Determine event type
+		var eventType string
+
+		switch finalStatus {
+		case constant.PaymentStatusCompleted:
+			eventType = kafka.PaymentCompletedEventType
+		case constant.PaymentStatusFailed:
+			eventType = kafka.PaymentFailedEventType
+		case constant.PaymentStatusPending,
+			constant.PaymentStatusProcessing,
+			constant.PaymentStatusTimeout,
+			constant.PaymentStatusRefunded:
+			eventType = kafka.PaymentProcessingEventType
+		default:
+			eventType = kafka.PaymentProcessingEventType
+		}
+
+		// 11. Publish payment event
+		evt := producer.NewPaymentLifecycleEvent(
+			updatedPayment.ID,
+			updatedPayment.OrderID,
+			updatedPayment.Status,
+			updatedPayment.Amount,
+		)
+
+		payload, errMarshal := json.Marshal(evt)
+		if errMarshal != nil {
+			return httperror.NewInternalServerError("failed to marshal payment event")
+		}
+
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "payment",
+			AggregateID:   updatedPayment.ID,
+			EventType:     eventType,
+			Topic:         kafka.PaymentLifecycleTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return httperror.NewInternalServerError("failed to create payment event")
+		}
+
+		res = mapper.MapToPaymentResponse(updatedPayment)
+
+		s.logger.Infof(
+			"Payment charged successfully: %s, order: %s, status: %s",
+			updatedPayment.ID,
+			orderID,
+			updatedPayment.Status,
+		)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

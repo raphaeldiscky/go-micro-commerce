@@ -134,4 +134,34 @@ export const QUERY_KEY = {
     detail: (id: string) => [...QUERY_KEY.address.details(), id] as const,
     default: () => [...QUERY_KEY.address.all, 'default'] as const,
   },
+
+  /**
+   * Order query keys
+   */
+  order: {
+    all: ['order'] as const,
+    lists: () => [...QUERY_KEY.order.all, 'list'] as const,
+    list: (limit?: number, cursor?: string) =>
+      [...QUERY_KEY.order.lists(), { limit, cursor }] as const,
+    details: () => [...QUERY_KEY.order.all, 'detail'] as const,
+    detail: (orderId: string) =>
+      [...QUERY_KEY.order.details(), orderId] as const,
+    payment: (paymentId: string) =>
+      [...QUERY_KEY.order.all, 'payment', paymentId] as const,
+    status: (orderId: string) =>
+      [...QUERY_KEY.order.all, 'status', orderId] as const,
+  },
+
+  /**
+   * Dashboard query keys (admin)
+   */
+  dashboard: {
+    all: ['dashboard'] as const,
+    orders: (filters: { searchQuery: string; status: string; cursor?: string }) =>
+      [...QUERY_KEY.dashboard.all, 'orders', filters] as const,
+    products: (filters: { searchQuery: string; status: string; cursor?: string }) =>
+      [...QUERY_KEY.dashboard.all, 'products', filters] as const,
+    users: (filters: { searchQuery: string; role: string; cursor?: string }) =>
+      [...QUERY_KEY.dashboard.all, 'users', filters] as const,
+  },
 } as const

@@ -22,18 +22,18 @@ const (
 type PaymentMethod string
 
 const (
-	// PaymentMethodCreditCard represents the credit card payment method.
-	PaymentMethodCreditCard PaymentMethod = "credit_card"
-	// PaymentMethodDebitCard represents the debit card payment method.
-	PaymentMethodDebitCard PaymentMethod = "debit_card"
-	// PaymentMethodBankTransfer represents the bank transfer payment method.
-	PaymentMethodBankTransfer PaymentMethod = "bank_transfer"
-	// PaymentMethodApplePay represents the Apple Pay payment method.
-	PaymentMethodApplePay PaymentMethod = "apple_pay"
-	// PaymentMethodGooglePay represents the Google Pay payment method.
-	PaymentMethodGooglePay PaymentMethod = "google_pay"
-	// PaymentMethodPayPal represents the PayPal payment method.
-	PaymentMethodPayPal PaymentMethod = "paypal"
+	// PaymentMethodCard represents the card payment method.
+	PaymentMethodCard PaymentMethod = "card"
+)
+
+// PaymentGateway represents the different payment gateways available.
+type PaymentGateway string
+
+const (
+	// PaymentGatewayStripe represents the Stripe payment gateway.
+	PaymentGatewayStripe PaymentGateway = "stripe"
+	// PaymentGatewayMock represents the Mock payment gateway for testing.
+	PaymentGatewayMock PaymentGateway = "mock"
 )
 
 // BankTransferStatus represents the status of a bank transfer.
@@ -64,8 +64,8 @@ const (
 	PaymentGatewayStatusSucceeded PaymentGatewayStatus = "succeeded"
 	// PaymentGatewayStatusFailed indicates the payment failed.
 	PaymentGatewayStatusFailed PaymentGatewayStatus = "failed"
-	// PaymentGatewayStatusCancelled indicates the payment was canceled.
-	PaymentGatewayStatusCancelled PaymentGatewayStatus = "canceled"
+	// PaymentGatewayStatusCanceled indicates the payment was canceled.
+	PaymentGatewayStatusCanceled PaymentGatewayStatus = "canceled"
 	// PaymentGatewayStatusRequiresAction indicates the payment requires additional action.
 	PaymentGatewayStatusRequiresAction PaymentGatewayStatus = "requires_action"
 )
@@ -106,6 +106,6 @@ const (
 	RefundStatusSucceeded RefundStatus = "succeeded"
 	// RefundStatusFailed indicates the refund failed.
 	RefundStatusFailed RefundStatus = "failed"
-	// RefundStatusCancelled indicates the refund was canceled.
-	RefundStatusCancelled RefundStatus = "canceled"
+	// RefundStatusCanceled indicates the refund was canceled.
+	RefundStatusCanceled RefundStatus = "canceled"
 )

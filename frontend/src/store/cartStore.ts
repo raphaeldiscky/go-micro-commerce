@@ -1,3 +1,10 @@
+import {
+  DEFAULT_PRODUCT_DIMENSIONS,
+  DEFAULT_PRODUCT_WEIGHT_KG,
+  DEFAULT_WAREHOUSE_ADDRESS,
+  mapShippingOptionToCarrier,
+} from '@/data/mockData'
+import type { Address } from '@/types/__generated__/graphql'
 import type {
   Cart,
   CartItem,
@@ -5,19 +12,15 @@ import type {
   CheckoutSession,
   MockProduct,
   OrderSummary,
+  PaymentGateway,
   PaymentMethod,
   ShippingOption,
 } from '@/types/cart'
+import type { PlaceOrderRequest } from '@/types/order'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/shallow'
-
-const generateId = () =>
-  `cart-${Date.now()}-${Math.random().toString(36).substring(7)}`
-
-const generateCartId = () =>
-  `cart-${Date.now()}-${Math.random().toString(36).substring(7)}`
 
 export const useCartStore = create<CartStore>()(
   persist(
@@ -34,8 +37,10 @@ export const useCartStore = create<CartStore>()(
         shippingMethod: '',
         paymentMethod: '',
       },
+      selectedAddress: null,
       selectedShippingOption: null,
       selectedPaymentMethod: null,
+      selectedPaymentGateway: null,
 
       // Cart and item management
       initializeCart: (customerId: string) => {
@@ -44,7 +49,7 @@ export const useCartStore = create<CartStore>()(
         // Initialize cart if it doesn't exist
         if (!state.cart) {
           const newCart: Cart = {
-            id: generateCartId(),
+            id: crypto.randomUUID(),
             customer_id: customerId,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
@@ -97,7 +102,7 @@ export const useCartStore = create<CartStore>()(
         } else {
           // Add new item
           const newItem: CartItem = {
-            id: generateId(),
+            id: crypto.randomUUID(),
             cart_id: state.cart.id,
             product_id: product.id,
             quantity,
@@ -242,9 +247,22 @@ export const useCartStore = create<CartStore>()(
           return
         }
 
+        // Clear any existing checkout state for clean start
+        set({
+          selectedAddress: null,
+          selectedShippingOption: null,
+          selectedPaymentMethod: null,
+          selectedPaymentGateway: null,
+          checkoutData: {
+            orderNote: '',
+            shippingMethod: '',
+            paymentMethod: '',
+          },
+        })
+
         // Create checkout session
         const checkoutSession: CheckoutSession = {
-          id: generateId(),
+          id: crypto.randomUUID(),
           customer_id: state.cart?.customer_id || '',
           cart_id: state.cart?.id || '',
           status: 'pending',
@@ -261,6 +279,10 @@ export const useCartStore = create<CartStore>()(
         }
       },
 
+      setAddress: (address: Address) => {
+        set({ selectedAddress: address })
+      },
+
       setShippingMethod: (method: ShippingOption) => {
         const state = get()
         set({
@@ -275,11 +297,16 @@ export const useCartStore = create<CartStore>()(
       setPaymentMethod: (method: PaymentMethod) => {
         set({
           selectedPaymentMethod: method,
+          selectedPaymentGateway: null, // Reset gateway when payment method changes
           checkoutData: {
             ...get().checkoutData,
             paymentMethod: method.id,
           },
         })
+      },
+
+      setPaymentGateway: (gateway: PaymentGateway) => {
+        set({ selectedPaymentGateway: gateway })
       },
 
       setOrderNote: (note: string) => {
@@ -291,9 +318,24 @@ export const useCartStore = create<CartStore>()(
         })
       },
 
+      clearCheckoutState: () => {
+        set({
+          selectedAddress: null,
+          selectedShippingOption: null,
+          selectedPaymentMethod: null,
+          selectedPaymentGateway: null,
+          checkoutData: {
+            orderNote: '',
+            shippingMethod: '',
+            paymentMethod: '',
+          },
+        })
+      },
+
       placeOrder: async (): Promise<{
         success: boolean
         orderId?: string
+        paymentId?: string
         error?: string
       }> => {
         const state = get()
@@ -301,6 +343,10 @@ export const useCartStore = create<CartStore>()(
 
         if (selectedItems.length === 0) {
           return { success: false, error: 'No items selected' }
+        }
+
+        if (!state.selectedAddress) {
+          return { success: false, error: 'Please select a delivery address' }
         }
 
         if (!state.selectedShippingOption) {
@@ -311,14 +357,79 @@ export const useCartStore = create<CartStore>()(
           return { success: false, error: 'Please select a payment method' }
         }
 
+        if (!state.selectedPaymentGateway) {
+          return { success: false, error: 'Payment gateway not configured' }
+        }
+
         set({ isCheckoutLoading: true })
 
         try {
-          // Simulate API call
-          await new Promise((resolve) => setTimeout(resolve, 2000))
+          // Build PlaceOrderRequest
+          const orderRequest: PlaceOrderRequest = {
+            idempotencyKey: crypto.randomUUID(),
+            items: selectedItems.map((item) => ({
+              productId: item.product_id,
+              quantity: item.quantity,
+            })),
+            paymentMethod: state.selectedPaymentMethod.type,
+            paymentGateway: state.selectedPaymentGateway.type,
+            currency: 'USD',
+            shipping: {
+              fromAddress: {
+                city: DEFAULT_WAREHOUSE_ADDRESS.city,
+                state: DEFAULT_WAREHOUSE_ADDRESS.state,
+                postalCode: DEFAULT_WAREHOUSE_ADDRESS.postalCode,
+                country: DEFAULT_WAREHOUSE_ADDRESS.country,
+              },
+              toAddress: {
+                city: state.selectedAddress.city,
+                state: state.selectedAddress.state || '',
+                postalCode: state.selectedAddress.postalCode,
+                country: state.selectedAddress.countryCode,
+              },
+              dimensions: DEFAULT_PRODUCT_DIMENSIONS,
+              weightKg: DEFAULT_PRODUCT_WEIGHT_KG,
+              carrierId: mapShippingOptionToCarrier(
+                state.selectedShippingOption.id,
+              ),
+            },
+          }
 
-          // Generate order ID
-          const orderId = `order-${Date.now()}-${Math.random().toString(36).substring(7)}`
+          console.log('Placing order:', orderRequest)
+
+          // Create order using mutation hook (will be executed directly)
+          // Note: In production, this should be called via the hook from the component
+          // For now, we'll use a simulated response
+          const response = await new Promise<{
+            orderId: string
+            paymentId: string
+            status: string
+            paymentStatus: string
+            paymentGateway: string
+            totalAmount: number
+            currency: string
+            paymentDeadline: string
+            createdAt: string
+          }>((resolve) => {
+            setTimeout(() => {
+              const now = new Date()
+              const paymentDeadline = new Date(
+                now.getTime() + 24 * 60 * 60 * 1000,
+              )
+
+              resolve({
+                orderId: `order-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                paymentId: `payment-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+                status: 'payment_pending',
+                paymentStatus: 'pending',
+                paymentGateway: state.selectedPaymentGateway?.type || 'stripe',
+                totalAmount: state.getOrderSummary().total,
+                currency: 'USD',
+                paymentDeadline: paymentDeadline.toISOString(),
+                createdAt: now.toISOString(),
+              })
+            }, 1500)
+          })
 
           // Update checkout session
           if (state.checkoutSession) {
@@ -337,7 +448,11 @@ export const useCartStore = create<CartStore>()(
           set({ isCheckoutLoading: false })
           toast.success('Order placed successfully!')
 
-          return { success: true, orderId }
+          return {
+            success: true,
+            orderId: response.orderId,
+            paymentId: response.paymentId,
+          }
         } catch (error) {
           set({ isCheckoutLoading: false })
           const errorMessage =
@@ -407,10 +522,7 @@ export const useCartStore = create<CartStore>()(
       partialize: (state) => ({
         cart: state.cart,
         items: state.items,
-        checkoutSession: state.checkoutSession,
-        checkoutData: state.checkoutData,
-        selectedShippingOption: state.selectedShippingOption,
-        selectedPaymentMethod: state.selectedPaymentMethod,
+        // Only persist cart items, not checkout state
       }),
     },
   ),
@@ -447,10 +559,14 @@ export const useIsCartDrawerOpen = () =>
   useCartStore((state) => state.isDrawerOpen)
 export const useIsCheckoutLoading = () =>
   useCartStore((state) => state.isCheckoutLoading)
+export const useSelectedAddress = () =>
+  useCartStore((state) => state.selectedAddress)
 export const useSelectedShippingOption = () =>
   useCartStore((state) => state.selectedShippingOption)
 export const useSelectedPaymentMethod = () =>
   useCartStore((state) => state.selectedPaymentMethod)
+export const useSelectedPaymentGateway = () =>
+  useCartStore((state) => state.selectedPaymentGateway)
 export const useCheckoutSession = () =>
   useCartStore((state) => state.checkoutSession)
 export const useOrderSummary = () =>

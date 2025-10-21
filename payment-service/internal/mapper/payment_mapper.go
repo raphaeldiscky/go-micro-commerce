@@ -15,10 +15,7 @@ import (
 // MapStringToPaymentMethod converts a string to a PaymentMethod.
 func MapStringToPaymentMethod(s string) (constant.PaymentMethod, error) {
 	constants := []constant.PaymentMethod{
-		constant.PaymentMethodCreditCard,
-		constant.PaymentMethodDebitCard,
-		constant.PaymentMethodPayPal,
-		constant.PaymentMethodBankTransfer,
+		constant.PaymentMethodCard,
 	}
 
 	for _, c := range constants {
@@ -28,6 +25,22 @@ func MapStringToPaymentMethod(s string) (constant.PaymentMethod, error) {
 	}
 
 	return "", fmt.Errorf("invalid payment method: %s", s)
+}
+
+// MapStringToPaymentGateway converts a string to a PaymentGateway.
+func MapStringToPaymentGateway(s string) (constant.PaymentGateway, error) {
+	gateways := []constant.PaymentGateway{
+		constant.PaymentGatewayStripe,
+		constant.PaymentGatewayMock,
+	}
+
+	for _, g := range gateways {
+		if strings.EqualFold(s, string(g)) {
+			return g, nil
+		}
+	}
+
+	return "", fmt.Errorf("invalid payment gateway: %s", s)
 }
 
 // MapToPaymentResponse converts domain entity to DTO response.
@@ -41,6 +54,8 @@ func MapToPaymentResponse(payment *entity.Payment) *dto.PaymentResponse {
 		PaymentMethod:      payment.PaymentMethod,
 		PaymentGateway:     payment.PaymentGateway,
 		GatewayReferenceID: payment.GatewayReferenceID,
+		PaymentMethodID:    payment.PaymentMethodID,
+		StripeCustomerID:   payment.StripeCustomerID,
 		CreatedAt:          payment.CreatedAt,
 		UpdatedAt:          payment.UpdatedAt,
 		CompletedAt:        payment.CompletedAt,

@@ -12,6 +12,19 @@ import {
 } from 'date-fns'
 
 /**
+ * Format a timestamp to a date string (MMM d, yyyy)
+ */
+export function formatDate(timestamp: string): string {
+  try {
+    const date = parseISO(timestamp)
+    if (!isValid(date)) return ''
+    return format(date, 'MMM d, yyyy')
+  } catch {
+    return ''
+  }
+}
+
+/**
  * Format a timestamp to a time string (HH:mm)
  */
 export function formatTime(timestamp: string): string {

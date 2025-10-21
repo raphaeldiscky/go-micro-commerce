@@ -96,7 +96,11 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 
 		switch meta.Metadata.EventType {
 		case kafka.PaymentCreatedEventType:
-			processingErr = c.processPaymentCreated(ctx, ds, body)
+			processingErr = c.processPaymentCreated(
+				ctx,
+				ds,
+				body,
+			) // it means the payment has been created, and waiting for user payment
 		case kafka.PaymentProcessingEventType:
 			processingErr = c.processPaymentProcessing(ctx, ds, body)
 		case kafka.PaymentCompletedEventType:
@@ -161,14 +165,14 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 		return nil
 	}
 
-	// Update order status to processing if it's still pending
+	// Update order status to waiting_payment if it's still pending
 	if order.Status == constant.OrderStatusPending {
-		order.Status = constant.OrderStatusProcessing
+		order.Status = constant.OrderStatusPaymentPending
 		if _, err = orderRepo.Update(ctx, order); err != nil {
 			return fmt.Errorf("failed to update order status: %w", err)
 		}
 
-		c.logger.Infof("Order %s status updated to processing", evt.Payload.OrderID)
+		c.logger.Infof("Order %s status updated to waiting_payment", evt.Payload.OrderID)
 	}
 
 	// Notify waiting saga about payment creation

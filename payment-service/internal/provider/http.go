@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/routes"
 )
@@ -14,8 +15,9 @@ func SetupHTTP(
 	e *echo.Echo,
 	appLogger logger.Logger,
 	providers *Providers,
+	cfg *config.Config,
 ) {
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
-	SetupPayment(e, appLogger, providers)
+	SetupPayment(e, cfg, appLogger, providers)
 }

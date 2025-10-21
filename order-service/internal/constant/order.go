@@ -8,6 +8,8 @@ const (
 	OrderStatusPending OrderStatus = "pending"
 	// OrderStatusProcessing indicates that the order is being processed.
 	OrderStatusProcessing OrderStatus = "processing"
+	// OrderStatusPaymentPending indicates that the order payment is pending.
+	OrderStatusPaymentPending OrderStatus = "payment_pending"
 	// OrderStatusPaymentExpired indicates that the order payment has expired.
 	OrderStatusPaymentExpired OrderStatus = "payment_expired"
 	// OrderStatusPaid indicates that the order has been paid.

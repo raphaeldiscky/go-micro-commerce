@@ -1,3 +1,5 @@
+import type { Address } from './__generated__/graphql'
+
 // Matches 'carts' table
 export interface Cart {
   id: string
@@ -60,10 +62,17 @@ export interface ShippingOption {
 export interface PaymentMethod {
   id: string
   name: string
-  type: 'credit_card' | 'debit_card' | 'bank_transfer' | 'ewallet' | 'cod'
+  type: 'card' | 'bank_transfer' | 'ewallet' | 'cod'
   icon?: string
   isActive: boolean
   description?: string
+  supportedGateways: Array<PaymentGateway>
+}
+
+export interface PaymentGateway {
+  id: string
+  name: string
+  type: 'stripe' | 'paypal'
 }
 
 // Order summary for checkout
@@ -90,8 +99,10 @@ export interface CartState {
   isDrawerOpen: boolean
   isCheckoutLoading: boolean
   checkoutData: CheckoutFormData
+  selectedAddress: Address | null
   selectedShippingOption: ShippingOption | null
   selectedPaymentMethod: PaymentMethod | null
+  selectedPaymentGateway: PaymentGateway | null
 }
 
 // Cart store actions interface
@@ -113,12 +124,15 @@ export interface CartActions {
 
   // Checkout flow
   startCheckout: (navigateToCheckout?: (checkoutId: string) => void) => void
+  setAddress: (address: Address) => void
   setShippingMethod: (method: ShippingOption) => void
   setPaymentMethod: (method: PaymentMethod) => void
+  setPaymentGateway: (gateway: PaymentGateway) => void
   setOrderNote: (note: string) => void
   placeOrder: () => Promise<{
     success: boolean
     orderId?: string
+    paymentId?: string
     error?: string
   }>
 
