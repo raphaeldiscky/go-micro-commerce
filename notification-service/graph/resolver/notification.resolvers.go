@@ -15,23 +15,21 @@ import (
 )
 
 // MarkAsRead is the resolver for the markAsRead field.
-func (r *mutationResolver) MarkAsRead(ctx context.Context, id string) (*graph.Notification, error) {
+func (r *mutationResolver) MarkAsRead(
+	ctx context.Context,
+	id uuid.UUID,
+) (*graph.Notification, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	notificationID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, err
-	}
-
-	if err = r.notificationService.MarkAsRead(ctx, notificationID, user.UserID); err != nil {
+	if err = r.notificationService.MarkAsRead(ctx, id, user.UserID); err != nil {
 		return nil, err
 	}
 
 	// Fetch and return the updated notification
-	notif, err := r.notificationService.GetNotification(ctx, notificationID, user.UserID)
+	notif, err := r.notificationService.GetNotification(ctx, id, user.UserID)
 	if err != nil {
 		return nil, err
 	}

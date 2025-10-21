@@ -33,9 +33,9 @@ autobind:
   - "github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 
 models:
-  ID:
+  UUID:
     model:
-      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.UUID
   Time:
     model:
       - github.com/99designs/gqlgen/graphql.Time

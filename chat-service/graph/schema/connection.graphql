@@ -7,7 +7,7 @@ type OnlineStatus {
 # Chat connection response for WebSocket node selection
 type ChatConnection {
   nodeAddress: String!
-  userId: ID!
+  userId: UUID!
   userType: String!
 }
 

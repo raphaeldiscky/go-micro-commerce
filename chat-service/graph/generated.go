@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -80,9 +81,9 @@ type ComplexityRoot struct {
 	}
 
 	Entity struct {
-		FindConversationByID func(childComplexity int, id string) int
-		FindMessageByID      func(childComplexity int, id string) int
-		FindUserByID         func(childComplexity int, id string) int
+		FindConversationByID func(childComplexity int, id uuid.UUID) int
+		FindMessageByID      func(childComplexity int, id uuid.UUID) int
+		FindUserByID         func(childComplexity int, id uuid.UUID) int
 	}
 
 	Message struct {
@@ -108,11 +109,11 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		AssignConversationToAdmin func(childComplexity int, conversationID string, adminID string) int
+		AssignConversationToAdmin func(childComplexity int, conversationID uuid.UUID, adminID uuid.UUID) int
 		CreateConversation        func(childComplexity int, input CreateConversationInput) int
-		EndConversation           func(childComplexity int, conversationID string) int
+		EndConversation           func(childComplexity int, conversationID uuid.UUID) int
 		JoinConversation          func(childComplexity int, input JoinConversationInput) int
-		LeaveConversation         func(childComplexity int, conversationID string) int
+		LeaveConversation         func(childComplexity int, conversationID uuid.UUID) int
 		RequestChatConnection     func(childComplexity int) int
 		SendDeliveryReceipt       func(childComplexity int, input SendDeliveryReceiptInput) int
 		SendMessage               func(childComplexity int, input SendMessageInput) int
@@ -163,9 +164,9 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Conversation             func(childComplexity int, id string) int
-		ConversationMessages     func(childComplexity int, conversationID string, first *int, after *string, last *int, before *string) int
-		ConversationParticipants func(childComplexity int, conversationID string) int
+		Conversation             func(childComplexity int, id uuid.UUID) int
+		ConversationMessages     func(childComplexity int, conversationID uuid.UUID, first *int, after *string, last *int, before *string) int
+		ConversationParticipants func(childComplexity int, conversationID uuid.UUID) int
 		Conversations            func(childComplexity int) int
 		OnlineUsers              func(childComplexity int) int
 		WaitingConversations     func(childComplexity int) int
@@ -181,7 +182,7 @@ type ComplexityRoot struct {
 	}
 
 	Subscription struct {
-		ConversationEvents func(childComplexity int, conversationID string) int
+		ConversationEvents func(childComplexity int, conversationID uuid.UUID) int
 		UserEvents         func(childComplexity int) int
 	}
 
@@ -204,33 +205,33 @@ type ComplexityRoot struct {
 }
 
 type EntityResolver interface {
-	FindConversationByID(ctx context.Context, id string) (*Conversation, error)
-	FindMessageByID(ctx context.Context, id string) (*Message, error)
-	FindUserByID(ctx context.Context, id string) (*User, error)
+	FindConversationByID(ctx context.Context, id uuid.UUID) (*Conversation, error)
+	FindMessageByID(ctx context.Context, id uuid.UUID) (*Message, error)
+	FindUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 }
 type MutationResolver interface {
 	RequestChatConnection(ctx context.Context) (*ChatConnection, error)
 	CreateConversation(ctx context.Context, input CreateConversationInput) (*Conversation, error)
-	EndConversation(ctx context.Context, conversationID string) (*Conversation, error)
-	AssignConversationToAdmin(ctx context.Context, conversationID string, adminID string) (*Conversation, error)
+	EndConversation(ctx context.Context, conversationID uuid.UUID) (*Conversation, error)
+	AssignConversationToAdmin(ctx context.Context, conversationID uuid.UUID, adminID uuid.UUID) (*Conversation, error)
 	SendMessage(ctx context.Context, input SendMessageInput) (*Message, error)
 	SendDeliveryReceipt(ctx context.Context, input SendDeliveryReceiptInput) (*DeliveryReceipt, error)
 	SendReadReceipt(ctx context.Context, input SendReadReceiptInput) (*ReadReceipt, error)
 	JoinConversation(ctx context.Context, input JoinConversationInput) (*Participant, error)
-	LeaveConversation(ctx context.Context, conversationID string) (bool, error)
+	LeaveConversation(ctx context.Context, conversationID uuid.UUID) (bool, error)
 	UpdatePresence(ctx context.Context, status constant.PresenceStatus) (*PresenceUpdate, error)
 	SendTypingIndicator(ctx context.Context, input TypingIndicatorInput) (*TypingIndicator, error)
 }
 type QueryResolver interface {
 	OnlineUsers(ctx context.Context) ([]*User, error)
-	Conversation(ctx context.Context, id string) (*Conversation, error)
+	Conversation(ctx context.Context, id uuid.UUID) (*Conversation, error)
 	Conversations(ctx context.Context) ([]*Conversation, error)
 	WaitingConversations(ctx context.Context) ([]*Conversation, error)
-	ConversationMessages(ctx context.Context, conversationID string, first *int, after *string, last *int, before *string) (*MessageConnection, error)
-	ConversationParticipants(ctx context.Context, conversationID string) ([]*Participant, error)
+	ConversationMessages(ctx context.Context, conversationID uuid.UUID, first *int, after *string, last *int, before *string) (*MessageConnection, error)
+	ConversationParticipants(ctx context.Context, conversationID uuid.UUID) ([]*Participant, error)
 }
 type SubscriptionResolver interface {
-	ConversationEvents(ctx context.Context, conversationID string) (<-chan ConversationEvent, error)
+	ConversationEvents(ctx context.Context, conversationID uuid.UUID) (<-chan ConversationEvent, error)
 	UserEvents(ctx context.Context) (<-chan UserEvent, error)
 }
 
@@ -373,7 +374,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Entity.FindConversationByID(childComplexity, args["id"].(string)), true
+		return e.complexity.Entity.FindConversationByID(childComplexity, args["id"].(uuid.UUID)), true
 	case "Entity.findMessageByID":
 		if e.complexity.Entity.FindMessageByID == nil {
 			break
@@ -384,7 +385,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Entity.FindMessageByID(childComplexity, args["id"].(string)), true
+		return e.complexity.Entity.FindMessageByID(childComplexity, args["id"].(uuid.UUID)), true
 	case "Entity.findUserByID":
 		if e.complexity.Entity.FindUserByID == nil {
 			break
@@ -395,7 +396,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(string)), true
+		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Message.content":
 		if e.complexity.Message.Content == nil {
@@ -488,7 +489,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AssignConversationToAdmin(childComplexity, args["conversationId"].(string), args["adminId"].(string)), true
+		return e.complexity.Mutation.AssignConversationToAdmin(childComplexity, args["conversationId"].(uuid.UUID), args["adminId"].(uuid.UUID)), true
 	case "Mutation.createConversation":
 		if e.complexity.Mutation.CreateConversation == nil {
 			break
@@ -510,7 +511,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EndConversation(childComplexity, args["conversationId"].(string)), true
+		return e.complexity.Mutation.EndConversation(childComplexity, args["conversationId"].(uuid.UUID)), true
 	case "Mutation.joinConversation":
 		if e.complexity.Mutation.JoinConversation == nil {
 			break
@@ -532,7 +533,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.LeaveConversation(childComplexity, args["conversationId"].(string)), true
+		return e.complexity.Mutation.LeaveConversation(childComplexity, args["conversationId"].(uuid.UUID)), true
 	case "Mutation.requestChatConnection":
 		if e.complexity.Mutation.RequestChatConnection == nil {
 			break
@@ -766,7 +767,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Conversation(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.Conversation(childComplexity, args["id"].(uuid.UUID)), true
 	case "Query.conversationMessages":
 		if e.complexity.Query.ConversationMessages == nil {
 			break
@@ -777,7 +778,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ConversationMessages(childComplexity, args["conversationId"].(string), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
+		return e.complexity.Query.ConversationMessages(childComplexity, args["conversationId"].(uuid.UUID), args["first"].(*int), args["after"].(*string), args["last"].(*int), args["before"].(*string)), true
 	case "Query.conversationParticipants":
 		if e.complexity.Query.ConversationParticipants == nil {
 			break
@@ -788,7 +789,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ConversationParticipants(childComplexity, args["conversationId"].(string)), true
+		return e.complexity.Query.ConversationParticipants(childComplexity, args["conversationId"].(uuid.UUID)), true
 	case "Query.conversations":
 		if e.complexity.Query.Conversations == nil {
 			break
@@ -860,7 +861,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Subscription.ConversationEvents(childComplexity, args["conversationId"].(string)), true
+		return e.complexity.Subscription.ConversationEvents(childComplexity, args["conversationId"].(uuid.UUID)), true
 	case "Subscription.userEvents":
 		if e.complexity.Subscription.UserEvents == nil {
 			break
@@ -1121,9 +1122,9 @@ union _Entity = Conversation | Message | User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
-	findConversationByID(id: ID!,): Conversation!
-	findMessageByID(id: ID!,): Message!
-	findUserByID(id: ID!,): User!
+	findConversationByID(id: UUID!,): Conversation!
+	findMessageByID(id: UUID!,): Message!
+	findUserByID(id: UUID!,): User!
 }
 
 type _Service {
@@ -1172,7 +1173,7 @@ func (ec *executionContext) field_Conversation_messages_args(ctx context.Context
 func (ec *executionContext) field_Entity_findConversationByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1183,7 +1184,7 @@ func (ec *executionContext) field_Entity_findConversationByID_args(ctx context.C
 func (ec *executionContext) field_Entity_findMessageByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1194,7 +1195,7 @@ func (ec *executionContext) field_Entity_findMessageByID_args(ctx context.Contex
 func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1205,12 +1206,12 @@ func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_assignConversationToAdmin_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
 	args["conversationId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "adminId", ec.unmarshalNID2string)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "adminId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1232,7 +1233,7 @@ func (ec *executionContext) field_Mutation_createConversation_args(ctx context.C
 func (ec *executionContext) field_Mutation_endConversation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1254,7 +1255,7 @@ func (ec *executionContext) field_Mutation_joinConversation_args(ctx context.Con
 func (ec *executionContext) field_Mutation_leaveConversation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1342,7 +1343,7 @@ func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawA
 func (ec *executionContext) field_Query_conversationMessages_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1373,7 +1374,7 @@ func (ec *executionContext) field_Query_conversationMessages_args(ctx context.Co
 func (ec *executionContext) field_Query_conversationParticipants_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1384,7 +1385,7 @@ func (ec *executionContext) field_Query_conversationParticipants_args(ctx contex
 func (ec *executionContext) field_Query_conversation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1395,7 +1396,7 @@ func (ec *executionContext) field_Query_conversation_args(ctx context.Context, r
 func (ec *executionContext) field_Subscription_conversationEvents_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "conversationId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -1494,7 +1495,7 @@ func (ec *executionContext) _ChatConnection_userId(ctx context.Context, field gr
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1507,7 +1508,7 @@ func (ec *executionContext) fieldContext_ChatConnection_userId(_ context.Context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1552,7 +1553,7 @@ func (ec *executionContext) _Conversation_id(ctx context.Context, field graphql.
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1565,7 +1566,7 @@ func (ec *executionContext) fieldContext_Conversation_id(_ context.Context, fiel
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1881,7 +1882,7 @@ func (ec *executionContext) _DeliveryReceipt_messageId(ctx context.Context, fiel
 			return obj.MessageID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1894,7 +1895,7 @@ func (ec *executionContext) fieldContext_DeliveryReceipt_messageId(_ context.Con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1910,7 +1911,7 @@ func (ec *executionContext) _DeliveryReceipt_conversationId(ctx context.Context,
 			return obj.ConversationID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1923,7 +1924,7 @@ func (ec *executionContext) fieldContext_DeliveryReceipt_conversationId(_ contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1939,7 +1940,7 @@ func (ec *executionContext) _DeliveryReceipt_recipientId(ctx context.Context, fi
 			return obj.RecipientID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1952,7 +1953,7 @@ func (ec *executionContext) fieldContext_DeliveryReceipt_recipientId(_ context.C
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1995,7 +1996,7 @@ func (ec *executionContext) _Entity_findConversationByID(ctx context.Context, fi
 		ec.fieldContext_Entity_findConversationByID,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Entity().FindConversationByID(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Entity().FindConversationByID(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNConversation2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐConversation,
@@ -2058,7 +2059,7 @@ func (ec *executionContext) _Entity_findMessageByID(ctx context.Context, field g
 		ec.fieldContext_Entity_findMessageByID,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Entity().FindMessageByID(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Entity().FindMessageByID(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNMessage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐMessage,
@@ -2119,7 +2120,7 @@ func (ec *executionContext) _Entity_findUserByID(ctx context.Context, field grap
 		ec.fieldContext_Entity_findUserByID,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Entity().FindUserByID(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Entity().FindUserByID(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNUser2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUser,
@@ -2170,7 +2171,7 @@ func (ec *executionContext) _Message_id(ctx context.Context, field graphql.Colle
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -2183,7 +2184,7 @@ func (ec *executionContext) fieldContext_Message_id(_ context.Context, field gra
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2199,7 +2200,7 @@ func (ec *executionContext) _Message_conversationId(ctx context.Context, field g
 			return obj.ConversationID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -2212,7 +2213,7 @@ func (ec *executionContext) fieldContext_Message_conversationId(_ context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2279,7 +2280,7 @@ func (ec *executionContext) _Message_senderId(ctx context.Context, field graphql
 			return obj.SenderID, nil
 		},
 		nil,
-		ec.marshalOID2ᚖstring,
+		ec.marshalOUUID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		false,
 	)
@@ -2292,7 +2293,7 @@ func (ec *executionContext) fieldContext_Message_senderId(_ context.Context, fie
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2737,7 +2738,7 @@ func (ec *executionContext) _Mutation_endConversation(ctx context.Context, field
 		ec.fieldContext_Mutation_endConversation,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EndConversation(ctx, fc.Args["conversationId"].(string))
+			return ec.resolvers.Mutation().EndConversation(ctx, fc.Args["conversationId"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2825,7 +2826,7 @@ func (ec *executionContext) _Mutation_assignConversationToAdmin(ctx context.Cont
 		ec.fieldContext_Mutation_assignConversationToAdmin,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().AssignConversationToAdmin(ctx, fc.Args["conversationId"].(string), fc.Args["adminId"].(string))
+			return ec.resolvers.Mutation().AssignConversationToAdmin(ctx, fc.Args["conversationId"].(uuid.UUID), fc.Args["adminId"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -3191,7 +3192,7 @@ func (ec *executionContext) _Mutation_leaveConversation(ctx context.Context, fie
 		ec.fieldContext_Mutation_leaveConversation,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().LeaveConversation(ctx, fc.Args["conversationId"].(string))
+			return ec.resolvers.Mutation().LeaveConversation(ctx, fc.Args["conversationId"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -3373,7 +3374,7 @@ func (ec *executionContext) _NewMessage_id(ctx context.Context, field graphql.Co
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -3386,7 +3387,7 @@ func (ec *executionContext) fieldContext_NewMessage_id(_ context.Context, field 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3402,7 +3403,7 @@ func (ec *executionContext) _NewMessage_conversationId(ctx context.Context, fiel
 			return obj.ConversationID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -3415,7 +3416,7 @@ func (ec *executionContext) fieldContext_NewMessage_conversationId(_ context.Con
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3431,7 +3432,7 @@ func (ec *executionContext) _NewMessage_senderId(ctx context.Context, field grap
 			return obj.SenderID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -3444,7 +3445,7 @@ func (ec *executionContext) fieldContext_NewMessage_senderId(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3750,7 +3751,7 @@ func (ec *executionContext) _Participant_id(ctx context.Context, field graphql.C
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -3763,7 +3764,7 @@ func (ec *executionContext) fieldContext_Participant_id(_ context.Context, field
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3779,7 +3780,7 @@ func (ec *executionContext) _Participant_conversationId(ctx context.Context, fie
 			return obj.ConversationID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -3792,7 +3793,7 @@ func (ec *executionContext) fieldContext_Participant_conversationId(_ context.Co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3859,7 +3860,7 @@ func (ec *executionContext) _Participant_userId(ctx context.Context, field graph
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -3872,7 +3873,7 @@ func (ec *executionContext) fieldContext_Participant_userId(_ context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4070,7 +4071,7 @@ func (ec *executionContext) _PresenceUpdate_userId(ctx context.Context, field gr
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -4083,7 +4084,7 @@ func (ec *executionContext) fieldContext_PresenceUpdate_userId(_ context.Context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4205,7 +4206,7 @@ func (ec *executionContext) _Query_conversation(ctx context.Context, field graph
 		ec.fieldContext_Query_conversation,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Conversation(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().Conversation(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -4421,7 +4422,7 @@ func (ec *executionContext) _Query_conversationMessages(ctx context.Context, fie
 		ec.fieldContext_Query_conversationMessages,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().ConversationMessages(ctx, fc.Args["conversationId"].(string), fc.Args["first"].(*int), fc.Args["after"].(*string), fc.Args["last"].(*int), fc.Args["before"].(*string))
+			return ec.resolvers.Query().ConversationMessages(ctx, fc.Args["conversationId"].(uuid.UUID), fc.Args["first"].(*int), fc.Args["after"].(*string), fc.Args["last"].(*int), fc.Args["before"].(*string))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -4481,7 +4482,7 @@ func (ec *executionContext) _Query_conversationParticipants(ctx context.Context,
 		ec.fieldContext_Query_conversationParticipants,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().ConversationParticipants(ctx, fc.Args["conversationId"].(string))
+			return ec.resolvers.Query().ConversationParticipants(ctx, fc.Args["conversationId"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -4741,7 +4742,7 @@ func (ec *executionContext) _ReadReceipt_messageId(ctx context.Context, field gr
 			return obj.MessageID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -4754,7 +4755,7 @@ func (ec *executionContext) fieldContext_ReadReceipt_messageId(_ context.Context
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4770,7 +4771,7 @@ func (ec *executionContext) _ReadReceipt_conversationId(ctx context.Context, fie
 			return obj.ConversationID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -4783,7 +4784,7 @@ func (ec *executionContext) fieldContext_ReadReceipt_conversationId(_ context.Co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4799,7 +4800,7 @@ func (ec *executionContext) _ReadReceipt_readerId(ctx context.Context, field gra
 			return obj.ReaderID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -4812,7 +4813,7 @@ func (ec *executionContext) fieldContext_ReadReceipt_readerId(_ context.Context,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4855,7 +4856,7 @@ func (ec *executionContext) _Subscription_conversationEvents(ctx context.Context
 		ec.fieldContext_Subscription_conversationEvents,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Subscription().ConversationEvents(ctx, fc.Args["conversationId"].(string))
+			return ec.resolvers.Subscription().ConversationEvents(ctx, fc.Args["conversationId"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -4953,7 +4954,7 @@ func (ec *executionContext) _TypingIndicator_userId(ctx context.Context, field g
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -4966,7 +4967,7 @@ func (ec *executionContext) fieldContext_TypingIndicator_userId(_ context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4982,7 +4983,7 @@ func (ec *executionContext) _TypingIndicator_conversationId(ctx context.Context,
 			return obj.ConversationID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -4995,7 +4996,7 @@ func (ec *executionContext) fieldContext_TypingIndicator_conversationId(_ contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5069,7 +5070,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -5082,7 +5083,7 @@ func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphq
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6706,7 +6707,7 @@ func (ec *executionContext) unmarshalInputJoinConversationInput(ctx context.Cont
 		switch k {
 		case "conversationId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6740,14 +6741,14 @@ func (ec *executionContext) unmarshalInputSendDeliveryReceiptInput(ctx context.C
 		switch k {
 		case "messageId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.MessageID = data
 		case "conversationId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6778,7 +6779,7 @@ func (ec *executionContext) unmarshalInputSendMessageInput(ctx context.Context, 
 		switch k {
 		case "conversationId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6799,7 +6800,7 @@ func (ec *executionContext) unmarshalInputSendMessageInput(ctx context.Context, 
 			it.MessageType = data
 		case "replyToId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("replyToId"))
-			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOUUID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6826,14 +6827,14 @@ func (ec *executionContext) unmarshalInputSendReadReceiptInput(ctx context.Conte
 		switch k {
 		case "messageId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("messageId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.MessageID = data
 		case "conversationId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6860,7 +6861,7 @@ func (ec *executionContext) unmarshalInputTypingIndicatorInput(ctx context.Conte
 		switch k {
 		case "conversationId":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("conversationId"))
-			data, err := ec.unmarshalNID2string(ctx, v)
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8743,22 +8744,6 @@ func (ec *executionContext) marshalNFieldSet2string(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
-	res, err := graphql.UnmarshalID(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -9083,6 +9068,22 @@ func (ec *executionContext) marshalNTypingIndicator2ᚖgithubᚗcomᚋraphaeldis
 func (ec *executionContext) unmarshalNTypingIndicatorInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐTypingIndicatorInput(ctx context.Context, v any) (TypingIndicatorInput, error) {
 	res, err := ec.unmarshalInputTypingIndicatorInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v any) (uuid.UUID, error) {
+	res, err := graphql.UnmarshalUUID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, sel ast.SelectionSet, v uuid.UUID) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalUUID(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) marshalNUser2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {
@@ -9706,24 +9707,6 @@ func (ec *executionContext) marshalOConversation2ᚖgithubᚗcomᚋraphaeldiscky
 	return ec._Conversation(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalID(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	_ = sel
-	_ = ctx
-	res := graphql.MarshalID(*v)
-	return res
-}
-
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
 	if v == nil {
 		return nil, nil
@@ -9849,6 +9832,24 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	_ = sel
 	_ = ctx
 	res := graphql.MarshalTime(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOUUID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v any) (*uuid.UUID, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalUUID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOUUID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, sel ast.SelectionSet, v *uuid.UUID) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalUUID(*v)
 	return res
 }
 

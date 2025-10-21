@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -54,12 +55,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Entity struct {
-		FindUserByID func(childComplexity int, id string) int
+		FindUserByID func(childComplexity int, id uuid.UUID) int
 	}
 
 	Mutation struct {
 		MarkAllAsRead func(childComplexity int) int
-		MarkAsRead    func(childComplexity int, id string) int
+		MarkAsRead    func(childComplexity int, id uuid.UUID) int
 	}
 
 	NewNotification struct {
@@ -149,10 +150,10 @@ type ComplexityRoot struct {
 }
 
 type EntityResolver interface {
-	FindUserByID(ctx context.Context, id string) (*User, error)
+	FindUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 }
 type MutationResolver interface {
-	MarkAsRead(ctx context.Context, id string) (*Notification, error)
+	MarkAsRead(ctx context.Context, id uuid.UUID) (*Notification, error)
 	MarkAllAsRead(ctx context.Context) (bool, error)
 }
 type QueryResolver interface {
@@ -194,7 +195,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(string)), true
+		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Mutation.markAllAsRead":
 		if e.complexity.Mutation.MarkAllAsRead == nil {
@@ -212,7 +213,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.MarkAsRead(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.MarkAsRead(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "NewNotification.createdAt":
 		if e.complexity.NewNotification.CreatedAt == nil {
@@ -710,7 +711,7 @@ union _Entity = User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
-	findUserByID(id: ID!,): User!
+	findUserByID(id: UUID!,): User!
 }
 
 type _Service {
@@ -743,7 +744,7 @@ func (ec *executionContext) dir_requiresRole_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -754,7 +755,7 @@ func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_markAsRead_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -876,7 +877,7 @@ func (ec *executionContext) _Entity_findUserByID(ctx context.Context, field grap
 		ec.fieldContext_Entity_findUserByID,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Entity().FindUserByID(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Entity().FindUserByID(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNUser2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋnotificationᚑserviceᚋgraphᚐUser,
@@ -925,7 +926,7 @@ func (ec *executionContext) _Mutation_markAsRead(ctx context.Context, field grap
 		ec.fieldContext_Mutation_markAsRead,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().MarkAsRead(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Mutation().MarkAsRead(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1045,7 +1046,7 @@ func (ec *executionContext) _NewNotification_id(ctx context.Context, field graph
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1058,7 +1059,7 @@ func (ec *executionContext) fieldContext_NewNotification_id(_ context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1074,7 +1075,7 @@ func (ec *executionContext) _NewNotification_userId(ctx context.Context, field g
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1087,7 +1088,7 @@ func (ec *executionContext) fieldContext_NewNotification_userId(_ context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1277,7 +1278,7 @@ func (ec *executionContext) _Notification_id(ctx context.Context, field graphql.
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1290,7 +1291,7 @@ func (ec *executionContext) fieldContext_Notification_id(_ context.Context, fiel
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1306,7 +1307,7 @@ func (ec *executionContext) _Notification_userId(ctx context.Context, field grap
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1319,7 +1320,7 @@ func (ec *executionContext) fieldContext_Notification_userId(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1641,7 +1642,7 @@ func (ec *executionContext) _NotificationDeleted_id(ctx context.Context, field g
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1654,7 +1655,7 @@ func (ec *executionContext) fieldContext_NotificationDeleted_id(_ context.Contex
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1670,7 +1671,7 @@ func (ec *executionContext) _NotificationDeleted_userId(ctx context.Context, fie
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1683,7 +1684,7 @@ func (ec *executionContext) fieldContext_NotificationDeleted_userId(_ context.Co
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1779,7 +1780,7 @@ func (ec *executionContext) _NotificationRead_id(ctx context.Context, field grap
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1792,7 +1793,7 @@ func (ec *executionContext) fieldContext_NotificationRead_id(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1808,7 +1809,7 @@ func (ec *executionContext) _NotificationRead_userId(ctx context.Context, field 
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1821,7 +1822,7 @@ func (ec *executionContext) fieldContext_NotificationRead_userId(_ context.Conte
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2538,7 +2539,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -2551,7 +2552,7 @@ func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphq
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5406,22 +5407,6 @@ func (ec *executionContext) marshalNFieldSet2string(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
-	res, err := graphql.UnmarshalID(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -5642,6 +5627,22 @@ func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v an
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalTime(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v any) (uuid.UUID, error) {
+	res, err := graphql.UnmarshalUUID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, sel ast.SelectionSet, v uuid.UUID) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalUUID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

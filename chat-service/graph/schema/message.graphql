@@ -1,9 +1,9 @@
 # Message entity (owned by chat-service)
 type Message @key(fields: "id") {
-  id: ID!
-  conversationId: ID!
+  id: UUID!
+  conversationId: UUID!
   conversation: Conversation!
-  senderId: ID
+  senderId: UUID
   sender: User
   content: String!
   messageType: MessageType!
@@ -39,27 +39,27 @@ type PageInfo {
 
 # Message input types
 input SendMessageInput {
-  conversationId: ID!
+  conversationId: UUID!
   content: String!
   messageType: MessageType = TEXT
-  replyToId: ID
+  replyToId: UUID
 }
 
 input SendDeliveryReceiptInput {
-  messageId: ID!
-  conversationId: ID!
+  messageId: UUID!
+  conversationId: UUID!
 }
 
 input SendReadReceiptInput {
-  messageId: ID!
-  conversationId: ID!
+  messageId: UUID!
+  conversationId: UUID!
 }
 
 # Message queries
 extend type Query {
   # Get messages for a conversation with cursor-based pagination
   conversationMessages(
-    conversationId: ID!
+    conversationId: UUID!
     first: Int
     after: String
     last: Int
@@ -73,7 +73,8 @@ extend type Mutation {
   sendMessage(input: SendMessageInput!): Message! @requiresAuth
 
   # Send delivery receipt for a message
-  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt! @requiresAuth
+  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt!
+    @requiresAuth
 
   # Send read receipt for a message
   sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @requiresAuth

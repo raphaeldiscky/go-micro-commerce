@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
 )
 
@@ -20,8 +21,8 @@ type Mutation struct {
 }
 
 type NewNotification struct {
-	ID        string                        `json:"id"`
-	UserID    string                        `json:"userId"`
+	ID        uuid.UUID                     `json:"id"`
+	UserID    uuid.UUID                     `json:"userId"`
 	Type      constant.PushNotificationType `json:"type"`
 	Title     string                        `json:"title"`
 	Message   string                        `json:"message"`
@@ -33,8 +34,8 @@ type NewNotification struct {
 func (NewNotification) IsNotificationEvent() {}
 
 type Notification struct {
-	ID        string                        `json:"id"`
-	UserID    string                        `json:"userId"`
+	ID        uuid.UUID                     `json:"id"`
+	UserID    uuid.UUID                     `json:"userId"`
 	Type      constant.PushNotificationType `json:"type"`
 	Title     string                        `json:"title"`
 	Message   string                        `json:"message"`
@@ -51,8 +52,8 @@ type NotificationConnection struct {
 }
 
 type NotificationDeleted struct {
-	ID     string `json:"id"`
-	UserID string `json:"userId"`
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"userId"`
 }
 
 func (NotificationDeleted) IsNotificationEvent() {}
@@ -63,8 +64,8 @@ type NotificationEdge struct {
 }
 
 type NotificationRead struct {
-	ID     string    `json:"id"`
-	UserID string    `json:"userId"`
+	ID     uuid.UUID `json:"id"`
+	UserID uuid.UUID `json:"userId"`
 	ReadAt time.Time `json:"readAt"`
 }
 
@@ -94,7 +95,7 @@ type UnreadCount struct {
 }
 
 type User struct {
-	ID            string          `json:"id"`
+	ID            uuid.UUID       `json:"id"`
 	Notifications []*Notification `json:"notifications"`
 	UnreadCount   int             `json:"unreadCount"`
 }

@@ -12,7 +12,6 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
 )
 
@@ -27,14 +26,9 @@ func (r *mutationResolver) JoinConversation(
 		return nil, err
 	}
 
-	conversationID, err := uuid.Parse(input.ConversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
 	participant, err := r.chatService.JoinConversation(
 		ctx,
-		conversationID,
+		input.ConversationID,
 		user.UserID,
 		constant.UserTypeUser,
 		input.Role,
@@ -50,7 +44,7 @@ func (r *mutationResolver) JoinConversation(
 // LeaveConversation is the resolver for the leaveConversation field.
 func (r *mutationResolver) LeaveConversation(
 	ctx context.Context,
-	conversationID string,
+	conversationID uuid.UUID,
 ) (bool, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -58,12 +52,7 @@ func (r *mutationResolver) LeaveConversation(
 		return false, err
 	}
 
-	convID, err := uuid.Parse(conversationID)
-	if err != nil {
-		return false, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
-	err = r.chatService.LeaveConversation(ctx, convID, user.UserID)
+	err = r.chatService.LeaveConversation(ctx, conversationID, user.UserID)
 	if err != nil {
 		r.logger.Error("Failed to leave conversation", "error", err)
 		return false, err
@@ -75,14 +64,9 @@ func (r *mutationResolver) LeaveConversation(
 // ConversationParticipants is the resolver for the conversationParticipants field.
 func (r *queryResolver) ConversationParticipants(
 	ctx context.Context,
-	conversationID string,
+	conversationID uuid.UUID,
 ) ([]*graph.Participant, error) {
-	convID, err := uuid.Parse(conversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
-	participants, err := r.chatService.GetConversationParticipants(ctx, convID)
+	participants, err := r.chatService.GetConversationParticipants(ctx, conversationID)
 	if err != nil {
 		r.logger.Error("Failed to get conversation participants", "error", err)
 		return nil, err

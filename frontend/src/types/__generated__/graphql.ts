@@ -26,7 +26,8 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean }
   Int: { input: number; output: number }
   Float: { input: number; output: number }
-  Time: { input: any; output: any }
+  Time: { input: string; output: string }
+  UUID: { input: string; output: string }
   join__FieldSet: { input: any; output: any }
   link__Import: { input: any; output: any }
 }
@@ -39,7 +40,7 @@ export type Address = {
   countryCode: Scalars['String']['output']
   createdAt: Scalars['Time']['output']
   fullAddress: Scalars['String']['output']
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   isDefault: Scalars['Boolean']['output']
   latitude?: Maybe<Scalars['Float']['output']>
   longitude?: Maybe<Scalars['Float']['output']>
@@ -48,7 +49,7 @@ export type Address = {
   receiverName: Scalars['String']['output']
   state?: Maybe<Scalars['String']['output']>
   updatedAt: Scalars['Time']['output']
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export type AddressConnection = {
@@ -73,7 +74,7 @@ export type AuthPayload = {
 export type ChatConnection = {
   __typename?: 'ChatConnection'
   nodeAddress: Scalars['String']['output']
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
   userType: Scalars['String']['output']
 }
 
@@ -81,7 +82,7 @@ export type Conversation = {
   __typename?: 'Conversation'
   createdAt: Scalars['Time']['output']
   endedAt?: Maybe<Scalars['Time']['output']>
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   messages: MessageConnection
   participantCount: Scalars['Int']['output']
   participants: Array<Participant>
@@ -130,14 +131,14 @@ export type CreateConversationInput = {
 
 export type DeliveryReceipt = {
   __typename?: 'DeliveryReceipt'
-  conversationId: Scalars['ID']['output']
+  conversationId: Scalars['UUID']['output']
   deliveredAt: Scalars['Time']['output']
-  messageId: Scalars['ID']['output']
-  recipientId: Scalars['ID']['output']
+  messageId: Scalars['UUID']['output']
+  recipientId: Scalars['UUID']['output']
 }
 
 export type JoinConversationInput = {
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
   role: ParticipantRole
 }
 
@@ -150,13 +151,13 @@ export type Message = {
   __typename?: 'Message'
   content: Scalars['String']['output']
   conversation: Conversation
-  conversationId: Scalars['ID']['output']
+  conversationId: Scalars['UUID']['output']
   createdAt: Scalars['Time']['output']
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   isSystem: Scalars['Boolean']['output']
   messageType: MessageType
   sender?: Maybe<User>
-  senderId?: Maybe<Scalars['ID']['output']>
+  senderId?: Maybe<Scalars['UUID']['output']>
 }
 
 export type MessageConnection = {
@@ -204,8 +205,8 @@ export type Mutation = {
 }
 
 export type MutationAssignConversationToAdminArgs = {
-  adminId: Scalars['ID']['input']
-  conversationId: Scalars['ID']['input']
+  adminId: Scalars['UUID']['input']
+  conversationId: Scalars['UUID']['input']
 }
 
 export type MutationCreateAddressArgs = {
@@ -217,11 +218,11 @@ export type MutationCreateConversationArgs = {
 }
 
 export type MutationDeleteAddressArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
 }
 
 export type MutationEndConversationArgs = {
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
 }
 
 export type MutationJoinConversationArgs = {
@@ -229,7 +230,7 @@ export type MutationJoinConversationArgs = {
 }
 
 export type MutationLeaveConversationArgs = {
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
 }
 
 export type MutationLoginArgs = {
@@ -237,7 +238,7 @@ export type MutationLoginArgs = {
 }
 
 export type MutationMarkAsReadArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
 }
 
 export type MutationRegisterArgs = {
@@ -261,11 +262,11 @@ export type MutationSendTypingIndicatorArgs = {
 }
 
 export type MutationSetDefaultAddressArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
 }
 
 export type MutationUpdateAddressArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
   input: UpdateAddressInput
 }
 
@@ -276,30 +277,30 @@ export type MutationUpdatePresenceArgs = {
 export type NewMessage = {
   __typename?: 'NewMessage'
   content: Scalars['String']['output']
-  conversationId: Scalars['ID']['output']
+  conversationId: Scalars['UUID']['output']
   createdAt: Scalars['Time']['output']
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   isSystem: Scalars['Boolean']['output']
   messageType: MessageType
-  senderId: Scalars['ID']['output']
+  senderId: Scalars['UUID']['output']
 }
 
 export type NewNotification = {
   __typename?: 'NewNotification'
   createdAt: Scalars['Time']['output']
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   isRead: Scalars['Boolean']['output']
   message: Scalars['String']['output']
   metadata?: Maybe<Scalars['String']['output']>
   title: Scalars['String']['output']
   type: PushNotificationType
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export type Notification = {
   __typename?: 'Notification'
   createdAt: Scalars['Time']['output']
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   isRead: Scalars['Boolean']['output']
   message: Scalars['String']['output']
   metadata?: Maybe<Scalars['String']['output']>
@@ -307,7 +308,7 @@ export type Notification = {
   title: Scalars['String']['output']
   type: PushNotificationType
   updatedAt: Scalars['Time']['output']
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export type NotificationConnection = {
@@ -318,8 +319,8 @@ export type NotificationConnection = {
 
 export type NotificationDeleted = {
   __typename?: 'NotificationDeleted'
-  id: Scalars['ID']['output']
-  userId: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export type NotificationEdge = {
@@ -335,9 +336,9 @@ export type NotificationEvent =
 
 export type NotificationRead = {
   __typename?: 'NotificationRead'
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   readAt: Scalars['Time']['output']
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export type OnlineStatus = {
@@ -357,14 +358,14 @@ export type PageInfo = {
 export type Participant = {
   __typename?: 'Participant'
   conversation: Conversation
-  conversationId: Scalars['ID']['output']
-  id: Scalars['ID']['output']
+  conversationId: Scalars['UUID']['output']
+  id: Scalars['UUID']['output']
   isActive: Scalars['Boolean']['output']
   joinedAt: Scalars['Time']['output']
   leftAt?: Maybe<Scalars['Time']['output']>
   role: ParticipantRole
   user: User
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
   userType: UserType
 }
 
@@ -385,7 +386,7 @@ export type PresenceUpdate = {
   __typename?: 'PresenceUpdate'
   lastSeen?: Maybe<Scalars['Time']['output']>
   status: PresenceStatus
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export enum PushNotificationType {
@@ -420,23 +421,23 @@ export type Query = {
 }
 
 export type QueryConversationArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
 }
 
 export type QueryConversationMessagesArgs = {
   after?: InputMaybe<Scalars['String']['input']>
   before?: InputMaybe<Scalars['String']['input']>
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
   first?: InputMaybe<Scalars['Int']['input']>
   last?: InputMaybe<Scalars['Int']['input']>
 }
 
 export type QueryConversationParticipantsArgs = {
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
 }
 
 export type QueryGetAddressArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
 }
 
 export type QueryListAddressesArgs = {
@@ -455,15 +456,15 @@ export type QueryListUnreadNotificationsArgs = {
 }
 
 export type QueryUserArgs = {
-  id: Scalars['ID']['input']
+  id: Scalars['UUID']['input']
 }
 
 export type ReadReceipt = {
   __typename?: 'ReadReceipt'
-  conversationId: Scalars['ID']['output']
-  messageId: Scalars['ID']['output']
+  conversationId: Scalars['UUID']['output']
+  messageId: Scalars['UUID']['output']
   readAt: Scalars['Time']['output']
-  readerId: Scalars['ID']['output']
+  readerId: Scalars['UUID']['output']
 }
 
 export type RegisterUserInput = {
@@ -480,20 +481,20 @@ export enum Role {
 }
 
 export type SendDeliveryReceiptInput = {
-  conversationId: Scalars['ID']['input']
-  messageId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
+  messageId: Scalars['UUID']['input']
 }
 
 export type SendMessageInput = {
   content: Scalars['String']['input']
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
   messageType?: InputMaybe<MessageType>
-  replyToId?: InputMaybe<Scalars['ID']['input']>
+  replyToId?: InputMaybe<Scalars['UUID']['input']>
 }
 
 export type SendReadReceiptInput = {
-  conversationId: Scalars['ID']['input']
-  messageId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
+  messageId: Scalars['UUID']['input']
 }
 
 export type Subscription = {
@@ -504,7 +505,7 @@ export type Subscription = {
 }
 
 export type SubscriptionConversationEventsArgs = {
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
 }
 
 export type TabCounts = {
@@ -516,14 +517,14 @@ export type TabCounts = {
 
 export type TypingIndicator = {
   __typename?: 'TypingIndicator'
-  conversationId: Scalars['ID']['output']
+  conversationId: Scalars['UUID']['output']
   isTyping: Scalars['Boolean']['output']
   timestamp: Scalars['Time']['output']
-  userId: Scalars['ID']['output']
+  userId: Scalars['UUID']['output']
 }
 
 export type TypingIndicatorInput = {
-  conversationId: Scalars['ID']['input']
+  conversationId: Scalars['UUID']['input']
   isTyping: Scalars['Boolean']['input']
 }
 
@@ -552,7 +553,7 @@ export type User = {
   email: Scalars['String']['output']
   emailVerified: Scalars['Boolean']['output']
   firstName: Scalars['String']['output']
-  id: Scalars['ID']['output']
+  id: Scalars['UUID']['output']
   isActive: Scalars['Boolean']['output']
   lastName: Scalars['String']['output']
   notifications: Array<Notification>

@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 )
 
@@ -21,13 +22,13 @@ type UserEvent interface {
 }
 
 type ChatConnection struct {
-	NodeAddress string `json:"nodeAddress"`
-	UserID      string `json:"userId"`
-	UserType    string `json:"userType"`
+	NodeAddress string    `json:"nodeAddress"`
+	UserID      uuid.UUID `json:"userId"`
+	UserType    string    `json:"userType"`
 }
 
 type Conversation struct {
-	ID               string                      `json:"id"`
+	ID               uuid.UUID                   `json:"id"`
 	Subject          *string                     `json:"subject,omitempty"`
 	Status           constant.ConversationStatus `json:"status"`
 	Priority         int                         `json:"priority"`
@@ -48,24 +49,24 @@ type CreateConversationInput struct {
 }
 
 type DeliveryReceipt struct {
-	MessageID      string    `json:"messageId"`
-	ConversationID string    `json:"conversationId"`
-	RecipientID    string    `json:"recipientId"`
+	MessageID      uuid.UUID `json:"messageId"`
+	ConversationID uuid.UUID `json:"conversationId"`
+	RecipientID    uuid.UUID `json:"recipientId"`
 	DeliveredAt    time.Time `json:"deliveredAt"`
 }
 
 func (DeliveryReceipt) IsConversationEvent() {}
 
 type JoinConversationInput struct {
-	ConversationID string                   `json:"conversationId"`
+	ConversationID uuid.UUID                `json:"conversationId"`
 	Role           constant.ParticipantRole `json:"role"`
 }
 
 type Message struct {
-	ID             string               `json:"id"`
-	ConversationID string               `json:"conversationId"`
+	ID             uuid.UUID            `json:"id"`
+	ConversationID uuid.UUID            `json:"conversationId"`
 	Conversation   *Conversation        `json:"conversation"`
-	SenderID       *string              `json:"senderId,omitempty"`
+	SenderID       *uuid.UUID           `json:"senderId,omitempty"`
 	Sender         *User                `json:"sender,omitempty"`
 	Content        string               `json:"content"`
 	MessageType    constant.MessageType `json:"messageType"`
@@ -89,9 +90,9 @@ type Mutation struct {
 }
 
 type NewMessage struct {
-	ID             string               `json:"id"`
-	ConversationID string               `json:"conversationId"`
-	SenderID       string               `json:"senderId"`
+	ID             uuid.UUID            `json:"id"`
+	ConversationID uuid.UUID            `json:"conversationId"`
+	SenderID       uuid.UUID            `json:"senderId"`
 	Content        string               `json:"content"`
 	MessageType    constant.MessageType `json:"messageType"`
 	IsSystem       bool                 `json:"isSystem"`
@@ -113,10 +114,10 @@ type PageInfo struct {
 }
 
 type Participant struct {
-	ID             string                   `json:"id"`
-	ConversationID string                   `json:"conversationId"`
+	ID             uuid.UUID                `json:"id"`
+	ConversationID uuid.UUID                `json:"conversationId"`
 	Conversation   *Conversation            `json:"conversation"`
-	UserID         string                   `json:"userId"`
+	UserID         uuid.UUID                `json:"userId"`
 	User           *User                    `json:"user"`
 	UserType       constant.UserType        `json:"userType"`
 	Role           constant.ParticipantRole `json:"role"`
@@ -126,7 +127,7 @@ type Participant struct {
 }
 
 type PresenceUpdate struct {
-	UserID   string                  `json:"userId"`
+	UserID   uuid.UUID               `json:"userId"`
 	Status   constant.PresenceStatus `json:"status"`
 	LastSeen *time.Time              `json:"lastSeen,omitempty"`
 }
@@ -137,37 +138,37 @@ type Query struct {
 }
 
 type ReadReceipt struct {
-	MessageID      string    `json:"messageId"`
-	ConversationID string    `json:"conversationId"`
-	ReaderID       string    `json:"readerId"`
+	MessageID      uuid.UUID `json:"messageId"`
+	ConversationID uuid.UUID `json:"conversationId"`
+	ReaderID       uuid.UUID `json:"readerId"`
 	ReadAt         time.Time `json:"readAt"`
 }
 
 func (ReadReceipt) IsConversationEvent() {}
 
 type SendDeliveryReceiptInput struct {
-	MessageID      string `json:"messageId"`
-	ConversationID string `json:"conversationId"`
+	MessageID      uuid.UUID `json:"messageId"`
+	ConversationID uuid.UUID `json:"conversationId"`
 }
 
 type SendMessageInput struct {
-	ConversationID string                `json:"conversationId"`
+	ConversationID uuid.UUID             `json:"conversationId"`
 	Content        string                `json:"content"`
 	MessageType    *constant.MessageType `json:"messageType,omitempty"`
-	ReplyToID      *string               `json:"replyToId,omitempty"`
+	ReplyToID      *uuid.UUID            `json:"replyToId,omitempty"`
 }
 
 type SendReadReceiptInput struct {
-	MessageID      string `json:"messageId"`
-	ConversationID string `json:"conversationId"`
+	MessageID      uuid.UUID `json:"messageId"`
+	ConversationID uuid.UUID `json:"conversationId"`
 }
 
 type Subscription struct {
 }
 
 type TypingIndicator struct {
-	UserID         string    `json:"userId"`
-	ConversationID string    `json:"conversationId"`
+	UserID         uuid.UUID `json:"userId"`
+	ConversationID uuid.UUID `json:"conversationId"`
 	IsTyping       bool      `json:"isTyping"`
 	Timestamp      time.Time `json:"timestamp"`
 }
@@ -175,12 +176,12 @@ type TypingIndicator struct {
 func (TypingIndicator) IsConversationEvent() {}
 
 type TypingIndicatorInput struct {
-	ConversationID string `json:"conversationId"`
-	IsTyping       bool   `json:"isTyping"`
+	ConversationID uuid.UUID `json:"conversationId"`
+	IsTyping       bool      `json:"isTyping"`
 }
 
 type User struct {
-	ID            string          `json:"id"`
+	ID            uuid.UUID       `json:"id"`
 	Conversations []*Conversation `json:"conversations"`
 	OnlineStatus  *OnlineStatus   `json:"onlineStatus,omitempty"`
 }

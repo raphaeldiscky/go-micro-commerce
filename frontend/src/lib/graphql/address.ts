@@ -41,7 +41,7 @@ export const LIST_ADDRESSES_QUERY = gql`
  * Get single address by ID
  */
 export const GET_ADDRESS_QUERY = gql`
-  query GetAddress($id: ID!) {
+  query GetAddress($id: UUID!) {
     getAddress(id: $id) {
       id
       userId
@@ -119,7 +119,7 @@ export const CREATE_ADDRESS_MUTATION = gql`
  * Update existing address mutation
  */
 export const UPDATE_ADDRESS_MUTATION = gql`
-  mutation UpdateAddress($id: ID!, $input: UpdateAddressInput!) {
+  mutation UpdateAddress($id: UUID!, $input: UpdateAddressInput!) {
     updateAddress(id: $id, input: $input) {
       id
       userId
@@ -145,7 +145,7 @@ export const UPDATE_ADDRESS_MUTATION = gql`
  * Delete address mutation
  */
 export const DELETE_ADDRESS_MUTATION = gql`
-  mutation DeleteAddress($id: ID!) {
+  mutation DeleteAddress($id: UUID!) {
     deleteAddress(id: $id)
   }
 `
@@ -154,7 +154,7 @@ export const DELETE_ADDRESS_MUTATION = gql`
  * Set address as default mutation
  */
 export const SET_DEFAULT_ADDRESS_MUTATION = gql`
-  mutation SetDefaultAddress($id: ID!) {
+  mutation SetDefaultAddress($id: UUID!) {
     setDefaultAddress(id: $id) {
       id
       userId

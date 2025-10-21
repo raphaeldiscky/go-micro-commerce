@@ -13,7 +13,7 @@ import (
 // MapConversationToGraphQL maps a ConversationResponse to a Conversation GraphQL type.
 func MapConversationToGraphQL(conv *dto.ConversationResponse) *graph.Conversation {
 	return &graph.Conversation{
-		ID:               conv.ID.String(),
+		ID:               conv.ID,
 		Subject:          conv.Subject,
 		Status:           constant.ConversationStatus(strings.ToUpper(string(conv.Status))),
 		Priority:         conv.Priority,
@@ -26,17 +26,10 @@ func MapConversationToGraphQL(conv *dto.ConversationResponse) *graph.Conversatio
 
 // MapMessageToGraphQL maps a MessageResponse to a Message GraphQL type.
 func MapMessageToGraphQL(msg *dto.MessageResponse) *graph.Message {
-	var senderID *string
-
-	if msg.SenderID != nil {
-		id := msg.SenderID.String()
-		senderID = &id
-	}
-
 	return &graph.Message{
-		ID:             msg.ID.String(),
-		ConversationID: msg.ConversationID.String(),
-		SenderID:       senderID,
+		ID:             msg.ID,
+		ConversationID: msg.ConversationID,
+		SenderID:       msg.SenderID,
 		Content:        msg.Content,
 		MessageType:    constant.MessageType(strings.ToUpper(string(msg.MessageType))),
 		IsSystem:       msg.IsSystem,
@@ -63,9 +56,9 @@ func convertParticipantRoleToGraphQL(role constant.ParticipantRole) constant.Par
 // MapParticipantToGraphQL maps a ParticipantResponse to a Participant GraphQL type.
 func MapParticipantToGraphQL(p *dto.ParticipantResponse) *graph.Participant {
 	return &graph.Participant{
-		ID:             p.ID.String(),
-		ConversationID: p.ConversationID.String(),
-		UserID:         p.UserID.String(),
+		ID:             p.ID,
+		ConversationID: p.ConversationID,
+		UserID:         p.UserID,
 		UserType:       constant.UserType(strings.ToUpper(string(p.UserType))),
 		Role:           convertParticipantRoleToGraphQL(p.Role),
 		JoinedAt:       p.JoinedAt,
@@ -111,7 +104,7 @@ func MapMessagesToCursorConnection(
 func MapChatConnectionToGraphQL(conn *dto.ChatConnectionResponse) *graph.ChatConnection {
 	return &graph.ChatConnection{
 		NodeAddress: conn.NodeAddress,
-		UserID:      conn.UserID.String(),
+		UserID:      conn.UserID,
 		UserType:    string(conn.UserType),
 	}
 }

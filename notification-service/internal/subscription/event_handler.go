@@ -108,8 +108,8 @@ func (h *EventHandler) handleNotificationRead(event rediseventbus.Event) error {
 
 	// Convert to GraphQL NotificationRead event
 	graphQLEvent := &graph.NotificationRead{
-		ID:     readEvent.NotificationID.String(),
-		UserID: readEvent.UserID.String(),
+		ID:     readEvent.NotificationID,
+		UserID: readEvent.UserID,
 		ReadAt: time.Now(),
 	}
 
@@ -134,8 +134,8 @@ func (h *EventHandler) handleNotificationDeleted(event rediseventbus.Event) erro
 
 	// Convert to GraphQL NotificationDeleted event
 	graphQLEvent := &graph.NotificationDeleted{
-		ID:     deletedEvent.NotificationID.String(),
-		UserID: deletedEvent.UserID.String(),
+		ID:     deletedEvent.NotificationID,
+		UserID: deletedEvent.UserID,
 	}
 
 	// Notify local subscribers

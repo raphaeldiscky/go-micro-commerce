@@ -22,7 +22,7 @@ export const CONVERSATIONS_QUERY = gql`
  * Get single conversation by ID
  */
 export const CONVERSATION_QUERY = gql`
-  query Conversation($id: ID!) {
+  query Conversation($id: UUID!) {
     conversation(id: $id) {
       id
       subject
@@ -40,7 +40,7 @@ export const CONVERSATION_QUERY = gql`
  */
 export const CONVERSATION_MESSAGES_QUERY = gql`
   query ConversationMessages(
-    $conversationId: ID!
+    $conversationId: UUID!
     $first: Int
     $after: String
     $last: Int
@@ -79,7 +79,7 @@ export const CONVERSATION_MESSAGES_QUERY = gql`
  * Get conversation participants
  */
 export const CONVERSATION_PARTICIPANTS_QUERY = gql`
-  query ConversationParticipants($conversationId: ID!) {
+  query ConversationParticipants($conversationId: UUID!) {
     conversationParticipants(conversationId: $conversationId) {
       id
       conversationId
@@ -164,7 +164,7 @@ export const REQUEST_CHAT_CONNECTION_MUTATION = gql`
  * Subscribe to conversation events (messages, typing, receipts)
  */
 export const CONVERSATION_EVENTS_SUBSCRIPTION = gql`
-  subscription ConversationEvents($conversationId: ID!) {
+  subscription ConversationEvents($conversationId: UUID!) {
     conversationEvents(conversationId: $conversationId) {
       __typename
       ... on NewMessage {

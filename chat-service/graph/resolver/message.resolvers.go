@@ -29,11 +29,6 @@ func (r *mutationResolver) SendMessage(
 		r.logger.Error("Failed to get user from context", "error", err)
 		return nil, err
 	}
-	// Parse conversation ID
-	convID, err := uuid.Parse(input.ConversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
 
 	// Validate user is a participant in the conversation
 	conversations, err := r.chatService.GetUserConversations(ctx, user.UserID)
@@ -45,7 +40,7 @@ func (r *mutationResolver) SendMessage(
 	isParticipant := false
 
 	for _, conv := range conversations {
-		if conv.ID == convID {
+		if conv.ID == input.ConversationID {
 			isParticipant = true
 			break
 		}
@@ -63,7 +58,12 @@ func (r *mutationResolver) SendMessage(
 	}
 
 	// Create message entity
-	messageEntity, err := entity.NewMessage(convID, user.UserID, input.Content, messageType)
+	messageEntity, err := entity.NewMessage(
+		input.ConversationID,
+		user.UserID,
+		input.Content,
+		messageType,
+	)
 	if err != nil {
 		r.logger.Error("Failed to create message entity", "error", err)
 		return nil, httperror.NewBadRequestError(err.Error())
@@ -78,33 +78,38 @@ func (r *mutationResolver) SendMessage(
 
 	r.logger.Info("Message saved via GraphQL",
 		"message_id", savedMessage.ID,
-		"conversation_id", convID,
+		"conversation_id", input.ConversationID,
 		"sender_id", user.UserID)
 
 	// Broadcast message to conversation participants via WebSocket
-	wsMessage, err := chatwebsocket.NewChatMessage(convID, user.UserID, input.Content, messageType)
+	wsMessage, err := chatwebsocket.NewChatMessage(
+		input.ConversationID,
+		user.UserID,
+		input.Content,
+		messageType,
+	)
 	if err != nil {
 		r.logger.Error("Failed to create WebSocket message", "error", err)
 	} else {
-		err = r.subscriptionManager.Hub.BroadcastToConversation(convID, wsMessage, user.UserID)
+		err = r.subscriptionManager.Hub.BroadcastToConversation(input.ConversationID, wsMessage, user.UserID)
 		if err != nil {
 			r.logger.Error("Failed to broadcast message", "error", err)
 		}
 
 		graphqlEvent := &graph.NewMessage{
-			ID:             savedMessage.ID.String(),
-			ConversationID: convID.String(),
-			SenderID:       user.UserID.String(),
+			ID:             savedMessage.ID,
+			ConversationID: input.ConversationID,
+			SenderID:       user.UserID,
 			Content:        savedMessage.Content,
 			MessageType:    savedMessage.MessageType,
 			IsSystem:       savedMessage.IsSystem,
 			CreatedAt:      savedMessage.CreatedAt,
 		}
-		r.subscriptionManager.NotifyLocalConversationSubscribers(convID, graphqlEvent)
+		r.subscriptionManager.NotifyLocalConversationSubscribers(input.ConversationID, graphqlEvent)
 
 		r.logger.Debug("Notified local GraphQL subscribers",
 			"message_id", savedMessage.ID,
-			"conversation_id", convID)
+			"conversation_id", input.ConversationID)
 	}
 
 	// Map to GraphQL type
@@ -124,23 +129,12 @@ func (r *mutationResolver) SendDeliveryReceipt(
 		return nil, err
 	}
 
-	// Parse IDs
-	messageID, err := uuid.Parse(input.MessageID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid message ID")
-	}
-
-	convID, err := uuid.Parse(input.ConversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
 	// Create delivery receipt WebSocket message
 	deliveredAt := time.Now().Unix()
 
 	wsMessage, err := chatwebsocket.NewDeliveryReceiptMessage(
-		messageID,
-		convID,
+		input.MessageID,
+		input.ConversationID,
 		user.UserID,
 		deliveredAt,
 	)
@@ -150,22 +144,26 @@ func (r *mutationResolver) SendDeliveryReceipt(
 	}
 
 	// Broadcast to conversation participants
-	err = r.subscriptionManager.Hub.BroadcastToConversation(convID, wsMessage, user.UserID)
+	err = r.subscriptionManager.Hub.BroadcastToConversation(
+		input.ConversationID,
+		wsMessage,
+		user.UserID,
+	)
 	if err != nil {
 		r.logger.Error("Failed to broadcast delivery receipt", "error", err)
 		return nil, httperror.NewInternalServerError("failed to send delivery receipt")
 	}
 
 	r.logger.Debug("Delivery receipt sent via GraphQL",
-		"message_id", messageID,
-		"conversation_id", convID,
+		"message_id", input.MessageID,
+		"conversation_id", input.ConversationID,
 		"recipient_id", user.UserID)
 
 	// Return the receipt
 	return &graph.DeliveryReceipt{
 		MessageID:      input.MessageID,
 		ConversationID: input.ConversationID,
-		RecipientID:    user.UserID.String(),
+		RecipientID:    user.UserID,
 		DeliveredAt:    time.Unix(deliveredAt, 0),
 	}, nil
 }
@@ -181,43 +179,41 @@ func (r *mutationResolver) SendReadReceipt(
 		return nil, err
 	}
 
-	// Parse IDs
-	messageID, err := uuid.Parse(input.MessageID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid message ID")
-	}
-
-	convID, err := uuid.Parse(input.ConversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
 	// Create read receipt WebSocket message
 	readAt := time.Now().Unix()
 
-	wsMessage, err := chatwebsocket.NewReadReceiptMessage(messageID, convID, user.UserID, readAt)
+	wsMessage, err := chatwebsocket.NewReadReceiptMessage(
+		input.MessageID,
+		input.ConversationID,
+		user.UserID,
+		readAt,
+	)
 	if err != nil {
 		r.logger.Error("Failed to create read receipt message", "error", err)
 		return nil, httperror.NewInternalServerError("failed to create read receipt")
 	}
 
 	// Broadcast to conversation participants
-	err = r.subscriptionManager.Hub.BroadcastToConversation(convID, wsMessage, user.UserID)
+	err = r.subscriptionManager.Hub.BroadcastToConversation(
+		input.ConversationID,
+		wsMessage,
+		user.UserID,
+	)
 	if err != nil {
 		r.logger.Error("Failed to broadcast read receipt", "error", err)
 		return nil, httperror.NewInternalServerError("failed to send read receipt")
 	}
 
 	r.logger.Debug("Read receipt sent via GraphQL",
-		"message_id", messageID,
-		"conversation_id", convID,
+		"message_id", input.MessageID,
+		"conversation_id", input.ConversationID,
 		"reader_id", user.UserID)
 
 	// Return the receipt
 	return &graph.ReadReceipt{
 		MessageID:      input.MessageID,
 		ConversationID: input.ConversationID,
-		ReaderID:       user.UserID.String(),
+		ReaderID:       user.UserID,
 		ReadAt:         time.Unix(readAt, 0),
 	}, nil
 }
@@ -225,7 +221,7 @@ func (r *mutationResolver) SendReadReceipt(
 // ConversationMessages is the resolver for the conversationMessages field.
 func (r *queryResolver) ConversationMessages(
 	ctx context.Context,
-	conversationID string,
+	conversationID uuid.UUID,
 	first *int,
 	after *string,
 	last *int,
@@ -235,11 +231,6 @@ func (r *queryResolver) ConversationMessages(
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
 		return nil, err
-	}
-
-	convID, err := uuid.Parse(conversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
 	}
 
 	// Determine limit and cursors
@@ -264,7 +255,7 @@ func (r *queryResolver) ConversationMessages(
 	// Get messages with cursor pagination
 	messages, paging, err := r.chatService.GetConversationMessagesWithCursor(
 		ctx,
-		convID,
+		conversationID,
 		user.UserID,
 		limit,
 		afterCursor,

@@ -69,7 +69,7 @@ func (r *mutationResolver) UpdatePresence(
 		"status", status)
 
 	presenceEvent := &graph.PresenceUpdate{
-		UserID:   user.UserID.String(),
+		UserID:   user.UserID,
 		Status:   status,
 		LastSeen: &now,
 	}
@@ -94,12 +94,6 @@ func (r *mutationResolver) SendTypingIndicator(
 		return nil, httperror.NewUnauthorizedError("authentication required")
 	}
 
-	// Parse conversation ID
-	conversationID, err := uuid.Parse(input.ConversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
 	// Create typing indicator content
 	typingContent := websocket.TypingContent{
 		IsTyping: input.IsTyping,
@@ -113,7 +107,7 @@ func (r *mutationResolver) SendTypingIndicator(
 
 	// Create WebSocket message
 	now := time.Now()
-	channelName := redispkg.ConversationChannel(conversationID)
+	channelName := redispkg.ConversationChannel(input.ConversationID)
 	wsMessage := &pkgwebsocket.Message{
 		ID:        uuid.New(),
 		Type:      websocket.ChatMessageTypeTyping,
@@ -124,32 +118,32 @@ func (r *mutationResolver) SendTypingIndicator(
 	}
 
 	// Broadcast typing indicator to all instances
-	if err = r.hub.BroadcastTypingIndicator(conversationID, wsMessage, user.UserID); err != nil {
+	if err = r.hub.BroadcastTypingIndicator(input.ConversationID, wsMessage, user.UserID); err != nil {
 		r.logger.Error("Failed to broadcast typing indicator",
 			"error", err,
 			"user_id", user.UserID,
-			"conversation_id", conversationID)
+			"conversation_id", input.ConversationID)
 
 		return nil, httperror.NewInternalServerError("failed to broadcast typing indicator")
 	}
 
 	r.logger.Info("Typing indicator published",
 		"user_id", user.UserID,
-		"conversation_id", conversationID,
+		"conversation_id", input.ConversationID,
 		"is_typing", input.IsTyping)
 
 	typingEvent := &graph.TypingIndicator{
-		UserID:         user.UserID.String(),
+		UserID:         user.UserID,
 		ConversationID: input.ConversationID,
 		IsTyping:       input.IsTyping,
 		Timestamp:      now,
 	}
 
-	r.subscriptionManager.NotifyLocalConversationSubscribers(conversationID, typingEvent)
+	r.subscriptionManager.NotifyLocalConversationSubscribers(input.ConversationID, typingEvent)
 
 	r.logger.Debug("Notified local GraphQL subscribers for typing indicator",
 		"user_id", user.UserID,
-		"conversation_id", conversationID)
+		"conversation_id", input.ConversationID)
 
 	return typingEvent, nil
 }
@@ -157,23 +151,13 @@ func (r *mutationResolver) SendTypingIndicator(
 // ConversationEvents is the resolver for the conversationEvents field.
 func (r *subscriptionResolver) ConversationEvents(
 	ctx context.Context,
-	conversationID string,
+	conversationID uuid.UUID,
 ) (<-chan graph.ConversationEvent, error) {
 	r.logger.Info("GraphQL subscription request received",
 		"conversation_id", conversationID)
 
-	// Validate conversation ID
-	convID, err := uuid.Parse(conversationID)
-	if err != nil {
-		r.logger.Error("Invalid conversation ID in subscription",
-			"error", err,
-			"conversation_id", conversationID)
-
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
 	// Subscribe to conversation events via the manager
-	eventChan, err := r.subscriptionManager.SubscribeToConversation(ctx, convID)
+	eventChan, err := r.subscriptionManager.SubscribeToConversation(ctx, conversationID)
 	if err != nil {
 		r.logger.Error("Failed to subscribe to conversation events",
 			"error", err,

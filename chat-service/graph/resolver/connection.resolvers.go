@@ -54,11 +54,10 @@ func (r *queryResolver) OnlineUsers(ctx context.Context) ([]*graph.User, error) 
 	// Get online user IDs from WebSocket hub
 	onlineUserIDs := r.subscriptionManager.Hub.GetOnlineUsers()
 
-	// Convert user IDs to User stub objects (Apollo Federation will resolve full details)
 	users := make([]*graph.User, 0, len(onlineUserIDs))
 	for _, userID := range onlineUserIDs {
 		users = append(users, &graph.User{
-			ID: userID.String(),
+			ID: userID,
 		})
 	}
 

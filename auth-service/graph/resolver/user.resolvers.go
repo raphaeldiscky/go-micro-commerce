@@ -139,13 +139,8 @@ func (r *queryResolver) Me(ctx context.Context) (*graph.User, error) {
 }
 
 // User is the resolver for the user field.
-func (r *queryResolver) User(ctx context.Context, id string) (*graph.User, error) {
-	userID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid user ID format")
-	}
-
-	user, err := r.authService.GetUser(ctx, userID)
+func (r *queryResolver) User(ctx context.Context, id uuid.UUID) (*graph.User, error) {
+	user, err := r.authService.GetUser(ctx, id)
 	if err != nil {
 		r.logger.Error("Failed to get user by ID", "id", id, "error", err)
 		return nil, err

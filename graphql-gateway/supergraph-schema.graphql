@@ -24,8 +24,8 @@ directive @link(url: String, as: String, for: link__Purpose, import: [link__Impo
 type Address
   @join__type(graph: AUTH_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   receiverName: String!
   addressLine1: String!
   addressLine2: String
@@ -68,14 +68,14 @@ type ChatConnection
   @join__type(graph: CHAT_SERVICE)
 {
   nodeAddress: String!
-  userId: ID!
+  userId: UUID!
   userType: String!
 }
 
 type Conversation
   @join__type(graph: CHAT_SERVICE, key: "id")
 {
-  id: ID!
+  id: UUID!
   subject: String
   status: ConversationStatus!
   priority: Int!
@@ -130,9 +130,9 @@ input CreateConversationInput
 type DeliveryReceipt
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
-  recipientId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+  recipientId: UUID!
   deliveredAt: Time!
 }
 
@@ -147,7 +147,7 @@ enum join__Graph {
 input JoinConversationInput
   @join__type(graph: CHAT_SERVICE)
 {
-  conversationId: ID!
+  conversationId: UUID!
   role: ParticipantRole!
 }
 
@@ -175,10 +175,10 @@ input LoginInput
 type Message
   @join__type(graph: CHAT_SERVICE, key: "id")
 {
-  id: ID!
-  conversationId: ID!
+  id: UUID!
+  conversationId: UUID!
   conversation: Conversation!
-  senderId: ID
+  senderId: UUID
   sender: User
   content: String!
   messageType: MessageType!
@@ -215,34 +215,34 @@ type Mutation
   @join__type(graph: NOTIFICATION_SERVICE)
 {
   createAddress(input: CreateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
-  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
-  deleteAddress(id: ID!): Boolean! @join__field(graph: AUTH_SERVICE)
-  setDefaultAddress(id: ID!): Address! @join__field(graph: AUTH_SERVICE)
+  updateAddress(id: UUID!, input: UpdateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
+  deleteAddress(id: UUID!): Boolean! @join__field(graph: AUTH_SERVICE)
+  setDefaultAddress(id: UUID!): Address! @join__field(graph: AUTH_SERVICE)
   register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
   logout: Boolean! @join__field(graph: AUTH_SERVICE)
   requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
-  endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
-  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  endConversation(conversationId: UUID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  assignConversationToAdmin(conversationId: UUID!, adminId: UUID!): Conversation! @join__field(graph: CHAT_SERVICE)
   sendMessage(input: SendMessageInput!): Message! @join__field(graph: CHAT_SERVICE)
   sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt! @join__field(graph: CHAT_SERVICE)
   sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @join__field(graph: CHAT_SERVICE)
   joinConversation(input: JoinConversationInput!): Participant! @join__field(graph: CHAT_SERVICE)
-  leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
+  leaveConversation(conversationId: UUID!): Boolean! @join__field(graph: CHAT_SERVICE)
   updatePresence(status: PresenceStatus!): PresenceUpdate! @join__field(graph: CHAT_SERVICE)
   sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @join__field(graph: CHAT_SERVICE)
-  markAsRead(id: ID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
+  markAsRead(id: UUID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
   markAllAsRead: Boolean! @join__field(graph: NOTIFICATION_SERVICE)
 }
 
 type NewMessage
   @join__type(graph: CHAT_SERVICE)
 {
-  id: ID!
-  conversationId: ID!
-  senderId: ID!
+  id: UUID!
+  conversationId: UUID!
+  senderId: UUID!
   content: String!
   messageType: MessageType!
   isSystem: Boolean!
@@ -252,8 +252,8 @@ type NewMessage
 type NewNotification
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   type: PushNotificationType!
   title: String!
   message: String!
@@ -265,8 +265,8 @@ type NewNotification
 type Notification
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   type: PushNotificationType!
   title: String!
   message: String!
@@ -287,8 +287,8 @@ type NotificationConnection
 type NotificationDeleted
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
 }
 
 type NotificationEdge
@@ -308,8 +308,8 @@ union NotificationEvent
 type NotificationRead
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   readAt: Time!
 }
 
@@ -334,10 +334,10 @@ type PageInfo
 type Participant
   @join__type(graph: CHAT_SERVICE)
 {
-  id: ID!
-  conversationId: ID!
+  id: UUID!
+  conversationId: UUID!
   conversation: Conversation!
-  userId: ID!
+  userId: UUID!
   user: User!
   userType: UserType!
   role: ParticipantRole!
@@ -366,7 +366,7 @@ enum PresenceStatus
 type PresenceUpdate
   @join__type(graph: CHAT_SERVICE)
 {
-  userId: ID!
+  userId: UUID!
   status: PresenceStatus!
   lastSeen: Time
 }
@@ -391,16 +391,16 @@ type Query
   @join__type(graph: NOTIFICATION_SERVICE)
 {
   listAddresses(limit: Int!, cursor: String): AddressConnection! @join__field(graph: AUTH_SERVICE)
-  getAddress(id: ID!): Address! @join__field(graph: AUTH_SERVICE)
+  getAddress(id: UUID!): Address! @join__field(graph: AUTH_SERVICE)
   getDefaultAddress: Address! @join__field(graph: AUTH_SERVICE)
   me: User @join__field(graph: AUTH_SERVICE)
-  user(id: ID!): User @join__field(graph: AUTH_SERVICE)
+  user(id: UUID!): User @join__field(graph: AUTH_SERVICE)
   onlineUsers: [User!]! @join__field(graph: CHAT_SERVICE)
-  conversation(id: ID!): Conversation @join__field(graph: CHAT_SERVICE)
+  conversation(id: UUID!): Conversation @join__field(graph: CHAT_SERVICE)
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   waitingConversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
-  conversationMessages(conversationId: ID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
-  conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
+  conversationMessages(conversationId: UUID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
+  conversationParticipants(conversationId: UUID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
   listNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
   listUnreadNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
   getUnreadCount: UnreadCount! @join__field(graph: NOTIFICATION_SERVICE)
@@ -410,9 +410,9 @@ type Query
 type ReadReceipt
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
-  readerId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+  readerId: UUID!
   readAt: Time!
 }
 
@@ -438,31 +438,31 @@ enum Role
 input SendDeliveryReceiptInput
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
+  messageId: UUID!
+  conversationId: UUID!
 }
 
 input SendMessageInput
   @join__type(graph: CHAT_SERVICE)
 {
-  conversationId: ID!
+  conversationId: UUID!
   content: String!
   messageType: MessageType = TEXT
-  replyToId: ID
+  replyToId: UUID
 }
 
 input SendReadReceiptInput
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
+  messageId: UUID!
+  conversationId: UUID!
 }
 
 type Subscription
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  conversationEvents(conversationId: ID!): ConversationEvent! @join__field(graph: CHAT_SERVICE)
+  conversationEvents(conversationId: UUID!): ConversationEvent! @join__field(graph: CHAT_SERVICE)
   userEvents: UserEvent! @join__field(graph: CHAT_SERVICE)
   notificationEvents: NotificationEvent! @join__field(graph: NOTIFICATION_SERVICE)
 }
@@ -483,8 +483,8 @@ scalar Time
 type TypingIndicator
   @join__type(graph: CHAT_SERVICE)
 {
-  userId: ID!
-  conversationId: ID!
+  userId: UUID!
+  conversationId: UUID!
   isTyping: Boolean!
   timestamp: Time!
 }
@@ -492,7 +492,7 @@ type TypingIndicator
 input TypingIndicatorInput
   @join__type(graph: CHAT_SERVICE)
 {
-  conversationId: ID!
+  conversationId: UUID!
   isTyping: Boolean!
 }
 
@@ -522,7 +522,7 @@ type User
   @join__type(graph: CHAT_SERVICE, key: "id")
   @join__type(graph: NOTIFICATION_SERVICE, key: "id")
 {
-  id: ID!
+  id: UUID!
   email: String! @join__field(graph: AUTH_SERVICE)
   firstName: String! @join__field(graph: AUTH_SERVICE)
   lastName: String! @join__field(graph: AUTH_SERVICE)
@@ -548,3 +548,8 @@ enum UserType
   USER @join__enumValue(graph: CHAT_SERVICE)
   ADMIN @join__enumValue(graph: CHAT_SERVICE)
 }
+
+scalar UUID
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)

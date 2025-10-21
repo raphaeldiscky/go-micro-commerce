@@ -1389,7 +1389,7 @@ The BaseHub supports **external subscribers** for bridging WebSocket events to G
 #### Use Case
 
 ```graphql
-subscription OnNewMessage($conversationID: ID!) {
+subscription OnNewMessage($conversationID: UUID!) {
   onNewMessage(conversationID: $conversationID) {
     id
     text
