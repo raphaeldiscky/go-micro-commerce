@@ -3,7 +3,6 @@ import {
   DEFAULT_PRODUCT_WEIGHT_KG,
   DEFAULT_WAREHOUSE_ADDRESS,
   mapShippingOptionToCarrier,
-  mockPaymentGateways,
 } from '@/data/mockData'
 import type { Address } from '@/types/__generated__/graphql'
 import type {
