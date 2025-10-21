@@ -1,6 +1,6 @@
 CREATE TABLE user_addresses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users (id) ON DELETE CASCADE,
     receiver_name VARCHAR(255) NOT NULL,
     address_line1 VARCHAR(255) NOT NULL,
     address_line2 VARCHAR(255),
@@ -12,14 +12,14 @@ CREATE TABLE user_addresses (
     longitude DECIMAL(10, 7),
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
     note TEXT,
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
 
-    CONSTRAINT fk_user_addresses_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT chk_default_address CHECK (is_default IN (true, false)),
+    CONSTRAINT fk_user_addresses_user FOREIGN KEY (user_id) REFERENCES users (id),
+    CONSTRAINT chk_default_address CHECK (is_default IN (TRUE, FALSE)),
     CONSTRAINT chk_latitude_range CHECK (latitude >= -90 AND latitude <= 90),
     CONSTRAINT chk_longitude_range CHECK (longitude >= -180 AND longitude <= 180),
-    CONSTRAINT chk_country_code_length CHECK (LENGTH(country_code) = 2),
+    CONSTRAINT chk_country_code_length CHECK (length(country_code) = 2),
     CONSTRAINT chk_postal_code_not_empty CHECK (postal_code <> '')
 );
 
@@ -39,6 +39,6 @@ $$ LANGUAGE plpgsql;
 
 -- Create trigger for user_addresses table
 CREATE TRIGGER trigger_user_addresses_updated_at
-    BEFORE UPDATE ON user_addresses
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+BEFORE UPDATE ON user_addresses
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

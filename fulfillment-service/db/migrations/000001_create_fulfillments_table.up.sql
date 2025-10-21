@@ -19,8 +19,8 @@ CREATE TABLE fulfillments (
     dimensions JSONB NOT NULL, -- {width: 0, height: 0, length: 0, unit: "cm"}
     estimated_delivery_at TIMESTAMPTZ NOT NULL,
     actual_delivery_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 ALTER TABLE fulfillments
@@ -39,6 +39,6 @@ CHECK (shipping_cost >= 0),
 ADD CONSTRAINT chk_fulfillments_currency
 CHECK (currency ~ '^[A-Z]{3}$');
 
-CREATE INDEX idx_fulfillments_order_id ON fulfillments(order_id);
-CREATE INDEX idx_fulfillments_status ON fulfillments(status);
-CREATE INDEX idx_fulfillments_tracking_number ON fulfillments(tracking_number);
+CREATE INDEX idx_fulfillments_order_id ON fulfillments (order_id);
+CREATE INDEX idx_fulfillments_status ON fulfillments (status);
+CREATE INDEX idx_fulfillments_tracking_number ON fulfillments (tracking_number);

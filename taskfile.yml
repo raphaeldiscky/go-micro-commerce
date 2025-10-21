@@ -253,6 +253,11 @@ tasks:
         fi
     deps: ["format"]
 
+  lint_sql:
+    desc: Run SQL linters
+    cmds:
+      - sqlfluff lint
+
   deadcode:
     desc: Check deadcode
     vars:

@@ -1,0 +1,9 @@
+[sqlfluff]
+dialect = postgres
+templater = jinja
+max_line_length = 130
+
+[sqlfluff:rules]
+# Optional: ignore some rules if needed
+# L003 = False
+# L009 = False

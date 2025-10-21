@@ -1,10 +1,10 @@
 CREATE TABLE participants (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    conversation_id UUID NOT NULL REFERENCES conversations (id) ON DELETE CASCADE,
     user_id UUID NOT NULL,
     user_type TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'participant',
-    joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    role TEXT NOT NULL DEFAULT 'participant', -- noqa: RF04
+    joined_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     left_at TIMESTAMPTZ,
     is_active BOOLEAN NOT NULL DEFAULT TRUE
 );
@@ -25,7 +25,7 @@ ADD CONSTRAINT unq_participants_conversation_user
 UNIQUE (conversation_id, user_id, user_type);
 
 -- Indexes for efficient querying
-CREATE INDEX idx_participants_conversation_id ON participants(conversation_id);
-CREATE INDEX idx_participants_user ON participants(user_id, user_type);
-CREATE INDEX idx_participants_active ON participants(conversation_id, is_active) WHERE is_active = TRUE;
-CREATE INDEX idx_participants_joined_at ON participants(joined_at DESC);
+CREATE INDEX idx_participants_conversation_id ON participants (conversation_id);
+CREATE INDEX idx_participants_user ON participants (user_id, user_type);
+CREATE INDEX idx_participants_active ON participants (conversation_id, is_active) WHERE is_active = TRUE;
+CREATE INDEX idx_participants_joined_at ON participants (joined_at DESC);
