@@ -26,6 +26,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean }
   Int: { input: number; output: number }
   Float: { input: number; output: number }
+  Decimal: { input: any; output: any }
   Time: { input: string; output: string }
   UUID: { input: string; output: string }
   join__FieldSet: { input: any; output: any }
@@ -129,12 +130,40 @@ export type CreateConversationInput = {
   subject?: InputMaybe<Scalars['String']['input']>
 }
 
+export type CreateOrderInput = {
+  currency: Scalars['String']['input']
+  idempotencyKey: Scalars['UUID']['input']
+  items: Array<CreateOrderItemInput>
+  paymentGateway: PaymentGateway
+  paymentMethod: PaymentMethod
+  shipping: ShippingInput
+}
+
+export type CreateOrderItemInput = {
+  productId: Scalars['UUID']['input']
+  quantity: Scalars['Int']['input']
+}
+
 export type DeliveryReceipt = {
   __typename?: 'DeliveryReceipt'
   conversationId: Scalars['UUID']['output']
   deliveredAt: Scalars['Time']['output']
   messageId: Scalars['UUID']['output']
   recipientId: Scalars['UUID']['output']
+}
+
+export type DimensionsInput = {
+  height: Scalars['Decimal']['input']
+  length: Scalars['Decimal']['input']
+  unit: Scalars['String']['input']
+  width: Scalars['Decimal']['input']
+}
+
+export type FromAddressInput = {
+  city: Scalars['String']['input']
+  country: Scalars['String']['input']
+  postalCode: Scalars['String']['input']
+  state: Scalars['String']['input']
 }
 
 export type JoinConversationInput = {
@@ -184,6 +213,7 @@ export type Mutation = {
   assignConversationToAdmin: Conversation
   createAddress: Address
   createConversation: Conversation
+  createOrder: Order
   deleteAddress: Scalars['Boolean']['output']
   endConversation: Conversation
   joinConversation: Participant
@@ -215,6 +245,10 @@ export type MutationCreateAddressArgs = {
 
 export type MutationCreateConversationArgs = {
   input: CreateConversationInput
+}
+
+export type MutationCreateOrderArgs = {
+  input: CreateOrderInput
 }
 
 export type MutationDeleteAddressArgs = {
@@ -347,6 +381,64 @@ export type OnlineStatus = {
   lastSeen?: Maybe<Scalars['Time']['output']>
 }
 
+export type Order = {
+  __typename?: 'Order'
+  createdAt: Scalars['Time']['output']
+  currency: Scalars['String']['output']
+  customerId: Scalars['UUID']['output']
+  id: Scalars['UUID']['output']
+  idempotencyKey: Scalars['UUID']['output']
+  items: Array<OrderItem>
+  paymentGateway: PaymentGateway
+  paymentMethod: PaymentMethod
+  shippingCost: Scalars['Decimal']['output']
+  status: OrderStatus
+  subtotal: Scalars['Decimal']['output']
+  totalDiscount: Scalars['Decimal']['output']
+  totalPrice: Scalars['Decimal']['output']
+  totalTax: Scalars['Decimal']['output']
+  updatedAt: Scalars['Time']['output']
+}
+
+export type OrderConnection = {
+  __typename?: 'OrderConnection'
+  edges: Array<OrderEdge>
+  pageInfo: PageInfo
+}
+
+export type OrderEdge = {
+  __typename?: 'OrderEdge'
+  cursor: Scalars['String']['output']
+  node: Order
+}
+
+export type OrderItem = {
+  __typename?: 'OrderItem'
+  createdAt: Scalars['Time']['output']
+  id: Scalars['UUID']['output']
+  orderId: Scalars['UUID']['output']
+  productId: Scalars['UUID']['output']
+  quantity: Scalars['Int']['output']
+  taxRate: Scalars['Decimal']['output']
+  totalDiscount: Scalars['Decimal']['output']
+  totalPrice: Scalars['Decimal']['output']
+  totalTax: Scalars['Decimal']['output']
+  unitPrice: Scalars['Decimal']['output']
+  updatedAt: Scalars['Time']['output']
+}
+
+export enum OrderStatus {
+  Canceled = 'CANCELED',
+  Delivered = 'DELIVERED',
+  Failed = 'FAILED',
+  Paid = 'PAID',
+  PaymentExpired = 'PAYMENT_EXPIRED',
+  PaymentPending = 'PAYMENT_PENDING',
+  Pending = 'PENDING',
+  Processing = 'PROCESSING',
+  Shipped = 'SHIPPED',
+}
+
 export type PageInfo = {
   __typename?: 'PageInfo'
   endCursor?: Maybe<Scalars['String']['output']>
@@ -373,6 +465,15 @@ export enum ParticipantRole {
   Member = 'MEMBER',
   Moderator = 'MODERATOR',
   Owner = 'OWNER',
+}
+
+export enum PaymentGateway {
+  Mock = 'MOCK',
+  Stripe = 'STRIPE',
+}
+
+export enum PaymentMethod {
+  Card = 'CARD',
 }
 
 export enum PresenceStatus {
@@ -412,7 +513,9 @@ export type Query = {
   getTabCounts: TabCounts
   getUnreadCount: UnreadCount
   listAddresses: AddressConnection
+  listMyOrders: OrderConnection
   listNotifications: NotificationConnection
+  listOrders: OrderConnection
   listUnreadNotifications: NotificationConnection
   me?: Maybe<User>
   onlineUsers: Array<User>
@@ -445,7 +548,17 @@ export type QueryListAddressesArgs = {
   limit: Scalars['Int']['input']
 }
 
+export type QueryListMyOrdersArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>
+  limit: Scalars['Int']['input']
+}
+
 export type QueryListNotificationsArgs = {
+  cursor?: InputMaybe<Scalars['String']['input']>
+  limit: Scalars['Int']['input']
+}
+
+export type QueryListOrdersArgs = {
   cursor?: InputMaybe<Scalars['String']['input']>
   limit: Scalars['Int']['input']
 }
@@ -497,6 +610,14 @@ export type SendReadReceiptInput = {
   messageId: Scalars['UUID']['input']
 }
 
+export type ShippingInput = {
+  carrierId: Scalars['String']['input']
+  dimensions: DimensionsInput
+  fromAddress: FromAddressInput
+  toAddress: ToAddressInput
+  weightKg: Scalars['Decimal']['input']
+}
+
 export type Subscription = {
   __typename?: 'Subscription'
   conversationEvents: ConversationEvent
@@ -513,6 +634,13 @@ export type TabCounts = {
   all: Scalars['Int']['output']
   read: Scalars['Int']['output']
   unread: Scalars['Int']['output']
+}
+
+export type ToAddressInput = {
+  city: Scalars['String']['input']
+  country: Scalars['String']['input']
+  postalCode: Scalars['String']['input']
+  state: Scalars['String']['input']
 }
 
 export type TypingIndicator = {
@@ -574,6 +702,7 @@ export enum Join__Graph {
   AuthService = 'AUTH_SERVICE',
   ChatService = 'CHAT_SERVICE',
   NotificationService = 'NOTIFICATION_SERVICE',
+  OrderService = 'ORDER_SERVICE',
 }
 
 export enum Link__Purpose {

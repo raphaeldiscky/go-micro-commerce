@@ -12,3 +12,7 @@ subgraphs:
     routing_url: http://host.docker.internal:8086/graph
     schema:
       file: ../notification-service/graph/schema.graphqls
+  order-service:
+    routing_url: http://host.docker.internal:8085/graph
+    schema:
+      file: ../order-service/graph/schema.graphqls
