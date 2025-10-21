@@ -4,15 +4,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { mockPaymentGateways } from '@/data/mockData'
 import { useCartStore } from '@/store/cartStore'
 import type { PaymentGateway } from '@/types/cart'
-import { Building2, CreditCard } from 'lucide-react'
+import { Building2 } from 'lucide-react'
 import { useEffect } from 'react'
+import { BsPaypal, BsStripe } from 'react-icons/bs'
 
 const getGatewayIcon = (type: PaymentGateway['type']) => {
   switch (type) {
     case 'stripe':
-      return CreditCard
+      return BsStripe
     case 'paypal':
-      return CreditCard
+      return BsPaypal
     default:
       return Building2
   }
@@ -37,10 +38,19 @@ export function PaymentGatewaySelector() {
 
   // Auto-select first available gateway when payment method is selected and no gateway is selected
   useEffect(() => {
-    if (selectedPaymentMethod && !selectedPaymentGateway && availableGateways.length > 0) {
+    if (
+      selectedPaymentMethod &&
+      !selectedPaymentGateway &&
+      availableGateways.length > 0
+    ) {
       setPaymentGateway(availableGateways[0])
     }
-  }, [selectedPaymentMethod, selectedPaymentGateway, availableGateways, setPaymentGateway])
+  }, [
+    selectedPaymentMethod,
+    selectedPaymentGateway,
+    availableGateways,
+    setPaymentGateway,
+  ])
 
   const handleGatewayChange = (gatewayId: string) => {
     const gateway = availableGateways.find((g) => g.id === gatewayId)
@@ -71,25 +81,20 @@ export function PaymentGatewaySelector() {
           {availableGateways.map((gateway: PaymentGateway) => {
             const Icon = getGatewayIcon(gateway.type)
             return (
-              <div key={gateway.id} className="space-y-2">
-                <div className="flex items-start space-x-3">
+              <div key={gateway.id} className="space-y-1">
+                <div className="flex items-center space-x-3">
                   <RadioGroupItem
                     id={gateway.id}
                     value={gateway.id}
-                    className="mt-1"
                     disabled={isDisabled}
                   />
-                  <div className="flex-1 space-y-1">
-                    <Label
-                      htmlFor={gateway.id}
-                      className="flex items-center justify-between font-medium cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4" />
-                        <span>{gateway.name}</span>
-                      </div>
-                    </Label>
-                  </div>
+                  <Label
+                    htmlFor={gateway.id}
+                    className="font-medium cursor-pointer flex items-center gap-2"
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                    <span>{gateway.name}</span>
+                  </Label>
                 </div>
               </div>
             )
