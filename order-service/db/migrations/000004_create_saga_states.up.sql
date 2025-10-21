@@ -4,54 +4,54 @@ CREATE TABLE IF NOT EXISTS saga_states (
     order_id UUID NOT NULL,
     status VARCHAR(50) NOT NULL,
     current_step BIGINT NOT NULL DEFAULT 0,
-    version BIGINT NOT NULL DEFAULT 1,
-    executed_steps JSONB NOT NULL DEFAULT '[]'::jsonb,
-    compensated_steps JSONB NOT NULL DEFAULT '[]'::jsonb,
-    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    version BIGINT NOT NULL DEFAULT 1, -- noqa: RF04
+    executed_steps JSONB NOT NULL DEFAULT '[]'::JSONB,
+    compensated_steps JSONB NOT NULL DEFAULT '[]'::JSONB,
+    data JSONB NOT NULL DEFAULT '{}'::JSONB, -- noqa: RF04
     error TEXT,
     retry_count BIGINT NOT NULL DEFAULT 0,
     last_retry_at TIMESTAMPTZ,
     timeout_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     completed_at TIMESTAMPTZ,
-    
+
     -- Foreign key constraint
-    CONSTRAINT fk_saga_states_order_id 
-        FOREIGN KEY (order_id) 
-        REFERENCES orders(id) 
-        ON DELETE CASCADE
+    CONSTRAINT fk_saga_states_order_id
+    FOREIGN KEY (order_id)
+    REFERENCES orders (id)
+    ON DELETE CASCADE
 );
 
 -- Create indexes for better query performance
-CREATE INDEX idx_saga_states_order_id ON saga_states(order_id);
-CREATE INDEX idx_saga_states_status ON saga_states(status);
-CREATE INDEX idx_saga_states_updated_at ON saga_states(updated_at);
-CREATE INDEX idx_saga_states_created_at ON saga_states(created_at);
-CREATE INDEX idx_saga_states_version ON saga_states(version);
-CREATE INDEX idx_saga_states_retry ON saga_states(retry_count, last_retry_at);
-CREATE INDEX idx_saga_states_timeout ON saga_states(timeout_at);
+CREATE INDEX idx_saga_states_order_id ON saga_states (order_id);
+CREATE INDEX idx_saga_states_status ON saga_states (status);
+CREATE INDEX idx_saga_states_updated_at ON saga_states (updated_at);
+CREATE INDEX idx_saga_states_created_at ON saga_states (created_at);
+CREATE INDEX idx_saga_states_version ON saga_states (version);
+CREATE INDEX idx_saga_states_retry ON saga_states (retry_count, last_retry_at);
+CREATE INDEX idx_saga_states_timeout ON saga_states (timeout_at);
 
 
 -- Composite index for status and updated_at (useful for recovery queries)
-CREATE INDEX idx_saga_states_status_updated 
-    ON saga_states(status, updated_at);
+CREATE INDEX idx_saga_states_status_updated
+ON saga_states (status, updated_at);
 
 -- Partial index for finding sagas that need recovery
-CREATE INDEX idx_saga_states_recovery 
-    ON saga_states(status, updated_at, timeout_at) 
-    WHERE status IN ('pending', 'executing', 'failed', 'compensating');
+CREATE INDEX idx_saga_states_recovery
+ON saga_states (status, updated_at, timeout_at)
+WHERE status IN ('pending', 'executing', 'failed', 'compensating');
 
 -- Index for finding completed sagas for cleanup
-CREATE INDEX idx_saga_states_cleanup 
-    ON saga_states(status, completed_at) 
-    WHERE status IN ('completed', 'compensated');
+CREATE INDEX idx_saga_states_cleanup
+ON saga_states (status, completed_at)
+WHERE status IN ('completed', 'compensated');
 
 
 COMMENT ON TABLE saga_states IS 'Stores the execution state of order processing sagas';
 COMMENT ON COLUMN saga_states.id IS 'Unique identifier for the saga instance';
 COMMENT ON COLUMN saga_states.order_id IS 'Reference to the order being processed';
-COMMENT ON COLUMN saga_states.status IS 'Current status of the saga (pending, executing, compensating, completed, failed, compensated)';
+COMMENT ON COLUMN saga_states.status IS 'Current status of the saga';
 COMMENT ON COLUMN saga_states.current_step IS 'Index of the current/last executed step';
 COMMENT ON COLUMN saga_states.executed_steps IS 'Array of step names that have been successfully executed';
 COMMENT ON COLUMN saga_states.compensated_steps IS 'Array of step names that have been compensated';
@@ -72,12 +72,12 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
-CREATE TRIGGER update_saga_states_updated_at 
-    BEFORE UPDATE ON saga_states 
-    FOR EACH ROW 
-    EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_saga_states_updated_at
+BEFORE UPDATE ON saga_states
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 
 -- Create enum type for saga status (optional but recommended for type safety)
 DO $$ BEGIN
