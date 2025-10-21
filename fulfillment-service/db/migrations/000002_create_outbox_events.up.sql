@@ -2,35 +2,40 @@ BEGIN;
 
 CREATE TABLE IF NOT EXISTS outbox_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    aggregate_type TEXT NOT NULL, -- 'order', 'product', 'payment', etc. base on table name
+    -- 'order', 'product', 'payment', etc. base on table name
+    aggregate_type TEXT NOT NULL,
     aggregate_id UUID NOT NULL,
     event_type TEXT NOT NULL, -- 'PaymentCreated', 'PaymentUpdated', etc.
     topic TEXT NOT NULL, -- 'payment.lifecycle', etc.
     payload JSONB NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT now(),
     processed_at TIMESTAMPTZ,
-    scheduled_for TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    scheduled_for TIMESTAMPTZ NOT NULL DEFAULT now(),
     attempts INTEGER DEFAULT 0,
     last_error TEXT
 );
 
 
-CREATE INDEX idx_outbox_status_scheduled ON outbox_events(status, scheduled_for);
-CREATE INDEX idx_outbox_aggregate_type_id ON outbox_events(aggregate_type, aggregate_id);
-CREATE INDEX idx_outbox_created_at ON outbox_events(created_at);
+CREATE INDEX idx_outbox_status_scheduled ON outbox_events (
+    status, scheduled_for
+);
+CREATE INDEX idx_outbox_aggregate_type_id ON outbox_events (
+    aggregate_type, aggregate_id
+);
+CREATE INDEX idx_outbox_created_at ON outbox_events (created_at);
 
 
-ALTER TABLE outbox_events 
-ADD CONSTRAINT chk_outbox_status 
+ALTER TABLE outbox_events
+ADD CONSTRAINT chk_outbox_status
 CHECK (status IN ('pending', 'processing', 'processed', 'failed', 'retry'));
 
-ALTER TABLE outbox_events 
-ADD CONSTRAINT chk_outbox_attempts 
+ALTER TABLE outbox_events
+ADD CONSTRAINT chk_outbox_attempts
 CHECK (attempts >= 0);
 
-ALTER TABLE outbox_events 
-ADD CONSTRAINT chk_outbox_scheduled_for 
+ALTER TABLE outbox_events
+ADD CONSTRAINT chk_outbox_scheduled_for
 CHECK (scheduled_for >= created_at);
 
 

@@ -7,33 +7,38 @@ CREATE TABLE payments (
     order_id UUID NOT NULL, -- Reference to order ID (from order-service)
     amount DECIMAL(12, 2) NOT NULL,
     currency VARCHAR(3) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, processing, completed, failed, refunded
+    -- pending, processing, completed, failed, refunded
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
     payment_method VARCHAR(50) NOT NULL, -- credit_card, bank_transfer, etc.
     payment_gateway VARCHAR(50), -- stripe, midtrans, xendit, etc.
     gateway_reference_id VARCHAR(255), -- Reference ID from payment gateway
     gateway_response JSONB, -- Raw response from payment gateway
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
     completed_at TIMESTAMPTZ,
     failed_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_payments_order_id ON payments(order_id);
-CREATE INDEX idx_payments_status ON payments(status);
-CREATE INDEX idx_payments_created_at ON payments(created_at);
-CREATE INDEX idx_payments_gateway_reference ON payments(gateway_reference_id);
-CREATE INDEX idx_payments_payment_method ON payments(payment_method);
+CREATE INDEX idx_payments_order_id ON payments (order_id);
+CREATE INDEX idx_payments_status ON payments (status);
+CREATE INDEX idx_payments_created_at ON payments (created_at);
+CREATE INDEX idx_payments_gateway_reference ON payments (gateway_reference_id);
+CREATE INDEX idx_payments_payment_method ON payments (payment_method);
 
-ALTER TABLE payments 
-ADD CONSTRAINT chk_payments_status 
-CHECK (status IN ('pending', 'processing', 'timeout', 'completed', 'failed', 'refunded'));
+ALTER TABLE payments
+ADD CONSTRAINT chk_payments_status
+CHECK (
+    status IN (
+        'pending', 'processing', 'timeout', 'completed', 'failed', 'refunded'
+    )
+);
 
-ALTER TABLE payments 
-ADD CONSTRAINT chk_payments_amount 
+ALTER TABLE payments
+ADD CONSTRAINT chk_payments_amount
 CHECK (amount > 0);
 
-ALTER TABLE payments 
-ADD CONSTRAINT chk_payments_currency 
+ALTER TABLE payments
+ADD CONSTRAINT chk_payments_currency
 CHECK (currency ~ '^[A-Z]{3}$');
 
 
@@ -58,8 +63,8 @@ $$ LANGUAGE plpgsql;
 
 -- Create trigger to automatically update updated_at
 CREATE TRIGGER trigger_payments_updated_at
-    BEFORE UPDATE ON payments
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
+BEFORE UPDATE ON payments
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
 
 COMMIT;

@@ -3,17 +3,22 @@ BEGIN;
 -- Create inbox_events table for consuming events from other services
 CREATE TABLE inbox_events (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    message_id UUID NOT NULL UNIQUE, -- Unique identifier from Kafka message metadata
-    aggregate_type TEXT NOT NULL, -- 'order', 'product', 'user', etc. from source service
+    -- Unique identifier from Kafka message metadata
+    message_id UUID NOT NULL UNIQUE,
+    -- 'order', 'product', 'user', etc. from source service
+    aggregate_type TEXT NOT NULL,
     aggregate_id UUID NOT NULL, -- ID of the aggregate from source service
-    event_type TEXT NOT NULL, -- 'OrderCreated', 'OrderUpdated', 'ProductUpdated', etc.
-    topic TEXT NOT NULL, -- 'order.lifecycle', 'product.lifecycle', 'user.verification', etc.
-    source_service TEXT NOT NULL, -- 'order-service', 'product-service', 'user-service', etc.
+    -- 'OrderCreated', 'OrderUpdated', 'ProductUpdated', etc.
+    event_type TEXT NOT NULL,
+    -- 'order.lifecycle', 'product.lifecycle', 'user.verification', etc.
+    topic TEXT NOT NULL,
+    -- 'order-service', 'product-service', 'user-service', etc.
+    source_service TEXT NOT NULL,
     payload JSONB NOT NULL, -- Complete event payload from the source service
     status TEXT NOT NULL DEFAULT 'pending',
-    created_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT now(),
     processed_at TIMESTAMPTZ,
-    scheduled_for TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    scheduled_for TIMESTAMPTZ NOT NULL DEFAULT now(),
     attempts INTEGER DEFAULT 0,
     last_error TEXT,
     correlation_id UUID, -- For tracing requests across services
@@ -21,25 +26,33 @@ CREATE TABLE inbox_events (
 );
 
 
-CREATE UNIQUE INDEX idx_inbox_message_id ON inbox_events(message_id);
-CREATE INDEX idx_inbox_status_scheduled ON inbox_events(status, scheduled_for);
-CREATE INDEX idx_inbox_aggregate_type_id ON inbox_events(aggregate_type, aggregate_id);
-CREATE INDEX idx_inbox_event_type ON inbox_events(event_type);
-CREATE INDEX idx_inbox_source_service ON inbox_events(source_service);
-CREATE INDEX idx_inbox_created_at ON inbox_events(created_at);
-CREATE INDEX idx_inbox_correlation_id ON inbox_events(correlation_id) WHERE correlation_id IS NOT NULL;
+CREATE UNIQUE INDEX idx_inbox_message_id ON inbox_events (message_id);
+CREATE INDEX idx_inbox_status_scheduled ON inbox_events (status, scheduled_for);
+CREATE INDEX idx_inbox_aggregate_type_id ON inbox_events (
+    aggregate_type, aggregate_id
+);
+CREATE INDEX idx_inbox_event_type ON inbox_events (event_type);
+CREATE INDEX idx_inbox_source_service ON inbox_events (source_service);
+CREATE INDEX idx_inbox_created_at ON inbox_events (created_at);
+CREATE INDEX idx_inbox_correlation_id ON inbox_events (
+    correlation_id
+) WHERE correlation_id IS NOT NULL;
 
 
-ALTER TABLE inbox_events 
-ADD CONSTRAINT chk_inbox_status 
-CHECK (status IN ('pending', 'processing', 'processed', 'failed', 'retry', 'duplicate'));
+ALTER TABLE inbox_events
+ADD CONSTRAINT chk_inbox_status
+CHECK (
+    status IN (
+        'pending', 'processing', 'processed', 'failed', 'retry', 'duplicate'
+    )
+);
 
-ALTER TABLE inbox_events 
-ADD CONSTRAINT chk_inbox_attempts 
+ALTER TABLE inbox_events
+ADD CONSTRAINT chk_inbox_attempts
 CHECK (attempts >= 0);
 
-ALTER TABLE inbox_events 
-ADD CONSTRAINT chk_inbox_scheduled_for 
+ALTER TABLE inbox_events
+ADD CONSTRAINT chk_inbox_scheduled_for
 CHECK (scheduled_for >= created_at);
 
 

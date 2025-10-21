@@ -7,20 +7,20 @@ CREATE TABLE notifications (
     metadata JSONB,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     read_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Indexes
 CREATE INDEX idx_notifications_user_id
-    ON notifications(user_id);
+ON notifications (user_id);
 
 CREATE INDEX idx_notifications_user_unread
-    ON notifications (user_id, is_read)
-    WHERE is_read = false;
+ON notifications (user_id, is_read)
+WHERE is_read = FALSE;
 
 CREATE INDEX idx_notifications_user_created
-    ON notifications (user_id, created_at DESC);
+ON notifications (user_id, created_at DESC);
 
 -- Trigger function for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()

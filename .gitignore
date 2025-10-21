@@ -34,6 +34,7 @@ BIN
 CLAUDE.md
 AGENTS.md
 .vscode/mcp.json
+.claude
 
 # RSA keys for JWT signing
 **/keys/*.pem

@@ -1,0 +1,18 @@
+name: Lint SQL
+
+on: [pull_request]
+
+jobs:
+    lint-sql:
+        runs-on: tenki-standard-autoscale
+        steps:
+            - name: Checkout code
+              uses: "actions/checkout@v5"
+            - name: Setup Python
+              uses: "actions/setup-python@v6"
+              with:
+                  python-version: "3.13.5"
+            - name: Install SQLFluff
+              run: "pip install sqlfluff"
+            - name: Lint models
+              run: "sqlfluff lint"
