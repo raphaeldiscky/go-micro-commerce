@@ -1,57 +1,65 @@
-// Order types for checkout and order management
+/**
+ * Frontend-specific order types
+ *
+ * Note: Most order types are generated from GraphQL schema in @/types/__generated__/graphql
+ * This file only contains frontend-specific types that don't exist in GraphQL
+ */
 
-export interface PlaceOrderRequest {
-  idempotencyKey: string
-  items: Array<{
-    productId: string
-    quantity: number
-  }>
-  paymentMethod: string // e.g. "card", "bank_transfer", "ewallet"
-  paymentGateway: string // e.g. "stripe", "midtrans", "xendit"
-  currency: string // e.g. "IDR", "USD"
-  shipping: {
-    fromAddress: {
-      city: string
-      state: string
-      postalCode: string
-      country: string
-    }
-    toAddress: {
-      city: string
-      state: string
-      postalCode: string
-      country: string
-    }
-    dimensions: {
-      width: number
-      height: number
-      length: number
-      unit: string
-    }
-    weightKg: number
-    carrierId: string
+import type { Order, OrderStatus } from '@/types/__generated__/graphql'
+import type { Decimal } from 'decimal.js'
+
+/**
+ * Order filters for frontend UI
+ * Used by OrderStore and OrderFilters component
+ */
+export interface OrderFilters {
+  status?: OrderStatus
+  search?: string // For future search functionality
+  dateFrom?: string // For future date filtering
+  dateTo?: string // For future date filtering
+  minAmount?: number // For future amount filtering
+  maxAmount?: number // For future amount filtering
+}
+
+/**
+ * Order display model for frontend UI
+ * Maps GraphQL Order type with Decimal instances for precision calculations
+ */
+export interface OrderDisplay
+  extends Omit<
+    Order,
+    'shippingCost' | 'subtotal' | 'totalPrice' | 'totalTax' | 'totalDiscount'
+  > {
+  shippingCost: Decimal
+  subtotal: Decimal
+  totalPrice: Decimal
+  totalTax: Decimal
+  totalDiscount: Decimal
+}
+
+/**
+ * Shipping carrier information (frontend-specific)
+ */
+export interface ShippingCarrier {
+  id: string
+  name: string
+  type: 'standard' | 'express' | 'overnight'
+  estimatedDays: {
+    min: number
+    max: number
   }
 }
 
-export interface PlaceOrderResponse {
-  orderId: string
-  paymentId: string
-  status: OrderStatus
-  paymentStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'timeout'
-  paymentGateway: string
-  totalAmount: number
-  currency: string
-  paymentDeadline: string // ISO 8601 date string
-  createdAt: string
-}
-
+/**
+ * Checkout session types (temporary until payment service GraphQL is ready)
+ */
 export interface CreateCheckoutSessionRequest {
   paymentId: string
 }
 
 export interface CreateCheckoutSessionResponse {
   sessionId: string
-  checkoutUrl: string // Stripe hosted checkout URL
+  checkoutUrl: string
 }
 
 export interface PaymentDetails {
@@ -62,7 +70,7 @@ export interface PaymentDetails {
   paymentStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'timeout'
   paymentMethod: string
   paymentGateway: string
-  paymentDeadline: string // ISO 8601 date string
+  paymentDeadline: string
   order: {
     orderId: string
     items: Array<{
@@ -86,96 +94,4 @@ export interface PaymentDetails {
   }
   createdAt: string
   updatedAt: string
-}
-
-export type OrderStatus =
-  | 'pending'
-  | 'processing'
-  | 'payment_pending'
-  | 'payment_expired'
-  | 'paid'
-  | 'shipped'
-  | 'delivered'
-  | 'completed'
-  | 'failed'
-  | 'canceled'
-
-export interface OrderTransaction {
-  id: string
-  idempotencyKey: string
-  customerId: string
-  status: OrderStatus
-  paymentGateway: string
-  paymentMethod: string
-  currency: string
-  shippingCost: number
-  subtotal: number
-  totalTax: number
-  totalDiscount: number
-  totalPrice: number
-  createdAt: string
-  updatedAt: string
-}
-
-export interface CursorPaginationInfo {
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-  startCursor?: string
-  endCursor?: string
-  nextCursor?: string
-  previousCursor?: string
-}
-
-export interface OrderTransactionsResponse {
-  orders: Array<OrderTransaction>
-  pagination: CursorPaginationInfo
-}
-
-export interface OrderFilters {
-  status?: OrderStatus
-  search?: string // For future search functionality
-  dateFrom?: string // For future date filtering
-  dateTo?: string // For future date filtering
-  minAmount?: number // For future amount filtering
-  maxAmount?: number // For future amount filtering
-}
-
-export interface OrderDetails {
-  orderId: string
-  customerId: string
-  items: Array<{
-    productId: string
-    productName: string
-    quantity: number
-    price: number
-  }>
-  subtotal: number
-  shippingCost: number
-  total: number
-  currency: string
-  status: OrderStatus
-  paymentMethod: string
-  paymentGateway: string
-  shippingAddress: {
-    receiverName: string
-    addressLine1: string
-    addressLine2?: string
-    city: string
-    state: string
-    postalCode: string
-    countryCode: string
-  }
-  createdAt: string
-  updatedAt: string
-}
-
-// Shipping carrier information
-export interface ShippingCarrier {
-  id: string
-  name: string
-  type: 'standard' | 'express' | 'overnight'
-  estimatedDays: {
-    min: number
-    max: number
-  }
 }

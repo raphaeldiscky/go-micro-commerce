@@ -19,6 +19,7 @@ const config: CodegenConfig = {
         scalars: {
           UUID: 'string',
           Time: 'string',
+          Decimal: 'string',
         },
       },
     },
@@ -40,6 +41,7 @@ const config: CodegenConfig = {
         scalars: {
           UUID: 'string',
           Time: 'string',
+          Decimal: 'string',
         },
       },
     },

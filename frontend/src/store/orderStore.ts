@@ -1,10 +1,15 @@
-import { fetchMockOrders } from '@/lib/mock/orders'
-import type { OrderFilters, OrderTransactionsResponse } from '@/types/order'
+import { graphClient } from '@/lib/graphql/client'
+import { LIST_MY_ORDERS_QUERY } from '@/lib/graphql/order'
+import type { ListMyOrdersQuery } from '@/lib/graphql/order.generated'
+import { parseDecimal } from '@/lib/utils/decimal'
+import type { Order, PageInfo } from '@/types/__generated__/graphql'
+import type { OrderDisplay, OrderFilters } from '@/types/order'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 interface OrderState {
-  orders: OrderTransactionsResponse
+  orders: Array<OrderDisplay>
+  pagination: PageInfo
   filters: OrderFilters
   isLoading: boolean
   error: string | null
@@ -18,19 +23,33 @@ interface OrderActions {
   setError: (error: string | null) => void
   clearError: () => void
   resetOrders: () => void
-  appendOrders: (response: OrderTransactionsResponse) => void
   initialize: () => void
 }
 
 type OrderStore = OrderState & OrderActions
 
+/**
+ * Convert GraphQL Order (with Decimal strings) to OrderDisplay (with Decimal instances)
+ */
+function mapOrderToDisplay(order: Order): OrderDisplay {
+  return {
+    ...order,
+    shippingCost: parseDecimal(order.shippingCost),
+    subtotal: parseDecimal(order.subtotal),
+    totalPrice: parseDecimal(order.totalPrice),
+    totalTax: parseDecimal(order.totalTax),
+    totalDiscount: parseDecimal(order.totalDiscount),
+  }
+}
+
 // Default empty state
-const defaultOrdersState: OrderTransactionsResponse = {
-  orders: [],
-  pagination: {
-    hasNextPage: false,
-    hasPreviousPage: false,
-  },
+const defaultOrdersState: Array<OrderDisplay> = []
+
+const defaultPagination: PageInfo = {
+  hasNextPage: false,
+  hasPreviousPage: false,
+  startCursor: null,
+  endCursor: null,
 }
 
 const defaultFilters: OrderFilters = {}
@@ -40,6 +59,7 @@ export const useOrderStore = create<OrderStore>()(
     (set, get) => ({
       // State
       orders: defaultOrdersState,
+      pagination: defaultPagination,
       filters: defaultFilters,
       isLoading: false,
       error: null,
@@ -50,32 +70,35 @@ export const useOrderStore = create<OrderStore>()(
         set({ isLoading: true, error: null })
 
         try {
-          // Use mock data service
-          const mockResponse = await fetchMockOrders(
-            cursor,
-            filters || get().filters,
-            20,
+          // Fetch orders from GraphQL
+          const data = await graphClient.request<ListMyOrdersQuery>(
+            LIST_MY_ORDERS_QUERY,
+            { limit: 20, cursor },
           )
+
+          const { edges, pageInfo } = data.listMyOrders
+
+          // Map GraphQL orders to display format with Decimal instances
+          const orders = edges.map((edge) => mapOrderToDisplay(edge.node))
 
           if (cursor) {
             // Append orders for pagination (load more)
-            const currentOrders = get().orders.orders
-            const newOrders = mockResponse.orders.filter(
+            const currentOrders = get().orders
+            const newOrders = orders.filter(
               (order) =>
                 !currentOrders.some((existing) => existing.id === order.id),
             )
 
             set({
-              orders: {
-                orders: [...currentOrders, ...newOrders],
-                pagination: mockResponse.pagination,
-              },
+              orders: [...currentOrders, ...newOrders],
+              pagination: pageInfo,
               isLoading: false,
             })
           } else {
             // Replace orders for new search/filter
             set({
-              orders: mockResponse,
+              orders,
+              pagination: pageInfo,
               isLoading: false,
             })
           }
@@ -112,21 +135,7 @@ export const useOrderStore = create<OrderStore>()(
       resetOrders: () => {
         set({
           orders: defaultOrdersState,
-        })
-      },
-
-      appendOrders: (response: OrderTransactionsResponse) => {
-        const currentOrders = get().orders.orders
-        const newOrders = response.orders.filter(
-          (order) =>
-            !currentOrders.some((existing) => existing.id === order.id),
-        )
-
-        set({
-          orders: {
-            orders: [...currentOrders, ...newOrders],
-            pagination: response.pagination,
-          },
+          pagination: defaultPagination,
         })
       },
 
@@ -149,9 +158,9 @@ export const useOrderStore = create<OrderStore>()(
 )
 
 // Selectors for easier access
-export const useOrders = () => useOrderStore((state) => state.orders.orders)
+export const useOrders = () => useOrderStore((state) => state.orders)
 export const useOrdersPagination = () =>
-  useOrderStore((state) => state.orders.pagination)
+  useOrderStore((state) => state.pagination)
 export const useOrderFilters = () => useOrderStore((state) => state.filters)
 export const useOrdersLoading = () => useOrderStore((state) => state.isLoading)
 export const useOrdersError = () => useOrderStore((state) => state.error)
