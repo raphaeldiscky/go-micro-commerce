@@ -11,8 +11,8 @@ export const NAVIGATION_ITEMS: Array<NavigationItem> = [
   { icon: Info, name: 'About', path: PATH_ROOT.about },
 ]
 
-// Features dropdown items
-export const FEATURES_ITEMS: Array<NavigationItem> = [
+// Explore dropdown items
+export const EXPLORE_ITEMS: Array<NavigationItem> = [
   {
     description: 'Browse products',
     icon: Package,

@@ -1,6 +1,6 @@
 import {
   APP_CONFIG,
-  FEATURES_ITEMS,
+  EXPLORE_ITEMS,
   PATH,
   PATH_AUTH,
   PATH_ROOT,
@@ -98,14 +98,14 @@ export default function Header() {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {/* Features Dropdown */}
+                {/* Explore Dropdown */}
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="inline-flex items-center mt-3">
-                    Features
+                    Explore
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
                     <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                      {FEATURES_ITEMS.map((feature) => (
+                      {EXPLORE_ITEMS.map((feature) => (
                         <li key={feature.path}>
                           <NavigationMenuLink asChild>
                             <Link
@@ -297,13 +297,13 @@ export default function Header() {
                 Home
               </Link>
 
-              {/* Features Section */}
+              {/* Explore Section */}
               <div className="px-3 py-2">
                 <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  Features
+                  Explore
                 </div>
                 <div className="space-y-1 ml-4">
-                  {FEATURES_ITEMS.map((feature) => (
+                  {EXPLORE_ITEMS.map((feature) => (
                     <Link
                       className={cn(
                         'flex items-start px-3 py-2 rounded-md text-sm font-medium transition-colors',
