@@ -76,7 +76,7 @@ export default function Header() {
           </div>
 
           {/* Desktop Navigation - Centered */}
-          <div className="hidden md:flex justify-self-center">
+          <div className="hidden md:flex items-center justify-center space-x-6">
             <NavigationMenu viewport={false}>
               <NavigationMenuList>
                 {/* Home */}
