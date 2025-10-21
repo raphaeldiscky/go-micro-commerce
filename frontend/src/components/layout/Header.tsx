@@ -3,6 +3,7 @@ import {
   EXPLORE_ITEMS,
   PATH,
   PATH_AUTH,
+  PATH_DASHBOARD,
   PATH_ROOT,
 } from '@/constants'
 import { useIsAuthenticated, useLogout, useUser } from '@/hooks/auth'
@@ -12,6 +13,7 @@ import {
   ChevronDown,
   Home,
   Info,
+  LayoutDashboardIcon,
   LogIn,
   LogOut,
   Menu,
@@ -54,7 +56,7 @@ export default function Header() {
   const logoutMutation = useLogout()
 
   const isActive = (path: string) => currentPath === path
-
+  const isAdmin = user?.roles.includes('admin')
   const handleLogout = () => {
     logoutMutation.mutate()
   }
@@ -226,6 +228,19 @@ export default function Header() {
                           <span>Account</span>
                         </Link>
                       </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+
+                      {isAdmin && (
+                        <DropdownMenuItem asChild>
+                          <Link
+                            className="flex items-center cursor-pointer"
+                            to={PATH_DASHBOARD.root}
+                          >
+                            <LayoutDashboardIcon className="mr-2 h-4 w-4" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="cursor-pointer text-red-600 focus:text-red-600"

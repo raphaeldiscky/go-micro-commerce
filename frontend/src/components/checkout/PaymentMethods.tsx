@@ -62,10 +62,7 @@ export function PaymentMethods() {
             return (
               <div key={method.id} className="space-y-1">
                 <div className="flex items-center space-x-3">
-                  <RadioGroupItem
-                    id={method.id}
-                    value={method.id}
-                  />
+                  <RadioGroupItem id={method.id} value={method.id} />
                   <Label
                     htmlFor={method.id}
                     className="font-medium cursor-pointer flex items-center gap-2"

@@ -16,6 +16,7 @@ export function mapGraphQLUserToApiUser(graphqlUser: GraphQLUser): User {
     id: graphqlUser.id,
     isActive: graphqlUser.isActive,
     lastName: graphqlUser.lastName,
+    roles: graphqlUser.roles,
     notifications: [],
     unreadCount: 0,
     updatedAt: graphqlUser.updatedAt,

@@ -52,6 +52,11 @@ export const PATH = {
 
 export const PATH_DASHBOARD = {
   root: ROOTS_DASHBOARD,
+  analytics: path(ROOTS_DASHBOARD, '/analytics'),
+  revenue: path(ROOTS_DASHBOARD, '/revenue'),
+  orders: path(ROOTS_DASHBOARD, '/orders'),
+  products: path(ROOTS_DASHBOARD, '/products'),
+  users: path(ROOTS_DASHBOARD, '/users'),
   fulfillments: {
     root: path(ROOTS_DASHBOARD, '/fulfillments'),
     detail: (id: string) => path(ROOTS_DASHBOARD, `/fulfillments/${id}`),

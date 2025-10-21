@@ -14,6 +14,7 @@ func MapUserToGraphQL(user *dto.UserResponse) *graph.User {
 		LastName:      user.LastName,
 		IsActive:      user.IsActive,
 		EmailVerified: user.IsEmailVerified,
+		Roles:         user.Roles,
 		CreatedAt:     user.CreatedAt,
 		UpdatedAt:     user.UpdatedAt,
 	}
