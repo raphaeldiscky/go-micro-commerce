@@ -31,11 +31,11 @@ type Order {
   currency: String!
   paymentGateway: PaymentGateway!
   paymentMethod: PaymentMethod!
-  shippingCost: String!
-  subtotal: String!
-  totalPrice: String!
-  totalTax: String!
-  totalDiscount: String!
+  shippingCost: Decimal!
+  subtotal: Decimal!
+  totalPrice: Decimal!
+  totalTax: Decimal!
+  totalDiscount: Decimal!
   items: [OrderItem!]!
   createdAt: Time!
   updatedAt: Time!
@@ -47,11 +47,11 @@ type OrderItem {
   orderId: UUID!
   productId: UUID!
   quantity: Int!
-  unitPrice: String!
-  totalPrice: String!
-  taxRate: String!
-  totalTax: String!
-  totalDiscount: String!
+  unitPrice: Decimal!
+  totalPrice: Decimal!
+  taxRate: Decimal!
+  totalTax: Decimal!
+  totalDiscount: Decimal!
   createdAt: Time!
   updatedAt: Time!
 }
@@ -84,9 +84,9 @@ input CreateOrderItemInput {
 
 # Input type for shipping dimensions
 input DimensionsInput {
-  length: String!
-  height: String!
-  width: String!
+  length: Decimal!
+  height: Decimal!
+  width: Decimal!
   unit: String!
 }
 
@@ -111,7 +111,7 @@ input ShippingInput {
   carrierId: String!
   fromAddress: FromAddressInput!
   toAddress: ToAddressInput!
-  weightKg: String!
+  weightKg: Decimal!
   dimensions: DimensionsInput!
 }
 

@@ -17,7 +17,9 @@ import (
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph/scalar"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/shopspring/decimal"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -1007,7 +1009,7 @@ func (ec *executionContext) _Order_shippingCost(ctx context.Context, field graph
 			return obj.ShippingCost, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1020,7 +1022,7 @@ func (ec *executionContext) fieldContext_Order_shippingCost(_ context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1036,7 +1038,7 @@ func (ec *executionContext) _Order_subtotal(ctx context.Context, field graphql.C
 			return obj.Subtotal, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1049,7 +1051,7 @@ func (ec *executionContext) fieldContext_Order_subtotal(_ context.Context, field
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1065,7 +1067,7 @@ func (ec *executionContext) _Order_totalPrice(ctx context.Context, field graphql
 			return obj.TotalPrice, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1078,7 +1080,7 @@ func (ec *executionContext) fieldContext_Order_totalPrice(_ context.Context, fie
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1094,7 +1096,7 @@ func (ec *executionContext) _Order_totalTax(ctx context.Context, field graphql.C
 			return obj.TotalTax, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1107,7 +1109,7 @@ func (ec *executionContext) fieldContext_Order_totalTax(_ context.Context, field
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1123,7 +1125,7 @@ func (ec *executionContext) _Order_totalDiscount(ctx context.Context, field grap
 			return obj.TotalDiscount, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1136,7 +1138,7 @@ func (ec *executionContext) fieldContext_Order_totalDiscount(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1543,7 +1545,7 @@ func (ec *executionContext) _OrderItem_unitPrice(ctx context.Context, field grap
 			return obj.UnitPrice, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1556,7 +1558,7 @@ func (ec *executionContext) fieldContext_OrderItem_unitPrice(_ context.Context, 
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1572,7 +1574,7 @@ func (ec *executionContext) _OrderItem_totalPrice(ctx context.Context, field gra
 			return obj.TotalPrice, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1585,7 +1587,7 @@ func (ec *executionContext) fieldContext_OrderItem_totalPrice(_ context.Context,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1601,7 +1603,7 @@ func (ec *executionContext) _OrderItem_taxRate(ctx context.Context, field graphq
 			return obj.TaxRate, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1614,7 +1616,7 @@ func (ec *executionContext) fieldContext_OrderItem_taxRate(_ context.Context, fi
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1630,7 +1632,7 @@ func (ec *executionContext) _OrderItem_totalTax(ctx context.Context, field graph
 			return obj.TotalTax, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1643,7 +1645,7 @@ func (ec *executionContext) fieldContext_OrderItem_totalTax(_ context.Context, f
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1659,7 +1661,7 @@ func (ec *executionContext) _OrderItem_totalDiscount(ctx context.Context, field 
 			return obj.TotalDiscount, nil
 		},
 		nil,
-		ec.marshalNString2string,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
 		true,
 		true,
 	)
@@ -1672,7 +1674,7 @@ func (ec *executionContext) fieldContext_OrderItem_totalDiscount(_ context.Conte
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3705,21 +3707,21 @@ func (ec *executionContext) unmarshalInputDimensionsInput(ctx context.Context, o
 		switch k {
 		case "length":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("length"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Length = data
 		case "height":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Height = data
 		case "width":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("width"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3822,7 +3824,7 @@ func (ec *executionContext) unmarshalInputShippingInput(ctx context.Context, obj
 			it.ToAddress = data
 		case "weightKg":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("weightKg"))
-			data, err := ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4805,6 +4807,22 @@ func (ec *executionContext) unmarshalNCreateOrderItemInput2ᚕᚖgithubᚗcomᚋ
 func (ec *executionContext) unmarshalNCreateOrderItemInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋgraphᚐCreateOrderItemInput(ctx context.Context, v any) (*CreateOrderItemInput, error) {
 	res, err := ec.unmarshalInputCreateOrderItemInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx context.Context, v any) (decimal.Decimal, error) {
+	res, err := scalar.UnmarshalDecimal(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx context.Context, sel ast.SelectionSet, v decimal.Decimal) graphql.Marshaler {
+	_ = sel
+	res := scalar.MarshalDecimal(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNDimensionsInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋgraphᚐDimensionsInput(ctx context.Context, v any) (*DimensionsInput, error) {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
@@ -26,11 +25,11 @@ func MapToGraphQLOrder(order *entity.Order) *graph.Order {
 		Currency:       order.Currency,
 		PaymentGateway: order.PaymentGateway,
 		PaymentMethod:  order.PaymentMethod,
-		ShippingCost:   order.ShippingCost.String(),
-		Subtotal:       order.Subtotal.String(),
-		TotalPrice:     order.TotalPrice.String(),
-		TotalTax:       order.TotalTax.String(),
-		TotalDiscount:  order.TotalDiscount.String(),
+		ShippingCost:   order.ShippingCost,
+		Subtotal:       order.Subtotal,
+		TotalPrice:     order.TotalPrice,
+		TotalTax:       order.TotalTax,
+		TotalDiscount:  order.TotalDiscount,
 		Items:          items,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,
@@ -51,11 +50,11 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 		Currency:       order.Currency,
 		PaymentGateway: order.PaymentGateway,
 		PaymentMethod:  order.PaymentMethod,
-		ShippingCost:   order.ShippingCost.String(),
-		Subtotal:       order.Subtotal.String(),
-		TotalPrice:     order.TotalPrice.String(),
-		TotalTax:       order.TotalTax.String(),
-		TotalDiscount:  order.TotalDiscount.String(),
+		ShippingCost:   order.ShippingCost,
+		Subtotal:       order.Subtotal,
+		TotalPrice:     order.TotalPrice,
+		TotalTax:       order.TotalTax,
+		TotalDiscount:  order.TotalDiscount,
 		Items:          items,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,
@@ -69,11 +68,11 @@ func MapToGraphQLOrderItem(item *entity.OrderItem) *graph.OrderItem {
 		OrderID:       item.OrderID,
 		ProductID:     item.ProductID,
 		Quantity:      int(item.Quantity),
-		UnitPrice:     item.UnitPrice.String(),
-		TotalPrice:    item.TotalPrice.String(),
-		TaxRate:       item.TaxRate.String(),
-		TotalTax:      item.TotalTax.String(),
-		TotalDiscount: item.TotalDiscount.String(),
+		UnitPrice:     item.UnitPrice,
+		TotalPrice:    item.TotalPrice,
+		TaxRate:       item.TaxRate,
+		TotalTax:      item.TotalTax,
+		TotalDiscount: item.TotalDiscount,
 		CreatedAt:     item.CreatedAt,
 		UpdatedAt:     item.UpdatedAt,
 	}
@@ -85,11 +84,11 @@ func MapToGraphQLOrderItemFromDTO(item *dto.OrderItemResponse) *graph.OrderItem 
 		ID:            item.ID,
 		ProductID:     item.ProductID,
 		Quantity:      int(item.Quantity),
-		UnitPrice:     item.UnitPrice.String(),
-		TotalPrice:    item.TotalPrice.String(),
-		TaxRate:       item.TaxRate.String(),
-		TotalTax:      item.TotalTax.String(),
-		TotalDiscount: item.TotalDiscount.String(),
+		UnitPrice:     item.UnitPrice,
+		TotalPrice:    item.TotalPrice,
+		TaxRate:       item.TaxRate,
+		TotalTax:      item.TotalTax,
+		TotalDiscount: item.TotalDiscount,
 	}
 }
 
@@ -146,27 +145,6 @@ func MapToCreateOrderRequest(
 		}
 	}
 
-	// Parse shipping dimensions from string to decimal
-	length, err := decimal.NewFromString(input.Shipping.Dimensions.Length)
-	if err != nil {
-		return nil, fmt.Errorf("invalid shipping dimension length: %w", err)
-	}
-
-	height, err := decimal.NewFromString(input.Shipping.Dimensions.Height)
-	if err != nil {
-		return nil, fmt.Errorf("invalid shipping dimension height: %w", err)
-	}
-
-	width, err := decimal.NewFromString(input.Shipping.Dimensions.Width)
-	if err != nil {
-		return nil, fmt.Errorf("invalid shipping dimension width: %w", err)
-	}
-
-	weightKG, err := decimal.NewFromString(input.Shipping.WeightKg)
-	if err != nil {
-		return nil, fmt.Errorf("invalid shipping weight: %w", err)
-	}
-
 	return &dto.CreateOrderRequest{
 		CustomerID:     customerID,
 		CustomerEmail:  customerEmail,
@@ -186,11 +164,11 @@ func MapToCreateOrderRequest(
 				PostalCode: input.Shipping.ToAddress.PostalCode,
 				Country:    input.Shipping.ToAddress.Country,
 			},
-			WeightKG: weightKG,
+			WeightKG: input.Shipping.WeightKg,
 			Dimensions: dto.Dimensions{
-				Length: length,
-				Height: height,
-				Width:  width,
+				Length: input.Shipping.Dimensions.Length,
+				Height: input.Shipping.Dimensions.Height,
+				Width:  input.Shipping.Dimensions.Width,
 				Unit:   input.Shipping.Dimensions.Unit,
 			},
 		},

@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+	"github.com/shopspring/decimal"
 )
 
 type CreateOrderInput struct {
@@ -28,10 +29,10 @@ type CreateOrderItemInput struct {
 }
 
 type DimensionsInput struct {
-	Length string `json:"length"`
-	Height string `json:"height"`
-	Width  string `json:"width"`
-	Unit   string `json:"unit"`
+	Length decimal.Decimal `json:"length"`
+	Height decimal.Decimal `json:"height"`
+	Width  decimal.Decimal `json:"width"`
+	Unit   string          `json:"unit"`
 }
 
 type FromAddressInput struct {
@@ -52,11 +53,11 @@ type Order struct {
 	Currency       string                  `json:"currency"`
 	PaymentGateway constant.PaymentGateway `json:"paymentGateway"`
 	PaymentMethod  constant.PaymentMethod  `json:"paymentMethod"`
-	ShippingCost   string                  `json:"shippingCost"`
-	Subtotal       string                  `json:"subtotal"`
-	TotalPrice     string                  `json:"totalPrice"`
-	TotalTax       string                  `json:"totalTax"`
-	TotalDiscount  string                  `json:"totalDiscount"`
+	ShippingCost   decimal.Decimal         `json:"shippingCost"`
+	Subtotal       decimal.Decimal         `json:"subtotal"`
+	TotalPrice     decimal.Decimal         `json:"totalPrice"`
+	TotalTax       decimal.Decimal         `json:"totalTax"`
+	TotalDiscount  decimal.Decimal         `json:"totalDiscount"`
 	Items          []*OrderItem            `json:"items"`
 	CreatedAt      time.Time               `json:"createdAt"`
 	UpdatedAt      time.Time               `json:"updatedAt"`
@@ -73,17 +74,17 @@ type OrderEdge struct {
 }
 
 type OrderItem struct {
-	ID            uuid.UUID `json:"id"`
-	OrderID       uuid.UUID `json:"orderId"`
-	ProductID     uuid.UUID `json:"productId"`
-	Quantity      int       `json:"quantity"`
-	UnitPrice     string    `json:"unitPrice"`
-	TotalPrice    string    `json:"totalPrice"`
-	TaxRate       string    `json:"taxRate"`
-	TotalTax      string    `json:"totalTax"`
-	TotalDiscount string    `json:"totalDiscount"`
-	CreatedAt     time.Time `json:"createdAt"`
-	UpdatedAt     time.Time `json:"updatedAt"`
+	ID            uuid.UUID       `json:"id"`
+	OrderID       uuid.UUID       `json:"orderId"`
+	ProductID     uuid.UUID       `json:"productId"`
+	Quantity      int             `json:"quantity"`
+	UnitPrice     decimal.Decimal `json:"unitPrice"`
+	TotalPrice    decimal.Decimal `json:"totalPrice"`
+	TaxRate       decimal.Decimal `json:"taxRate"`
+	TotalTax      decimal.Decimal `json:"totalTax"`
+	TotalDiscount decimal.Decimal `json:"totalDiscount"`
+	CreatedAt     time.Time       `json:"createdAt"`
+	UpdatedAt     time.Time       `json:"updatedAt"`
 }
 
 type PageInfo struct {
@@ -100,7 +101,7 @@ type ShippingInput struct {
 	CarrierID   string            `json:"carrierId"`
 	FromAddress *FromAddressInput `json:"fromAddress"`
 	ToAddress   *ToAddressInput   `json:"toAddress"`
-	WeightKg    string            `json:"weightKg"`
+	WeightKg    decimal.Decimal   `json:"weightKg"`
 	Dimensions  *DimensionsInput  `json:"dimensions"`
 }
 
