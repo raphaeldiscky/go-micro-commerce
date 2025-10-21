@@ -18,7 +18,7 @@ import {
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-export const Route = createFileRoute('/order/pending-payment/$paymentId')({
+export const Route = createFileRoute('/orders/$paymentId')({
   component: RouteComponent,
 })
 

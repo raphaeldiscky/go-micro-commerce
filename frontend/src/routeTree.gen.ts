@@ -16,13 +16,15 @@ import { Route as CatchAllRouteImport } from './routes/$catchAll'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as OrdersPaymentIdRouteImport } from './routes/orders/$paymentId'
 import { Route as CheckoutCheckoutIdRouteImport } from './routes/checkout/$checkoutId'
 import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as OrderPendingPaymentPaymentIdRouteImport } from './routes/order/pending-payment/$paymentId'
+import { Route as DashboardFulfillmentsIndexRouteImport } from './routes/dashboard/fulfillments/index'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -59,6 +61,11 @@ const OrdersIndexRoute = OrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/dashboard/',
+  path: '/dashboard/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatIndexRoute = ChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -67,6 +74,11 @@ const ChatIndexRoute = ChatIndexRouteImport.update({
 const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/account/',
   path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersPaymentIdRoute = OrdersPaymentIdRouteImport.update({
+  id: '/orders/$paymentId',
+  path: '/orders/$paymentId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckoutCheckoutIdRoute = CheckoutCheckoutIdRouteImport.update({
@@ -89,10 +101,10 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrderPendingPaymentPaymentIdRoute =
-  OrderPendingPaymentPaymentIdRouteImport.update({
-    id: '/order/pending-payment/$paymentId',
-    path: '/order/pending-payment/$paymentId',
+const DashboardFulfillmentsIndexRoute =
+  DashboardFulfillmentsIndexRouteImport.update({
+    id: '/dashboard/fulfillments/',
+    path: '/dashboard/fulfillments/',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -106,11 +118,13 @@ export interface FileRoutesByFullPath {
   '/auth/register': typeof AuthRegisterRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/orders/$paymentId': typeof OrdersPaymentIdRoute
   '/account': typeof AccountIndexRoute
   '/chat': typeof ChatIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
+  '/dashboard/fulfillments': typeof DashboardFulfillmentsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,11 +136,13 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/orders/$paymentId': typeof OrdersPaymentIdRoute
   '/account': typeof AccountIndexRoute
   '/chat': typeof ChatIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
+  '/dashboard/fulfillments': typeof DashboardFulfillmentsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -139,11 +155,13 @@ export interface FileRoutesById {
   '/auth/register': typeof AuthRegisterRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/orders/$paymentId': typeof OrdersPaymentIdRoute
   '/account/': typeof AccountIndexRoute
   '/chat/': typeof ChatIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
-  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
+  '/dashboard/fulfillments/': typeof DashboardFulfillmentsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -157,11 +175,13 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/chat/$conversationId'
     | '/checkout/$checkoutId'
+    | '/orders/$paymentId'
     | '/account'
     | '/chat'
+    | '/dashboard'
     | '/orders'
     | '/products'
-    | '/order/pending-payment/$paymentId'
+    | '/dashboard/fulfillments'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,11 +193,13 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/chat/$conversationId'
     | '/checkout/$checkoutId'
+    | '/orders/$paymentId'
     | '/account'
     | '/chat'
+    | '/dashboard'
     | '/orders'
     | '/products'
-    | '/order/pending-payment/$paymentId'
+    | '/dashboard/fulfillments'
   id:
     | '__root__'
     | '/'
@@ -189,11 +211,13 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/chat/$conversationId'
     | '/checkout/$checkoutId'
+    | '/orders/$paymentId'
     | '/account/'
     | '/chat/'
+    | '/dashboard/'
     | '/orders/'
     | '/products/'
-    | '/order/pending-payment/$paymentId'
+    | '/dashboard/fulfillments/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,11 +230,13 @@ export interface RootRouteChildren {
   AuthRegisterRoute: typeof AuthRegisterRoute
   ChatConversationIdRoute: typeof ChatConversationIdRoute
   CheckoutCheckoutIdRoute: typeof CheckoutCheckoutIdRoute
+  OrdersPaymentIdRoute: typeof OrdersPaymentIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
   ChatIndexRoute: typeof ChatIndexRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
-  OrderPendingPaymentPaymentIdRoute: typeof OrderPendingPaymentPaymentIdRoute
+  DashboardFulfillmentsIndexRoute: typeof DashboardFulfillmentsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -264,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat/': {
       id: '/chat/'
       path: '/chat'
@@ -276,6 +309,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders/$paymentId': {
+      id: '/orders/$paymentId'
+      path: '/orders/$paymentId'
+      fullPath: '/orders/$paymentId'
+      preLoaderRoute: typeof OrdersPaymentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkout/$checkoutId': {
@@ -306,11 +346,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/order/pending-payment/$paymentId': {
-      id: '/order/pending-payment/$paymentId'
-      path: '/order/pending-payment/$paymentId'
-      fullPath: '/order/pending-payment/$paymentId'
-      preLoaderRoute: typeof OrderPendingPaymentPaymentIdRouteImport
+    '/dashboard/fulfillments/': {
+      id: '/dashboard/fulfillments/'
+      path: '/dashboard/fulfillments'
+      fullPath: '/dashboard/fulfillments'
+      preLoaderRoute: typeof DashboardFulfillmentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -326,11 +366,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRegisterRoute: AuthRegisterRoute,
   ChatConversationIdRoute: ChatConversationIdRoute,
   CheckoutCheckoutIdRoute: CheckoutCheckoutIdRoute,
+  OrdersPaymentIdRoute: OrdersPaymentIdRoute,
   AccountIndexRoute: AccountIndexRoute,
   ChatIndexRoute: ChatIndexRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
-  OrderPendingPaymentPaymentIdRoute: OrderPendingPaymentPaymentIdRoute,
+  DashboardFulfillmentsIndexRoute: DashboardFulfillmentsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
