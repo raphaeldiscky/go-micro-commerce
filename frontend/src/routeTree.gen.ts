@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as FeaturesProductsIndexRouteImport } from './routes/features/products/index'
+import { Route as FeaturesOrdersIndexRouteImport } from './routes/features/orders/index'
 import { Route as FeaturesChatIndexRouteImport } from './routes/features/chat/index'
 import { Route as FeaturesAccountIndexRouteImport } from './routes/features/account/index'
 import { Route as FeaturesCheckoutCheckoutIdRouteImport } from './routes/features/checkout/$checkoutId'
@@ -63,6 +64,11 @@ const FeaturesProductsIndexRoute = FeaturesProductsIndexRouteImport.update({
   path: '/features/products/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FeaturesOrdersIndexRoute = FeaturesOrdersIndexRouteImport.update({
+  id: '/features/orders/',
+  path: '/features/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FeaturesChatIndexRoute = FeaturesChatIndexRouteImport.update({
   id: '/features/chat/',
   path: '/features/chat/',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
   '/features/account': typeof FeaturesAccountIndexRoute
   '/features/chat': typeof FeaturesChatIndexRoute
+  '/features/orders': typeof FeaturesOrdersIndexRoute
   '/features/products': typeof FeaturesProductsIndexRoute
   '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
   '/features/account': typeof FeaturesAccountIndexRoute
   '/features/chat': typeof FeaturesChatIndexRoute
+  '/features/orders': typeof FeaturesOrdersIndexRoute
   '/features/products': typeof FeaturesProductsIndexRoute
   '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
   '/features/account/': typeof FeaturesAccountIndexRoute
   '/features/chat/': typeof FeaturesChatIndexRoute
+  '/features/orders/': typeof FeaturesOrdersIndexRoute
   '/features/products/': typeof FeaturesProductsIndexRoute
   '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/features/checkout/$checkoutId'
     | '/features/account'
     | '/features/chat'
+    | '/features/orders'
     | '/features/products'
     | '/features/order/pending-payment/$paymentId'
   fileRoutesByTo: FileRoutesByTo
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/features/checkout/$checkoutId'
     | '/features/account'
     | '/features/chat'
+    | '/features/orders'
     | '/features/products'
     | '/features/order/pending-payment/$paymentId'
   id:
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/features/checkout/$checkoutId'
     | '/features/account/'
     | '/features/chat/'
+    | '/features/orders/'
     | '/features/products/'
     | '/features/order/pending-payment/$paymentId'
   fileRoutesById: FileRoutesById
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   FeaturesCheckoutCheckoutIdRoute: typeof FeaturesCheckoutCheckoutIdRoute
   FeaturesAccountIndexRoute: typeof FeaturesAccountIndexRoute
   FeaturesChatIndexRoute: typeof FeaturesChatIndexRoute
+  FeaturesOrdersIndexRoute: typeof FeaturesOrdersIndexRoute
   FeaturesProductsIndexRoute: typeof FeaturesProductsIndexRoute
   FeaturesOrderPendingPaymentPaymentIdRoute: typeof FeaturesOrderPendingPaymentPaymentIdRoute
 }
@@ -260,6 +273,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FeaturesProductsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/features/orders/': {
+      id: '/features/orders/'
+      path: '/features/orders'
+      fullPath: '/features/orders'
+      preLoaderRoute: typeof FeaturesOrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/features/chat/': {
       id: '/features/chat/'
       path: '/features/chat'
@@ -310,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   FeaturesCheckoutCheckoutIdRoute: FeaturesCheckoutCheckoutIdRoute,
   FeaturesAccountIndexRoute: FeaturesAccountIndexRoute,
   FeaturesChatIndexRoute: FeaturesChatIndexRoute,
+  FeaturesOrdersIndexRoute: FeaturesOrdersIndexRoute,
   FeaturesProductsIndexRoute: FeaturesProductsIndexRoute,
   FeaturesOrderPendingPaymentPaymentIdRoute:
     FeaturesOrderPendingPaymentPaymentIdRoute,

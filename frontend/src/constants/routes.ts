@@ -42,6 +42,9 @@ export const PATH_FEATURES = {
     root: path(ROOTS_FEATURES, '/account'),
     detail: (id: string) => path(ROOTS_FEATURES, `/account/${id}`),
   },
+  orders: {
+    root: path(ROOTS_FEATURES, '/orders'),
+  },
   order: {
     root: path(ROOTS_FEATURES, '/order'),
     pendingPayment: (paymentId: string) =>
