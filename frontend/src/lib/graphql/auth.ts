@@ -11,6 +11,7 @@ export const ME_QUERY = gql`
       firstName
       lastName
       isActive
+      roles
       emailVerified
       createdAt
       updatedAt
@@ -33,6 +34,7 @@ export const LOGIN_MUTATION = gql`
         firstName
         lastName
         isActive
+        roles
         emailVerified
         createdAt
         updatedAt
@@ -56,6 +58,7 @@ export const REGISTER_MUTATION = gql`
         firstName
         lastName
         isActive
+        roles
         emailVerified
         createdAt
         updatedAt

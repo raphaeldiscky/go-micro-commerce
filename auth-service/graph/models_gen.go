@@ -104,6 +104,7 @@ type User struct {
 	FirstName     string    `json:"firstName"`
 	LastName      string    `json:"lastName"`
 	IsActive      bool      `json:"isActive"`
+	Roles         []string  `json:"roles"`
 	EmailVerified bool      `json:"emailVerified"`
 	CreatedAt     time.Time `json:"createdAt"`
 	UpdatedAt     time.Time `json:"updatedAt"`

@@ -2,8 +2,9 @@ function path(root: string, sublink: string) {
   return `${root}${sublink}`
 }
 
-const ROOTS_AUTH = '/auth'
 const ROOTS = ''
+const ROOTS_AUTH = '/auth'
+const ROOTS_DASHBOARD = '/dashboard'
 
 export const PATH_ROOT = {
   home: '/',
@@ -44,11 +45,20 @@ export const PATH = {
   },
   orders: {
     root: path(ROOTS, '/orders'),
+    pendingPayment: (paymentId: string) => path(ROOTS, `/orders/${paymentId}`),
+    $pendingPayment: '/orders/$paymentId' as const,
   },
-  order: {
-    root: path(ROOTS, '/order'),
-    pendingPayment: (paymentId: string) =>
-      path(ROOTS, `/order/pending-payment/${paymentId}`),
-    $pendingPayment: '/order/pending-payment/$paymentId' as const,
+}
+
+export const PATH_DASHBOARD = {
+  root: ROOTS_DASHBOARD,
+  analytics: path(ROOTS_DASHBOARD, '/analytics'),
+  revenue: path(ROOTS_DASHBOARD, '/revenue'),
+  orders: path(ROOTS_DASHBOARD, '/orders'),
+  products: path(ROOTS_DASHBOARD, '/products'),
+  users: path(ROOTS_DASHBOARD, '/users'),
+  fulfillments: {
+    root: path(ROOTS_DASHBOARD, '/fulfillments'),
+    detail: (id: string) => path(ROOTS_DASHBOARD, `/fulfillments/${id}`),
   },
 }

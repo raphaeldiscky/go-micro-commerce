@@ -5,6 +5,7 @@ type User @key(fields: "id") {
   firstName: String!
   lastName: String!
   isActive: Boolean!
+  roles: [String!]!
   emailVerified: Boolean!
   createdAt: Time!
   updatedAt: Time!

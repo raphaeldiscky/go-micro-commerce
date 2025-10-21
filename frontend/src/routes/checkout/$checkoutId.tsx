@@ -72,7 +72,7 @@ function RouteComponent() {
         toast.success('Order placed successfully!')
         // Navigate to pending payment page
         navigate({
-          to: PATH.order.pendingPayment(result.paymentId),
+          to: PATH.orders.pendingPayment(result.paymentId),
         })
       } else {
         toast.error(result.error || 'Failed to place order')
@@ -272,8 +272,8 @@ function RouteComponent() {
                     selectedPaymentMethod && selectedPaymentGateway
                       ? 'bg-green-600 text-white'
                       : selectedPaymentMethod
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-500'
                   }`}
                 >
                   {selectedPaymentMethod && selectedPaymentGateway ? (

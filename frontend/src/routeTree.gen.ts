@@ -10,23 +10,34 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as CatchAllRouteImport } from './routes/$catchAll'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProductsIndexRouteImport } from './routes/products/index'
 import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as OrdersPaymentIdRouteImport } from './routes/orders/$paymentId'
+import { Route as DashboardUsersRouteImport } from './routes/dashboard/users'
+import { Route as DashboardRevenueRouteImport } from './routes/dashboard/revenue'
+import { Route as DashboardProductsRouteImport } from './routes/dashboard/products'
+import { Route as DashboardOrdersRouteImport } from './routes/dashboard/orders'
 import { Route as CheckoutCheckoutIdRouteImport } from './routes/checkout/$checkoutId'
 import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as OrderPendingPaymentPaymentIdRouteImport } from './routes/order/pending-payment/$paymentId'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
   path: '/services',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AboutRoute = AboutRouteImport.update({
@@ -59,6 +70,11 @@ const OrdersIndexRoute = OrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardIndexRoute = DashboardIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const ChatIndexRoute = ChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -68,6 +84,31 @@ const AccountIndexRoute = AccountIndexRouteImport.update({
   id: '/account/',
   path: '/account/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersPaymentIdRoute = OrdersPaymentIdRouteImport.update({
+  id: '/orders/$paymentId',
+  path: '/orders/$paymentId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardUsersRoute = DashboardUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardRevenueRoute = DashboardRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardProductsRoute = DashboardProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOrdersRoute = DashboardOrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const CheckoutCheckoutIdRoute = CheckoutCheckoutIdRouteImport.update({
   id: '/checkout/$checkoutId',
@@ -89,28 +130,28 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OrderPendingPaymentPaymentIdRoute =
-  OrderPendingPaymentPaymentIdRouteImport.update({
-    id: '/order/pending-payment/$paymentId',
-    path: '/order/pending-payment/$paymentId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$catchAll': typeof CatchAllRoute
   '/404': typeof R404Route
   '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/revenue': typeof DashboardRevenueRoute
+  '/dashboard/users': typeof DashboardUsersRoute
+  '/orders/$paymentId': typeof OrdersPaymentIdRoute
   '/account': typeof AccountIndexRoute
   '/chat': typeof ChatIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -122,11 +163,16 @@ export interface FileRoutesByTo {
   '/auth/register': typeof AuthRegisterRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/revenue': typeof DashboardRevenueRoute
+  '/dashboard/users': typeof DashboardUsersRoute
+  '/orders/$paymentId': typeof OrdersPaymentIdRoute
   '/account': typeof AccountIndexRoute
   '/chat': typeof ChatIndexRoute
+  '/dashboard': typeof DashboardIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
-  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,16 +180,22 @@ export interface FileRoutesById {
   '/$catchAll': typeof CatchAllRoute
   '/404': typeof R404Route
   '/about': typeof AboutRoute
+  '/dashboard': typeof DashboardRouteWithChildren
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
   '/chat/$conversationId': typeof ChatConversationIdRoute
   '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/dashboard/orders': typeof DashboardOrdersRoute
+  '/dashboard/products': typeof DashboardProductsRoute
+  '/dashboard/revenue': typeof DashboardRevenueRoute
+  '/dashboard/users': typeof DashboardUsersRoute
+  '/orders/$paymentId': typeof OrdersPaymentIdRoute
   '/account/': typeof AccountIndexRoute
   '/chat/': typeof ChatIndexRoute
+  '/dashboard/': typeof DashboardIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
-  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -152,16 +204,22 @@ export interface FileRouteTypes {
     | '/$catchAll'
     | '/404'
     | '/about'
+    | '/dashboard'
     | '/services'
     | '/auth/login'
     | '/auth/register'
     | '/chat/$conversationId'
     | '/checkout/$checkoutId'
+    | '/dashboard/orders'
+    | '/dashboard/products'
+    | '/dashboard/revenue'
+    | '/dashboard/users'
+    | '/orders/$paymentId'
     | '/account'
     | '/chat'
+    | '/dashboard/'
     | '/orders'
     | '/products'
-    | '/order/pending-payment/$paymentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -173,27 +231,38 @@ export interface FileRouteTypes {
     | '/auth/register'
     | '/chat/$conversationId'
     | '/checkout/$checkoutId'
+    | '/dashboard/orders'
+    | '/dashboard/products'
+    | '/dashboard/revenue'
+    | '/dashboard/users'
+    | '/orders/$paymentId'
     | '/account'
     | '/chat'
+    | '/dashboard'
     | '/orders'
     | '/products'
-    | '/order/pending-payment/$paymentId'
   id:
     | '__root__'
     | '/'
     | '/$catchAll'
     | '/404'
     | '/about'
+    | '/dashboard'
     | '/services'
     | '/auth/login'
     | '/auth/register'
     | '/chat/$conversationId'
     | '/checkout/$checkoutId'
+    | '/dashboard/orders'
+    | '/dashboard/products'
+    | '/dashboard/revenue'
+    | '/dashboard/users'
+    | '/orders/$paymentId'
     | '/account/'
     | '/chat/'
+    | '/dashboard/'
     | '/orders/'
     | '/products/'
-    | '/order/pending-payment/$paymentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,16 +270,17 @@ export interface RootRouteChildren {
   CatchAllRoute: typeof CatchAllRoute
   R404Route: typeof R404Route
   AboutRoute: typeof AboutRoute
+  DashboardRoute: typeof DashboardRouteWithChildren
   ServicesRoute: typeof ServicesRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
   ChatConversationIdRoute: typeof ChatConversationIdRoute
   CheckoutCheckoutIdRoute: typeof CheckoutCheckoutIdRoute
+  OrdersPaymentIdRoute: typeof OrdersPaymentIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
   ChatIndexRoute: typeof ChatIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
-  OrderPendingPaymentPaymentIdRoute: typeof OrderPendingPaymentPaymentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -220,6 +290,13 @@ declare module '@tanstack/react-router' {
       path: '/services'
       fullPath: '/services'
       preLoaderRoute: typeof ServicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/about': {
@@ -264,6 +341,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrdersIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/': {
+      id: '/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/chat/': {
       id: '/chat/'
       path: '/chat'
@@ -277,6 +361,41 @@ declare module '@tanstack/react-router' {
       fullPath: '/account'
       preLoaderRoute: typeof AccountIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/orders/$paymentId': {
+      id: '/orders/$paymentId'
+      path: '/orders/$paymentId'
+      fullPath: '/orders/$paymentId'
+      preLoaderRoute: typeof OrdersPaymentIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/users': {
+      id: '/dashboard/users'
+      path: '/users'
+      fullPath: '/dashboard/users'
+      preLoaderRoute: typeof DashboardUsersRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/revenue': {
+      id: '/dashboard/revenue'
+      path: '/revenue'
+      fullPath: '/dashboard/revenue'
+      preLoaderRoute: typeof DashboardRevenueRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/products': {
+      id: '/dashboard/products'
+      path: '/products'
+      fullPath: '/dashboard/products'
+      preLoaderRoute: typeof DashboardProductsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/orders': {
+      id: '/dashboard/orders'
+      path: '/orders'
+      fullPath: '/dashboard/orders'
+      preLoaderRoute: typeof DashboardOrdersRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/checkout/$checkoutId': {
       id: '/checkout/$checkoutId'
@@ -306,31 +425,45 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/order/pending-payment/$paymentId': {
-      id: '/order/pending-payment/$paymentId'
-      path: '/order/pending-payment/$paymentId'
-      fullPath: '/order/pending-payment/$paymentId'
-      preLoaderRoute: typeof OrderPendingPaymentPaymentIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
+
+interface DashboardRouteChildren {
+  DashboardOrdersRoute: typeof DashboardOrdersRoute
+  DashboardProductsRoute: typeof DashboardProductsRoute
+  DashboardRevenueRoute: typeof DashboardRevenueRoute
+  DashboardUsersRoute: typeof DashboardUsersRoute
+  DashboardIndexRoute: typeof DashboardIndexRoute
+}
+
+const DashboardRouteChildren: DashboardRouteChildren = {
+  DashboardOrdersRoute: DashboardOrdersRoute,
+  DashboardProductsRoute: DashboardProductsRoute,
+  DashboardRevenueRoute: DashboardRevenueRoute,
+  DashboardUsersRoute: DashboardUsersRoute,
+  DashboardIndexRoute: DashboardIndexRoute,
+}
+
+const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
+  DashboardRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CatchAllRoute: CatchAllRoute,
   R404Route: R404Route,
   AboutRoute: AboutRoute,
+  DashboardRoute: DashboardRouteWithChildren,
   ServicesRoute: ServicesRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
   ChatConversationIdRoute: ChatConversationIdRoute,
   CheckoutCheckoutIdRoute: CheckoutCheckoutIdRoute,
+  OrdersPaymentIdRoute: OrdersPaymentIdRoute,
   AccountIndexRoute: AccountIndexRoute,
   ChatIndexRoute: ChatIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
-  OrderPendingPaymentPaymentIdRoute: OrderPendingPaymentPaymentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
