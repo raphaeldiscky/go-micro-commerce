@@ -94,10 +94,51 @@ export type OrderStatus =
   | 'payment_pending'
   | 'payment_expired'
   | 'paid'
+  | 'shipped'
   | 'delivered'
   | 'completed'
   | 'failed'
   | 'canceled'
+
+export interface OrderTransaction {
+  id: string
+  idempotencyKey: string
+  customerId: string
+  status: OrderStatus
+  paymentGateway: string
+  paymentMethod: string
+  currency: string
+  shippingCost: number
+  subtotal: number
+  totalTax: number
+  totalDiscount: number
+  totalPrice: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface CursorPaginationInfo {
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+  startCursor?: string
+  endCursor?: string
+  nextCursor?: string
+  previousCursor?: string
+}
+
+export interface OrderTransactionsResponse {
+  orders: Array<OrderTransaction>
+  pagination: CursorPaginationInfo
+}
+
+export interface OrderFilters {
+  status?: OrderStatus
+  search?: string // For future search functionality
+  dateFrom?: string // For future date filtering
+  dateTo?: string // For future date filtering
+  minAmount?: number // For future amount filtering
+  maxAmount?: number // For future amount filtering
+}
 
 export interface OrderDetails {
   orderId: string

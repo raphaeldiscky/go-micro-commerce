@@ -3,7 +3,6 @@ import {
   DEFAULT_PRODUCT_WEIGHT_KG,
   DEFAULT_WAREHOUSE_ADDRESS,
   mapShippingOptionToCarrier,
-  mockPaymentGateways,
 } from '@/data/mockData'
 import type { Address } from '@/types/__generated__/graphql'
 import type {
@@ -41,7 +40,7 @@ export const useCartStore = create<CartStore>()(
       selectedAddress: null,
       selectedShippingOption: null,
       selectedPaymentMethod: null,
-      selectedPaymentGateway: mockPaymentGateways[0], // Default to Stripe
+      selectedPaymentGateway: null,
 
       // Cart and item management
       initializeCart: (customerId: string) => {
@@ -248,6 +247,19 @@ export const useCartStore = create<CartStore>()(
           return
         }
 
+        // Clear any existing checkout state for clean start
+        set({
+          selectedAddress: null,
+          selectedShippingOption: null,
+          selectedPaymentMethod: null,
+          selectedPaymentGateway: null,
+          checkoutData: {
+            orderNote: '',
+            shippingMethod: '',
+            paymentMethod: '',
+          },
+        })
+
         // Create checkout session
         const checkoutSession: CheckoutSession = {
           id: crypto.randomUUID(),
@@ -285,6 +297,7 @@ export const useCartStore = create<CartStore>()(
       setPaymentMethod: (method: PaymentMethod) => {
         set({
           selectedPaymentMethod: method,
+          selectedPaymentGateway: null, // Reset gateway when payment method changes
           checkoutData: {
             ...get().checkoutData,
             paymentMethod: method.id,
@@ -301,6 +314,20 @@ export const useCartStore = create<CartStore>()(
           checkoutData: {
             ...get().checkoutData,
             orderNote: note,
+          },
+        })
+      },
+
+      clearCheckoutState: () => {
+        set({
+          selectedAddress: null,
+          selectedShippingOption: null,
+          selectedPaymentMethod: null,
+          selectedPaymentGateway: null,
+          checkoutData: {
+            orderNote: '',
+            shippingMethod: '',
+            paymentMethod: '',
           },
         })
       },
@@ -495,12 +522,7 @@ export const useCartStore = create<CartStore>()(
       partialize: (state) => ({
         cart: state.cart,
         items: state.items,
-        checkoutSession: state.checkoutSession,
-        checkoutData: state.checkoutData,
-        selectedAddress: state.selectedAddress,
-        selectedShippingOption: state.selectedShippingOption,
-        selectedPaymentMethod: state.selectedPaymentMethod,
-        selectedPaymentGateway: state.selectedPaymentGateway,
+        // Only persist cart items, not checkout state
       }),
     },
   ),

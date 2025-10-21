@@ -18,7 +18,7 @@ import {
 } from '@/lib/graphql'
 import { useAuthStore } from '@/store/authStore'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useRouter } from '@tanstack/react-router'
+import { useNavigate, useRouter } from '@tanstack/react-router'
 
 /**
  * Hook for getting current user profile
@@ -87,7 +87,7 @@ export function useLogin() {
  */
 export function useLogout() {
   const queryClient = useQueryClient()
-  const router = useRouter()
+  const navigate = useNavigate()
   const logoutUser = useAuthStore((state) => state.logout)
 
   return useMutation({
@@ -114,12 +114,11 @@ export function useLogout() {
 
       // Navigate to home page
       try {
-        router.navigate({ to: PATH_ROOT.home })
+        navigate({ to: PATH_ROOT.home })
         console.log('Navigation complete')
       } catch (navError) {
         console.error('Navigation failed:', navError)
-        // Force reload as fallback
-        window.location.href = PATH_ROOT.home
+        navigate({ to: PATH_ROOT.home })
       }
     },
     onError: (error) => {
@@ -132,10 +131,10 @@ export function useLogout() {
 
       // Navigate to home even on error
       try {
-        router.navigate({ to: PATH_ROOT.home })
+        navigate({ to: PATH_ROOT.home })
       } catch (navError) {
         console.error('Navigation failed:', navError)
-        window.location.href = PATH_ROOT.home
+        navigate({ to: PATH_ROOT.home })
       }
     },
   })

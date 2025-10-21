@@ -14,14 +14,15 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as CatchAllRouteImport } from './routes/$catchAll'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProductsIndexRouteImport } from './routes/products/index'
+import { Route as OrdersIndexRouteImport } from './routes/orders/index'
+import { Route as ChatIndexRouteImport } from './routes/chat/index'
+import { Route as AccountIndexRouteImport } from './routes/account/index'
+import { Route as CheckoutCheckoutIdRouteImport } from './routes/checkout/$checkoutId'
+import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
-import { Route as FeaturesProductsIndexRouteImport } from './routes/features/products/index'
-import { Route as FeaturesChatIndexRouteImport } from './routes/features/chat/index'
-import { Route as FeaturesAccountIndexRouteImport } from './routes/features/account/index'
-import { Route as FeaturesCheckoutCheckoutIdRouteImport } from './routes/features/checkout/$checkoutId'
-import { Route as FeaturesChatConversationIdRouteImport } from './routes/features/chat/$conversationId'
-import { Route as FeaturesOrderPendingPaymentPaymentIdRouteImport } from './routes/features/order/pending-payment/$paymentId'
+import { Route as OrderPendingPaymentPaymentIdRouteImport } from './routes/order/pending-payment/$paymentId'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -48,6 +49,36 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProductsIndexRoute = ProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OrdersIndexRoute = OrdersIndexRouteImport.update({
+  id: '/orders/',
+  path: '/orders/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatIndexRoute = ChatIndexRouteImport.update({
+  id: '/chat/',
+  path: '/chat/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccountIndexRoute = AccountIndexRouteImport.update({
+  id: '/account/',
+  path: '/account/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutCheckoutIdRoute = CheckoutCheckoutIdRouteImport.update({
+  id: '/checkout/$checkoutId',
+  path: '/checkout/$checkoutId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatConversationIdRoute = ChatConversationIdRouteImport.update({
+  id: '/chat/$conversationId',
+  path: '/chat/$conversationId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/auth/register',
   path: '/auth/register',
@@ -58,37 +89,10 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FeaturesProductsIndexRoute = FeaturesProductsIndexRouteImport.update({
-  id: '/features/products/',
-  path: '/features/products/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesChatIndexRoute = FeaturesChatIndexRouteImport.update({
-  id: '/features/chat/',
-  path: '/features/chat/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesAccountIndexRoute = FeaturesAccountIndexRouteImport.update({
-  id: '/features/account/',
-  path: '/features/account/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FeaturesCheckoutCheckoutIdRoute =
-  FeaturesCheckoutCheckoutIdRouteImport.update({
-    id: '/features/checkout/$checkoutId',
-    path: '/features/checkout/$checkoutId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const FeaturesChatConversationIdRoute =
-  FeaturesChatConversationIdRouteImport.update({
-    id: '/features/chat/$conversationId',
-    path: '/features/chat/$conversationId',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const FeaturesOrderPendingPaymentPaymentIdRoute =
-  FeaturesOrderPendingPaymentPaymentIdRouteImport.update({
-    id: '/features/order/pending-payment/$paymentId',
-    path: '/features/order/pending-payment/$paymentId',
+const OrderPendingPaymentPaymentIdRoute =
+  OrderPendingPaymentPaymentIdRouteImport.update({
+    id: '/order/pending-payment/$paymentId',
+    path: '/order/pending-payment/$paymentId',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -100,12 +104,13 @@ export interface FileRoutesByFullPath {
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
-  '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
-  '/features/account': typeof FeaturesAccountIndexRoute
-  '/features/chat': typeof FeaturesChatIndexRoute
-  '/features/products': typeof FeaturesProductsIndexRoute
-  '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/account': typeof AccountIndexRoute
+  '/chat': typeof ChatIndexRoute
+  '/orders': typeof OrdersIndexRoute
+  '/products': typeof ProductsIndexRoute
+  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -115,12 +120,13 @@ export interface FileRoutesByTo {
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
-  '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
-  '/features/account': typeof FeaturesAccountIndexRoute
-  '/features/chat': typeof FeaturesChatIndexRoute
-  '/features/products': typeof FeaturesProductsIndexRoute
-  '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/account': typeof AccountIndexRoute
+  '/chat': typeof ChatIndexRoute
+  '/orders': typeof OrdersIndexRoute
+  '/products': typeof ProductsIndexRoute
+  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -131,12 +137,13 @@ export interface FileRoutesById {
   '/services': typeof ServicesRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/register': typeof AuthRegisterRoute
-  '/features/chat/$conversationId': typeof FeaturesChatConversationIdRoute
-  '/features/checkout/$checkoutId': typeof FeaturesCheckoutCheckoutIdRoute
-  '/features/account/': typeof FeaturesAccountIndexRoute
-  '/features/chat/': typeof FeaturesChatIndexRoute
-  '/features/products/': typeof FeaturesProductsIndexRoute
-  '/features/order/pending-payment/$paymentId': typeof FeaturesOrderPendingPaymentPaymentIdRoute
+  '/chat/$conversationId': typeof ChatConversationIdRoute
+  '/checkout/$checkoutId': typeof CheckoutCheckoutIdRoute
+  '/account/': typeof AccountIndexRoute
+  '/chat/': typeof ChatIndexRoute
+  '/orders/': typeof OrdersIndexRoute
+  '/products/': typeof ProductsIndexRoute
+  '/order/pending-payment/$paymentId': typeof OrderPendingPaymentPaymentIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,12 +155,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/features/chat/$conversationId'
-    | '/features/checkout/$checkoutId'
-    | '/features/account'
-    | '/features/chat'
-    | '/features/products'
-    | '/features/order/pending-payment/$paymentId'
+    | '/chat/$conversationId'
+    | '/checkout/$checkoutId'
+    | '/account'
+    | '/chat'
+    | '/orders'
+    | '/products'
+    | '/order/pending-payment/$paymentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -163,12 +171,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/features/chat/$conversationId'
-    | '/features/checkout/$checkoutId'
-    | '/features/account'
-    | '/features/chat'
-    | '/features/products'
-    | '/features/order/pending-payment/$paymentId'
+    | '/chat/$conversationId'
+    | '/checkout/$checkoutId'
+    | '/account'
+    | '/chat'
+    | '/orders'
+    | '/products'
+    | '/order/pending-payment/$paymentId'
   id:
     | '__root__'
     | '/'
@@ -178,12 +187,13 @@ export interface FileRouteTypes {
     | '/services'
     | '/auth/login'
     | '/auth/register'
-    | '/features/chat/$conversationId'
-    | '/features/checkout/$checkoutId'
-    | '/features/account/'
-    | '/features/chat/'
-    | '/features/products/'
-    | '/features/order/pending-payment/$paymentId'
+    | '/chat/$conversationId'
+    | '/checkout/$checkoutId'
+    | '/account/'
+    | '/chat/'
+    | '/orders/'
+    | '/products/'
+    | '/order/pending-payment/$paymentId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -194,12 +204,13 @@ export interface RootRouteChildren {
   ServicesRoute: typeof ServicesRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthRegisterRoute: typeof AuthRegisterRoute
-  FeaturesChatConversationIdRoute: typeof FeaturesChatConversationIdRoute
-  FeaturesCheckoutCheckoutIdRoute: typeof FeaturesCheckoutCheckoutIdRoute
-  FeaturesAccountIndexRoute: typeof FeaturesAccountIndexRoute
-  FeaturesChatIndexRoute: typeof FeaturesChatIndexRoute
-  FeaturesProductsIndexRoute: typeof FeaturesProductsIndexRoute
-  FeaturesOrderPendingPaymentPaymentIdRoute: typeof FeaturesOrderPendingPaymentPaymentIdRoute
+  ChatConversationIdRoute: typeof ChatConversationIdRoute
+  CheckoutCheckoutIdRoute: typeof CheckoutCheckoutIdRoute
+  AccountIndexRoute: typeof AccountIndexRoute
+  ChatIndexRoute: typeof ChatIndexRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
+  ProductsIndexRoute: typeof ProductsIndexRoute
+  OrderPendingPaymentPaymentIdRoute: typeof OrderPendingPaymentPaymentIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -239,6 +250,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/products/': {
+      id: '/products/'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof ProductsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders/': {
+      id: '/orders/'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/': {
+      id: '/chat/'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/account/': {
+      id: '/account/'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AccountIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/$checkoutId': {
+      id: '/checkout/$checkoutId'
+      path: '/checkout/$checkoutId'
+      fullPath: '/checkout/$checkoutId'
+      preLoaderRoute: typeof CheckoutCheckoutIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/$conversationId': {
+      id: '/chat/$conversationId'
+      path: '/chat/$conversationId'
+      fullPath: '/chat/$conversationId'
+      preLoaderRoute: typeof ChatConversationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/register': {
       id: '/auth/register'
       path: '/auth/register'
@@ -253,46 +306,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/features/products/': {
-      id: '/features/products/'
-      path: '/features/products'
-      fullPath: '/features/products'
-      preLoaderRoute: typeof FeaturesProductsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features/chat/': {
-      id: '/features/chat/'
-      path: '/features/chat'
-      fullPath: '/features/chat'
-      preLoaderRoute: typeof FeaturesChatIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features/account/': {
-      id: '/features/account/'
-      path: '/features/account'
-      fullPath: '/features/account'
-      preLoaderRoute: typeof FeaturesAccountIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features/checkout/$checkoutId': {
-      id: '/features/checkout/$checkoutId'
-      path: '/features/checkout/$checkoutId'
-      fullPath: '/features/checkout/$checkoutId'
-      preLoaderRoute: typeof FeaturesCheckoutCheckoutIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features/chat/$conversationId': {
-      id: '/features/chat/$conversationId'
-      path: '/features/chat/$conversationId'
-      fullPath: '/features/chat/$conversationId'
-      preLoaderRoute: typeof FeaturesChatConversationIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/features/order/pending-payment/$paymentId': {
-      id: '/features/order/pending-payment/$paymentId'
-      path: '/features/order/pending-payment/$paymentId'
-      fullPath: '/features/order/pending-payment/$paymentId'
-      preLoaderRoute: typeof FeaturesOrderPendingPaymentPaymentIdRouteImport
+    '/order/pending-payment/$paymentId': {
+      id: '/order/pending-payment/$paymentId'
+      path: '/order/pending-payment/$paymentId'
+      fullPath: '/order/pending-payment/$paymentId'
+      preLoaderRoute: typeof OrderPendingPaymentPaymentIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -306,13 +324,13 @@ const rootRouteChildren: RootRouteChildren = {
   ServicesRoute: ServicesRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthRegisterRoute: AuthRegisterRoute,
-  FeaturesChatConversationIdRoute: FeaturesChatConversationIdRoute,
-  FeaturesCheckoutCheckoutIdRoute: FeaturesCheckoutCheckoutIdRoute,
-  FeaturesAccountIndexRoute: FeaturesAccountIndexRoute,
-  FeaturesChatIndexRoute: FeaturesChatIndexRoute,
-  FeaturesProductsIndexRoute: FeaturesProductsIndexRoute,
-  FeaturesOrderPendingPaymentPaymentIdRoute:
-    FeaturesOrderPendingPaymentPaymentIdRoute,
+  ChatConversationIdRoute: ChatConversationIdRoute,
+  CheckoutCheckoutIdRoute: CheckoutCheckoutIdRoute,
+  AccountIndexRoute: AccountIndexRoute,
+  ChatIndexRoute: ChatIndexRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
+  ProductsIndexRoute: ProductsIndexRoute,
+  OrderPendingPaymentPaymentIdRoute: OrderPendingPaymentPaymentIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

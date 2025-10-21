@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS orders(
 
 ALTER TABLE orders
 ADD CONSTRAINT chk_order_status
-CHECK (status IN ('pending', 'processing', 'payment_pending', 'payment_expired', 'paid', 'delivered', 'completed', 'failed', 'canceled'));
+CHECK (status IN ('pending', 'processing', 'payment_pending', 'payment_expired', 'paid', 'shipped', 'delivered', 'completed', 'failed', 'canceled'));
 
 ALTER TABLE orders
 ADD CONSTRAINT chk_order_currency
