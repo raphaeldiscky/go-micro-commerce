@@ -36,13 +36,13 @@ directive @provides(fields: String!) on FIELD_DEFINITION
 
 # Extend User entity from auth-service
 extend type User @key(fields: "id") {
-  id: ID! @external
+  id: UUID! @external
   conversations: [Conversation!]!
   onlineStatus: OnlineStatus
 }
 
 type Conversation @key(fields: "id") {
-  id: ID!
+  id: UUID!
   subject: String
   status: ConversationStatus!
   priority: Int!
@@ -54,9 +54,9 @@ type Conversation @key(fields: "id") {
 }
 
 type Message @key(fields: "id") {
-  id: ID!
-  conversationId: ID!
-  senderId: ID
+  id: UUID!
+  conversationId: UUID!
+  senderId: UUID
   content: String!
   messageType: MessageType!
   isSystem: Boolean!
@@ -64,9 +64,9 @@ type Message @key(fields: "id") {
 }
 
 type Participant {
-  id: ID!
-  conversationId: ID!
-  userId: ID!
+  id: UUID!
+  conversationId: UUID!
+  userId: UUID!
   userType: UserType!
   role: ParticipantRole!
   joinedAt: Time!

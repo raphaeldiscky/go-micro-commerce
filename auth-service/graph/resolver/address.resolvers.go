@@ -50,7 +50,7 @@ func (r *mutationResolver) CreateAddress(
 // UpdateAddress is the resolver for the updateAddress field.
 func (r *mutationResolver) UpdateAddress(
 	ctx context.Context,
-	id string,
+	id uuid.UUID,
 	input graph.UpdateAddressInput,
 ) (*graph.Address, error) {
 	// Get user from context
@@ -58,12 +58,6 @@ func (r *mutationResolver) UpdateAddress(
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
 		return nil, err
-	}
-
-	// Parse address ID
-	addressID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid address ID")
 	}
 
 	// Map GraphQL input to DTO
@@ -76,7 +70,7 @@ func (r *mutationResolver) UpdateAddress(
 	}
 
 	// Call service to update address
-	addressDTO, err := r.addressService.UpdateAddress(ctx, user.UserID, addressID, req)
+	addressDTO, err := r.addressService.UpdateAddress(ctx, user.UserID, id, req)
 	if err != nil {
 		r.logger.Error("Failed to update address", "address_id", id, "error", err)
 		return nil, err
@@ -86,7 +80,7 @@ func (r *mutationResolver) UpdateAddress(
 }
 
 // DeleteAddress is the resolver for the deleteAddress field.
-func (r *mutationResolver) DeleteAddress(ctx context.Context, id string) (bool, error) {
+func (r *mutationResolver) DeleteAddress(ctx context.Context, id uuid.UUID) (bool, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -94,14 +88,8 @@ func (r *mutationResolver) DeleteAddress(ctx context.Context, id string) (bool, 
 		return false, err
 	}
 
-	// Parse address ID
-	addressID, err := uuid.Parse(id)
-	if err != nil {
-		return false, httperror.NewBadRequestError("invalid address ID")
-	}
-
 	// Call service to delete address
-	if err = r.addressService.DeleteAddress(ctx, user.UserID, addressID); err != nil {
+	if err = r.addressService.DeleteAddress(ctx, user.UserID, id); err != nil {
 		r.logger.Error("Failed to delete address", "address_id", id, "error", err)
 		return false, err
 	}
@@ -112,7 +100,7 @@ func (r *mutationResolver) DeleteAddress(ctx context.Context, id string) (bool, 
 // SetDefaultAddress is the resolver for the setDefaultAddress field.
 func (r *mutationResolver) SetDefaultAddress(
 	ctx context.Context,
-	id string,
+	id uuid.UUID,
 ) (*graph.Address, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
@@ -121,16 +109,10 @@ func (r *mutationResolver) SetDefaultAddress(
 		return nil, err
 	}
 
-	// Parse address ID
-	addressID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid address ID")
-	}
-
 	r.logger.Info("SetDefaultAddress called", "user_id", user.UserID.String(), "address_id", id)
 
 	// Call service to set default address
-	addressDTO, err := r.addressService.SetDefaultAddress(ctx, user.UserID, addressID)
+	addressDTO, err := r.addressService.SetDefaultAddress(ctx, user.UserID, id)
 	if err != nil {
 		r.logger.Error("Failed to set default address", "address_id", id, "error", err)
 		return nil, err
@@ -216,7 +198,7 @@ func (r *queryResolver) ListAddresses(
 }
 
 // GetAddress is the resolver for the getAddress field.
-func (r *queryResolver) GetAddress(ctx context.Context, id string) (*graph.Address, error) {
+func (r *queryResolver) GetAddress(ctx context.Context, id uuid.UUID) (*graph.Address, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -224,14 +206,8 @@ func (r *queryResolver) GetAddress(ctx context.Context, id string) (*graph.Addre
 		return nil, err
 	}
 
-	// Parse address ID
-	addressID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid address ID")
-	}
-
 	// Call service to get address
-	addressDTO, err := r.addressService.GetAddress(ctx, user.UserID, addressID)
+	addressDTO, err := r.addressService.GetAddress(ctx, user.UserID, id)
 	if err != nil {
 		r.logger.Error("Failed to get address", "address_id", id, "error", err)
 		return nil, err

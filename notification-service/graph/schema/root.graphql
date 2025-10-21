@@ -1,5 +1,6 @@
 # Scalars
 scalar Time
+scalar UUID
 
 # Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
 directive @requiresAuth on FIELD_DEFINITION | OBJECT
@@ -16,7 +17,7 @@ enum Role {
 
 # Extend User entity from auth-service (we reference it but don't own it)
 extend type User @key(fields: "id") {
-  id: ID! @external
+  id: UUID! @external
   notifications: [Notification!]!
   unreadCount: Int!
 }

@@ -28,11 +28,28 @@ type OrderRepository interface {
 		limit, offset int64,
 	) ([]*entity.Order, error)
 
+	// FindByCustomerIDWithCursor retrieves orders for a customer with cursor-based pagination
+	FindByCustomerIDWithCursor(
+		ctx context.Context,
+		customerID uuid.UUID,
+		limit int64,
+		cursorID string,
+		cursorTimestamp int64,
+	) ([]*entity.Order, error)
+
 	// FindByIdempotencyKey retrieves an order by its idempotency key
 	FindByIdempotencyKey(ctx context.Context, idempotencyKey uuid.UUID) (*entity.Order, error)
 
 	// FindAll retrieves all orders with optional pagination
 	FindAll(ctx context.Context, limit, offset int64) ([]*entity.Order, error)
+
+	// FindAllWithCursor retrieves all orders with cursor-based pagination
+	FindAllWithCursor(
+		ctx context.Context,
+		limit int64,
+		cursorID string,
+		cursorTimestamp int64,
+	) ([]*entity.Order, error)
 
 	// Update updates an existing order
 	Update(ctx context.Context, order *entity.Order) (*entity.Order, error)
@@ -618,6 +635,161 @@ func (r *orderRepository) CountByCustomer(
 	}
 
 	return count, nil
+}
+
+// FindByCustomerIDWithCursor retrieves orders for a customer with cursor-based pagination.
+func (r *orderRepository) FindByCustomerIDWithCursor(
+	ctx context.Context,
+	customerID uuid.UUID,
+	limit int64,
+	cursorID string,
+	cursorTimestamp int64,
+) ([]*entity.Order, error) {
+	var query string
+
+	var args []interface{}
+
+	// If cursor is provided, use it for pagination
+	if cursorID != "" && cursorTimestamp > 0 {
+		query = `
+			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			FROM orders
+			WHERE customer_id = $1
+			  AND (EXTRACT(EPOCH FROM created_at) < $2 OR (EXTRACT(EPOCH FROM created_at) = $2 AND id < $3))
+			ORDER BY created_at DESC, id DESC
+			LIMIT $4
+		`
+		args = []interface{}{customerID, cursorTimestamp, cursorID, limit}
+	} else {
+		query = `
+			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			FROM orders
+			WHERE customer_id = $1
+			ORDER BY created_at DESC, id DESC
+			LIMIT $2
+		`
+		args = []interface{}{customerID, limit}
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query orders with cursor: %w", err)
+	}
+	defer rows.Close()
+
+	var orders []*entity.Order
+
+	for rows.Next() {
+		var order entity.Order
+
+		err = rows.Scan(
+			&order.ID,
+			&order.IdempotencyKey,
+			&order.CustomerID,
+			&order.Status,
+			&order.Currency,
+			&order.ShippingCost,
+			&order.Subtotal,
+			&order.TotalTax,
+			&order.TotalDiscount,
+			&order.TotalPrice,
+			&order.CreatedAt,
+			&order.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		orders = append(orders, &order)
+	}
+
+	// Load items for each order
+	for _, order := range orders {
+		items, rowErr := r.loadOrderItems(ctx, order.ID)
+		if rowErr != nil {
+			return nil, fmt.Errorf("failed to load items for order %s: %w", order.ID, rowErr)
+		}
+
+		order.Items = items
+	}
+
+	return orders, nil
+}
+
+// FindAllWithCursor retrieves all orders with cursor-based pagination.
+func (r *orderRepository) FindAllWithCursor(
+	ctx context.Context,
+	limit int64,
+	cursorID string,
+	cursorTimestamp int64,
+) ([]*entity.Order, error) {
+	var query string
+
+	var args []interface{}
+
+	// If cursor is provided, use it for pagination
+	if cursorID != "" && cursorTimestamp > 0 {
+		query = `
+			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			FROM orders
+			WHERE (EXTRACT(EPOCH FROM created_at) < $1 OR (EXTRACT(EPOCH FROM created_at) = $1 AND id < $2))
+			ORDER BY created_at DESC, id DESC
+			LIMIT $3
+		`
+		args = []interface{}{cursorTimestamp, cursorID, limit}
+	} else {
+		query = `
+			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			FROM orders
+			ORDER BY created_at DESC, id DESC
+			LIMIT $1
+		`
+		args = []interface{}{limit}
+	}
+
+	rows, err := r.db.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query all orders with cursor: %w", err)
+	}
+	defer rows.Close()
+
+	var orders []*entity.Order
+
+	for rows.Next() {
+		var order entity.Order
+
+		err = rows.Scan(
+			&order.ID,
+			&order.IdempotencyKey,
+			&order.CustomerID,
+			&order.Status,
+			&order.Currency,
+			&order.ShippingCost,
+			&order.Subtotal,
+			&order.TotalTax,
+			&order.TotalDiscount,
+			&order.TotalPrice,
+			&order.CreatedAt,
+			&order.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		orders = append(orders, &order)
+	}
+
+	// Load items for each order
+	for _, order := range orders {
+		items, rowErr := r.loadOrderItems(ctx, order.ID)
+		if rowErr != nil {
+			return nil, fmt.Errorf("failed to load items for order %s: %w", order.ID, rowErr)
+		}
+
+		order.Items = items
+	}
+
+	return orders, nil
 }
 
 // loadOrderItems is a helper method to load items for an order.

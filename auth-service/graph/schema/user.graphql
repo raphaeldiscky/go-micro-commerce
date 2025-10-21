@@ -1,6 +1,6 @@
 # User entity - owned by auth-service
 type User @key(fields: "id") {
-  id: ID!
+  id: UUID!
   email: String!
   firstName: String!
   lastName: String!
@@ -32,7 +32,7 @@ type AuthPayload {
 
 extend type Query {
   me: User @requiresAuth
-  user(id: ID!): User @requiresAuth
+  user(id: UUID!): User @requiresAuth
 }
 
 extend type Mutation {

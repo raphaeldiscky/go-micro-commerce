@@ -90,7 +90,7 @@ export const GET_TAB_COUNTS_QUERY = gql`
  * Mark a notification as read
  */
 export const MARK_AS_READ_MUTATION = gql`
-  mutation MarkAsRead($id: ID!) {
+  mutation MarkAsRead($id: UUID!) {
     markAsRead(id: $id) {
       id
       userId

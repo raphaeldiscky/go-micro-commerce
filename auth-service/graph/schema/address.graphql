@@ -1,7 +1,7 @@
 # Address entity
 type Address {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   receiverName: String!
   addressLine1: String!
   addressLine2: String
@@ -73,7 +73,7 @@ extend type Query {
   listAddresses(limit: Int!, cursor: String): AddressConnection! @requiresAuth
 
   # Get a specific address by ID
-  getAddress(id: ID!): Address! @requiresAuth
+  getAddress(id: UUID!): Address! @requiresAuth
 
   # Get the default address for the authenticated user
   getDefaultAddress: Address! @requiresAuth
@@ -85,11 +85,11 @@ extend type Mutation {
   createAddress(input: CreateAddressInput!): Address! @requiresAuth
 
   # Update an existing address
-  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @requiresAuth
+  updateAddress(id: UUID!, input: UpdateAddressInput!): Address! @requiresAuth
 
   # Delete an address
-  deleteAddress(id: ID!): Boolean! @requiresAuth
+  deleteAddress(id: UUID!): Boolean! @requiresAuth
 
   # Set an address as the default
-  setDefaultAddress(id: ID!): Address! @requiresAuth
+  setDefaultAddress(id: UUID!): Address! @requiresAuth
 }

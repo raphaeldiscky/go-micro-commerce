@@ -13,8 +13,8 @@ enum PushNotificationType {
 
 # Notification entity
 type Notification {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   type: PushNotificationType!
   title: String!
   message: String!
@@ -77,7 +77,7 @@ extend type Query {
 # Notification mutations
 extend type Mutation {
   # Mark a notification as read
-  markAsRead(id: ID!): Notification! @requiresAuth
+  markAsRead(id: UUID!): Notification! @requiresAuth
 
   # Mark all notifications as read
   markAllAsRead: Boolean! @requiresAuth

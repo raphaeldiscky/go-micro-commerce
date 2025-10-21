@@ -3,7 +3,7 @@
 # Subscription root type
 type Subscription {
   # Subscribe to conversation events (messages, typing, receipts)
-  conversationEvents(conversationId: ID!): ConversationEvent! @requiresAuth
+  conversationEvents(conversationId: UUID!): ConversationEvent! @requiresAuth
 
   # Subscribe to user-specific events (presence updates)
   userEvents: UserEvent! @requiresAuth
@@ -21,9 +21,9 @@ union UserEvent = PresenceUpdate
 
 # New message event
 type NewMessage {
-  id: ID!
-  conversationId: ID!
-  senderId: ID!
+  id: UUID!
+  conversationId: UUID!
+  senderId: UUID!
   content: String!
   messageType: MessageType!
   isSystem: Boolean!
@@ -32,31 +32,31 @@ type NewMessage {
 
 # Typing indicator event
 type TypingIndicator {
-  userId: ID!
-  conversationId: ID!
+  userId: UUID!
+  conversationId: UUID!
   isTyping: Boolean!
   timestamp: Time!
 }
 
 # Delivery receipt event
 type DeliveryReceipt {
-  messageId: ID!
-  conversationId: ID!
-  recipientId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+  recipientId: UUID!
   deliveredAt: Time!
 }
 
 # Read receipt event
 type ReadReceipt {
-  messageId: ID!
-  conversationId: ID!
-  readerId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+  readerId: UUID!
   readAt: Time!
 }
 
 # Presence update event
 type PresenceUpdate {
-  userId: ID!
+  userId: UUID!
   status: PresenceStatus!
   lastSeen: Time
 }
@@ -71,7 +71,7 @@ enum PresenceStatus {
 
 # Typing indicator input
 input TypingIndicatorInput {
-  conversationId: ID!
+  conversationId: UUID!
   isTyping: Boolean!
 }
 
@@ -81,5 +81,6 @@ extend type Mutation {
   updatePresence(status: PresenceStatus!): PresenceUpdate! @requiresAuth
 
   # Send typing indicator
-  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @requiresAuth
+  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator!
+    @requiresAuth
 }

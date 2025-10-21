@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
@@ -87,15 +88,28 @@ func (c *EventConverter) convertToNewMessage(msg *pkgwebsocket.Message) (*graph.
 	}
 
 	// Extract conversation ID from channel (format: "conversation:{uuid}")
-	var conversationID string
+	var conversationID uuid.UUID
+
 	if msg.Channel != nil {
-		conversationID = extractUUIDFromChannel(*msg.Channel)
+		uuidStr := extractUUIDFromChannel(*msg.Channel)
+
+		parsedUUID, err := uuid.Parse(uuidStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse conversation UUID: %w", err)
+		}
+
+		conversationID = parsedUUID
+	}
+
+	var senderID uuid.UUID
+	if msg.SenderID != nil {
+		senderID = *msg.SenderID
 	}
 
 	return &graph.NewMessage{
-		ID:             msg.ID.String(),
+		ID:             msg.ID,
 		ConversationID: conversationID,
-		SenderID:       msg.SenderID.String(),
+		SenderID:       senderID,
 		Content:        content.Text,
 		MessageType:    content.MessageType,
 		IsSystem:       content.MessageType == constant.MessageTypeSystem,
@@ -112,13 +126,26 @@ func (c *EventConverter) convertToTypingIndicator(
 		return nil, fmt.Errorf("failed to unmarshal typing content: %w", err)
 	}
 
-	var conversationID string
+	var conversationID uuid.UUID
+
 	if msg.Channel != nil {
-		conversationID = extractUUIDFromChannel(*msg.Channel)
+		uuidStr := extractUUIDFromChannel(*msg.Channel)
+
+		parsedUUID, err := uuid.Parse(uuidStr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse conversation UUID: %w", err)
+		}
+
+		conversationID = parsedUUID
+	}
+
+	var userID uuid.UUID
+	if msg.SenderID != nil {
+		userID = *msg.SenderID
 	}
 
 	return &graph.TypingIndicator{
-		UserID:         msg.SenderID.String(),
+		UserID:         userID,
 		ConversationID: conversationID,
 		IsTyping:       content.IsTyping,
 		Timestamp:      msg.Timestamp,
@@ -135,9 +162,9 @@ func (c *EventConverter) convertToDeliveryReceipt(
 	}
 
 	return &graph.DeliveryReceipt{
-		MessageID:      content.MessageID.String(),
-		ConversationID: content.ConversationID.String(),
-		RecipientID:    content.RecipientID.String(),
+		MessageID:      content.MessageID,
+		ConversationID: content.ConversationID,
+		RecipientID:    content.RecipientID,
 		DeliveredAt:    time.Unix(content.DeliveredAt, 0),
 	}, nil
 }
@@ -152,9 +179,9 @@ func (c *EventConverter) convertToReadReceipt(
 	}
 
 	return &graph.ReadReceipt{
-		MessageID:      content.MessageID.String(),
-		ConversationID: content.ConversationID.String(),
-		ReaderID:       content.ReaderID.String(),
+		MessageID:      content.MessageID,
+		ConversationID: content.ConversationID,
+		ReaderID:       content.ReaderID,
 		ReadAt:         time.Unix(content.ReadAt, 0),
 	}, nil
 }
@@ -178,7 +205,7 @@ func (c *EventConverter) convertToPresenceUpdate(
 	}
 
 	return &graph.PresenceUpdate{
-		UserID:   content.UserID.String(),
+		UserID:   content.UserID,
 		Status:   status,
 		LastSeen: lastSeen,
 	}, nil

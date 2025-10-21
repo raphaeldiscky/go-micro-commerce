@@ -45,3 +45,10 @@ tasks:
       output: '{{.output | default "./mocks"}}'
     cmds:
       - mockery --all --case underscore --dir {{.input}} --output {{.output}}
+
+  graphql:
+    desc: Generate GraphQL schema
+    cmds:
+      - gqlgen generate --verbose
+      - rm tools.go
+      - go mod tidy

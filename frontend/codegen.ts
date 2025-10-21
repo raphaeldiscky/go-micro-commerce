@@ -15,6 +15,12 @@ const config: CodegenConfig = {
     // Base types file
     './src/types/__generated__/graphql.ts': {
       plugins: ['typescript'],
+      config: {
+        scalars: {
+          UUID: 'string',
+          Time: 'string',
+        },
+      },
     },
     // Operation types near each component file
     './src/': {
@@ -31,6 +37,10 @@ const config: CodegenConfig = {
         defaultScalarType: 'unknown',
         nonOptionalTypename: true,
         skipTypeNameForRoot: true,
+        scalars: {
+          UUID: 'string',
+          Time: 'string',
+        },
       },
     },
   },

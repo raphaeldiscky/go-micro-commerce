@@ -8,7 +8,7 @@ import (
 // MapUserToGraphQL maps a UserResponse to a User GraphQL type.
 func MapUserToGraphQL(user *dto.UserResponse) *graph.User {
 	return &graph.User{
-		ID:            user.ID.String(),
+		ID:            user.ID,
 		Email:         user.Email,
 		FirstName:     user.FirstName,
 		LastName:      user.LastName,
@@ -32,8 +32,8 @@ func MapAuthResponseToGraphQL(auth *dto.AuthResponse) *graph.AuthPayload {
 // MapAddressDTOToGraphQL maps an AddressResponse DTO to a GraphQL Address type.
 func MapAddressDTOToGraphQL(addressDTO *dto.AddressResponse) *graph.Address {
 	return &graph.Address{
-		ID:           addressDTO.ID.String(),
-		UserID:       addressDTO.UserID.String(),
+		ID:           addressDTO.ID,
+		UserID:       addressDTO.UserID,
 		ReceiverName: addressDTO.ReceiverName,
 		AddressLine1: addressDTO.AddressLine1,
 		AddressLine2: addressDTO.AddressLine2,

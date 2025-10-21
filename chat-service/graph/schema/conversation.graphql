@@ -1,6 +1,6 @@
 # Conversation entity (owned by chat-service)
 type Conversation @key(fields: "id") {
-  id: ID!
+  id: UUID!
   subject: String
   status: ConversationStatus!
   priority: Int!
@@ -29,23 +29,31 @@ input CreateConversationInput {
 # Conversation queries
 extend type Query {
   # Get single conversation
-  conversation(id: ID!): Conversation @requiresAuth
+  conversation(id: UUID!): Conversation @requiresAuth
 
   # Get user's conversations
   conversations: [Conversation!]! @requiresAuth
 
   # Admin: Get waiting conversations
-  waitingConversations: [Conversation!]! @requiresAuth @requiresRole(role: ADMIN)
+  waitingConversations: [Conversation!]!
+    @requiresAuth
+    @requiresRole(role: ADMIN)
 }
 
 # Conversation mutations
 extend type Mutation {
   # Create new conversation
-  createConversation(input: CreateConversationInput!): Conversation! @requiresAuth
+  createConversation(input: CreateConversationInput!): Conversation!
+    @requiresAuth
 
   # End conversation (admin only)
-  endConversation(conversationId: ID!): Conversation! @requiresAuth @requiresRole(role: ADMIN)
+  endConversation(conversationId: UUID!): Conversation!
+    @requiresAuth
+    @requiresRole(role: ADMIN)
 
   # Assign conversation to admin
-  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @requiresAuth @requiresRole(role: ADMIN)
+  assignConversationToAdmin(
+    conversationId: UUID!
+    adminId: UUID!
+  ): Conversation! @requiresAuth @requiresRole(role: ADMIN)
 }

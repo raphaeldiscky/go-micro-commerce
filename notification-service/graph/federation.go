@@ -161,7 +161,7 @@ func (ec *executionContext) resolveEntity(
 		switch resolverName {
 
 		case "findUserByID":
-			id0, err := ec.unmarshalNID2string(ctx, rep["id"])
+			id0, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, rep["id"])
 			if err != nil {
 				return nil, fmt.Errorf(`unmarshalling param 0 for findUserByID(): %w`, err)
 			}

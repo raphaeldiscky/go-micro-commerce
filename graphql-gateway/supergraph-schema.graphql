@@ -24,8 +24,8 @@ directive @link(url: String, as: String, for: link__Purpose, import: [link__Impo
 type Address
   @join__type(graph: AUTH_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   receiverName: String!
   addressLine1: String!
   addressLine2: String
@@ -68,14 +68,14 @@ type ChatConnection
   @join__type(graph: CHAT_SERVICE)
 {
   nodeAddress: String!
-  userId: ID!
+  userId: UUID!
   userType: String!
 }
 
 type Conversation
   @join__type(graph: CHAT_SERVICE, key: "id")
 {
-  id: ID!
+  id: UUID!
   subject: String
   status: ConversationStatus!
   priority: Int!
@@ -127,13 +127,52 @@ input CreateConversationInput
   initialMessage: String
 }
 
+input CreateOrderInput
+  @join__type(graph: ORDER_SERVICE)
+{
+  idempotencyKey: UUID!
+  items: [CreateOrderItemInput!]!
+  shipping: ShippingInput!
+  paymentMethod: PaymentMethod!
+  paymentGateway: PaymentGateway!
+  currency: String!
+}
+
+input CreateOrderItemInput
+  @join__type(graph: ORDER_SERVICE)
+{
+  productId: UUID!
+  quantity: Int!
+}
+
+scalar Decimal
+  @join__type(graph: ORDER_SERVICE)
+
 type DeliveryReceipt
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
-  recipientId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+  recipientId: UUID!
   deliveredAt: Time!
+}
+
+input DimensionsInput
+  @join__type(graph: ORDER_SERVICE)
+{
+  length: Decimal!
+  height: Decimal!
+  width: Decimal!
+  unit: String!
+}
+
+input FromAddressInput
+  @join__type(graph: ORDER_SERVICE)
+{
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
 }
 
 scalar join__FieldSet
@@ -142,12 +181,13 @@ enum join__Graph {
   AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
   CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
   NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
+  ORDER_SERVICE @join__graph(name: "order-service", url: "http://host.docker.internal:8085/graph")
 }
 
 input JoinConversationInput
   @join__type(graph: CHAT_SERVICE)
 {
-  conversationId: ID!
+  conversationId: UUID!
   role: ParticipantRole!
 }
 
@@ -175,10 +215,10 @@ input LoginInput
 type Message
   @join__type(graph: CHAT_SERVICE, key: "id")
 {
-  id: ID!
-  conversationId: ID!
+  id: UUID!
+  conversationId: UUID!
   conversation: Conversation!
-  senderId: ID
+  senderId: UUID
   sender: User
   content: String!
   messageType: MessageType!
@@ -213,36 +253,38 @@ type Mutation
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
 {
   createAddress(input: CreateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
-  updateAddress(id: ID!, input: UpdateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
-  deleteAddress(id: ID!): Boolean! @join__field(graph: AUTH_SERVICE)
-  setDefaultAddress(id: ID!): Address! @join__field(graph: AUTH_SERVICE)
+  updateAddress(id: UUID!, input: UpdateAddressInput!): Address! @join__field(graph: AUTH_SERVICE)
+  deleteAddress(id: UUID!): Boolean! @join__field(graph: AUTH_SERVICE)
+  setDefaultAddress(id: UUID!): Address! @join__field(graph: AUTH_SERVICE)
   register(input: RegisterUserInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
   logout: Boolean! @join__field(graph: AUTH_SERVICE)
   requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
-  endConversation(conversationId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
-  assignConversationToAdmin(conversationId: ID!, adminId: ID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  endConversation(conversationId: UUID!): Conversation! @join__field(graph: CHAT_SERVICE)
+  assignConversationToAdmin(conversationId: UUID!, adminId: UUID!): Conversation! @join__field(graph: CHAT_SERVICE)
   sendMessage(input: SendMessageInput!): Message! @join__field(graph: CHAT_SERVICE)
   sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt! @join__field(graph: CHAT_SERVICE)
   sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @join__field(graph: CHAT_SERVICE)
   joinConversation(input: JoinConversationInput!): Participant! @join__field(graph: CHAT_SERVICE)
-  leaveConversation(conversationId: ID!): Boolean! @join__field(graph: CHAT_SERVICE)
+  leaveConversation(conversationId: UUID!): Boolean! @join__field(graph: CHAT_SERVICE)
   updatePresence(status: PresenceStatus!): PresenceUpdate! @join__field(graph: CHAT_SERVICE)
   sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator! @join__field(graph: CHAT_SERVICE)
-  markAsRead(id: ID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
+  markAsRead(id: UUID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
   markAllAsRead: Boolean! @join__field(graph: NOTIFICATION_SERVICE)
+  createOrder(input: CreateOrderInput!): Order! @join__field(graph: ORDER_SERVICE)
 }
 
 type NewMessage
   @join__type(graph: CHAT_SERVICE)
 {
-  id: ID!
-  conversationId: ID!
-  senderId: ID!
+  id: UUID!
+  conversationId: UUID!
+  senderId: UUID!
   content: String!
   messageType: MessageType!
   isSystem: Boolean!
@@ -252,8 +294,8 @@ type NewMessage
 type NewNotification
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   type: PushNotificationType!
   title: String!
   message: String!
@@ -265,8 +307,8 @@ type NewNotification
 type Notification
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   type: PushNotificationType!
   title: String!
   message: String!
@@ -287,8 +329,8 @@ type NotificationConnection
 type NotificationDeleted
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
 }
 
 type NotificationEdge
@@ -308,8 +350,8 @@ union NotificationEvent
 type NotificationRead
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   readAt: Time!
 }
 
@@ -320,10 +362,75 @@ type OnlineStatus
   lastSeen: Time
 }
 
+type Order
+  @join__type(graph: ORDER_SERVICE)
+{
+  id: UUID!
+  idempotencyKey: UUID!
+  customerId: UUID!
+  status: OrderStatus!
+  currency: String!
+  paymentGateway: PaymentGateway!
+  paymentMethod: PaymentMethod!
+  shippingCost: Decimal!
+  subtotal: Decimal!
+  totalPrice: Decimal!
+  totalTax: Decimal!
+  totalDiscount: Decimal!
+  items: [OrderItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type OrderConnection
+  @join__type(graph: ORDER_SERVICE)
+{
+  edges: [OrderEdge!]!
+  pageInfo: PageInfo!
+}
+
+type OrderEdge
+  @join__type(graph: ORDER_SERVICE)
+{
+  node: Order!
+  cursor: String!
+}
+
+type OrderItem
+  @join__type(graph: ORDER_SERVICE)
+{
+  id: UUID!
+  orderId: UUID!
+  productId: UUID!
+  quantity: Int!
+  unitPrice: Decimal!
+  totalPrice: Decimal!
+  taxRate: Decimal!
+  totalTax: Decimal!
+  totalDiscount: Decimal!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+enum OrderStatus
+  @join__type(graph: ORDER_SERVICE)
+{
+  PENDING @join__enumValue(graph: ORDER_SERVICE)
+  PROCESSING @join__enumValue(graph: ORDER_SERVICE)
+  PAYMENT_PENDING @join__enumValue(graph: ORDER_SERVICE)
+  PAYMENT_EXPIRED @join__enumValue(graph: ORDER_SERVICE)
+  PAID @join__enumValue(graph: ORDER_SERVICE)
+  SHIPPED @join__enumValue(graph: ORDER_SERVICE)
+  DELIVERED @join__enumValue(graph: ORDER_SERVICE)
+  CANCELED @join__enumValue(graph: ORDER_SERVICE)
+  FAILED @join__enumValue(graph: ORDER_SERVICE)
+}
+
 type PageInfo
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
 {
   hasNextPage: Boolean!
   hasPreviousPage: Boolean!
@@ -334,10 +441,10 @@ type PageInfo
 type Participant
   @join__type(graph: CHAT_SERVICE)
 {
-  id: ID!
-  conversationId: ID!
+  id: UUID!
+  conversationId: UUID!
   conversation: Conversation!
-  userId: ID!
+  userId: UUID!
   user: User!
   userType: UserType!
   role: ParticipantRole!
@@ -354,6 +461,19 @@ enum ParticipantRole
   MODERATOR @join__enumValue(graph: CHAT_SERVICE)
 }
 
+enum PaymentGateway
+  @join__type(graph: ORDER_SERVICE)
+{
+  STRIPE @join__enumValue(graph: ORDER_SERVICE)
+  MOCK @join__enumValue(graph: ORDER_SERVICE)
+}
+
+enum PaymentMethod
+  @join__type(graph: ORDER_SERVICE)
+{
+  CARD @join__enumValue(graph: ORDER_SERVICE)
+}
+
 enum PresenceStatus
   @join__type(graph: CHAT_SERVICE)
 {
@@ -366,7 +486,7 @@ enum PresenceStatus
 type PresenceUpdate
   @join__type(graph: CHAT_SERVICE)
 {
-  userId: ID!
+  userId: UUID!
   status: PresenceStatus!
   lastSeen: Time
 }
@@ -389,30 +509,33 @@ type Query
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
 {
   listAddresses(limit: Int!, cursor: String): AddressConnection! @join__field(graph: AUTH_SERVICE)
-  getAddress(id: ID!): Address! @join__field(graph: AUTH_SERVICE)
+  getAddress(id: UUID!): Address! @join__field(graph: AUTH_SERVICE)
   getDefaultAddress: Address! @join__field(graph: AUTH_SERVICE)
   me: User @join__field(graph: AUTH_SERVICE)
-  user(id: ID!): User @join__field(graph: AUTH_SERVICE)
+  user(id: UUID!): User @join__field(graph: AUTH_SERVICE)
   onlineUsers: [User!]! @join__field(graph: CHAT_SERVICE)
-  conversation(id: ID!): Conversation @join__field(graph: CHAT_SERVICE)
+  conversation(id: UUID!): Conversation @join__field(graph: CHAT_SERVICE)
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
   waitingConversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
-  conversationMessages(conversationId: ID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
-  conversationParticipants(conversationId: ID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
+  conversationMessages(conversationId: UUID!, first: Int, after: String, last: Int, before: String): MessageConnection! @join__field(graph: CHAT_SERVICE)
+  conversationParticipants(conversationId: UUID!): [Participant!]! @join__field(graph: CHAT_SERVICE)
   listNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
   listUnreadNotifications(limit: Int!, cursor: String): NotificationConnection! @join__field(graph: NOTIFICATION_SERVICE)
   getUnreadCount: UnreadCount! @join__field(graph: NOTIFICATION_SERVICE)
   getTabCounts: TabCounts! @join__field(graph: NOTIFICATION_SERVICE)
+  listOrders(limit: Int!, cursor: String): OrderConnection! @join__field(graph: ORDER_SERVICE)
+  listMyOrders(limit: Int!, cursor: String): OrderConnection! @join__field(graph: ORDER_SERVICE)
 }
 
 type ReadReceipt
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
-  readerId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+  readerId: UUID!
   readAt: Time!
 }
 
@@ -430,39 +553,50 @@ enum Role
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
 {
-  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE)
-  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE)
+  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
+  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
 }
 
 input SendDeliveryReceiptInput
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
+  messageId: UUID!
+  conversationId: UUID!
 }
 
 input SendMessageInput
   @join__type(graph: CHAT_SERVICE)
 {
-  conversationId: ID!
+  conversationId: UUID!
   content: String!
   messageType: MessageType = TEXT
-  replyToId: ID
+  replyToId: UUID
 }
 
 input SendReadReceiptInput
   @join__type(graph: CHAT_SERVICE)
 {
-  messageId: ID!
-  conversationId: ID!
+  messageId: UUID!
+  conversationId: UUID!
+}
+
+input ShippingInput
+  @join__type(graph: ORDER_SERVICE)
+{
+  carrierId: String!
+  fromAddress: FromAddressInput!
+  toAddress: ToAddressInput!
+  weightKg: Decimal!
+  dimensions: DimensionsInput!
 }
 
 type Subscription
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
 {
-  conversationEvents(conversationId: ID!): ConversationEvent! @join__field(graph: CHAT_SERVICE)
+  conversationEvents(conversationId: UUID!): ConversationEvent! @join__field(graph: CHAT_SERVICE)
   userEvents: UserEvent! @join__field(graph: CHAT_SERVICE)
   notificationEvents: NotificationEvent! @join__field(graph: NOTIFICATION_SERVICE)
 }
@@ -479,12 +613,22 @@ scalar Time
   @join__type(graph: AUTH_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
+
+input ToAddressInput
+  @join__type(graph: ORDER_SERVICE)
+{
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+}
 
 type TypingIndicator
   @join__type(graph: CHAT_SERVICE)
 {
-  userId: ID!
-  conversationId: ID!
+  userId: UUID!
+  conversationId: UUID!
   isTyping: Boolean!
   timestamp: Time!
 }
@@ -492,7 +636,7 @@ type TypingIndicator
 input TypingIndicatorInput
   @join__type(graph: CHAT_SERVICE)
 {
-  conversationId: ID!
+  conversationId: UUID!
   isTyping: Boolean!
 }
 
@@ -522,7 +666,7 @@ type User
   @join__type(graph: CHAT_SERVICE, key: "id")
   @join__type(graph: NOTIFICATION_SERVICE, key: "id")
 {
-  id: ID!
+  id: UUID!
   email: String! @join__field(graph: AUTH_SERVICE)
   firstName: String! @join__field(graph: AUTH_SERVICE)
   lastName: String! @join__field(graph: AUTH_SERVICE)
@@ -548,3 +692,9 @@ enum UserType
   USER @join__enumValue(graph: CHAT_SERVICE)
   ADMIN @join__enumValue(graph: CHAT_SERVICE)
 }
+
+scalar UUID
+  @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CHAT_SERVICE)
+  @join__type(graph: NOTIFICATION_SERVICE)
+  @join__type(graph: ORDER_SERVICE)

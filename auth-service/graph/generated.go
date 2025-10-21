@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
+	"github.com/google/uuid"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -87,18 +88,18 @@ type ComplexityRoot struct {
 	}
 
 	Entity struct {
-		FindUserByID func(childComplexity int, id string) int
+		FindUserByID func(childComplexity int, id uuid.UUID) int
 	}
 
 	Mutation struct {
 		CreateAddress     func(childComplexity int, input CreateAddressInput) int
-		DeleteAddress     func(childComplexity int, id string) int
+		DeleteAddress     func(childComplexity int, id uuid.UUID) int
 		Login             func(childComplexity int, input LoginInput) int
 		Logout            func(childComplexity int) int
 		RefreshToken      func(childComplexity int) int
 		Register          func(childComplexity int, input RegisterUserInput) int
-		SetDefaultAddress func(childComplexity int, id string) int
-		UpdateAddress     func(childComplexity int, id string, input UpdateAddressInput) int
+		SetDefaultAddress func(childComplexity int, id uuid.UUID) int
+		UpdateAddress     func(childComplexity int, id uuid.UUID, input UpdateAddressInput) int
 	}
 
 	PageInfo struct {
@@ -109,11 +110,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetAddress         func(childComplexity int, id string) int
+		GetAddress         func(childComplexity int, id uuid.UUID) int
 		GetDefaultAddress  func(childComplexity int) int
 		ListAddresses      func(childComplexity int, limit int, cursor *string) int
 		Me                 func(childComplexity int) int
-		User               func(childComplexity int, id string) int
+		User               func(childComplexity int, id uuid.UUID) int
 		__resolve__service func(childComplexity int) int
 		__resolve_entities func(childComplexity int, representations []map[string]any) int
 	}
@@ -136,13 +137,13 @@ type ComplexityRoot struct {
 }
 
 type EntityResolver interface {
-	FindUserByID(ctx context.Context, id string) (*User, error)
+	FindUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 }
 type MutationResolver interface {
 	CreateAddress(ctx context.Context, input CreateAddressInput) (*Address, error)
-	UpdateAddress(ctx context.Context, id string, input UpdateAddressInput) (*Address, error)
-	DeleteAddress(ctx context.Context, id string) (bool, error)
-	SetDefaultAddress(ctx context.Context, id string) (*Address, error)
+	UpdateAddress(ctx context.Context, id uuid.UUID, input UpdateAddressInput) (*Address, error)
+	DeleteAddress(ctx context.Context, id uuid.UUID) (bool, error)
+	SetDefaultAddress(ctx context.Context, id uuid.UUID) (*Address, error)
 	Register(ctx context.Context, input RegisterUserInput) (*AuthPayload, error)
 	Login(ctx context.Context, input LoginInput) (*AuthPayload, error)
 	RefreshToken(ctx context.Context) (*AuthPayload, error)
@@ -150,10 +151,10 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	ListAddresses(ctx context.Context, limit int, cursor *string) (*AddressConnection, error)
-	GetAddress(ctx context.Context, id string) (*Address, error)
+	GetAddress(ctx context.Context, id uuid.UUID) (*Address, error)
 	GetDefaultAddress(ctx context.Context) (*Address, error)
 	Me(ctx context.Context) (*User, error)
-	User(ctx context.Context, id string) (*User, error)
+	User(ctx context.Context, id uuid.UUID) (*User, error)
 }
 
 type executableSchema struct {
@@ -327,7 +328,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(string)), true
+		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(uuid.UUID)), true
 
 	case "Mutation.createAddress":
 		if e.complexity.Mutation.CreateAddress == nil {
@@ -350,7 +351,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteAddress(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.DeleteAddress(childComplexity, args["id"].(uuid.UUID)), true
 	case "Mutation.login":
 		if e.complexity.Mutation.Login == nil {
 			break
@@ -395,7 +396,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetDefaultAddress(childComplexity, args["id"].(string)), true
+		return e.complexity.Mutation.SetDefaultAddress(childComplexity, args["id"].(uuid.UUID)), true
 	case "Mutation.updateAddress":
 		if e.complexity.Mutation.UpdateAddress == nil {
 			break
@@ -406,7 +407,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateAddress(childComplexity, args["id"].(string), args["input"].(UpdateAddressInput)), true
+		return e.complexity.Mutation.UpdateAddress(childComplexity, args["id"].(uuid.UUID), args["input"].(UpdateAddressInput)), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -443,7 +444,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.GetAddress(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.GetAddress(childComplexity, args["id"].(uuid.UUID)), true
 	case "Query.getDefaultAddress":
 		if e.complexity.Query.GetDefaultAddress == nil {
 			break
@@ -477,7 +478,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
+		return e.complexity.Query.User(childComplexity, args["id"].(uuid.UUID)), true
 	case "Query._service":
 		if e.complexity.Query.__resolve__service == nil {
 			break
@@ -738,7 +739,7 @@ union _Entity = User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
-	findUserByID(id: ID!,): User!
+	findUserByID(id: UUID!,): User!
 }
 
 type _Service {
@@ -771,7 +772,7 @@ func (ec *executionContext) dir_requiresRole_args(ctx context.Context, rawArgs m
 func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -793,7 +794,7 @@ func (ec *executionContext) field_Mutation_createAddress_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_deleteAddress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -826,7 +827,7 @@ func (ec *executionContext) field_Mutation_register_args(ctx context.Context, ra
 func (ec *executionContext) field_Mutation_setDefaultAddress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -837,7 +838,7 @@ func (ec *executionContext) field_Mutation_setDefaultAddress_args(ctx context.Co
 func (ec *executionContext) field_Mutation_updateAddress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -875,7 +876,7 @@ func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawA
 func (ec *executionContext) field_Query_getAddress_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -902,7 +903,7 @@ func (ec *executionContext) field_Query_listAddresses_args(ctx context.Context, 
 func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
 	if err != nil {
 		return nil, err
 	}
@@ -972,7 +973,7 @@ func (ec *executionContext) _Address_id(ctx context.Context, field graphql.Colle
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -985,7 +986,7 @@ func (ec *executionContext) fieldContext_Address_id(_ context.Context, field gra
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1001,7 +1002,7 @@ func (ec *executionContext) _Address_userId(ctx context.Context, field graphql.C
 			return obj.UserID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -1014,7 +1015,7 @@ func (ec *executionContext) fieldContext_Address_userId(_ context.Context, field
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1707,7 +1708,7 @@ func (ec *executionContext) _Entity_findUserByID(ctx context.Context, field grap
 		ec.fieldContext_Entity_findUserByID,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Entity().FindUserByID(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Entity().FindUserByID(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNUser2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋauthᚑserviceᚋgraphᚐUser,
@@ -1856,7 +1857,7 @@ func (ec *executionContext) _Mutation_updateAddress(ctx context.Context, field g
 		ec.fieldContext_Mutation_updateAddress,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().UpdateAddress(ctx, fc.Args["id"].(string), fc.Args["input"].(UpdateAddressInput))
+			return ec.resolvers.Mutation().UpdateAddress(ctx, fc.Args["id"].(uuid.UUID), fc.Args["input"].(UpdateAddressInput))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1944,7 +1945,7 @@ func (ec *executionContext) _Mutation_deleteAddress(ctx context.Context, field g
 		ec.fieldContext_Mutation_deleteAddress,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteAddress(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Mutation().DeleteAddress(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -1998,7 +1999,7 @@ func (ec *executionContext) _Mutation_setDefaultAddress(ctx context.Context, fie
 		ec.fieldContext_Mutation_setDefaultAddress,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().SetDefaultAddress(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Mutation().SetDefaultAddress(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2439,7 +2440,7 @@ func (ec *executionContext) _Query_getAddress(ctx context.Context, field graphql
 		ec.fieldContext_Query_getAddress,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().GetAddress(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().GetAddress(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2665,7 +2666,7 @@ func (ec *executionContext) _Query_user(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_user,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().User(ctx, fc.Args["id"].(string))
+			return ec.resolvers.Query().User(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
 			directive0 := next
@@ -2923,7 +2924,7 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 			return obj.ID, nil
 		},
 		nil,
-		ec.marshalNID2string,
+		ec.marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
 		true,
 		true,
 	)
@@ -2936,7 +2937,7 @@ func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphq
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
+			return nil, errors.New("field of type UUID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6176,22 +6177,6 @@ func (ec *executionContext) marshalNFieldSet2string(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
-	res, err := graphql.UnmarshalID(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalID(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6292,6 +6277,22 @@ func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v an
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalTime(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v any) (uuid.UUID, error) {
+	res, err := graphql.UnmarshalUUID(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, sel ast.SelectionSet, v uuid.UUID) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalUUID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

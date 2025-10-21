@@ -10,18 +10,12 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph"
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"
 )
 
 // FindUserByID is the resolver for the findUserByID field.
-func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*graph.User, error) {
-	userID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid user ID format")
-	}
-
-	user, err := r.authService.GetUser(ctx, userID)
+func (r *entityResolver) FindUserByID(ctx context.Context, id uuid.UUID) (*graph.User, error) {
+	user, err := r.authService.GetUser(ctx, id)
 	if err != nil {
 		r.logger.Error("Failed to find user by ID", "id", id, "error", err)
 		return nil, err

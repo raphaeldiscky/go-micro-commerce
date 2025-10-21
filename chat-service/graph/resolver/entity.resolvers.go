@@ -10,21 +10,15 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
 )
 
 // FindConversationByID is the resolver for the findConversationByID field.
 func (r *entityResolver) FindConversationByID(
 	ctx context.Context,
-	id string,
+	id uuid.UUID,
 ) (*graph.Conversation, error) {
-	conversationID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID format")
-	}
-
-	conversation, err := r.chatService.GetConversationByID(ctx, conversationID)
+	conversation, err := r.chatService.GetConversationByID(ctx, id)
 	if err != nil {
 		r.logger.Error("Failed to find conversation by ID", "id", id, "error", err)
 		return nil, err
@@ -34,13 +28,11 @@ func (r *entityResolver) FindConversationByID(
 }
 
 // FindMessageByID is the resolver for the findMessageByID field.
-func (r *entityResolver) FindMessageByID(ctx context.Context, id string) (*graph.Message, error) {
-	messageID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid message ID format")
-	}
-
-	message, err := r.chatService.GetMessageByID(ctx, messageID)
+func (r *entityResolver) FindMessageByID(
+	ctx context.Context,
+	id uuid.UUID,
+) (*graph.Message, error) {
+	message, err := r.chatService.GetMessageByID(ctx, id)
 	if err != nil {
 		r.logger.Error("Failed to find message by ID", "id", id, "error", err)
 		return nil, err
@@ -50,7 +42,7 @@ func (r *entityResolver) FindMessageByID(ctx context.Context, id string) (*graph
 }
 
 // FindUserByID is the resolver for the findUserByID field.
-func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*graph.User, error) {
+func (r *entityResolver) FindUserByID(ctx context.Context, id uuid.UUID) (*graph.User, error) {
 	_ = ctx
 	// User entity is owned by auth-service
 	// This resolver is a stub that returns the user reference with just the ID

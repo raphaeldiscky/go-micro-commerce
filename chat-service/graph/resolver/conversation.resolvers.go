@@ -13,7 +13,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
 )
 
@@ -50,14 +49,9 @@ func (r *mutationResolver) CreateConversation(
 // EndConversation is the resolver for the endConversation field.
 func (r *mutationResolver) EndConversation(
 	ctx context.Context,
-	conversationID string,
+	conversationID uuid.UUID,
 ) (*graph.Conversation, error) {
-	convID, err := uuid.Parse(conversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
-	conversation, err := r.chatService.EndConversation(ctx, convID)
+	conversation, err := r.chatService.EndConversation(ctx, conversationID)
 	if err != nil {
 		r.logger.Error("Failed to end conversation", "error", err)
 		return nil, err
@@ -69,20 +63,10 @@ func (r *mutationResolver) EndConversation(
 // AssignConversationToAdmin is the resolver for the assignConversationToAdmin field.
 func (r *mutationResolver) AssignConversationToAdmin(
 	ctx context.Context,
-	conversationID string,
-	adminID string,
+	conversationID uuid.UUID,
+	adminID uuid.UUID,
 ) (*graph.Conversation, error) {
-	convID, err := uuid.Parse(conversationID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
-	admID, err := uuid.Parse(adminID)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid admin ID")
-	}
-
-	conversation, err := r.chatService.AssignConversationToAdmin(ctx, convID, admID)
+	conversation, err := r.chatService.AssignConversationToAdmin(ctx, conversationID, adminID)
 	if err != nil {
 		r.logger.Error("Failed to assign conversation to admin", "error", err)
 		return nil, err
@@ -92,19 +76,17 @@ func (r *mutationResolver) AssignConversationToAdmin(
 }
 
 // Conversation is the resolver for the conversation field.
-func (r *queryResolver) Conversation(ctx context.Context, id string) (*graph.Conversation, error) {
+func (r *queryResolver) Conversation(
+	ctx context.Context,
+	id uuid.UUID,
+) (*graph.Conversation, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
 		return nil, err
 	}
 
-	conversationID, err := uuid.Parse(id)
-	if err != nil {
-		return nil, httperror.NewBadRequestError("invalid conversation ID")
-	}
-
-	conversation, err := r.chatService.GetConversation(ctx, conversationID, user.UserID)
+	conversation, err := r.chatService.GetConversation(ctx, id, user.UserID)
 	if err != nil {
 		r.logger.Error("Failed to get conversation", "error", err)
 		return nil, err

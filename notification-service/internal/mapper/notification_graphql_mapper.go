@@ -18,8 +18,8 @@ func MapToGraphQLNotification(notif *entity.Notification) *graph.Notification {
 	}
 
 	return &graph.Notification{
-		ID:        notif.ID.String(),
-		UserID:    notif.UserID.String(),
+		ID:        notif.ID,
+		UserID:    notif.UserID,
 		Type:      notif.Type,
 		Title:     notif.Title,
 		Message:   notif.Message,
@@ -41,8 +41,8 @@ func MapToGraphQLNotificationFromDTO(notif *dto.NotificationResponse) *graph.Not
 	}
 
 	return &graph.Notification{
-		ID:        notif.ID.String(),
-		UserID:    notif.UserID.String(),
+		ID:        notif.ID,
+		UserID:    notif.UserID,
 		Type:      notif.Type,
 		Title:     notif.Title,
 		Message:   notif.Message,
@@ -64,8 +64,8 @@ func MapToGraphQLNewNotification(notif *entity.Notification) *graph.NewNotificat
 	}
 
 	return &graph.NewNotification{
-		ID:        notif.ID.String(),
-		UserID:    notif.UserID.String(),
+		ID:        notif.ID,
+		UserID:    notif.UserID,
 		Type:      notif.Type,
 		Title:     notif.Title,
 		Message:   notif.Message,
@@ -85,8 +85,8 @@ func MapToGraphQLNewNotificationFromDTO(notif *dto.NotificationResponse) *graph.
 	}
 
 	return &graph.NewNotification{
-		ID:        notif.ID.String(),
-		UserID:    notif.UserID.String(),
+		ID:        notif.ID,
+		UserID:    notif.UserID,
 		Type:      notif.Type,
 		Title:     notif.Title,
 		Message:   notif.Message,
@@ -107,7 +107,7 @@ func MapToGraphQLNotificationConnection(
 	for i, notif := range notifications {
 		// Generate cursor from notification timestamp and ID
 		cursorData := map[string]interface{}{
-			"id":        notif.ID.String(),
+			"id":        notif.ID,
 			"timestamp": notif.CreatedAt.Unix(),
 		}
 

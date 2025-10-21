@@ -14,8 +14,8 @@ union NotificationEvent =
 
 # New notification event (real-time delivery)
 type NewNotification {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   type: PushNotificationType!
   title: String!
   message: String!
@@ -26,13 +26,13 @@ type NewNotification {
 
 # Notification read event
 type NotificationRead {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
   readAt: Time!
 }
 
 # Notification deleted event
 type NotificationDeleted {
-  id: ID!
-  userId: ID!
+  id: UUID!
+  userId: UUID!
 }

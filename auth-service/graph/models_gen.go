@@ -8,11 +8,13 @@ import (
 	"io"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type Address struct {
-	ID           string    `json:"id"`
-	UserID       string    `json:"userId"`
+	ID           uuid.UUID `json:"id"`
+	UserID       uuid.UUID `json:"userId"`
 	ReceiverName string    `json:"receiverName"`
 	AddressLine1 string    `json:"addressLine1"`
 	AddressLine2 *string   `json:"addressLine2,omitempty"`
@@ -99,7 +101,7 @@ type UpdateAddressInput struct {
 }
 
 type User struct {
-	ID            string    `json:"id"`
+	ID            uuid.UUID `json:"id"`
 	Email         string    `json:"email"`
 	FirstName     string    `json:"firstName"`
 	LastName      string    `json:"lastName"`

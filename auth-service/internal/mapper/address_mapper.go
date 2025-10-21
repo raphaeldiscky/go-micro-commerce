@@ -124,8 +124,8 @@ func MapUpdateRequestToEntity(
 // MapToGraphQLAddress converts entity.Address to graph.Address.
 func MapToGraphQLAddress(address *entity.Address) *graph.Address {
 	graphAddress := &graph.Address{
-		ID:           address.ID.String(),
-		UserID:       address.UserID.String(),
+		ID:           address.ID,
+		UserID:       address.UserID,
 		ReceiverName: address.ReceiverName,
 		AddressLine1: address.AddressLine1,
 		City:         address.City,

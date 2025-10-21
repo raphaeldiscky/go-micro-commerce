@@ -7,6 +7,7 @@ package resolver
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
@@ -15,7 +16,7 @@ import (
 )
 
 // FindUserByID is the resolver for the findUserByID field.
-func (r *entityResolver) FindUserByID(ctx context.Context, id string) (*graph.User, error) {
+func (r *entityResolver) FindUserByID(ctx context.Context, id uuid.UUID) (*graph.User, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
