@@ -5,6 +5,7 @@ import { mockPaymentGateways } from '@/data/mockData'
 import { useCartStore } from '@/store/cartStore'
 import type { PaymentGateway } from '@/types/cart'
 import { Building2, CreditCard } from 'lucide-react'
+import { useEffect } from 'react'
 
 const getGatewayIcon = (type: PaymentGateway['type']) => {
   switch (type) {
@@ -29,8 +30,20 @@ export function PaymentGatewaySelector() {
   const isDisabled =
     !selectedAddress || !selectedShippingOption || !selectedPaymentMethod
 
+  // Filter available gateways based on payment method
+  const availableGateways = selectedPaymentMethod?.supportedGateways
+    ? selectedPaymentMethod.supportedGateways
+    : mockPaymentGateways
+
+  // Auto-select first available gateway when payment method is selected and no gateway is selected
+  useEffect(() => {
+    if (selectedPaymentMethod && !selectedPaymentGateway && availableGateways.length > 0) {
+      setPaymentGateway(availableGateways[0])
+    }
+  }, [selectedPaymentMethod, selectedPaymentGateway, availableGateways, setPaymentGateway])
+
   const handleGatewayChange = (gatewayId: string) => {
-    const gateway = mockPaymentGateways.find((g) => g.id === gatewayId)
+    const gateway = availableGateways.find((g) => g.id === gatewayId)
     if (gateway) {
       setPaymentGateway(gateway)
     }
@@ -55,7 +68,7 @@ export function PaymentGatewaySelector() {
           onValueChange={handleGatewayChange}
           disabled={isDisabled}
         >
-          {mockPaymentGateways.map((gateway: PaymentGateway) => {
+          {availableGateways.map((gateway: PaymentGateway) => {
             const Icon = getGatewayIcon(gateway.type)
             return (
               <div key={gateway.id} className="space-y-2">

@@ -269,13 +269,17 @@ function RouteComponent() {
               <div className="flex items-center">
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    selectedPaymentGateway
+                    selectedPaymentMethod && selectedPaymentGateway
                       ? 'bg-green-600 text-white'
+                      : selectedPaymentMethod
+                      ? 'bg-blue-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {selectedPaymentGateway ? (
+                  {selectedPaymentMethod && selectedPaymentGateway ? (
                     <CheckCircle className="h-4 w-4" />
+                  ) : selectedPaymentMethod ? (
+                    <span>4</span>
                   ) : (
                     <span>4</span>
                   )}
