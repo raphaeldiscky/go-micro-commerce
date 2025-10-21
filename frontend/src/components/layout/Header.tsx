@@ -15,16 +15,15 @@ import {
   LogIn,
   LogOut,
   Menu,
-  MessageCircle,
   Settings,
   User,
   UserPlus,
   X,
-  Zap,
 } from 'lucide-react'
 import { useState } from 'react'
 import { CartDrawer } from '../cart/CartDrawer'
 import { CartIcon } from '../cart/CartIcon'
+import { ChatIcon } from '../chat/ChatIcon'
 import { NotificationBell } from '../notification/NotificationBell'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { Button } from '../ui/button'
@@ -102,7 +101,6 @@ export default function Header() {
                 {/* Features Dropdown */}
                 <NavigationMenuItem>
                   <NavigationMenuTrigger className="inline-flex items-center mt-3">
-                    <Zap className="mr-1 h-4 w-4" />
                     Features
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
@@ -153,25 +151,6 @@ export default function Header() {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {/* Chat Demo */}
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link
-                      className={cn(
-                        navigationMenuTriggerStyle(),
-                        'inline-flex items-center',
-                        isActive(PATH.chat.root)
-                          ? 'bg-accent text-accent-foreground'
-                          : '',
-                      )}
-                      to={PATH.chat.root}
-                    >
-                      <MessageCircle className="mr-1 h-4 w-4" />
-                      Chat Demo
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-
                 {/* About */}
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
@@ -202,6 +181,7 @@ export default function Header() {
                 <>
                   <div className="flex items-center gap-1">
                     <NotificationBell />
+                    <ChatIcon />
                     <CartIcon />
                   </div>
 
@@ -320,7 +300,6 @@ export default function Header() {
               {/* Features Section */}
               <div className="px-3 py-2">
                 <div className="flex items-center text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                  <Zap className="mr-1 h-3 w-3" />
                   Features
                 </div>
                 <div className="space-y-1 ml-4">
@@ -361,21 +340,6 @@ export default function Header() {
               >
                 <Settings className="mr-2 h-4 w-4" />
                 Services
-              </Link>
-
-              {/* Chat Demo */}
-              <Link
-                className={cn(
-                  'flex items-center px-3 py-2 rounded-md text-base font-medium transition-colors',
-                  isActive(PATH.chat.root)
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent',
-                )}
-                onClick={() => setIsMobileMenuOpen(false)}
-                to={PATH.chat.root}
-              >
-                <MessageCircle className="mr-2 h-4 w-4" />
-                Chat Demo
               </Link>
 
               {/* About */}
@@ -426,6 +390,7 @@ export default function Header() {
 
                     <div className="flex items-center justify-center py-3 gap-1 border-t">
                       <NotificationBell />
+                      <ChatIcon />
                       <CartIcon />
                     </div>
 

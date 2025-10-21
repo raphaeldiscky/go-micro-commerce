@@ -34,7 +34,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
               TanStackQueryDevtools,
             ]}
           />
-          <Toaster position="top-right" />
+          <Toaster position="bottom-left" />
         </div>
       </NotificationProvider>
     </AuthProvider>

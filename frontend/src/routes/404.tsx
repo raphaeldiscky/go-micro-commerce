@@ -4,13 +4,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { PATH, PATH_AUTH, PATH_ROOT } from '@/constants/routes'
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import {
   ArrowLeft,
   ExternalLink,
   Home,
   Mail,
-  MessageCircle,
   Phone,
   Search,
   ShoppingBag,
@@ -24,12 +23,14 @@ export const Route = createFileRoute('/404')({
 
 function RouteComponent() {
   const [searchQuery, setSearchQuery] = useState('')
-
+  const navigate = useNavigate()
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
       // Redirect to products page with search query
-      window.location.href = `${PATH.products.root}?search=${encodeURIComponent(searchQuery.trim())}`
+      navigate({
+        to: `${PATH.products.root}?search=${encodeURIComponent(searchQuery.trim())}`,
+      })
     }
   }
 
@@ -45,12 +46,6 @@ function RouteComponent() {
       href: PATH.products.root,
       icon: ShoppingBag,
       description: 'Browse our catalog',
-    },
-    {
-      name: 'Chat',
-      href: PATH.chat.root,
-      icon: MessageCircle,
-      description: 'Start a conversation',
     },
     {
       name: 'Account',

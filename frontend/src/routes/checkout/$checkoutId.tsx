@@ -141,7 +141,7 @@ function RouteComponent() {
                 Back to Cart
               </Button>
               <Button
-                onClick={() => (window.location.href = '/features/products')}
+                onClick={() => navigate({ to: PATH.products.root })}
                 className="w-full"
               >
                 Continue Shopping

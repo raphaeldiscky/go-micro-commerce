@@ -14,7 +14,7 @@ export const NAVIGATION_ITEMS: Array<NavigationItem> = [
 // Features dropdown items
 export const FEATURES_ITEMS: Array<NavigationItem> = [
   {
-    description: 'Browse products with cursor pagination',
+    description: 'Browse products',
     icon: Package,
     name: 'Products',
     path: PATH.products.root,
