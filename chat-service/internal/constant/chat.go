@@ -100,6 +100,8 @@ const (
 	WebSocketEventTypeJoin WebSocketEventType = "join"
 	// WebSocketEventTypeLeave represents leaving a conversation.
 	WebSocketEventTypeLeave WebSocketEventType = "leave"
+	// WebSocketEventTypeStatusUpdate represents a presence status update.
+	WebSocketEventTypeStatusUpdate WebSocketEventType = "status_update"
 )
 
 // WebSocket configuration constants.

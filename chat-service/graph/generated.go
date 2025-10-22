@@ -8693,20 +8693,13 @@ func (ec *executionContext) marshalNConversationEvent2githubᚗcomᚋraphaeldisc
 }
 
 func (ec *executionContext) unmarshalNConversationStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐConversationStatus(ctx context.Context, v any) (constant.ConversationStatus, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.ConversationStatus(tmp)
+	var res constant.ConversationStatus
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNConversationStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐConversationStatus(ctx context.Context, sel ast.SelectionSet, v constant.ConversationStatus) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalNCreateConversationInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐCreateConversationInput(ctx context.Context, v any) (CreateConversationInput, error) {
@@ -8848,20 +8841,13 @@ func (ec *executionContext) marshalNMessageEdge2ᚖgithubᚗcomᚋraphaeldiscky�
 }
 
 func (ec *executionContext) unmarshalNMessageType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx context.Context, v any) (constant.MessageType, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.MessageType(tmp)
+	var res constant.MessageType
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNMessageType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx context.Context, sel ast.SelectionSet, v constant.MessageType) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
@@ -8933,37 +8919,23 @@ func (ec *executionContext) marshalNParticipant2ᚖgithubᚗcomᚋraphaeldiscky�
 }
 
 func (ec *executionContext) unmarshalNParticipantRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐParticipantRole(ctx context.Context, v any) (constant.ParticipantRole, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.ParticipantRole(tmp)
+	var res constant.ParticipantRole
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNParticipantRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐParticipantRole(ctx context.Context, sel ast.SelectionSet, v constant.ParticipantRole) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus(ctx context.Context, v any) (constant.PresenceStatus, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.PresenceStatus(tmp)
+	var res constant.PresenceStatus
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPresenceStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐPresenceStatus(ctx context.Context, sel ast.SelectionSet, v constant.PresenceStatus) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) marshalNPresenceUpdate2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐPresenceUpdate(ctx context.Context, sel ast.SelectionSet, v PresenceUpdate) graphql.Marshaler {
@@ -9155,20 +9127,13 @@ func (ec *executionContext) marshalNUserEvent2githubᚗcomᚋraphaeldisckyᚋgo�
 }
 
 func (ec *executionContext) unmarshalNUserType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐUserType(ctx context.Context, v any) (constant.UserType, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.UserType(tmp)
+	var res constant.UserType
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUserType2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐUserType(ctx context.Context, sel ast.SelectionSet, v constant.UserType) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalN_Any2map(ctx context.Context, v any) (map[string]any, error) {
@@ -9729,19 +9694,16 @@ func (ec *executionContext) unmarshalOMessageType2ᚖgithubᚗcomᚋraphaeldisck
 	if v == nil {
 		return nil, nil
 	}
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.MessageType(tmp)
-	return &res, graphql.ErrorOnPath(ctx, err)
+	var res = new(constant.MessageType)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOMessageType2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋinternalᚋconstantᚐMessageType(ctx context.Context, sel ast.SelectionSet, v *constant.MessageType) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	_ = sel
-	_ = ctx
-	res := graphql.MarshalString(string(*v))
-	return res
+	return v
 }
 
 func (ec *executionContext) marshalOOnlineStatus2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋchatᚑserviceᚋgraphᚐOnlineStatus(ctx context.Context, sel ast.SelectionSet, v *OnlineStatus) graphql.Marshaler {

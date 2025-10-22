@@ -6,14 +6,10 @@ package resolver
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
-	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
-	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
 
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
@@ -33,27 +29,18 @@ func (r *mutationResolver) UpdatePresence(
 		return nil, httperror.NewUnauthorizedError("authentication required")
 	}
 
-	// Create presence content
-	presenceContent := websocket.PresenceContent{
-		UserID: user.UserID,
-		Status: status,
-	}
-
-	contentBytes, err := json.Marshal(presenceContent)
+	// Create presence update message using helper
+	wsMessage, err := websocket.NewPresenceMessage(
+		user.UserID,
+		status,
+		constant.WebSocketEventTypeStatusUpdate,
+	)
 	if err != nil {
-		r.logger.Error("Failed to marshal presence content", "error", err)
-		return nil, httperror.NewInternalServerError("failed to process presence update")
+		r.logger.Error("Failed to create presence message", "error", err)
+		return nil, httperror.NewInternalServerError("failed to create presence update")
 	}
 
-	// Create WebSocket message
 	now := time.Now()
-	wsMessage := &pkgwebsocket.Message{
-		ID:        uuid.New(),
-		Type:      websocket.ChatMessageTypePresence,
-		SenderID:  &user.UserID,
-		Content:   json.RawMessage(contentBytes),
-		Timestamp: now,
-	}
 
 	// Broadcast presence update to all instances
 	if err = r.hub.BroadcastPresenceUpdate(user.UserID, wsMessage); err != nil {
@@ -94,28 +81,18 @@ func (r *mutationResolver) SendTypingIndicator(
 		return nil, httperror.NewUnauthorizedError("authentication required")
 	}
 
-	// Create typing indicator content
-	typingContent := websocket.TypingContent{
-		IsTyping: input.IsTyping,
-	}
-
-	contentBytes, err := json.Marshal(typingContent)
+	// Create typing indicator message using helper
+	wsMessage, err := websocket.NewTypingMessage(
+		input.ConversationID,
+		user.UserID,
+		input.IsTyping,
+	)
 	if err != nil {
-		r.logger.Error("Failed to marshal typing content", "error", err)
-		return nil, httperror.NewInternalServerError("failed to process typing indicator")
+		r.logger.Error("Failed to create typing message", "error", err)
+		return nil, httperror.NewInternalServerError("failed to create typing indicator")
 	}
 
-	// Create WebSocket message
 	now := time.Now()
-	channelName := redispkg.ConversationChannel(input.ConversationID)
-	wsMessage := &pkgwebsocket.Message{
-		ID:        uuid.New(),
-		Type:      websocket.ChatMessageTypeTyping,
-		Channel:   &channelName,
-		SenderID:  &user.UserID,
-		Content:   json.RawMessage(contentBytes),
-		Timestamp: now,
-	}
 
 	// Broadcast typing indicator to all instances
 	if err = r.hub.BroadcastTypingIndicator(input.ConversationID, wsMessage, user.UserID); err != nil {
