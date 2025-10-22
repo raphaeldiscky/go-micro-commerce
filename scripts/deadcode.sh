@@ -5,7 +5,7 @@ set -euo pipefail
 SERVICES=()
 
 for dir in */ ; do
-  dir="${dir%/}"  
+  dir="${dir%/}"
   if [[ -f "$dir/go.mod" ]]; then
     SERVICES+=("$dir")
   fi
@@ -13,26 +13,44 @@ done
 
 MAX_CONCURRENT=4
 
+# --- Colored output helpers ---
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+RESET="\033[0m"
+
 deadcode_service() {
   local dir="$1"
-  echo "Running deadcode analysis on $dir..."
+  echo -e "${YELLOW}Running deadcode analysis on $dir...${RESET}"
 
-  # Run deadcode from cmd/api main package
   if [ -f "$dir/cmd/api/main.go" ]; then
-    # Run in a subshell to isolate the cd command
-    (cd "$dir" && deadcode -test ./cmd/api)
+    (cd "$dir" && {
+      output=$(deadcode ./cmd/api 2>&1 || true)
+
+      if [[ -n "$output" ]]; then
+        echo -e "${RED}❌ Deadcode found in $dir:${RESET}"
+        echo "$output"
+
+        # Only fail in CI (GitHub Actions sets CI=true automatically)
+        if [[ "${CI:-}" == "true" ]]; then
+          exit 1
+        fi
+      else
+        echo -e "${GREEN}✅ No deadcode in $dir${RESET}"
+      fi
+    })
   else
     echo "Skipping $dir - no cmd/api/main.go found"
   fi
 }
 
-# Check and install dependency once at the start ---
+# --- Check and install dependency once at the start ---
 if ! command -v deadcode &> /dev/null; then
   echo "Installing deadcode..."
   go install golang.org/x/tools/cmd/deadcode@latest
 fi
 
-# If a specific service is provided as an argument
+# --- If a specific service is provided as an argument ---
 if [ -n "${1-}" ]; then
   if [[ " ${SERVICES[*]} " =~ " $1 " ]]; then
     deadcode_service "$1"
@@ -42,43 +60,37 @@ if [ -n "${1-}" ]; then
     echo "Available services: ${SERVICES[*]}"
     exit 1
   fi
-# If no argument, run for all services concurrently
 else
+  # --- Run for all services concurrently ---
   pids=()
-  exit_code=0 # Variable to track if any process fails
+  exit_code=0
 
   for service in "${SERVICES[@]}"; do
-    # If the number of running jobs has reached the limit...
+    # Limit concurrency
     if [ ${#pids[@]} -ge $MAX_CONCURRENT ]; then
-      # ...wait for the *next* job to finish
-      # Handle failures from finished jobs ---
       if ! wait -n; then
-        echo "A deadcode process failed."
         exit_code=1
       fi
-      # Remove all finished PIDs from the list
       pids=($(jobs -pr))
     fi
 
-    echo "Starting deadcode analysis for $service..."
     deadcode_service "$service" &
     pids+=($!)
   done
 
-  # Wait for all remaining jobs and check for failures ---
-  echo "Waiting for remaining jobs to finish..."
+  echo "Waiting for remaining deadcode checks to finish..."
   for pid in "${pids[@]}"; do
     if ! wait "$pid"; then
-      echo "A deadcode process failed (PID: $pid)."
       exit_code=1
     fi
   done
 
-  # After checking all processes, decide the final outcome
   if [ "$exit_code" -ne 0 ]; then
-    echo "Deadcode analysis failed in one or more services."
+    echo -e "${RED}Deadcode analysis failed in one or more services.${RESET}"
     exit 1
   fi
 
-  echo "All deadcode checks completed successfully!"
+  echo -e "${GREEN}All deadcode checks completed successfully!${RESET}"
 fi
+
+exit 0

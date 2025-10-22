@@ -18,8 +18,3 @@ type Product struct {
 	CreatedAt        time.Time       `json:"created_at"`
 	UpdatedAt        time.Time       `json:"updated_at"`
 }
-
-// GetAvailableStock returns the available stock (quantity - reserved).
-func (p *Product) GetAvailableStock() int64 {
-	return p.Quantity - p.ReservedQuantity
-}
