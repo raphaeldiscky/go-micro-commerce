@@ -2,58 +2,62 @@
   "folders": [
     {
       "name": "api-gateway",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/api-gateway"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/api-gateway",
     },
     {
       "name": "graphql-gateway",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/graphql-gateway"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/graphql-gateway",
     },
     {
       "name": "auth-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/auth-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/auth-service",
     },
     {
       "name": "fulfillment-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/fulfillment-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/fulfillment-service",
     },
     {
       "name": "notification-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/notification-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/notification-service",
     },
     {
       "name": "order-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/order-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/order-service",
     },
     {
       "name": "payment-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/payment-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/payment-service",
     },
     {
       "name": "product-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/product-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/product-service",
     },
     {
       "name": "search-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/search-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/search-service",
     },
     {
       "name": "chat-service",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/chat-service"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/chat-service",
+    },
+    {
+      "name": "cart-service",
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/cart-service",
     },
     {
       "name": "pkg",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/pkg"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/pkg",
     },
     {
       "name": "proto",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/proto"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/proto",
     },
     {
       "name": "frontend",
-      "path": "/home/rdisckyzp/repos/go-micro-commerce/frontend"
+      "path": "/home/rdisckyzp/repos/go-micro-commerce/frontend",
     },
     {
-      "path": ".."
-    }
-  ]
+      "path": "..",
+    },
+  ],
 }

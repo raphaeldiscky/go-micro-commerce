@@ -52,6 +52,7 @@ get_service_port() {
     "notification-service") echo "15436" ;;
     "search-service") echo "15437" ;;
     "chat-service" ) echo "15438" ;;
+    "cart-service" ) echo "15439" ;;
     *) echo "" ;;
   esac
 }
@@ -66,6 +67,7 @@ get_service_db_name() {
     "notification-service") echo "notification_db" ;;
     "search-service") echo "search_db" ;;
     "chat-service" ) echo "chat_db" ;;
+    "cart-service" ) echo "cart_db" ;;
     *) echo "" ;;
   esac
 }
@@ -82,7 +84,7 @@ POSTGRES_MIGRATION_PATH="db/migrations"
 
 # Function to get all services
 get_all_services() {
-  echo "auth-service product-service order-service payment-service fulfillment-service notification-service search-service chat-service" 
+  echo "auth-service product-service order-service payment-service fulfillment-service notification-service search-service chat-service cart-service" 
 }
 
 # Function to run migration for a single service

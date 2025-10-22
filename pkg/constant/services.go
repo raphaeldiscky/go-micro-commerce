@@ -13,6 +13,8 @@ const (
 	NotificationServiceName = "notification-service"
 	// AuthServiceName is the name of the auth service.
 	AuthServiceName = "auth-service"
+	// CartServiceName is the name of the cart service.
+	CartServiceName = "cart-service"
 )
 
 const (

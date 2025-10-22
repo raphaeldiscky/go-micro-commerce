@@ -25,6 +25,7 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
 	public.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
 	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
+	public.GET("/carts/health", gw.ProxyToService("cart-service", "/health"))
 	public.GET(
 		"/chats/ws/health",
 		gw.ProxyToService("chat-service-ws", "/ws/health"),
@@ -88,4 +89,5 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
 	protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
 	protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
+	protected.Any("/carts/*", gw.ProxyToService("cart-service", ""))
 }

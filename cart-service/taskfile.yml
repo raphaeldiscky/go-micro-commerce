@@ -1,0 +1,47 @@
+version: "3"
+
+dotenv: [".env"]
+
+vars:
+  CURDIR: "{{.PWD}}"
+
+tasks:
+  build:
+    desc: Build the application binary
+    cmds:
+      - CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-w -s" -tags="sonic avx" -v -o {{.CURDIR}}/bin/main {{.CURDIR}}/cmd/main.go
+
+  run:
+    desc: Run the application
+    cmds:
+      - air -c .air.toml
+
+  lint:
+    desc: Run linters
+    cmds:
+      - golangci-lint run ./...
+
+  test:
+    desc: Run tests with verbose output and coverage
+    cmds:
+      - go test -v -cover {{.CURDIR}}/...
+
+  test-cover:
+    desc: Run tests with coverage report and open HTML
+    cmds:
+      - go test {{.CURDIR}}/... -coverprofile=coverage.out
+      - go tool cover -html=coverage.out && rm -f coverage.out
+
+  coverage:
+    desc: Generate coverage report and open HTML
+    cmds:
+      - go test {{.CURDIR}}/... -coverprofile=cover.out
+      - go tool cover -html=cover.out && rm -rf cover.out
+
+  mockery:
+    desc: Generate mocks using mockery
+    vars:
+      input: '{{.input | default "."}}'
+      output: '{{.output | default "./mocks"}}'
+    cmds:
+      - mockery --all --case underscore --dir {{.input}} --output {{.output}}

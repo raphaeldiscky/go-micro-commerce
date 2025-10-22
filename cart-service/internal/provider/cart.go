@@ -1,0 +1,26 @@
+package provider
+
+import (
+	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/service"
+)
+
+// SetupCart initializes the cart-related routes and services.
+func SetupCart(
+	e *echo.Echo,
+	appLogger logger.Logger,
+	providers *Providers,
+) {
+	cartService := service.NewCartService(
+		providers.DataStore,
+		appLogger,
+	)
+	providers.CartService = cartService
+	cartHandler := handler.NewCartHandler(cartService)
+
+	routes.SetupCartRoutes(e, cartHandler)
+}
