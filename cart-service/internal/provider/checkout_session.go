@@ -1,0 +1,64 @@
+package provider
+
+import (
+	"context"
+
+	"github.com/IBM/sarama"
+	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/handler"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/mq/producer"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/routes"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/service"
+)
+
+// SetupCheckoutSession initializes the checkout-session-related routes and services.
+func SetupCheckoutSession(
+	ctx context.Context,
+	cfg *config.Config,
+	e *echo.Echo,
+	appLogger logger.Logger,
+	providers *Providers,
+) {
+	err := providers.KafkaAdmin.CreateTopic(
+		kafka.CheckoutSessionLifecycleTopic,
+		constant.CheckoutSessionLifecycleTopicNumPartitions,
+		constant.CheckoutSessionLifecycleTopicReplicationFactor,
+	)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka topic: %v", err)
+	}
+
+	asyncProducer, err := kafka.NewAsyncProducer(ctx, &kafka.ProducerConfig{
+		Brokers:        cfg.Kafka.Brokers,
+		RetryMax:       cfg.Kafka.RetryMax,
+		RetryInterval:  cfg.Kafka.RetryInterval,
+		FlushFrequency: cfg.Kafka.FlushFrequency,
+		ReturnSuccess:  cfg.Kafka.ReturnSuccess,
+		ReturnErrors:   cfg.Kafka.ReturnErrors,
+		Acks:           sarama.WaitForAll,
+	}, appLogger)
+	if err != nil {
+		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
+	}
+
+	checkoutSessionOrderPlacedProducer := producer.NewCheckoutSessionOrderPlacedProducer(
+		asyncProducer,
+	)
+
+	providers.CheckoutSessionOrderPlacedProducer = checkoutSessionOrderPlacedProducer
+
+	checkoutSessionService := service.NewCheckoutSessionService(
+		providers.DataStore,
+		appLogger,
+		checkoutSessionOrderPlacedProducer,
+	)
+	providers.CheckoutSessionService = checkoutSessionService
+	checkoutSessionHandler := handler.NewCheckoutSessionHandler(checkoutSessionService)
+
+	routes.SetupCheckoutSessionRoutes(e, checkoutSessionHandler)
+}

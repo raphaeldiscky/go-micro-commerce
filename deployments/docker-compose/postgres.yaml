@@ -171,6 +171,25 @@ services:
       timeout: 5s
       retries: 5
 
+  postgres-cart:
+    image: postgres:17.5-alpine
+    container_name: postgres-cartt
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=cart_db
+    ports:
+      - "15440:5432"
+    networks:
+      - go-micro-commerce
+    volumes:
+      - postgres_cart_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_auth_data:
   postgres_product_data:
@@ -180,6 +199,7 @@ volumes:
   postgres_notification_data:
   postgres_search_data:
   postgres_chat_data:
+  postgres_cart_data:
 
 networks:
   go-micro-commerce:

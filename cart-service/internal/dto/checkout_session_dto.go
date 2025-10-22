@@ -1,0 +1,51 @@
+// Package dto contains data transfer objects for checkout session service.
+package dto
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
+)
+
+// CreateCheckoutSessionRequest represents the request to create a new checkout session.
+// Uses snapshot pattern - gets selected items from customer's cart automatically.
+type CreateCheckoutSessionRequest struct {
+	CustomerID     uuid.UUID  // from context or header
+	IdempotencyKey uuid.UUID  `json:"idempotency_key" validate:"required"`
+	AddressID      *uuid.UUID `json:"address_id"`
+	CarrierID      *string    `json:"carrier_id"`
+	PaymentGateway string     `json:"payment_gateway" validate:"required"`
+	PaymentMethod  string     `json:"payment_method"  validate:"required"`
+	Currency       string     `json:"currency"        validate:"required"`
+}
+
+// PlaceOrderRequest represents the request to place an order from a checkout session.
+type PlaceOrderRequest struct {
+	CustomerID     uuid.UUID // from context or header
+	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
+}
+
+// CheckoutSessionItemResponse represents a checkout session item in API responses.
+type CheckoutSessionItemResponse struct {
+	ID        uuid.UUID `json:"id"`
+	ProductID uuid.UUID `json:"product_id"`
+	Quantity  int64     `json:"quantity"`
+}
+
+// CheckoutSessionResponse represents a checkout session in API responses.
+type CheckoutSessionResponse struct {
+	ID             uuid.UUID                      `json:"id"`
+	IdempotencyKey uuid.UUID                      `json:"idempotency_key"`
+	CustomerID     uuid.UUID                      `json:"customer_id"`
+	AddressID      *uuid.UUID                     `json:"address_id,omitempty"`
+	CarrierID      *string                        `json:"carrier_id,omitempty"`
+	Status         constant.CheckoutSessionStatus `json:"status"`
+	PaymentGateway string                         `json:"payment_gateway"`
+	PaymentMethod  string                         `json:"payment_method"`
+	Currency       string                         `json:"currency"`
+	Items          []CheckoutSessionItemResponse  `json:"items"`
+	CreatedAt      time.Time                      `json:"created_at"`
+	UpdatedAt      time.Time                      `json:"updated_at"`
+}

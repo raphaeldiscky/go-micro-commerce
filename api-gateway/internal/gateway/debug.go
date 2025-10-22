@@ -19,6 +19,7 @@ func (gw *Gateway) DebugServices() echo.HandlerFunc {
 			"payment-service",
 			"search-service",
 			"chat-service",
+			"cart-service",
 		}
 		result := make(map[string]any)
 
