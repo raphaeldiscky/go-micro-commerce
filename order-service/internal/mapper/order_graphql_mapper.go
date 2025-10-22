@@ -7,34 +7,7 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 )
-
-// MapToGraphQLOrder maps entity.Order to graph.Order.
-func MapToGraphQLOrder(order *entity.Order) *graph.Order {
-	items := make([]*graph.OrderItem, len(order.Items))
-	for i := range order.Items {
-		items[i] = MapToGraphQLOrderItem(&order.Items[i])
-	}
-
-	return &graph.Order{
-		ID:             order.ID,
-		IdempotencyKey: order.IdempotencyKey,
-		CustomerID:     order.CustomerID,
-		Status:         order.Status,
-		Currency:       order.Currency,
-		PaymentGateway: order.PaymentGateway,
-		PaymentMethod:  order.PaymentMethod,
-		ShippingCost:   order.ShippingCost,
-		Subtotal:       order.Subtotal,
-		TotalPrice:     order.TotalPrice,
-		TotalTax:       order.TotalTax,
-		TotalDiscount:  order.TotalDiscount,
-		Items:          items,
-		CreatedAt:      order.CreatedAt,
-		UpdatedAt:      order.UpdatedAt,
-	}
-}
 
 // MapToGraphQLOrderFromDTO maps dto.OrderResponse to graph.Order.
 func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
@@ -59,23 +32,6 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 		Items:          items,
 		CreatedAt:      order.CreatedAt,
 		UpdatedAt:      order.UpdatedAt,
-	}
-}
-
-// MapToGraphQLOrderItem maps entity.OrderItem to graph.OrderItem.
-func MapToGraphQLOrderItem(item *entity.OrderItem) *graph.OrderItem {
-	return &graph.OrderItem{
-		ID:            item.ID,
-		OrderID:       item.OrderID,
-		ProductID:     item.ProductID,
-		Quantity:      int(item.Quantity),
-		UnitPrice:     item.UnitPrice,
-		TotalPrice:    item.TotalPrice,
-		TaxRate:       item.TaxRate,
-		TotalTax:      item.TotalTax,
-		TotalDiscount: item.TotalDiscount,
-		CreatedAt:     item.CreatedAt,
-		UpdatedAt:     item.UpdatedAt,
 	}
 }
 

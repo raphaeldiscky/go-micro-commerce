@@ -271,7 +271,6 @@ tasks:
           echo "Running deadcode for {{.SERVICE}}..."
           bash ./scripts/deadcode.sh {{.SERVICE}}
         fi
-    deps: ["format"]
 
   check:
     desc: Run deadcode, linter, and formatter checks for all services

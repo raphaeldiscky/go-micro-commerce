@@ -121,56 +121,6 @@ func MapUpdateRequestToEntity(
 	return existing
 }
 
-// MapToGraphQLAddress converts entity.Address to graph.Address.
-func MapToGraphQLAddress(address *entity.Address) *graph.Address {
-	graphAddress := &graph.Address{
-		ID:           address.ID,
-		UserID:       address.UserID,
-		ReceiverName: address.ReceiverName,
-		AddressLine1: address.AddressLine1,
-		City:         address.City,
-		PostalCode:   address.PostalCode,
-		CountryCode:  address.CountryCode,
-		IsDefault:    address.IsDefault,
-		FullAddress:  address.GetFullAddress(),
-		CreatedAt:    address.CreatedAt,
-		UpdatedAt:    address.UpdatedAt,
-	}
-
-	// Handle optional fields
-	if address.AddressLine2 != nil {
-		graphAddress.AddressLine2 = address.AddressLine2
-	}
-
-	if address.State != nil {
-		graphAddress.State = address.State
-	}
-
-	if address.Latitude != nil {
-		graphAddress.Latitude = address.Latitude
-	}
-
-	if address.Longitude != nil {
-		graphAddress.Longitude = address.Longitude
-	}
-
-	if address.Note != nil {
-		graphAddress.Note = address.Note
-	}
-
-	return graphAddress
-}
-
-// MapToGraphQLAddressList converts a slice of entity.Address to a slice of graph.Address.
-func MapToGraphQLAddressList(addresses []*entity.Address) []*graph.Address {
-	graphAddresses := make([]*graph.Address, len(addresses))
-	for i, address := range addresses {
-		graphAddresses[i] = MapToGraphQLAddress(address)
-	}
-
-	return graphAddresses
-}
-
 // MapGraphQLInputToCreateRequest converts graph.CreateAddressInput to dto.CreateAddressRequest.
 func MapGraphQLInputToCreateRequest(input graph.CreateAddressInput) *dto.CreateAddressRequest {
 	req := &dto.CreateAddressRequest{
