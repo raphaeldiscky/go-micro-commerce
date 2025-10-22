@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { MockOrder } from '@/data/orders'
 import { formatDate } from '@/lib/utils/date'
+import type { MockOrder } from '@/mocks/orders'
 import { Eye } from 'lucide-react'
 
 interface OrderTableProps {

@@ -1,7 +1,7 @@
 import { QUERY_KEY } from '@/constants/query-key'
-import { paginateWithCursor } from '@/data/pagination'
-import type { ProductStatus } from '@/data/products'
-import { mockProducts } from '@/data/products'
+import { paginateWithCursor } from '@/mocks/pagination'
+import type { ProductStatus } from '@/mocks/products'
+import { mockProducts } from '@/mocks/products'
 import { useQuery } from '@tanstack/react-query'
 
 interface ProductFilters {

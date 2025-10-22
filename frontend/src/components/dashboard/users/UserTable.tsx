@@ -7,8 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { MockUser } from '@/data/users'
 import { formatDate } from '@/lib/utils/date'
+import type { MockUser } from '@/mocks/users'
 import { Edit, Eye, Shield } from 'lucide-react'
 
 interface UserTableProps {

@@ -1,12 +1,12 @@
+import { graphClient } from '@/lib/graphql/client'
+import { CREATE_ORDER_MUTATION } from '@/lib/graphql/order'
+import type { CreateOrderMutation } from '@/lib/graphql/order.generated'
 import {
   DEFAULT_PRODUCT_DIMENSIONS,
   DEFAULT_PRODUCT_WEIGHT_KG,
   DEFAULT_WAREHOUSE_ADDRESS,
   mapShippingOptionToCarrier,
-} from '@/data/shipping'
-import { graphClient } from '@/lib/graphql/client'
-import { CREATE_ORDER_MUTATION } from '@/lib/graphql/order'
-import type { CreateOrderMutation } from '@/lib/graphql/order.generated'
+} from '@/mocks/shipping'
 import type {
   Address,
   CreateOrderInput,

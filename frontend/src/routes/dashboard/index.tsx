@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { mockOrderStats, mockRevenueStats } from '@/data/analytics'
+import { mockOrderStats, mockRevenueStats } from '@/mocks/analytics'
 import { createFileRoute } from '@tanstack/react-router'
 import { DollarSign, Package, ShoppingCart, Users } from 'lucide-react'
 import { OrderOverview } from '../../components/dashboard/analytics/OrderOverview'

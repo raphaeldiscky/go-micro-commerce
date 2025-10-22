@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { ProductStatus } from '@/data/products'
+import type { ProductStatus } from '@/mocks/products'
 import { Search, X } from 'lucide-react'
 
 interface ProductFiltersProps {

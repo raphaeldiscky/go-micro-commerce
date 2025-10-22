@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { mockShippingOptions } from '@/data/shipping'
+import { mockShippingOptions } from '@/mocks/shipping'
 import { useCartStore } from '@/store/cartStore'
 import type { ShippingOption } from '@/types/cart'
 import { Clock, Truck } from 'lucide-react'

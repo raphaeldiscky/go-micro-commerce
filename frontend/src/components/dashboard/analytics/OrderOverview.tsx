@@ -5,7 +5,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
-import { mockOrderStats } from '@/data/analytics'
+import { mockOrderStats } from '@/mocks/analytics'
 import {
   CheckCircle2,
   Clock,
