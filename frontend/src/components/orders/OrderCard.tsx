@@ -3,8 +3,9 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import type { OrderTransaction } from '@/types/order'
+import type { Order } from '@/types/__generated__/graphql'
 import { format } from 'date-fns'
+import Decimal from 'decimal.js'
 import {
   CalendarIcon,
   CreditCardIcon,
@@ -14,7 +15,7 @@ import {
 } from 'lucide-react'
 
 interface OrderCardProps {
-  order: OrderTransaction
+  order: Order
   className?: string
 }
 
@@ -27,11 +28,14 @@ export function OrderCard({ order, className }: OrderCardProps) {
     }
   }
 
-  const formatCurrency = (amount: number, currency: string) => {
+  const formatCurrency = (amount: Decimal | string, currency: string) => {
+    const amountNum: number =
+      typeof amount === 'string' ? Number(amount) : amount.toNumber()
+
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency,
-    }).format(amount)
+    }).format(amountNum)
   }
 
   return (
@@ -92,7 +96,7 @@ export function OrderCard({ order, className }: OrderCardProps) {
               <span className="text-muted-foreground">Tax</span>
               <span>{formatCurrency(order.totalTax, order.currency)}</span>
             </div>
-            {order.totalDiscount > 0 && (
+            {Decimal(order.totalDiscount).greaterThan(new Decimal(0)) && (
               <div className="flex justify-between text-green-600">
                 <span>Discount</span>
                 <span>

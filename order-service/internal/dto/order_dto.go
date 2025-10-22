@@ -69,6 +69,7 @@ type ClientCreateOrderRequest struct {
 // OrderItemResponse represents an order item in API responses.
 type OrderItemResponse struct {
 	ID            uuid.UUID       `json:"id"`
+	OrderID       uuid.UUID       `json:"order_id"`
 	ProductID     uuid.UUID       `json:"product_id"`
 	Quantity      int64           `json:"quantity"`
 	UnitPrice     decimal.Decimal `json:"unit_price"`
@@ -76,11 +77,14 @@ type OrderItemResponse struct {
 	TaxRate       decimal.Decimal `json:"tax_rate"`
 	TotalTax      decimal.Decimal `json:"total_tax"`
 	TotalDiscount decimal.Decimal `json:"total_discount"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
 }
 
 // OrderResponse represents an order in API responses.
 type OrderResponse struct {
 	ID             uuid.UUID               `json:"id"`
+	IdempotencyKey uuid.UUID               `json:"idempotency_key"`
 	CustomerID     uuid.UUID               `json:"customer_id"`
 	Status         constant.OrderStatus    `json:"status"`
 	Currency       string                  `json:"currency"`

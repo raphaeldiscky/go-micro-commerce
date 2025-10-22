@@ -45,6 +45,7 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 
 	return &graph.Order{
 		ID:             order.ID,
+		IdempotencyKey: order.IdempotencyKey,
 		CustomerID:     order.CustomerID,
 		Status:         order.Status,
 		Currency:       order.Currency,
@@ -82,6 +83,7 @@ func MapToGraphQLOrderItem(item *entity.OrderItem) *graph.OrderItem {
 func MapToGraphQLOrderItemFromDTO(item *dto.OrderItemResponse) *graph.OrderItem {
 	return &graph.OrderItem{
 		ID:            item.ID,
+		OrderID:       item.OrderID,
 		ProductID:     item.ProductID,
 		Quantity:      int(item.Quantity),
 		UnitPrice:     item.UnitPrice,
@@ -89,6 +91,8 @@ func MapToGraphQLOrderItemFromDTO(item *dto.OrderItemResponse) *graph.OrderItem 
 		TaxRate:       item.TaxRate,
 		TotalTax:      item.TotalTax,
 		TotalDiscount: item.TotalDiscount,
+		CreatedAt:     item.CreatedAt,
+		UpdatedAt:     item.UpdatedAt,
 	}
 }
 

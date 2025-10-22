@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import type { OrderStatus } from '@/types/order'
+import type { OrderStatus } from '@/types/__generated__/graphql'
 import {
   CheckCircle2Icon,
   ClockIcon,
@@ -17,66 +17,59 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIGS: Record<OrderStatus, StatusConfig> = {
-  pending: {
+  PENDING: {
     label: 'Pending',
     variant: 'secondary',
     className:
       'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200',
     icon: ClockIcon,
   },
-  processing: {
+  PROCESSING: {
     label: 'Processing',
     variant: 'secondary',
     className: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200',
     icon: PackageIcon,
   },
-  payment_pending: {
+  PAYMENT_PENDING: {
     label: 'Payment Pending',
     variant: 'secondary',
     className:
       'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200',
     icon: ClockIcon,
   },
-  payment_expired: {
+  PAYMENT_EXPIRED: {
     label: 'Payment Expired',
     variant: 'destructive',
     className: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200',
     icon: XCircleIcon,
   },
-  paid: {
+  PAID: {
     label: 'Paid',
     variant: 'secondary',
     className:
       'bg-green-100 text-green-800 border-green-200 hover:bg-green-200',
     icon: CheckCircle2Icon,
   },
-  shipped: {
+  SHIPPED: {
     label: 'Shipped',
     variant: 'secondary',
     className:
       'bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-200',
     icon: TruckIcon,
   },
-  delivered: {
+  DELIVERED: {
     label: 'Delivered',
     variant: 'secondary',
     className: 'bg-teal-100 text-teal-800 border-teal-200 hover:bg-teal-200',
     icon: PackageIcon,
   },
-  completed: {
-    label: 'Completed',
-    variant: 'default',
-    className:
-      'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200',
-    icon: CheckCircle2Icon,
-  },
-  failed: {
+  FAILED: {
     label: 'Failed',
     variant: 'destructive',
     className: 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200',
     icon: XCircleIcon,
   },
-  canceled: {
+  CANCELED: {
     label: 'Canceled',
     variant: 'outline',
     className: 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200',

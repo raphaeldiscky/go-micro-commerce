@@ -205,7 +205,9 @@ func (ta *orderActivities) ReserveProducts(
 	calculatedOrder, err := entity.NewOrder(
 		order.CustomerID,
 		order.IdempotencyKey,
-		"IDR",
+		order.PaymentGateway,
+		order.PaymentMethod,
+		order.Currency,
 		orderItems,
 	)
 	if err != nil {

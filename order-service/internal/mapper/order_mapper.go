@@ -15,18 +15,21 @@ import (
 // MapToOrderResponse converts domain entity to DTO response.
 func MapToOrderResponse(order *entity.Order) *dto.OrderResponse {
 	return &dto.OrderResponse{
-		ID:            order.ID,
-		CustomerID:    order.CustomerID,
-		Status:        order.Status,
-		Currency:      order.Currency,
-		ShippingCost:  order.ShippingCost,
-		Subtotal:      order.Subtotal,
-		TotalPrice:    order.TotalPrice,
-		TotalTax:      order.TotalTax,
-		TotalDiscount: order.TotalDiscount,
-		Items:         MapToOrderItemResponses(order.Items),
-		CreatedAt:     order.CreatedAt,
-		UpdatedAt:     order.UpdatedAt,
+		ID:             order.ID,
+		IdempotencyKey: order.IdempotencyKey,
+		CustomerID:     order.CustomerID,
+		Status:         order.Status,
+		Currency:       order.Currency,
+		PaymentGateway: order.PaymentGateway,
+		PaymentMethod:  order.PaymentMethod,
+		ShippingCost:   order.ShippingCost,
+		Subtotal:       order.Subtotal,
+		TotalPrice:     order.TotalPrice,
+		TotalTax:       order.TotalTax,
+		TotalDiscount:  order.TotalDiscount,
+		Items:          MapToOrderItemResponses(order.Items),
+		CreatedAt:      order.CreatedAt,
+		UpdatedAt:      order.UpdatedAt,
 	}
 }
 
@@ -38,6 +41,7 @@ func MapToOrderItemResponses(items []entity.OrderItem) []dto.OrderItemResponse {
 		item := &items[i]
 		responses = append(responses, dto.OrderItemResponse{
 			ID:            item.ID,
+			OrderID:       item.OrderID,
 			ProductID:     item.ProductID,
 			Quantity:      item.Quantity,
 			UnitPrice:     item.UnitPrice,
@@ -45,6 +49,8 @@ func MapToOrderItemResponses(items []entity.OrderItem) []dto.OrderItemResponse {
 			TotalPrice:    item.TotalPrice,
 			TotalTax:      item.TotalTax,
 			TotalDiscount: item.TotalDiscount,
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
 		})
 	}
 

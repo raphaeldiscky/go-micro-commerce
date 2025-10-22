@@ -1,6 +1,8 @@
 package constant
 
 // OrderStatus represents the status of an order.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type OrderStatus string
 
 const (

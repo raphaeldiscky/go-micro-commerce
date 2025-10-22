@@ -169,7 +169,14 @@ func (s *orderService) CreateOrderWithTemporal(
 			}
 		}
 
-		newOrder, newErr := entity.NewOrder(req.CustomerID, req.IdempotencyKey, "IDR", orderItems)
+		newOrder, newErr := entity.NewOrder(
+			req.CustomerID,
+			req.IdempotencyKey,
+			req.PaymentGateway,
+			req.PaymentMethod,
+			req.Currency,
+			orderItems,
+		)
 		if newErr != nil {
 			return fmt.Errorf("failed to create order entity: %w", newErr)
 		}
@@ -536,7 +543,7 @@ func (s *orderService) RequestPaymentOrder(
 			updatedOrder.ID,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
-			"IDR", // Default currency
+			updatedOrder.Currency,
 			req.PaymentMethod,
 			req.PaymentGateway,
 		)

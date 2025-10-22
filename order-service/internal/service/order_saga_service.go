@@ -79,7 +79,9 @@ func (s *orderService) CreateOrderWithSaga(
 		newOrder, newOrderErr := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
-			"IDR",
+			req.PaymentGateway,
+			req.PaymentMethod,
+			req.Currency,
 			orderItems,
 		)
 		if newOrderErr != nil {
