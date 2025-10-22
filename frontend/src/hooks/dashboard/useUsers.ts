@@ -1,7 +1,7 @@
 import { QUERY_KEY } from '@/constants/query-key'
-import { paginateWithCursor } from '@/lib/mock-data/pagination'
-import type { UserRole } from '@/lib/mock-data/users'
-import { mockUsers } from '@/lib/mock-data/users'
+import { paginateWithCursor } from '@/mocks/pagination'
+import type { UserRole } from '@/mocks/users'
+import { mockUsers } from '@/mocks/users'
 import { useQuery } from '@tanstack/react-query'
 
 interface UserFilters {

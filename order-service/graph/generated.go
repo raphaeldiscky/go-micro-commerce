@@ -5004,20 +5004,13 @@ func (ec *executionContext) marshalNOrderItem2ᚖgithubᚗcomᚋraphaeldisckyᚋ
 }
 
 func (ec *executionContext) unmarshalNOrderStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐOrderStatus(ctx context.Context, v any) (constant.OrderStatus, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.OrderStatus(tmp)
+	var res constant.OrderStatus
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNOrderStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐOrderStatus(ctx context.Context, sel ast.SelectionSet, v constant.OrderStatus) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋgraphᚐPageInfo(ctx context.Context, sel ast.SelectionSet, v *PageInfo) graphql.Marshaler {
@@ -5031,37 +5024,23 @@ func (ec *executionContext) marshalNPageInfo2ᚖgithubᚗcomᚋraphaeldisckyᚋg
 }
 
 func (ec *executionContext) unmarshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx context.Context, v any) (constant.PaymentGateway, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.PaymentGateway(tmp)
+	var res constant.PaymentGateway
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx context.Context, sel ast.SelectionSet, v constant.PaymentGateway) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx context.Context, v any) (constant.PaymentMethod, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.PaymentMethod(tmp)
+	var res constant.PaymentMethod
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx context.Context, sel ast.SelectionSet, v constant.PaymentMethod) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {

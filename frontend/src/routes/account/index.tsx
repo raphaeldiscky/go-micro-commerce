@@ -1,4 +1,3 @@
-import { AccountStats } from '@/components/account/AccountStats'
 import { AddressSection } from '@/components/account/AddressSection'
 import { ProfileSection } from '@/components/account/ProfileSection'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -26,11 +25,6 @@ function AccountPage() {
             Welcome back, {user?.firstName} {user?.lastName}
           </p>
         </div>
-      </div>
-
-      {/* Account Stats */}
-      <div className="mb-8">
-        <AccountStats />
       </div>
 
       {/* Account Management Tabs */}

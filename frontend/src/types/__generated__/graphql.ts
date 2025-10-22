@@ -26,7 +26,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean }
   Int: { input: number; output: number }
   Float: { input: number; output: number }
-  Decimal: { input: any; output: any }
+  Decimal: { input: string; output: string }
   Time: { input: string; output: string }
   UUID: { input: string; output: string }
   join__FieldSet: { input: any; output: any }
@@ -429,6 +429,7 @@ export type OrderItem = {
 
 export enum OrderStatus {
   Canceled = 'CANCELED',
+  Completed = 'COMPLETED',
   Delivered = 'DELIVERED',
   Failed = 'FAILED',
   Paid = 'PAID',

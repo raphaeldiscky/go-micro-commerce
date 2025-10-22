@@ -32,6 +32,8 @@ const (
 	// OrderFailedEventType is when order processing failed (failed).
 	// Needed by: notification service, analytics.
 	OrderFailedEventType = "OrderFailed"
+	// OrderCompletedEventType is when order is completed (completed).
+	OrderCompletedEventType = "OrderCompleted"
 )
 
 const (

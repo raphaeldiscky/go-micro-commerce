@@ -1,10 +1,5 @@
 import { create } from 'zustand'
 
-/**
- * Zustand store for notification UI state
- * Data management is handled by TanStack Query via hooks
- */
-
 interface NotificationState {
   isDrawerOpen: boolean
   activeTab: 'all' | 'unread' | 'read'

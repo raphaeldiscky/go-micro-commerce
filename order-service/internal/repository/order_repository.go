@@ -89,9 +89,9 @@ func (r *orderRepository) Create(
 ) (*entity.Order, error) {
 	// Insert order
 	insertOrderQuery := `
-        INSERT INTO orders (id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        RETURNING id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+        INSERT INTO orders (id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        RETURNING id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
     `
 
 	var createdOrder entity.Order
@@ -103,6 +103,8 @@ func (r *orderRepository) Create(
 		order.IdempotencyKey,
 		order.CustomerID,
 		order.Status,
+		order.PaymentGateway,
+		order.PaymentMethod,
 		order.Currency,
 		order.ShippingCost,
 		order.Subtotal,
@@ -116,6 +118,8 @@ func (r *orderRepository) Create(
 		&createdOrder.IdempotencyKey,
 		&createdOrder.CustomerID,
 		&createdOrder.Status,
+		&createdOrder.PaymentGateway,
+		&createdOrder.PaymentMethod,
 		&createdOrder.Currency,
 		&createdOrder.ShippingCost,
 		&createdOrder.Subtotal,
@@ -171,7 +175,7 @@ func (r *orderRepository) FindByID(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE id = $1
 	`
@@ -185,6 +189,8 @@ func (r *orderRepository) FindByID(
 		&order.IdempotencyKey,
 		&order.CustomerID,
 		&order.Status,
+		&order.PaymentGateway,
+		&order.PaymentMethod,
 		&order.Currency,
 		&order.ShippingCost,
 		&order.Subtotal,
@@ -252,7 +258,7 @@ func (r *orderRepository) FindByIdempotencyKey(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE idempotency_key = $1
 	`
@@ -266,6 +272,8 @@ func (r *orderRepository) FindByIdempotencyKey(
 		&order.IdempotencyKey,
 		&order.CustomerID,
 		&order.Status,
+		&order.PaymentGateway,
+		&order.PaymentMethod,
 		&order.Currency,
 		&order.ShippingCost,
 		&order.Subtotal,
@@ -333,7 +341,7 @@ func (r *orderRepository) FindByCustomerID(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE customer_id = $1
 		ORDER BY created_at DESC
@@ -356,6 +364,8 @@ func (r *orderRepository) FindByCustomerID(
 			&order.IdempotencyKey,
 			&order.CustomerID,
 			&order.Status,
+			&order.PaymentGateway,
+			&order.PaymentMethod,
 			&order.Currency,
 			&order.ShippingCost,
 			&order.Subtotal,
@@ -391,7 +401,7 @@ func (r *orderRepository) FindAll(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -413,6 +423,8 @@ func (r *orderRepository) FindAll(
 			&order.IdempotencyKey,
 			&order.CustomerID,
 			&order.Status,
+			&order.PaymentGateway,
+			&order.PaymentMethod,
 			&order.Currency,
 			&order.ShippingCost,
 			&order.Subtotal,
@@ -453,15 +465,17 @@ func (r *orderRepository) Update(
 		SET customer_id = $1,
 			idempotency_key = $2,
 			status = $3,
-			currency = $4,
-			shipping_cost = $5,
-			subtotal = $6,
-			total_tax = $7,
-			total_discount = $8,
-			total_price = $9,
-			updated_at = $10
-		WHERE id = $11
-		RETURNING id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			payment_gateway = $4,
+			payment_method = $5,
+			currency = $6,
+			shipping_cost = $7,
+			subtotal = $8,
+			total_tax = $9,
+			total_discount = $10,
+			total_price = $11,
+			updated_at = $12
+		WHERE id = $13
+		RETURNING id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(
@@ -470,14 +484,16 @@ func (r *orderRepository) Update(
 		order.CustomerID,     // $1
 		order.IdempotencyKey, // $2
 		order.Status,         // $3
-		order.Currency,       // $4
-		order.ShippingCost,   // $5
-		order.Subtotal,       // $6
-		order.TotalTax,       // $7
-		order.TotalDiscount,  // $8
-		order.TotalPrice,     // $9
-		order.UpdatedAt,      // $10
-		order.ID,             // $11
+		order.PaymentGateway, // $4
+		order.PaymentMethod,  // $5
+		order.Currency,       // $6
+		order.ShippingCost,   // $7
+		order.Subtotal,       // $8
+		order.TotalTax,       // $9
+		order.TotalDiscount,  // $10
+		order.TotalPrice,     // $11
+		order.UpdatedAt,      // $12
+		order.ID,             // $13
 	)
 
 	var updatedOrder entity.Order
@@ -487,6 +503,8 @@ func (r *orderRepository) Update(
 		&updatedOrder.IdempotencyKey,
 		&updatedOrder.CustomerID,
 		&updatedOrder.Status,
+		&updatedOrder.PaymentGateway,
+		&updatedOrder.PaymentMethod,
 		&updatedOrder.Currency,
 		&updatedOrder.ShippingCost,
 		&updatedOrder.Subtotal,
@@ -652,7 +670,7 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 	// If cursor is provided, use it for pagination
 	if cursorID != "" && cursorTimestamp > 0 {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			WHERE customer_id = $1
 			  AND (EXTRACT(EPOCH FROM created_at) < $2 OR (EXTRACT(EPOCH FROM created_at) = $2 AND id < $3))
@@ -662,7 +680,7 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 		args = []interface{}{customerID, cursorTimestamp, cursorID, limit}
 	} else {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			WHERE customer_id = $1
 			ORDER BY created_at DESC, id DESC
@@ -687,6 +705,8 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 			&order.IdempotencyKey,
 			&order.CustomerID,
 			&order.Status,
+			&order.PaymentGateway,
+			&order.PaymentMethod,
 			&order.Currency,
 			&order.ShippingCost,
 			&order.Subtotal,
@@ -730,7 +750,7 @@ func (r *orderRepository) FindAllWithCursor(
 	// If cursor is provided, use it for pagination
 	if cursorID != "" && cursorTimestamp > 0 {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			WHERE (EXTRACT(EPOCH FROM created_at) < $1 OR (EXTRACT(EPOCH FROM created_at) = $1 AND id < $2))
 			ORDER BY created_at DESC, id DESC
@@ -739,7 +759,7 @@ func (r *orderRepository) FindAllWithCursor(
 		args = []interface{}{cursorTimestamp, cursorID, limit}
 	} else {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, customer_id, status, payment_gateway, payment_method, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			ORDER BY created_at DESC, id DESC
 			LIMIT $1
@@ -763,6 +783,8 @@ func (r *orderRepository) FindAllWithCursor(
 			&order.IdempotencyKey,
 			&order.CustomerID,
 			&order.Status,
+			&order.PaymentGateway,
+			&order.PaymentMethod,
 			&order.Currency,
 			&order.ShippingCost,
 			&order.Subtotal,

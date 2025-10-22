@@ -50,6 +50,8 @@ type OrderItem struct {
 // NewOrder creates a new order with validation.
 func NewOrder(
 	customerID, idempotencyKey uuid.UUID,
+	paymentGateway constant.PaymentGateway,
+	paymentMethod constant.PaymentMethod,
 	currency string,
 	items []OrderItem,
 ) (*Order, error) {
@@ -92,6 +94,8 @@ func NewOrder(
 		UpdatedAt:      time.Now(),
 		CustomerID:     customerID,
 		Status:         constant.OrderStatusPending,
+		PaymentGateway: paymentGateway,
+		PaymentMethod:  paymentMethod,
 		Currency:       currency,
 		ShippingCost:   shippingCost,
 		Subtotal:       subtotal.Round(constant.DefaultPricingScale),

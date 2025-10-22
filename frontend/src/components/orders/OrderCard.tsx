@@ -3,8 +3,10 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { cn } from '@/lib/utils'
-import type { OrderTransaction } from '@/types/order'
+import { fCurrency } from '@/lib/utils/number'
+import type { Order } from '@/types/__generated__/graphql'
 import { format } from 'date-fns'
+import Decimal from 'decimal.js'
 import {
   CalendarIcon,
   CreditCardIcon,
@@ -14,7 +16,7 @@ import {
 } from 'lucide-react'
 
 interface OrderCardProps {
-  order: OrderTransaction
+  order: Order
   className?: string
 }
 
@@ -25,13 +27,6 @@ export function OrderCard({ order, className }: OrderCardProps) {
     } catch {
       return dateString
     }
-  }
-
-  const formatCurrency = (amount: number, currency: string) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency,
-    }).format(amount)
   }
 
   return (
@@ -82,29 +77,27 @@ export function OrderCard({ order, className }: OrderCardProps) {
           <div className="space-y-1 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatCurrency(order.subtotal, order.currency)}</span>
+              <span>{fCurrency(order.subtotal, order.currency)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Shipping</span>
-              <span>{formatCurrency(order.shippingCost, order.currency)}</span>
+              <span>{fCurrency(order.shippingCost, order.currency)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tax</span>
-              <span>{formatCurrency(order.totalTax, order.currency)}</span>
+              <span>{fCurrency(order.totalTax, order.currency)}</span>
             </div>
-            {order.totalDiscount > 0 && (
+            {Decimal(order.totalDiscount).greaterThan(new Decimal(0)) && (
               <div className="flex justify-between text-green-600">
                 <span>Discount</span>
-                <span>
-                  -{formatCurrency(order.totalDiscount, order.currency)}
-                </span>
+                <span>-{fCurrency(order.totalDiscount, order.currency)}</span>
               </div>
             )}
             <Separator className="my-2" />
             <div className="flex justify-between font-semibold text-base">
               <span>Total</span>
               <span className="text-primary">
-                {formatCurrency(order.totalPrice, order.currency)}
+                {fCurrency(order.totalPrice, order.currency)}
               </span>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { mockPaymentMethods } from '@/data/mockData'
+import { mockPaymentMethods } from '@/mocks/shipping'
 import { useCartStore } from '@/store/cartStore'
 import type { PaymentMethod } from '@/types/cart'
 import { Building, CreditCard, Package, Smartphone, Wallet } from 'lucide-react'

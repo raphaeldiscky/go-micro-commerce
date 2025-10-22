@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { useProducts } from '@/hooks/dashboard'
-import type { ProductStatus } from '@/lib/mock-data/products'
+import type { ProductStatus } from '@/mocks/products'
 import { createFileRoute } from '@tanstack/react-router'
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'

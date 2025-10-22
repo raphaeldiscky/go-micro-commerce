@@ -1,6 +1,8 @@
 package constant
 
 // PaymentMethod represents the different payment methods available.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type PaymentMethod string
 
 const (
@@ -9,6 +11,8 @@ const (
 )
 
 // PaymentGateway represents the different payment gateways available.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type PaymentGateway string
 
 const (

@@ -181,7 +181,7 @@ enum join__Graph {
   AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
   CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
   NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
-  ORDER_SERVICE @join__graph(name: "order-service", url: "http://host.docker.internal:8085/graph")
+  ORDER_SERVICE @join__graph(name: "order-service", url: "http://host.docker.internal:8083/graph")
 }
 
 input JoinConversationInput
@@ -420,6 +420,7 @@ enum OrderStatus
   PAYMENT_PENDING @join__enumValue(graph: ORDER_SERVICE)
   PAYMENT_EXPIRED @join__enumValue(graph: ORDER_SERVICE)
   PAID @join__enumValue(graph: ORDER_SERVICE)
+  COMPLETED @join__enumValue(graph: ORDER_SERVICE)
   SHIPPED @join__enumValue(graph: ORDER_SERVICE)
   DELIVERED @join__enumValue(graph: ORDER_SERVICE)
   CANCELED @join__enumValue(graph: ORDER_SERVICE)

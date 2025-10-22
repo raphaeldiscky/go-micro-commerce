@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { UserRole } from '@/lib/mock-data/users'
+import type { UserRole } from '@/mocks/users'
 import { Search, X } from 'lucide-react'
 
 interface UserFiltersProps {

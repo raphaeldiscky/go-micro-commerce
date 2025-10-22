@@ -89,11 +89,3 @@ export type PasswordFormValues = z.infer<typeof passwordSchema>
 // Interface types for form data
 export interface ProfileUpdateRequest extends ProfileFormValues {}
 export interface PasswordChangeRequest extends PasswordFormValues {}
-
-export type AccountStats = {
-  totalOrders: number
-  totalSpent: number
-  averageOrderValue: number
-  lastOrderDate: string
-  memberSince: string
-}

@@ -1,6 +1,8 @@
 package constant
 
 // OrderStatus represents the status of an order.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type OrderStatus string
 
 const (
@@ -22,4 +24,6 @@ const (
 	OrderStatusCanceled OrderStatus = "canceled"
 	// OrderStatusFailed indicates that the order has failed.
 	OrderStatusFailed OrderStatus = "failed"
+	// OrderStatusCompleted indicates that the order has completed.
+	OrderStatusCompleted OrderStatus = "completed"
 )

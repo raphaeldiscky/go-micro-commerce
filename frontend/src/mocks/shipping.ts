@@ -156,11 +156,3 @@ export const getPlaceholderImage = (
 ): string => {
   return `https://picsum.photos/seed/${Math.random().toString(36).substring(7)}/${width}/${height}.jpg`
 }
-
-// Format currency
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}

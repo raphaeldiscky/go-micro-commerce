@@ -12,14 +12,14 @@ export function OrderPagination({ className }: OrderPaginationProps) {
   const { fetchOrders, isLoading } = useOrderStore()
 
   const handleLoadPrevious = async () => {
-    if (pagination.previousCursor && !isLoading) {
-      await fetchOrders(pagination.previousCursor)
+    if (pagination.hasPreviousPage && pagination.startCursor && !isLoading) {
+      await fetchOrders(pagination.startCursor)
     }
   }
 
   const handleLoadNext = async () => {
-    if (pagination.nextCursor && !isLoading) {
-      await fetchOrders(pagination.nextCursor)
+    if (pagination.hasNextPage && pagination.endCursor && !isLoading) {
+      await fetchOrders(pagination.endCursor)
     }
   }
 
