@@ -80,6 +80,12 @@ jobs:
               - 'proto/**'
               - 'go.mod'
               - 'go.sum'
+            cart-service:
+              - 'cart-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
 
       - name: Classify services as node or go
         id: classify
