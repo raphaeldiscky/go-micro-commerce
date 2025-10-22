@@ -87,30 +87,25 @@ func (h *CartHandler) CreateCart(c echo.Context) error {
 	return echoutils.ResponseCreated(c, cart)
 }
 
-// AddItemToCart adds an item to the user's cart.
+// AddItemToActiveCart adds an item to the user's active cart.
 //
 // Route: POST /carts/:cartID/items
 //
 // Authentication: Requires user authentication.
-func (h *CartHandler) AddItemToCart(c echo.Context) error {
-	param := c.Param("cartID")
-
-	cartID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
-
+func (h *CartHandler) AddItemToActiveCart(c echo.Context) error {
 	var req dto.AddCartItemRequest
 
-	if err = c.Bind(&req); err != nil {
+	req.CustomerID = echoutils.GetUserIDFromContext(c)
+
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err = c.Validate(&req); err != nil {
+	if err := c.Validate(&req); err != nil {
 		return err
 	}
 
-	cart, errAdd := h.cartService.AddItemToCart(c.Request().Context(), cartID, &req)
+	cart, errAdd := h.cartService.AddItemToActiveCart(c.Request().Context(), &req)
 	if errAdd != nil {
 		return errAdd
 	}

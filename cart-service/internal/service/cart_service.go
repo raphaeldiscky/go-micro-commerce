@@ -22,9 +22,8 @@ type CartService interface {
 	CreateCart(ctx context.Context, req *dto.CreateCartRequest) (*dto.CartResponse, error)
 	GetCart(ctx context.Context, cartID uuid.UUID) (*dto.CartResponse, error)
 	GetCartByUserID(ctx context.Context, userID uuid.UUID) (*dto.CartResponse, error)
-	AddItemToCart(
+	AddItemToActiveCart(
 		ctx context.Context,
-		cartID uuid.UUID,
 		req *dto.AddCartItemRequest,
 	) (*dto.CartResponse, error)
 	RemoveItemFromCart(
@@ -147,41 +146,60 @@ func (s *cartService) GetCartByUserID(
 	return mapper.MapToCartResponse(cart), nil
 }
 
-// AddItemToCart adds an item to the cart.
-func (s *cartService) AddItemToCart(
+// AddItemToCart adds an item to the active cart.
+func (s *cartService) AddItemToActiveCart(
 	ctx context.Context,
-	cartID uuid.UUID,
 	req *dto.AddCartItemRequest,
 ) (*dto.CartResponse, error) {
-	var updatedCart *entity.Cart
+	var resultCart *entity.Cart
 
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		cartRepo := ds.CartRepository()
 
-		// Check if cart exists
-		cart, errCart := cartRepo.FindByID(ctx, cartID)
+		// Try to find active cart for customer
+		cart, errCart := cartRepo.FindActiveCartByUserID(ctx, req.CustomerID)
+
+		// If no active cart exists, create a new one with the item
 		if errCart != nil {
-			return httperror.NewInternalServerError("failed to get cart")
+			// Create cart item
+			item, errItem := entity.NewCartItem(req.ProductID, req.Quantity)
+			if errItem != nil {
+				return httperror.NewBadRequestError(fmt.Sprintf("invalid item: %v", errItem))
+			}
+
+			// Create new cart with status active and the item
+			newCart, errNewCart := entity.NewCart(req.CustomerID, []entity.CartItem{*item})
+			if errNewCart != nil {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf("failed to create cart: %v", errNewCart),
+				)
+			}
+
+			// Save new cart to database
+			createdCart, err := cartRepo.Create(ctx, newCart)
+			if err != nil {
+				return httperror.NewInternalServerError("failed to create cart")
+			}
+
+			resultCart = createdCart
+
+			return nil
 		}
 
-		if cart == nil {
-			return httperror.NewCartNotFoundError()
-		}
-
-		// Create cart item
+		// Cart exists - add item to existing cart
 		item, errItem := entity.NewCartItem(req.ProductID, req.Quantity)
 		if errItem != nil {
 			return httperror.NewBadRequestError(fmt.Sprintf("invalid item: %v", errItem))
 		}
 
 		// Add item to cart
-		err := cartRepo.AddItem(ctx, cartID, item)
+		err := cartRepo.AddItem(ctx, cart.ID, item)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to add item to cart")
 		}
 
 		// Fetch updated cart
-		updatedCart, err = cartRepo.FindByID(ctx, cartID)
+		resultCart, err = cartRepo.FindByID(ctx, cart.ID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get updated cart")
 		}
@@ -192,7 +210,7 @@ func (s *cartService) AddItemToCart(
 		return nil, err
 	}
 
-	return mapper.MapToCartResponse(updatedCart), nil
+	return mapper.MapToCartResponse(resultCart), nil
 }
 
 // RemoveItemFromCart removes an item from the cart.
@@ -256,28 +274,33 @@ func (s *cartService) UpdateItemQuantity(
 		// Check if cart exists
 		cart, errCart := cartRepo.FindByID(ctx, cartID)
 		if errCart != nil {
+			s.logger.Errorf("failed to get cart: %v", errCart)
 			return httperror.NewInternalServerError("failed to get cart")
 		}
 
 		if cart == nil {
+			s.logger.Error("cart not found")
 			return httperror.NewCartNotFoundError()
 		}
 
 		// Update item quantity
 		err := cartRepo.UpdateItemQuantity(ctx, cartID, itemID, quantity)
 		if err != nil {
+			s.logger.Errorf("failed to update item quantity: %v", err)
 			return httperror.NewInternalServerError("failed to update item quantity")
 		}
 
 		// Fetch updated cart
 		updatedCart, err = cartRepo.FindByID(ctx, cartID)
 		if err != nil {
+			s.logger.Errorf("failed to get updated cart: %v", err)
 			return httperror.NewInternalServerError("failed to get updated cart")
 		}
 
 		return nil
 	})
 	if err != nil {
+		s.logger.Errorf("failed to update item quantity: %v", err)
 		return nil, err
 	}
 

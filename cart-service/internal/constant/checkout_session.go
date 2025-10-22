@@ -3,6 +3,8 @@ package constant
 import "time"
 
 // CheckoutSessionStatus represents the status of a checkout session.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type CheckoutSessionStatus string
 
 const (

@@ -10,16 +10,15 @@ import (
 
 // SetupCartRoutes sets up all cart routes.
 func SetupCartRoutes(e *echo.Echo, h *handler.CartHandler) {
-	v1 := e.Group("/v1/carts")
+	v1 := e.Group("/v1")
 
-	// Protected routes (require authentication)
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
 	// User cart operations
-	protected.GET("/me", h.GetMyCart)                 // Get my active cart
-	protected.POST("", h.CreateCart)                  // Create cart
-	protected.POST("/:cartID/items", h.AddItemToCart) // Add item to cart
+	protected.GET("/", h.GetMyCart)                         // Get my active cart
+	protected.POST("", h.CreateCart)                        // Create cart
+	protected.POST("/:cartID/items", h.AddItemToActiveCart) // Add item to cart
 	protected.DELETE(
 		"/:cartID/items/:itemID",
 		h.RemoveItemFromCart,

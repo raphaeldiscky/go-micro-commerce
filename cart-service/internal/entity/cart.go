@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 )
 
 // Cart represents a lightweight cart in the marketplace.
@@ -15,6 +17,7 @@ import (
 type Cart struct {
 	ID         uuid.UUID
 	CustomerID uuid.UUID
+	Status     constant.CartStatus
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 	Items      []CartItem // Not stored in carts table, loaded from cart_items
@@ -29,7 +32,8 @@ type CartItem struct {
 	ProductID           uuid.UUID
 	Quantity            int64
 	SelectedForCheckout bool
-	AddedAt             time.Time
+	CreatedAt           time.Time
+	UpdatedAt           time.Time
 }
 
 // NewCart creates a new lightweight cart with validation.
@@ -44,17 +48,22 @@ func NewCart(
 	cartID := uuid.New()
 	now := time.Now()
 
-	// Initialize items with CartID
+	// Initialize items with CartID and timestamps
 	for i := range items {
 		items[i].CartID = cartID
-		if items[i].AddedAt.IsZero() {
-			items[i].AddedAt = now
+		if items[i].CreatedAt.IsZero() {
+			items[i].CreatedAt = now
+		}
+
+		if items[i].UpdatedAt.IsZero() {
+			items[i].UpdatedAt = now
 		}
 	}
 
 	cart := &Cart{
 		ID:         cartID,
 		CustomerID: customerID,
+		Status:     constant.CartStatusActive,
 		CreatedAt:  now,
 		UpdatedAt:  now,
 		Items:      items,
@@ -80,12 +89,15 @@ func NewCartItem(
 		return nil, errors.New("quantity must be greater than 0")
 	}
 
+	now := time.Now()
+
 	return &CartItem{
 		ID:                  uuid.New(),
 		ProductID:           productID,
 		Quantity:            quantity,
 		SelectedForCheckout: false,
-		AddedAt:             time.Now(),
+		CreatedAt:           now,
+		UpdatedAt:           now,
 	}, nil
 }
 
@@ -139,8 +151,12 @@ func (c *Cart) validateItem(item *CartItem, index int) error {
 		return fmt.Errorf("item[%d]: quantity must be greater than 0", index)
 	}
 
-	if item.AddedAt.IsZero() {
-		return fmt.Errorf("item[%d]: added_at must not be zero", index)
+	if item.CreatedAt.IsZero() {
+		return fmt.Errorf("item[%d]: created_at must not be zero", index)
+	}
+
+	if item.UpdatedAt.IsZero() {
+		return fmt.Errorf("item[%d]: updated_at must not be zero", index)
 	}
 
 	return nil
@@ -232,4 +248,54 @@ func (c *Cart) HasSelectedItems() bool {
 	}
 
 	return false
+}
+
+// MarkAsCheckedOut transitions the cart to checked_out status.
+func (c *Cart) MarkAsCheckedOut() error {
+	if c.Status != constant.CartStatusActive {
+		return fmt.Errorf("cannot checkout cart with status %s", c.Status)
+	}
+
+	c.Status = constant.CartStatusCheckedOut
+	c.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// RevertToActive reverts the cart from checked_out back to active.
+// Used when checkout is canceled or fails.
+func (c *Cart) RevertToActive() error {
+	if c.Status != constant.CartStatusCheckedOut {
+		return fmt.Errorf("cannot revert cart with status %s to active", c.Status)
+	}
+
+	c.Status = constant.CartStatusActive
+	c.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// MarkAsArchived archives the cart after successful order placement.
+func (c *Cart) MarkAsArchived() error {
+	if c.Status != constant.CartStatusCheckedOut {
+		return fmt.Errorf("cannot archive cart with status %s", c.Status)
+	}
+
+	c.Status = constant.CartStatusArchived
+	c.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// CanCheckout validates if the cart can proceed to checkout.
+func (c *Cart) CanCheckout() error {
+	if c.Status != constant.CartStatusActive {
+		return fmt.Errorf("cart must be active to checkout, current status: %s", c.Status)
+	}
+
+	if !c.HasSelectedItems() {
+		return errors.New("cart must have selected items to checkout")
+	}
+
+	return nil
 }

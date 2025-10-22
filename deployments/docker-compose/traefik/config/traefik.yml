@@ -92,6 +92,15 @@ http:
       middlewares:
         - rate-limit
 
+    # Direct access to Admin Service (for testing/admin)
+    cart-service:
+      rule: "Host(`cart.localhost`)"
+      service: cart-service
+      entryPoints:
+        - web
+      middlewares:
+        - rate-limit
+
   services:
     api-gateway:
       loadBalancer:
@@ -200,6 +209,17 @@ http:
           timeout: 10s
           headers:
             Host: chat-service
+
+    cart-service:
+      loadBalancer:
+        servers:
+          - url: "http://cart-service:8089"
+        healthCheck:
+          path: /health
+          interval: 30s
+          timeout: 10s
+          headers:
+            Host: cart-service
 
   middlewares:
     rate-limit:
