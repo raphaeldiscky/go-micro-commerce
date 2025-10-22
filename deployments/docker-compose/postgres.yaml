@@ -1,6 +1,6 @@
 services:
   postgres-auth:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-auth
     environment:
       - POSTGRES_USER=postgres
@@ -23,7 +23,7 @@ services:
           memory: 500m
 
   postgres-product:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-product
     environment:
       - POSTGRES_USER=postgres
@@ -46,7 +46,7 @@ services:
           memory: 500m
 
   postgres-order:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-order
     environment:
       - POSTGRES_USER=postgres
@@ -69,7 +69,7 @@ services:
           memory: 500m
 
   postgres-payment:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-payment
     environment:
       - POSTGRES_USER=postgres
@@ -92,7 +92,7 @@ services:
           memory: 500m
 
   postgres-fulfillment:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-fulfillment
     environment:
       - POSTGRES_USER=postgres
@@ -115,7 +115,7 @@ services:
           memory: 500m
 
   postgres-notification:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-notification
     environment:
       - POSTGRES_USER=postgres
@@ -134,7 +134,7 @@ services:
       retries: 5
 
   postgres-search:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-search
     environment:
       - POSTGRES_USER=postgres
@@ -153,7 +153,7 @@ services:
       retries: 5
 
   postgres-chat:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-chat
     environment:
       - POSTGRES_USER=postgres
@@ -172,7 +172,7 @@ services:
       retries: 5
 
   postgres-cart:
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     container_name: postgres-cartt
     environment:
       - POSTGRES_USER=postgres

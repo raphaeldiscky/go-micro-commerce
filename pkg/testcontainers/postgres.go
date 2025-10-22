@@ -22,7 +22,7 @@ const (
 	pgMaxIdleConns       = 10
 	pgMaxOpenConns       = 25
 	pgMaxConnLifetime    = 5 * time.Minute
-	defaultPgImage       = "postgres:15-alpine"
+	defaultPgImage       = "postgres:18-alpine"
 )
 
 // PostgresConfig holds configuration for PostgreSQL testcontainer.
@@ -33,7 +33,7 @@ type PostgresConfig struct {
 	Username string
 	// Password for authentication
 	Password string
-	// Docker image (defaults to postgres:15-alpine)
+	// Docker image
 	Image string
 	// Migration file paths (e.g., "../../db/migrations/*.sql")
 	MigrationPaths []string

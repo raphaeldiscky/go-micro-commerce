@@ -44,7 +44,7 @@ services:
 
   postgres-temporal:
     container_name: postgres-temporal
-    image: postgres:17.5-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
