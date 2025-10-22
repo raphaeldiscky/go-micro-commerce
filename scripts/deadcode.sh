@@ -20,7 +20,7 @@ deadcode_service() {
   # Run deadcode from cmd/api main package
   if [ -f "$dir/cmd/api/main.go" ]; then
     # Run in a subshell to isolate the cd command
-    (cd "$dir" && deadcode ./cmd/api)
+    (cd "$dir" && deadcode -test ./cmd/api)
   else
     echo "Skipping $dir - no cmd/api/main.go found"
   fi

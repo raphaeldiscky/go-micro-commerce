@@ -3,6 +3,8 @@ package constant
 import "time"
 
 // ConversationStatus represents the status of a chat conversation.
+//
+//nolint:recvcheck // Mixed receivers required: Unmarshal uses pointer, Marshal uses value.
 type ConversationStatus string
 
 const (
@@ -17,6 +19,8 @@ const (
 )
 
 // UserType represents the type of user in the chat system.
+//
+//nolint:recvcheck // Mixed receivers required: Unmarshal uses pointer, Marshal uses value.
 type UserType string
 
 const (
@@ -27,6 +31,8 @@ const (
 )
 
 // MessageType represents the type of message.
+//
+//nolint:recvcheck // Mixed receivers required: Unmarshal uses pointer, Marshal uses value.
 type MessageType string
 
 const (
@@ -41,6 +47,8 @@ const (
 )
 
 // ParticipantRole represents the role of a participant in a conversation.
+//
+//nolint:recvcheck // Mixed receivers required: Unmarshal uses pointer, Marshal uses value.
 type ParticipantRole string
 
 const (
@@ -65,6 +73,8 @@ const (
 )
 
 // PresenceStatus represents user presence status.
+//
+//nolint:recvcheck // Mixed receivers required: Unmarshal uses pointer, Marshal uses value.
 type PresenceStatus string
 
 const (

@@ -52,11 +52,6 @@ type ReadReceiptEvent struct {
 	ExcludeUserID  *uuid.UUID            `json:"exclude_user_id,omitempty"`
 }
 
-// MarshalEvent marshals an event payload to JSON.
-func MarshalEvent(payload interface{}) ([]byte, error) {
-	return json.Marshal(payload)
-}
-
 // UnmarshalChatMessageEvent unmarshals a chat message event.
 func UnmarshalChatMessageEvent(data []byte) (*ChatMessageEvent, error) {
 	var event ChatMessageEvent
