@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { formatCurrency } from '@/data/mockData'
+import { fCurrency } from '@/lib/utils/number'
 import { useOrderSummary } from '@/store/cartStore'
 import { Receipt, ShoppingCart, Truck } from 'lucide-react'
 
@@ -24,7 +24,7 @@ export function OrderSummary() {
               <span>Subtotal</span>
             </div>
             <span className="font-medium">
-              {formatCurrency(orderSummary.subtotal)}
+              {fCurrency(orderSummary.subtotal)}
             </span>
           </div>
 
@@ -38,7 +38,7 @@ export function OrderSummary() {
               {orderSummary.shipping === 0 ? (
                 <span className="text-green-600">FREE</span>
               ) : (
-                formatCurrency(orderSummary.shipping)
+                fCurrency(orderSummary.shipping)
               )}
             </span>
           </div>
@@ -48,7 +48,7 @@ export function OrderSummary() {
           {/* Total */}
           <div className="flex items-center justify-between text-lg font-bold">
             <span>Total</span>
-            <span>{formatCurrency(orderSummary.total)}</span>
+            <span>{fCurrency(orderSummary.total)}</span>
           </div>
         </div>
 

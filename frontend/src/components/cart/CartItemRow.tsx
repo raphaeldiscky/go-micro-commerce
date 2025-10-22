@@ -1,8 +1,8 @@
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { formatCurrency } from '@/data/mockData'
 import { cn } from '@/lib/utils/index'
+import { fCurrency } from '@/lib/utils/number'
 import { useCartStore } from '@/store/cartStore'
 import type { CartItem } from '@/types/cart'
 import { Minus, Package, Plus, Trash2 } from 'lucide-react'
@@ -95,7 +95,7 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
             </p>
             <div className="flex items-center gap-2 mt-2">
               <span className="font-semibold text-sm">
-                {formatCurrency(item.product.price)}
+                {fCurrency(item.product.price)}
               </span>
               {isLowStock && (
                 <Badge variant="secondary" className="text-xs">
@@ -146,7 +146,7 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
         {/* Item Subtotal */}
         <div className="mt-2">
           <span className="text-sm font-medium">
-            Subtotal: {formatCurrency(item.product.price * item.quantity)}
+            Subtotal: {fCurrency(item.product.price * item.quantity)}
           </span>
         </div>
       </div>

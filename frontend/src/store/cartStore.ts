@@ -3,11 +3,10 @@ import {
   DEFAULT_PRODUCT_WEIGHT_KG,
   DEFAULT_WAREHOUSE_ADDRESS,
   mapShippingOptionToCarrier,
-} from '@/data/mockData'
+} from '@/data/shipping'
 import { graphClient } from '@/lib/graphql/client'
 import { CREATE_ORDER_MUTATION } from '@/lib/graphql/order'
 import type { CreateOrderMutation } from '@/lib/graphql/order.generated'
-import { toDecimalString } from '@/lib/utils/decimal'
 import type {
   Address,
   CreateOrderInput,
@@ -17,7 +16,6 @@ import type {
 import type {
   Cart,
   CartItem,
-  CartStore,
   CheckoutSession,
   MockProduct,
   OrderSummary,
@@ -29,6 +27,69 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/shallow'
+
+// Checkout form data
+export interface CheckoutFormData {
+  orderNote?: string
+  shippingMethod?: string
+  paymentMethod?: string
+}
+
+// Cart store state interface
+export interface CartState {
+  cart: Cart | null
+  items: Array<CartItem>
+  checkoutSession: CheckoutSession | null
+  isLoading: boolean
+  isDrawerOpen: boolean
+  isCheckoutLoading: boolean
+  checkoutData: CheckoutFormData
+  selectedAddress: Address | null
+  selectedShippingOption: ShippingOption | null
+  selectedPaymentMethod: PaymentMethod | null
+  selectedPaymentGateway: PaymentGateway | null
+}
+
+// Cart store actions interface
+export interface CartActions {
+  // Cart and item management
+  initializeCart: (customerId: string) => void
+  addItem: (product: MockProduct, quantity?: number) => void
+  removeItem: (itemId: string) => void
+  updateQuantity: (itemId: string, quantity: number) => void
+  toggleSelection: (itemId: string) => void
+  selectAll: () => void
+  deselectAll: () => void
+  clearCart: () => void
+
+  // Drawer management
+  openDrawer: () => void
+  closeDrawer: () => void
+  toggleDrawer: () => void
+
+  // Checkout flow
+  startCheckout: (navigateToCheckout?: (checkoutId: string) => void) => void
+  setAddress: (address: Address) => void
+  setShippingMethod: (method: ShippingOption) => void
+  setPaymentMethod: (method: PaymentMethod) => void
+  setPaymentGateway: (gateway: PaymentGateway) => void
+  setOrderNote: (note: string) => void
+  placeOrder: () => Promise<{
+    success: boolean
+    orderId?: string
+    paymentId?: string
+    error?: string
+  }>
+
+  // Utility selectors
+  getTotalItemCount: () => number
+  getSelectedItems: () => Array<CartItem>
+  getSelectedTotal: () => number
+  getSubtotal: () => number
+  getOrderSummary: () => OrderSummary
+}
+
+export type CartStore = CartState & CartActions
 
 export const useCartStore = create<CartStore>()(
   devtools(
@@ -398,12 +459,12 @@ export const useCartStore = create<CartStore>()(
                   country: state.selectedAddress.countryCode,
                 },
                 dimensions: {
-                  length: toDecimalString(DEFAULT_PRODUCT_DIMENSIONS.length),
-                  height: toDecimalString(DEFAULT_PRODUCT_DIMENSIONS.height),
-                  width: toDecimalString(DEFAULT_PRODUCT_DIMENSIONS.width),
+                  length: DEFAULT_PRODUCT_DIMENSIONS.length.toString(),
+                  height: DEFAULT_PRODUCT_DIMENSIONS.height.toString(),
+                  width: DEFAULT_PRODUCT_DIMENSIONS.width.toString(),
                   unit: DEFAULT_PRODUCT_DIMENSIONS.unit,
                 },
-                weightKg: toDecimalString(DEFAULT_PRODUCT_WEIGHT_KG),
+                weightKg: DEFAULT_PRODUCT_WEIGHT_KG.toString(),
                 carrierId: mapShippingOptionToCarrier(
                   state.selectedShippingOption.id,
                 ),

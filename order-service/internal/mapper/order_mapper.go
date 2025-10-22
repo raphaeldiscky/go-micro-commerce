@@ -78,6 +78,8 @@ func MapStatusToEventType(status constant.OrderStatus) string {
 		return kafka.OrderProcessingEventType
 	case constant.OrderStatusFailed:
 		return kafka.OrderFailedEventType
+	case constant.OrderStatusCompleted:
+		return kafka.OrderCompletedEventType
 	default:
 		return "unknown"
 	}

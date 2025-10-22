@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
-import { formatCurrency } from '@/data/mockData'
+import { fCurrency } from '@/lib/utils/number'
 import { useCartStore } from '@/store/cartStore'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
@@ -370,7 +370,7 @@ function RouteComponent() {
                     ) : (
                       <>
                         Place Order •{' '}
-                        {formatCurrency(
+                        {fCurrency(
                           selectedItems.reduce(
                             (total, item) =>
                               total + item.product.price * item.quantity,

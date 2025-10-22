@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet'
 import { PATH } from '@/constants/routes'
-import { formatCurrency } from '@/data/mockData'
+import { fCurrency } from '@/lib/utils/number'
 import { useCartStore } from '@/store/cartStore'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCheck, Package, ShoppingBag } from 'lucide-react'
@@ -171,7 +171,7 @@ export function CartDrawer() {
                             {item.product.name} x{item.quantity}
                           </span>
                           <span className="font-medium">
-                            {formatCurrency(item.product.price * item.quantity)}
+                            {fCurrency(item.product.price * item.quantity)}
                           </span>
                         </div>
                       ))}
@@ -187,7 +187,7 @@ export function CartDrawer() {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold">Selected Total:</span>
                       <span className="font-bold text-lg">
-                        {formatCurrency(selectedTotal)}
+                        {fCurrency(selectedTotal)}
                       </span>
                     </div>
 

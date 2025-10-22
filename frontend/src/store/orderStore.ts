@@ -1,14 +1,21 @@
 import { graphClient } from '@/lib/graphql/client'
 import { LIST_MY_ORDERS_QUERY } from '@/lib/graphql/order'
 import type { ListMyOrdersQuery } from '@/lib/graphql/order.generated'
-import { parseDecimal } from '@/lib/utils/decimal'
-import type { Order, PageInfo } from '@/types/__generated__/graphql'
-import type { OrderDisplay, OrderFilters } from '@/types/order'
+import type {
+  Order,
+  OrderStatus,
+  PageInfo,
+} from '@/types/__generated__/graphql'
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export interface OrderFilters {
+  status?: OrderStatus
+  search?: string
+}
+
 interface OrderState {
-  orders: Array<OrderDisplay>
+  orders: Array<Order>
   pagination: PageInfo
   filters: OrderFilters
   isLoading: boolean
@@ -28,22 +35,7 @@ interface OrderActions {
 
 type OrderStore = OrderState & OrderActions
 
-/**
- * Convert GraphQL Order (with Decimal strings) to OrderDisplay (with Decimal instances)
- */
-function mapOrderToDisplay(order: Order): OrderDisplay {
-  return {
-    ...order,
-    shippingCost: parseDecimal(order.shippingCost),
-    subtotal: parseDecimal(order.subtotal),
-    totalPrice: parseDecimal(order.totalPrice),
-    totalTax: parseDecimal(order.totalTax),
-    totalDiscount: parseDecimal(order.totalDiscount),
-  }
-}
-
-// Default empty state
-const defaultOrdersState: Array<OrderDisplay> = []
+const defaultOrdersState: Array<Order> = []
 
 const defaultPagination: PageInfo = {
   hasNextPage: false,
@@ -66,7 +58,7 @@ export const useOrderStore = create<OrderStore>()(
       hasInitialized: false,
 
       // Actions
-      fetchOrders: async (cursor?: string, filters?: OrderFilters) => {
+      fetchOrders: async (cursor?: string) => {
         set({ isLoading: true, error: null })
 
         try {
@@ -78,16 +70,16 @@ export const useOrderStore = create<OrderStore>()(
 
           const { edges, pageInfo } = data.listMyOrders
 
-          // Map GraphQL orders to display format with Decimal instances
-          const orders = edges.map((edge) => mapOrderToDisplay(edge.node))
-
           if (cursor) {
-            // Append orders for pagination (load more)
             const currentOrders = get().orders
-            const newOrders = orders.filter(
-              (order) =>
-                !currentOrders.some((existing) => existing.id === order.id),
-            )
+            const newOrders = edges
+              .filter(
+                (order) =>
+                  !currentOrders.some(
+                    (existing) => existing.id === order.node.id,
+                  ),
+              )
+              .map(({ node }) => node)
 
             set({
               orders: [...currentOrders, ...newOrders],
@@ -95,9 +87,8 @@ export const useOrderStore = create<OrderStore>()(
               isLoading: false,
             })
           } else {
-            // Replace orders for new search/filter
             set({
-              orders,
+              orders: edges.map(({ node }) => node),
               pagination: pageInfo,
               isLoading: false,
             })

@@ -1,5 +1,3 @@
-import type { Address } from './__generated__/graphql'
-
 // Matches 'carts' table
 export interface Cart {
   id: string
@@ -82,70 +80,6 @@ export interface OrderSummary {
   discount: number
   total: number
 }
-
-// Checkout form data
-export interface CheckoutFormData {
-  orderNote?: string
-  shippingMethod?: string
-  paymentMethod?: string
-}
-
-// Cart store state interface
-export interface CartState {
-  cart: Cart | null
-  items: Array<CartItem>
-  checkoutSession: CheckoutSession | null
-  isLoading: boolean
-  isDrawerOpen: boolean
-  isCheckoutLoading: boolean
-  checkoutData: CheckoutFormData
-  selectedAddress: Address | null
-  selectedShippingOption: ShippingOption | null
-  selectedPaymentMethod: PaymentMethod | null
-  selectedPaymentGateway: PaymentGateway | null
-}
-
-// Cart store actions interface
-export interface CartActions {
-  // Cart and item management
-  initializeCart: (customerId: string) => void
-  addItem: (product: MockProduct, quantity?: number) => void
-  removeItem: (itemId: string) => void
-  updateQuantity: (itemId: string, quantity: number) => void
-  toggleSelection: (itemId: string) => void
-  selectAll: () => void
-  deselectAll: () => void
-  clearCart: () => void
-
-  // Drawer management
-  openDrawer: () => void
-  closeDrawer: () => void
-  toggleDrawer: () => void
-
-  // Checkout flow
-  startCheckout: (navigateToCheckout?: (checkoutId: string) => void) => void
-  setAddress: (address: Address) => void
-  setShippingMethod: (method: ShippingOption) => void
-  setPaymentMethod: (method: PaymentMethod) => void
-  setPaymentGateway: (gateway: PaymentGateway) => void
-  setOrderNote: (note: string) => void
-  placeOrder: () => Promise<{
-    success: boolean
-    orderId?: string
-    paymentId?: string
-    error?: string
-  }>
-
-  // Utility selectors
-  getTotalItemCount: () => number
-  getSelectedItems: () => Array<CartItem>
-  getSelectedTotal: () => number
-  getSubtotal: () => number
-  getOrderSummary: () => OrderSummary
-}
-
-// Cart store type (state + actions)
-export type CartStore = CartState & CartActions
 
 // Pagination for cart items
 export interface CartItemsPagination {

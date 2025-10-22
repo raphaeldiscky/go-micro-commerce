@@ -63,6 +63,13 @@ const STATUS_CONFIGS: Record<OrderStatus, StatusConfig> = {
     className: 'bg-teal-100 text-teal-800 border-teal-200 hover:bg-teal-200',
     icon: PackageIcon,
   },
+  COMPLETED: {
+    label: 'Completed',
+    variant: 'default',
+    className:
+      'bg-emerald-100 text-emerald-800 border-emerald-200 hover:bg-emerald-200',
+    icon: CheckCircle2Icon,
+  },
   FAILED: {
     label: 'Failed',
     variant: 'destructive',

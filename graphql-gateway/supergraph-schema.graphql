@@ -420,6 +420,7 @@ enum OrderStatus
   PAYMENT_PENDING @join__enumValue(graph: ORDER_SERVICE)
   PAYMENT_EXPIRED @join__enumValue(graph: ORDER_SERVICE)
   PAID @join__enumValue(graph: ORDER_SERVICE)
+  COMPLETED @join__enumValue(graph: ORDER_SERVICE)
   SHIPPED @join__enumValue(graph: ORDER_SERVICE)
   DELIVERED @join__enumValue(graph: ORDER_SERVICE)
   CANCELED @join__enumValue(graph: ORDER_SERVICE)

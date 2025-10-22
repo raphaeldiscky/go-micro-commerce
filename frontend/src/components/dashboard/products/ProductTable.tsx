@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { MockProduct } from '@/lib/mock-data/products'
+import type { MockProduct } from '@/data/products'
 import { formatDate } from '@/lib/utils/date'
 import { Edit, Eye } from 'lucide-react'
 

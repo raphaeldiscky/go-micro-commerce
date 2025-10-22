@@ -1,10 +1,8 @@
 import { QUERY_KEY } from '@/constants/query-key'
 import { graphClient } from '@/lib/graphql/client'
 import { CREATE_ORDER_MUTATION } from '@/lib/graphql/order'
-import type {
-  CreateOrderInput,
-  CreateOrderMutation,
-} from '@/lib/graphql/order.generated'
+import type { CreateOrderMutation } from '@/lib/graphql/order.generated'
+import type { CreateOrderInput } from '@/types/__generated__/graphql'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 /**

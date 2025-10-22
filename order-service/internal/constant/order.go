@@ -24,4 +24,6 @@ const (
 	OrderStatusCanceled OrderStatus = "canceled"
 	// OrderStatusFailed indicates that the order has failed.
 	OrderStatusFailed OrderStatus = "failed"
+	// OrderStatusCompleted indicates that the order has completed.
+	OrderStatusCompleted OrderStatus = "completed"
 )

@@ -10,21 +10,21 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { useOrderFilters, useOrderStore } from '@/store/orderStore'
-import type { OrderStatus } from '@/types/order'
+import { OrderStatus } from '@/types/__generated__/graphql'
 import { RotateCcwIcon, SearchIcon } from 'lucide-react'
 import { useState } from 'react'
 
 const ORDER_STATUSES: Array<{ value: OrderStatus; label: string }> = [
-  { value: 'pending', label: 'Pending' },
-  { value: 'processing', label: 'Processing' },
-  { value: 'payment_pending', label: 'Payment Pending' },
-  { value: 'payment_expired', label: 'Payment Expired' },
-  { value: 'paid', label: 'Paid' },
-  { value: 'shipped', label: 'Shipped' },
-  { value: 'delivered', label: 'Delivered' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'canceled', label: 'Canceled' },
+  { value: OrderStatus.Pending, label: 'Pending' },
+  { value: OrderStatus.Processing, label: 'Processing' },
+  { value: OrderStatus.PaymentPending, label: 'Payment Pending' },
+  { value: OrderStatus.PaymentExpired, label: 'Payment Expired' },
+  { value: OrderStatus.Paid, label: 'Paid' },
+  { value: OrderStatus.Shipped, label: 'Shipped' },
+  { value: OrderStatus.Delivered, label: 'Delivered' },
+  { value: OrderStatus.Completed, label: 'Completed' },
+  { value: OrderStatus.Failed, label: 'Failed' },
+  { value: OrderStatus.Canceled, label: 'Canceled' },
 ]
 
 interface OrderFiltersProps {
@@ -56,21 +56,12 @@ export function OrderFilters({ className }: OrderFiltersProps) {
     setFilters({
       status: undefined,
       search: undefined,
-      dateFrom: undefined,
-      dateTo: undefined,
-      minAmount: undefined,
-      maxAmount: undefined,
     })
   }
 
-  const activeFiltersCount = [
-    filters.status,
-    filters.search,
-    filters.dateFrom,
-    filters.dateTo,
-    filters.minAmount,
-    filters.maxAmount,
-  ].filter(Boolean).length
+  const activeFiltersCount = [filters.status, filters.search].filter(
+    Boolean,
+  ).length
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -127,50 +118,6 @@ export function OrderFilters({ className }: OrderFiltersProps) {
           )}
         </div>
       </div>
-
-      {/* Future filters can be added here */}
-      {/*
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="date-from">Date From</Label>
-          <Input
-            id="date-from"
-            type="date"
-            value={filters.dateFrom || ''}
-            onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value || undefined })}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="date-to">Date To</Label>
-          <Input
-            id="date-to"
-            type="date"
-            value={filters.dateTo || ''}
-            onChange={(e) => setFilters({ ...filters, dateTo: e.target.value || undefined })}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="min-amount">Min Amount</Label>
-          <Input
-            id="min-amount"
-            type="number"
-            placeholder="0.00"
-            value={filters.minAmount || ''}
-            onChange={(e) => setFilters({ ...filters, minAmount: e.target.value ? Number(e.target.value) : undefined })}
-          />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="max-amount">Max Amount</Label>
-          <Input
-            id="max-amount"
-            type="number"
-            placeholder="0.00"
-            value={filters.maxAmount || ''}
-            onChange={(e) => setFilters({ ...filters, maxAmount: e.target.value ? Number(e.target.value) : undefined })}
-          />
-        </div>
-      </div>
-      */}
     </div>
   )
 }

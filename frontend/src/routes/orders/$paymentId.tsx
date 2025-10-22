@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
-import { formatCurrency } from '@/data/mockData'
 import { useCreateCheckoutSession } from '@/hooks/order'
+import { fCurrency } from '@/lib/utils/number'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircle,
@@ -215,7 +215,7 @@ function RouteComponent() {
                         </p>
                       </div>
                       <p className="font-medium">
-                        {formatCurrency(item.price * item.quantity)}
+                        {fCurrency(item.price * item.quantity)}
                       </p>
                     </div>
                   ))}
@@ -224,15 +224,15 @@ function RouteComponent() {
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span>{formatCurrency(payment.order.subtotal)}</span>
+                    <span>{fCurrency(payment.order.subtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span>{formatCurrency(payment.order.shippingCost)}</span>
+                    <span>{fCurrency(payment.order.shippingCost)}</span>
                   </div>
                   <div className="flex justify-between text-base font-bold pt-2 border-t">
                     <span>Total</span>
-                    <span>{formatCurrency(payment.order.total)}</span>
+                    <span>{fCurrency(payment.order.total)}</span>
                   </div>
                 </div>
               </CardContent>

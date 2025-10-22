@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import type { MockOrder } from '@/lib/mock-data/orders'
+import type { MockOrder } from '@/data/orders'
 import { formatDate } from '@/lib/utils/date'
 import { Eye } from 'lucide-react'
 

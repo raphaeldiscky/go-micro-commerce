@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { OrderStatus } from '@/lib/mock-data/orders'
+import type { OrderStatus } from '@/data/orders'
 import { Search, X } from 'lucide-react'
 
 interface OrderFiltersProps {

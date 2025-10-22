@@ -1,7 +1,7 @@
 import { QUERY_KEY } from '@/constants/query-key'
-import type { OrderStatus } from '@/lib/mock-data/orders'
-import { mockOrders } from '@/lib/mock-data/orders'
-import { paginateWithCursor } from '@/lib/mock-data/pagination'
+import type { OrderStatus } from '@/data/orders'
+import { mockOrders } from '@/data/orders'
+import { paginateWithCursor } from '@/data/pagination'
 import { useQuery } from '@tanstack/react-query'
 
 interface OrderFilters {

@@ -429,6 +429,7 @@ export type OrderItem = {
 
 export enum OrderStatus {
   Canceled = 'CANCELED',
+  Completed = 'COMPLETED',
   Delivered = 'DELIVERED',
   Failed = 'FAILED',
   Paid = 'PAID',

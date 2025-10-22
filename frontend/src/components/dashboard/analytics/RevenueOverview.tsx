@@ -5,10 +5,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
-import {
-  mockRevenueChartData,
-  mockRevenueStats,
-} from '@/lib/mock-data/analytics'
+import { mockRevenueChartData, mockRevenueStats } from '@/data/analytics'
 import { ArrowDown, ArrowUp, DollarSign, TrendingUp } from 'lucide-react'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 

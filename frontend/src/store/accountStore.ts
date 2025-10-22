@@ -1,23 +1,13 @@
 import type {
-  AccountStats,
   PasswordChangeRequest,
   ProfileUpdateRequest,
 } from '@/schemas/account'
 import { toast } from 'sonner'
 import { create } from 'zustand'
-
-// Mock data for demonstration (stats only - addresses use GraphQL now)
-const mockStats: AccountStats = {
-  totalOrders: 12,
-  totalSpent: 1245.99,
-  averageOrderValue: 103.83,
-  lastOrderDate: '2024-01-15T10:30:00Z',
-  memberSince: '2023-06-15T14:22:00Z',
-}
+import type { User } from '../types/__generated__/graphql'
 
 interface AccountState {
-  user: unknown // From auth store
-  stats: AccountStats | null
+  user: User | null
   isLoading: boolean
   isUpdating: boolean
   error: string | null
@@ -102,7 +92,7 @@ export const useAccountStore = create<AccountStore>()((set) => ({
       })
 
       // Use mock data for now
-      set({ stats: mockStats, isLoading: false })
+      set({ isLoading: false })
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -118,8 +108,6 @@ export const useAccountStore = create<AccountStore>()((set) => ({
   setError: (error: string | null) => set({ error }),
 }))
 
-// Selectors for easier access
-export const useAccountStats = () => useAccountStore((state) => state.stats)
 export const useAccountLoading = () =>
   useAccountStore((state) => state.isLoading)
 export const useAccountUpdating = () =>
