@@ -10,34 +10,33 @@ import {
 } from '@/components/ui/sheet'
 import { PATH } from '@/constants/routes'
 import { fCurrency } from '@/lib/utils/number'
-import { useCartStore } from '@/store/cartStore'
+import {
+  useCartStore,
+  useEnrichedCartItems,
+  useSelectedItems,
+  useSelectedTotal,
+} from '@/store/cartStore'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCheck, Package, ShoppingBag } from 'lucide-react'
-import { useMemo } from 'react'
 import { CartItemRow } from './CartItemRow'
 
 export function CartDrawer() {
-  const navigate = useNavigate()
   const {
-    items,
     isDrawerOpen,
     closeDrawer,
-    getSelectedItems,
     getTotalItemCount,
-    startCheckout,
     selectAll,
     deselectAll,
-    clearCart,
   } = useCartStore()
-
-  const selectedItems = getSelectedItems()
+  const items = useEnrichedCartItems()
+  const selectedItems = useSelectedItems()
   const totalItemCount = getTotalItemCount()
-  const selectedTotal = useMemo(() => {
-    return selectedItems.reduce(
-      (total, item) => total + item.product.price * item.quantity,
-      0,
-    )
-  }, [selectedItems])
+  const selectedTotal = useSelectedTotal()
+
+  const navigate = useNavigate()
+  const { startCheckout, isLoading: isCheckoutLoading } =
+    useCheckoutSessionStore()
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -46,7 +45,7 @@ export function CartDrawer() {
   }
 
   const handleSelectAll = () => {
-    const hasUnselectedItems = items.some((item) => !item.selected_for_checkout)
+    const hasUnselectedItems = items.some((item) => !item.selectedForCheckout)
     if (hasUnselectedItems) {
       selectAll()
     } else {
@@ -54,22 +53,24 @@ export function CartDrawer() {
     }
   }
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (selectedItems.length === 0) {
       return
     }
 
-    // Navigate to checkout with ID
-    const navigateToCheckout = (checkoutId: string) => {
-      navigate({ to: PATH.checkout.detail(checkoutId) })
+    try {
+      await startCheckout((checkoutId) => {
+        navigate({ to: PATH.checkout.detail(checkoutId) })
+      })
+    } catch (error) {
+      // Error is already handled by the store with toast
+      console.error('Checkout failed:', error)
     }
-
-    startCheckout(navigateToCheckout)
   }
 
   const hasSelectedItems = selectedItems.length > 0
   const allItemsSelected =
-    items.length > 0 && items.every((item) => item.selected_for_checkout)
+    items.length > 0 && items.every((item) => item.selectedForCheckout)
 
   return (
     <Sheet onOpenChange={handleOpenChange} open={isDrawerOpen}>
@@ -118,34 +119,24 @@ export function CartDrawer() {
             <>
               {/* Selection Controls */}
               <div className="flex-shrink-0 px-6 py-3 border-b">
-                <div className="flex items-center justify-between">
-                  <Button
-                    onClick={handleSelectAll}
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 px-3"
-                  >
-                    {allItemsSelected ? (
-                      <>
-                        <CheckCheck className="h-4 w-4 mr-2" />
-                        Deselect All
-                      </>
-                    ) : (
-                      <>
-                        <CheckCheck className="h-4 w-4 mr-2" />
-                        Select All
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    onClick={clearCart}
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 px-3 text-muted-foreground hover:text-destructive"
-                  >
-                    Clear Cart
-                  </Button>
-                </div>
+                <Button
+                  onClick={handleSelectAll}
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 px-3"
+                >
+                  {allItemsSelected ? (
+                    <>
+                      <CheckCheck className="h-4 w-4 mr-2" />
+                      Deselect All
+                    </>
+                  ) : (
+                    <>
+                      <CheckCheck className="h-4 w-4 mr-2" />
+                      Select All
+                    </>
+                  )}
+                </Button>
               </div>
 
               {/* Cart Items List */}
@@ -168,10 +159,13 @@ export function CartDrawer() {
                           className="flex justify-between text-sm"
                         >
                           <span className="text-muted-foreground truncate">
-                            {item.product.name} x{item.quantity}
+                            {item.product?.name || 'Loading...'} x
+                            {item.quantity}
                           </span>
                           <span className="font-medium">
-                            {fCurrency(item.product.price * item.quantity)}
+                            {item.product
+                              ? fCurrency(item.product.price * item.quantity)
+                              : '...'}
                           </span>
                         </div>
                       ))}
@@ -206,12 +200,17 @@ export function CartDrawer() {
         {items.length > 0 && (
           <div className="flex-shrink-0 border-t p-6">
             <Button
-              disabled={!hasSelectedItems}
+              disabled={!hasSelectedItems || isCheckoutLoading}
               onClick={handleCheckout}
               className="w-full"
               size="lg"
             >
-              {hasSelectedItems ? (
+              {isCheckoutLoading ? (
+                <>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  Starting checkout...
+                </>
+              ) : hasSelectedItems ? (
                 <>
                   Checkout ({selectedItems.length}{' '}
                   {selectedItems.length === 1 ? 'item' : 'items'})

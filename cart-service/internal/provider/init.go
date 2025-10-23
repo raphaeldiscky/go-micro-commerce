@@ -9,6 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/service"
@@ -16,8 +17,9 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore  repository.DataStore
-	KafkaAdmin *kafka.Admin
+	DataStore     repository.DataStore
+	KafkaAdmin    *kafka.Admin
+	ProductClient client.ProductClient
 
 	NotificationRequestProducer        kafka.Producer
 	CheckoutSessionOrderPlacedProducer kafka.Producer
@@ -77,8 +79,17 @@ func SetupGlobal(
 	// Setup datastore
 	dataStore := repository.NewDataStore(pgPool, redisLockClient, appLogger)
 
+	// Setup product client
+	productClient, err := client.NewProductClient(cfg)
+	if err != nil {
+		appLogger.Errorf("failed to create product client: %v", err)
+
+		return nil, err
+	}
+
 	return &Providers{
-		DataStore:  dataStore,
-		KafkaAdmin: kafkaAdmin,
+		DataStore:     dataStore,
+		KafkaAdmin:    kafkaAdmin,
+		ProductClient: productClient,
 	}, nil
 }

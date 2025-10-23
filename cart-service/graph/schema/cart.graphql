@@ -80,6 +80,10 @@ input CreateCheckoutSessionInput {
 # Input type for placing order
 input PlaceOrderInput {
   idempotencyKey: UUID!
+  addressId: UUID!
+  carrierId: String!
+  paymentMethod: String!
+  paymentGateway: String!
 }
 
 # Cart queries

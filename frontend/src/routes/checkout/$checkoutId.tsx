@@ -14,7 +14,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
 import { fCurrency } from '@/lib/utils/number'
-import { useCartStore } from '@/store/cartStore'
+import { useSelectedItems } from '@/store/cartStore'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircle,
@@ -35,20 +36,17 @@ function RouteComponent() {
   const navigate = useNavigate()
   const {
     checkoutSession,
-    getSelectedItems,
     selectedAddress,
     selectedShippingOption,
     selectedPaymentMethod,
     selectedPaymentGateway,
-    isCheckoutLoading,
-    placeOrder,
-  } = useCartStore()
+    isLoading: isCheckoutLoading,
+  } = useCheckoutSessionStore()
 
-  const selectedItems = getSelectedItems()
+  const selectedItems = useSelectedItems()
 
   // Validate checkout session
   const isValidSession = checkoutSession?.id === checkoutId
-  const isSessionExpired = checkoutSession?.status === 'expired'
 
   // Check if checkout is ready
   const isCheckoutReady =
@@ -56,8 +54,7 @@ function RouteComponent() {
     selectedAddress &&
     selectedShippingOption &&
     selectedPaymentMethod &&
-    selectedPaymentGateway &&
-    !isSessionExpired
+    selectedPaymentGateway
 
   const handlePlaceOrder = async () => {
     if (!isCheckoutReady) {
@@ -66,17 +63,7 @@ function RouteComponent() {
     }
 
     try {
-      const result = await placeOrder()
-
-      if (result.success && result.paymentId) {
-        toast.success('Order placed successfully!')
-        // Navigate to pending payment page
-        navigate({
-          to: PATH.orders.pendingPayment(result.paymentId),
-        })
-      } else {
-        toast.error(result.error || 'Failed to place order')
-      }
+      await alert('TODO: Implement place order')
     } catch (error) {
       toast.error('An unexpected error occurred')
     }
@@ -111,7 +98,7 @@ function RouteComponent() {
   }
 
   // Invalid or expired session
-  if (!isValidSession || isSessionExpired) {
+  if (!isValidSession) {
     return (
       <div className="min-h-screen bg-gray-50/40 flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
@@ -120,16 +107,12 @@ function RouteComponent() {
               <AlertCircle className="h-6 w-6 text-red-600" />
             </div>
             <CardTitle className="text-red-600">
-              {isSessionExpired
-                ? 'Session Expired'
-                : 'Invalid Checkout Session'}
+              Invalid Checkout Session
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
-              {isSessionExpired
-                ? 'Your checkout session has expired. Please start a new checkout process.'
-                : 'We could not find your checkout session. Please start over.'}
+              We could not find your checkout session. Please start over.
             </p>
             <div className="space-y-2">
               <Button
@@ -180,11 +163,11 @@ function RouteComponent() {
             <div className="flex items-center gap-2">
               <Badge
                 variant={
-                  checkoutSession.status === 'pending' ? 'default' : 'secondary'
+                  checkoutSession.status === 'PENDING' ? 'default' : 'secondary'
                 }
                 className="flex items-center gap-1"
               >
-                {checkoutSession.status === 'pending' && (
+                {checkoutSession.status === 'PENDING' && (
                   <Clock className="h-3 w-3" />
                 )}
                 {checkoutSession.status}
@@ -373,7 +356,8 @@ function RouteComponent() {
                         {fCurrency(
                           selectedItems.reduce(
                             (total, item) =>
-                              total + item.product.price * item.quantity,
+                              total +
+                              (item.product?.price ?? 0) * item.quantity,
                             0,
                           ) + (selectedShippingOption?.price || 0),
                         )}

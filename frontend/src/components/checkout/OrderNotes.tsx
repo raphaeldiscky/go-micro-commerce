@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { useCartStore } from '@/store/cartStore'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { FileText } from 'lucide-react'
 
 export function OrderNotes() {
-  const { checkoutData, setOrderNote } = useCartStore()
+  const { orderNote, setOrderNote } = useCheckoutSessionStore()
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setOrderNote(e.target.value)
@@ -27,7 +27,7 @@ export function OrderNotes() {
           <Textarea
             id="order-notes"
             placeholder="e.g., Delivery instructions, gift wrapping, special requests..."
-            value={checkoutData.orderNote || ''}
+            value={orderNote || ''}
             onChange={handleNoteChange}
             rows={3}
             className="resize-none"

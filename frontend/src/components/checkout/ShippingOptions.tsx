@@ -2,25 +2,27 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { mockShippingOptions } from '@/mocks/shipping'
-import { useCartStore } from '@/store/cartStore'
-import type { ShippingOption } from '@/types/cart'
+import { useSelectedItems } from '@/store/cartStore'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
+import type { ShippingOptionUI } from '@/types/cart'
 import { Clock, Truck } from 'lucide-react'
 
 export function ShippingOptions() {
-  const {
-    selectedAddress,
-    selectedShippingOption,
-    setShippingMethod,
-    getSubtotal,
-  } = useCartStore()
+  const { selectedAddress, selectedShippingOption, setShippingMethod } =
+    useCheckoutSessionStore()
+  const selectedItems = useSelectedItems()
 
-  const subtotal = getSubtotal()
+  // Calculate subtotal from selected cart items
+  const subtotal = selectedItems.reduce(
+    (total, item) => total + (item.product?.price ?? 0) * item.quantity,
+    0,
+  )
   const isDisabled = !selectedAddress
 
   const handleShippingChange = (optionId: string) => {
     const option = mockShippingOptions.find((opt) => opt.id === optionId)
     if (option) {
-      setShippingMethod(option)
+      setShippingMethod(optionId, option)
     }
   }
 
@@ -51,7 +53,7 @@ export function ShippingOptions() {
           onValueChange={handleShippingChange}
           disabled={isDisabled}
         >
-          {availableShippingOptions.map((option: ShippingOption) => (
+          {availableShippingOptions.map((option: ShippingOptionUI) => (
             <div key={option.id} className="space-y-2">
               <div className="flex items-start space-x-3">
                 <RadioGroupItem

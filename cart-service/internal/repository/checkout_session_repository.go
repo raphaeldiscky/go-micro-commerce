@@ -91,8 +91,8 @@ func (r *checkoutSessionRepository) Create(
 	// Insert checkout session items
 	if len(session.Items) > 0 {
 		const insertItemQuery = `
-            INSERT INTO checkout_session_items (id, checkout_session_id, product_id, quantity)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO checkout_session_items (id, checkout_session_id, product_id, quantity, unit_price)
+            VALUES ($1, $2, $3, $4, $5)
         `
 
 		for i := range len(session.Items) {
@@ -105,6 +105,7 @@ func (r *checkoutSessionRepository) Create(
 				createdSession.ID,
 				item.ProductID,
 				item.Quantity,
+				item.UnitPrice,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to insert checkout session item: %w", err)
@@ -158,7 +159,7 @@ func (r *checkoutSessionRepository) GetByID(
 
 	// Get checkout session items (ordered by UUIDv7 id for chronological order)
 	const itemsQuery = `
-		SELECT id, product_id, quantity
+		SELECT id, product_id, quantity, unit_price
 		FROM checkout_session_items
 		WHERE checkout_session_id = $1
 		ORDER BY id ASC
@@ -179,6 +180,7 @@ func (r *checkoutSessionRepository) GetByID(
 			&item.ID,
 			&item.ProductID,
 			&item.Quantity,
+			&item.UnitPrice,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan checkout session item: %w", err)
@@ -237,7 +239,7 @@ func (r *checkoutSessionRepository) Update(
 
 	// Get checkout session items (items don't change in update)
 	const itemsQuery = `
-		SELECT id, product_id, quantity
+		SELECT id, product_id, quantity, unit_price
 		FROM checkout_session_items
 		WHERE checkout_session_id = $1
 		ORDER BY id ASC
@@ -258,6 +260,7 @@ func (r *checkoutSessionRepository) Update(
 			&item.ID,
 			&item.ProductID,
 			&item.Quantity,
+			&item.UnitPrice,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan checkout session item: %w", err)

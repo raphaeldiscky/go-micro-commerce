@@ -2,13 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { mockPaymentGateways } from '@/mocks/shipping'
-import { useCartStore } from '@/store/cartStore'
-import type { PaymentGateway } from '@/types/cart'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
+import type { PaymentGatewayUI } from '@/types/cart'
 import { Building2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { BsPaypal, BsStripe } from 'react-icons/bs'
 
-const getGatewayIcon = (type: PaymentGateway['type']) => {
+const getGatewayIcon = (type: PaymentGatewayUI['type']) => {
   switch (type) {
     case 'stripe':
       return BsStripe
@@ -23,39 +23,41 @@ export function PaymentGatewaySelector() {
   const {
     selectedAddress,
     selectedShippingOption,
-    selectedPaymentMethod,
-    selectedPaymentGateway,
+    selectedPaymentMethodData,
+    selectedPaymentGatewayData,
     setPaymentGateway,
-  } = useCartStore()
+  } = useCheckoutSessionStore()
 
   const isDisabled =
-    !selectedAddress || !selectedShippingOption || !selectedPaymentMethod
+    !selectedAddress || !selectedShippingOption || !selectedPaymentMethodData
 
   // Filter available gateways based on payment method
-  const availableGateways = selectedPaymentMethod?.supportedGateways
-    ? selectedPaymentMethod.supportedGateways
+  const availableGateways = selectedPaymentMethodData?.supportedGateways
+    ? selectedPaymentMethodData.supportedGateways
     : mockPaymentGateways
 
   // Auto-select first available gateway when payment method is selected and no gateway is selected
   useEffect(() => {
     if (
-      selectedPaymentMethod &&
-      !selectedPaymentGateway &&
+      selectedPaymentMethodData &&
+      !selectedPaymentGatewayData &&
       availableGateways.length > 0
     ) {
-      setPaymentGateway(availableGateways[0])
+      setPaymentGateway(availableGateways[0].id, availableGateways[0])
     }
   }, [
-    selectedPaymentMethod,
-    selectedPaymentGateway,
+    selectedPaymentMethodData,
+    selectedPaymentGatewayData,
     availableGateways,
     setPaymentGateway,
   ])
 
   const handleGatewayChange = (gatewayId: string) => {
-    const gateway = availableGateways.find((g) => g.id === gatewayId)
+    const gateway = availableGateways.find(
+      (g: PaymentGatewayUI) => g.id === gatewayId,
+    )
     if (gateway) {
-      setPaymentGateway(gateway)
+      setPaymentGateway(gatewayId, gateway)
     }
   }
 
@@ -74,11 +76,11 @@ export function PaymentGatewaySelector() {
           </p>
         )}
         <RadioGroup
-          value={selectedPaymentGateway?.id || ''}
+          value={selectedPaymentGatewayData?.id || ''}
           onValueChange={handleGatewayChange}
           disabled={isDisabled}
         >
-          {availableGateways.map((gateway: PaymentGateway) => {
+          {availableGateways.map((gateway: PaymentGatewayUI) => {
             const Icon = getGatewayIcon(gateway.type)
             return (
               <div key={gateway.id} className="space-y-1">
@@ -101,7 +103,7 @@ export function PaymentGatewaySelector() {
           })}
         </RadioGroup>
 
-        {!isDisabled && !selectedPaymentGateway && (
+        {!isDisabled && !selectedPaymentGatewayData && (
           <p className="text-sm text-muted-foreground">
             Please select a payment gateway to continue
           </p>

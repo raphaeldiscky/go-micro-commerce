@@ -67,6 +67,10 @@ type Mutation struct {
 
 type PlaceOrderInput struct {
 	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
+	AddressID      uuid.UUID `json:"addressId"`
+	CarrierID      string    `json:"carrierId"`
+	PaymentMethod  string    `json:"paymentMethod"`
+	PaymentGateway string    `json:"paymentGateway"`
 }
 
 type Query struct {

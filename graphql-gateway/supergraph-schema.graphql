@@ -21,6 +21,13 @@ directive @join__unionMember(graph: join__Graph!, member: String!) repeatable on
 
 directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
+input AddCartItemInput
+  @join__type(graph: CART_SERVICE)
+{
+  productId: UUID!
+  quantity: Int!
+}
+
 type Address
   @join__type(graph: AUTH_SERVICE)
 {
@@ -64,12 +71,76 @@ type AuthPayload
   user: User!
 }
 
+type Cart
+  @join__type(graph: CART_SERVICE)
+{
+  id: UUID!
+  customerId: UUID!
+  status: CartStatus!
+  items: [CartItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type CartItem
+  @join__type(graph: CART_SERVICE)
+{
+  id: UUID!
+  cartId: UUID!
+  productId: UUID!
+  quantity: Int!
+  selectedForCheckout: Boolean!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+enum CartStatus
+  @join__type(graph: CART_SERVICE)
+{
+  ACTIVE @join__enumValue(graph: CART_SERVICE)
+  CHECKED_OUT @join__enumValue(graph: CART_SERVICE)
+  ARCHIVED @join__enumValue(graph: CART_SERVICE)
+}
+
 type ChatConnection
   @join__type(graph: CHAT_SERVICE)
 {
   nodeAddress: String!
   userId: UUID!
   userType: String!
+}
+
+type CheckoutSession
+  @join__type(graph: CART_SERVICE)
+{
+  id: UUID!
+  idempotencyKey: UUID!
+  customerId: UUID!
+  addressId: UUID
+  carrierId: String
+  status: CheckoutSessionStatus!
+  paymentGateway: String
+  paymentMethod: String
+  currency: String!
+  items: [CheckoutSessionItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+type CheckoutSessionItem
+  @join__type(graph: CART_SERVICE)
+{
+  id: UUID!
+  productId: UUID!
+  quantity: Int!
+}
+
+enum CheckoutSessionStatus
+  @join__type(graph: CART_SERVICE)
+{
+  PENDING @join__enumValue(graph: CART_SERVICE)
+  ORDER_PLACED @join__enumValue(graph: CART_SERVICE)
+  CANCELED @join__enumValue(graph: CART_SERVICE)
 }
 
 type Conversation
@@ -117,6 +188,12 @@ input CreateAddressInput
   longitude: Float
   isDefault: Boolean!
   note: String
+}
+
+input CreateCheckoutSessionInput
+  @join__type(graph: CART_SERVICE)
+{
+  idempotencyKey: UUID!
 }
 
 input CreateConversationInput
@@ -179,6 +256,7 @@ scalar join__FieldSet
 
 enum join__Graph {
   AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
+  CART_SERVICE @join__graph(name: "cart-service", url: "http://host.docker.internal:8089/graph")
   CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
   NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
   ORDER_SERVICE @join__graph(name: "order-service", url: "http://host.docker.internal:8083/graph")
@@ -251,6 +329,7 @@ enum MessageType
 
 type Mutation
   @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CART_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
@@ -263,6 +342,13 @@ type Mutation
   login(input: LoginInput!): AuthPayload! @join__field(graph: AUTH_SERVICE)
   refreshToken: AuthPayload! @join__field(graph: AUTH_SERVICE)
   logout: Boolean! @join__field(graph: AUTH_SERVICE)
+  addItemToCart(input: AddCartItemInput!): Cart! @join__field(graph: CART_SERVICE)
+  removeItemFromCart(itemId: UUID!): Cart! @join__field(graph: CART_SERVICE)
+  updateItemQuantity(itemId: UUID!, input: UpdateCartItemQuantityInput!): Cart! @join__field(graph: CART_SERVICE)
+  selectItemForCheckout(itemId: UUID!, input: SelectItemForCheckoutInput!): Cart! @join__field(graph: CART_SERVICE)
+  createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
+  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
+  cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @join__field(graph: CART_SERVICE)
   requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
   endConversation(conversationId: UUID!): Conversation! @join__field(graph: CHAT_SERVICE)
@@ -475,6 +561,16 @@ enum PaymentMethod
   CARD @join__enumValue(graph: ORDER_SERVICE)
 }
 
+input PlaceOrderInput
+  @join__type(graph: CART_SERVICE)
+{
+  idempotencyKey: UUID!
+  addressId: UUID!
+  carrierId: String!
+  paymentMethod: String!
+  paymentGateway: String!
+}
+
 enum PresenceStatus
   @join__type(graph: CHAT_SERVICE)
 {
@@ -508,6 +604,7 @@ enum PushNotificationType
 
 type Query
   @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CART_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
@@ -517,6 +614,8 @@ type Query
   getDefaultAddress: Address! @join__field(graph: AUTH_SERVICE)
   me: User @join__field(graph: AUTH_SERVICE)
   user(id: UUID!): User @join__field(graph: AUTH_SERVICE)
+  getMyCart: Cart @join__field(graph: CART_SERVICE)
+  getCheckoutSession(id: UUID!): CheckoutSession @join__field(graph: CART_SERVICE)
   onlineUsers: [User!]! @join__field(graph: CHAT_SERVICE)
   conversation(id: UUID!): Conversation @join__field(graph: CHAT_SERVICE)
   conversations: [Conversation!]! @join__field(graph: CHAT_SERVICE)
@@ -552,12 +651,19 @@ input RegisterUserInput
 
 enum Role
   @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CART_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
 {
-  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
-  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
+  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CART_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
+  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CART_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
+}
+
+input SelectItemForCheckoutInput
+  @join__type(graph: CART_SERVICE)
+{
+  selected: Boolean!
 }
 
 input SendDeliveryReceiptInput
@@ -612,6 +718,7 @@ type TabCounts
 
 scalar Time
   @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CART_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
@@ -662,6 +769,12 @@ input UpdateAddressInput
   note: String
 }
 
+input UpdateCartItemQuantityInput
+  @join__type(graph: CART_SERVICE)
+{
+  quantity: Int!
+}
+
 type User
   @join__type(graph: AUTH_SERVICE, key: "id")
   @join__type(graph: CHAT_SERVICE, key: "id")
@@ -696,6 +809,7 @@ enum UserType
 
 scalar UUID
   @join__type(graph: AUTH_SERVICE)
+  @join__type(graph: CART_SERVICE)
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)

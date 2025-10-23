@@ -977,6 +977,170 @@ func (x *RestoreProductsResponse) GetMessage() string {
 	return ""
 }
 
+type ValidateProductsRequest struct {
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	Products      []*ProductForValidation `protobuf:"bytes,1,rep,name=products,proto3" json:"products,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateProductsRequest) Reset() {
+	*x = ValidateProductsRequest{}
+	mi := &file_product_v1_product_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateProductsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateProductsRequest) ProtoMessage() {}
+
+func (x *ValidateProductsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_product_v1_product_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateProductsRequest.ProtoReflect.Descriptor instead.
+func (*ValidateProductsRequest) Descriptor() ([]byte, []int) {
+	return file_product_v1_product_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *ValidateProductsRequest) GetProducts() []*ProductForValidation {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
+type ValidateProductsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"` // true if all products are valid
+	Products      []*Product             `protobuf:"bytes,2,rep,name=products,proto3" json:"products,omitempty"`
+	Message       string                 `protobuf:"bytes,3,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateProductsResponse) Reset() {
+	*x = ValidateProductsResponse{}
+	mi := &file_product_v1_product_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateProductsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateProductsResponse) ProtoMessage() {}
+
+func (x *ValidateProductsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_product_v1_product_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateProductsResponse.ProtoReflect.Descriptor instead.
+func (*ValidateProductsResponse) Descriptor() ([]byte, []int) {
+	return file_product_v1_product_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ValidateProductsResponse) GetSuccess() bool {
+	if x != nil {
+		return x.Success
+	}
+	return false
+}
+
+func (x *ValidateProductsResponse) GetProducts() []*Product {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
+func (x *ValidateProductsResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type ProductForValidation struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Price         float64                `protobuf:"fixed64,2,opt,name=price,proto3" json:"price,omitempty"`
+	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProductForValidation) Reset() {
+	*x = ProductForValidation{}
+	mi := &file_product_v1_product_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProductForValidation) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProductForValidation) ProtoMessage() {}
+
+func (x *ProductForValidation) ProtoReflect() protoreflect.Message {
+	mi := &file_product_v1_product_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProductForValidation.ProtoReflect.Descriptor instead.
+func (*ProductForValidation) Descriptor() ([]byte, []int) {
+	return file_product_v1_product_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ProductForValidation) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ProductForValidation) GetPrice() float64 {
+	if x != nil {
+		return x.Price
+	}
+	return 0
+}
+
+func (x *ProductForValidation) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
 type HealthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -985,7 +1149,7 @@ type HealthRequest struct {
 
 func (x *HealthRequest) Reset() {
 	*x = HealthRequest{}
-	mi := &file_product_v1_product_proto_msgTypes[16]
+	mi := &file_product_v1_product_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -997,7 +1161,7 @@ func (x *HealthRequest) String() string {
 func (*HealthRequest) ProtoMessage() {}
 
 func (x *HealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_product_v1_product_proto_msgTypes[16]
+	mi := &file_product_v1_product_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1010,7 +1174,7 @@ func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
 func (*HealthRequest) Descriptor() ([]byte, []int) {
-	return file_product_v1_product_proto_rawDescGZIP(), []int{16}
+	return file_product_v1_product_proto_rawDescGZIP(), []int{19}
 }
 
 type HealthResponse struct {
@@ -1022,7 +1186,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_product_v1_product_proto_msgTypes[17]
+	mi := &file_product_v1_product_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1034,7 +1198,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_product_v1_product_proto_msgTypes[17]
+	mi := &file_product_v1_product_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1047,7 +1211,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_product_v1_product_proto_rawDescGZIP(), []int{17}
+	return file_product_v1_product_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *HealthResponse) GetStatus() HealthStatus {
@@ -1092,25 +1256,25 @@ const file_product_v1_product_proto_rawDesc = "" +
 	"\x0fidempotency_key\x18\x01 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x0eidempotencyKey\x12H\n" +
 	"\x05items\x18\x02 \x03(\v2&.product.v1.ProductQuantityWithVersionB\n" +
-	"\xbaH\a\x92\x01\x04\b\x01\x102R\x05items\"\x91\x01\n" +
+	"\xbaH\a\x92\x01\x04\b\x01\x102R\x05items\"\x8d\x01\n" +
 	"\x1aProductQuantityWithVersion\x12'\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tproductId\x12'\n" +
-	"\bquantity\x18\x02 \x01(\x03B\v\xbaH\b\"\x06\x18\xc0\x84= \x00R\bquantity\x12!\n" +
-	"\aversion\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\aversion\"c\n" +
+	"product_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tproductId\x12#\n" +
+	"\bquantity\x18\x02 \x01(\x03B\a\xbaH\x04\"\x02 \x00R\bquantity\x12!\n" +
+	"\aversion\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\aversion\"_\n" +
 	"\x0fProductQuantity\x12'\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tproductId\x12'\n" +
-	"\bquantity\x18\x02 \x01(\x03B\v\xbaH\b\"\x06\x18\xc0\x84= \x00R\bquantity\"\x8f\x01\n" +
+	"product_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tproductId\x12#\n" +
+	"\bquantity\x18\x02 \x01(\x03B\a\xbaH\x04\"\x02 \x00R\bquantity\"\x8f\x01\n" +
 	"\x17ReserveProductsResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12@\n" +
 	"\x11reserved_products\x18\x02 \x03(\v2\x13.product.v1.ProductR\x10reservedProducts\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\xe6\x02\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xdd\x02\n" +
 	"\aProduct\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12\x1e\n" +
 	"\x04name\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04name\x12-\n" +
-	"\x05price\x18\x03 \x01(\x01B\x17\xbaH\x14\x12\x12\x19\x00\x00\x00\x00\x80\x84.A!\x00\x00\x00\x00\x00\x00\x00\x00R\x05price\x12#\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04name\x12$\n" +
+	"\x05price\x18\x03 \x01(\x01B\x0e\xbaH\v\x12\t!\x00\x00\x00\x00\x00\x00\x00\x00R\x05price\x12#\n" +
 	"\bquantity\x18\x04 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\bquantity\x12!\n" +
 	"\aversion\x18\x05 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\aversion\x124\n" +
 	"\x11reserved_quantity\x18\x06 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x10reservedQuantity\x129\n" +
@@ -1139,21 +1303,32 @@ const file_product_v1_product_proto_rawDesc = "" +
 	"\x17RestoreProductsResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12@\n" +
 	"\x11restored_products\x18\x02 \x03(\v2\x13.product.v1.ProductR\x10restoredProducts\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\x0f\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"W\n" +
+	"\x17ValidateProductsRequest\x12<\n" +
+	"\bproducts\x18\x01 \x03(\v2 .product.v1.ProductForValidationR\bproducts\"\x7f\n" +
+	"\x18ValidateProductsResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\x12/\n" +
+	"\bproducts\x18\x02 \x03(\v2\x13.product.v1.ProductR\bproducts\x12\x18\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"{\n" +
+	"\x14ProductForValidation\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12$\n" +
+	"\x05price\x18\x02 \x01(\x01B\x0e\xbaH\v\x12\t!\x00\x00\x00\x00\x00\x00\x00\x00R\x05price\x12#\n" +
+	"\bquantity\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\bquantity\"\x0f\n" +
 	"\rHealthRequest\"B\n" +
 	"\x0eHealthResponse\x120\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x18.product.v1.HealthStatusR\x06status*g\n" +
 	"\fHealthStatus\x12\x1d\n" +
 	"\x19HEALTH_STATUS_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15HEALTH_STATUS_SERVING\x10\x01\x12\x1d\n" +
-	"\x19HEALTH_STATUS_NOT_SERVING\x10\x022\x9d\x05\n" +
+	"\x19HEALTH_STATUS_NOT_SERVING\x10\x022\xfc\x05\n" +
 	"\x0eProductService\x12Q\n" +
 	"\fListProducts\x12\x1f.product.v1.ListProductsRequest\x1a .product.v1.ListProductsResponse\x12l\n" +
 	"\x15BatchGetProductsByIDs\x12(.product.v1.BatchGetProductsByIDsRequest\x1a).product.v1.BatchGetProductsByIDsResponse\x12Z\n" +
 	"\x0fReserveProducts\x12\".product.v1.ReserveProductsRequest\x1a#.product.v1.ReserveProductsResponse\x12Z\n" +
 	"\x0fReleaseProducts\x12\".product.v1.ReleaseProductsRequest\x1a#.product.v1.ReleaseProductsResponse\x12u\n" +
 	"\x18ConfirmProductsDeduction\x12+.product.v1.ConfirmProductsDeductionRequest\x1a,.product.v1.ConfirmProductsDeductionResponse\x12Z\n" +
-	"\x0fRestoreProducts\x12\".product.v1.RestoreProductsRequest\x1a#.product.v1.RestoreProductsResponse\x12?\n" +
+	"\x0fRestoreProducts\x12\".product.v1.RestoreProductsRequest\x1a#.product.v1.RestoreProductsResponse\x12]\n" +
+	"\x10ValidateProducts\x12#.product.v1.ValidateProductsRequest\x1a$.product.v1.ValidateProductsResponse\x12?\n" +
 	"\x06Health\x12\x19.product.v1.HealthRequest\x1a\x1a.product.v1.HealthResponseB\xae\x01\n" +
 	"\x0ecom.product.v1B\fProductProtoP\x01ZEgithub.com/raphaeldiscky/go-micro-commerce/proto/product/v1;productv1\xa2\x02\x03PXX\xaa\x02\n" +
 	"Product.V1\xca\x02\n" +
@@ -1172,7 +1347,7 @@ func file_product_v1_product_proto_rawDescGZIP() []byte {
 }
 
 var file_product_v1_product_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_product_v1_product_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_product_v1_product_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_product_v1_product_proto_goTypes = []any{
 	(HealthStatus)(0),                        // 0: product.v1.HealthStatus
 	(*ListProductsRequest)(nil),              // 1: product.v1.ListProductsRequest
@@ -1191,9 +1366,12 @@ var file_product_v1_product_proto_goTypes = []any{
 	(*ConfirmProductsDeductionResponse)(nil), // 14: product.v1.ConfirmProductsDeductionResponse
 	(*RestoreProductsRequest)(nil),           // 15: product.v1.RestoreProductsRequest
 	(*RestoreProductsResponse)(nil),          // 16: product.v1.RestoreProductsResponse
-	(*HealthRequest)(nil),                    // 17: product.v1.HealthRequest
-	(*HealthResponse)(nil),                   // 18: product.v1.HealthResponse
-	(*timestamppb.Timestamp)(nil),            // 19: google.protobuf.Timestamp
+	(*ValidateProductsRequest)(nil),          // 17: product.v1.ValidateProductsRequest
+	(*ValidateProductsResponse)(nil),         // 18: product.v1.ValidateProductsResponse
+	(*ProductForValidation)(nil),             // 19: product.v1.ProductForValidation
+	(*HealthRequest)(nil),                    // 20: product.v1.HealthRequest
+	(*HealthResponse)(nil),                   // 21: product.v1.HealthResponse
+	(*timestamppb.Timestamp)(nil),            // 22: google.protobuf.Timestamp
 }
 var file_product_v1_product_proto_depIdxs = []int32{
 	10, // 0: product.v1.ListProductsResponse.products:type_name -> product.v1.Product
@@ -1201,33 +1379,37 @@ var file_product_v1_product_proto_depIdxs = []int32{
 	10, // 2: product.v1.BatchGetProductsByIDsResponse.products:type_name -> product.v1.Product
 	7,  // 3: product.v1.ReserveProductsRequest.items:type_name -> product.v1.ProductQuantityWithVersion
 	10, // 4: product.v1.ReserveProductsResponse.reserved_products:type_name -> product.v1.Product
-	19, // 5: product.v1.Product.created_at:type_name -> google.protobuf.Timestamp
-	19, // 6: product.v1.Product.updated_at:type_name -> google.protobuf.Timestamp
+	22, // 5: product.v1.Product.created_at:type_name -> google.protobuf.Timestamp
+	22, // 6: product.v1.Product.updated_at:type_name -> google.protobuf.Timestamp
 	8,  // 7: product.v1.ReleaseProductsRequest.items:type_name -> product.v1.ProductQuantity
 	8,  // 8: product.v1.ConfirmProductsDeductionRequest.items:type_name -> product.v1.ProductQuantity
 	10, // 9: product.v1.ConfirmProductsDeductionResponse.updated_products:type_name -> product.v1.Product
 	8,  // 10: product.v1.RestoreProductsRequest.items:type_name -> product.v1.ProductQuantity
 	10, // 11: product.v1.RestoreProductsResponse.restored_products:type_name -> product.v1.Product
-	0,  // 12: product.v1.HealthResponse.status:type_name -> product.v1.HealthStatus
-	1,  // 13: product.v1.ProductService.ListProducts:input_type -> product.v1.ListProductsRequest
-	4,  // 14: product.v1.ProductService.BatchGetProductsByIDs:input_type -> product.v1.BatchGetProductsByIDsRequest
-	6,  // 15: product.v1.ProductService.ReserveProducts:input_type -> product.v1.ReserveProductsRequest
-	11, // 16: product.v1.ProductService.ReleaseProducts:input_type -> product.v1.ReleaseProductsRequest
-	13, // 17: product.v1.ProductService.ConfirmProductsDeduction:input_type -> product.v1.ConfirmProductsDeductionRequest
-	15, // 18: product.v1.ProductService.RestoreProducts:input_type -> product.v1.RestoreProductsRequest
-	17, // 19: product.v1.ProductService.Health:input_type -> product.v1.HealthRequest
-	2,  // 20: product.v1.ProductService.ListProducts:output_type -> product.v1.ListProductsResponse
-	5,  // 21: product.v1.ProductService.BatchGetProductsByIDs:output_type -> product.v1.BatchGetProductsByIDsResponse
-	9,  // 22: product.v1.ProductService.ReserveProducts:output_type -> product.v1.ReserveProductsResponse
-	12, // 23: product.v1.ProductService.ReleaseProducts:output_type -> product.v1.ReleaseProductsResponse
-	14, // 24: product.v1.ProductService.ConfirmProductsDeduction:output_type -> product.v1.ConfirmProductsDeductionResponse
-	16, // 25: product.v1.ProductService.RestoreProducts:output_type -> product.v1.RestoreProductsResponse
-	18, // 26: product.v1.ProductService.Health:output_type -> product.v1.HealthResponse
-	20, // [20:27] is the sub-list for method output_type
-	13, // [13:20] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	19, // 12: product.v1.ValidateProductsRequest.products:type_name -> product.v1.ProductForValidation
+	10, // 13: product.v1.ValidateProductsResponse.products:type_name -> product.v1.Product
+	0,  // 14: product.v1.HealthResponse.status:type_name -> product.v1.HealthStatus
+	1,  // 15: product.v1.ProductService.ListProducts:input_type -> product.v1.ListProductsRequest
+	4,  // 16: product.v1.ProductService.BatchGetProductsByIDs:input_type -> product.v1.BatchGetProductsByIDsRequest
+	6,  // 17: product.v1.ProductService.ReserveProducts:input_type -> product.v1.ReserveProductsRequest
+	11, // 18: product.v1.ProductService.ReleaseProducts:input_type -> product.v1.ReleaseProductsRequest
+	13, // 19: product.v1.ProductService.ConfirmProductsDeduction:input_type -> product.v1.ConfirmProductsDeductionRequest
+	15, // 20: product.v1.ProductService.RestoreProducts:input_type -> product.v1.RestoreProductsRequest
+	17, // 21: product.v1.ProductService.ValidateProducts:input_type -> product.v1.ValidateProductsRequest
+	20, // 22: product.v1.ProductService.Health:input_type -> product.v1.HealthRequest
+	2,  // 23: product.v1.ProductService.ListProducts:output_type -> product.v1.ListProductsResponse
+	5,  // 24: product.v1.ProductService.BatchGetProductsByIDs:output_type -> product.v1.BatchGetProductsByIDsResponse
+	9,  // 25: product.v1.ProductService.ReserveProducts:output_type -> product.v1.ReserveProductsResponse
+	12, // 26: product.v1.ProductService.ReleaseProducts:output_type -> product.v1.ReleaseProductsResponse
+	14, // 27: product.v1.ProductService.ConfirmProductsDeduction:output_type -> product.v1.ConfirmProductsDeductionResponse
+	16, // 28: product.v1.ProductService.RestoreProducts:output_type -> product.v1.RestoreProductsResponse
+	18, // 29: product.v1.ProductService.ValidateProducts:output_type -> product.v1.ValidateProductsResponse
+	21, // 30: product.v1.ProductService.Health:output_type -> product.v1.HealthResponse
+	23, // [23:31] is the sub-list for method output_type
+	15, // [15:23] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_product_v1_product_proto_init() }
@@ -1243,7 +1425,7 @@ func file_product_v1_product_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_product_v1_product_proto_rawDesc), len(file_product_v1_product_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
@@ -43,6 +44,7 @@ type CheckoutSessionService interface {
 type checkoutSessionService struct {
 	dataStore                          repository.DataStore
 	logger                             logger.Logger
+	productClient                      client.ProductClient
 	checkoutSessionOrderPlacedProducer kafka.Producer
 }
 
@@ -50,11 +52,13 @@ type checkoutSessionService struct {
 func NewCheckoutSessionService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
+	productClient client.ProductClient,
 	checkoutSessionOrderPlacedProducer kafka.Producer,
 ) CheckoutSessionService {
 	return &checkoutSessionService{
 		dataStore:                          dataStore,
 		logger:                             appLogger,
+		productClient:                      productClient,
 		checkoutSessionOrderPlacedProducer: checkoutSessionOrderPlacedProducer,
 	}
 }
@@ -269,6 +273,19 @@ func (s *checkoutSessionService) PlaceOrder(
 				),
 			)
 		}
+
+		// Validate products before placing order (price & stock check)
+		if errValidate := s.productClient.ValidateProducts(ctx, session.Items); errValidate != nil {
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("product validation failed: %v", errValidate),
+			)
+		}
+
+		// Update session with order details
+		session.AddressID = &req.AddressID
+		session.CarrierID = &req.CarrierID
+		session.PaymentMethod = &req.PaymentMethod
+		session.PaymentGateway = &req.PaymentGateway
 
 		// Update status to order_placed
 		if err = session.UpdateStatus(constant.CheckoutSessionStatusOrderPlaced); err != nil {

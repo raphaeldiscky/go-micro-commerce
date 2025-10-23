@@ -2,6 +2,7 @@ import { env } from '@/env'
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import type {
+  BatchGetProductsByIDsRequest,
   ConfirmProductsDeductionRequest,
   HealthRequest,
   ReleaseProductsRequest,
@@ -32,6 +33,8 @@ const client = createClient(ProductService, transport)
 export const productApi = {
   listProducts: (limit?: string, nextCursor?: string) =>
     client.listProducts({ limit, nextCursor }),
+  batchGetProductsByIDs: (request: BatchGetProductsByIDsRequest) =>
+    client.batchGetProductsByIDs(request),
   reserveProducts: (request: ReserveProductsRequest) =>
     client.reserveProducts(request),
   releaseProducts: (request: ReleaseProductsRequest) =>

@@ -35,7 +35,8 @@ CREATE TABLE IF NOT EXISTS checkout_session_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     checkout_session_id UUID NOT NULL REFERENCES checkout_sessions (id) ON DELETE CASCADE,
     product_id UUID NOT NULL,
-    quantity BIGINT NOT NULL CHECK (quantity > 0)
+    quantity BIGINT NOT NULL CHECK (quantity > 0),
+    unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0) -- Price per unit
 );
 
 CREATE INDEX IF NOT EXISTS idx_checkout_session_items_session_id ON checkout_session_items (checkout_session_id);

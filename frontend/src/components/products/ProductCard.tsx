@@ -49,33 +49,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
     setIsAdding(true)
     try {
-      // Convert Product to MockProduct format
-      const mockProduct = {
-        id: product.id,
-        name: product.name,
-        description: 'desc',
-        price: Number(product.price),
-        quantity: Number(product.quantity),
-        reservedQuantity: Number(product.reservedQuantity),
-        category: 'Electronics', // Default category
-        sku: product.id.slice(0, 8), // Use first 8 chars as SKU
-        version: Number(product.version),
-        createdAt: product.createdAt
-          ? timestampToDate(product.createdAt)
-          : undefined,
-        updatedAt: product.updatedAt
-          ? timestampToDate(product.updatedAt)
-          : undefined,
-      }
-
-      addItem(mockProduct, quantity)
+      addItem(product.id, quantity)
       setQuantity(1)
-      console.log(
-        'Product added to cart:',
-        mockProduct.name,
-        'Quantity:',
-        quantity,
-      )
+      console.log('Product added to cart:', product.name, 'Quantity:', quantity)
 
       // Show success animation
       setShowSuccess(true)

@@ -2,11 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { mockPaymentMethods } from '@/mocks/shipping'
-import { useCartStore } from '@/store/cartStore'
-import type { PaymentMethod } from '@/types/cart'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
+import type { PaymentMethodUI } from '@/types/cart'
 import { Building, CreditCard, Package, Smartphone, Wallet } from 'lucide-react'
 
-const getPaymentIcon = (type: PaymentMethod['type']) => {
+const getPaymentIcon = (type: PaymentMethodUI['type']) => {
   switch (type) {
     case 'card':
       return CreditCard
@@ -25,16 +25,16 @@ export function PaymentMethods() {
   const {
     selectedAddress,
     selectedShippingOption,
-    selectedPaymentMethod,
+    selectedPaymentMethodData,
     setPaymentMethod,
-  } = useCartStore()
+  } = useCheckoutSessionStore()
 
   const isDisabled = !selectedAddress || !selectedShippingOption
 
   const handlePaymentChange = (methodId: string) => {
     const method = mockPaymentMethods.find((m) => m.id === methodId)
     if (method) {
-      setPaymentMethod(method)
+      setPaymentMethod(methodId, method)
     }
   }
 
@@ -53,11 +53,11 @@ export function PaymentMethods() {
           </p>
         )}
         <RadioGroup
-          value={selectedPaymentMethod?.id || ''}
+          value={selectedPaymentMethodData?.id || ''}
           onValueChange={handlePaymentChange}
           disabled={isDisabled}
         >
-          {mockPaymentMethods.map((method: PaymentMethod) => {
+          {mockPaymentMethods.map((method: PaymentMethodUI) => {
             const Icon = getPaymentIcon(method.type)
             return (
               <div key={method.id} className="space-y-1">
@@ -81,7 +81,7 @@ export function PaymentMethods() {
           })}
         </RadioGroup>
 
-        {!selectedPaymentMethod && (
+        {!selectedPaymentMethodData && (
           <p className="text-sm text-muted-foreground">
             Please select a payment method to continue
           </p>

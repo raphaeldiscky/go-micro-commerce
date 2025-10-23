@@ -3962,7 +3962,7 @@ func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"idempotencyKey"}
+	fieldsInOrder := [...]string{"idempotencyKey", "addressId", "carrierId", "paymentMethod", "paymentGateway"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3976,6 +3976,34 @@ func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, o
 				return it, err
 			}
 			it.IdempotencyKey = data
+		case "addressId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("addressId"))
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.AddressID = data
+		case "carrierId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("carrierId"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CarrierID = data
+		case "paymentMethod":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentMethod"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PaymentMethod = data
+		case "paymentGateway":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentGateway"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PaymentGateway = data
 		}
 	}
 

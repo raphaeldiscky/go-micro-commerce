@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 )
@@ -35,6 +36,7 @@ type CheckoutSessionItem struct {
 	ID        uuid.UUID
 	ProductID uuid.UUID
 	Quantity  int64
+	UnitPrice decimal.Decimal
 }
 
 // NewCheckoutSession creates a new checkout session with validation.

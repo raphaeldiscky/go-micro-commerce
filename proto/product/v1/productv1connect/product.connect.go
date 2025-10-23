@@ -52,6 +52,9 @@ const (
 	// ProductServiceRestoreProductsProcedure is the fully-qualified name of the ProductService's
 	// RestoreProducts RPC.
 	ProductServiceRestoreProductsProcedure = "/product.v1.ProductService/RestoreProducts"
+	// ProductServiceValidateProductsProcedure is the fully-qualified name of the ProductService's
+	// ValidateProducts RPC.
+	ProductServiceValidateProductsProcedure = "/product.v1.ProductService/ValidateProducts"
 	// ProductServiceHealthProcedure is the fully-qualified name of the ProductService's Health RPC.
 	ProductServiceHealthProcedure = "/product.v1.ProductService/Health"
 )
@@ -70,6 +73,8 @@ type ProductServiceClient interface {
 	ConfirmProductsDeduction(context.Context, *connect.Request[v1.ConfirmProductsDeductionRequest]) (*connect.Response[v1.ConfirmProductsDeductionResponse], error)
 	// RestoreProducts restore quantity
 	RestoreProducts(context.Context, *connect.Request[v1.RestoreProductsRequest]) (*connect.Response[v1.RestoreProductsResponse], error)
+	// ValidateProducts validate products before place order if price not changed and stock still available
+	ValidateProducts(context.Context, *connect.Request[v1.ValidateProductsRequest]) (*connect.Response[v1.ValidateProductsResponse], error)
 	Health(context.Context, *connect.Request[v1.HealthRequest]) (*connect.Response[v1.HealthResponse], error)
 }
 
@@ -120,6 +125,12 @@ func NewProductServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(productServiceMethods.ByName("RestoreProducts")),
 			connect.WithClientOptions(opts...),
 		),
+		validateProducts: connect.NewClient[v1.ValidateProductsRequest, v1.ValidateProductsResponse](
+			httpClient,
+			baseURL+ProductServiceValidateProductsProcedure,
+			connect.WithSchema(productServiceMethods.ByName("ValidateProducts")),
+			connect.WithClientOptions(opts...),
+		),
 		health: connect.NewClient[v1.HealthRequest, v1.HealthResponse](
 			httpClient,
 			baseURL+ProductServiceHealthProcedure,
@@ -137,6 +148,7 @@ type productServiceClient struct {
 	releaseProducts          *connect.Client[v1.ReleaseProductsRequest, v1.ReleaseProductsResponse]
 	confirmProductsDeduction *connect.Client[v1.ConfirmProductsDeductionRequest, v1.ConfirmProductsDeductionResponse]
 	restoreProducts          *connect.Client[v1.RestoreProductsRequest, v1.RestoreProductsResponse]
+	validateProducts         *connect.Client[v1.ValidateProductsRequest, v1.ValidateProductsResponse]
 	health                   *connect.Client[v1.HealthRequest, v1.HealthResponse]
 }
 
@@ -170,6 +182,11 @@ func (c *productServiceClient) RestoreProducts(ctx context.Context, req *connect
 	return c.restoreProducts.CallUnary(ctx, req)
 }
 
+// ValidateProducts calls product.v1.ProductService.ValidateProducts.
+func (c *productServiceClient) ValidateProducts(ctx context.Context, req *connect.Request[v1.ValidateProductsRequest]) (*connect.Response[v1.ValidateProductsResponse], error) {
+	return c.validateProducts.CallUnary(ctx, req)
+}
+
 // Health calls product.v1.ProductService.Health.
 func (c *productServiceClient) Health(ctx context.Context, req *connect.Request[v1.HealthRequest]) (*connect.Response[v1.HealthResponse], error) {
 	return c.health.CallUnary(ctx, req)
@@ -189,6 +206,8 @@ type ProductServiceHandler interface {
 	ConfirmProductsDeduction(context.Context, *connect.Request[v1.ConfirmProductsDeductionRequest]) (*connect.Response[v1.ConfirmProductsDeductionResponse], error)
 	// RestoreProducts restore quantity
 	RestoreProducts(context.Context, *connect.Request[v1.RestoreProductsRequest]) (*connect.Response[v1.RestoreProductsResponse], error)
+	// ValidateProducts validate products before place order if price not changed and stock still available
+	ValidateProducts(context.Context, *connect.Request[v1.ValidateProductsRequest]) (*connect.Response[v1.ValidateProductsResponse], error)
 	Health(context.Context, *connect.Request[v1.HealthRequest]) (*connect.Response[v1.HealthResponse], error)
 }
 
@@ -235,6 +254,12 @@ func NewProductServiceHandler(svc ProductServiceHandler, opts ...connect.Handler
 		connect.WithSchema(productServiceMethods.ByName("RestoreProducts")),
 		connect.WithHandlerOptions(opts...),
 	)
+	productServiceValidateProductsHandler := connect.NewUnaryHandler(
+		ProductServiceValidateProductsProcedure,
+		svc.ValidateProducts,
+		connect.WithSchema(productServiceMethods.ByName("ValidateProducts")),
+		connect.WithHandlerOptions(opts...),
+	)
 	productServiceHealthHandler := connect.NewUnaryHandler(
 		ProductServiceHealthProcedure,
 		svc.Health,
@@ -255,6 +280,8 @@ func NewProductServiceHandler(svc ProductServiceHandler, opts ...connect.Handler
 			productServiceConfirmProductsDeductionHandler.ServeHTTP(w, r)
 		case ProductServiceRestoreProductsProcedure:
 			productServiceRestoreProductsHandler.ServeHTTP(w, r)
+		case ProductServiceValidateProductsProcedure:
+			productServiceValidateProductsHandler.ServeHTTP(w, r)
 		case ProductServiceHealthProcedure:
 			productServiceHealthHandler.ServeHTTP(w, r)
 		default:
@@ -288,6 +315,10 @@ func (UnimplementedProductServiceHandler) ConfirmProductsDeduction(context.Conte
 
 func (UnimplementedProductServiceHandler) RestoreProducts(context.Context, *connect.Request[v1.RestoreProductsRequest]) (*connect.Response[v1.RestoreProductsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("product.v1.ProductService.RestoreProducts is not implemented"))
+}
+
+func (UnimplementedProductServiceHandler) ValidateProducts(context.Context, *connect.Request[v1.ValidateProductsRequest]) (*connect.Response[v1.ValidateProductsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("product.v1.ProductService.ValidateProducts is not implemented"))
 }
 
 func (UnimplementedProductServiceHandler) Health(context.Context, *connect.Request[v1.HealthRequest]) (*connect.Response[v1.HealthResponse], error) {

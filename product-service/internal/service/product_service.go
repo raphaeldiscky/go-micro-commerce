@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
+	"github.com/shopspring/decimal"
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
@@ -49,6 +50,10 @@ type ProductService interface {
 	RestoreProducts(
 		ctx context.Context,
 		req dto.RestoreProductsRequest,
+	) ([]dto.ProductResponse, error)
+	ValidateProducts(
+		ctx context.Context,
+		req dto.ValidateProductsRequest,
 	) ([]dto.ProductResponse, error)
 }
 
@@ -591,6 +596,74 @@ func (s *productService) RestoreProducts(
 	err = cacheRepo.DeleteProductsPattern(ctx, redisutils.NewCacheListProductsPatternKey())
 	if err != nil {
 		return nil, err
+	}
+
+	return res, nil
+}
+
+// ValidateProducts validates products before checkout (price and stock validation).
+func (s *productService) ValidateProducts(
+	ctx context.Context,
+	req dto.ValidateProductsRequest,
+) ([]dto.ProductResponse, error) {
+	productRepo := s.dataStore.ProductRepository()
+
+	// Extract product IDs
+	productIDs := make([]uuid.UUID, len(req.Products))
+	expectedPrices := make(map[uuid.UUID]decimal.Decimal)
+	requestedQuantities := make(map[uuid.UUID]int64)
+
+	for i, item := range req.Products {
+		productIDs[i] = item.ID
+		expectedPrices[item.ID] = item.Price
+		requestedQuantities[item.ID] = item.Quantity
+	}
+
+	// Fetch products from repository
+	products, err := productRepo.FindByIDs(ctx, productIDs)
+	if err != nil {
+		return nil, httperror.NewInternalServerError("failed to fetch products for validation")
+	}
+
+	// Check if all products exist
+	if len(products) != len(productIDs) {
+		return nil, httperror.NewBadRequestError("one or more products not found")
+	}
+
+	// Validate each product
+	for _, product := range products {
+		// Price validation
+		if product.Price != expectedPrices[product.ID] {
+			return nil, httperror.NewBadRequestError(
+				fmt.Sprintf(
+					"price changed for product %s: expected %.2f, current %.2f",
+					product.ID,
+					expectedPrices[product.ID].InexactFloat64(),
+					product.Price.InexactFloat64(),
+				),
+			)
+		}
+
+		// Stock validation
+		availableStock := product.Quantity - product.ReservedQuantity
+		requestedQty := requestedQuantities[product.ID]
+
+		if availableStock < requestedQty {
+			return nil, httperror.NewBadRequestError(
+				fmt.Sprintf(
+					"insufficient stock for product %s: requested %d, available %d",
+					product.ID,
+					requestedQty,
+					availableStock,
+				),
+			)
+		}
+	}
+
+	// Convert to DTO responses
+	res := make([]dto.ProductResponse, len(products))
+	for i, product := range products {
+		res[i] = *mapper.MapToProductResponse(product)
 	}
 
 	return res, nil

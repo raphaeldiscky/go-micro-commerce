@@ -4,13 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAddresses } from '@/hooks/address'
-import { useCartStore } from '@/store/cartStore'
+import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import type { Address } from '@/types/__generated__/graphql'
 import { CheckCircle, MapPin, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function AddressSelector() {
-  const { selectedAddress, setAddress } = useCartStore()
+  const { selectedAddress, setAddress } = useCheckoutSessionStore()
   const { data, isLoading } = useAddresses(10) // Fetch up to 10 addresses
   const [_isAddingNew, setIsAddingNew] = useState(false)
 
@@ -21,7 +21,7 @@ export function AddressSelector() {
     if (!selectedAddress && addresses.length > 0) {
       const defaultAddress = addresses.find((addr) => addr.isDefault)
       if (defaultAddress) {
-        setAddress(defaultAddress)
+        setAddress(defaultAddress.id, defaultAddress)
       }
     }
   }, [addresses, selectedAddress, setAddress])
@@ -29,7 +29,7 @@ export function AddressSelector() {
   const handleAddressChange = (addressId: string) => {
     const address = addresses.find((addr) => addr.id === addressId)
     if (address) {
-      setAddress(address)
+      setAddress(addressId, address)
     }
   }
 
