@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS carts (
     CONSTRAINT chk_cart_status CHECK (status IN ('active', 'checked_out', 'archived'))
 );
 
-CREATE OR REPLACE FUNCTION update_updated_at()
+CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -18,14 +18,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE UNIQUE INDEX idx_active_cart_per_customer
-ON carts (customer_id)
-WHERE status IN ('active', 'checked_out');
 
 CREATE TRIGGER update_cart_updated_at
 BEFORE UPDATE ON carts
 FOR EACH ROW
-EXECUTE FUNCTION update_updated_at();
+EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TABLE IF NOT EXISTS cart_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -40,9 +37,17 @@ CREATE TABLE IF NOT EXISTS cart_items (
 CREATE TRIGGER update_cart_item_updated_at
 BEFORE UPDATE ON cart_items
 FOR EACH ROW
-EXECUTE FUNCTION update_updated_at();
+EXECUTE FUNCTION update_updated_at_column();
 
+CREATE INDEX idx_carts_customer_status
+ON carts (customer_id, status);
+CREATE UNIQUE INDEX idx_unique_active_cart_per_customer
+ON carts (customer_id)
+WHERE status = 'active';
+CREATE UNIQUE INDEX idx_unique_checkedout_cart_per_customer
+ON carts (customer_id)
+WHERE status = 'checked_out';
 CREATE INDEX IF NOT EXISTS idx_cart_created_at ON carts (created_at);
 CREATE INDEX IF NOT EXISTS idx_cart_customer_id ON carts (customer_id);
 CREATE INDEX IF NOT EXISTS idx_fk_cart_item_cart_id ON cart_items (cart_id);
-CREATE INDEX IF NOT EXISTS idx_fk_cart_item_product_id ON cart_items (product_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id_selected ON cart_items (cart_id, selected_for_checkout);

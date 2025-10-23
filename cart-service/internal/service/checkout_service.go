@@ -92,7 +92,7 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 		cartRepo := ds.CartRepository()
 
 		// Get customer's cart with ONLY selected items (database-level filtering)
-		cart, errCart := cartRepo.FindByUserIDForCheckout(ctx, req.CustomerID)
+		cart, errCart := cartRepo.FindActiveCartByUserIDForCheckout(ctx, req.CustomerID)
 		if errCart != nil {
 			return httperror.NewInternalServerError("failed to get cart")
 		}

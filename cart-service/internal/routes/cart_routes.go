@@ -16,21 +16,12 @@ func SetupCartRoutes(e *echo.Echo, h *handler.CartHandler) {
 	protected.Use(middleware.AuthMiddleware)
 
 	// User cart operations
-	protected.GET("/", h.GetMyCart)                         // Get my active cart
-	protected.POST("", h.CreateCart)                        // Create cart
-	protected.POST("/:cartID/items", h.AddItemToActiveCart) // Add item to cart
-	protected.DELETE(
-		"/:cartID/items/:itemID",
-		h.RemoveItemFromCart,
-	) // Remove item from cart
-	protected.PATCH(
-		"/:cartID/items/:itemID/quantity",
-		h.UpdateItemQuantity,
-	) // Update item quantity
-	protected.PATCH(
-		"/:cartID/items/:itemID/select",
-		h.SelectItemForCheckout,
-	) // Select item for checkout
+	protected.GET("/", h.GetMyCart)                                   // Get my active cart
+	protected.POST("", h.CreateCart)                                  // Create cart
+	protected.POST("/items", h.AddItemToActiveCart)                   // Add item to cart
+	protected.DELETE("/items/:itemID", h.RemoveItemFromCart)          // Remove item from cart
+	protected.PATCH("/items/:itemID/quantity", h.UpdateItemQuantity)  // Update item quantity
+	protected.PATCH("/items/:itemID/select", h.SelectItemForCheckout) // Select item for checkout
 
 	// Admin routes
 	admin := protected.Group("")

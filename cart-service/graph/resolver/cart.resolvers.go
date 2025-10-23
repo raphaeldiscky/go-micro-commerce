@@ -46,14 +46,8 @@ func (r *mutationResolver) RemoveItemFromCart(
 		return nil, err
 	}
 
-	// Get user's cart
-	cart, err := r.cartService.GetCartByUserID(ctx, user.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Remove item from cart
-	updatedCart, err := r.cartService.RemoveItemFromCart(ctx, cart.ID, itemID)
+	// Remove item from active cart
+	updatedCart, err := r.cartService.RemoveItemFromActiveCart(ctx, user.UserID, itemID)
 	if err != nil {
 		return nil, err
 	}
@@ -72,16 +66,10 @@ func (r *mutationResolver) UpdateItemQuantity(
 		return nil, err
 	}
 
-	// Get user's cart
-	cart, err := r.cartService.GetCartByUserID(ctx, user.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Update item quantity
-	updatedCart, err := r.cartService.UpdateItemQuantity(
+	// Update item quantity in active cart
+	updatedCart, err := r.cartService.UpdateActiveCartItemQuantity(
 		ctx,
-		cart.ID,
+		user.UserID,
 		itemID,
 		int64(input.Quantity),
 	)
@@ -103,14 +91,13 @@ func (r *mutationResolver) SelectItemForCheckout(
 		return nil, err
 	}
 
-	// Get user's cart
-	cart, err := r.cartService.GetCartByUserID(ctx, user.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Select/deselect item for checkout
-	updatedCart, err := r.cartService.SelectItemForCheckout(ctx, cart.ID, itemID, input.Selected)
+	// Select/deselect item for checkout in active cart
+	updatedCart, err := r.cartService.SelectActiveCartItemForCheckout(
+		ctx,
+		user.UserID,
+		itemID,
+		input.Selected,
+	)
 	if err != nil {
 		return nil, err
 	}
