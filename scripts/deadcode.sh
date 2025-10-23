@@ -19,17 +19,73 @@ GREEN="\033[32m"
 YELLOW="\033[33m"
 RESET="\033[0m"
 
+# Load ignore patterns from .deadcodeignore file
+load_ignore_patterns() {
+  local ignore_file=".deadcodeignore"
+
+  if [[ -f "$ignore_file" ]]; then
+    # Read patterns, skip empty lines and comments
+    grep -v '^#' "$ignore_file" | grep -v '^[[:space:]]*$' || true
+  fi
+}
+
+# Filter deadcode output based on ignore patterns
+filter_ignored_patterns() {
+  local output="$1"
+  local patterns="$2"
+
+  if [[ -z "$patterns" ]]; then
+    # No patterns to filter, return original output
+    echo "$output"
+    return
+  fi
+
+  # Filter out each pattern
+  local filtered_output="$output"
+  while IFS= read -r pattern; do
+    if [[ -n "$pattern" ]]; then
+      # Use grep -v -F for fixed-string matching to filter out the pattern
+      filtered_output=$(echo "$filtered_output" | grep -v -F "$pattern" || true)
+    fi
+  done <<< "$patterns"
+
+  echo "$filtered_output"
+}
+
 deadcode_service() {
   local dir="$1"
+  local ignore_patterns="$2"
   echo -e "${YELLOW}Running deadcode analysis on $dir...${RESET}"
 
   if [ -f "$dir/cmd/api/main.go" ]; then
     (cd "$dir" && {
-      output=$(deadcode ./cmd/api 2>&1 || true)
+      output=$(deadcode --test ./cmd/api 2>&1 || true)
 
-      if [[ -n "$output" ]]; then
+      # Track ignored items
+      local ignored_items=""
+      if [[ -n "$output" && -n "$ignore_patterns" ]]; then
+        while IFS= read -r pattern; do
+          if [[ -n "$pattern" ]]; then
+            local matched=$(echo "$output" | grep -F "$pattern" || true)
+            if [[ -n "$matched" ]]; then
+              ignored_items+="$matched"$'\n'
+            fi
+          fi
+        done <<< "$ignore_patterns"
+      fi
+
+      # Filter ignored patterns
+      filtered_output=$(filter_ignored_patterns "$output" "$ignore_patterns")
+
+      # Show ignored items if any
+      if [[ -n "$ignored_items" ]]; then
+        echo -e "${YELLOW}ℹ Ignored deadcode (via .deadcodeignore):${RESET}"
+        echo -n "$ignored_items"
+      fi
+
+      if [[ -n "$filtered_output" ]]; then
         echo -e "${RED}❌ Deadcode found in $dir:${RESET}"
-        echo "$output"
+        echo "$filtered_output"
 
         # Only fail in CI (GitHub Actions sets CI=true automatically)
         if [[ "${CI:-}" == "true" ]]; then
@@ -50,10 +106,13 @@ if ! command -v deadcode &> /dev/null; then
   go install golang.org/x/tools/cmd/deadcode@latest
 fi
 
+# --- Load ignore patterns once at the start ---
+IGNORE_PATTERNS=$(load_ignore_patterns)
+
 # --- If a specific service is provided as an argument ---
 if [ -n "${1-}" ]; then
   if [[ " ${SERVICES[*]} " =~ " $1 " ]]; then
-    deadcode_service "$1"
+    deadcode_service "$1" "$IGNORE_PATTERNS"
     echo "Deadcode analysis completed for $1."
   else
     echo "Error: '$1' is not a valid service directory."
@@ -74,7 +133,7 @@ else
       pids=($(jobs -pr))
     fi
 
-    deadcode_service "$service" &
+    deadcode_service "$service" "$IGNORE_PATTERNS" &
     pids+=($!)
   done
 
