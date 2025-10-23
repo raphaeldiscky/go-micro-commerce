@@ -87,30 +87,25 @@ func (h *CartHandler) CreateCart(c echo.Context) error {
 	return echoutils.ResponseCreated(c, cart)
 }
 
-// AddItemToCart adds an item to the user's cart.
+// AddItemToActiveCart adds an item to the user's active cart.
 //
 // Route: POST /carts/:cartID/items
 //
 // Authentication: Requires user authentication.
-func (h *CartHandler) AddItemToCart(c echo.Context) error {
-	param := c.Param("cartID")
-
-	cartID, err := uuid.Parse(param)
-	if err != nil {
-		return err
-	}
-
+func (h *CartHandler) AddItemToActiveCart(c echo.Context) error {
 	var req dto.AddCartItemRequest
 
-	if err = c.Bind(&req); err != nil {
+	req.CustomerID = echoutils.GetUserIDFromContext(c)
+
+	if err := c.Bind(&req); err != nil {
 		return err
 	}
 
-	if err = c.Validate(&req); err != nil {
+	if err := c.Validate(&req); err != nil {
 		return err
 	}
 
-	cart, errAdd := h.cartService.AddItemToCart(c.Request().Context(), cartID, &req)
+	cart, errAdd := h.cartService.AddItemToActiveCart(c.Request().Context(), &req)
 	if errAdd != nil {
 		return errAdd
 	}
@@ -118,18 +113,13 @@ func (h *CartHandler) AddItemToCart(c echo.Context) error {
 	return echoutils.ResponseOK(c, cart)
 }
 
-// RemoveItemFromCart removes an item from the user's cart.
+// RemoveItemFromCart removes an item from the user's active cart.
 //
-// Route: DELETE /carts/:cartID/items/:itemID
+// Route: DELETE /items/:itemID
 //
 // Authentication: Requires user authentication.
 func (h *CartHandler) RemoveItemFromCart(c echo.Context) error {
-	cartParam := c.Param("cartID")
-
-	cartID, err := uuid.Parse(cartParam)
-	if err != nil {
-		return err
-	}
+	customerID := echoutils.GetUserIDFromContext(c)
 
 	itemParam := c.Param("itemID")
 
@@ -138,7 +128,7 @@ func (h *CartHandler) RemoveItemFromCart(c echo.Context) error {
 		return err
 	}
 
-	cart, err := h.cartService.RemoveItemFromCart(c.Request().Context(), cartID, itemID)
+	cart, err := h.cartService.RemoveItemFromActiveCart(c.Request().Context(), customerID, itemID)
 	if err != nil {
 		return err
 	}
@@ -148,16 +138,11 @@ func (h *CartHandler) RemoveItemFromCart(c echo.Context) error {
 
 // UpdateItemQuantity updates the quantity of a cart item.
 //
-// Route: PATCH /carts/:cartID/items/:itemID/quantity
+// Route: PATCH /items/:itemID/quantity
 //
 // Authentication: Requires user authentication.
 func (h *CartHandler) UpdateItemQuantity(c echo.Context) error {
-	cartParam := c.Param("cartID")
-
-	cartID, err := uuid.Parse(cartParam)
-	if err != nil {
-		return err
-	}
+	customerID := echoutils.GetUserIDFromContext(c)
 
 	itemParam := c.Param("itemID")
 
@@ -176,9 +161,9 @@ func (h *CartHandler) UpdateItemQuantity(c echo.Context) error {
 		return err
 	}
 
-	cart, errUpdate := h.cartService.UpdateItemQuantity(
+	cart, errUpdate := h.cartService.UpdateActiveCartItemQuantity(
 		c.Request().Context(),
-		cartID,
+		customerID,
 		itemID,
 		req.Quantity,
 	)
@@ -191,22 +176,17 @@ func (h *CartHandler) UpdateItemQuantity(c echo.Context) error {
 
 // SelectItemForCheckout marks an item as selected for checkout.
 //
-// Route: PATCH /carts/:cartID/items/:itemID/select
+// Route: PATCH /items/:itemID/select
 //
 // Authentication: Requires user authentication.
 func (h *CartHandler) SelectItemForCheckout(c echo.Context) error {
-	cartParam := c.Param("cartID")
-
-	cartID, err := uuid.Parse(cartParam)
-	if err != nil {
-		return err
-	}
+	customerID := echoutils.GetUserIDFromContext(c)
 
 	itemParam := c.Param("itemID")
 
-	itemID, errParse := uuid.Parse(itemParam)
-	if errParse != nil {
-		return errParse
+	itemID, err := uuid.Parse(itemParam)
+	if err != nil {
+		return err
 	}
 
 	var req dto.SelectItemForCheckoutRequest
@@ -219,9 +199,9 @@ func (h *CartHandler) SelectItemForCheckout(c echo.Context) error {
 		return err
 	}
 
-	cart, err := h.cartService.SelectItemForCheckout(
+	cart, err := h.cartService.SelectActiveCartItemForCheckout(
 		c.Request().Context(),
-		cartID,
+		customerID,
 		itemID,
 		req.Selected,
 	)

@@ -12,6 +12,7 @@ func MapToCartResponse(cart *entity.Cart) *dto.CartResponse {
 	return &dto.CartResponse{
 		ID:         cart.ID,
 		CustomerID: cart.CustomerID,
+		Status:     cart.Status,
 		Items:      MapToCartItemResponses(cart.Items),
 		CreatedAt:  cart.CreatedAt,
 		UpdatedAt:  cart.UpdatedAt,
@@ -34,7 +35,8 @@ func MapToCartItemResponses(items []entity.CartItem) []dto.CartItemResponse {
 			ProductID:           item.ProductID,
 			Quantity:            item.Quantity,
 			SelectedForCheckout: item.SelectedForCheckout,
-			AddedAt:             item.AddedAt,
+			CreatedAt:           item.CreatedAt,
+			UpdatedAt:           item.UpdatedAt,
 		})
 	}
 

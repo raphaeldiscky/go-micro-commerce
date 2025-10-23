@@ -18,51 +18,73 @@ type CartRepository interface {
 	// Create saves a new cart
 	Create(ctx context.Context, cart *entity.Cart) (*entity.Cart, error)
 
+	// FindActiveCartByUserID retrieves an active cart by its UserID
+	FindActiveCartByUserID(ctx context.Context, userID uuid.UUID) (*entity.Cart, error)
+
 	// FindByID retrieves a cart by its ID
 	FindByID(ctx context.Context, cartID uuid.UUID) (*entity.Cart, error)
 
 	// FindByUserID retrieves a cart by its UserID
 	FindByUserID(ctx context.Context, userID uuid.UUID) (*entity.Cart, error)
 
-	// FindByUserIDForCheckout retrieves a cart by its UserID for checkout
-	FindByUserIDForCheckout(ctx context.Context, userID uuid.UUID) (*entity.Cart, error)
+	// FindActiveCartByUserIDForCheckout retrieves a cart by its UserID for checkout
+	FindActiveCartByUserIDForCheckout(ctx context.Context, userID uuid.UUID) (*entity.Cart, error)
+
+	// FindCheckedOutCartWithUnselectedItems retrieves a checked out cart with ONLY unselected items
+	FindCheckedOutCartWithUnselectedItems(
+		ctx context.Context,
+		userID uuid.UUID,
+	) (*entity.Cart, error)
 
 	// Update updates an existing cart
 	Update(ctx context.Context, cart *entity.Cart) (*entity.Cart, error)
 
-	// AddItem adds an item to the cart
+	// AddItem adds an item to the cart (only works for active carts)
 	AddItem(ctx context.Context, cartID uuid.UUID, item *entity.CartItem) error
 
-	// RemoveItem removes an item from the cart
-	RemoveItem(ctx context.Context, cartID uuid.UUID, itemID uuid.UUID) error
+	// RemoveItem removes an item from the active cart
+	RemoveItem(ctx context.Context, itemID uuid.UUID) error
 
-	// UpdateItemQuantity updates the quantity of a cart item
-	UpdateItemQuantity(
+	// UpdateActiveCartItemQuantity updates the quantity of a cart item
+	UpdateActiveCartItemQuantity(
 		ctx context.Context,
-		cartID uuid.UUID,
 		itemID uuid.UUID,
 		quantity int64,
 	) error
 
 	// SelectForCheckout marks an item as selected for checkout
-	SelectForCheckout(ctx context.Context, cartID uuid.UUID, itemID uuid.UUID, selected bool) error
+	SelectForCheckout(ctx context.Context, itemID uuid.UUID, selected bool) error
+
+	// UpdateStatus updates the status of a cart
+	UpdateStatus(ctx context.Context, cartID uuid.UUID, status constant.CartStatus) error
 }
 
 const (
 	// SQL query to find cart by customer_id.
 	findCartByCustomerIDQuery = `
-		SELECT id, customer_id, created_at, updated_at
+		SELECT id, customer_id, status, created_at, updated_at
 		FROM carts
 		WHERE customer_id = $1
 		ORDER BY created_at DESC
 		LIMIT 1
 	`
 
-	// SQL query to update cart timestamp.
-	updateCartTimestampQuery = `
-		UPDATE carts
-		SET updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1
+	// SQL query to find active cart by customer_id.
+	findActiveCartByCustomerIDQuery = `
+		SELECT id, customer_id, status, created_at, updated_at
+		FROM carts
+		WHERE customer_id = $1 AND status = 'active'
+		ORDER BY created_at DESC
+		LIMIT 1
+	`
+
+	// SQL query to find checked out cart by customer_id.
+	findCheckedOutCartByCustomerIDQuery = `
+		SELECT id, customer_id, status, created_at, updated_at
+		FROM carts
+		WHERE customer_id = $1 AND status = 'checked_out'
+		ORDER BY created_at DESC
+		LIMIT 1
 	`
 )
 
@@ -85,9 +107,9 @@ func (r *cartRepository) Create(
 ) (*entity.Cart, error) {
 	// Insert cart
 	insertCartQuery := `
-        INSERT INTO carts (id, customer_id, created_at, updated_at)
-        VALUES ($1, $2, $3, $4)
-        RETURNING id, customer_id, created_at, updated_at
+        INSERT INTO carts (id, customer_id, status, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING id, customer_id, status, created_at, updated_at
     `
 
 	var createdCart entity.Cart
@@ -97,11 +119,13 @@ func (r *cartRepository) Create(
 		insertCartQuery,
 		cart.ID,
 		cart.CustomerID,
+		cart.Status,
 		cart.CreatedAt,
 		cart.UpdatedAt,
 	).Scan(
 		&createdCart.ID,
 		&createdCart.CustomerID,
+		&createdCart.Status,
 		&createdCart.CreatedAt,
 		&createdCart.UpdatedAt,
 	)
@@ -112,8 +136,8 @@ func (r *cartRepository) Create(
 	// Insert cart items if present
 	if len(cart.Items) > 0 {
 		const insertItemQuery = `
-            INSERT INTO cart_items (id, cart_id, product_id, quantity, selected_for_checkout, added_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
+            INSERT INTO cart_items (id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
         `
 
 		for i := range len(cart.Items) {
@@ -127,7 +151,8 @@ func (r *cartRepository) Create(
 				item.ProductID,
 				item.Quantity,
 				item.SelectedForCheckout,
-				item.AddedAt,
+				item.CreatedAt,
+				item.UpdatedAt,
 			)
 			if err != nil {
 				return nil, fmt.Errorf("failed to insert cart item: %w", err)
@@ -147,7 +172,7 @@ func (r *cartRepository) FindByID(
 ) (*entity.Cart, error) {
 	// Get cart
 	cartQuery := `
-		SELECT id, customer_id, created_at, updated_at
+		SELECT id, customer_id, status, created_at, updated_at
 		FROM carts
 		WHERE id = $1
 	`
@@ -159,6 +184,7 @@ func (r *cartRepository) FindByID(
 	err := row.Scan(
 		&cart.ID,
 		&cart.CustomerID,
+		&cart.Status,
 		&cart.CreatedAt,
 		&cart.UpdatedAt,
 	)
@@ -172,10 +198,10 @@ func (r *cartRepository) FindByID(
 
 	// Get cart items
 	const itemsQuery = `
-		SELECT id, cart_id, product_id, quantity, selected_for_checkout, added_at
+		SELECT id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at
 		FROM cart_items
 		WHERE cart_id = $1
-		ORDER BY added_at ASC
+		ORDER BY created_at ASC
 	`
 
 	rows, err := r.db.Query(ctx, itemsQuery, cartID)
@@ -195,7 +221,73 @@ func (r *cartRepository) FindByID(
 			&item.ProductID,
 			&item.Quantity,
 			&item.SelectedForCheckout,
-			&item.AddedAt,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan cart item: %w", err)
+		}
+
+		items = append(items, item)
+	}
+
+	cart.Items = items
+
+	return &cart, nil
+}
+
+// FindActiveCartByUserID retrieves an active cart by its customer ID.
+func (r *cartRepository) FindActiveCartByUserID(
+	ctx context.Context,
+	userID uuid.UUID,
+) (*entity.Cart, error) {
+	// Get active cart only
+	row := r.db.QueryRow(ctx, findActiveCartByCustomerIDQuery, userID)
+
+	var cart entity.Cart
+
+	err := row.Scan(
+		&cart.ID,
+		&cart.CustomerID,
+		&cart.Status,
+		&cart.CreatedAt,
+		&cart.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New(constant.CartNotFoundErrorMessage)
+		}
+
+		return nil, fmt.Errorf("failed to scan cart: %w", err)
+	}
+
+	// Get all cart items
+	const itemsQuery = `
+		SELECT id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at
+		FROM cart_items
+		WHERE cart_id = $1
+		ORDER BY created_at ASC
+	`
+
+	rows, err := r.db.Query(ctx, itemsQuery, cart.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query cart items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []entity.CartItem
+
+	for rows.Next() {
+		var item entity.CartItem
+
+		err = rows.Scan(
+			&item.ID,
+			&item.CartID,
+			&item.ProductID,
+			&item.Quantity,
+			&item.SelectedForCheckout,
+			&item.CreatedAt,
+			&item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan cart item: %w", err)
@@ -222,6 +314,7 @@ func (r *cartRepository) FindByUserID(
 	err := row.Scan(
 		&cart.ID,
 		&cart.CustomerID,
+		&cart.Status,
 		&cart.CreatedAt,
 		&cart.UpdatedAt,
 	)
@@ -235,10 +328,10 @@ func (r *cartRepository) FindByUserID(
 
 	// Get cart items
 	const itemsQuery = `
-		SELECT id, cart_id, product_id, quantity, selected_for_checkout, added_at
+		SELECT id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at
 		FROM cart_items
 		WHERE cart_id = $1
-		ORDER BY added_at ASC
+		ORDER BY created_at ASC
 	`
 
 	rows, err := r.db.Query(ctx, itemsQuery, cart.ID)
@@ -258,7 +351,8 @@ func (r *cartRepository) FindByUserID(
 			&item.ProductID,
 			&item.Quantity,
 			&item.SelectedForCheckout,
-			&item.AddedAt,
+			&item.CreatedAt,
+			&item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan cart item: %w", err)
@@ -272,20 +366,21 @@ func (r *cartRepository) FindByUserID(
 	return &cart, nil
 }
 
-// FindByUserIDForCheckout retrieves a cart by its customer ID with ONLY selected items for checkout.
+// FindActiveCartByUserIDForCheckout retrieves a cart by its customer ID with ONLY selected items for checkout.
 // This is optimized for checkout session creation - filters at database level.
-func (r *cartRepository) FindByUserIDForCheckout(
+func (r *cartRepository) FindActiveCartByUserIDForCheckout(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (*entity.Cart, error) {
-	// Get cart
-	row := r.db.QueryRow(ctx, findCartByCustomerIDQuery, userID)
+	// Get active cart only
+	row := r.db.QueryRow(ctx, findActiveCartByCustomerIDQuery, userID)
 
 	var cart entity.Cart
 
 	err := row.Scan(
 		&cart.ID,
 		&cart.CustomerID,
+		&cart.Status,
 		&cart.CreatedAt,
 		&cart.UpdatedAt,
 	)
@@ -299,10 +394,10 @@ func (r *cartRepository) FindByUserIDForCheckout(
 
 	// Get ONLY selected cart items (database-level filtering)
 	const itemsQuery = `
-		SELECT id, cart_id, product_id, quantity, selected_for_checkout, added_at
+		SELECT id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at
 		FROM cart_items
 		WHERE cart_id = $1 AND selected_for_checkout = true
-		ORDER BY id ASC
+		ORDER BY created_at ASC
 	`
 
 	rows, err := r.db.Query(ctx, itemsQuery, cart.ID)
@@ -322,7 +417,74 @@ func (r *cartRepository) FindByUserIDForCheckout(
 			&item.ProductID,
 			&item.Quantity,
 			&item.SelectedForCheckout,
-			&item.AddedAt,
+			&item.CreatedAt,
+			&item.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan cart item: %w", err)
+		}
+
+		items = append(items, item)
+	}
+
+	cart.Items = items
+
+	return &cart, nil
+}
+
+// FindCheckedOutCartWithUnselectedItems retrieves a checked out cart with ONLY unselected items.
+// This is optimized for cart migration after order placement - filters at database level.
+func (r *cartRepository) FindCheckedOutCartWithUnselectedItems(
+	ctx context.Context,
+	userID uuid.UUID,
+) (*entity.Cart, error) {
+	// Get checked out cart only
+	row := r.db.QueryRow(ctx, findCheckedOutCartByCustomerIDQuery, userID)
+
+	var cart entity.Cart
+
+	err := row.Scan(
+		&cart.ID,
+		&cart.CustomerID,
+		&cart.Status,
+		&cart.CreatedAt,
+		&cart.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New(constant.CartNotFoundErrorMessage)
+		}
+
+		return nil, fmt.Errorf("failed to scan cart: %w", err)
+	}
+
+	// Get ONLY unselected cart items (database-level filtering)
+	const itemsQuery = `
+		SELECT id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at
+		FROM cart_items
+		WHERE cart_id = $1 AND selected_for_checkout = false
+		ORDER BY created_at ASC
+	`
+
+	rows, err := r.db.Query(ctx, itemsQuery, cart.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query unselected cart items: %w", err)
+	}
+	defer rows.Close()
+
+	var items []entity.CartItem
+
+	for rows.Next() {
+		var item entity.CartItem
+
+		err = rows.Scan(
+			&item.ID,
+			&item.CartID,
+			&item.ProductID,
+			&item.Quantity,
+			&item.SelectedForCheckout,
+			&item.CreatedAt,
+			&item.UpdatedAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan cart item: %w", err)
@@ -344,9 +506,9 @@ func (r *cartRepository) Update(
 	// Update cart
 	updateCartQuery := `
 		UPDATE carts
-		SET updated_at = $1
-		WHERE id = $2
-		RETURNING id, customer_id, created_at, updated_at
+		SET status = $1, updated_at = $2
+		WHERE id = $3
+		RETURNING id, customer_id, status, created_at, updated_at
 	`
 
 	var updatedCart entity.Cart
@@ -354,11 +516,13 @@ func (r *cartRepository) Update(
 	err := r.db.QueryRow(
 		ctx,
 		updateCartQuery,
+		cart.Status,
 		cart.UpdatedAt,
 		cart.ID,
 	).Scan(
 		&updatedCart.ID,
 		&updatedCart.CustomerID,
+		&updatedCart.Status,
 		&updatedCart.CreatedAt,
 		&updatedCart.UpdatedAt,
 	)
@@ -375,12 +539,34 @@ func (r *cartRepository) Update(
 	return &updatedCart, nil
 }
 
-// AddItem adds an item to the cart.
+// AddItem adds an item to the cart (only works for active carts).
 func (r *cartRepository) AddItem(
 	ctx context.Context,
 	cartID uuid.UUID,
 	item *entity.CartItem,
 ) error {
+	// Verify cart exists and is active
+	verifyCartQuery := `
+		SELECT status
+		FROM carts
+		WHERE id = $1
+	`
+
+	var cartStatus string
+
+	err := r.db.QueryRow(ctx, verifyCartQuery, cartID).Scan(&cartStatus)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return errors.New("cart not found")
+		}
+
+		return fmt.Errorf("failed to verify cart: %w", err)
+	}
+
+	if cartStatus != string(constant.CartStatusActive) {
+		return errors.New("cannot add item to cart that is not active")
+	}
+
 	// Check if item already exists (by product_id)
 	checkQuery := `
 		SELECT id, quantity
@@ -392,7 +578,7 @@ func (r *cartRepository) AddItem(
 
 	var existingQuantity int64
 
-	err := r.db.QueryRow(ctx, checkQuery, cartID, item.ProductID).
+	err = r.db.QueryRow(ctx, checkQuery, cartID, item.ProductID).
 		Scan(&existingID, &existingQuantity)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to check existing item: %w", err)
@@ -413,8 +599,8 @@ func (r *cartRepository) AddItem(
 	} else {
 		// Item doesn't exist, insert new
 		insertQuery := `
-			INSERT INTO cart_items (id, cart_id, product_id, quantity, selected_for_checkout, added_at)
-			VALUES ($1, $2, $3, $4, $5, $6)
+			INSERT INTO cart_items (id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 		`
 
 		_, err = r.db.Exec(
@@ -425,17 +611,12 @@ func (r *cartRepository) AddItem(
 			item.ProductID,
 			item.Quantity,
 			item.SelectedForCheckout,
-			item.AddedAt,
+			item.CreatedAt,
+			item.UpdatedAt,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to insert cart item: %w", err)
 		}
-	}
-
-	// Update cart updated_at
-	_, err = r.db.Exec(ctx, updateCartTimestampQuery, cartID)
-	if err != nil {
-		return fmt.Errorf("failed to update cart timestamp: %w", err)
 	}
 
 	return nil
@@ -444,60 +625,48 @@ func (r *cartRepository) AddItem(
 // RemoveItem removes an item from the cart.
 func (r *cartRepository) RemoveItem(
 	ctx context.Context,
-	cartID uuid.UUID,
 	itemID uuid.UUID,
 ) error {
 	deleteQuery := `
 		DELETE FROM cart_items
-		WHERE id = $1 AND cart_id = $2
+		WHERE id = $1
+		AND cart_id IN (SELECT id FROM carts WHERE status = 'active')
 	`
 
-	result, err := r.db.Exec(ctx, deleteQuery, itemID, cartID)
+	result, err := r.db.Exec(ctx, deleteQuery, itemID)
 	if err != nil {
 		return fmt.Errorf("failed to remove cart item: %w", err)
 	}
 
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
-		return errors.New("cart item not found")
-	}
-
-	// Update cart updated_at
-	_, err = r.db.Exec(ctx, updateCartTimestampQuery, cartID)
-	if err != nil {
-		return fmt.Errorf("failed to update cart timestamp: %w", err)
+		return errors.New("cart item not found or cart is not active")
 	}
 
 	return nil
 }
 
-// UpdateItemQuantity updates the quantity of a cart item.
-func (r *cartRepository) UpdateItemQuantity(
+// UpdateActiveCartItemQuantity updates the quantity of a cart item.
+func (r *cartRepository) UpdateActiveCartItemQuantity(
 	ctx context.Context,
-	cartID uuid.UUID,
 	itemID uuid.UUID,
 	quantity int64,
 ) error {
 	updateQuery := `
 		UPDATE cart_items
 		SET quantity = $1
-		WHERE id = $2 AND cart_id = $3
+		WHERE id = $2
+		AND cart_id IN (SELECT id FROM carts WHERE status = 'active')
 	`
 
-	result, err := r.db.Exec(ctx, updateQuery, quantity, itemID, cartID)
+	result, err := r.db.Exec(ctx, updateQuery, quantity, itemID)
 	if err != nil {
 		return fmt.Errorf("failed to update item quantity: %w", err)
 	}
 
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
-		return errors.New("cart item not found")
-	}
-
-	// Update cart updated_at
-	_, err = r.db.Exec(ctx, updateCartTimestampQuery, cartID)
-	if err != nil {
-		return fmt.Errorf("failed to update cart timestamp: %w", err)
+		return errors.New("cart item not found or cart is not active")
 	}
 
 	return nil
@@ -506,30 +675,49 @@ func (r *cartRepository) UpdateItemQuantity(
 // SelectForCheckout marks an item as selected for checkout.
 func (r *cartRepository) SelectForCheckout(
 	ctx context.Context,
-	cartID uuid.UUID,
 	itemID uuid.UUID,
 	selected bool,
 ) error {
 	updateQuery := `
 		UPDATE cart_items
 		SET selected_for_checkout = $1
-		WHERE id = $2 AND cart_id = $3
+		WHERE id = $2
+		AND cart_id IN (SELECT id FROM carts WHERE status = 'active')
 	`
 
-	result, err := r.db.Exec(ctx, updateQuery, selected, itemID, cartID)
+	result, err := r.db.Exec(ctx, updateQuery, selected, itemID)
 	if err != nil {
 		return fmt.Errorf("failed to update item selection: %w", err)
 	}
 
 	rowsAffected := result.RowsAffected()
 	if rowsAffected == 0 {
-		return errors.New("cart item not found")
+		return errors.New("cart item not found or cart is not active")
 	}
 
-	// Update cart updated_at
-	_, err = r.db.Exec(ctx, updateCartTimestampQuery, cartID)
+	return nil
+}
+
+// UpdateStatus updates the status of a cart.
+func (r *cartRepository) UpdateStatus(
+	ctx context.Context,
+	cartID uuid.UUID,
+	status constant.CartStatus,
+) error {
+	updateQuery := `
+		UPDATE carts
+		SET status = $1, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $2
+	`
+
+	result, err := r.db.Exec(ctx, updateQuery, status, cartID)
 	if err != nil {
-		return fmt.Errorf("failed to update cart timestamp: %w", err)
+		return fmt.Errorf("failed to update cart status: %w", err)
+	}
+
+	rowsAffected := result.RowsAffected()
+	if rowsAffected == 0 {
+		return errors.New("cart not found")
 	}
 
 	return nil

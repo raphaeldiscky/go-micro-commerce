@@ -4,6 +4,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/service"
@@ -12,6 +13,7 @@ import (
 // SetupCart initializes the cart-related routes and services.
 func SetupCart(
 	e *echo.Echo,
+	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *Providers,
 ) {
@@ -23,4 +25,7 @@ func SetupCart(
 	cartHandler := handler.NewCartHandler(cartService)
 
 	routes.SetupCartRoutes(e, cartHandler)
+
+	graphResolver := SetupGraphQLResolver(cartService, providers.CheckoutSessionService)
+	routes.SetupGraphQLRoutes(e, cfg, graphResolver, appLogger)
 }

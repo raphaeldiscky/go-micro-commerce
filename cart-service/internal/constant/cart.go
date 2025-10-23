@@ -1,23 +1,15 @@
 package constant
 
-// CartStatus represents the status of an cart.
+// CartStatus represents the status of a cart.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type CartStatus string
 
 const (
-	// CartStatusPending indicates that the cart is pending.
-	CartStatusPending CartStatus = "pending"
-	// CartStatusProcessing indicates that the cart is being processed.
-	CartStatusProcessing CartStatus = "processing"
-	// CartStatusPaymentExpired indicates that the cart payment has expired.
-	CartStatusPaymentExpired CartStatus = "payment_expired"
-	// CartStatusPaid indicates that the cart has been paid.
-	CartStatusPaid CartStatus = "paid"
-	// CartStatusShipped indicates that the cart has been shipped.
-	CartStatusShipped CartStatus = "shipped"
-	// CartStatusDelivered indicates that the cart has been delivered.
-	CartStatusDelivered CartStatus = "delivered"
-	// CartStatusCanceled indicates that the cart has been canceled.
-	CartStatusCanceled CartStatus = "canceled"
-	// CartStatusFailed indicates that the cart has failed.
-	CartStatusFailed CartStatus = "failed"
+	// CartStatusActive indicates that the cart is active.
+	CartStatusActive CartStatus = "active"
+	// CartStatusCheckedOut indicates that the cart is being checked out.
+	CartStatusCheckedOut CartStatus = "checked_out"
+	// CartStatusArchived indicates that the cart has been archived.
+	CartStatusArchived CartStatus = "archived"
 )

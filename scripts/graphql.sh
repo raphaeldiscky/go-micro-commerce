@@ -2,16 +2,14 @@
 
 set -euo pipefail
 
-SERVICES=(
-  "auth-service"
-  "notification-service"
-  "order-service"
-  "product-service"
-  "payment-service"
-  "fulfillment-service"
-  "search-service"
-  "chat-service"
-)
+SERVICES=()
+
+for dir in */ ; do
+  dir="${dir%/}"  
+  if [[ -f "$dir/go.mod" ]]; then
+    SERVICES+=("$dir")
+  fi
+done
 
 generate_graphql() {
   local service="$1"

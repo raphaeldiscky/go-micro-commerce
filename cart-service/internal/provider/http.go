@@ -22,6 +22,6 @@ func SetupHTTP(
 ) {
 	appHandler := handler.NewAppHandler()
 	routes.SetupAppRoutes(e, appHandler)
-	SetupCart(e, appLogger, providers)
 	SetupCheckoutSession(ctx, cfg, e, appLogger, providers)
+	SetupCart(e, cfg, appLogger, providers)
 }

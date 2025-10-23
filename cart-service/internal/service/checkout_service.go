@@ -32,6 +32,11 @@ type CheckoutSessionService interface {
 		sessionID uuid.UUID,
 		req *dto.PlaceOrderRequest,
 	) (*dto.CheckoutSessionResponse, error)
+	CancelCheckoutSession(
+		ctx context.Context,
+		sessionID uuid.UUID,
+		customerID uuid.UUID,
+	) (*dto.CheckoutSessionResponse, error)
 }
 
 // checkoutSessionService implements the CheckoutSessionService.
@@ -87,7 +92,7 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 		cartRepo := ds.CartRepository()
 
 		// Get customer's cart with ONLY selected items (database-level filtering)
-		cart, errCart := cartRepo.FindByUserIDForCheckout(ctx, req.CustomerID)
+		cart, errCart := cartRepo.FindActiveCartByUserIDForCheckout(ctx, req.CustomerID)
 		if errCart != nil {
 			return httperror.NewInternalServerError("failed to get cart")
 		}
@@ -96,40 +101,49 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 			return httperror.NewBadRequestError("cart not found")
 		}
 
-		// Validate cart has selected items (already filtered by DB query)
-		if len(cart.Items) == 0 {
-			return httperror.NewBadRequestError("no items selected for checkout")
+		// Validate cart can checkout (must be active and have selected items)
+		if err = cart.CanCheckout(); err != nil {
+			return httperror.NewBadRequestError(err.Error())
+		}
+
+		// Mark cart as checked out
+		if err = cart.MarkAsCheckedOut(); err != nil {
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("failed to mark cart as checked out: %v", err),
+			)
+		}
+
+		// Update cart status in database
+		if err = cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusCheckedOut); err != nil {
+			return httperror.NewInternalServerError("failed to update cart status")
 		}
 
 		// Copy selected cart items to checkout session items (snapshot pattern)
-		var sessionItems []entity.CheckoutSessionItem
-
-		for i := range cart.Items {
-			cartItem := &cart.Items[i]
-
-			sessionItem, errItem := entity.NewCheckoutSessionItem(
-				cartItem.ProductID,
-				cartItem.Quantity,
-			)
-			if errItem != nil {
-				return httperror.NewBadRequestError(fmt.Sprintf("invalid item: %v", errItem))
+		sessionItems, errItems := s.createCheckoutSessionItems(cart.Items)
+		if errItems != nil {
+			// Revert cart status to active
+			err = cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusActive)
+			if err != nil {
+				return httperror.NewInternalServerError("failed to update cart status")
 			}
 
-			sessionItems = append(sessionItems, *sessionItem)
+			return httperror.NewBadRequestError(errItems.Error())
 		}
 
-		// Create checkout session entity (snapshot pattern - no cart reference)
+		// Create checkout session entity with simplified signature
 		session, errSession := entity.NewCheckoutSession(
 			req.IdempotencyKey,
 			req.CustomerID,
-			req.AddressID,
-			req.CarrierID,
-			req.PaymentGateway,
-			req.PaymentMethod,
-			req.Currency,
+			"IDR", // Default currency
 			sessionItems,
 		)
 		if errSession != nil {
+			// Revert cart status to active
+			err = cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusActive)
+			if err != nil {
+				return httperror.NewInternalServerError("failed to update cart status")
+			}
+
 			return httperror.NewBadRequestError(
 				fmt.Sprintf("failed to create checkout session: %v", errSession),
 			)
@@ -138,6 +152,12 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 		// Save checkout session
 		createdSession, err = checkoutSessionRepo.Create(ctx, session)
 		if err != nil {
+			// Revert cart status to active
+			err = cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusActive)
+			if err != nil {
+				return httperror.NewInternalServerError("failed to update cart status")
+			}
+
 			return httperror.NewInternalServerError("failed to create checkout session")
 		}
 
@@ -148,6 +168,29 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 	}
 
 	return mapper.MapToCheckoutSessionResponse(createdSession), nil
+}
+
+// createCheckoutSessionItems creates checkout session items from cart items.
+func (s *checkoutSessionService) createCheckoutSessionItems(
+	cartItems []entity.CartItem,
+) ([]entity.CheckoutSessionItem, error) {
+	sessionItems := make([]entity.CheckoutSessionItem, 0, len(cartItems))
+
+	for i := range cartItems {
+		cartItem := &cartItems[i]
+
+		sessionItem, errItem := entity.NewCheckoutSessionItem(
+			cartItem.ProductID,
+			cartItem.Quantity,
+		)
+		if errItem != nil {
+			return nil, fmt.Errorf("invalid item: %w", errItem)
+		}
+
+		sessionItems = append(sessionItems, *sessionItem)
+	}
+
+	return sessionItems, nil
 }
 
 // GetCheckoutSession retrieves a checkout session by ID.
@@ -200,6 +243,7 @@ func (s *checkoutSessionService) PlaceOrder(
 
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		checkoutSessionRepo := ds.CheckoutSessionRepository()
+		cartRepo := ds.CartRepository()
 
 		// Get checkout session
 		session, errSession := checkoutSessionRepo.GetByID(ctx, sessionID)
@@ -237,6 +281,20 @@ func (s *checkoutSessionService) PlaceOrder(
 			return httperror.NewInternalServerError("failed to update checkout session")
 		}
 
+		// Migrate cart: archive checked out cart and create new active cart with unselected items
+		s.migrateCartAfterOrderPlacement(ctx, cartRepo, req.CustomerID)
+
+		// Dereference nullable fields for event
+		paymentGateway := ""
+		if updatedSession.PaymentGateway != nil {
+			paymentGateway = *updatedSession.PaymentGateway
+		}
+
+		paymentMethod := ""
+		if updatedSession.PaymentMethod != nil {
+			paymentMethod = *updatedSession.PaymentMethod
+		}
+
 		// Publish domain event via outbox pattern
 		evt := producer.NewCheckoutSessionOrderPlacedEvent(
 			updatedSession.ID,
@@ -244,8 +302,8 @@ func (s *checkoutSessionService) PlaceOrder(
 			constant.CheckoutSessionStatusOrderPlaced,
 			updatedSession.CustomerID,
 			updatedSession.Currency,
-			updatedSession.PaymentGateway,
-			updatedSession.PaymentMethod,
+			paymentGateway,
+			paymentMethod,
 			updatedSession.Items,
 			updatedSession.CreatedAt,
 		)
@@ -254,6 +312,123 @@ func (s *checkoutSessionService) PlaceOrder(
 			return httperror.NewInternalServerError(
 				"failed to send checkout session order placed event",
 			)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
+}
+
+// migrateCartAfterOrderPlacement archives the checked out cart and creates a new active cart with unselected items.
+func (s *checkoutSessionService) migrateCartAfterOrderPlacement(
+	ctx context.Context,
+	cartRepo repository.CartRepository,
+	customerID uuid.UUID,
+) {
+	// Get checked out cart with unselected items for migration
+	cart, errCart := cartRepo.FindCheckedOutCartWithUnselectedItems(ctx, customerID)
+	if errCart != nil {
+		s.logger.Warnf("failed to get cart for migration: %v", errCart)
+		return
+	}
+
+	if cart == nil {
+		return
+	}
+
+	// Archive the old cart
+	if errArchive := cart.MarkAsArchived(); errArchive != nil {
+		s.logger.Warnf("failed to mark cart as archived: %v", errArchive)
+		return
+	}
+
+	if errUpdateStatus := cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusArchived); errUpdateStatus != nil {
+		s.logger.Warnf("failed to update cart status to archived: %v", errUpdateStatus)
+		return
+	}
+
+	// Create new active cart only if there are unselected items
+	if len(cart.Items) == 0 {
+		return
+	}
+
+	newCart, errNewCart := entity.NewCart(customerID, cart.Items)
+	if errNewCart != nil {
+		s.logger.Warnf("failed to create new cart entity: %v", errNewCart)
+		return
+	}
+
+	if _, errCreate := cartRepo.Create(ctx, newCart); errCreate != nil {
+		s.logger.Warnf("failed to save new cart: %v", errCreate)
+	}
+}
+
+// CancelCheckoutSession cancels a checkout session and reverts the cart to active.
+func (s *checkoutSessionService) CancelCheckoutSession(
+	ctx context.Context,
+	sessionID uuid.UUID,
+	customerID uuid.UUID,
+) (*dto.CheckoutSessionResponse, error) {
+	var (
+		updatedSession *entity.CheckoutSession
+		err            error
+	)
+
+	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		checkoutSessionRepo := ds.CheckoutSessionRepository()
+		cartRepo := ds.CartRepository()
+
+		// Get checkout session
+		session, errSession := checkoutSessionRepo.GetByID(ctx, sessionID)
+		if errSession != nil {
+			return httperror.NewInternalServerError("failed to get checkout session")
+		}
+
+		if session == nil {
+			return httperror.NewBadRequestError("checkout session not found")
+		}
+
+		// Validate session belongs to the customer
+		if session.CustomerID != customerID {
+			return httperror.NewForbiddenError("checkout session does not belong to customer")
+		}
+
+		// Validate session can be canceled
+		if !session.CanBeCanceled() {
+			return httperror.NewBadRequestError(
+				fmt.Sprintf(
+					"checkout session cannot be canceled in current status: %s",
+					session.Status,
+				),
+			)
+		}
+
+		// Update status to canceled
+		if err = session.UpdateStatus(constant.CheckoutSessionStatusCanceled); err != nil {
+			return httperror.NewBadRequestError("failed to update checkout session status")
+		}
+
+		// Save updated session
+		updatedSession, err = checkoutSessionRepo.Update(ctx, session)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to update checkout session")
+		}
+
+		// Get customer's checked out cart to revert to active
+		cart, errCart := cartRepo.FindByUserID(ctx, customerID)
+		if errCart != nil {
+			s.logger.Warnf("failed to get cart for reverting: %v", errCart)
+		} else if cart != nil && cart.Status == constant.CartStatusCheckedOut {
+			// Revert cart to active using domain method
+			if errRevert := cart.RevertToActive(); errRevert != nil {
+				s.logger.Warnf("failed to revert cart to active: %v", errRevert)
+			} else if errUpdate := cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusActive); errUpdate != nil {
+				s.logger.Warnf("failed to update cart status to active: %v", errUpdate)
+			}
 		}
 
 		return nil

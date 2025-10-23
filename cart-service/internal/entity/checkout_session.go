@@ -21,8 +21,8 @@ type CheckoutSession struct {
 	AddressID      *uuid.UUID
 	CarrierID      *string
 	Status         constant.CheckoutSessionStatus
-	PaymentGateway string
-	PaymentMethod  string
+	PaymentGateway *string
+	PaymentMethod  *string
 	Currency       string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -42,10 +42,6 @@ type CheckoutSessionItem struct {
 func NewCheckoutSession(
 	idempotencyKey uuid.UUID,
 	customerID uuid.UUID,
-	addressID *uuid.UUID,
-	carrierID *string,
-	paymentGateway string,
-	paymentMethod string,
 	currency string,
 	items []CheckoutSessionItem,
 ) (*CheckoutSession, error) {
@@ -61,11 +57,11 @@ func NewCheckoutSession(
 		ID:             checkoutSessionID,
 		IdempotencyKey: idempotencyKey,
 		CustomerID:     customerID,
-		AddressID:      addressID,
-		CarrierID:      carrierID,
+		AddressID:      nil,
+		CarrierID:      nil,
 		Status:         constant.CheckoutSessionStatusPending,
-		PaymentGateway: paymentGateway,
-		PaymentMethod:  paymentMethod,
+		PaymentGateway: nil,
+		PaymentMethod:  nil,
 		Currency:       currency,
 		CreatedAt:      now,
 		UpdatedAt:      now,
@@ -111,18 +107,6 @@ func (cs *CheckoutSession) validate() error {
 
 	if len(cs.Items) == 0 {
 		return errors.New("checkout session must have at least one item")
-	}
-
-	if cs.PaymentGateway == "" {
-		return errors.New("payment_gateway must not be empty")
-	}
-
-	if cs.PaymentMethod == "" {
-		return errors.New("payment_method must not be empty")
-	}
-
-	if cs.Currency == "" {
-		return errors.New("currency must not be empty")
 	}
 
 	if cs.CreatedAt.After(cs.UpdatedAt) {

@@ -11,7 +11,7 @@ for dir in */ ; do
   fi
 done
 
-MAX_CONCURRENT=4
+MAX_CONCURRENT=2
 
 # --- Colored output helpers ---
 RED="\033[31m"

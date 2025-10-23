@@ -22,25 +22,24 @@ type CartService interface {
 	CreateCart(ctx context.Context, req *dto.CreateCartRequest) (*dto.CartResponse, error)
 	GetCart(ctx context.Context, cartID uuid.UUID) (*dto.CartResponse, error)
 	GetCartByUserID(ctx context.Context, userID uuid.UUID) (*dto.CartResponse, error)
-	AddItemToCart(
+	AddItemToActiveCart(
 		ctx context.Context,
-		cartID uuid.UUID,
 		req *dto.AddCartItemRequest,
 	) (*dto.CartResponse, error)
-	RemoveItemFromCart(
+	RemoveItemFromActiveCart(
 		ctx context.Context,
-		cartID uuid.UUID,
+		customerID uuid.UUID,
 		itemID uuid.UUID,
 	) (*dto.CartResponse, error)
-	UpdateItemQuantity(
+	UpdateActiveCartItemQuantity(
 		ctx context.Context,
-		cartID uuid.UUID,
+		customerID uuid.UUID,
 		itemID uuid.UUID,
 		quantity int64,
 	) (*dto.CartResponse, error)
-	SelectItemForCheckout(
+	SelectActiveCartItemForCheckout(
 		ctx context.Context,
-		cartID uuid.UUID,
+		customerID uuid.UUID,
 		itemID uuid.UUID,
 		selected bool,
 	) (*dto.CartResponse, error)
@@ -147,41 +146,60 @@ func (s *cartService) GetCartByUserID(
 	return mapper.MapToCartResponse(cart), nil
 }
 
-// AddItemToCart adds an item to the cart.
-func (s *cartService) AddItemToCart(
+// AddItemToCart adds an item to the active cart.
+func (s *cartService) AddItemToActiveCart(
 	ctx context.Context,
-	cartID uuid.UUID,
 	req *dto.AddCartItemRequest,
 ) (*dto.CartResponse, error) {
-	var updatedCart *entity.Cart
+	var resultCart *entity.Cart
 
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		cartRepo := ds.CartRepository()
 
-		// Check if cart exists
-		cart, errCart := cartRepo.FindByID(ctx, cartID)
+		// Try to find active cart for customer
+		cart, errCart := cartRepo.FindActiveCartByUserID(ctx, req.CustomerID)
+
+		// If no active cart exists, create a new one with the item
 		if errCart != nil {
-			return httperror.NewInternalServerError("failed to get cart")
+			// Create cart item
+			item, errItem := entity.NewCartItem(req.ProductID, req.Quantity)
+			if errItem != nil {
+				return httperror.NewBadRequestError(fmt.Sprintf("invalid item: %v", errItem))
+			}
+
+			// Create new cart with status active and the item
+			newCart, errNewCart := entity.NewCart(req.CustomerID, []entity.CartItem{*item})
+			if errNewCart != nil {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf("failed to create cart: %v", errNewCart),
+				)
+			}
+
+			// Save new cart to database
+			createdCart, err := cartRepo.Create(ctx, newCart)
+			if err != nil {
+				return httperror.NewInternalServerError("failed to create cart")
+			}
+
+			resultCart = createdCart
+
+			return nil
 		}
 
-		if cart == nil {
-			return httperror.NewCartNotFoundError()
-		}
-
-		// Create cart item
+		// Cart exists - add item to existing cart
 		item, errItem := entity.NewCartItem(req.ProductID, req.Quantity)
 		if errItem != nil {
 			return httperror.NewBadRequestError(fmt.Sprintf("invalid item: %v", errItem))
 		}
 
 		// Add item to cart
-		err := cartRepo.AddItem(ctx, cartID, item)
+		err := cartRepo.AddItem(ctx, cart.ID, item)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to add item to cart")
 		}
 
 		// Fetch updated cart
-		updatedCart, err = cartRepo.FindByID(ctx, cartID)
+		resultCart, err = cartRepo.FindByID(ctx, cart.ID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get updated cart")
 		}
@@ -192,13 +210,13 @@ func (s *cartService) AddItemToCart(
 		return nil, err
 	}
 
-	return mapper.MapToCartResponse(updatedCart), nil
+	return mapper.MapToCartResponse(resultCart), nil
 }
 
-// RemoveItemFromCart removes an item from the cart.
-func (s *cartService) RemoveItemFromCart(
+// RemoveItemFromActiveCart removes an item from the active cart.
+func (s *cartService) RemoveItemFromActiveCart(
 	ctx context.Context,
-	cartID uuid.UUID,
+	customerID uuid.UUID,
 	itemID uuid.UUID,
 ) (*dto.CartResponse, error) {
 	var updatedCart *entity.Cart
@@ -206,24 +224,20 @@ func (s *cartService) RemoveItemFromCart(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		cartRepo := ds.CartRepository()
 
-		// Check if cart exists
-		cart, errCart := cartRepo.FindByID(ctx, cartID)
+		// Find active cart by customerID
+		cart, errCart := cartRepo.FindActiveCartByUserID(ctx, customerID)
 		if errCart != nil {
-			return httperror.NewInternalServerError("failed to get cart")
-		}
-
-		if cart == nil {
 			return httperror.NewCartNotFoundError()
 		}
 
-		// Remove item from cart
-		err := cartRepo.RemoveItem(ctx, cartID, itemID)
+		// Remove item from cart (repository enforces active status)
+		err := cartRepo.RemoveItem(ctx, itemID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to remove item from cart")
 		}
 
 		// Fetch updated cart
-		updatedCart, err = cartRepo.FindByID(ctx, cartID)
+		updatedCart, err = cartRepo.FindByID(ctx, cart.ID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get updated cart")
 		}
@@ -237,10 +251,10 @@ func (s *cartService) RemoveItemFromCart(
 	return mapper.MapToCartResponse(updatedCart), nil
 }
 
-// UpdateItemQuantity updates the quantity of a cart item.
-func (s *cartService) UpdateItemQuantity(
+// UpdateActiveCartItemQuantity updates the quantity of a cart item in the active cart.
+func (s *cartService) UpdateActiveCartItemQuantity(
 	ctx context.Context,
-	cartID uuid.UUID,
+	customerID uuid.UUID,
 	itemID uuid.UUID,
 	quantity int64,
 ) (*dto.CartResponse, error) {
@@ -253,41 +267,41 @@ func (s *cartService) UpdateItemQuantity(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		cartRepo := ds.CartRepository()
 
-		// Check if cart exists
-		cart, errCart := cartRepo.FindByID(ctx, cartID)
+		// Find active cart by customerID
+		cart, errCart := cartRepo.FindActiveCartByUserID(ctx, customerID)
 		if errCart != nil {
-			return httperror.NewInternalServerError("failed to get cart")
-		}
-
-		if cart == nil {
+			s.logger.Errorf("failed to get active cart: %v", errCart)
 			return httperror.NewCartNotFoundError()
 		}
 
-		// Update item quantity
-		err := cartRepo.UpdateItemQuantity(ctx, cartID, itemID, quantity)
+		// Update item quantity (repository enforces active status)
+		err := cartRepo.UpdateActiveCartItemQuantity(ctx, itemID, quantity)
 		if err != nil {
+			s.logger.Errorf("failed to update item quantity: %v", err)
 			return httperror.NewInternalServerError("failed to update item quantity")
 		}
 
 		// Fetch updated cart
-		updatedCart, err = cartRepo.FindByID(ctx, cartID)
+		updatedCart, err = cartRepo.FindByID(ctx, cart.ID)
 		if err != nil {
+			s.logger.Errorf("failed to get updated cart: %v", err)
 			return httperror.NewInternalServerError("failed to get updated cart")
 		}
 
 		return nil
 	})
 	if err != nil {
+		s.logger.Errorf("failed to update item quantity: %v", err)
 		return nil, err
 	}
 
 	return mapper.MapToCartResponse(updatedCart), nil
 }
 
-// SelectItemForCheckout marks an item as selected for checkout.
-func (s *cartService) SelectItemForCheckout(
+// SelectActiveCartItemForCheckout marks an item as selected for checkout in the active cart.
+func (s *cartService) SelectActiveCartItemForCheckout(
 	ctx context.Context,
-	cartID uuid.UUID,
+	customerID uuid.UUID,
 	itemID uuid.UUID,
 	selected bool,
 ) (*dto.CartResponse, error) {
@@ -296,24 +310,20 @@ func (s *cartService) SelectItemForCheckout(
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		cartRepo := ds.CartRepository()
 
-		// Check if cart exists
-		cart, errCart := cartRepo.FindByID(ctx, cartID)
+		// Find active cart by customerID
+		cart, errCart := cartRepo.FindActiveCartByUserID(ctx, customerID)
 		if errCart != nil {
-			return httperror.NewInternalServerError("failed to get cart")
-		}
-
-		if cart == nil {
 			return httperror.NewCartNotFoundError()
 		}
 
-		// Select/deselect item for checkout
-		err := cartRepo.SelectForCheckout(ctx, cartID, itemID, selected)
+		// Select/deselect item for checkout (repository enforces active status)
+		err := cartRepo.SelectForCheckout(ctx, itemID, selected)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to update item selection")
 		}
 
 		// Fetch updated cart
-		updatedCart, err = cartRepo.FindByID(ctx, cartID)
+		updatedCart, err = cartRepo.FindByID(ctx, cart.ID)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to get updated cart")
 		}

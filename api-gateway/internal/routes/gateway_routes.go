@@ -39,8 +39,7 @@ func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMid
 	// This allows both authenticated and unauthenticated queries to work
 	optionalAuth := e.Group("")
 	optionalAuth.Use(h.OptionalAuthorization())
-	optionalAuth.GET("/graph", gw.ProxyToService("graphql-gateway", "/"))
-	optionalAuth.POST("/graph", gw.ProxyToService("graphql-gateway", "/"))
+	optionalAuth.Any("/graph", gw.ProxyToService("graphql-gateway", "/"))
 
 	// GraphQL Subscriptions WebSocket (bypass Apollo Router, proxy directly to chat-service)
 	// Apollo Router doesn't support WebSocket subscriptions, so we route directly
