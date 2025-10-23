@@ -14,17 +14,28 @@ import type {
   UpdateItemQuantityMutation,
 } from '@/lib/graphql/cart.generated'
 import { graphClient } from '@/lib/graphql/client'
-import type { Product } from '@/proto/product/v1/product_pb'
 import { BatchGetProductsByIDsRequestSchema } from '@/proto/product/v1/product_pb'
 import { create as createProto } from '@bufbuild/protobuf'
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import { useShallow } from 'zustand/shallow'
+import { useShallow } from 'zustand/react/shallow'
 
 // Extract types from GraphQL schema
 type Cart = NonNullable<GetMyCartQuery['getMyCart']>
 type CartItem = Cart['items'][number]
+
+type Product = {
+  id: string
+  name: string
+  price: number
+  quantity: number
+  version: number
+  reservedQuantity: number
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
+}
 
 // Enriched cart item with product data from Connect-RPC
 export type EnrichedCartItem = CartItem & {
@@ -37,6 +48,7 @@ export interface CartState {
   productsMap: Map<string, Product>
   isLoading: boolean
   isDrawerOpen: boolean
+  lastFetchedAt: number | null
 }
 
 // Cart store actions interface
@@ -76,9 +88,21 @@ export const useCartStore = create<CartStore>()(
         productsMap: new Map(),
         isLoading: false,
         isDrawerOpen: false,
+        lastFetchedAt: null,
 
         // Cart and item management
         fetchCart: async () => {
+          const state = get()
+
+          // Smart caching: skip fetch if data is fresh (< 60 seconds old)
+          if (state.lastFetchedAt) {
+            const timeSinceLastFetch = Date.now() - state.lastFetchedAt
+            if (timeSinceLastFetch < 60000) {
+              // Data is fresh, skip fetch
+              return
+            }
+          }
+
           set({ isLoading: true })
 
           try {
@@ -100,20 +124,41 @@ export const useCartStore = create<CartStore>()(
                 )
                 const productsResponse =
                   await productApi.batchGetProductsByIDs(request)
-                // Store products in map
+
                 const productsMap = new Map<string, Product>()
                 for (const product of productsResponse.products) {
-                  productsMap.set(product.id, product)
+                  const processedProduct: Product = {
+                    id: product.id,
+                    name: product.name,
+                    price: Number(product.price),
+                    quantity: Number(product.quantity),
+                    version: Number(product.version),
+                    reservedQuantity: Number(product.reservedQuantity),
+                  }
+                  productsMap.set(product.id, processedProduct)
                 }
 
-                set({ cart: data.getMyCart, productsMap, isLoading: false })
+                set({
+                  cart: data.getMyCart,
+                  productsMap,
+                  isLoading: false,
+                  lastFetchedAt: Date.now(),
+                })
               } catch (productError) {
                 console.error('Failed to fetch products:', productError)
                 // Still set cart even if product fetch fails
-                set({ cart: data.getMyCart, isLoading: false })
+                set({
+                  cart: data.getMyCart,
+                  isLoading: false,
+                  lastFetchedAt: Date.now(),
+                })
               }
             } else {
-              set({ cart: data.getMyCart, isLoading: false })
+              set({
+                cart: data.getMyCart,
+                isLoading: false,
+                lastFetchedAt: Date.now(),
+              })
             }
           } catch (error) {
             set({ isLoading: false })
@@ -238,18 +283,18 @@ export const useCartStore = create<CartStore>()(
             // Update all items to selected
             for (const item of state.cart.items) {
               if (!item.selectedForCheckout) {
-                await graphClient.request<SelectItemForCheckoutMutation>(
-                  SELECT_ITEM_FOR_CHECKOUT_MUTATION,
-                  {
-                    itemId: item.id,
-                    input: { selected: true },
-                  },
-                )
+                const data =
+                  await graphClient.request<SelectItemForCheckoutMutation>(
+                    SELECT_ITEM_FOR_CHECKOUT_MUTATION,
+                    {
+                      itemId: item.id,
+                      input: { selected: true },
+                    },
+                  )
+
+                set({ cart: data.selectItemForCheckout })
               }
             }
-
-            // Refresh cart to get updated state
-            await get().fetchCart()
           } catch (error) {
             const errorMessage =
               error instanceof Error
@@ -269,18 +314,18 @@ export const useCartStore = create<CartStore>()(
             // Update all items to deselected
             for (const item of state.cart.items) {
               if (item.selectedForCheckout) {
-                await graphClient.request<SelectItemForCheckoutMutation>(
-                  SELECT_ITEM_FOR_CHECKOUT_MUTATION,
-                  {
-                    itemId: item.id,
-                    input: { selected: false },
-                  },
-                )
+                const data =
+                  await graphClient.request<SelectItemForCheckoutMutation>(
+                    SELECT_ITEM_FOR_CHECKOUT_MUTATION,
+                    {
+                      itemId: item.id,
+                      input: { selected: false },
+                    },
+                  )
+
+                set({ cart: data.selectItemForCheckout })
               }
             }
-
-            // Refresh cart to get updated state
-            await get().fetchCart()
           } catch (error) {
             const errorMessage =
               error instanceof Error
@@ -293,9 +338,15 @@ export const useCartStore = create<CartStore>()(
 
         // Product management
         addProductToMap: (product: Product) => {
-          const updatedProductsMap = new Map(get().productsMap)
-          updatedProductsMap.set(product.id, product)
-          set({ productsMap: updatedProductsMap })
+          const currentMap = get().productsMap
+          const existingProduct = currentMap.get(product.id)
+
+          // Only update if product doesn't exist or has changed (different reference)
+          if (!existingProduct || existingProduct !== product) {
+            const updatedProductsMap = new Map(currentMap)
+            updatedProductsMap.set(product.id, product)
+            set({ productsMap: updatedProductsMap })
+          }
         },
 
         getEnrichedCartItems: () => {
@@ -341,19 +392,17 @@ export const useCartStore = create<CartStore>()(
       {
         name: 'cart-store',
         partialize: (state) => ({
-          // Persist cart data and products map (converted to array for storage)
           cart: state.cart,
           productsMap: Array.from(state.productsMap.entries()),
+          lastFetchedAt: state.lastFetchedAt,
         }),
         merge: (persistedState, currentState) => {
-          const persisted = persistedState as Partial<CartState> & {
-            productsMap?: Array<[string, Product]>
-          }
+          const persisted = persistedState as CartState
           return {
             ...currentState,
-            ...persisted,
-            // Restore Map from array
-            productsMap: new Map(persisted.productsMap || []),
+            cart: persisted.cart,
+            productsMap: new Map(persisted.productsMap),
+            lastFetchedAt: persisted.lastFetchedAt,
           }
         },
       },
@@ -363,16 +412,27 @@ export const useCartStore = create<CartStore>()(
 
 // Selectors for easier access
 export const useCart = () => useCartStore((state) => state.cart)
-export const useEnrichedCartItems = () =>
-  useCartStore(useShallow((state) => state.getEnrichedCartItems()))
+
+// Simple selectors - return raw state, no transformations
+export const useCartItems = () =>
+  useCartStore((state) => state.cart?.items ?? [])
+
+export const useProductsMap = () => useCartStore((state) => state.productsMap)
+
+// Multi-property selector with shallow comparison
+export const useCartData = () =>
+  useCartStore(
+    useShallow((state) => ({
+      items: state.cart?.items ?? [],
+      productsMap: state.productsMap,
+    })),
+  )
+
 export const useCartItemCount = () =>
   useCartStore((state) =>
     (state.cart?.items || []).reduce((total, item) => total + item.quantity, 0),
   )
-export const useSelectedItems = () =>
-  useCartStore(useShallow((state) => state.getSelectedItems()))
-export const useSelectedTotal = () =>
-  useCartStore((state) => state.getSelectedTotal())
+
 export const useIsCartDrawerOpen = () =>
   useCartStore((state) => state.isDrawerOpen)
 export const useIsCartLoading = () => useCartStore((state) => state.isLoading)

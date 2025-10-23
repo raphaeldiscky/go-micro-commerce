@@ -2,15 +2,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { mockShippingOptions } from '@/mocks/shipping'
-import { useSelectedItems } from '@/store/cartStore'
+import { useCartData } from '@/store/cartStore'
 import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import type { ShippingOptionUI } from '@/types/cart'
 import { Clock, Truck } from 'lucide-react'
+import { useMemo } from 'react'
 
 export function ShippingOptions() {
   const { selectedAddress, selectedShippingOption, setShippingMethod } =
     useCheckoutSessionStore()
-  const selectedItems = useSelectedItems()
+
+  // Get raw state with shallow comparison
+  const { items: cartItems, productsMap } = useCartData()
+
+  // Transform in useMemo - only recalculates when dependencies change
+  const selectedItems = useMemo(() => {
+    return cartItems
+      .map((item) => ({
+        ...item,
+        product: productsMap.get(item.productId),
+      }))
+      .filter((item) => item.selectedForCheckout)
+  }, [cartItems, productsMap])
 
   // Calculate subtotal from selected cart items
   const subtotal = selectedItems.reduce(

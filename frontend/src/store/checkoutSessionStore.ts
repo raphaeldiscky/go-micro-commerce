@@ -49,7 +49,7 @@ export interface CheckoutSessionActions {
   // Checkout session management
   fetchCheckoutSession: (sessionId: string) => Promise<void>
   startCheckout: (
-    navigateToCheckout?: (checkoutId: string) => void,
+    navigateToCheckout: (checkoutId: string) => void,
   ) => Promise<void>
   cancelCheckout: (sessionId: string) => Promise<void>
 
@@ -120,7 +120,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         },
 
         startCheckout: async (
-          navigateToCheckout?: (checkoutId: string) => void,
+          navigateToCheckout: (checkoutId: string) => void,
         ) => {
           set({ isLoading: true })
 
@@ -150,7 +150,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
             toast.success('Proceeding to checkout')
 
             // Navigate to checkout page with ID if navigation function provided
-            if (navigateToCheckout && session.id) {
+            if (session.id) {
               navigateToCheckout(session.id)
             }
           } catch (error) {

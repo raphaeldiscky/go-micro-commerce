@@ -1,10 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { useSelectedItems } from '@/store/cartStore'
+import { useCartData } from '@/store/cartStore'
+import { useMemo } from 'react'
 import { CartItemRow } from '../cart/CartItemRow'
 
 export function OrderReview() {
-  const selectedItems = useSelectedItems()
+  // Get raw state with shallow comparison
+  const { items: cartItems, productsMap } = useCartData()
+
+  // Transform in useMemo - only recalculates when dependencies change
+  const selectedItems = useMemo(() => {
+    return cartItems
+      .map((item) => ({
+        ...item,
+        product: productsMap.get(item.productId),
+      }))
+      .filter((item) => item.selectedForCheckout)
+  }, [cartItems, productsMap])
 
   if (selectedItems.length === 0) {
     return (

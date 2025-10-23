@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
 import { fCurrency } from '@/lib/utils/number'
-import { useSelectedItems } from '@/store/cartStore'
+import { useCartData } from '@/store/cartStore'
 import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
@@ -25,6 +25,7 @@ import {
   MapPin,
   Package,
 } from 'lucide-react'
+import { useMemo } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/checkout/$checkoutId')({
@@ -43,7 +44,18 @@ function RouteComponent() {
     isLoading: isCheckoutLoading,
   } = useCheckoutSessionStore()
 
-  const selectedItems = useSelectedItems()
+  // Get raw state with shallow comparison
+  const { items: cartItems, productsMap } = useCartData()
+
+  // Transform in useMemo - only recalculates when dependencies change
+  const selectedItems = useMemo(() => {
+    return cartItems
+      .map((item) => ({
+        ...item,
+        product: productsMap.get(item.productId),
+      }))
+      .filter((item) => item.selectedForCheckout)
+  }, [cartItems, productsMap])
 
   // Validate checkout session
   const isValidSession = checkoutSession?.id === checkoutId

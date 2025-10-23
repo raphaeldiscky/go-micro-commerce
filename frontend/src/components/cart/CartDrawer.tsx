@@ -11,32 +11,55 @@ import {
 import { PATH } from '@/constants/routes'
 import { fCurrency } from '@/lib/utils/number'
 import {
+  useCartData,
+  useCartItemCount,
   useCartStore,
-  useEnrichedCartItems,
-  useSelectedItems,
-  useSelectedTotal,
 } from '@/store/cartStore'
 import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCheck, Package, ShoppingBag } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
 import { CartItemRow } from './CartItemRow'
 
 export function CartDrawer() {
-  const {
-    isDrawerOpen,
-    closeDrawer,
-    getTotalItemCount,
-    selectAll,
-    deselectAll,
-  } = useCartStore()
-  const items = useEnrichedCartItems()
-  const selectedItems = useSelectedItems()
-  const totalItemCount = getTotalItemCount()
-  const selectedTotal = useSelectedTotal()
+  const { isDrawerOpen, closeDrawer, selectAll, deselectAll, fetchCart } =
+    useCartStore()
+
+  // Get raw state with shallow comparison
+  const { items: cartItems, productsMap } = useCartData()
+  const totalItemCount = useCartItemCount()
+
+  // Transform in useMemo - only recalculates when dependencies change
+  const items = useMemo(() => {
+    return cartItems.map((item) => ({
+      ...item,
+      product: productsMap.get(item.productId),
+    }))
+  }, [cartItems, productsMap])
+
+  const selectedItems = useMemo(() => {
+    return items.filter((item) => item.selectedForCheckout)
+  }, [items])
+
+  const selectedTotal = useMemo(() => {
+    return selectedItems.reduce((total, item) => {
+      if (item.product) {
+        return total + item.product.price * item.quantity
+      }
+      return total
+    }, 0)
+  }, [selectedItems])
 
   const navigate = useNavigate()
   const { startCheckout, isLoading: isCheckoutLoading } =
     useCheckoutSessionStore()
+
+  // Fetch cart data when drawer opens (lazy loading)
+  useEffect(() => {
+    if (isDrawerOpen) {
+      fetchCart()
+    }
+  }, [isDrawerOpen, fetchCart])
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
