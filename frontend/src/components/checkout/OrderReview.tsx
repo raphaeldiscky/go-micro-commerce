@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { useCartData } from '@/store/cartStore'
 import { useMemo } from 'react'
-import { CartItemRow } from '../cart/CartItemRow'
+import { CheckoutItemRow } from './CheckoutItemRow'
 
 export function OrderReview() {
   // Get raw state with shallow comparison
@@ -41,7 +41,7 @@ export function OrderReview() {
       <CardContent className="space-y-4">
         {selectedItems.map((item) => (
           <div key={item.id} className="space-y-2">
-            <CartItemRow item={item} />
+            <CheckoutItemRow item={item} />
             {selectedItems.indexOf(item) < selectedItems.length - 1 && (
               <Separator />
             )}

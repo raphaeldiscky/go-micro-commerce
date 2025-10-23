@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"connectrpc.com/connect"
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/proto/product/v1/productv1connect"
 
 	pkgconnect "github.com/raphaeldiscky/go-micro-commerce/pkg/connect"
@@ -17,11 +18,13 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/mapper"
 )
 
 // ProductClient defines methods available for grpc products.
 type ProductClient interface {
 	ValidateProducts(ctx context.Context, items []entity.CheckoutSessionItem) error
+	GetProducts(ctx context.Context, ids []uuid.UUID) ([]entity.Product, error)
 }
 
 // productClient is a Connect-RPC client for interacting with the product service.
@@ -50,6 +53,41 @@ func NewProductClient(
 	return &productClient{
 		client: client,
 	}, nil
+}
+
+// GetProducts fetches product data by IDs.
+func (pc *productClient) GetProducts(
+	ctx context.Context,
+	ids []uuid.UUID,
+) ([]entity.Product, error) {
+	stringIDs := make([]string, len(ids))
+	for i, id := range ids {
+		stringIDs[i] = id.String()
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, constant.ProductClientTimeout)
+	defer cancel()
+
+	req := connect.NewRequest(&pb.BatchGetProductsByIDsRequest{Ids: stringIDs})
+	pkgconnect.AddAuthHeaders(ctx, req)
+
+	resp, err := pc.client.BatchGetProductsByIDs(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call GetProducts: %w", err)
+	}
+
+	products := make([]entity.Product, len(resp.Msg.GetProducts()))
+
+	for i, p := range resp.Msg.GetProducts() {
+		product, rowErr := mapper.MapProtoToProduct(p)
+		if rowErr != nil {
+			return nil, rowErr
+		}
+
+		products[i] = product
+	}
+
+	return products, nil
 }
 
 // ValidateProducts validates products before place order using checkout session items snapshot.

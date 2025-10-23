@@ -17,7 +17,9 @@ import (
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/graph/scalar"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
+	"github.com/shopspring/decimal"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -90,6 +92,7 @@ type ComplexityRoot struct {
 		ID        func(childComplexity int) int
 		ProductID func(childComplexity int) int
 		Quantity  func(childComplexity int) int
+		UnitPrice func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -317,6 +320,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.CheckoutSessionItem.Quantity(childComplexity), true
+	case "CheckoutSessionItem.unitPrice":
+		if e.complexity.CheckoutSessionItem.UnitPrice == nil {
+			break
+		}
+
+		return e.complexity.CheckoutSessionItem.UnitPrice(childComplexity), true
 
 	case "Mutation.addItemToCart":
 		if e.complexity.Mutation.AddItemToCart == nil {
@@ -536,7 +545,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
-//go:embed "schema/cart.graphql" "schema/root.graphql"
+//go:embed "schema/cart.graphql" "schema/checkout.graphql" "schema/root.graphql"
 var sourcesFS embed.FS
 
 func sourceData(filename string) string {
@@ -549,6 +558,7 @@ func sourceData(filename string) string {
 
 var sources = []*ast.Source{
 	{Name: "schema/cart.graphql", Input: sourceData("schema/cart.graphql"), BuiltIn: false},
+	{Name: "schema/checkout.graphql", Input: sourceData("schema/checkout.graphql"), BuiltIn: false},
 	{Name: "schema/root.graphql", Input: sourceData("schema/root.graphql"), BuiltIn: false},
 	{Name: "../federation/directives.graphql", Input: `
 	directive @authenticated on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
@@ -1478,6 +1488,8 @@ func (ec *executionContext) fieldContext_CheckoutSession_items(_ context.Context
 				return ec.fieldContext_CheckoutSessionItem_productId(ctx, field)
 			case "quantity":
 				return ec.fieldContext_CheckoutSessionItem_quantity(ctx, field)
+			case "unitPrice":
+				return ec.fieldContext_CheckoutSessionItem_unitPrice(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CheckoutSessionItem", field.Name)
 		},
@@ -1625,6 +1637,35 @@ func (ec *executionContext) fieldContext_CheckoutSessionItem_quantity(_ context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckoutSessionItem_unitPrice(ctx context.Context, field graphql.CollectedField, obj *CheckoutSessionItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CheckoutSessionItem_unitPrice,
+		func(ctx context.Context) (any, error) {
+			return obj.UnitPrice, nil
+		},
+		nil,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CheckoutSessionItem_unitPrice(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckoutSessionItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Decimal does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3935,7 +3976,7 @@ func (ec *executionContext) unmarshalInputCreateCheckoutSessionInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"idempotencyKey"}
+	fieldsInOrder := [...]string{"idempotencyKey", "cartId"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3949,6 +3990,13 @@ func (ec *executionContext) unmarshalInputCreateCheckoutSessionInput(ctx context
 				return it, err
 			}
 			it.IdempotencyKey = data
+		case "cartId":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("cartId"))
+			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CartID = data
 		}
 	}
 
@@ -4310,6 +4358,11 @@ func (ec *executionContext) _CheckoutSessionItem(ctx context.Context, sel ast.Se
 			}
 		case "quantity":
 			out.Values[i] = ec._CheckoutSessionItem_quantity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unitPrice":
+			out.Values[i] = ec._CheckoutSessionItem_unitPrice(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5088,6 +5141,22 @@ func (ec *executionContext) marshalNCheckoutSessionStatus2githubᚗcomᚋraphael
 func (ec *executionContext) unmarshalNCreateCheckoutSessionInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCreateCheckoutSessionInput(ctx context.Context, v any) (CreateCheckoutSessionInput, error) {
 	res, err := ec.unmarshalInputCreateCheckoutSessionInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx context.Context, v any) (decimal.Decimal, error) {
+	res, err := scalar.UnmarshalDecimal(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal(ctx context.Context, sel ast.SelectionSet, v decimal.Decimal) graphql.Marshaler {
+	_ = sel
+	res := scalar.MarshalDecimal(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v any) (string, error) {

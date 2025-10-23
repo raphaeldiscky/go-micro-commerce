@@ -33,29 +33,6 @@ type CartItem {
   updatedAt: Time!
 }
 
-# CheckoutSession entity
-type CheckoutSession {
-  id: UUID!
-  idempotencyKey: UUID!
-  customerId: UUID!
-  addressId: UUID
-  carrierId: String
-  status: CheckoutSessionStatus!
-  paymentGateway: String
-  paymentMethod: String
-  currency: String!
-  items: [CheckoutSessionItem!]!
-  createdAt: Time!
-  updatedAt: Time!
-}
-
-# CheckoutSessionItem entity
-type CheckoutSessionItem {
-  id: UUID!
-  productId: UUID!
-  quantity: Int!
-}
-
 # Input type for adding cart item
 input AddCartItemInput {
   productId: UUID!
@@ -72,27 +49,10 @@ input SelectItemForCheckoutInput {
   selected: Boolean!
 }
 
-# Input type for creating checkout session
-input CreateCheckoutSessionInput {
-  idempotencyKey: UUID!
-}
-
-# Input type for placing order
-input PlaceOrderInput {
-  idempotencyKey: UUID!
-  addressId: UUID!
-  carrierId: String!
-  paymentMethod: String!
-  paymentGateway: String!
-}
-
 # Cart queries
 extend type Query {
   # Get authenticated user's cart
   getMyCart: Cart @requiresAuth
-
-  # Get checkout session by ID
-  getCheckoutSession(id: UUID!): CheckoutSession @requiresAuth
 }
 
 # Cart mutations
@@ -112,15 +72,4 @@ extend type Mutation {
     itemId: UUID!
     input: SelectItemForCheckoutInput!
   ): Cart! @requiresAuth
-
-  # Create checkout session from authenticated user's cart
-  createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession!
-    @requiresAuth
-
-  # Place order from checkout session
-  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession!
-    @requiresAuth
-
-  # Cancel checkout session
-  cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @requiresAuth
 }

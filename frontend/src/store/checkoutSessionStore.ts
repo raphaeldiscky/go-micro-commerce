@@ -3,13 +3,13 @@ import {
   CREATE_CHECKOUT_SESSION_MUTATION,
   GET_CHECKOUT_SESSION_QUERY,
   PLACE_ORDER_MUTATION,
-} from '@/lib/graphql/cart'
+} from '@/lib/graphql/checkout'
 import type {
   CancelCheckoutSessionMutation,
   CreateCheckoutSessionMutation,
   GetCheckoutSessionQuery,
   PlaceOrderMutation,
-} from '@/lib/graphql/cart.generated'
+} from '@/lib/graphql/checkout.generated'
 import { graphClient } from '@/lib/graphql/client'
 import type { Address } from '@/types/__generated__/graphql'
 import type {
@@ -21,6 +21,7 @@ import type {
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
+import { useShallow } from 'zustand/react/shallow'
 
 // Extract CheckoutSession type from GraphQL
 type CheckoutSession = NonNullable<
@@ -48,7 +49,7 @@ export interface CheckoutSessionState {
 export interface CheckoutSessionActions {
   // Checkout session management
   fetchCheckoutSession: (sessionId: string) => Promise<void>
-  startCheckout: (
+  createCheckoutSession: (
     navigateToCheckout: (checkoutId: string) => void,
   ) => Promise<void>
   cancelCheckout: (sessionId: string) => Promise<void>
@@ -119,7 +120,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           }
         },
 
-        startCheckout: async (
+        createCheckoutSession: async (
           navigateToCheckout: (checkoutId: string) => void,
         ) => {
           set({ isLoading: true })
@@ -359,4 +360,4 @@ export const useSelectedPaymentMethod = () =>
 export const useSelectedPaymentGateway = () =>
   useCheckoutSessionStore((state) => state.selectedPaymentGateway)
 export const useCheckoutOrderSummary = () =>
-  useCheckoutSessionStore((state) => state.getOrderSummary())
+  useCheckoutSessionStore(useShallow((state) => state.getOrderSummary()))

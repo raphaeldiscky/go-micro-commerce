@@ -40,6 +40,7 @@ func MapToGraphQLCheckoutSessionItemFromDTO(
 		ID:        item.ID,
 		ProductID: item.ProductID,
 		Quantity:  int(item.Quantity),
+		UnitPrice: item.UnitPrice,
 	}
 }
 
@@ -51,6 +52,7 @@ func MapToCreateCheckoutSessionRequest(
 	return &dto.CreateCheckoutSessionRequest{
 		CustomerID:     customerID,
 		IdempotencyKey: input.IdempotencyKey,
+		CartID:         input.CartID,
 	}
 }
 

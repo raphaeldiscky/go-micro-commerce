@@ -42,6 +42,8 @@ export type EnrichedCartItem = CartItem & {
   product?: Product
 }
 
+const EMPTY_CART_ITEMS: Array<CartItem> = []
+
 // Cart store state interface
 export interface CartState {
   cart: Cart | null
@@ -54,7 +56,7 @@ export interface CartState {
 // Cart store actions interface
 export interface CartActions {
   // Cart and item management
-  fetchCart: () => Promise<void>
+  fetchCart: (force?: boolean) => Promise<void>
   addItem: (productId: string, quantity?: number) => Promise<void>
   removeItem: (itemId: string) => Promise<void>
   updateQuantity: (itemId: string, quantity: number) => Promise<void>
@@ -91,11 +93,12 @@ export const useCartStore = create<CartStore>()(
         lastFetchedAt: null,
 
         // Cart and item management
-        fetchCart: async () => {
+        fetchCart: async (force = false) => {
           const state = get()
 
           // Smart caching: skip fetch if data is fresh (< 60 seconds old)
-          if (state.lastFetchedAt) {
+          // Can be bypassed with force parameter
+          if (!force && state.lastFetchedAt) {
             const timeSinceLastFetch = Date.now() - state.lastFetchedAt
             if (timeSinceLastFetch < 60000) {
               // Data is fresh, skip fetch
@@ -397,12 +400,17 @@ export const useCartStore = create<CartStore>()(
           lastFetchedAt: state.lastFetchedAt,
         }),
         merge: (persistedState, currentState) => {
-          const persisted = persistedState as CartState
+          // The persisted state has productsMap as an array of entries, not a Map
+          const persisted = persistedState as {
+            cart: Cart | null
+            productsMap: Array<[string, Product]>
+            lastFetchedAt: number | null
+          }
           return {
             ...currentState,
-            cart: persisted.cart,
+            cart: persisted.cart ?? null,
             productsMap: new Map(persisted.productsMap),
-            lastFetchedAt: persisted.lastFetchedAt,
+            lastFetchedAt: persisted.lastFetchedAt ?? null,
           }
         },
       },
@@ -415,7 +423,7 @@ export const useCart = () => useCartStore((state) => state.cart)
 
 // Simple selectors - return raw state, no transformations
 export const useCartItems = () =>
-  useCartStore((state) => state.cart?.items ?? [])
+  useCartStore((state) => state.cart?.items ?? EMPTY_CART_ITEMS)
 
 export const useProductsMap = () => useCartStore((state) => state.productsMap)
 
@@ -423,14 +431,17 @@ export const useProductsMap = () => useCartStore((state) => state.productsMap)
 export const useCartData = () =>
   useCartStore(
     useShallow((state) => ({
-      items: state.cart?.items ?? [],
+      items: state.cart?.items ?? EMPTY_CART_ITEMS,
       productsMap: state.productsMap,
     })),
   )
 
 export const useCartItemCount = () =>
   useCartStore((state) =>
-    (state.cart?.items || []).reduce((total, item) => total + item.quantity, 0),
+    (state.cart?.items ?? EMPTY_CART_ITEMS).reduce(
+      (total, item) => total + item.quantity,
+      0,
+    ),
   )
 
 export const useIsCartDrawerOpen = () =>

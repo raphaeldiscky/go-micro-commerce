@@ -31,7 +31,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const { addItem, cart } = useCartStore()
+  const { addItem } = useCartStore()
 
   const availableQuantity = Number(product.quantity - product.reservedQuantity)
   const isLowStock = availableQuantity < 10 && availableQuantity > 0
@@ -40,12 +40,6 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleAddToCart = () => {
     if (isOutOfStock || quantity > availableQuantity || availableQuantity <= 0)
       return
-
-    // Check if cart is initialized
-    if (!cart) {
-      toast.error('Cart is not initialized. Please refresh the page.')
-      return
-    }
 
     setIsAdding(true)
     try {

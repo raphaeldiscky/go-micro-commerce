@@ -39,6 +39,8 @@ models:
   Time:
     model:
       - github.com/99designs/gqlgen/graphql.Time
+  Decimal:
+    model: github.com/raphaeldiscky/go-micro-commerce/cart-service/graph/scalar.Decimal
 
   # Map enums to existing constants
   CheckoutSessionStatus:

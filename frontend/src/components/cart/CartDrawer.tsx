@@ -10,11 +10,7 @@ import {
 } from '@/components/ui/sheet'
 import { PATH } from '@/constants/routes'
 import { fCurrency } from '@/lib/utils/number'
-import {
-  useCartData,
-  useCartItemCount,
-  useCartStore,
-} from '@/store/cartStore'
+import { useCartData, useCartItemCount, useCartStore } from '@/store/cartStore'
 import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCheck, Package, ShoppingBag } from 'lucide-react'
@@ -51,7 +47,7 @@ export function CartDrawer() {
   }, [selectedItems])
 
   const navigate = useNavigate()
-  const { startCheckout, isLoading: isCheckoutLoading } =
+  const { createCheckoutSession, isLoading: isCheckoutLoading } =
     useCheckoutSessionStore()
 
   // Fetch cart data when drawer opens (lazy loading)
@@ -59,7 +55,7 @@ export function CartDrawer() {
     if (isDrawerOpen) {
       fetchCart()
     }
-  }, [isDrawerOpen, fetchCart])
+  }, [isDrawerOpen])
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -82,8 +78,12 @@ export function CartDrawer() {
     }
 
     try {
-      await startCheckout((checkoutId) => {
-        navigate({ to: PATH.checkout.detail(checkoutId) })
+      await createCheckoutSession((checkoutId) => {
+        // Force refresh cart before navigating to checkout page
+        // This bypasses cache to ensure cart state is in sync with checkout session
+        fetchCart(true).finally(() => {
+          navigate({ to: PATH.checkout.detail(checkoutId) })
+        })
       })
     } catch (error) {
       // Error is already handled by the store with toast

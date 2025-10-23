@@ -25,7 +25,7 @@ import {
   MapPin,
   Package,
 } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/checkout/$checkoutId')({
@@ -42,6 +42,7 @@ function RouteComponent() {
     selectedPaymentMethod,
     selectedPaymentGateway,
     isLoading: isCheckoutLoading,
+    fetchCheckoutSession,
   } = useCheckoutSessionStore()
 
   // Get raw state with shallow comparison
@@ -56,6 +57,18 @@ function RouteComponent() {
       }))
       .filter((item) => item.selectedForCheckout)
   }, [cartItems, productsMap])
+
+  // Fetch checkout session on mount or when checkoutId changes
+  useEffect(() => {
+    const shouldFetch = !checkoutSession || checkoutSession.id !== checkoutId
+
+    if (shouldFetch) {
+      fetchCheckoutSession(checkoutId).catch((error) => {
+        console.error('Failed to load checkout session:', error)
+      })
+    }
+    // fetchCheckoutSession is a stable Zustand action and doesn't need to be in dependencies
+  }, [checkoutId, checkoutSession?.id])
 
   // Validate checkout session
   const isValidSession = checkoutSession?.id === checkoutId

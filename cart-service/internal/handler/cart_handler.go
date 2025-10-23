@@ -53,7 +53,7 @@ func (h *CartHandler) GetCartByID(c echo.Context) error {
 func (h *CartHandler) GetMyCart(c echo.Context) error {
 	customerID := echoutils.GetUserIDFromContext(c)
 
-	cart, err := h.cartService.GetCartByUserID(c.Request().Context(), customerID)
+	cart, err := h.cartService.GetUserActiveCart(c.Request().Context(), customerID)
 	if err != nil {
 		return err
 	}

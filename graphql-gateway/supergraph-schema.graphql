@@ -133,6 +133,7 @@ type CheckoutSessionItem
   id: UUID!
   productId: UUID!
   quantity: Int!
+  unitPrice: Decimal!
 }
 
 enum CheckoutSessionStatus
@@ -194,6 +195,7 @@ input CreateCheckoutSessionInput
   @join__type(graph: CART_SERVICE)
 {
   idempotencyKey: UUID!
+  cartId: UUID!
 }
 
 input CreateConversationInput
@@ -223,6 +225,7 @@ input CreateOrderItemInput
 }
 
 scalar Decimal
+  @join__type(graph: CART_SERVICE)
   @join__type(graph: ORDER_SERVICE)
 
 type DeliveryReceipt

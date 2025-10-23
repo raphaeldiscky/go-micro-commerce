@@ -51,7 +51,12 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 		return err
 	}
 
-	err = fn(&dataStore{pool: s.pool, db: tx})
+	err = fn(&dataStore{
+		pool:   s.pool,
+		db:     tx,
+		rdl:    s.rdl,
+		logger: s.logger,
+	})
 	if err != nil {
 		if errRollback := tx.Rollback(ctx); errRollback != nil {
 			return err
@@ -65,7 +70,7 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 
 // CartRepository returns a new CartRepository.
 func (s *dataStore) CartRepository() CartRepository {
-	return NewCartRepository(s.db)
+	return NewCartRepository(s.db, s.logger)
 }
 
 // CheckoutSessionRepository returns a new CheckoutSessionRepository.

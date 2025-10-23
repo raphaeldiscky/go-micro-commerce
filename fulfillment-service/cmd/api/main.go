@@ -55,7 +55,7 @@ func setupConsulRegistration(cfg *config.Config, appLogger logger.Logger) func()
 		return func() {}
 	}
 
-	if err = consulClient.RegisterGRPC(cfg.GRPCServer.ServiceName, cfg.GRPCServer.Host, cfg.GRPCServer.Port); err != nil {
+	if err = consulClient.RegisterConnectRPC(cfg.GRPCServer.ServiceName, cfg.GRPCServer.Host, cfg.GRPCServer.Port); err != nil {
 		appLogger.Errorf("Failed to register gRPC service with Consul: %v", err)
 
 		return func() {}

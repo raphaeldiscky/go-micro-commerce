@@ -14,6 +14,7 @@ import (
 type CreateCheckoutSessionRequest struct {
 	CustomerID     uuid.UUID // from context or header
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
+	CartID         uuid.UUID `json:"cart_id"         validate:"required"`
 }
 
 // PlaceOrderRequest represents the request to place an order from a checkout session.

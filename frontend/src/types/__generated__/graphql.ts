@@ -132,6 +132,7 @@ export type CheckoutSessionItem = {
   id: Scalars['UUID']['output']
   productId: Scalars['UUID']['output']
   quantity: Scalars['Int']['output']
+  unitPrice: Scalars['Decimal']['output']
 }
 
 export enum CheckoutSessionStatus {
@@ -186,6 +187,7 @@ export type CreateAddressInput = {
 }
 
 export type CreateCheckoutSessionInput = {
+  cartId: Scalars['UUID']['input']
   idempotencyKey: Scalars['UUID']['input']
 }
 
