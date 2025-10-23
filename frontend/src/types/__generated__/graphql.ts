@@ -33,6 +33,11 @@ export type Scalars = {
   link__Import: { input: any; output: any }
 }
 
+export type AddCartItemInput = {
+  productId: Scalars['UUID']['input']
+  quantity: Scalars['Int']['input']
+}
+
 export type Address = {
   __typename?: 'Address'
   addressLine1: Scalars['String']['output']
@@ -72,11 +77,68 @@ export type AuthPayload = {
   user: User
 }
 
+export type Cart = {
+  __typename?: 'Cart'
+  createdAt: Scalars['Time']['output']
+  customerId: Scalars['UUID']['output']
+  id: Scalars['UUID']['output']
+  items: Array<CartItem>
+  status: CartStatus
+  updatedAt: Scalars['Time']['output']
+}
+
+export type CartItem = {
+  __typename?: 'CartItem'
+  cartId: Scalars['UUID']['output']
+  createdAt: Scalars['Time']['output']
+  id: Scalars['UUID']['output']
+  productId: Scalars['UUID']['output']
+  quantity: Scalars['Int']['output']
+  selectedForCheckout: Scalars['Boolean']['output']
+  updatedAt: Scalars['Time']['output']
+}
+
+export enum CartStatus {
+  Active = 'ACTIVE',
+  Archived = 'ARCHIVED',
+  CheckedOut = 'CHECKED_OUT',
+}
+
 export type ChatConnection = {
   __typename?: 'ChatConnection'
   nodeAddress: Scalars['String']['output']
   userId: Scalars['UUID']['output']
   userType: Scalars['String']['output']
+}
+
+export type CheckoutSession = {
+  __typename?: 'CheckoutSession'
+  addressId?: Maybe<Scalars['UUID']['output']>
+  carrierId?: Maybe<Scalars['String']['output']>
+  createdAt: Scalars['Time']['output']
+  currency: Scalars['String']['output']
+  customerId: Scalars['UUID']['output']
+  id: Scalars['UUID']['output']
+  idempotencyKey: Scalars['UUID']['output']
+  items: Array<CheckoutSessionItem>
+  paymentGateway?: Maybe<Scalars['String']['output']>
+  paymentMethod?: Maybe<Scalars['String']['output']>
+  status: CheckoutSessionStatus
+  updatedAt: Scalars['Time']['output']
+}
+
+export type CheckoutSessionItem = {
+  __typename?: 'CheckoutSessionItem'
+  id: Scalars['UUID']['output']
+  productId: Scalars['UUID']['output']
+  quantity: Scalars['Int']['output']
+  unitPrice: Scalars['Decimal']['output']
+}
+
+export enum CheckoutSessionStatus {
+  Canceled = 'CANCELED',
+  OrderPlaced = 'ORDER_PLACED',
+  Pending = 'PENDING',
 }
 
 export type Conversation = {
@@ -122,6 +184,11 @@ export type CreateAddressInput = {
   postalCode: Scalars['String']['input']
   receiverName: Scalars['String']['input']
   state?: InputMaybe<Scalars['String']['input']>
+}
+
+export type CreateCheckoutSessionInput = {
+  cartId: Scalars['UUID']['input']
+  idempotencyKey: Scalars['UUID']['input']
 }
 
 export type CreateConversationInput = {
@@ -210,8 +277,11 @@ export enum MessageType {
 
 export type Mutation = {
   __typename?: 'Mutation'
+  addItemToCart: Cart
   assignConversationToAdmin: Conversation
+  cancelCheckoutSession: CheckoutSession
   createAddress: Address
+  createCheckoutSession: CheckoutSession
   createConversation: Conversation
   createOrder: Order
   deleteAddress: Scalars['Boolean']['output']
@@ -222,16 +292,24 @@ export type Mutation = {
   logout: Scalars['Boolean']['output']
   markAllAsRead: Scalars['Boolean']['output']
   markAsRead: Notification
+  placeOrder: CheckoutSession
   refreshToken: AuthPayload
   register: AuthPayload
+  removeItemFromCart: Cart
   requestChatConnection: ChatConnection
+  selectItemForCheckout: Cart
   sendDeliveryReceipt: DeliveryReceipt
   sendMessage: Message
   sendReadReceipt: ReadReceipt
   sendTypingIndicator: TypingIndicator
   setDefaultAddress: Address
   updateAddress: Address
+  updateItemQuantity: Cart
   updatePresence: PresenceUpdate
+}
+
+export type MutationAddItemToCartArgs = {
+  input: AddCartItemInput
 }
 
 export type MutationAssignConversationToAdminArgs = {
@@ -239,8 +317,16 @@ export type MutationAssignConversationToAdminArgs = {
   conversationId: Scalars['UUID']['input']
 }
 
+export type MutationCancelCheckoutSessionArgs = {
+  sessionId: Scalars['UUID']['input']
+}
+
 export type MutationCreateAddressArgs = {
   input: CreateAddressInput
+}
+
+export type MutationCreateCheckoutSessionArgs = {
+  input: CreateCheckoutSessionInput
 }
 
 export type MutationCreateConversationArgs = {
@@ -275,8 +361,22 @@ export type MutationMarkAsReadArgs = {
   id: Scalars['UUID']['input']
 }
 
+export type MutationPlaceOrderArgs = {
+  input: PlaceOrderInput
+  sessionId: Scalars['UUID']['input']
+}
+
 export type MutationRegisterArgs = {
   input: RegisterUserInput
+}
+
+export type MutationRemoveItemFromCartArgs = {
+  itemId: Scalars['UUID']['input']
+}
+
+export type MutationSelectItemForCheckoutArgs = {
+  input: SelectItemForCheckoutInput
+  itemId: Scalars['UUID']['input']
 }
 
 export type MutationSendDeliveryReceiptArgs = {
@@ -302,6 +402,11 @@ export type MutationSetDefaultAddressArgs = {
 export type MutationUpdateAddressArgs = {
   id: Scalars['UUID']['input']
   input: UpdateAddressInput
+}
+
+export type MutationUpdateItemQuantityArgs = {
+  input: UpdateCartItemQuantityInput
+  itemId: Scalars['UUID']['input']
 }
 
 export type MutationUpdatePresenceArgs = {
@@ -477,6 +582,14 @@ export enum PaymentMethod {
   Card = 'CARD',
 }
 
+export type PlaceOrderInput = {
+  addressId: Scalars['UUID']['input']
+  carrierId: Scalars['String']['input']
+  idempotencyKey: Scalars['UUID']['input']
+  paymentGateway: Scalars['String']['input']
+  paymentMethod: Scalars['String']['input']
+}
+
 export enum PresenceStatus {
   Away = 'AWAY',
   Busy = 'BUSY',
@@ -510,7 +623,9 @@ export type Query = {
   conversationParticipants: Array<Participant>
   conversations: Array<Conversation>
   getAddress: Address
+  getCheckoutSession?: Maybe<CheckoutSession>
   getDefaultAddress: Address
+  getMyCart?: Maybe<Cart>
   getTabCounts: TabCounts
   getUnreadCount: UnreadCount
   listAddresses: AddressConnection
@@ -541,6 +656,10 @@ export type QueryConversationParticipantsArgs = {
 }
 
 export type QueryGetAddressArgs = {
+  id: Scalars['UUID']['input']
+}
+
+export type QueryGetCheckoutSessionArgs = {
   id: Scalars['UUID']['input']
 }
 
@@ -592,6 +711,10 @@ export type RegisterUserInput = {
 export enum Role {
   Admin = 'ADMIN',
   User = 'USER',
+}
+
+export type SelectItemForCheckoutInput = {
+  selected: Scalars['Boolean']['input']
 }
 
 export type SendDeliveryReceiptInput = {
@@ -675,6 +798,10 @@ export type UpdateAddressInput = {
   state?: InputMaybe<Scalars['String']['input']>
 }
 
+export type UpdateCartItemQuantityInput = {
+  quantity: Scalars['Int']['input']
+}
+
 export type User = {
   __typename?: 'User'
   conversations: Array<Conversation>
@@ -701,6 +828,7 @@ export enum UserType {
 
 export enum Join__Graph {
   AuthService = 'AUTH_SERVICE',
+  CartService = 'CART_SERVICE',
   ChatService = 'CHAT_SERVICE',
   NotificationService = 'NOTIFICATION_SERVICE',
   OrderService = 'ORDER_SERVICE',

@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { fCurrency } from '@/lib/utils/number'
-import { useOrderSummary } from '@/store/cartStore'
+import { useCheckoutOrderSummary } from '@/store/checkoutSessionStore'
 import { Receipt, ShoppingCart, Truck } from 'lucide-react'
 
 export function OrderSummary() {
-  const orderSummary = useOrderSummary()
+  const orderSummary = useCheckoutOrderSummary()
 
   return (
     <Card>

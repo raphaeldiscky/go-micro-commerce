@@ -40,6 +40,7 @@ func MapToCheckoutSessionItemResponses(
 			ID:        item.ID,
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
+			UnitPrice: item.UnitPrice,
 		})
 	}
 
@@ -71,6 +72,7 @@ func MapCheckoutSessionItemsToPayload(
 		payloadItems[i] = kafkaevent.CheckoutItemPayload{
 			ProductID: item.ProductID,
 			Quantity:  item.Quantity,
+			UnitPrice: item.UnitPrice,
 		}
 	}
 

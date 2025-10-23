@@ -1,0 +1,56 @@
+# CheckoutSession entity
+type CheckoutSession {
+  id: UUID!
+  idempotencyKey: UUID!
+  customerId: UUID!
+  addressId: UUID
+  carrierId: String
+  status: CheckoutSessionStatus!
+  paymentGateway: String
+  paymentMethod: String
+  currency: String!
+  items: [CheckoutSessionItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# CheckoutSessionItem entity
+type CheckoutSessionItem {
+  id: UUID!
+  productId: UUID!
+  quantity: Int!
+  unitPrice: Decimal!
+}
+
+# Input type for creating checkout session
+input CreateCheckoutSessionInput {
+  idempotencyKey: UUID!
+  cartId: UUID!
+}
+
+# Input type for placing order
+input PlaceOrderInput {
+  idempotencyKey: UUID!
+  addressId: UUID!
+  carrierId: String!
+  paymentMethod: String!
+  paymentGateway: String!
+}
+
+extend type Query {
+  # Get checkout session by ID
+  getCheckoutSession(id: UUID!): CheckoutSession @requiresAuth
+}
+
+extend type Mutation {
+  # Create checkout session from authenticated user's cart
+  createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession!
+    @requiresAuth
+
+  # Place order from checkout session
+  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession!
+    @requiresAuth
+
+  # Cancel checkout session
+  cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @requiresAuth
+}

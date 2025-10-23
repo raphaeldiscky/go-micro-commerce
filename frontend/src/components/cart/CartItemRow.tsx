@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils/index'
 import { fCurrency } from '@/lib/utils/number'
+import type { EnrichedCartItem } from '@/store/cartStore'
 import { useCartStore } from '@/store/cartStore'
-import type { CartItem } from '@/types/cart'
 import { Minus, Package, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 interface CartItemRowProps {
-  item: CartItem
+  item: EnrichedCartItem
   className?: string
 }
 
@@ -17,8 +17,28 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
   const [isRemoving, setIsRemoving] = useState(false)
   const { updateQuantity, removeItem, toggleSelection } = useCartStore()
 
-  const availableQuantity =
-    item.product.quantity - item.product.reservedQuantity
+  // If product data not loaded, show loading state
+  if (!item.product) {
+    return (
+      <div
+        className={cn(
+          'flex items-center gap-4 p-4 border-b animate-pulse',
+          className,
+        )}
+      >
+        <div className="h-4 w-4 bg-muted rounded" />
+        <div className="h-16 w-16 rounded-md bg-muted" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-muted rounded w-3/4" />
+          <div className="h-3 bg-muted rounded w-1/2" />
+        </div>
+      </div>
+    )
+  }
+
+  const availableQuantity = Number(
+    item.product.quantity - item.product.reservedQuantity,
+  )
   const isLowStock = availableQuantity < 10 && availableQuantity > 0
   const isOutOfStock = availableQuantity === 0
 
@@ -61,7 +81,7 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
     >
       {/* Selection Checkbox */}
       <Checkbox
-        checked={item.selected_for_checkout}
+        checked={item.selectedForCheckout}
         disabled={isOutOfStock}
         onCheckedChange={handleToggleSelection}
       />
@@ -69,15 +89,7 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
       {/* Product Image */}
       <div className="flex-shrink-0">
         <div className="h-16 w-16 rounded-md bg-muted flex items-center justify-center overflow-hidden">
-          {item.product.image ? (
-            <img
-              alt={item.product.name}
-              className="h-full w-full object-cover"
-              src={item.product.image}
-            />
-          ) : (
-            <Package className="h-8 w-8 text-muted-foreground" />
-          )}
+          <Package className="h-8 w-8 text-muted-foreground" />
         </div>
       </div>
 
@@ -89,9 +101,7 @@ export function CartItemRow({ item, className }: CartItemRowProps) {
               {item.product.name}
             </h4>
             <p className="text-xs text-muted-foreground mt-1">
-              {item.product.sku && (
-                <span className="font-mono">SKU: {item.product.sku}</span>
-              )}
+              <span className="font-mono">ID: {item.product.id}</span>
             </p>
             <div className="flex items-center gap-2 mt-2">
               <span className="font-semibold text-sm">

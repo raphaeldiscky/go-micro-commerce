@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 )
@@ -18,6 +19,7 @@ type CheckoutSession struct {
 	ID             uuid.UUID
 	IdempotencyKey uuid.UUID
 	CustomerID     uuid.UUID
+	CartID         uuid.UUID
 	AddressID      *uuid.UUID
 	CarrierID      *string
 	Status         constant.CheckoutSessionStatus
@@ -35,6 +37,7 @@ type CheckoutSessionItem struct {
 	ID        uuid.UUID
 	ProductID uuid.UUID
 	Quantity  int64
+	UnitPrice decimal.Decimal
 }
 
 // NewCheckoutSession creates a new checkout session with validation.
@@ -42,6 +45,7 @@ type CheckoutSessionItem struct {
 func NewCheckoutSession(
 	idempotencyKey uuid.UUID,
 	customerID uuid.UUID,
+	cartID uuid.UUID,
 	currency string,
 	items []CheckoutSessionItem,
 ) (*CheckoutSession, error) {
@@ -57,6 +61,7 @@ func NewCheckoutSession(
 		ID:             checkoutSessionID,
 		IdempotencyKey: idempotencyKey,
 		CustomerID:     customerID,
+		CartID:         cartID,
 		AddressID:      nil,
 		CarrierID:      nil,
 		Status:         constant.CheckoutSessionStatusPending,
@@ -79,6 +84,7 @@ func NewCheckoutSession(
 func NewCheckoutSessionItem(
 	productID uuid.UUID,
 	quantity int64,
+	unitPrice decimal.Decimal,
 ) (*CheckoutSessionItem, error) {
 	if productID == uuid.Nil {
 		return nil, errors.New("product_id must not be empty")
@@ -88,10 +94,15 @@ func NewCheckoutSessionItem(
 		return nil, errors.New("quantity must be greater than 0")
 	}
 
+	if unitPrice.LessThan(decimal.Zero) {
+		return nil, errors.New("unit_price must not be negative")
+	}
+
 	return &CheckoutSessionItem{
 		ID:        uuid.New(),
 		ProductID: productID,
 		Quantity:  quantity,
+		UnitPrice: unitPrice,
 	}, nil
 }
 
@@ -125,6 +136,10 @@ func (cs *CheckoutSession) validate() error {
 
 		if item.Quantity <= 0 {
 			return fmt.Errorf("item[%d]: quantity must be greater than 0", i)
+		}
+
+		if item.UnitPrice.LessThan(decimal.Zero) {
+			return fmt.Errorf("item[%d]: unit_price must not be negative", i)
 		}
 
 		// prevent duplicate products

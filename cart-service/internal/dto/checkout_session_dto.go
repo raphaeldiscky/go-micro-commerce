@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 )
@@ -13,19 +14,25 @@ import (
 type CreateCheckoutSessionRequest struct {
 	CustomerID     uuid.UUID // from context or header
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
+	CartID         uuid.UUID `json:"cart_id"         validate:"required"`
 }
 
 // PlaceOrderRequest represents the request to place an order from a checkout session.
 type PlaceOrderRequest struct {
 	CustomerID     uuid.UUID // from context or header
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
+	AddressID      uuid.UUID `json:"address_id"      validate:"required"`
+	CarrierID      string    `json:"carrier_id"      validate:"required"`
+	PaymentMethod  string    `json:"payment_method"  validate:"required"`
+	PaymentGateway string    `json:"payment_gateway" validate:"required"`
 }
 
 // CheckoutSessionItemResponse represents a checkout session item in API responses.
 type CheckoutSessionItemResponse struct {
-	ID        uuid.UUID `json:"id"`
-	ProductID uuid.UUID `json:"product_id"`
-	Quantity  int64     `json:"quantity"`
+	ID        uuid.UUID       `json:"id"`
+	ProductID uuid.UUID       `json:"product_id"`
+	Quantity  int64           `json:"quantity"`
+	UnitPrice decimal.Decimal `json:"unit_price"`
 }
 
 // CheckoutSessionResponse represents a checkout session in API responses.

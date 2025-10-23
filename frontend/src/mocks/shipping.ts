@@ -1,12 +1,12 @@
 import type {
-  PaymentGateway,
-  PaymentMethod,
-  ShippingOption,
+  PaymentGatewayUI,
+  PaymentMethodUI,
+  ShippingOptionUI,
 } from '@/types/cart'
 import type { ShippingCarrier } from '@/types/order'
 
 // Mock shipping options
-export const mockShippingOptions: Array<ShippingOption> = [
+export const mockShippingOptions: Array<ShippingOptionUI> = [
   {
     id: 'ship-1',
     name: 'Standard Delivery',
@@ -41,7 +41,7 @@ export const mockShippingOptions: Array<ShippingOption> = [
   },
 ]
 
-export const mockPaymentGateways: Array<PaymentGateway> = [
+export const mockPaymentGateways: Array<PaymentGatewayUI> = [
   {
     id: 'gateway-1',
     name: 'Stripe',
@@ -55,7 +55,7 @@ export const mockPaymentGateways: Array<PaymentGateway> = [
 ]
 
 // Mock payment methods
-export const mockPaymentMethods: Array<PaymentMethod> = [
+export const mockPaymentMethods: Array<PaymentMethodUI> = [
   {
     id: 'pay-1',
     name: 'Card',
@@ -116,7 +116,7 @@ export const DEFAULT_PRODUCT_WEIGHT_KG = 0.5
 
 export const findShippingOptionById = (
   id: string,
-): ShippingOption | undefined => {
+): ShippingOptionUI | undefined => {
   return mockShippingOptions.find(
     (option) => option.id === id && option.isActive,
   )
@@ -124,7 +124,7 @@ export const findShippingOptionById = (
 
 export const findPaymentMethodById = (
   id: string,
-): PaymentMethod | undefined => {
+): PaymentMethodUI | undefined => {
   return mockPaymentMethods.find(
     (method) => method.id === id && method.isActive,
   )

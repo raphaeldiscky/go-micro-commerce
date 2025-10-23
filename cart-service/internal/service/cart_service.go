@@ -21,7 +21,7 @@ import (
 type CartService interface {
 	CreateCart(ctx context.Context, req *dto.CreateCartRequest) (*dto.CartResponse, error)
 	GetCart(ctx context.Context, cartID uuid.UUID) (*dto.CartResponse, error)
-	GetCartByUserID(ctx context.Context, userID uuid.UUID) (*dto.CartResponse, error)
+	GetUserActiveCart(ctx context.Context, userID uuid.UUID) (*dto.CartResponse, error)
 	AddItemToActiveCart(
 		ctx context.Context,
 		req *dto.AddCartItemRequest,
@@ -128,13 +128,13 @@ func (s *cartService) GetCart(
 }
 
 // GetCartByUserID retrieves a cart by user ID.
-func (s *cartService) GetCartByUserID(
+func (s *cartService) GetUserActiveCart(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (*dto.CartResponse, error) {
 	cartRepo := s.dataStore.CartRepository()
 
-	cart, err := cartRepo.FindByUserID(ctx, userID)
+	cart, err := cartRepo.FindActiveCartByUserID(ctx, userID)
 	if err != nil {
 		return nil, httperror.NewInternalServerError("failed to get cart")
 	}

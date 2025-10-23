@@ -55,6 +55,7 @@ func SetupCheckoutSession(
 	checkoutSessionService := service.NewCheckoutSessionService(
 		providers.DataStore,
 		appLogger,
+		providers.ProductClient,
 		checkoutSessionOrderPlacedProducer,
 	)
 	providers.CheckoutSessionService = checkoutSessionService

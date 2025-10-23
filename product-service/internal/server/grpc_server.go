@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/proto/product/v1/productv1connect"
+	"github.com/shopspring/decimal"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
@@ -103,6 +104,48 @@ func (s *GRPCServer) BatchGetProductsByIDs(
 
 	resp := &pb.BatchGetProductsByIDsResponse{
 		Products: mapper.MapDTOToProtobufProducts(products),
+	}
+
+	return connect.NewResponse(resp), nil
+}
+
+// ValidateProducts validates products before place order if price not changed and stock still available.
+func (s *GRPCServer) ValidateProducts(
+	ctx context.Context,
+	req *connect.Request[pb.ValidateProductsRequest],
+) (*connect.Response[pb.ValidateProductsResponse], error) {
+	// Convert protobuf request to service DTO
+	validateReq := dto.ValidateProductsRequest{
+		Products: make([]dto.ProductValidationItem, len(req.Msg.GetProducts())),
+	}
+
+	for i, item := range req.Msg.GetProducts() {
+		productID, err := uuid.Parse(item.GetId())
+		if err != nil {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				fmt.Errorf("invalid product ID: %s", item.GetId()),
+			)
+		}
+
+		validateReq.Products[i] = dto.ProductValidationItem{
+			ID:       productID,
+			Price:    decimal.NewFromFloat(item.GetPrice()),
+			Quantity: item.GetQuantity(),
+		}
+	}
+
+	// Call service method
+	products, err := s.productService.ValidateProducts(ctx, validateReq)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	// Convert service response to protobuf
+	resp := &pb.ValidateProductsResponse{
+		Success:  true,
+		Products: mapper.MapDTOToProtobufProducts(products),
+		Message:  "All products validated successfully",
 	}
 
 	return connect.NewResponse(resp), nil

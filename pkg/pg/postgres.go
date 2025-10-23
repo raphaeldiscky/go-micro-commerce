@@ -8,7 +8,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	pgxdecimal "github.com/jackc/pgx-shopspring-decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
@@ -45,6 +48,12 @@ func NewPostgresConnection(
 	poolConfig.MaxConns = int32(cfg.MaxOpenConns)
 	poolConfig.MinConns = int32(cfg.MaxIdleConns)
 	poolConfig.MaxConnLifetime = cfg.MaxConnLifetime
+
+	// Register shopspring/decimal support on every connection
+	poolConfig.AfterConnect = func(_ context.Context, conn *pgx.Conn) error {
+		pgxdecimal.Register(conn.TypeMap())
+		return nil
+	}
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolConfig)
 	if err != nil {

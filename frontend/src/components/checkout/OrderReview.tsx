@@ -1,11 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { useSelectedItems } from '@/store/cartStore'
-import type { CartItem } from '@/types/cart'
-import { CartItemRow } from '../cart/CartItemRow'
+import { useCartData } from '@/store/cartStore'
+import { useMemo } from 'react'
+import { CheckoutItemRow } from './CheckoutItemRow'
 
 export function OrderReview() {
-  const selectedItems = useSelectedItems()
+  // Get raw state with shallow comparison
+  const { items: cartItems, productsMap } = useCartData()
+
+  // Transform in useMemo - only recalculates when dependencies change
+  const selectedItems = useMemo(() => {
+    return cartItems
+      .map((item) => ({
+        ...item,
+        product: productsMap.get(item.productId),
+      }))
+      .filter((item) => item.selectedForCheckout)
+  }, [cartItems, productsMap])
 
   if (selectedItems.length === 0) {
     return (
@@ -28,9 +39,9 @@ export function OrderReview() {
         <CardTitle>Order Review ({selectedItems.length} items)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {selectedItems.map((item: CartItem) => (
+        {selectedItems.map((item) => (
           <div key={item.id} className="space-y-2">
-            <CartItemRow item={item} />
+            <CheckoutItemRow item={item} />
             {selectedItems.indexOf(item) < selectedItems.length - 1 && (
               <Separator />
             )}

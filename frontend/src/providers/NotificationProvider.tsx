@@ -27,18 +27,19 @@ export function NotificationProvider({
   const isAuthenticated = useIsAuthenticated()
   const user = useUser()
   const previousUserIdRef = useRef<string | null>(null)
+  const previousAuthStateRef = useRef<boolean | null>(null)
 
-  // Subscribe to notifications when authenticated
-  // The hook internally handles connection and reconnection logic
   useNotificationSubscription(isAuthenticated)
 
-  // Handle authentication state changes
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated && previousAuthStateRef.current === true) {
       console.log('🔕 NotificationProvider - User logged out, closing clients')
       closeSubscriptionClient()
       previousUserIdRef.current = null
     }
+
+    // Update the previous state for next comparison
+    previousAuthStateRef.current = isAuthenticated
   }, [isAuthenticated])
 
   // Handle token refresh detection via user ID changes

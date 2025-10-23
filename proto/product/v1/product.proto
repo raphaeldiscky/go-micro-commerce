@@ -21,6 +21,8 @@ service ProductService {
   rpc ConfirmProductsDeduction(ConfirmProductsDeductionRequest) returns (ConfirmProductsDeductionResponse);
   // RestoreProducts restore quantity
   rpc RestoreProducts(RestoreProductsRequest) returns (RestoreProductsResponse);
+  // ValidateProducts validate products before place order if price not changed and stock still available
+  rpc ValidateProducts(ValidateProductsRequest) returns (ValidateProductsResponse);
   rpc Health(HealthRequest) returns (HealthResponse);
 }
 
@@ -69,8 +71,7 @@ message ReserveProductsRequest {
 message ProductQuantityWithVersion {
   string product_id = 1 [(buf.validate.field).string.uuid = true];
   int64 quantity = 2 [(buf.validate.field).int64 = {
-    gt: 0,
-    lte: 1000000
+    gt: 0
   }];
   int64 version = 3 [(buf.validate.field).int64.gte = 0]; // for optimistic locking
 }
@@ -78,8 +79,7 @@ message ProductQuantityWithVersion {
 message ProductQuantity {
   string product_id = 1 [(buf.validate.field).string.uuid = true];
   int64 quantity = 2 [(buf.validate.field).int64 = {
-    gt: 0,
-    lte: 1000000
+    gt: 0
   }];
 }
 
@@ -96,8 +96,7 @@ message Product {
     max_len: 255
   }];
   double price = 3 [(buf.validate.field).double = {
-    gt: 0,
-    lte: 1000000
+    gt: 0
   }];
   int64 quantity = 4 [(buf.validate.field).int64.gte = 0];
   int64 version = 5 [(buf.validate.field).int64.gte = 0]; // for optimistic locking
@@ -147,6 +146,26 @@ message RestoreProductsResponse {
   repeated Product restored_products = 2;
   string message = 3;
 }
+
+message ValidateProductsRequest {
+  repeated ProductForValidation products = 1;
+}
+
+message ValidateProductsResponse {
+  bool success = 1; // true if all products are valid
+  repeated Product products = 2;
+  string message = 3;
+}
+
+
+message ProductForValidation {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  double price = 2 [(buf.validate.field).double = {
+    gt: 0
+  }];
+  int64 quantity = 3 [(buf.validate.field).int64.gte = 0];
+}
+
 
 message HealthRequest {}
 

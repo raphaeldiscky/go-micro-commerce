@@ -1,92 +1,82 @@
-import { graphClient } from '@/lib/graphql/client'
-import { CREATE_ORDER_MUTATION } from '@/lib/graphql/order'
-import type { CreateOrderMutation } from '@/lib/graphql/order.generated'
+import { productApi } from '@/lib/api/product'
 import {
-  DEFAULT_PRODUCT_DIMENSIONS,
-  DEFAULT_PRODUCT_WEIGHT_KG,
-  DEFAULT_WAREHOUSE_ADDRESS,
-  mapShippingOptionToCarrier,
-} from '@/mocks/shipping'
+  ADD_ITEM_TO_CART_MUTATION,
+  GET_MY_CART_QUERY,
+  REMOVE_ITEM_FROM_CART_MUTATION,
+  SELECT_ITEM_FOR_CHECKOUT_MUTATION,
+  UPDATE_ITEM_QUANTITY_MUTATION,
+} from '@/lib/graphql/cart'
 import type {
-  Address,
-  CreateOrderInput,
-  PaymentGateway as GraphQLPaymentGateway,
-  PaymentMethod as GraphQLPaymentMethod,
-} from '@/types/__generated__/graphql'
-import type {
-  Cart,
-  CartItem,
-  CheckoutSession,
-  MockProduct,
-  OrderSummary,
-  PaymentGateway,
-  PaymentMethod,
-  ShippingOption,
-} from '@/types/cart'
+  AddItemToCartMutation,
+  GetMyCartQuery,
+  RemoveItemFromCartMutation,
+  SelectItemForCheckoutMutation,
+  UpdateItemQuantityMutation,
+} from '@/lib/graphql/cart.generated'
+import { graphClient } from '@/lib/graphql/client'
+import { BatchGetProductsByIDsRequestSchema } from '@/proto/product/v1/product_pb'
+import { create as createProto } from '@bufbuild/protobuf'
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
 import { toast } from 'sonner'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
-import { useShallow } from 'zustand/shallow'
+import { useShallow } from 'zustand/react/shallow'
 
-// Checkout form data
-export interface CheckoutFormData {
-  orderNote?: string
-  shippingMethod?: string
-  paymentMethod?: string
+// Extract types from GraphQL schema
+type Cart = NonNullable<GetMyCartQuery['getMyCart']>
+type CartItem = Cart['items'][number]
+
+type Product = {
+  id: string
+  name: string
+  price: number
+  quantity: number
+  version: number
+  reservedQuantity: number
+  createdAt?: Timestamp
+  updatedAt?: Timestamp
 }
+
+// Enriched cart item with product data from Connect-RPC
+export type EnrichedCartItem = CartItem & {
+  product?: Product
+}
+
+const EMPTY_CART_ITEMS: Array<CartItem> = []
 
 // Cart store state interface
 export interface CartState {
   cart: Cart | null
-  items: Array<CartItem>
-  checkoutSession: CheckoutSession | null
+  productsMap: Map<string, Product>
   isLoading: boolean
   isDrawerOpen: boolean
-  isCheckoutLoading: boolean
-  checkoutData: CheckoutFormData
-  selectedAddress: Address | null
-  selectedShippingOption: ShippingOption | null
-  selectedPaymentMethod: PaymentMethod | null
-  selectedPaymentGateway: PaymentGateway | null
+  lastFetchedAt: number | null
 }
 
 // Cart store actions interface
 export interface CartActions {
   // Cart and item management
-  initializeCart: (customerId: string) => void
-  addItem: (product: MockProduct, quantity?: number) => void
-  removeItem: (itemId: string) => void
-  updateQuantity: (itemId: string, quantity: number) => void
-  toggleSelection: (itemId: string) => void
-  selectAll: () => void
-  deselectAll: () => void
-  clearCart: () => void
+  fetchCart: (force?: boolean) => Promise<void>
+  addItem: (productId: string, quantity?: number) => Promise<void>
+  removeItem: (itemId: string) => Promise<void>
+  updateQuantity: (itemId: string, quantity: number) => Promise<void>
+  toggleSelection: (itemId: string) => Promise<void>
+  selectAll: () => Promise<void>
+  deselectAll: () => Promise<void>
+
+  // Product management
+  addProductToMap: (product: Product) => void
+  getEnrichedCartItems: () => Array<EnrichedCartItem>
 
   // Drawer management
   openDrawer: () => void
   closeDrawer: () => void
   toggleDrawer: () => void
 
-  // Checkout flow
-  startCheckout: (navigateToCheckout?: (checkoutId: string) => void) => void
-  setAddress: (address: Address) => void
-  setShippingMethod: (method: ShippingOption) => void
-  setPaymentMethod: (method: PaymentMethod) => void
-  setPaymentGateway: (gateway: PaymentGateway) => void
-  setOrderNote: (note: string) => void
-  placeOrder: () => Promise<{
-    success: boolean
-    orderId?: string
-    paymentId?: string
-    error?: string
-  }>
-
   // Utility selectors
   getTotalItemCount: () => number
-  getSelectedItems: () => Array<CartItem>
+  getSelectedItems: () => Array<EnrichedCartItem>
   getSelectedTotal: () => number
-  getSubtotal: () => number
-  getOrderSummary: () => OrderSummary
 }
 
 export type CartStore = CartState & CartActions
@@ -97,208 +87,279 @@ export const useCartStore = create<CartStore>()(
       (set, get) => ({
         // Initial state
         cart: null,
-        items: [],
-        checkoutSession: null,
+        productsMap: new Map(),
         isLoading: false,
         isDrawerOpen: false,
-        isCheckoutLoading: false,
-        checkoutData: {
-          orderNote: '',
-          shippingMethod: '',
-          paymentMethod: '',
-        },
-        selectedAddress: null,
-        selectedShippingOption: null,
-        selectedPaymentMethod: null,
-        selectedPaymentGateway: null,
+        lastFetchedAt: null,
 
         // Cart and item management
-        initializeCart: (customerId: string) => {
+        fetchCart: async (force = false) => {
           const state = get()
 
-          // Initialize cart if it doesn't exist
-          if (!state.cart) {
-            const newCart: Cart = {
-              id: crypto.randomUUID(),
-              customer_id: customerId,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }
-
-            set({ cart: newCart })
-          }
-        },
-
-        addItem: (product: MockProduct, quantity = 1) => {
-          const state = get()
-          if (!state.cart) {
-            toast.error('Cart not initialized')
-            return
-          }
-
-          // Check if product is available
-          const availableQuantity = product.quantity - product.reservedQuantity
-          if (availableQuantity < quantity) {
-            toast.error(`Only ${availableQuantity} items available`)
-            return
-          }
-
-          // Check if item already exists in cart
-          const existingItemIndex = state.items.findIndex(
-            (item) => item.product_id === product.id,
-          )
-
-          let updatedItems: Array<CartItem>
-
-          if (existingItemIndex >= 0) {
-            // Update existing item quantity
-            const existingItem = state.items[existingItemIndex]
-            const newQuantity = existingItem.quantity + quantity
-
-            if (availableQuantity < newQuantity) {
-              toast.error(`Only ${availableQuantity} items available`)
+          // Smart caching: skip fetch if data is fresh (< 60 seconds old)
+          // Can be bypassed with force parameter
+          if (!force && state.lastFetchedAt) {
+            const timeSinceLastFetch = Date.now() - state.lastFetchedAt
+            if (timeSinceLastFetch < 60000) {
+              // Data is fresh, skip fetch
               return
             }
-
-            updatedItems = state.items.map((item, index) =>
-              index === existingItemIndex
-                ? {
-                    ...item,
-                    quantity: newQuantity,
-                    selected_for_checkout: true, // Auto-select on add
-                  }
-                : item,
-            )
-          } else {
-            // Add new item
-            const newItem: CartItem = {
-              id: crypto.randomUUID(),
-              cart_id: state.cart.id,
-              product_id: product.id,
-              quantity,
-              selected_for_checkout: true,
-              added_at: new Date().toISOString(),
-              product,
-            }
-
-            updatedItems = [...state.items, newItem]
           }
 
-          set({
-            items: updatedItems,
-            cart: state.cart,
-          })
+          set({ isLoading: true })
 
-          toast.success(`Added ${product.name} to cart`)
-        },
+          try {
+            const data =
+              await graphClient.request<GetMyCartQuery>(GET_MY_CART_QUERY)
 
-        removeItem: (itemId: string) => {
-          const state = get()
-          const itemToRemove = state.items.find((item) => item.id === itemId)
+            // Extract product IDs from cart items
+            const productIds =
+              data.getMyCart?.items.map((item) => item.productId) || []
 
-          if (!itemToRemove) return
+            // Fetch products if cart has items
+            if (productIds.length > 0) {
+              try {
+                const request = createProto(
+                  BatchGetProductsByIDsRequestSchema,
+                  {
+                    ids: productIds,
+                  },
+                )
+                const productsResponse =
+                  await productApi.batchGetProductsByIDs(request)
 
-          const updatedItems = state.items.filter((item) => item.id !== itemId)
-
-          set({
-            items: updatedItems,
-            cart: state.cart
-              ? {
-                  ...state.cart,
-                  updated_at: new Date().toISOString(),
+                const productsMap = new Map<string, Product>()
+                for (const product of productsResponse.products) {
+                  const processedProduct: Product = {
+                    id: product.id,
+                    name: product.name,
+                    price: Number(product.price),
+                    quantity: Number(product.quantity),
+                    version: Number(product.version),
+                    reservedQuantity: Number(product.reservedQuantity),
+                  }
+                  productsMap.set(product.id, processedProduct)
                 }
-              : null,
-          })
 
-          toast.success(`Removed ${itemToRemove.product.name} from cart`)
+                set({
+                  cart: data.getMyCart,
+                  productsMap,
+                  isLoading: false,
+                  lastFetchedAt: Date.now(),
+                })
+              } catch (productError) {
+                console.error('Failed to fetch products:', productError)
+                // Still set cart even if product fetch fails
+                set({
+                  cart: data.getMyCart,
+                  isLoading: false,
+                  lastFetchedAt: Date.now(),
+                })
+              }
+            } else {
+              set({
+                cart: data.getMyCart,
+                isLoading: false,
+                lastFetchedAt: Date.now(),
+              })
+            }
+          } catch (error) {
+            set({ isLoading: false })
+            console.error('Failed to fetch cart:', error)
+
+            // If no cart exists, create an empty one locally
+            set({ cart: null })
+          }
         },
 
-        updateQuantity: (itemId: string, quantity: number) => {
+        addItem: async (productId: string, quantity = 1) => {
+          set({ isLoading: true })
+
+          try {
+            const data = await graphClient.request<AddItemToCartMutation>(
+              ADD_ITEM_TO_CART_MUTATION,
+              {
+                input: {
+                  productId,
+                  quantity,
+                },
+              },
+            )
+
+            set({ cart: data.addItemToCart, isLoading: false })
+            toast.success('Added to cart')
+          } catch (error) {
+            set({ isLoading: false })
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to add item to cart'
+            toast.error(errorMessage)
+            throw error
+          }
+        },
+
+        removeItem: async (itemId: string) => {
+          set({ isLoading: true })
+
+          try {
+            const data = await graphClient.request<RemoveItemFromCartMutation>(
+              REMOVE_ITEM_FROM_CART_MUTATION,
+              { itemId },
+            )
+
+            set({ cart: data.removeItemFromCart, isLoading: false })
+            toast.success('Removed from cart')
+          } catch (error) {
+            set({ isLoading: false })
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to remove item from cart'
+            toast.error(errorMessage)
+            throw error
+          }
+        },
+
+        updateQuantity: async (itemId: string, quantity: number) => {
+          if (quantity <= 0) {
+            await get().removeItem(itemId)
+            return
+          }
+
+          set({ isLoading: true })
+
+          try {
+            const data = await graphClient.request<UpdateItemQuantityMutation>(
+              UPDATE_ITEM_QUANTITY_MUTATION,
+              {
+                itemId,
+                input: { quantity },
+              },
+            )
+
+            set({ cart: data.updateItemQuantity, isLoading: false })
+          } catch (error) {
+            set({ isLoading: false })
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to update quantity'
+            toast.error(errorMessage)
+            throw error
+          }
+        },
+
+        toggleSelection: async (itemId: string) => {
           const state = get()
-          const item = state.items.find((x) => x.id === itemId)
+          const item = state.cart?.items.find((x) => x.id === itemId)
 
           if (!item) return
 
-          // Validate quantity
-          if (quantity <= 0) {
-            get().removeItem(itemId)
-            return
+          try {
+            const data =
+              await graphClient.request<SelectItemForCheckoutMutation>(
+                SELECT_ITEM_FOR_CHECKOUT_MUTATION,
+                {
+                  itemId,
+                  input: { selected: !item.selectedForCheckout },
+                },
+              )
+
+            set({ cart: data.selectItemForCheckout })
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to update selection'
+            toast.error(errorMessage)
+            throw error
           }
+        },
 
-          // Check if quantity is available
-          const availableQuantity =
-            item.product.quantity - item.product.reservedQuantity
-          if (availableQuantity < quantity) {
-            toast.error(`Only ${availableQuantity} items available`)
-            return
+        selectAll: async () => {
+          const state = get()
+
+          if (!state.cart?.items) return
+
+          try {
+            // Update all items to selected
+            for (const item of state.cart.items) {
+              if (!item.selectedForCheckout) {
+                const data =
+                  await graphClient.request<SelectItemForCheckoutMutation>(
+                    SELECT_ITEM_FOR_CHECKOUT_MUTATION,
+                    {
+                      itemId: item.id,
+                      input: { selected: true },
+                    },
+                  )
+
+                set({ cart: data.selectItemForCheckout })
+              }
+            }
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to select all items'
+            toast.error(errorMessage)
+            throw error
           }
-
-          const updatedItems = state.items.map((x) =>
-            x.id === itemId ? { ...x, quantity } : x,
-          )
-
-          set({
-            items: updatedItems,
-            cart: state.cart
-              ? {
-                  ...state.cart,
-                  updated_at: new Date().toISOString(),
-                }
-              : null,
-          })
         },
 
-        toggleSelection: (itemId: string) => {
+        deselectAll: async () => {
           const state = get()
-          const updatedItems = state.items.map((item) =>
-            item.id === itemId
-              ? { ...item, selected_for_checkout: !item.selected_for_checkout }
-              : item,
-          )
-          set({ items: updatedItems })
+
+          if (!state.cart?.items) return
+
+          try {
+            // Update all items to deselected
+            for (const item of state.cart.items) {
+              if (item.selectedForCheckout) {
+                const data =
+                  await graphClient.request<SelectItemForCheckoutMutation>(
+                    SELECT_ITEM_FOR_CHECKOUT_MUTATION,
+                    {
+                      itemId: item.id,
+                      input: { selected: false },
+                    },
+                  )
+
+                set({ cart: data.selectItemForCheckout })
+              }
+            }
+          } catch (error) {
+            const errorMessage =
+              error instanceof Error
+                ? error.message
+                : 'Failed to deselect all items'
+            toast.error(errorMessage)
+            throw error
+          }
         },
 
-        selectAll: () => {
+        // Product management
+        addProductToMap: (product: Product) => {
+          const currentMap = get().productsMap
+          const existingProduct = currentMap.get(product.id)
+
+          // Only update if product doesn't exist or has changed (different reference)
+          if (!existingProduct || existingProduct !== product) {
+            const updatedProductsMap = new Map(currentMap)
+            updatedProductsMap.set(product.id, product)
+            set({ productsMap: updatedProductsMap })
+          }
+        },
+
+        getEnrichedCartItems: () => {
           const state = get()
-          const updatedItems = state.items.map((item) => ({
+          if (!state.cart?.items) return []
+
+          return state.cart.items.map((item) => ({
             ...item,
-            selected_for_checkout: true,
+            product: state.productsMap.get(item.productId),
           }))
-          set({ items: updatedItems })
-        },
-
-        deselectAll: () => {
-          const state = get()
-          const updatedItems = state.items.map((item) => ({
-            ...item,
-            selected_for_checkout: false,
-          }))
-          set({ items: updatedItems })
-        },
-
-        clearCart: () => {
-          const state = get()
-          set({
-            items: [],
-            cart: state.cart
-              ? {
-                  ...state.cart,
-                  updated_at: new Date().toISOString(),
-                }
-              : null,
-          })
-
-          // Clear checkout data
-          set({
-            checkoutData: {
-              orderNote: '',
-              shippingMethod: '',
-              paymentMethod: '',
-            },
-            selectedShippingOption: null,
-            selectedPaymentMethod: null,
-            checkoutSession: null,
-          })
         },
 
         // Drawer management
@@ -307,329 +368,82 @@ export const useCartStore = create<CartStore>()(
         toggleDrawer: () =>
           set((state) => ({ isDrawerOpen: !state.isDrawerOpen })),
 
-        // Checkout flow
-        startCheckout: (navigateToCheckout?: (checkoutId: string) => void) => {
-          const state = get()
-          const selectedItems = state.getSelectedItems()
-
-          if (selectedItems.length === 0) {
-            toast.error('Please select items to checkout')
-            return
-          }
-
-          // Clear any existing checkout state for clean start
-          set({
-            selectedAddress: null,
-            selectedShippingOption: null,
-            selectedPaymentMethod: null,
-            selectedPaymentGateway: null,
-            checkoutData: {
-              orderNote: '',
-              shippingMethod: '',
-              paymentMethod: '',
-            },
-          })
-
-          // Create checkout session
-          const checkoutSession: CheckoutSession = {
-            id: crypto.randomUUID(),
-            customer_id: state.cart?.customer_id || '',
-            cart_id: state.cart?.id || '',
-            status: 'pending',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }
-
-          set({ checkoutSession, isDrawerOpen: false })
-          toast.success('Proceeding to checkout')
-
-          // Navigate to checkout page with ID if navigation function provided
-          if (navigateToCheckout && checkoutSession.id) {
-            navigateToCheckout(checkoutSession.id)
-          }
-        },
-
-        setAddress: (address: Address) => {
-          set({ selectedAddress: address })
-        },
-
-        setShippingMethod: (method: ShippingOption) => {
-          const state = get()
-          set({
-            selectedShippingOption: method,
-            checkoutData: {
-              ...state.checkoutData,
-              shippingMethod: method.id,
-            },
-          })
-        },
-
-        setPaymentMethod: (method: PaymentMethod) => {
-          set({
-            selectedPaymentMethod: method,
-            selectedPaymentGateway: null, // Reset gateway when payment method changes
-            checkoutData: {
-              ...get().checkoutData,
-              paymentMethod: method.id,
-            },
-          })
-        },
-
-        setPaymentGateway: (gateway: PaymentGateway) => {
-          set({ selectedPaymentGateway: gateway })
-        },
-
-        setOrderNote: (note: string) => {
-          set({
-            checkoutData: {
-              ...get().checkoutData,
-              orderNote: note,
-            },
-          })
-        },
-
-        clearCheckoutState: () => {
-          set({
-            selectedAddress: null,
-            selectedShippingOption: null,
-            selectedPaymentMethod: null,
-            selectedPaymentGateway: null,
-            checkoutData: {
-              orderNote: '',
-              shippingMethod: '',
-              paymentMethod: '',
-            },
-          })
-        },
-
-        placeOrder: async (): Promise<{
-          success: boolean
-          orderId?: string
-          error?: string
-        }> => {
-          const state = get()
-          const selectedItems = state.getSelectedItems()
-
-          if (selectedItems.length === 0) {
-            return { success: false, error: 'No items selected' }
-          }
-
-          if (!state.selectedAddress) {
-            return { success: false, error: 'Please select a delivery address' }
-          }
-
-          if (!state.selectedShippingOption) {
-            return { success: false, error: 'Please select a shipping method' }
-          }
-
-          if (!state.selectedPaymentMethod) {
-            return { success: false, error: 'Please select a payment method' }
-          }
-
-          if (!state.selectedPaymentGateway) {
-            return { success: false, error: 'Payment gateway not configured' }
-          }
-
-          set({ isCheckoutLoading: true })
-
-          try {
-            // Build CreateOrderInput for GraphQL mutation
-            const input: CreateOrderInput = {
-              idempotencyKey: crypto.randomUUID(),
-              items: selectedItems.map((item) => ({
-                productId: item.product_id,
-                quantity: item.quantity,
-              })),
-              paymentMethod:
-                state.selectedPaymentMethod.type.toUpperCase() as GraphQLPaymentMethod,
-              paymentGateway:
-                state.selectedPaymentGateway.type.toUpperCase() as GraphQLPaymentGateway,
-              currency: 'USD',
-              shipping: {
-                fromAddress: {
-                  city: DEFAULT_WAREHOUSE_ADDRESS.city,
-                  state: DEFAULT_WAREHOUSE_ADDRESS.state,
-                  postalCode: DEFAULT_WAREHOUSE_ADDRESS.postalCode,
-                  country: DEFAULT_WAREHOUSE_ADDRESS.country,
-                },
-                toAddress: {
-                  city: state.selectedAddress.city,
-                  state: state.selectedAddress.state || '',
-                  postalCode: state.selectedAddress.postalCode,
-                  country: state.selectedAddress.countryCode,
-                },
-                dimensions: {
-                  length: DEFAULT_PRODUCT_DIMENSIONS.length.toString(),
-                  height: DEFAULT_PRODUCT_DIMENSIONS.height.toString(),
-                  width: DEFAULT_PRODUCT_DIMENSIONS.width.toString(),
-                  unit: DEFAULT_PRODUCT_DIMENSIONS.unit,
-                },
-                weightKg: DEFAULT_PRODUCT_WEIGHT_KG.toString(),
-                carrierId: mapShippingOptionToCarrier(
-                  state.selectedShippingOption.id,
-                ),
-              },
-            }
-
-            console.log('Placing order:', input)
-
-            // Create order using GraphQL mutation
-            const data = await graphClient.request<CreateOrderMutation>(
-              CREATE_ORDER_MUTATION,
-              { input },
-            )
-
-            const order = data.createOrder
-
-            // Update checkout session
-            if (state.checkoutSession) {
-              set({
-                checkoutSession: {
-                  ...state.checkoutSession,
-                  status: 'placed',
-                  updated_at: new Date().toISOString(),
-                },
-              })
-            }
-
-            // Clear cart after successful order
-            state.clearCart()
-
-            set({ isCheckoutLoading: false })
-            toast.success('Order placed successfully!')
-
-            return {
-              success: true,
-              orderId: order.id,
-            }
-          } catch (error) {
-            set({ isCheckoutLoading: false })
-            const errorMessage =
-              error instanceof Error ? error.message : 'Order placement failed'
-            toast.error(errorMessage)
-
-            // Update checkout session as failed
-            if (state.checkoutSession) {
-              set({
-                checkoutSession: {
-                  ...state.checkoutSession,
-                  status: 'failed',
-                  updated_at: new Date().toISOString(),
-                },
-              })
-            }
-
-            return { success: false, error: errorMessage }
-          }
-        },
-
         // Utility selectors
         getTotalItemCount: () => {
           const state = get()
-          return state.items.reduce((total, item) => total + item.quantity, 0)
-        },
-
-        getSelectedItems: () => {
-          const state = get()
-          return state.items.filter((item) => item.selected_for_checkout)
-        },
-
-        getSelectedTotal: () => {
-          const state = get()
-          return state
-            .getSelectedItems()
-            .reduce(
-              (total, item) => total + item.product.price * item.quantity,
-              0,
-            )
-        },
-
-        getSubtotal: () => {
-          const state = get()
-          return state.items.reduce(
-            (total, item) => total + item.product.price * item.quantity,
+          return (state.cart?.items || []).reduce(
+            (total, item) => total + item.quantity,
             0,
           )
         },
 
-        getOrderSummary: (): OrderSummary => {
-          const state = get()
-          const subtotal = state.getSelectedTotal()
-          const shipping = state.selectedShippingOption?.price || 0
-          const total = subtotal + shipping
+        getSelectedItems: () => {
+          const enrichedItems = get().getEnrichedCartItems()
+          return enrichedItems.filter((item) => item.selectedForCheckout)
+        },
 
-          return {
-            subtotal,
-            shipping,
-            discount: 0,
-            total,
-          }
+        getSelectedTotal: () => {
+          const selectedItems = get().getSelectedItems()
+          return selectedItems.reduce((total, item) => {
+            if (item.product) {
+              return total + item.product.price * item.quantity
+            }
+            return total
+          }, 0)
         },
       }),
       {
         name: 'cart-store',
         partialize: (state) => ({
           cart: state.cart,
-          items: state.items,
-          // Only persist cart items, not checkout state
+          productsMap: Array.from(state.productsMap.entries()),
+          lastFetchedAt: state.lastFetchedAt,
         }),
+        merge: (persistedState, currentState) => {
+          // The persisted state has productsMap as an array of entries, not a Map
+          const persisted = persistedState as {
+            cart: Cart | null
+            productsMap: Array<[string, Product]>
+            lastFetchedAt: number | null
+          }
+          return {
+            ...currentState,
+            cart: persisted.cart ?? null,
+            productsMap: new Map(persisted.productsMap),
+            lastFetchedAt: persisted.lastFetchedAt ?? null,
+          }
+        },
       },
     ),
   ),
 )
 
 // Selectors for easier access
-export const useCartItems = () => useCartStore((state) => state.items)
+export const useCart = () => useCartStore((state) => state.cart)
+
+// Simple selectors - return raw state, no transformations
+export const useCartItems = () =>
+  useCartStore((state) => state.cart?.items ?? EMPTY_CART_ITEMS)
+
+export const useProductsMap = () => useCartStore((state) => state.productsMap)
+
+// Multi-property selector with shallow comparison
+export const useCartData = () =>
+  useCartStore(
+    useShallow((state) => ({
+      items: state.cart?.items ?? EMPTY_CART_ITEMS,
+      productsMap: state.productsMap,
+    })),
+  )
+
 export const useCartItemCount = () =>
   useCartStore((state) =>
-    state.items.reduce((total, item) => total + item.quantity, 0),
-  )
-export const useSelectedItems = () =>
-  useCartStore(
-    useShallow((state) =>
-      state.items.filter((item) => item.selected_for_checkout),
+    (state.cart?.items ?? EMPTY_CART_ITEMS).reduce(
+      (total, item) => total + item.quantity,
+      0,
     ),
   )
-export const useCartTotal = () =>
-  useCartStore(
-    useShallow((state) => {
-      const subtotal = state.items
-        .filter((item) => item.selected_for_checkout)
-        .reduce((total, item) => total + item.product.price * item.quantity, 0)
-      const shipping = state.selectedShippingOption?.price || 0
-      return {
-        subtotal,
-        shipping,
-        discount: 0,
-        total: subtotal + shipping,
-      }
-    }),
-  )
+
 export const useIsCartDrawerOpen = () =>
   useCartStore((state) => state.isDrawerOpen)
-export const useIsCheckoutLoading = () =>
-  useCartStore((state) => state.isCheckoutLoading)
-export const useSelectedAddress = () =>
-  useCartStore((state) => state.selectedAddress)
-export const useSelectedShippingOption = () =>
-  useCartStore((state) => state.selectedShippingOption)
-export const useSelectedPaymentMethod = () =>
-  useCartStore((state) => state.selectedPaymentMethod)
-export const useSelectedPaymentGateway = () =>
-  useCartStore((state) => state.selectedPaymentGateway)
-export const useCheckoutSession = () =>
-  useCartStore((state) => state.checkoutSession)
-export const useOrderSummary = () =>
-  useCartStore(
-    useShallow((state) => {
-      const subtotal = state.getSelectedTotal()
-      const shipping = state.selectedShippingOption?.price || 0
-      const total = subtotal + shipping
-      return {
-        subtotal,
-        shipping,
-        discount: 0,
-        total,
-      }
-    }),
-  )
+export const useIsCartLoading = () => useCartStore((state) => state.isLoading)

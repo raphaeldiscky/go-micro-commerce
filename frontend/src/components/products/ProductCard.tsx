@@ -31,7 +31,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const { addItem, cart } = useCartStore()
+  const { addItem } = useCartStore()
 
   const availableQuantity = Number(product.quantity - product.reservedQuantity)
   const isLowStock = availableQuantity < 10 && availableQuantity > 0
@@ -41,41 +41,11 @@ export function ProductCard({ product }: ProductCardProps) {
     if (isOutOfStock || quantity > availableQuantity || availableQuantity <= 0)
       return
 
-    // Check if cart is initialized
-    if (!cart) {
-      toast.error('Cart is not initialized. Please refresh the page.')
-      return
-    }
-
     setIsAdding(true)
     try {
-      // Convert Product to MockProduct format
-      const mockProduct = {
-        id: product.id,
-        name: product.name,
-        description: 'desc',
-        price: Number(product.price),
-        quantity: Number(product.quantity),
-        reservedQuantity: Number(product.reservedQuantity),
-        category: 'Electronics', // Default category
-        sku: product.id.slice(0, 8), // Use first 8 chars as SKU
-        version: Number(product.version),
-        createdAt: product.createdAt
-          ? timestampToDate(product.createdAt)
-          : undefined,
-        updatedAt: product.updatedAt
-          ? timestampToDate(product.updatedAt)
-          : undefined,
-      }
-
-      addItem(mockProduct, quantity)
+      addItem(product.id, quantity)
       setQuantity(1)
-      console.log(
-        'Product added to cart:',
-        mockProduct.name,
-        'Quantity:',
-        quantity,
-      )
+      console.log('Product added to cart:', product.name, 'Quantity:', quantity)
 
       // Show success animation
       setShowSuccess(true)

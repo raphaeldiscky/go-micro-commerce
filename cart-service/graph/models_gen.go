@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
+	"github.com/shopspring/decimal"
 )
 
 type AddCartItemInput struct {
@@ -53,13 +54,15 @@ type CheckoutSession struct {
 }
 
 type CheckoutSessionItem struct {
-	ID        uuid.UUID `json:"id"`
-	ProductID uuid.UUID `json:"productId"`
-	Quantity  int       `json:"quantity"`
+	ID        uuid.UUID       `json:"id"`
+	ProductID uuid.UUID       `json:"productId"`
+	Quantity  int             `json:"quantity"`
+	UnitPrice decimal.Decimal `json:"unitPrice"`
 }
 
 type CreateCheckoutSessionInput struct {
 	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
+	CartID         uuid.UUID `json:"cartId"`
 }
 
 type Mutation struct {
@@ -67,6 +70,10 @@ type Mutation struct {
 
 type PlaceOrderInput struct {
 	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
+	AddressID      uuid.UUID `json:"addressId"`
+	CarrierID      string    `json:"carrierId"`
+	PaymentMethod  string    `json:"paymentMethod"`
+	PaymentGateway string    `json:"paymentGateway"`
 }
 
 type Query struct {

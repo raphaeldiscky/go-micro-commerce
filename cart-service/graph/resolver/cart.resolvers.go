@@ -105,70 +105,6 @@ func (r *mutationResolver) SelectItemForCheckout(
 	return mapper.MapToGraphQLCartFromDTO(updatedCart), nil
 }
 
-// CreateCheckoutSession is the resolver for the createCheckoutSession field.
-func (r *mutationResolver) CreateCheckoutSession(
-	ctx context.Context,
-	input graph.CreateCheckoutSessionInput,
-) (*graph.CheckoutSession, error) {
-	user, err := echoutils.GetUserAuthContexts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Map GraphQL input to service DTO
-	req := mapper.MapToCreateCheckoutSessionRequest(input, user.UserID)
-
-	// Create checkout session
-	session, err := r.checkoutSessionService.CreateCheckoutSession(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
-}
-
-// PlaceOrder is the resolver for the placeOrder field.
-func (r *mutationResolver) PlaceOrder(
-	ctx context.Context,
-	sessionID uuid.UUID,
-	input graph.PlaceOrderInput,
-) (*graph.CheckoutSession, error) {
-	user, err := echoutils.GetUserAuthContexts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Map GraphQL input to service DTO
-	req := mapper.MapToPlaceOrderRequest(input, user.UserID)
-
-	// Place order
-	session, err := r.checkoutSessionService.PlaceOrder(ctx, sessionID, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
-}
-
-// CancelCheckoutSession is the resolver for the cancelCheckoutSession field.
-func (r *mutationResolver) CancelCheckoutSession(
-	ctx context.Context,
-	sessionID uuid.UUID,
-) (*graph.CheckoutSession, error) {
-	user, err := echoutils.GetUserAuthContexts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Cancel checkout session
-	session, err := r.checkoutSessionService.CancelCheckoutSession(ctx, sessionID, user.UserID)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
-}
-
 // GetMyCart is the resolver for the getMyCart field.
 func (r *queryResolver) GetMyCart(ctx context.Context) (*graph.Cart, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
@@ -177,24 +113,10 @@ func (r *queryResolver) GetMyCart(ctx context.Context) (*graph.Cart, error) {
 	}
 
 	// Get user's cart
-	cart, err := r.cartService.GetCartByUserID(ctx, user.UserID)
+	cart, err := r.cartService.GetUserActiveCart(ctx, user.UserID)
 	if err != nil {
 		return nil, err
 	}
 
 	return mapper.MapToGraphQLCartFromDTO(cart), nil
-}
-
-// GetCheckoutSession is the resolver for the getCheckoutSession field.
-func (r *queryResolver) GetCheckoutSession(
-	ctx context.Context,
-	id uuid.UUID,
-) (*graph.CheckoutSession, error) {
-	// Get checkout session
-	session, err := r.checkoutSessionService.GetCheckoutSession(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
 }

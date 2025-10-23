@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
@@ -90,13 +91,15 @@ const (
 
 // cartRepository implements the CartRepository interface for PostgreSQL.
 type cartRepository struct {
-	db DBTX
+	db     DBTX
+	logger logger.Logger
 }
 
 // NewCartRepository creates a new instance of cartRepository.
-func NewCartRepository(db DBTX) CartRepository {
+func NewCartRepository(db DBTX, appLogger logger.Logger) CartRepository {
 	return &cartRepository{
-		db: db,
+		db:     db,
+		logger: appLogger,
 	}
 }
 
@@ -712,6 +715,7 @@ func (r *cartRepository) UpdateStatus(
 
 	result, err := r.db.Exec(ctx, updateQuery, status, cartID)
 	if err != nil {
+		r.logger.Errorf("failed to update cart status: %v", err)
 		return fmt.Errorf("failed to update cart status: %w", err)
 	}
 

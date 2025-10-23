@@ -38,7 +38,10 @@ func (h *CheckoutSessionHandler) CreateCheckoutSession(c echo.Context) error {
 		return err
 	}
 
-	session, err := h.checkoutSessionService.CreateCheckoutSession(c.Request().Context(), &req)
+	session, err := h.checkoutSessionService.CreateCheckoutSession(
+		echoutils.ContextWithUserInfo(c),
+		&req,
+	)
 	if err != nil {
 		return err
 	}
@@ -59,7 +62,10 @@ func (h *CheckoutSessionHandler) GetCheckoutSessionByID(c echo.Context) error {
 		return err
 	}
 
-	session, err := h.checkoutSessionService.GetCheckoutSession(c.Request().Context(), sessionID)
+	session, err := h.checkoutSessionService.GetCheckoutSession(
+		echoutils.ContextWithUserInfo(c),
+		sessionID,
+	)
 	if err != nil {
 		return err
 	}
@@ -89,7 +95,11 @@ func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 		return err
 	}
 
-	session, err := h.checkoutSessionService.PlaceOrder(c.Request().Context(), sessionID, &req)
+	session, err := h.checkoutSessionService.PlaceOrder(
+		echoutils.ContextWithUserInfo(c),
+		sessionID,
+		&req,
+	)
 	if err != nil {
 		return err
 	}
