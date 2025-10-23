@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/shopspring/decimal"
 )
 
 // CheckoutSessionOrderPlacedPayload holds the data for the checkout session confirmed event (place order).
@@ -21,8 +22,9 @@ type CheckoutSessionOrderPlacedPayload struct {
 
 // CheckoutItemPayload holds the data for the checkout session item.
 type CheckoutItemPayload struct {
-	ProductID uuid.UUID `json:"product_id"`
-	Quantity  int64     `json:"quantity"`
+	ProductID uuid.UUID       `json:"product_id"`
+	Quantity  int64           `json:"quantity"`
+	UnitPrice decimal.Decimal `json:"unit_price"`
 }
 
 // CheckoutSessionCanceledPayload holds the data for the checkout session canceled event.

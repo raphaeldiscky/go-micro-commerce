@@ -160,7 +160,7 @@ func (r *checkoutSessionRepository) GetByID(
 		return nil, fmt.Errorf("failed to scan checkout session: %w", err)
 	}
 
-	// Get checkout session items (ordered by UUIDv7 id for chronological order)
+	// Get checkout session items
 	const itemsQuery = `
 		SELECT id, product_id, quantity, unit_price
 		FROM checkout_session_items
