@@ -18,7 +18,6 @@ func MapToGraphQLPayment(payment *dto.PaymentResponse) *graph.Payment {
 		Amount:         payment.Amount,
 		Currency:       payment.Currency,
 		Status:         payment.Status,
-		PaymentMethod:  payment.PaymentMethod,
 		PaymentGateway: payment.PaymentGateway,
 		ClientSecret:   payment.ClientSecret, // Stripe client secret for Payment Element
 		ExpiresAt:      payment.ExpiresAt,    // 24-hour payment window expiry

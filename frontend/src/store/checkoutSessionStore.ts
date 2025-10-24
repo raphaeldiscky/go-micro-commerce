@@ -15,7 +15,6 @@ import type { Address, CheckoutSession } from '@/types/__generated__/graphql'
 import type {
   OrderSummary,
   PaymentGatewayUI,
-  PaymentMethodUI,
   ShippingOptionUI,
 } from '@/types/cart'
 import { toast } from 'sonner'
@@ -29,14 +28,12 @@ export interface CheckoutSessionState {
   isLoading: boolean
   selectedAddressId: string | null
   selectedCarrierId: string | null
-  selectedPaymentMethod: string | null
   selectedPaymentGateway: string | null
   orderNote?: string
 
   // UI-specific selections for display purposes
   selectedAddress: Address | null
   selectedShippingOption: ShippingOptionUI | null
-  selectedPaymentMethodData: PaymentMethodUI | null
   selectedPaymentGatewayData: PaymentGatewayUI | null
 }
 
@@ -53,7 +50,6 @@ export interface CheckoutSessionActions {
   // Set selections for checkout
   setAddress: (addressId: string, address: Address) => void
   setShippingMethod: (carrierId: string, method: ShippingOptionUI) => void
-  setPaymentMethod: (method: string, methodData: PaymentMethodUI) => void
   setPaymentGateway: (gateway: string, gatewayData: PaymentGatewayUI) => void
   setOrderNote: (note: string) => void
 
@@ -140,7 +136,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
               isLoading: false,
               selectedAddressId: session.addressId,
               selectedCarrierId: session.carrierId,
-              selectedPaymentMethod: session.paymentMethod,
               selectedPaymentGateway: session.paymentGateway,
             })
 
@@ -198,16 +193,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           })
         },
 
-        setPaymentMethod: (method: string, methodData: PaymentMethodUI) => {
-          set({
-            selectedPaymentMethod: method,
-            selectedPaymentMethodData: methodData,
-            // Reset gateway when payment method changes
-            selectedPaymentGateway: null,
-            selectedPaymentGatewayData: null,
-          })
-        },
-
         setPaymentGateway: (gateway: string, gatewayData: PaymentGatewayUI) => {
           set({
             selectedPaymentGateway: gateway,
@@ -240,10 +225,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
             return { success: false, error: 'Please select a shipping method' }
           }
 
-          if (!state.selectedPaymentMethod) {
-            return { success: false, error: 'Please select a payment method' }
-          }
-
           if (!state.selectedPaymentGateway) {
             return { success: false, error: 'Payment gateway not configured' }
           }
@@ -259,7 +240,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                   idempotencyKey: crypto.randomUUID(),
                   addressId: state.selectedAddressId,
                   carrierId: state.selectedCarrierId,
-                  paymentMethod: state.selectedPaymentMethod,
                   paymentGateway: state.selectedPaymentGateway,
                 },
               },
@@ -316,11 +296,9 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
             isLoading: false,
             selectedAddressId: null,
             selectedCarrierId: null,
-            selectedPaymentMethod: null,
             selectedPaymentGateway: null,
             selectedAddress: null,
             selectedShippingOption: null,
-            selectedPaymentMethodData: null,
             selectedPaymentGatewayData: null,
             orderNote: '',
           })
@@ -333,7 +311,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           // Full session data should be refetched
           selectedAddressId: state.selectedAddressId,
           selectedCarrierId: state.selectedCarrierId,
-          selectedPaymentMethod: state.selectedPaymentMethod,
           selectedPaymentGateway: state.selectedPaymentGateway,
         }),
       },
@@ -354,8 +331,6 @@ export const useSelectedCarrierId = () =>
   useCheckoutSessionStore((state) => state.selectedCarrierId)
 export const useSelectedShippingOption = () =>
   useCheckoutSessionStore((state) => state.selectedShippingOption)
-export const useSelectedPaymentMethod = () =>
-  useCheckoutSessionStore((state) => state.selectedPaymentMethod)
 export const useSelectedPaymentGateway = () =>
   useCheckoutSessionStore((state) => state.selectedPaymentGateway)
 export const useCheckoutOrderSummary = () =>

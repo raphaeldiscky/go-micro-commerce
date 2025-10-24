@@ -13,22 +13,20 @@ import (
 
 // Payment represents a payment transaction in the marketplace.
 type Payment struct {
-	CreatedAt          time.Time
-	UpdatedAt          time.Time
-	PaymentGateway     constant.PaymentGateway
-	GatewayReferenceID *string
-	GatewayResponse    map[string]any
-	CompletedAt        *time.Time
-	FailedAt           *time.Time
-	ExpiresAt          *time.Time // 24-hour payment window expiry
-	Currency           string
-	Status             constant.PaymentStatus
-	PaymentMethod      constant.PaymentMethod
-	Amount             decimal.Decimal
-	ID                 uuid.UUID
-	OrderID            uuid.UUID
-	PaymentMethodID    *string // Stripe PaymentMethod ID (pm_xxx) for off-session charging
-	StripeCustomerID   *string // Stripe Customer ID (cus_xxx) for payment method attachment
+	CreatedAt            time.Time
+	UpdatedAt            time.Time
+	PaymentGateway       constant.PaymentGateway
+	GatewayTransactionID *string        // Gateway transaction ID (e.g., Stripe PaymentIntent ID: pi_xxx)
+	GatewayMetadata      map[string]any // JSONB field storing gateway-specific metadata
+	CompletedAt          *time.Time
+	FailedAt             *time.Time
+	ExpiresAt            *time.Time // 24-hour payment window expiry
+	Currency             string
+	Status               constant.PaymentStatus
+	PaymentMethod        constant.PaymentMethod
+	Amount               decimal.Decimal
+	ID                   uuid.UUID
+	OrderID              uuid.UUID
 }
 
 // NewPayment creates a new payment with validation.
@@ -37,7 +35,6 @@ func NewPayment(
 	orderID uuid.UUID,
 	amount decimal.Decimal,
 	currency string,
-	paymentMethod constant.PaymentMethod,
 	paymentGateway constant.PaymentGateway,
 ) (*Payment, error) {
 	now := time.Now()
@@ -48,7 +45,6 @@ func NewPayment(
 		Amount:         amount.Round(constant.DefaultPricingScale),
 		Currency:       currency,
 		Status:         constant.PaymentStatusPending,
-		PaymentMethod:  paymentMethod,
 		PaymentGateway: paymentGateway,
 		CreatedAt:      now,
 		UpdatedAt:      now,
@@ -88,24 +84,97 @@ func (p *Payment) UpdateStatus(status constant.PaymentStatus) error {
 }
 
 // SetGatewayReference sets the payment gateway reference information.
+// The metadata parameter should contain gateway-specific data as a map.
 func (p *Payment) SetGatewayReference(
 	gateway constant.PaymentGateway,
-	referenceID string,
-	response map[string]any,
+	transactionID string,
+	metadata map[string]any,
 ) error {
 	p.PaymentGateway = gateway
-	p.GatewayReferenceID = &referenceID
-	p.GatewayResponse = response
+	p.GatewayTransactionID = &transactionID
+	p.GatewayMetadata = metadata
 	p.UpdatedAt = time.Now()
 
 	return p.validate()
 }
 
-// SetPaymentMethodInfo sets the Stripe payment method and customer IDs.
-// Used for storing payment method during SetupIntent flow for later off-session charging.
-func (p *Payment) SetPaymentMethodInfo(paymentMethodID, stripeCustomerID string) error {
-	p.PaymentMethodID = &paymentMethodID
-	p.StripeCustomerID = &stripeCustomerID
+// SetGatewayMetadataTyped sets typed gateway metadata.
+// This provides type safety by accepting a GatewayMetadata interface.
+func (p *Payment) SetGatewayMetadataTyped(metadata GatewayMetadata) error {
+	metadataMap, err := metadata.ToMap()
+	if err != nil {
+		return err
+	}
+
+	p.GatewayMetadata = metadataMap
+	p.UpdatedAt = time.Now()
+
+	return p.validate()
+}
+
+// GetStripeMetadata retrieves Stripe-specific metadata with type safety.
+// Returns nil if metadata doesn't exist or parsing fails.
+func (p *Payment) GetStripeMetadata() (*StripeMetadata, error) {
+	if p.GatewayMetadata == nil {
+		return &StripeMetadata{}, nil
+	}
+
+	return NewStripeMetadataFromMap(p.GatewayMetadata)
+}
+
+// SetStripeMetadata sets Stripe-specific metadata with type safety.
+func (p *Payment) SetStripeMetadata(metadata *StripeMetadata) error {
+	return p.SetGatewayMetadataTyped(metadata)
+}
+
+// GetMidtransMetadata retrieves Midtrans-specific metadata with type safety.
+func (p *Payment) GetMidtransMetadata() (*MidtransMetadata, error) {
+	if p.GatewayMetadata == nil {
+		return &MidtransMetadata{}, nil
+	}
+
+	return NewMidtransMetadataFromMap(p.GatewayMetadata)
+}
+
+// SetMidtransMetadata sets Midtrans-specific metadata with type safety.
+func (p *Payment) SetMidtransMetadata(metadata *MidtransMetadata) error {
+	return p.SetGatewayMetadataTyped(metadata)
+}
+
+// GetXenditMetadata retrieves Xendit-specific metadata with type safety.
+func (p *Payment) GetXenditMetadata() (*XenditMetadata, error) {
+	if p.GatewayMetadata == nil {
+		return &XenditMetadata{}, nil
+	}
+
+	return NewXenditMetadataFromMap(p.GatewayMetadata)
+}
+
+// SetXenditMetadata sets Xendit-specific metadata with type safety.
+func (p *Payment) SetXenditMetadata(metadata *XenditMetadata) error {
+	return p.SetGatewayMetadataTyped(metadata)
+}
+
+// GetMetadataField retrieves a specific field from the gateway metadata.
+// Returns nil if metadata doesn't exist or key not found.
+// Use typed getters (GetStripeMetadata, etc.) when possible for type safety.
+func (p *Payment) GetMetadataField(key string) any {
+	if p.GatewayMetadata == nil {
+		return nil
+	}
+
+	return p.GatewayMetadata[key]
+}
+
+// SetMetadataField sets a specific field in the gateway metadata.
+// Creates metadata map if it doesn't exist.
+// Prefer using typed setters (SetStripeMetadata, etc.) for type safety.
+func (p *Payment) SetMetadataField(key string, value any) error {
+	if p.GatewayMetadata == nil {
+		p.GatewayMetadata = make(map[string]any)
+	}
+
+	p.GatewayMetadata[key] = value
 	p.UpdatedAt = time.Now()
 
 	return p.validate()

@@ -72,7 +72,6 @@ type ComplexityRoot struct {
 		Items          func(childComplexity int) int
 		Payment        func(childComplexity int) int
 		PaymentGateway func(childComplexity int) int
-		PaymentMethod  func(childComplexity int) int
 		ShippingCost   func(childComplexity int) int
 		Status         func(childComplexity int) int
 		Subtotal       func(childComplexity int) int
@@ -231,12 +230,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Order.PaymentGateway(childComplexity), true
-	case "Order.paymentMethod":
-		if e.complexity.Order.PaymentMethod == nil {
-			break
-		}
-
-		return e.complexity.Order.PaymentMethod(childComplexity), true
 	case "Order.shippingCost":
 		if e.complexity.Order.ShippingCost == nil {
 			break
@@ -886,8 +879,6 @@ func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Contex
 				return ec.fieldContext_Order_currency(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_Order_paymentGateway(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_Order_paymentMethod(ctx, field)
 			case "shippingCost":
 				return ec.fieldContext_Order_shippingCost(ctx, field)
 			case "subtotal":
@@ -1093,35 +1084,6 @@ func (ec *executionContext) fieldContext_Order_paymentGateway(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type PaymentGateway does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Order_paymentMethod(ctx context.Context, field graphql.CollectedField, obj *Order) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Order_paymentMethod,
-		func(ctx context.Context) (any, error) {
-			return obj.PaymentMethod, nil
-		},
-		nil,
-		ec.marshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentMethod,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Order_paymentMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Order",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type PaymentMethod does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1526,8 +1488,6 @@ func (ec *executionContext) fieldContext_OrderEdge_node(_ context.Context, field
 				return ec.fieldContext_Order_currency(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_Order_paymentGateway(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_Order_paymentMethod(ctx, field)
 			case "shippingCost":
 				return ec.fieldContext_Order_shippingCost(ctx, field)
 			case "subtotal":
@@ -3835,7 +3795,7 @@ func (ec *executionContext) unmarshalInputCreateOrderInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"idempotencyKey", "items", "shipping", "paymentMethod", "paymentGateway", "currency"}
+	fieldsInOrder := [...]string{"idempotencyKey", "items", "shipping", "paymentGateway", "currency"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3863,13 +3823,6 @@ func (ec *executionContext) unmarshalInputCreateOrderInput(ctx context.Context, 
 				return it, err
 			}
 			it.Shipping = data
-		case "paymentMethod":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentMethod"))
-			data, err := ec.unmarshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PaymentMethod = data
 		case "paymentGateway":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentGateway"))
 			data, err := ec.unmarshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx, v)
@@ -4298,11 +4251,6 @@ func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, ob
 			}
 		case "paymentGateway":
 			out.Values[i] = ec._Order_paymentGateway(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "paymentMethod":
-			out.Values[i] = ec._Order_paymentMethod(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5420,16 +5368,6 @@ func (ec *executionContext) unmarshalNPaymentGateway2githubᚗcomᚋraphaeldisck
 }
 
 func (ec *executionContext) marshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx context.Context, sel ast.SelectionSet, v constant.PaymentGateway) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx context.Context, v any) (constant.PaymentMethod, error) {
-	var res constant.PaymentMethod
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋorderᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx context.Context, sel ast.SelectionSet, v constant.PaymentMethod) graphql.Marshaler {
 	return v
 }
 

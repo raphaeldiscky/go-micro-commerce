@@ -20,7 +20,6 @@ type Payment struct {
 	Amount         decimal.Decimal         `json:"amount"`
 	Currency       string                  `json:"currency"`
 	Status         constant.PaymentStatus  `json:"status"`
-	PaymentMethod  constant.PaymentMethod  `json:"paymentMethod"`
 	PaymentGateway constant.PaymentGateway `json:"paymentGateway"`
 	ClientSecret   *string                 `json:"clientSecret,omitempty"`
 	ExpiresAt      *time.Time              `json:"expiresAt,omitempty"`

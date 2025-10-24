@@ -80,7 +80,6 @@ func (s *orderService) CreateOrderWithSaga(
 			req.CustomerID,
 			req.IdempotencyKey,
 			req.PaymentGateway,
-			req.PaymentMethod,
 			req.Currency,
 			orderItems,
 		)

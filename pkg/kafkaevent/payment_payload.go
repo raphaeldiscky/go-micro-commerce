@@ -14,7 +14,6 @@ type PaymentRequestPayload struct {
 	CustomerID     uuid.UUID       `json:"customer_id"`
 	TotalPrice     decimal.Decimal `json:"total_price"`
 	Currency       string          `json:"currency"`
-	PaymentMethod  string          `json:"payment_method"`
 	PaymentGateway string          `json:"payment_gateway"`
 }
 

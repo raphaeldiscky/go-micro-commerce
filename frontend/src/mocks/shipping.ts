@@ -1,8 +1,4 @@
-import type {
-  PaymentGatewayUI,
-  PaymentMethodUI,
-  ShippingOptionUI,
-} from '@/types/cart'
+import type { PaymentGatewayUI, ShippingOptionUI } from '@/types/cart'
 import type { ShippingCarrier } from '@/types/order'
 
 // Mock shipping options
@@ -51,19 +47,6 @@ export const mockPaymentGateways: Array<PaymentGatewayUI> = [
     id: 'gateway-2',
     name: 'PayPal',
     type: 'paypal',
-  },
-]
-
-// Mock payment methods
-export const mockPaymentMethods: Array<PaymentMethodUI> = [
-  {
-    id: 'pay-1',
-    name: 'Card',
-    type: 'card',
-    icon: '/api/placeholder/32/32',
-    isActive: true,
-    description: 'Visa, Mastercard, American Express',
-    supportedGateways: mockPaymentGateways,
   },
 ]
 
@@ -119,14 +102,6 @@ export const findShippingOptionById = (
 ): ShippingOptionUI | undefined => {
   return mockShippingOptions.find(
     (option) => option.id === id && option.isActive,
-  )
-}
-
-export const findPaymentMethodById = (
-  id: string,
-): PaymentMethodUI | undefined => {
-  return mockPaymentMethods.find(
-    (method) => method.id === id && method.isActive,
   )
 }
 

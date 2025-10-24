@@ -69,7 +69,6 @@ type ComplexityRoot struct {
 		ID             func(childComplexity int) int
 		OrderID        func(childComplexity int) int
 		PaymentGateway func(childComplexity int) int
-		PaymentMethod  func(childComplexity int) int
 		Status         func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
 	}
@@ -183,12 +182,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Payment.PaymentGateway(childComplexity), true
-	case "Payment.paymentMethod":
-		if e.complexity.Payment.PaymentMethod == nil {
-			break
-		}
-
-		return e.complexity.Payment.PaymentMethod(childComplexity), true
 	case "Payment.status":
 		if e.complexity.Payment.Status == nil {
 			break
@@ -558,8 +551,6 @@ func (ec *executionContext) fieldContext_Entity_findPaymentByOrderID(ctx context
 				return ec.fieldContext_Payment_currency(ctx, field)
 			case "status":
 				return ec.fieldContext_Payment_status(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_Payment_paymentMethod(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_Payment_paymentGateway(ctx, field)
 			case "clientSecret":
@@ -732,35 +723,6 @@ func (ec *executionContext) fieldContext_Payment_status(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type PaymentStatus does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Payment_paymentMethod(ctx context.Context, field graphql.CollectedField, obj *Payment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Payment_paymentMethod,
-		func(ctx context.Context) (any, error) {
-			return obj.PaymentMethod, nil
-		},
-		nil,
-		ec.marshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentMethod,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Payment_paymentMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Payment",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type PaymentMethod does not have child fields")
 		},
 	}
 	return fc, nil
@@ -1017,8 +979,6 @@ func (ec *executionContext) fieldContext_Query_getPaymentByOrderId(ctx context.C
 				return ec.fieldContext_Payment_currency(ctx, field)
 			case "status":
 				return ec.fieldContext_Payment_status(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_Payment_paymentMethod(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_Payment_paymentGateway(ctx, field)
 			case "clientSecret":
@@ -2832,11 +2792,6 @@ func (ec *executionContext) _Payment(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "paymentMethod":
-			out.Values[i] = ec._Payment_paymentMethod(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "paymentGateway":
 			out.Values[i] = ec._Payment_paymentGateway(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -3436,23 +3391,6 @@ func (ec *executionContext) unmarshalNPaymentGateway2githubᚗcomᚋraphaeldisck
 }
 
 func (ec *executionContext) marshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx context.Context, sel ast.SelectionSet, v constant.PaymentGateway) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx context.Context, v any) (constant.PaymentMethod, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.PaymentMethod(tmp)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNPaymentMethod2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentMethod(ctx context.Context, sel ast.SelectionSet, v constant.PaymentMethod) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalString(string(v))
 	if res == graphql.Null {

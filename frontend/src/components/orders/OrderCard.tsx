@@ -11,7 +11,6 @@ import {
   CalendarIcon,
   CreditCardIcon,
   DollarSignIcon,
-  PackageIcon,
   UserIcon,
 } from 'lucide-react'
 
@@ -57,10 +56,6 @@ export function OrderCard({ order, className }: OrderCardProps) {
           <Badge variant="outline" className="flex items-center gap-1">
             <CreditCardIcon className="h-3 w-3" />
             {order.paymentGateway}
-          </Badge>
-          <Badge variant="outline" className="flex items-center gap-1">
-            <PackageIcon className="h-3 w-3" />
-            {order.paymentMethod.replace('_', ' ')}
           </Badge>
           <Badge variant="outline" className="flex items-center gap-1">
             <DollarSignIcon className="h-3 w-3" />

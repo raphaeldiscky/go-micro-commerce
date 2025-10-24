@@ -13,7 +13,6 @@ type PayOrderRequest struct {
 	CustomerID     uuid.UUID
 	CustomerEmail  string
 	IdempotencyKey uuid.UUID               `json:"idempotency_key" validate:"required"`
-	PaymentMethod  constant.PaymentMethod  `json:"payment_method"  validate:"required"`
 	PaymentGateway constant.PaymentGateway `json:"payment_gateway" validate:"required"`
 }
 

@@ -173,7 +173,6 @@ func (s *orderService) CreateOrderWithTemporal(
 			req.CustomerID,
 			req.IdempotencyKey,
 			req.PaymentGateway,
-			req.PaymentMethod,
 			req.Currency,
 			orderItems,
 		)
@@ -544,7 +543,6 @@ func (s *orderService) RequestPaymentOrder(
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
 			updatedOrder.Currency,
-			req.PaymentMethod,
 			req.PaymentGateway,
 		)
 

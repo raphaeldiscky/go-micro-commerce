@@ -162,11 +162,6 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		return nil
 	}
 
-	paymentMethod, err := mapper.MapStringToPaymentMethod(evt.Payload.PaymentMethod)
-	if err != nil {
-		return err
-	}
-
 	paymentGateway, err := mapper.MapStringToPaymentGateway(evt.Payload.PaymentGateway)
 	if err != nil {
 		return err
@@ -177,7 +172,6 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		evt.Payload.OrderID,
 		evt.Payload.TotalPrice,
 		evt.Payload.Currency,
-		paymentMethod,
 		paymentGateway,
 	)
 	if err != nil {

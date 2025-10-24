@@ -23,7 +23,6 @@ type PlaceOrderRequest struct {
 	IdempotencyKey uuid.UUID `json:"idempotency_key" validate:"required"`
 	AddressID      uuid.UUID `json:"address_id"      validate:"required"`
 	CarrierID      string    `json:"carrier_id"      validate:"required"`
-	PaymentMethod  string    `json:"payment_method"  validate:"required"`
 	PaymentGateway string    `json:"payment_gateway" validate:"required"`
 }
 
@@ -45,7 +44,6 @@ type CheckoutSessionResponse struct {
 	CarrierID      *string                        `json:"carrier_id,omitempty"`
 	Status         constant.CheckoutSessionStatus `json:"status"`
 	PaymentGateway *string                        `json:"payment_gateway,omitempty"`
-	PaymentMethod  *string                        `json:"payment_method,omitempty"`
 	Currency       string                         `json:"currency"`
 	Items          []CheckoutSessionItemResponse  `json:"items"`
 	CreatedAt      time.Time                      `json:"created_at"`

@@ -7,7 +7,6 @@ type CheckoutSession {
   carrierId: String
   status: CheckoutSessionStatus!
   paymentGateway: String
-  paymentMethod: String
   currency: String!
   items: [CheckoutSessionItem!]!
   createdAt: Time!
@@ -34,7 +33,6 @@ input PlaceOrderInput {
   idempotencyKey: UUID!
   addressId: UUID!
   carrierId: String!
-  paymentMethod: String!
   paymentGateway: String!
 }
 

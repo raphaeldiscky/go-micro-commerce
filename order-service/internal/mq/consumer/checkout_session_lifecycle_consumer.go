@@ -155,7 +155,6 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 		evt.Payload.IdempotencyKey,
 		evt.Payload.UserID,
 		constant.PaymentGateway(evt.Payload.PaymentGateway),
-		constant.PaymentMethod(evt.Payload.PaymentMethod),
 		evt.Payload.Currency,
 		orderItems,
 	)

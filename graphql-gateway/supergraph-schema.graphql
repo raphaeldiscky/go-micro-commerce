@@ -120,7 +120,6 @@ type CheckoutSession
   carrierId: String
   status: CheckoutSessionStatus!
   paymentGateway: String
-  paymentMethod: String
   currency: String!
   items: [CheckoutSessionItem!]!
   createdAt: Time!
@@ -213,7 +212,6 @@ input CreateOrderInput
   idempotencyKey: UUID!
   items: [CreateOrderItemInput!]!
   shipping: ShippingInput!
-  paymentMethod: PaymentMethod!
   paymentGateway: PaymentGateway!
   currency: String!
 }
@@ -463,7 +461,6 @@ type Order
   status: OrderStatus!
   currency: String!
   paymentGateway: PaymentGateway!
-  paymentMethod: PaymentMethod!
   shippingCost: Decimal!
   subtotal: Decimal!
   totalPrice: Decimal!
@@ -564,7 +561,6 @@ type Payment
   amount: Decimal! @join__field(graph: PAYMENT_SERVICE)
   currency: String! @join__field(graph: PAYMENT_SERVICE)
   status: PaymentStatus! @join__field(graph: PAYMENT_SERVICE)
-  paymentMethod: PaymentMethod! @join__field(graph: PAYMENT_SERVICE)
   paymentGateway: PaymentGateway! @join__field(graph: PAYMENT_SERVICE)
   clientSecret: String @join__field(graph: PAYMENT_SERVICE)
   expiresAt: Time @join__field(graph: PAYMENT_SERVICE)
@@ -579,13 +575,6 @@ enum PaymentGateway
   @join__type(graph: PAYMENT_SERVICE)
 {
   STRIPE @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
-}
-
-enum PaymentMethod
-  @join__type(graph: ORDER_SERVICE)
-  @join__type(graph: PAYMENT_SERVICE)
-{
-  CARD @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
 }
 
 enum PaymentStatus
@@ -605,7 +594,6 @@ input PlaceOrderInput
   idempotencyKey: UUID!
   addressId: UUID!
   carrierId: String!
-  paymentMethod: String!
   paymentGateway: String!
 }
 

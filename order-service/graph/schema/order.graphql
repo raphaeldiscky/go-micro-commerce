@@ -12,11 +12,6 @@ enum OrderStatus {
   FAILED
 }
 
-# PaymentMethod enum
-enum PaymentMethod {
-  CARD
-}
-
 # PaymentGateway enum
 enum PaymentGateway {
   STRIPE
@@ -35,7 +30,6 @@ type Order {
   status: OrderStatus!
   currency: String!
   paymentGateway: PaymentGateway!
-  paymentMethod: PaymentMethod!
   shippingCost: Decimal!
   subtotal: Decimal!
   totalPrice: Decimal!
@@ -126,7 +120,6 @@ input CreateOrderInput {
   idempotencyKey: UUID!
   items: [CreateOrderItemInput!]!
   shipping: ShippingInput!
-  paymentMethod: PaymentMethod!
   paymentGateway: PaymentGateway!
   currency: String!
 }

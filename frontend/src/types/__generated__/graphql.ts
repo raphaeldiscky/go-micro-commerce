@@ -122,7 +122,6 @@ export type CheckoutSession = {
   idempotencyKey: Scalars['UUID']['output']
   items: Array<CheckoutSessionItem>
   paymentGateway?: Maybe<Scalars['String']['output']>
-  paymentMethod?: Maybe<Scalars['String']['output']>
   status: CheckoutSessionStatus
   updatedAt: Scalars['Time']['output']
 }
@@ -203,7 +202,6 @@ export type CreateOrderInput = {
   idempotencyKey: Scalars['UUID']['input']
   items: Array<CreateOrderItemInput>
   paymentGateway: PaymentGateway
-  paymentMethod: PaymentMethod
   shipping: ShippingInput
 }
 
@@ -497,7 +495,6 @@ export type Order = {
   items: Array<OrderItem>
   payment?: Maybe<Payment>
   paymentGateway: PaymentGateway
-  paymentMethod: PaymentMethod
   shippingCost: Scalars['Decimal']['output']
   status: OrderStatus
   subtotal: Scalars['Decimal']['output']
@@ -587,17 +584,12 @@ export type Payment = {
   id: Scalars['UUID']['output']
   orderId: Scalars['UUID']['output']
   paymentGateway: PaymentGateway
-  paymentMethod: PaymentMethod
   status: PaymentStatus
   updatedAt: Scalars['Time']['output']
 }
 
 export enum PaymentGateway {
   Stripe = 'STRIPE',
-}
-
-export enum PaymentMethod {
-  Card = 'CARD',
 }
 
 export enum PaymentStatus {
@@ -614,7 +606,6 @@ export type PlaceOrderInput = {
   carrierId: Scalars['String']['input']
   idempotencyKey: Scalars['UUID']['input']
   paymentGateway: Scalars['String']['input']
-  paymentMethod: Scalars['String']['input']
 }
 
 export enum PresenceStatus {

@@ -32,7 +32,6 @@ func NewPaymentRequestEvent(
 	customerID uuid.UUID,
 	totalPrice decimal.Decimal,
 	currency string,
-	paymentMethod constant.PaymentMethod,
 	paymentGateway constant.PaymentGateway,
 ) *PaymentRequestEvent {
 	return &PaymentRequestEvent{
@@ -49,7 +48,6 @@ func NewPaymentRequestEvent(
 			CustomerID:     customerID,
 			TotalPrice:     totalPrice,
 			Currency:       currency,
-			PaymentMethod:  string(paymentMethod),
 			PaymentGateway: string(paymentGateway),
 		},
 	}

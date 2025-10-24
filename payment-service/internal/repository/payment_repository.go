@@ -54,13 +54,11 @@ func (r *paymentRepositoryPostgres) Create(
 	query := `
 		INSERT INTO payments (
 			id, order_id, amount, currency, status, payment_method,
-			payment_gateway, gateway_reference_id, gateway_response,
-			payment_method_id, stripe_customer_id,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		RETURNING id, order_id, amount, currency, status, payment_method,
-			payment_gateway, gateway_reference_id, gateway_response,
-			payment_method_id, stripe_customer_id,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 	`
 
@@ -74,10 +72,8 @@ func (r *paymentRepositoryPostgres) Create(
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.GatewayReferenceID,
-		payment.GatewayResponse,
-		payment.PaymentMethodID,
-		payment.StripeCustomerID,
+		payment.GatewayTransactionID,
+		payment.GatewayMetadata,
 		payment.CreatedAt,
 		payment.UpdatedAt,
 		payment.CompletedAt,
@@ -95,10 +91,8 @@ func (r *paymentRepositoryPostgres) Create(
 		&createdPayment.Status,
 		&createdPayment.PaymentMethod,
 		&createdPayment.PaymentGateway,
-		&createdPayment.GatewayReferenceID,
-		&createdPayment.GatewayResponse,
-		&createdPayment.PaymentMethodID,
-		&createdPayment.StripeCustomerID,
+		&createdPayment.GatewayTransactionID,
+		&createdPayment.GatewayMetadata,
 		&createdPayment.CreatedAt,
 		&createdPayment.UpdatedAt,
 		&createdPayment.CompletedAt,
@@ -119,8 +113,7 @@ func (r *paymentRepositoryPostgres) FindByID(
 ) (*entity.Payment, error) {
 	query := `
 		SELECT id, order_id, amount, currency, status, payment_method,
-			payment_gateway, gateway_reference_id, gateway_response,
-			payment_method_id, stripe_customer_id,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
 		WHERE id = $1
@@ -138,10 +131,8 @@ func (r *paymentRepositoryPostgres) FindByID(
 		&payment.Status,
 		&payment.PaymentMethod,
 		&payment.PaymentGateway,
-		&payment.GatewayReferenceID,
-		&payment.GatewayResponse,
-		&payment.PaymentMethodID,
-		&payment.StripeCustomerID,
+		&payment.GatewayTransactionID,
+		&payment.GatewayMetadata,
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
 		&payment.CompletedAt,
@@ -166,8 +157,7 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 ) (*entity.Payment, error) {
 	query := `
 		SELECT id, order_id, amount, currency, status, payment_method,
-			payment_gateway, gateway_reference_id, gateway_response,
-			payment_method_id, stripe_customer_id,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
 		WHERE order_id = $1
@@ -185,10 +175,8 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 		&payment.Status,
 		&payment.PaymentMethod,
 		&payment.PaymentGateway,
-		&payment.GatewayReferenceID,
-		&payment.GatewayResponse,
-		&payment.PaymentMethodID,
-		&payment.StripeCustomerID,
+		&payment.GatewayTransactionID,
+		&payment.GatewayMetadata,
 		&payment.CreatedAt,
 		&payment.UpdatedAt,
 		&payment.CompletedAt,
@@ -219,18 +207,15 @@ func (r *paymentRepositoryPostgres) Update(
 			status = $5,
 			payment_method = $6,
 			payment_gateway = $7,
-			gateway_reference_id = $8,
-			gateway_response = $9,
-			payment_method_id = $10,
-			stripe_customer_id = $11,
-			updated_at = $12,
-			completed_at = $13,
-			failed_at = $14,
-			expires_at = $15
+			gateway_transaction_id = $8,
+			gateway_metadata = $9,
+			updated_at = $10,
+			completed_at = $11,
+			failed_at = $12,
+			expires_at = $13
 		WHERE id = $1
 		RETURNING id, order_id, amount, currency, status, payment_method,
-			payment_gateway, gateway_reference_id, gateway_response,
-			payment_method_id, stripe_customer_id,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 	`
 
@@ -244,10 +229,8 @@ func (r *paymentRepositoryPostgres) Update(
 		payment.Status,
 		payment.PaymentMethod,
 		payment.PaymentGateway,
-		payment.GatewayReferenceID,
-		payment.GatewayResponse,
-		payment.PaymentMethodID,
-		payment.StripeCustomerID,
+		payment.GatewayTransactionID,
+		payment.GatewayMetadata,
 		payment.UpdatedAt,
 		payment.CompletedAt,
 		payment.FailedAt,
@@ -264,10 +247,8 @@ func (r *paymentRepositoryPostgres) Update(
 		&updatedPayment.Status,
 		&updatedPayment.PaymentMethod,
 		&updatedPayment.PaymentGateway,
-		&updatedPayment.GatewayReferenceID,
-		&updatedPayment.GatewayResponse,
-		&updatedPayment.PaymentMethodID,
-		&updatedPayment.StripeCustomerID,
+		&updatedPayment.GatewayTransactionID,
+		&updatedPayment.GatewayMetadata,
 		&updatedPayment.CreatedAt,
 		&updatedPayment.UpdatedAt,
 		&updatedPayment.CompletedAt,
@@ -320,8 +301,7 @@ func (r *paymentRepositoryPostgres) FindExpiredPayments(
 ) ([]*entity.Payment, error) {
 	query := `
 		SELECT id, order_id, amount, currency, status, payment_method,
-			payment_gateway, gateway_reference_id, gateway_response,
-			payment_method_id, stripe_customer_id,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
 		WHERE status = 'pending'
@@ -350,10 +330,8 @@ func (r *paymentRepositoryPostgres) FindExpiredPayments(
 			&payment.Status,
 			&payment.PaymentMethod,
 			&payment.PaymentGateway,
-			&payment.GatewayReferenceID,
-			&payment.GatewayResponse,
-			&payment.PaymentMethodID,
-			&payment.StripeCustomerID,
+			&payment.GatewayTransactionID,
+			&payment.GatewayMetadata,
 			&payment.CreatedAt,
 			&payment.UpdatedAt,
 			&payment.CompletedAt,

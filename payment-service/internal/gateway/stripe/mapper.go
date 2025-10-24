@@ -27,19 +27,37 @@ func MapPaymentIntentToResponse(
 	// Set client_secret for frontend to confirm payment with Stripe.js
 	clientSecret := pi.ClientSecret
 
+	// Build Stripe-specific metadata
+	gatewayMetadata := map[string]any{
+		"payment_intent_id": pi.ID,
+		"status":            string(pi.Status),
+		"client_secret":     pi.ClientSecret,
+	}
+
+	// Add payment method if available
+	if pi.PaymentMethod != nil {
+		gatewayMetadata["payment_method_id"] = pi.PaymentMethod.ID
+	}
+
+	// Add customer ID if available
+	if pi.Customer != nil {
+		gatewayMetadata["customer_id"] = pi.Customer.ID
+	}
+
+	// Add charge ID if available (after successful payment)
+	if pi.LatestCharge != nil {
+		gatewayMetadata["charge_id"] = pi.LatestCharge.ID
+	}
+
 	response := &dto.PaymentGatewayResponse{
-		TransactionID: transactionID,
-		GatewayID:     pi.ID,
-		Status:        status,
-		Amount:        amount,
-		Currency:      string(pi.Currency),
-		ProcessedAt:   time.Unix(pi.Created, 0),
-		ClientSecret:  &clientSecret, // For stripe.confirmCardPayment() on frontend
-		GatewayResponse: map[string]any{
-			"status":         string(pi.Status),
-			"client_secret":  pi.ClientSecret,
-			"payment_method": pi.PaymentMethod,
-		},
+		TransactionID:   transactionID,
+		GatewayID:       pi.ID,
+		Status:          status,
+		Amount:          amount,
+		Currency:        string(pi.Currency),
+		ProcessedAt:     time.Unix(pi.Created, 0),
+		ClientSecret:    &clientSecret,   // For stripe.confirmCardPayment() on frontend
+		GatewayResponse: gatewayMetadata, // Stripe-specific metadata
 	}
 
 	// Note: Fees are available after the charge is completed

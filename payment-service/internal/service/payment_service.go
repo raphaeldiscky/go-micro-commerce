@@ -115,7 +115,6 @@ func (s *paymentService) CreatePayment(
 			req.OrderID,
 			req.Amount,
 			req.Currency,
-			req.PaymentMethod,
 			req.PaymentGateway,
 		)
 		if err != nil {
@@ -131,7 +130,13 @@ func (s *paymentService) CreatePayment(
 				req.StripeCustomerID,
 			)
 
-			if err = payment.SetPaymentMethodInfo(req.PaymentMethodID, req.StripeCustomerID); err != nil {
+			// Create Stripe metadata with payment method and customer IDs
+			stripeMetadata := &entity.StripeMetadata{
+				PaymentMethodID: &req.PaymentMethodID,
+				CustomerID:      &req.StripeCustomerID,
+			}
+
+			if err = payment.SetStripeMetadata(stripeMetadata); err != nil {
 				return httperror.NewBadRequestError("failed to set payment method info")
 			}
 		}
@@ -372,7 +377,6 @@ func (s *paymentService) processWithPaymentGateway(
 		"Processing payment %s with gateway %s, method %s and amount %s",
 		payment.ID,
 		payment.PaymentGateway,
-		req.PaymentMethod,
 		payment.Amount,
 	)
 
@@ -386,7 +390,6 @@ func (s *paymentService) processWithPaymentGateway(
 		TransactionID:   payment.ID,
 		Amount:          payment.Amount,
 		Currency:        payment.Currency,
-		PaymentMethod:   req.PaymentMethod,
 		PaymentMethodID: req.PaymentMethodID, // Stripe PM ID from client
 		CustomerID:      req.CustomerID,
 		CustomerEmail:   req.CustomerEmail,
@@ -565,18 +568,24 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 		}
 
 		// 3. Validate payment method info is stored
-		if payment.PaymentMethodID == nil || *payment.PaymentMethodID == "" {
+		stripeMetadata, err := payment.GetStripeMetadata()
+		if err != nil {
+			s.logger.Errorf("Failed to get Stripe metadata for order %s: %v", orderID, err)
+			return httperror.NewInternalServerError("failed to retrieve payment metadata")
+		}
+
+		if stripeMetadata.PaymentMethodID == nil || *stripeMetadata.PaymentMethodID == "" {
 			s.logger.Errorf("Payment method ID not found for order: %s", orderID)
 			return httperror.NewBadRequestError("payment method not saved")
 		}
 
-		if payment.StripeCustomerID == nil || *payment.StripeCustomerID == "" {
+		if stripeMetadata.CustomerID == nil || *stripeMetadata.CustomerID == "" {
 			s.logger.Errorf("Stripe customer ID not found for order: %s", orderID)
 			return httperror.NewBadRequestError("stripe customer not saved")
 		}
 
 		// 4. Update status to processing
-		if err := payment.UpdateStatus(constant.PaymentStatusProcessing); err != nil {
+		if err = payment.UpdateStatus(constant.PaymentStatusProcessing); err != nil {
 			return httperror.NewBadRequestError("failed to update payment status")
 		}
 
@@ -588,8 +597,8 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 
 		// 6. Charge off-session
 		chargeReq := &dto.ChargeOffSessionRequest{
-			PaymentMethodID:  *payment.PaymentMethodID,
-			StripeCustomerID: *payment.StripeCustomerID,
+			PaymentMethodID:  *stripeMetadata.PaymentMethodID,
+			StripeCustomerID: *stripeMetadata.CustomerID,
 			Amount:           payment.Amount,
 			Currency:         payment.Currency,
 			TransactionID:    payment.ID,
@@ -604,11 +613,11 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 			s.logger.Errorf("Off-session charge failed for order %s: %v", orderID, errCharge)
 
 			// Mark payment as failed
-			if err := payment.UpdateStatus(constant.PaymentStatusFailed); err != nil {
+			if err = payment.UpdateStatus(constant.PaymentStatusFailed); err != nil {
 				s.logger.Errorf("Failed to update payment status to failed: %v", err)
 			}
 
-			_, err := paymentRepo.Update(ctx, payment)
+			_, err = paymentRepo.Update(ctx, payment)
 			if err != nil {
 				s.logger.Errorf("Failed to update payment: %v", err)
 				return err
@@ -624,9 +633,9 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 				nil, // expiresAt not needed for failed event
 			)
 
-			payload, err := json.Marshal(evt)
-			if err != nil {
-				return err
+			payload, errMarshal := json.Marshal(evt)
+			if errMarshal != nil {
+				return errMarshal
 			}
 
 			outboxEvent := &entity.OutboxEvent{
@@ -651,7 +660,7 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 		}
 
 		// 7. Update payment with gateway info
-		if err := payment.SetGatewayReference(
+		if err = payment.SetGatewayReference(
 			payment.PaymentGateway,
 			result.GatewayID,
 			result.GatewayResponse,
@@ -669,7 +678,7 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 			finalStatus = constant.PaymentStatusProcessing
 		}
 
-		if err := payment.UpdateStatus(finalStatus); err != nil {
+		if err = payment.UpdateStatus(finalStatus); err != nil {
 			return httperror.NewBadRequestError("failed to update final payment status")
 		}
 
@@ -724,7 +733,7 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 			Attempts:      0,
 		}
 
-		if err := outboxRepo.Create(ctx, outboxEvent); err != nil {
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError("failed to create payment event")
 		}
 
