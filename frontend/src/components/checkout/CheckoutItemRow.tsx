@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils/index'
 import { fCurrency } from '@/lib/utils/number'
 import { Package } from 'lucide-react'

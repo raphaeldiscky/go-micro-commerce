@@ -27,7 +27,7 @@ import {
   MapPin,
   Package,
 } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/checkout/$checkoutId')({

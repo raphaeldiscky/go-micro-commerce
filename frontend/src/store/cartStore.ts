@@ -445,9 +445,9 @@ export const useCartData = () =>
     })),
   )
 
-export const useCartItemCount = () =>
+export const useCartItemCount = (): number =>
   useCartStore((state) =>
-    state.cart?.items.reduce((total, item) => total + item.quantity, 0),
+    (state.cart?.items || []).reduce((total, item) => total + item.quantity, 0),
   )
 
 export const useIsCartDrawerOpen = () =>
