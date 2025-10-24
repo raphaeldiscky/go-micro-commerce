@@ -4,6 +4,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -353,7 +354,7 @@ func (s *paymentService) GetPaymentByOrderID(
 
 	payment, err := paymentRepo.FindByOrderID(ctx, orderID)
 	if err != nil {
-		if err.Error() == constant.PaymentNotFoundErrorMessage {
+		if errors.Is(err, constant.ErrPaymentNotFound) {
 			return nil, httperror.NewNotFoundError("payment not found for order")
 		}
 
@@ -410,7 +411,7 @@ func (s *paymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) 
 
 		payment, err := paymentRepo.FindByOrderID(ctx, orderID)
 		if err != nil {
-			if err.Error() == constant.PaymentNotFoundErrorMessage {
+			if errors.Is(err, constant.ErrPaymentNotFound) {
 				s.logger.Warnf("Payment not found for order %s during timeout", orderID)
 				return nil // Don't error if payment doesn't exist
 			}

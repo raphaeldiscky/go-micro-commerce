@@ -45,8 +45,9 @@ const (
 // ProcessPayment creates a Stripe PaymentIntent with the payment method attached.
 // For PCI compliance, this does NOT confirm the payment - confirmation happens client-side
 // with Stripe.js using the returned client_secret. This eliminates raw card data from our servers.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) ProcessPayment(
-	_ context.Context,
+	ctx context.Context,
 	req *dto.PaymentGatewayRequest,
 ) (*dto.PaymentGatewayResponse, error) {
 	c.logger.Infof(
@@ -95,6 +96,9 @@ func (c *stripeClient) ProcessPayment(
 		AllowRedirects: stripe.String("always"), // Allow redirect-based methods (iDEAL, SEPA, etc.)
 	}
 
+	// Set context for timeout and cancellation
+	params.Context = ctx
+
 	// Create PaymentIntent (not confirmed yet - client will confirm)
 	pi, err := paymentintent.New(params)
 	if err != nil {
@@ -114,13 +118,17 @@ func (c *stripeClient) ProcessPayment(
 }
 
 // GetPaymentStatus retrieves the status of a Stripe PaymentIntent.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) GetPaymentStatus(
-	_ context.Context,
+	ctx context.Context,
 	gatewayID string,
 ) (*dto.PaymentGatewayResponse, error) {
 	c.logger.Infof("Retrieving Stripe payment status for: %s", gatewayID)
 
-	pi, err := paymentintent.Get(gatewayID, nil)
+	params := &stripe.PaymentIntentParams{}
+	params.Context = ctx
+
+	pi, err := paymentintent.Get(gatewayID, params)
 	if err != nil {
 		c.logger.Errorf("Failed to retrieve Stripe PaymentIntent: %v", err)
 		return nil, fmt.Errorf("failed to get payment intent: %w", err)
@@ -137,8 +145,9 @@ func (c *stripeClient) GetPaymentStatus(
 }
 
 // CapturePayment captures an authorized Stripe PaymentIntent.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) CapturePayment(
-	_ context.Context,
+	ctx context.Context,
 	gatewayID string,
 	amount decimal.Decimal,
 ) (*dto.PaymentGatewayResponse, error) {
@@ -150,6 +159,7 @@ func (c *stripeClient) CapturePayment(
 	params := &stripe.PaymentIntentCaptureParams{
 		AmountToCapture: stripe.Int64(amountInCents),
 	}
+	params.Context = ctx
 
 	pi, err := paymentintent.Capture(gatewayID, params)
 	if err != nil {
@@ -168,10 +178,14 @@ func (c *stripeClient) CapturePayment(
 }
 
 // CancelPayment cancels a Stripe PaymentIntent.
-func (c *stripeClient) CancelPayment(_ context.Context, gatewayID string) error {
+// Context is used for request timeout and cancellation.
+func (c *stripeClient) CancelPayment(ctx context.Context, gatewayID string) error {
 	c.logger.Infof("Canceling Stripe payment: %s", gatewayID)
 
-	_, err := paymentintent.Cancel(gatewayID, nil)
+	params := &stripe.PaymentIntentCancelParams{}
+	params.Context = ctx
+
+	_, err := paymentintent.Cancel(gatewayID, params)
 	if err != nil {
 		c.logger.Errorf("Failed to cancel Stripe PaymentIntent: %v", err)
 		return fmt.Errorf("failed to cancel payment intent: %w", err)
@@ -183,8 +197,9 @@ func (c *stripeClient) CancelPayment(_ context.Context, gatewayID string) error 
 }
 
 // RefundPayment creates a refund for a Stripe charge.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) RefundPayment(
-	_ context.Context,
+	ctx context.Context,
 	req *dto.RefundRequest,
 ) (*dto.RefundResponse, error) {
 	c.logger.Infof(
@@ -206,6 +221,7 @@ func (c *stripeClient) RefundPayment(
 			"transaction_id": req.TransactionID.String(),
 		},
 	}
+	params.Context = ctx
 
 	if req.Reason != "" {
 		params.Metadata["reason"] = req.Reason
@@ -223,13 +239,17 @@ func (c *stripeClient) RefundPayment(
 }
 
 // GetRefundStatus retrieves the status of a Stripe refund.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) GetRefundStatus(
-	_ context.Context,
+	ctx context.Context,
 	gatewayRefundID string,
 ) (*dto.RefundResponse, error) {
 	c.logger.Infof("Retrieving Stripe refund status for: %s", gatewayRefundID)
 
-	r, err := refund.Get(gatewayRefundID, nil)
+	params := &stripe.RefundParams{}
+	params.Context = ctx
+
+	r, err := refund.Get(gatewayRefundID, params)
 	if err != nil {
 		c.logger.Errorf("Failed to retrieve Stripe refund: %v", err)
 		return nil, fmt.Errorf("failed to get refund: %w", err)
@@ -275,6 +295,7 @@ func (c *stripeClient) CreateSetupIntent(
 			"customer_id": req.CustomerID.String(),
 		},
 	}
+	params.Context = ctx
 
 	si, err := setupintent.New(params)
 	if err != nil {
@@ -293,8 +314,9 @@ func (c *stripeClient) CreateSetupIntent(
 
 // ChargeOffSession charges a saved payment method without customer present.
 // Used for delayed payment confirmation when customer already provided payment details.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) ChargeOffSession(
-	_ context.Context,
+	ctx context.Context,
 	req *dto.ChargeOffSessionRequest,
 ) (*dto.PaymentGatewayResponse, error) {
 	c.logger.Infof(
@@ -321,6 +343,7 @@ func (c *stripeClient) ChargeOffSession(
 			"order_id":       req.OrderID.String(),
 		},
 	}
+	params.Context = ctx
 
 	// Create and confirm PaymentIntent in one call
 	pi, err := paymentintent.New(params)
@@ -340,17 +363,19 @@ func (c *stripeClient) ChargeOffSession(
 
 // CreateOrRetrieveCustomer ensures a Stripe Customer exists for the given customer ID.
 // Searches for existing customer by metadata, creates new one if not found.
+// Context is used for request timeout and cancellation.
 func (c *stripeClient) CreateOrRetrieveCustomer(
-	_ context.Context,
+	ctx context.Context,
 	customerID string,
 	email string,
 ) (string, error) {
 	c.logger.Infof("Creating/retrieving Stripe Customer for: %s (%s)", customerID, email)
-
 	// Search for existing customer by metadata
+	// customerID is validated as UUID above, so it's safe to use in query
 	searchParams := &stripe.CustomerSearchParams{
 		SearchParams: stripe.SearchParams{
-			Query: fmt.Sprintf("metadata['customer_id']:'%s'", customerID),
+			Query:   fmt.Sprintf("metadata['customer_id']:'%s'", customerID),
+			Context: ctx,
 		},
 	}
 
@@ -377,6 +402,7 @@ func (c *stripeClient) CreateOrRetrieveCustomer(
 			"customer_id": customerID,
 		},
 	}
+	createParams.Context = ctx
 
 	cust, err := customer.New(createParams)
 	if err != nil {

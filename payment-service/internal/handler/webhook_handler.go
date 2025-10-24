@@ -65,11 +65,8 @@ func (h *WebhookHandler) HandleStripeWebhook(c echo.Context) error {
 	// Process webhook event (signature verification happens inside)
 	if err = h.webhookService.HandleStripeWebhook(ctx, payload, signature); err != nil {
 		h.logger.Errorf("Error processing webhook: %v", err)
-		// Return 400 for signature verification errors, 500 for processing errors
+
 		statusCode := http.StatusInternalServerError
-		if err.Error() == "invalid webhook signature" {
-			statusCode = http.StatusBadRequest
-		}
 
 		return c.JSON(statusCode, map[string]string{
 			"error": err.Error(),

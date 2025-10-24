@@ -1,5 +1,7 @@
-// Package constant defines error messages used throughout the payment service.
+// Package constant defines error messages and sentinel errors used throughout the payment service.
 package constant
+
+import "errors"
 
 const (
 	// FailedToPingDatabase indicates an error when the database connection cannot be established.
@@ -25,4 +27,17 @@ const (
 	ProductNotFoundErrorMessage = "product not found"
 	// InsufficientProductStockErrorMessage is the message returned when there is insufficient product stock.
 	InsufficientProductStockErrorMessage = "insufficient product stock"
+)
+
+// Sentinel errors for robust error checking.
+// These should be used with errors.Is() instead of string comparison.
+var (
+	// ErrPaymentNotFound is returned when a payment cannot be found.
+	ErrPaymentNotFound = errors.New(PaymentNotFoundErrorMessage)
+	// ErrInboxEventNotFound is returned when an inbox event cannot be found.
+	ErrInboxEventNotFound = errors.New(InboxEventNotFoundErrorMessage)
+	// ErrOutboxEventNotFound is returned when an outbox event cannot be found.
+	ErrOutboxEventNotFound = errors.New(OutboxEventNotFoundErrorMessage)
+	// ErrInvalidWebhookSignature is returned when webhook signature verification fails.
+	ErrInvalidWebhookSignature = errors.New("invalid webhook signature")
 )
