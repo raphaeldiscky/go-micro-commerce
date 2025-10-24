@@ -30,22 +30,6 @@ const (
 	PaymentGatewayMock PaymentGateway = "mock"
 )
 
-// BankTransferStatus represents the status of a bank transfer.
-type BankTransferStatus string
-
-const (
-	// BankTransferStatusPending indicates the transfer is pending.
-	BankTransferStatusPending BankTransferStatus = "pending"
-	// BankTransferStatusProcessing indicates the transfer is being processed.
-	BankTransferStatusProcessing BankTransferStatus = "processing"
-	// BankTransferStatusCompleted indicates the transfer is completed.
-	BankTransferStatusCompleted BankTransferStatus = "completed"
-	// BankTransferStatusFailed indicates the transfer failed.
-	BankTransferStatusFailed BankTransferStatus = "failed"
-	// BankTransferStatusCancelled indicates the transfer was canceled.
-	BankTransferStatusCancelled BankTransferStatus = "canceled"
-)
-
 // PaymentGatewayStatus represents the status of a payment gateway transaction.
 type PaymentGatewayStatus string
 
@@ -62,18 +46,6 @@ const (
 	PaymentGatewayStatusCanceled PaymentGatewayStatus = "canceled"
 	// PaymentGatewayStatusRequiresAction indicates the payment requires additional action.
 	PaymentGatewayStatusRequiresAction PaymentGatewayStatus = "requires_action"
-)
-
-// DigitalWalletType represents different digital wallet types.
-type DigitalWalletType string
-
-const (
-	// DigitalWalletTypeApplePay represents Apple Pay.
-	DigitalWalletTypeApplePay DigitalWalletType = "apple_pay"
-	// DigitalWalletTypeGooglePay represents Google Pay.
-	DigitalWalletTypeGooglePay DigitalWalletType = "google_pay"
-	// DigitalWalletTypePayPal represents PayPal.
-	DigitalWalletTypePayPal DigitalWalletType = "paypal"
 )
 
 // PaymentActionType represents types of actions required for payment completion.
