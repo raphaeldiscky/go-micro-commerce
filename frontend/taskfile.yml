@@ -21,6 +21,11 @@ tasks:
     cmds:
       - npm run lint
 
+  knip:
+    desc: Run knip
+    cmds:
+      - pnpm knip
+
   format:
     desc: Run formatters
     cmds:
