@@ -21,6 +21,3 @@ export const graphClient = new GraphQLClient(env.VITE_GRAPHQL_GATEWAY_URL, {
     }
   },
 })
-
-// Alias for backward compatibility
-export const graphAuthClient = graphClient

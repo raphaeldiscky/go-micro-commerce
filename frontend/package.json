@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "check": "prettier --write . && eslint --fix",
     "codegen": "graphql-codegen --config codegen.ts && pnpm lint && pnpm format",
-    "codegen:watch": "graphql-codegen --watch --config codegen.ts"
+    "codegen:watch": "graphql-codegen --watch --config codegen.ts",
+    "knip": "knip"
   },
   "dependencies": {
     "@bufbuild/protobuf": "2.9.0",
@@ -79,6 +80,7 @@
     "eslint": "9.37.0",
     "eslint-plugin-perfectionist": "4.15.0",
     "jsdom": "27.0.0",
+    "knip": "^5.66.2",
     "prettier": "3.6.2",
     "typescript": "5.9.2",
     "vite": "7.1.7",
