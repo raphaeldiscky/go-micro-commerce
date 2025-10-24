@@ -37,10 +37,11 @@ func MapToCheckoutSessionItemResponses(
 	for i := range items {
 		item := &items[i]
 		responses = append(responses, dto.CheckoutSessionItemResponse{
-			ID:        item.ID,
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-			UnitPrice: item.UnitPrice,
+			ID:          item.ID,
+			ProductID:   item.ProductID,
+			ProductName: item.ProductName,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice,
 		})
 	}
 
@@ -70,9 +71,10 @@ func MapCheckoutSessionItemsToPayload(
 	for i := range items {
 		item := &items[i]
 		payloadItems[i] = kafkaevent.CheckoutItemPayload{
-			ProductID: item.ProductID,
-			Quantity:  item.Quantity,
-			UnitPrice: item.UnitPrice,
+			ProductID:   item.ProductID,
+			ProductName: item.ProductName,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice,
 		}
 	}
 

@@ -34,10 +34,11 @@ type CheckoutSession struct {
 // CheckoutSessionItem represents an item in a checkout session.
 // Uses UUIDv7 for id, which provides natural chronological ordering.
 type CheckoutSessionItem struct {
-	ID        uuid.UUID
-	ProductID uuid.UUID
-	Quantity  int64
-	UnitPrice decimal.Decimal
+	ID          uuid.UUID
+	ProductID   uuid.UUID
+	ProductName string
+	Quantity    int64
+	UnitPrice   decimal.Decimal
 }
 
 // NewCheckoutSession creates a new checkout session with validation.
@@ -83,6 +84,7 @@ func NewCheckoutSession(
 // NewCheckoutSessionItem creates a new checkout session item with validation.
 func NewCheckoutSessionItem(
 	productID uuid.UUID,
+	productName string,
 	quantity int64,
 	unitPrice decimal.Decimal,
 ) (*CheckoutSessionItem, error) {
@@ -99,10 +101,11 @@ func NewCheckoutSessionItem(
 	}
 
 	return &CheckoutSessionItem{
-		ID:        uuid.New(),
-		ProductID: productID,
-		Quantity:  quantity,
-		UnitPrice: unitPrice,
+		ID:          uuid.New(),
+		ProductID:   productID,
+		ProductName: productName,
+		Quantity:    quantity,
+		UnitPrice:   unitPrice,
 	}, nil
 }
 

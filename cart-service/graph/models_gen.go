@@ -54,10 +54,11 @@ type CheckoutSession struct {
 }
 
 type CheckoutSessionItem struct {
-	ID        uuid.UUID       `json:"id"`
-	ProductID uuid.UUID       `json:"productId"`
-	Quantity  int             `json:"quantity"`
-	UnitPrice decimal.Decimal `json:"unitPrice"`
+	ID          uuid.UUID       `json:"id"`
+	ProductID   uuid.UUID       `json:"productId"`
+	ProductName string          `json:"productName"`
+	Quantity    int             `json:"quantity"`
+	UnitPrice   decimal.Decimal `json:"unitPrice"`
 }
 
 type CreateCheckoutSessionInput struct {

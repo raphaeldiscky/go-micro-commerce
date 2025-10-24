@@ -15,17 +15,16 @@ import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCheck, Package, ShoppingBag } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
+import { toast } from 'sonner'
 import { CartItemRow } from './CartItemRow'
 
 export function CartDrawer() {
   const { isDrawerOpen, closeDrawer, selectAll, deselectAll, fetchCart } =
     useCartStore()
-
-  // Get raw state with shallow comparison
-  const { items: cartItems, productsMap } = useCartData()
+  const { cart, productsMap } = useCartData()
   const totalItemCount = useCartItemCount()
+  const cartItems = cart?.items || []
 
-  // Transform in useMemo - only recalculates when dependencies change
   const items = useMemo(() => {
     return cartItems.map((item) => ({
       ...item,
@@ -73,17 +72,19 @@ export function CartDrawer() {
   }
 
   const handleCheckout = async () => {
-    if (selectedItems.length === 0) {
+    if (selectedItems.length === 0 || !cart?.id) {
+      toast.error('Invalid cart data')
       return
     }
 
     try {
-      await createCheckoutSession((checkoutId) => {
+      await createCheckoutSession(cart.id, (checkoutId) => {
         // Force refresh cart before navigating to checkout page
         // This bypasses cache to ensure cart state is in sync with checkout session
         fetchCart(true).finally(() => {
           navigate({ to: PATH.checkout.detail(checkoutId) })
         })
+        closeDrawer()
       })
     } catch (error) {
       // Error is already handled by the store with toast

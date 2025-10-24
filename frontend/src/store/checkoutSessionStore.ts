@@ -11,7 +11,7 @@ import type {
   PlaceOrderMutation,
 } from '@/lib/graphql/checkout.generated'
 import { graphClient } from '@/lib/graphql/client'
-import type { Address } from '@/types/__generated__/graphql'
+import type { Address, CheckoutSession } from '@/types/__generated__/graphql'
 import type {
   OrderSummary,
   PaymentGatewayUI,
@@ -22,11 +22,6 @@ import { toast } from 'sonner'
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 import { useShallow } from 'zustand/react/shallow'
-
-// Extract CheckoutSession type from GraphQL
-type CheckoutSession = NonNullable<
-  GetCheckoutSessionQuery['getCheckoutSession']
->
 
 // Checkout session store state interface
 export interface CheckoutSessionState {
@@ -50,6 +45,7 @@ export interface CheckoutSessionActions {
   // Checkout session management
   fetchCheckoutSession: (sessionId: string) => Promise<void>
   createCheckoutSession: (
+    cartId: string,
     navigateToCheckout: (checkoutId: string) => void,
   ) => Promise<void>
   cancelCheckout: (sessionId: string) => Promise<void>
@@ -90,9 +86,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         selectedShippingOption: null,
         selectedPaymentMethodData: null,
         selectedPaymentGatewayData: null,
-        checkoutData: {
-          orderNote: '',
-        },
+        orderNote: '',
 
         // Checkout session management
         fetchCheckoutSession: async (sessionId: string) => {
@@ -121,6 +115,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         },
 
         createCheckoutSession: async (
+          cartId: string,
           navigateToCheckout: (checkoutId: string) => void,
         ) => {
           set({ isLoading: true })
@@ -133,6 +128,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 {
                   input: {
                     idempotencyKey: crypto.randomUUID(),
+                    cartId,
                   },
                 },
               )
@@ -298,9 +294,12 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           const state = get()
           const shipping = state.selectedShippingOption?.price || 0
 
-          // Note: Subtotal calculation requires product prices
-          // This should be provided by the backend in the checkout session
-          const subtotal = 0
+          const items = state.checkoutSession?.items || []
+
+          const subtotal = items.reduce(
+            (total, item) => total + Number(item.unitPrice) * item.quantity,
+            0,
+          )
           const total = subtotal + shipping
 
           return {

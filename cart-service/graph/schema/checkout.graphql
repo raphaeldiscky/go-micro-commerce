@@ -18,6 +18,7 @@ type CheckoutSession {
 type CheckoutSessionItem {
   id: UUID!
   productId: UUID!
+  productName: String!
   quantity: Int!
   unitPrice: Decimal!
 }

@@ -61,6 +61,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const location = useLocation()
     const currentPathname = location.pathname
     const isDashboard = currentPathname.startsWith(PATH_DASHBOARD.root)
+
     return (
       <AuthProvider>
         <NotificationProvider>

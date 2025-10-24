@@ -158,6 +158,7 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 			// Create checkout session item with product price
 			checkoutItem, errItem := entity.NewCheckoutSessionItem(
 				cartItem.ProductID,
+				product.Name,
 				cartItem.Quantity,
 				product.UnitPrice,
 			)

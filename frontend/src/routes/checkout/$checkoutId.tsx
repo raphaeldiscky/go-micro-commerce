@@ -14,8 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
 import { fCurrency } from '@/lib/utils/number'
-import { useCartData } from '@/store/cartStore'
-import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
+import {
+  useCheckoutSession,
+  useCheckoutSessionStore,
+} from '@/store/checkoutSessionStore'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircle,
@@ -45,18 +47,9 @@ function RouteComponent() {
     fetchCheckoutSession,
   } = useCheckoutSessionStore()
 
-  // Get raw state with shallow comparison
-  const { items: cartItems, productsMap } = useCartData()
-
-  // Transform in useMemo - only recalculates when dependencies change
-  const selectedItems = useMemo(() => {
-    return cartItems
-      .map((item) => ({
-        ...item,
-        product: productsMap.get(item.productId),
-      }))
-      .filter((item) => item.selectedForCheckout)
-  }, [cartItems, productsMap])
+  console.log('====CHECKOUT DATA====', checkoutSession)
+  const data = useCheckoutSession()
+  const checkoutItems = data?.items ?? []
 
   // Fetch checkout session on mount or when checkoutId changes
   useEffect(() => {
@@ -75,7 +68,7 @@ function RouteComponent() {
 
   // Check if checkout is ready
   const isCheckoutReady =
-    selectedItems.length > 0 &&
+    checkoutItems.length > 0 &&
     selectedAddress &&
     selectedShippingOption &&
     selectedPaymentMethod &&
@@ -166,17 +159,17 @@ function RouteComponent() {
       {/* Header */}
       <div className="border-b bg-white">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToCart}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Cart
+          </Button>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToCart}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Cart
-              </Button>
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">Checkout</h1>
                 <p className="text-sm text-muted-foreground">
@@ -198,8 +191,8 @@ function RouteComponent() {
                 {checkoutSession.status}
               </Badge>
               <div className="text-sm text-muted-foreground">
-                {selectedItems.length}{' '}
-                {selectedItems.length === 1 ? 'item' : 'items'}
+                {checkoutItems.length}{' '}
+                {checkoutItems.length === 1 ? 'item' : 'items'}
               </div>
             </div>
           </div>
@@ -325,7 +318,7 @@ function RouteComponent() {
 
       {/* Main Content */}
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
-        {selectedItems.length === 0 ? (
+        {checkoutItems.length === 0 ? (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>No Items Selected</AlertTitle>
@@ -379,10 +372,9 @@ function RouteComponent() {
                       <>
                         Place Order •{' '}
                         {fCurrency(
-                          selectedItems.reduce(
+                          checkoutItems.reduce(
                             (total, item) =>
-                              total +
-                              (item.product?.price ?? 0) * item.quantity,
+                              total + Number(item.unitPrice) * item.quantity,
                             0,
                           ) + (selectedShippingOption?.price || 0),
                         )}

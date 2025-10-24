@@ -22,9 +22,10 @@ type CheckoutSessionOrderPlacedPayload struct {
 
 // CheckoutItemPayload holds the data for the checkout session item.
 type CheckoutItemPayload struct {
-	ProductID uuid.UUID       `json:"product_id"`
-	Quantity  int64           `json:"quantity"`
-	UnitPrice decimal.Decimal `json:"unit_price"`
+	ProductID   uuid.UUID       `json:"product_id"`
+	ProductName string          `json:"product_name"`
+	Quantity    int64           `json:"quantity"`
+	UnitPrice   decimal.Decimal `json:"unit_price"`
 }
 
 // CheckoutSessionCanceledPayload holds the data for the checkout session canceled event.

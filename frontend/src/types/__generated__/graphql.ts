@@ -131,6 +131,7 @@ export type CheckoutSessionItem = {
   __typename?: 'CheckoutSessionItem'
   id: Scalars['UUID']['output']
   productId: Scalars['UUID']['output']
+  productName: Scalars['String']['output']
   quantity: Scalars['Int']['output']
   unitPrice: Scalars['Decimal']['output']
 }
