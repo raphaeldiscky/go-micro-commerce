@@ -200,7 +200,6 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 			CustomerID:    evt.Payload.CustomerID,
 			Amount:        savedPayment.Amount,
 			Currency:      savedPayment.Currency,
-			PaymentMethod: savedPayment.PaymentMethod,
 			ExpiresAt:     savedPayment.ExpiresAt, // 24-hour payment window expiry
 		}
 

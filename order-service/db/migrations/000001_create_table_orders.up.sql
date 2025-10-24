@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS orders (
     customer_id UUID NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     payment_gateway VARCHAR(50) NOT NULL,
-    payment_method VARCHAR(50) NOT NULL,
     currency VARCHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
     shipping_cost DECIMAL(10, 2) NOT NULL CHECK (shipping_cost >= 0), -- generated from fulfillment-service
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0), -- SUM(unit_price * quantity) for all items

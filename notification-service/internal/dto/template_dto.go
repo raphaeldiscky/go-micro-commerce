@@ -101,7 +101,6 @@ type OrderPaymentExpiredTemplateData struct {
 type PaymentConfirmedTemplateData struct {
 	RecipientName string `json:"recipient_name"`
 	Amount        string `json:"amount,omitempty"`
-	PaymentMethod string `json:"payment_method,omitempty"`
 }
 
 // GenericTemplateData represents data for generic email template.

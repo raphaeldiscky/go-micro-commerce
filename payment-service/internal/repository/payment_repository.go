@@ -53,11 +53,11 @@ func (r *paymentRepositoryPostgres) Create(
 ) (*entity.Payment, error) {
 	query := `
 		INSERT INTO payments (
-			id, order_id, amount, currency, status, payment_method,
+			id, order_id, amount, currency, status,
 			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-		RETURNING id, order_id, amount, currency, status, payment_method,
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		RETURNING id, order_id, amount, currency, status,
 			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 	`
@@ -70,7 +70,6 @@ func (r *paymentRepositoryPostgres) Create(
 		payment.Amount,
 		payment.Currency,
 		payment.Status,
-		payment.PaymentMethod,
 		payment.PaymentGateway,
 		payment.GatewayTransactionID,
 		payment.GatewayMetadata,
@@ -89,7 +88,6 @@ func (r *paymentRepositoryPostgres) Create(
 		&createdPayment.Amount,
 		&createdPayment.Currency,
 		&createdPayment.Status,
-		&createdPayment.PaymentMethod,
 		&createdPayment.PaymentGateway,
 		&createdPayment.GatewayTransactionID,
 		&createdPayment.GatewayMetadata,
@@ -112,7 +110,7 @@ func (r *paymentRepositoryPostgres) FindByID(
 	id uuid.UUID,
 ) (*entity.Payment, error) {
 	query := `
-		SELECT id, order_id, amount, currency, status, payment_method,
+		SELECT id, order_id, amount, currency, status,
 			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
@@ -129,7 +127,6 @@ func (r *paymentRepositoryPostgres) FindByID(
 		&payment.Amount,
 		&payment.Currency,
 		&payment.Status,
-		&payment.PaymentMethod,
 		&payment.PaymentGateway,
 		&payment.GatewayTransactionID,
 		&payment.GatewayMetadata,
@@ -156,7 +153,7 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 	orderID uuid.UUID,
 ) (*entity.Payment, error) {
 	query := `
-		SELECT id, order_id, amount, currency, status, payment_method,
+		SELECT id, order_id, amount, currency, status,
 			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
@@ -173,7 +170,6 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 		&payment.Amount,
 		&payment.Currency,
 		&payment.Status,
-		&payment.PaymentMethod,
 		&payment.PaymentGateway,
 		&payment.GatewayTransactionID,
 		&payment.GatewayMetadata,
@@ -205,16 +201,15 @@ func (r *paymentRepositoryPostgres) Update(
 			amount = $3,
 			currency = $4,
 			status = $5,
-			payment_method = $6,
-			payment_gateway = $7,
-			gateway_transaction_id = $8,
-			gateway_metadata = $9,
-			updated_at = $10,
-			completed_at = $11,
-			failed_at = $12,
-			expires_at = $13
+			payment_gateway = $6,
+			gateway_transaction_id = $7,
+			gateway_metadata = $8,
+			updated_at = $9,
+			completed_at = $10,
+			failed_at = $11,
+			expires_at = $12
 		WHERE id = $1
-		RETURNING id, order_id, amount, currency, status, payment_method,
+		RETURNING id, order_id, amount, currency, status,
 			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 	`
@@ -227,7 +222,6 @@ func (r *paymentRepositoryPostgres) Update(
 		payment.Amount,
 		payment.Currency,
 		payment.Status,
-		payment.PaymentMethod,
 		payment.PaymentGateway,
 		payment.GatewayTransactionID,
 		payment.GatewayMetadata,
@@ -245,7 +239,6 @@ func (r *paymentRepositoryPostgres) Update(
 		&updatedPayment.Amount,
 		&updatedPayment.Currency,
 		&updatedPayment.Status,
-		&updatedPayment.PaymentMethod,
 		&updatedPayment.PaymentGateway,
 		&updatedPayment.GatewayTransactionID,
 		&updatedPayment.GatewayMetadata,
@@ -300,7 +293,7 @@ func (r *paymentRepositoryPostgres) FindExpiredPayments(
 	limit int,
 ) ([]*entity.Payment, error) {
 	query := `
-		SELECT id, order_id, amount, currency, status, payment_method,
+		SELECT id, order_id, amount, currency, status,
 			payment_gateway, gateway_transaction_id, gateway_metadata,
 			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
@@ -328,7 +321,6 @@ func (r *paymentRepositoryPostgres) FindExpiredPayments(
 			&payment.Amount,
 			&payment.Currency,
 			&payment.Status,
-			&payment.PaymentMethod,
 			&payment.PaymentGateway,
 			&payment.GatewayTransactionID,
 			&payment.GatewayMetadata,

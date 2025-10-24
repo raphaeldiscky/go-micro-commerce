@@ -31,7 +31,6 @@ function useMockPaymentDetails(paymentId: string) {
       amount: 359.97,
       currency: 'USD',
       paymentStatus: 'pending' as const,
-      paymentMethod: 'card',
       paymentGateway: 'stripe',
       paymentDeadline: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(),
       order: {
@@ -284,10 +283,6 @@ function RouteComponent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Method</span>
-                    <span className="capitalize">{payment.paymentMethod}</span>
-                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Gateway</span>
                     <span className="capitalize">{payment.paymentGateway}</span>

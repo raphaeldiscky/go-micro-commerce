@@ -23,7 +23,6 @@ type Payment struct {
 	ExpiresAt            *time.Time // 24-hour payment window expiry
 	Currency             string
 	Status               constant.PaymentStatus
-	PaymentMethod        constant.PaymentMethod
 	Amount               decimal.Decimal
 	ID                   uuid.UUID
 	OrderID              uuid.UUID
@@ -236,9 +235,6 @@ func (p *Payment) validate() error {
 	if p.CreatedAt.After(p.UpdatedAt) {
 		return errors.New("created_at must be before or equal to updated_at")
 	}
-
-	// Status validation is handled by database constraints
-	// PaymentMethod validation is handled by database constraints
 
 	return nil
 }

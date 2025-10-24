@@ -12,21 +12,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 )
 
-// MapStringToPaymentMethod converts a string to a PaymentMethod.
-func MapStringToPaymentMethod(s string) (constant.PaymentMethod, error) {
-	constants := []constant.PaymentMethod{
-		constant.PaymentMethodCard,
-	}
-
-	for _, c := range constants {
-		if strings.EqualFold(s, string(c)) {
-			return c, nil
-		}
-	}
-
-	return "", fmt.Errorf("invalid payment method: %s", s)
-}
-
 // MapStringToPaymentGateway converts a string to a PaymentGateway.
 func MapStringToPaymentGateway(s string) (constant.PaymentGateway, error) {
 	gateways := []constant.PaymentGateway{

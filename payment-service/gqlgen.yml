@@ -45,8 +45,6 @@ models:
   # Map enums to existing constants
   paymentStatus:
     model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.paymentStatus
-  PaymentMethod:
-    model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.PaymentMethod
   PaymentGateway:
     model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.PaymentGateway
 

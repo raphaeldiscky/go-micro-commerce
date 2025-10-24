@@ -76,11 +76,9 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         isLoading: false,
         selectedAddressId: null,
         selectedCarrierId: null,
-        selectedPaymentMethod: null,
         selectedPaymentGateway: null,
         selectedAddress: null,
         selectedShippingOption: null,
-        selectedPaymentMethodData: null,
         selectedPaymentGatewayData: null,
         orderNote: '',
 

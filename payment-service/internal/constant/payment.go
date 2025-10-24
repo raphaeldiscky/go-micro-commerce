@@ -20,14 +20,6 @@ const (
 	PaymentStatusRefunded PaymentStatus = "refunded"
 )
 
-// PaymentMethod represents the different payment methods available.
-type PaymentMethod string
-
-const (
-	// PaymentMethodCard represents the card payment method.
-	PaymentMethodCard PaymentMethod = "card"
-)
-
 // PaymentGateway represents the different payment gateways available.
 type PaymentGateway string
 
