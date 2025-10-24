@@ -1,6 +1,8 @@
 package dto
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -23,8 +25,10 @@ type PayOrderResponse struct {
 
 // PaymentResponse represents the response from payment service.
 type PaymentResponse struct {
-	PaymentID uuid.UUID              `json:"payment_id"`
-	Status    constant.PaymentStatus `json:"status"`
-	OrderID   uuid.UUID              `json:"order_id"`
-	Error     error                  `json:"error,omitempty"`
+	PaymentID    uuid.UUID              `json:"payment_id"`
+	Status       constant.PaymentStatus `json:"status"`
+	OrderID      uuid.UUID              `json:"order_id"`
+	ClientSecret *string                `json:"client_secret,omitempty"` // Stripe client secret for Payment Element
+	ExpiresAt    *time.Time             `json:"expires_at,omitempty"`    // 24-hour payment window expiry
+	Error        error                  `json:"error,omitempty"`
 }

@@ -20,6 +20,7 @@ type Payment struct {
 	GatewayResponse    map[string]any
 	CompletedAt        *time.Time
 	FailedAt           *time.Time
+	ExpiresAt          *time.Time // 24-hour payment window expiry
 	Currency           string
 	Status             constant.PaymentStatus
 	PaymentMethod      constant.PaymentMethod
@@ -31,6 +32,7 @@ type Payment struct {
 }
 
 // NewPayment creates a new payment with validation.
+// Sets 24-hour payment window by default.
 func NewPayment(
 	orderID uuid.UUID,
 	amount decimal.Decimal,
@@ -39,6 +41,7 @@ func NewPayment(
 	paymentGateway constant.PaymentGateway,
 ) (*Payment, error) {
 	now := time.Now()
+	expiresAt := now.Add(constant.PaymentExpiryDuration)
 	payment := &Payment{
 		ID:             uuid.New(),
 		OrderID:        orderID,
@@ -49,6 +52,7 @@ func NewPayment(
 		PaymentGateway: paymentGateway,
 		CreatedAt:      now,
 		UpdatedAt:      now,
+		ExpiresAt:      &expiresAt,
 	}
 
 	if err := payment.validate(); err != nil {
@@ -125,6 +129,21 @@ func (p *Payment) IsCompleted() bool {
 // IsFailed checks if payment has failed.
 func (p *Payment) IsFailed() bool {
 	return p.Status == constant.PaymentStatusFailed
+}
+
+// IsExpired checks if payment has exceeded the 24-hour window.
+func (p *Payment) IsExpired() bool {
+	if p.ExpiresAt == nil {
+		return false
+	}
+
+	return time.Now().After(*p.ExpiresAt)
+}
+
+// CanBeTimedOut checks if payment can be timed out.
+// Only pending payments that have expired can be timed out.
+func (p *Payment) CanBeTimedOut() bool {
+	return p.Status == constant.PaymentStatusPending && p.IsExpired()
 }
 
 // validate performs business rule validation.

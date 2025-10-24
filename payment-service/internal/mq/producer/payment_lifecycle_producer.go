@@ -34,6 +34,8 @@ func NewPaymentLifecycleEvent(
 	orderID uuid.UUID,
 	newStatus constant.PaymentStatus,
 	totalPrice decimal.Decimal,
+	clientSecret *string,
+	expiresAt *time.Time,
 ) *PaymentLifecycleEvent {
 	return &PaymentLifecycleEvent{
 		Metadata: kafkaevent.Metadata{ // Use the correct type from mq package
@@ -44,10 +46,12 @@ func NewPaymentLifecycleEvent(
 			Source:      pkgconstant.PaymentServiceName,
 		},
 		Payload: kafkaevent.PaymentLifecyclePayload{
-			PaymentID:  paymentID,
-			OrderID:    orderID,
-			Status:     string(newStatus),
-			TotalPrice: totalPrice,
+			PaymentID:    paymentID,
+			OrderID:      orderID,
+			Status:       string(newStatus),
+			TotalPrice:   totalPrice,
+			ClientSecret: clientSecret, // Stripe client secret for Payment Element
+			ExpiresAt:    expiresAt,    // 24-hour payment window expiry
 		},
 	}
 }

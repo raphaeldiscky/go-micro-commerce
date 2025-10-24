@@ -4,6 +4,7 @@ package stripe
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
@@ -59,16 +60,23 @@ func (c *stripeClient) ProcessPayment(
 	// Convert amount to smallest currency unit (cents for USD, yen for JPY, etc.)
 	amountInCents := req.Amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
 
+	metadata := map[string]string{
+		"transaction_id": req.TransactionID.String(),
+		"customer_id":    req.CustomerID.String(),
+	}
+
+	// Add expiry timestamp if provided for 24-hour payment window tracking
+	if req.ExpiresAt != nil {
+		metadata["expires_at"] = req.ExpiresAt.Format(time.RFC3339)
+	}
+
 	params := &stripe.PaymentIntentParams{
 		Amount:        stripe.Int64(amountInCents),
 		Currency:      stripe.String(req.Currency),
 		Description:   stripe.String(req.Description),
 		PaymentMethod: stripe.String(req.PaymentMethodID), // PM ID tokenized client-side
 		Confirm:       stripe.Bool(false),                 // Client confirms with Stripe.js
-		Metadata: map[string]string{
-			"transaction_id": req.TransactionID.String(),
-			"customer_id":    req.CustomerID.String(),
-		},
+		Metadata:      metadata,
 	}
 
 	// Set customer email for receipts

@@ -292,6 +292,8 @@ func (s *webhookService) updatePaymentStatus(
 			updatedPayment.OrderID,
 			updatedPayment.Status,
 			updatedPayment.Amount,
+			nil, // clientSecret not needed for webhook events
+			nil, // expiresAt not needed for webhook events
 		)
 
 		payload, errMarshal := json.Marshal(evt)

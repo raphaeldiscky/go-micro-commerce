@@ -1,11 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { fCurrency } from '@/lib/utils/number'
-import { useCheckoutOrderSummary } from '@/store/checkoutSessionStore'
+import {
+  useCheckoutOrderSummary,
+  useCheckoutSession,
+} from '@/store/checkoutSessionStore'
 import { Receipt, ShoppingCart, Truck } from 'lucide-react'
 
 export function OrderSummary() {
   const orderSummary = useCheckoutOrderSummary()
+  const data = useCheckoutSession()
 
   return (
     <Card>
@@ -38,7 +42,7 @@ export function OrderSummary() {
               {orderSummary.shipping === 0 ? (
                 <span className="text-green-600">FREE</span>
               ) : (
-                fCurrency(orderSummary.shipping)
+                fCurrency(orderSummary.shipping, data?.currency)
               )}
             </span>
           </div>

@@ -29,6 +29,9 @@ type PaymentRepository interface {
 
 	// FindByOrderID retrieves a payment by its order ID.
 	FindByOrderID(ctx context.Context, orderID uuid.UUID) (*entity.Payment, error)
+
+	// FindExpiredPayments finds all pending payments that have expired
+	FindExpiredPayments(ctx context.Context, limit int) ([]*entity.Payment, error)
 }
 
 // paymentRepositoryPostgres implements the ProductRepository interface for PostgreSQL.
@@ -53,12 +56,12 @@ func (r *paymentRepositoryPostgres) Create(
 			id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
 			payment_method_id, stripe_customer_id,
-			created_at, updated_at, completed_at, failed_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+			created_at, updated_at, completed_at, failed_at, expires_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		RETURNING id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
 			payment_method_id, stripe_customer_id,
-			created_at, updated_at, completed_at, failed_at
+			created_at, updated_at, completed_at, failed_at, expires_at
 	`
 
 	row := r.db.QueryRow(
@@ -79,6 +82,7 @@ func (r *paymentRepositoryPostgres) Create(
 		payment.UpdatedAt,
 		payment.CompletedAt,
 		payment.FailedAt,
+		payment.ExpiresAt,
 	)
 
 	var createdPayment entity.Payment
@@ -99,6 +103,7 @@ func (r *paymentRepositoryPostgres) Create(
 		&createdPayment.UpdatedAt,
 		&createdPayment.CompletedAt,
 		&createdPayment.FailedAt,
+		&createdPayment.ExpiresAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create payment: %w", err)
@@ -116,7 +121,7 @@ func (r *paymentRepositoryPostgres) FindByID(
 		SELECT id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
 			payment_method_id, stripe_customer_id,
-			created_at, updated_at, completed_at, failed_at
+			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
 		WHERE id = $1
 	`
@@ -141,6 +146,7 @@ func (r *paymentRepositoryPostgres) FindByID(
 		&payment.UpdatedAt,
 		&payment.CompletedAt,
 		&payment.FailedAt,
+		&payment.ExpiresAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -162,7 +168,7 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 		SELECT id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
 			payment_method_id, stripe_customer_id,
-			created_at, updated_at, completed_at, failed_at
+			created_at, updated_at, completed_at, failed_at, expires_at
 		FROM payments
 		WHERE order_id = $1
 	`
@@ -187,6 +193,7 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 		&payment.UpdatedAt,
 		&payment.CompletedAt,
 		&payment.FailedAt,
+		&payment.ExpiresAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -218,12 +225,13 @@ func (r *paymentRepositoryPostgres) Update(
 			stripe_customer_id = $11,
 			updated_at = $12,
 			completed_at = $13,
-			failed_at = $14
+			failed_at = $14,
+			expires_at = $15
 		WHERE id = $1
 		RETURNING id, order_id, amount, currency, status, payment_method,
 			payment_gateway, gateway_reference_id, gateway_response,
 			payment_method_id, stripe_customer_id,
-			created_at, updated_at, completed_at, failed_at
+			created_at, updated_at, completed_at, failed_at, expires_at
 	`
 
 	row := r.db.QueryRow(
@@ -243,6 +251,7 @@ func (r *paymentRepositoryPostgres) Update(
 		payment.UpdatedAt,
 		payment.CompletedAt,
 		payment.FailedAt,
+		payment.ExpiresAt,
 	)
 
 	var updatedPayment entity.Payment
@@ -263,6 +272,7 @@ func (r *paymentRepositoryPostgres) Update(
 		&updatedPayment.UpdatedAt,
 		&updatedPayment.CompletedAt,
 		&updatedPayment.FailedAt,
+		&updatedPayment.ExpiresAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -283,7 +293,7 @@ func (r *paymentRepositoryPostgres) UpdateStatus(
 ) error {
 	query := `
 		UPDATE payments
-		SET status = $2, 
+		SET status = $2,
 			updated_at = NOW(),
 			completed_at = CASE WHEN $2 = 'completed' THEN NOW() ELSE completed_at END,
 			failed_at = CASE WHEN $2 = 'failed' THEN NOW() ELSE failed_at END
@@ -300,4 +310,66 @@ func (r *paymentRepositoryPostgres) UpdateStatus(
 	}
 
 	return nil
+}
+
+// FindExpiredPayments finds all pending payments that have expired (past expires_at timestamp).
+// Used by the payment timeout job to automatically timeout expired payments.
+func (r *paymentRepositoryPostgres) FindExpiredPayments(
+	ctx context.Context,
+	limit int,
+) ([]*entity.Payment, error) {
+	query := `
+		SELECT id, order_id, amount, currency, status, payment_method,
+			payment_gateway, gateway_reference_id, gateway_response,
+			payment_method_id, stripe_customer_id,
+			created_at, updated_at, completed_at, failed_at, expires_at
+		FROM payments
+		WHERE status = 'pending'
+			AND expires_at IS NOT NULL
+			AND expires_at < NOW()
+		ORDER BY expires_at ASC
+		LIMIT $1
+	`
+
+	rows, err := r.db.Query(ctx, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query expired payments: %w", err)
+	}
+	defer rows.Close()
+
+	payments := make([]*entity.Payment, 0)
+
+	for rows.Next() {
+		var payment entity.Payment
+
+		scanErr := rows.Scan(
+			&payment.ID,
+			&payment.OrderID,
+			&payment.Amount,
+			&payment.Currency,
+			&payment.Status,
+			&payment.PaymentMethod,
+			&payment.PaymentGateway,
+			&payment.GatewayReferenceID,
+			&payment.GatewayResponse,
+			&payment.PaymentMethodID,
+			&payment.StripeCustomerID,
+			&payment.CreatedAt,
+			&payment.UpdatedAt,
+			&payment.CompletedAt,
+			&payment.FailedAt,
+			&payment.ExpiresAt,
+		)
+		if scanErr != nil {
+			return nil, fmt.Errorf("failed to scan payment: %w", scanErr)
+		}
+
+		payments = append(payments, &payment)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating payments: %w", err)
+	}
+
+	return payments, nil
 }

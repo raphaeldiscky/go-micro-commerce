@@ -12,7 +12,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
@@ -27,18 +29,21 @@ type PaymentRequestEvent struct {
 
 // PaymentRequestConsumer handles payment request events from order service.
 type PaymentRequestConsumer struct {
-	logger    logger.Logger
-	datastore repository.DataStore
+	logger                logger.Logger
+	datastore             repository.DataStore
+	paymentGatewayClients map[string]client.PaymentGatewayClient
 }
 
 // NewPaymentRequestConsumer creates a new consumer for payment request events.
 func NewPaymentRequestConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
+	paymentGatewayClients map[string]client.PaymentGatewayClient,
 ) *PaymentRequestConsumer {
 	return &PaymentRequestConsumer{
-		logger:    appLogger,
-		datastore: ds,
+		logger:                appLogger,
+		datastore:             ds,
+		paymentGatewayClients: paymentGatewayClients,
 	}
 }
 
@@ -185,12 +190,67 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		return fmt.Errorf("failed to save payment: %w", err)
 	}
 
+	// Create Stripe PaymentIntent immediately to get client_secret for 24h payment window
+	var clientSecret *string
+
+	//nolint:nestif // ignore for now
+	if gatewayClient, ok := c.paymentGatewayClients[string(savedPayment.PaymentGateway)]; ok {
+		c.logger.Infof(
+			"Creating PaymentIntent for payment %s with gateway %s",
+			savedPayment.ID,
+			savedPayment.PaymentGateway,
+		)
+
+		gatewayReq := &dto.PaymentGatewayRequest{
+			TransactionID: savedPayment.ID,
+			CustomerID:    evt.Payload.CustomerID,
+			Amount:        savedPayment.Amount,
+			Currency:      savedPayment.Currency,
+			PaymentMethod: savedPayment.PaymentMethod,
+			ExpiresAt:     savedPayment.ExpiresAt, // 24-hour payment window expiry
+		}
+
+		// Call payment gateway (Stripe) to create PaymentIntent
+		gwResp, gwErr := gatewayClient.ProcessPayment(ctx, gatewayReq)
+		if gwErr != nil {
+			c.logger.Errorf(
+				"Failed to create PaymentIntent for payment %s: %v",
+				savedPayment.ID,
+				gwErr,
+			)
+			// Continue anyway - frontend can retry or handle gracefully
+		} else {
+			clientSecret = gwResp.ClientSecret
+
+			c.logger.Infof("Successfully created PaymentIntent for payment %s with client_secret", savedPayment.ID)
+
+			// Update payment with gateway reference
+			if err = savedPayment.SetGatewayReference(
+				savedPayment.PaymentGateway,
+				gwResp.GatewayID,
+				gwResp.GatewayResponse,
+			); err != nil {
+				c.logger.Errorf("Failed to set gateway reference: %v", err)
+			} else {
+				// Save updated payment
+				savedPayment, err = paymentRepo.Update(ctx, savedPayment)
+				if err != nil {
+					c.logger.Errorf("Failed to update payment with gateway reference: %v", err)
+				}
+			}
+		}
+	} else {
+		c.logger.Warnf("Payment gateway client not found for %s", savedPayment.PaymentGateway)
+	}
+
 	// Create payment created event for the outbox
 	paymentCreatedEvt := producer.NewPaymentLifecycleEvent(
 		savedPayment.ID,
 		savedPayment.OrderID,
 		constant.PaymentStatusPending,
 		savedPayment.Amount,
+		clientSecret,           // Stripe client secret for Payment Element
+		savedPayment.ExpiresAt, // 24-hour payment window expiry
 	)
 
 	paymentCreatedPayload, err := sonic.Marshal(paymentCreatedEvt)

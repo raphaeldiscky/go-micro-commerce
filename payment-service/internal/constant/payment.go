@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 // PaymentStatus represents the status of a payment transaction.
 type PaymentStatus string
 
@@ -108,4 +110,10 @@ const (
 	RefundStatusFailed RefundStatus = "failed"
 	// RefundStatusCanceled indicates the refund was canceled.
 	RefundStatusCanceled RefundStatus = "canceled"
+)
+
+const (
+	// PaymentExpiryDuration is the default 24-hour payment window duration.
+	// Payments not completed within this time will be automatically timed out.
+	PaymentExpiryDuration = 24 * time.Hour
 )

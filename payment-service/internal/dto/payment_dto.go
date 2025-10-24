@@ -46,6 +46,7 @@ type PaymentResponse struct {
 	NextActionType     *string                 `json:"next_action_type,omitempty"`   // Type of action required
 	Amount             decimal.Decimal         `json:"amount"`
 	Currency           string                  `json:"currency"`
+	ExpiresAt          *time.Time              `json:"expires_at,omitempty"` // 24-hour payment window expiry
 	CompletedAt        *time.Time              `json:"completed_at,omitempty"`
 	FailedAt           *time.Time              `json:"failed_at,omitempty"`
 	CreatedAt          time.Time               `json:"created_at"`

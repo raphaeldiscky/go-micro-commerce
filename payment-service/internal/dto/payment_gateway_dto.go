@@ -30,6 +30,7 @@ type PaymentGatewayRequest struct {
 	Description     string                 `json:"description,omitempty"`
 	CustomerEmail   string                 `json:"customer_email"`
 	IdempotencyKey  string                 `json:"idempotency_key"`
+	ExpiresAt       *time.Time             `json:"expires_at,omitempty"` // 24-hour payment window expiry
 	TransactionID   uuid.UUID              `json:"transaction_id"`
 	CustomerID      uuid.UUID              `json:"customer_id"`
 }

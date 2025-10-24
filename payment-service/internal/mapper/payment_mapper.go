@@ -56,6 +56,7 @@ func MapToPaymentResponse(payment *entity.Payment) *dto.PaymentResponse {
 		GatewayReferenceID: payment.GatewayReferenceID,
 		PaymentMethodID:    payment.PaymentMethodID,
 		StripeCustomerID:   payment.StripeCustomerID,
+		ExpiresAt:          payment.ExpiresAt,
 		CreatedAt:          payment.CreatedAt,
 		UpdatedAt:          payment.UpdatedAt,
 		CompletedAt:        payment.CompletedAt,

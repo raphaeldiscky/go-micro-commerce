@@ -14,6 +14,7 @@ type Config struct {
 	Consul          *ConsulConfig
 	OutboxPublisher *OutboxPublisherConfig
 	PaymentGateway  *PaymentGatewayConfig
+	Job             *JobConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -36,6 +37,7 @@ func LoadConfig() (*Config, error) {
 		Consul:          initConsulConfig(),
 		OutboxPublisher: initOutboxPublisherConfig(),
 		PaymentGateway:  initPaymentGatewayConfig(),
+		Job:             initJobConfig(),
 	}
 
 	return cfg, nil

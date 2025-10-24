@@ -109,6 +109,8 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 			processingErr = c.processPaymentFailed(ctx, ds, body)
 		case kafka.PaymentRefundedEventType:
 			processingErr = c.processPaymentRefunded(ctx, ds, body)
+		case kafka.PaymentTimeoutEventType:
+			processingErr = c.processPaymentTimeout(ctx, ds, body)
 		default:
 			c.logger.Warnf("ignoring unknown event type: %s", meta.Metadata.EventType)
 			// Mark as processed even for unknown events to avoid reprocessing
@@ -178,10 +180,12 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 	// Notify waiting saga about payment creation
 	if c.paymentClient != nil {
 		response := &dto.PaymentResponse{
-			PaymentID: evt.Payload.PaymentID,
-			Status:    constant.PaymentStatus(evt.Payload.Status),
-			OrderID:   evt.Payload.OrderID,
-			Error:     nil,
+			PaymentID:    evt.Payload.PaymentID,
+			Status:       constant.PaymentStatus(evt.Payload.Status),
+			OrderID:      evt.Payload.OrderID,
+			ClientSecret: evt.Payload.ClientSecret, // Pass Stripe client secret for Payment Element
+			ExpiresAt:    evt.Payload.ExpiresAt,    // Pass 24-hour payment window expiry
+			Error:        nil,
 		}
 		c.paymentClient.NotifyWaitingSaga(response)
 	}
@@ -350,6 +354,56 @@ func (c *PaymentLifecycleConsumer) processPaymentRefunded(
 	}
 
 	c.logger.Infof("Order %s status updated to canceled due to refund", evt.Payload.OrderID)
+
+	return nil
+}
+
+// processPaymentTimeout handles payment timeout events.
+func (c *PaymentLifecycleConsumer) processPaymentTimeout(
+	ctx context.Context,
+	ds repository.DataStore,
+	body []byte,
+) error {
+	var evt PaymentLifecycleEvent
+	if err := json.Unmarshal(body, &evt); err != nil {
+		return fmt.Errorf("failed to unmarshal payment timeout event: %w", err)
+	}
+
+	c.logger.Infof("Handling payment timeout event for order ID: %s", evt.Payload.OrderID)
+
+	// Update order status to canceled due to payment timeout
+	orderRepo := ds.OrderRepository()
+
+	order, err := orderRepo.FindByID(ctx, evt.Payload.OrderID)
+	if err != nil {
+		if err.Error() == constant.OrderNotFoundErrorMessage {
+			return fmt.Errorf("order not found for payment timeout event: %s", evt.Payload.OrderID)
+		}
+
+		return fmt.Errorf("failed to get order: %w", err)
+	}
+
+	if order == nil {
+		c.logger.Warnf("Order not found for payment timeout event: %s", evt.Payload.OrderID)
+
+		return nil
+	}
+
+	// Only cancel if order is still waiting for payment
+	if order.Status == constant.OrderStatusPaymentPending ||
+		order.Status == constant.OrderStatusPending {
+		order.Status = constant.OrderStatusCanceled
+		if _, err = orderRepo.Update(ctx, order); err != nil {
+			return fmt.Errorf("failed to update order status: %w", err)
+		}
+
+		c.logger.Infof(
+			"Order %s status updated to canceled due to payment timeout (24h expiry)",
+			evt.Payload.OrderID,
+		)
+	} else {
+		c.logger.Infof("Order %s is in status %s, skipping cancellation", evt.Payload.OrderID, order.Status)
+	}
 
 	return nil
 }

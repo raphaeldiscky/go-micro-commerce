@@ -148,6 +148,8 @@ func (s *paymentService) CreatePayment(
 			savedPayment.OrderID,
 			constant.PaymentStatusPending,
 			savedPayment.Amount,
+			nil,                    // clientSecret - not created yet for direct API call
+			savedPayment.ExpiresAt, // 24-hour payment window expiry
 		)
 
 		payload, err := json.Marshal(evt)
@@ -292,6 +294,8 @@ func (s *paymentService) ProcessPayment(
 			updatedPayment.OrderID,
 			updatedPayment.Status,
 			updatedPayment.Amount,
+			nil, // clientSecret not needed for processing event
+			nil, // expiresAt not needed for processing event
 		)
 
 		payload, errMarshal := json.Marshal(evt)
@@ -387,6 +391,7 @@ func (s *paymentService) processWithPaymentGateway(
 		CustomerID:      req.CustomerID,
 		CustomerEmail:   req.CustomerEmail,
 		IdempotencyKey:  req.IdempotencyKey.String(),
+		ExpiresAt:       payment.ExpiresAt, // 24-hour payment window expiry
 	}
 
 	return gatewayClient.ProcessPayment(ctx, paymentRequest)
@@ -443,6 +448,8 @@ func (s *paymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) 
 			updatedPayment.OrderID,
 			constant.PaymentStatusTimeout,
 			updatedPayment.Amount,
+			nil, // clientSecret not needed for timeout event
+			nil, // expiresAt not needed for timeout event
 		)
 
 		payload, err := json.Marshal(evt)
@@ -613,6 +620,8 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 				payment.OrderID,
 				constant.PaymentStatusFailed,
 				payment.Amount,
+				nil, // clientSecret not needed for failed event
+				nil, // expiresAt not needed for failed event
 			)
 
 			payload, err := json.Marshal(evt)
@@ -693,6 +702,8 @@ func (s *paymentService) ChargeStoredPaymentMethod(
 			updatedPayment.OrderID,
 			updatedPayment.Status,
 			updatedPayment.Amount,
+			nil, // clientSecret not needed for charge event
+			nil, // expiresAt not needed for charge event
 		)
 
 		payload, errMarshal := json.Marshal(evt)
