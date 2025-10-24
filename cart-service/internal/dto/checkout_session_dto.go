@@ -51,29 +51,3 @@ type CheckoutSessionResponse struct {
 	CreatedAt      time.Time                      `json:"created_at"`
 	UpdatedAt      time.Time                      `json:"updated_at"`
 }
-
-// UpdatePaymentRequest represents the request to update payment method for a checkout session.
-type UpdatePaymentRequest struct {
-	CustomerID        uuid.UUID // from context or header
-	CheckoutSessionID uuid.UUID // from URL param
-	PaymentMethod     string    `json:"payment_method"  validate:"required"`
-	PaymentGateway    string    `json:"payment_gateway" validate:"required"`
-}
-
-// UpdatePaymentResponse represents the response to update payment method for a checkout session.
-type UpdatePaymentResponse struct {
-	PaymentGateway constant.PaymentGateway `json:"payment_gateway"`
-	PaymentMethod  constant.PaymentMethod  `json:"payment_method"`
-}
-
-// UpdateCarrierRequest represents the request to update carrier for a checkout session.
-type UpdateCarrierRequest struct {
-	CustomerID        uuid.UUID // from context or header
-	CheckoutSessionID uuid.UUID // from URL param
-	CarrierID         string    `json:"carrier_id" validate:"required"`
-}
-
-// UpdateCarrierResponse represents the response to update carrier for a checkout session.
-type UpdateCarrierResponse struct {
-	ShippingCost decimal.Decimal `json:"shipping_cost"`
-}
