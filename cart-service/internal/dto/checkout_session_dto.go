@@ -29,10 +29,11 @@ type PlaceOrderRequest struct {
 
 // CheckoutSessionItemResponse represents a checkout session item in API responses.
 type CheckoutSessionItemResponse struct {
-	ID        uuid.UUID       `json:"id"`
-	ProductID uuid.UUID       `json:"product_id"`
-	Quantity  int64           `json:"quantity"`
-	UnitPrice decimal.Decimal `json:"unit_price"`
+	ID          uuid.UUID       `json:"id"`
+	ProductID   uuid.UUID       `json:"product_id"`
+	ProductName string          `json:"product_name"`
+	Quantity    int64           `json:"quantity"`
+	UnitPrice   decimal.Decimal `json:"unit_price"`
 }
 
 // CheckoutSessionResponse represents a checkout session in API responses.

@@ -42,11 +42,10 @@ export type EnrichedCartItem = CartItem & {
   product?: Product
 }
 
-const EMPTY_CART_ITEMS: Array<CartItem> = []
-
 // Cart store state interface
 export interface CartState {
   cart: Cart | null
+  totalItemCount: number
   productsMap: Map<string, Product>
   isLoading: boolean
   isDrawerOpen: boolean
@@ -87,6 +86,7 @@ export const useCartStore = create<CartStore>()(
       (set, get) => ({
         // Initial state
         cart: null,
+        totalItemCount: 0,
         productsMap: new Map(),
         isLoading: false,
         isDrawerOpen: false,
@@ -143,6 +143,10 @@ export const useCartStore = create<CartStore>()(
 
                 set({
                   cart: data.getMyCart,
+                  totalItemCount: data.getMyCart?.items.reduce(
+                    (total, item) => total + item.quantity,
+                    0,
+                  ),
                   productsMap,
                   isLoading: false,
                   lastFetchedAt: Date.now(),
@@ -152,6 +156,10 @@ export const useCartStore = create<CartStore>()(
                 // Still set cart even if product fetch fails
                 set({
                   cart: data.getMyCart,
+                  totalItemCount: data.getMyCart?.items.reduce(
+                    (total, item) => total + item.quantity,
+                    0,
+                  ),
                   isLoading: false,
                   lastFetchedAt: Date.now(),
                 })
@@ -159,6 +167,7 @@ export const useCartStore = create<CartStore>()(
             } else {
               set({
                 cart: data.getMyCart,
+                totalItemCount: 0,
                 isLoading: false,
                 lastFetchedAt: Date.now(),
               })
@@ -423,7 +432,7 @@ export const useCart = () => useCartStore((state) => state.cart)
 
 // Simple selectors - return raw state, no transformations
 export const useCartItems = () =>
-  useCartStore((state) => state.cart?.items ?? EMPTY_CART_ITEMS)
+  useCartStore((state) => state.cart?.items || [])
 
 export const useProductsMap = () => useCartStore((state) => state.productsMap)
 
@@ -431,17 +440,14 @@ export const useProductsMap = () => useCartStore((state) => state.productsMap)
 export const useCartData = () =>
   useCartStore(
     useShallow((state) => ({
-      items: state.cart?.items ?? EMPTY_CART_ITEMS,
+      cart: state.cart,
       productsMap: state.productsMap,
     })),
   )
 
-export const useCartItemCount = () =>
+export const useCartItemCount = (): number =>
   useCartStore((state) =>
-    (state.cart?.items ?? EMPTY_CART_ITEMS).reduce(
-      (total, item) => total + item.quantity,
-      0,
-    ),
+    (state.cart?.items || []).reduce((total, item) => total + item.quantity, 0),
   )
 
 export const useIsCartDrawerOpen = () =>

@@ -1,24 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { useCartData } from '@/store/cartStore'
-import { useMemo } from 'react'
+import { useCheckoutSession } from '../../store/checkoutSessionStore'
 import { CheckoutItemRow } from './CheckoutItemRow'
 
 export function OrderReview() {
-  // Get raw state with shallow comparison
-  const { items: cartItems, productsMap } = useCartData()
+  const data = useCheckoutSession()
 
-  // Transform in useMemo - only recalculates when dependencies change
-  const selectedItems = useMemo(() => {
-    return cartItems
-      .map((item) => ({
-        ...item,
-        product: productsMap.get(item.productId),
-      }))
-      .filter((item) => item.selectedForCheckout)
-  }, [cartItems, productsMap])
+  const checkoutItems = data?.items ?? []
 
-  if (selectedItems.length === 0) {
+  if (checkoutItems.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -36,15 +25,12 @@ export function OrderReview() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Order Review ({selectedItems.length} items)</CardTitle>
+        <CardTitle>Order Review ({checkoutItems.length} items)</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {selectedItems.map((item) => (
+        {checkoutItems.map((item) => (
           <div key={item.id} className="space-y-2">
             <CheckoutItemRow item={item} />
-            {selectedItems.indexOf(item) < selectedItems.length - 1 && (
-              <Separator />
-            )}
           </div>
         ))}
       </CardContent>

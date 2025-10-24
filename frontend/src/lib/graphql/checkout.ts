@@ -18,7 +18,9 @@ export const GET_CHECKOUT_SESSION_QUERY = gql`
       items {
         id
         productId
+        productName
         quantity
+        unitPrice
       }
       createdAt
       updatedAt
@@ -44,6 +46,7 @@ export const CREATE_CHECKOUT_SESSION_MUTATION = gql`
       items {
         id
         productId
+        productName
         quantity
         unitPrice
       }
@@ -71,6 +74,7 @@ export const PLACE_ORDER_MUTATION = gql`
       items {
         id
         productId
+        productName
         quantity
         unitPrice
       }
@@ -98,6 +102,7 @@ export const CANCEL_CHECKOUT_SESSION_MUTATION = gql`
       items {
         id
         productId
+        productName
         quantity
         unitPrice
       }

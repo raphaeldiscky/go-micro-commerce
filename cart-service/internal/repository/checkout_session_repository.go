@@ -93,8 +93,8 @@ func (r *checkoutSessionRepository) Create(
 	// Insert checkout session items
 	if len(session.Items) > 0 {
 		const insertItemQuery = `
-            INSERT INTO checkout_session_items (id, checkout_session_id, product_id, quantity, unit_price)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO checkout_session_items (id, checkout_session_id, product_id, product_name, quantity, unit_price)
+            VALUES ($1, $2, $3, $4, $5, $6)
         `
 
 		for i := range len(session.Items) {
@@ -106,6 +106,7 @@ func (r *checkoutSessionRepository) Create(
 				item.ID,
 				createdSession.ID,
 				item.ProductID,
+				item.ProductName,
 				item.Quantity,
 				item.UnitPrice,
 			)
@@ -162,7 +163,7 @@ func (r *checkoutSessionRepository) GetByID(
 
 	// Get checkout session items
 	const itemsQuery = `
-		SELECT id, product_id, quantity, unit_price
+		SELECT id, product_id, product_name, quantity, unit_price
 		FROM checkout_session_items
 		WHERE checkout_session_id = $1
 		ORDER BY id ASC
@@ -182,6 +183,7 @@ func (r *checkoutSessionRepository) GetByID(
 		err = rows.Scan(
 			&item.ID,
 			&item.ProductID,
+			&item.ProductName,
 			&item.Quantity,
 			&item.UnitPrice,
 		)
@@ -243,7 +245,7 @@ func (r *checkoutSessionRepository) Update(
 
 	// Get checkout session items (items don't change in update)
 	const itemsQuery = `
-		SELECT id, product_id, quantity, unit_price
+		SELECT id, product_id, product_name, quantity, unit_price
 		FROM checkout_session_items
 		WHERE checkout_session_id = $1
 		ORDER BY id ASC
@@ -263,6 +265,7 @@ func (r *checkoutSessionRepository) Update(
 		err = rows.Scan(
 			&item.ID,
 			&item.ProductID,
+			&item.ProductName,
 			&item.Quantity,
 			&item.UnitPrice,
 		)

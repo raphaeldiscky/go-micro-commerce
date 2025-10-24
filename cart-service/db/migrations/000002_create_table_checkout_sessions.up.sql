@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS checkout_session_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     checkout_session_id UUID NOT NULL REFERENCES checkout_sessions (id) ON DELETE CASCADE,
     product_id UUID NOT NULL,
+    product_name TEXT NOT NULL,
     quantity BIGINT NOT NULL CHECK (quantity > 0),
     unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0) -- Price per unit
 );

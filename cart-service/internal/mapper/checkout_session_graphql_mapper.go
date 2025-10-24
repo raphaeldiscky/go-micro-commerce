@@ -37,10 +37,11 @@ func MapToGraphQLCheckoutSessionItemFromDTO(
 	item *dto.CheckoutSessionItemResponse,
 ) *graph.CheckoutSessionItem {
 	return &graph.CheckoutSessionItem{
-		ID:        item.ID,
-		ProductID: item.ProductID,
-		Quantity:  int(item.Quantity),
-		UnitPrice: item.UnitPrice,
+		ID:          item.ID,
+		ProductID:   item.ProductID,
+		ProductName: item.ProductName,
+		Quantity:    int(item.Quantity),
+		UnitPrice:   item.UnitPrice,
 	}
 }
 

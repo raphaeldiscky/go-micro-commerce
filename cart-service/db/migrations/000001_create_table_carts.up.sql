@@ -44,9 +44,6 @@ ON carts (customer_id, status);
 CREATE UNIQUE INDEX idx_unique_active_cart_per_customer
 ON carts (customer_id)
 WHERE status = 'active';
-CREATE UNIQUE INDEX idx_unique_checkedout_cart_per_customer
-ON carts (customer_id)
-WHERE status = 'checked_out';
 CREATE INDEX IF NOT EXISTS idx_cart_created_at ON carts (created_at);
 CREATE INDEX IF NOT EXISTS idx_cart_customer_id ON carts (customer_id);
 CREATE INDEX IF NOT EXISTS idx_fk_cart_item_cart_id ON cart_items (cart_id);

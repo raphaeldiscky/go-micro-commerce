@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react'
 
 export function AddressSelector() {
   const { selectedAddress, setAddress } = useCheckoutSessionStore()
-  const { data, isLoading } = useAddresses(10) // Fetch up to 10 addresses
+  const { data, isLoading } = useAddresses(10)
   const [_isAddingNew, setIsAddingNew] = useState(false)
 
   const addresses = data?.edges.map((edge) => edge.node) || []

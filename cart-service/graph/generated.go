@@ -89,10 +89,11 @@ type ComplexityRoot struct {
 	}
 
 	CheckoutSessionItem struct {
-		ID        func(childComplexity int) int
-		ProductID func(childComplexity int) int
-		Quantity  func(childComplexity int) int
-		UnitPrice func(childComplexity int) int
+		ID          func(childComplexity int) int
+		ProductID   func(childComplexity int) int
+		ProductName func(childComplexity int) int
+		Quantity    func(childComplexity int) int
+		UnitPrice   func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -314,6 +315,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.CheckoutSessionItem.ProductID(childComplexity), true
+	case "CheckoutSessionItem.productName":
+		if e.complexity.CheckoutSessionItem.ProductName == nil {
+			break
+		}
+
+		return e.complexity.CheckoutSessionItem.ProductName(childComplexity), true
 	case "CheckoutSessionItem.quantity":
 		if e.complexity.CheckoutSessionItem.Quantity == nil {
 			break
@@ -1486,6 +1493,8 @@ func (ec *executionContext) fieldContext_CheckoutSession_items(_ context.Context
 				return ec.fieldContext_CheckoutSessionItem_id(ctx, field)
 			case "productId":
 				return ec.fieldContext_CheckoutSessionItem_productId(ctx, field)
+			case "productName":
+				return ec.fieldContext_CheckoutSessionItem_productName(ctx, field)
 			case "quantity":
 				return ec.fieldContext_CheckoutSessionItem_quantity(ctx, field)
 			case "unitPrice":
@@ -1608,6 +1617,35 @@ func (ec *executionContext) fieldContext_CheckoutSessionItem_productId(_ context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type UUID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckoutSessionItem_productName(ctx context.Context, field graphql.CollectedField, obj *CheckoutSessionItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CheckoutSessionItem_productName,
+		func(ctx context.Context) (any, error) {
+			return obj.ProductName, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CheckoutSessionItem_productName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckoutSessionItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4353,6 +4391,11 @@ func (ec *executionContext) _CheckoutSessionItem(ctx context.Context, sel ast.Se
 			}
 		case "productId":
 			out.Values[i] = ec._CheckoutSessionItem_productId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "productName":
+			out.Values[i] = ec._CheckoutSessionItem_productName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
