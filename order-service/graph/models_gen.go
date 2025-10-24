@@ -59,6 +59,7 @@ type Order struct {
 	TotalTax       decimal.Decimal         `json:"totalTax"`
 	TotalDiscount  decimal.Decimal         `json:"totalDiscount"`
 	Items          []*OrderItem            `json:"items"`
+	Payment        *Payment                `json:"payment,omitempty"`
 	CreatedAt      time.Time               `json:"createdAt"`
 	UpdatedAt      time.Time               `json:"updatedAt"`
 }
@@ -93,6 +94,12 @@ type PageInfo struct {
 	StartCursor     *string `json:"startCursor,omitempty"`
 	EndCursor       *string `json:"endCursor,omitempty"`
 }
+
+type Payment struct {
+	OrderID uuid.UUID `json:"orderId"`
+}
+
+func (Payment) IsEntity() {}
 
 type Query struct {
 }

@@ -20,7 +20,11 @@ enum PaymentMethod {
 # PaymentGateway enum
 enum PaymentGateway {
   STRIPE
-  MOCK
+}
+
+# Payment type reference from payment-service (Federation)
+type Payment @key(fields: "orderId") {
+  orderId: UUID!
 }
 
 # Order entity
@@ -38,6 +42,7 @@ type Order {
   totalTax: Decimal!
   totalDiscount: Decimal!
   items: [OrderItem!]!
+  payment: Payment # Payment details from payment-service (includes clientSecret and expiresAt)
   createdAt: Time!
   updatedAt: Time!
 }

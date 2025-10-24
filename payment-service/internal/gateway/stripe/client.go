@@ -87,18 +87,12 @@ func (c *stripeClient) ProcessPayment(
 	// Set idempotency key for safe retries
 	params.IdempotencyKey = stripe.String(req.IdempotencyKey)
 
-	// Support multiple payment method types (cards, wallets, regional methods)
-	params.PaymentMethodTypes = stripe.StringSlice([]string{
-		"card",
-		"link",       // Stripe Link
-		"apple_pay",  // Apple Pay
-		"google_pay", // Google Pay
-	})
-
 	// Enable automatic payment methods based on customer's location and currency
+	// Stripe recommends NOT hardcoding payment_method_types - let Stripe choose
+	// optimal methods based on user's location, wallets, and preferences
 	params.AutomaticPaymentMethods = &stripe.PaymentIntentAutomaticPaymentMethodsParams{
 		Enabled:        stripe.Bool(true),
-		AllowRedirects: stripe.String("always"), // Allow redirect-based methods (iDEAL, etc.)
+		AllowRedirects: stripe.String("always"), // Allow redirect-based methods (iDEAL, SEPA, etc.)
 	}
 
 	// Create PaymentIntent (not confirmed yet - client will confirm)

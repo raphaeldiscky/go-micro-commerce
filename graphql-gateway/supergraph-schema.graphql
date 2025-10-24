@@ -228,6 +228,7 @@ input CreateOrderItemInput
 scalar Decimal
   @join__type(graph: CART_SERVICE)
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)
 
 type DeliveryReceipt
   @join__type(graph: CHAT_SERVICE)
@@ -264,6 +265,7 @@ enum join__Graph {
   CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
   NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
   ORDER_SERVICE @join__graph(name: "order-service", url: "http://host.docker.internal:8083/graph")
+  PAYMENT_SERVICE @join__graph(name: "payment-service", url: "http://host.docker.internal:8084/graph")
 }
 
 input JoinConversationInput
@@ -468,6 +470,7 @@ type Order
   totalTax: Decimal!
   totalDiscount: Decimal!
   items: [OrderItem!]!
+  payment: Payment
   createdAt: Time!
   updatedAt: Time!
 }
@@ -552,17 +555,48 @@ enum ParticipantRole
   MODERATOR @join__enumValue(graph: CHAT_SERVICE)
 }
 
+type Payment
+  @join__type(graph: ORDER_SERVICE, key: "orderId")
+  @join__type(graph: PAYMENT_SERVICE, key: "orderId")
+{
+  orderId: UUID!
+  id: UUID! @join__field(graph: PAYMENT_SERVICE)
+  amount: Decimal! @join__field(graph: PAYMENT_SERVICE)
+  currency: String! @join__field(graph: PAYMENT_SERVICE)
+  status: PaymentStatus! @join__field(graph: PAYMENT_SERVICE)
+  paymentMethod: PaymentMethod! @join__field(graph: PAYMENT_SERVICE)
+  paymentGateway: PaymentGateway! @join__field(graph: PAYMENT_SERVICE)
+  clientSecret: String @join__field(graph: PAYMENT_SERVICE)
+  expiresAt: Time @join__field(graph: PAYMENT_SERVICE)
+  createdAt: Time! @join__field(graph: PAYMENT_SERVICE)
+  updatedAt: Time! @join__field(graph: PAYMENT_SERVICE)
+  completedAt: Time @join__field(graph: PAYMENT_SERVICE)
+  failedAt: Time @join__field(graph: PAYMENT_SERVICE)
+}
+
 enum PaymentGateway
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)
 {
-  STRIPE @join__enumValue(graph: ORDER_SERVICE)
-  MOCK @join__enumValue(graph: ORDER_SERVICE)
+  STRIPE @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
 }
 
 enum PaymentMethod
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)
 {
-  CARD @join__enumValue(graph: ORDER_SERVICE)
+  CARD @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
+}
+
+enum PaymentStatus
+  @join__type(graph: PAYMENT_SERVICE)
+{
+  PENDING @join__enumValue(graph: PAYMENT_SERVICE)
+  PROCESSING @join__enumValue(graph: PAYMENT_SERVICE)
+  COMPLETED @join__enumValue(graph: PAYMENT_SERVICE)
+  FAILED @join__enumValue(graph: PAYMENT_SERVICE)
+  TIMEOUT @join__enumValue(graph: PAYMENT_SERVICE)
+  REFUNDED @join__enumValue(graph: PAYMENT_SERVICE)
 }
 
 input PlaceOrderInput
@@ -612,6 +646,7 @@ type Query
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)
 {
   listAddresses(limit: Int!, cursor: String): AddressConnection! @join__field(graph: AUTH_SERVICE)
   getAddress(id: UUID!): Address! @join__field(graph: AUTH_SERVICE)
@@ -632,6 +667,7 @@ type Query
   getTabCounts: TabCounts! @join__field(graph: NOTIFICATION_SERVICE)
   listOrders(limit: Int!, cursor: String): OrderConnection! @join__field(graph: ORDER_SERVICE)
   listMyOrders(limit: Int!, cursor: String): OrderConnection! @join__field(graph: ORDER_SERVICE)
+  getPaymentByOrderId(orderId: UUID!): Payment @join__field(graph: PAYMENT_SERVICE)
 }
 
 type ReadReceipt
@@ -659,9 +695,10 @@ enum Role
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)
 {
-  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CART_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
-  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CART_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE)
+  ADMIN @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CART_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
+  USER @join__enumValue(graph: AUTH_SERVICE) @join__enumValue(graph: CART_SERVICE) @join__enumValue(graph: CHAT_SERVICE) @join__enumValue(graph: NOTIFICATION_SERVICE) @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
 }
 
 input SelectItemForCheckoutInput
@@ -726,6 +763,7 @@ scalar Time
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)
 
 input ToAddressInput
   @join__type(graph: ORDER_SERVICE)
@@ -817,3 +855,4 @@ scalar UUID
   @join__type(graph: CHAT_SERVICE)
   @join__type(graph: NOTIFICATION_SERVICE)
   @join__type(graph: ORDER_SERVICE)
+  @join__type(graph: PAYMENT_SERVICE)

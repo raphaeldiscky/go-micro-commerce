@@ -20,3 +20,7 @@ subgraphs:
     routing_url: http://host.docker.internal:8089/graph
     schema:
       file: ../cart-service/graph/schema.graphqls
+  payment-service:
+    routing_url: http://host.docker.internal:8084/graph
+    schema:
+      file: ../payment-service/graph/schema.graphqls

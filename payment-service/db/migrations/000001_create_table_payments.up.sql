@@ -15,7 +15,8 @@ CREATE TABLE payments (
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now(),
     completed_at TIMESTAMPTZ,
-    failed_at TIMESTAMPTZ
+    failed_at TIMESTAMPTZ,
+    expired_at TIMESTAMPTZ
 );
 
 CREATE INDEX idx_payments_order_id ON payments (order_id);
@@ -23,6 +24,9 @@ CREATE INDEX idx_payments_status ON payments (status);
 CREATE INDEX idx_payments_created_at ON payments (created_at);
 CREATE INDEX idx_payments_gateway_reference ON payments (gateway_reference_id);
 CREATE INDEX idx_payments_payment_method ON payments (payment_method);
+CREATE INDEX idx_payments_expires_at_status
+ON payments (expires_at, status)
+WHERE status = 'pending';
 
 ALTER TABLE payments
 ADD CONSTRAINT chk_payments_status
@@ -46,6 +50,7 @@ COMMENT ON COLUMN payments.payment_gateway IS 'Payment gateway provider (stripe,
 COMMENT ON COLUMN payments.status IS 'Current payment status (pending, processing, completed, failed, refunded)';
 COMMENT ON COLUMN payments.amount IS 'Payment amount, must be greater than 0';
 COMMENT ON COLUMN payments.currency IS 'Currency code in ISO 4217 format (3 uppercase letters)';
+COMMENT ON COLUMN payments.expires_at IS '24-hour payment window expiry timestamp. Payments automatic timed out';
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()

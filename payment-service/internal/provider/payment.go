@@ -37,4 +37,7 @@ func SetupPayment(
 	)
 	webhookHandler := handler.NewWebhookHandler(webhookService, appLogger)
 	routes.SetupWebhookRoutes(e, webhookHandler)
+
+	graphResolver := SetupGraphQLResolver(paymentService)
+	routes.SetupGraphQLRoutes(e, cfg, graphResolver, appLogger)
 }
