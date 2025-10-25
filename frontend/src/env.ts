@@ -11,6 +11,7 @@ export const env = createEnv({
     VITE_GRAPHQL_SUBSCRIPTION_SSE_URL: z
       .url()
       .default('http://localhost:8080/graph/subscriptions/sse'),
+    VITE_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
     VITE_APP_TITLE: z.string().min(1).optional(),
   },
 
