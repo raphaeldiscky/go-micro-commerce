@@ -1,0 +1,51 @@
+schema:
+  - graph/schema/*.graphql
+
+exec:
+  filename: graph/generated.go
+  package: graph
+
+model:
+  filename: graph/models_gen.go
+  package: graph
+
+resolver:
+  layout: follow-schema
+  dir: graph/resolver
+  package: resolver
+  filename_template: "{name}.resolvers.go"
+
+# Enable Apollo Federation v2
+federation:
+  filename: graph/federation.go
+  package: graph
+  version: 2
+
+# Custom directive implementations
+directives:
+  requiresAuth:
+    skip_runtime: false
+  requiresRole:
+    skip_runtime: false
+
+# Autobind existing types
+autobind:
+  - "github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
+
+models:
+  UUID:
+    model:
+      - github.com/99designs/gqlgen/graphql.UUID
+  Time:
+    model:
+      - github.com/99designs/gqlgen/graphql.Time
+  Decimal:
+    model: github.com/raphaeldiscky/go-micro-commerce/payment-service/graph/scalar.Decimal
+
+  # Map enums to existing constants
+  paymentStatus:
+    model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.paymentStatus
+  PaymentGateway:
+    model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.PaymentGateway
+
+skip_mod_tidy: true

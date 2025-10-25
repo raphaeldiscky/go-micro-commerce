@@ -206,7 +206,6 @@ func (ta *orderActivities) ReserveProducts(
 		order.CustomerID,
 		order.IdempotencyKey,
 		order.PaymentGateway,
-		order.PaymentMethod,
 		order.Currency,
 		orderItems,
 	)
@@ -275,7 +274,6 @@ func (ta *orderActivities) CreatePayment(
 			order.CustomerID,
 			order.TotalPrice,
 			order.Currency,
-			order.PaymentMethod,
 			order.PaymentGateway,
 		)
 

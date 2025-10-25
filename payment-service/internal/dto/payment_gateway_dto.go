@@ -22,16 +22,16 @@ type Address struct {
 // Uses PaymentMethod ID (pm_xxx) tokenized client-side for PCI DSS compliance.
 // No raw card data is ever transmitted through this struct.
 type PaymentGatewayRequest struct {
-	PaymentMethodID string                 `json:"payment_method_id"` // Stripe PM ID (pm_xxx) from client
-	Metadata        map[string]string      `json:"metadata,omitempty"`
-	Amount          decimal.Decimal        `json:"amount"`
-	Currency        string                 `json:"currency"`
-	PaymentMethod   constant.PaymentMethod `json:"payment_method"`
-	Description     string                 `json:"description,omitempty"`
-	CustomerEmail   string                 `json:"customer_email"`
-	IdempotencyKey  string                 `json:"idempotency_key"`
-	TransactionID   uuid.UUID              `json:"transaction_id"`
-	CustomerID      uuid.UUID              `json:"customer_id"`
+	PaymentMethodID string            `json:"payment_method_id"` // Stripe PM ID (pm_xxx) from client
+	Metadata        map[string]string `json:"metadata,omitempty"`
+	Amount          decimal.Decimal   `json:"amount"`
+	Currency        string            `json:"currency"`
+	Description     string            `json:"description,omitempty"`
+	CustomerEmail   string            `json:"customer_email"`
+	IdempotencyKey  string            `json:"idempotency_key"`
+	ExpiresAt       *time.Time        `json:"expires_at,omitempty"` // 24-hour payment window expiry
+	TransactionID   uuid.UUID         `json:"transaction_id"`
+	CustomerID      uuid.UUID         `json:"customer_id"`
 }
 
 // PaymentGatewayResponse represents the result of a payment processing.

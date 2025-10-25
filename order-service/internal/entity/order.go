@@ -20,7 +20,6 @@ type Order struct {
 	Status         constant.OrderStatus
 	Reason         *string
 	PaymentGateway constant.PaymentGateway
-	PaymentMethod  constant.PaymentMethod
 	Currency       string
 	ShippingCost   decimal.Decimal // generated from fulfillment-service
 	Subtotal       decimal.Decimal // SUM(unit_price * quantity) for all items
@@ -51,7 +50,6 @@ type OrderItem struct {
 func NewOrder(
 	customerID, idempotencyKey uuid.UUID,
 	paymentGateway constant.PaymentGateway,
-	paymentMethod constant.PaymentMethod,
 	currency string,
 	items []OrderItem,
 ) (*Order, error) {
@@ -95,7 +93,6 @@ func NewOrder(
 		CustomerID:     customerID,
 		Status:         constant.OrderStatusPending,
 		PaymentGateway: paymentGateway,
-		PaymentMethod:  paymentMethod,
 		Currency:       currency,
 		ShippingCost:   shippingCost,
 		Subtotal:       subtotal.Round(constant.DefaultPricingScale),

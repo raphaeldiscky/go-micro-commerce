@@ -14,7 +14,6 @@ export const LIST_MY_ORDERS_QUERY = gql`
           status
           currency
           paymentGateway
-          paymentMethod
           shippingCost
           subtotal
           totalPrice
@@ -60,7 +59,6 @@ export const CREATE_ORDER_MUTATION = gql`
       status
       currency
       paymentGateway
-      paymentMethod
       shippingCost
       subtotal
       totalPrice

@@ -1,0 +1,36 @@
+# PaymentGateway enum
+enum PaymentGateway {
+  STRIPE
+}
+
+# PaymentStatus enum
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  TIMEOUT
+  REFUNDED
+}
+
+# Payment entity for 24-hour payment window (Federation entity)
+type Payment @key(fields: "orderId") {
+  id: UUID!
+  orderId: UUID!
+  amount: Decimal!
+  currency: String!
+  status: PaymentStatus!
+  paymentGateway: PaymentGateway!
+  clientSecret: String # Stripe client secret for Payment Element (sensitive - only for order owner)
+  expiresAt: Time # 24-hour payment window expiry
+  createdAt: Time!
+  updatedAt: Time!
+  completedAt: Time
+  failedAt: Time
+}
+
+# Payment queries
+extend type Query {
+  # Get payment by order ID (authenticated user can only access their own payment)
+  getPaymentByOrderId(orderId: UUID!): Payment @requiresAuth
+}

@@ -21,7 +21,6 @@ func MapToOrderResponse(order *entity.Order) *dto.OrderResponse {
 		Status:         order.Status,
 		Currency:       order.Currency,
 		PaymentGateway: order.PaymentGateway,
-		PaymentMethod:  order.PaymentMethod,
 		ShippingCost:   order.ShippingCost,
 		Subtotal:       order.Subtotal,
 		TotalPrice:     order.TotalPrice,

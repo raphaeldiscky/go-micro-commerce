@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 // PaymentStatus represents the status of a payment transaction.
 type PaymentStatus string
 
@@ -18,14 +20,6 @@ const (
 	PaymentStatusRefunded PaymentStatus = "refunded"
 )
 
-// PaymentMethod represents the different payment methods available.
-type PaymentMethod string
-
-const (
-	// PaymentMethodCard represents the card payment method.
-	PaymentMethodCard PaymentMethod = "card"
-)
-
 // PaymentGateway represents the different payment gateways available.
 type PaymentGateway string
 
@@ -34,22 +28,6 @@ const (
 	PaymentGatewayStripe PaymentGateway = "stripe"
 	// PaymentGatewayMock represents the Mock payment gateway for testing.
 	PaymentGatewayMock PaymentGateway = "mock"
-)
-
-// BankTransferStatus represents the status of a bank transfer.
-type BankTransferStatus string
-
-const (
-	// BankTransferStatusPending indicates the transfer is pending.
-	BankTransferStatusPending BankTransferStatus = "pending"
-	// BankTransferStatusProcessing indicates the transfer is being processed.
-	BankTransferStatusProcessing BankTransferStatus = "processing"
-	// BankTransferStatusCompleted indicates the transfer is completed.
-	BankTransferStatusCompleted BankTransferStatus = "completed"
-	// BankTransferStatusFailed indicates the transfer failed.
-	BankTransferStatusFailed BankTransferStatus = "failed"
-	// BankTransferStatusCancelled indicates the transfer was canceled.
-	BankTransferStatusCancelled BankTransferStatus = "canceled"
 )
 
 // PaymentGatewayStatus represents the status of a payment gateway transaction.
@@ -68,18 +46,6 @@ const (
 	PaymentGatewayStatusCanceled PaymentGatewayStatus = "canceled"
 	// PaymentGatewayStatusRequiresAction indicates the payment requires additional action.
 	PaymentGatewayStatusRequiresAction PaymentGatewayStatus = "requires_action"
-)
-
-// DigitalWalletType represents different digital wallet types.
-type DigitalWalletType string
-
-const (
-	// DigitalWalletTypeApplePay represents Apple Pay.
-	DigitalWalletTypeApplePay DigitalWalletType = "apple_pay"
-	// DigitalWalletTypeGooglePay represents Google Pay.
-	DigitalWalletTypeGooglePay DigitalWalletType = "google_pay"
-	// DigitalWalletTypePayPal represents PayPal.
-	DigitalWalletTypePayPal DigitalWalletType = "paypal"
 )
 
 // PaymentActionType represents types of actions required for payment completion.
@@ -108,4 +74,10 @@ const (
 	RefundStatusFailed RefundStatus = "failed"
 	// RefundStatusCanceled indicates the refund was canceled.
 	RefundStatusCanceled RefundStatus = "canceled"
+)
+
+const (
+	// PaymentExpiryDuration is the default 24-hour payment window duration.
+	// Payments not completed within this time will be automatically timed out.
+	PaymentExpiryDuration = 24 * time.Hour
 )

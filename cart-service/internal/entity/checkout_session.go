@@ -24,7 +24,6 @@ type CheckoutSession struct {
 	CarrierID      *string
 	Status         constant.CheckoutSessionStatus
 	PaymentGateway *string
-	PaymentMethod  *string
 	Currency       string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
@@ -67,7 +66,6 @@ func NewCheckoutSession(
 		CarrierID:      nil,
 		Status:         constant.CheckoutSessionStatusPending,
 		PaymentGateway: nil,
-		PaymentMethod:  nil,
 		Currency:       currency,
 		CreatedAt:      now,
 		UpdatedAt:      now,

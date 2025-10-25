@@ -40,7 +40,11 @@ func SetupKafkaConsumers(
 		cfg.Kafka.Brokers,
 		kafka.PaymentRequestTopic,
 		kafka.PaymentEventsConsumerGroup,
-		consumer.NewPaymentRequestConsumer(appLogger, providers.DataStore).Handler,
+		consumer.NewPaymentRequestConsumer(
+			appLogger,
+			providers.DataStore,
+			providers.PaymentGatewayClients,
+		).Handler,
 		appLogger,
 	)
 	if err != nil {

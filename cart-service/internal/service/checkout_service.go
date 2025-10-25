@@ -290,7 +290,6 @@ func (s *checkoutSessionService) PlaceOrder(
 		// Update session with order details
 		session.AddressID = &req.AddressID
 		session.CarrierID = &req.CarrierID
-		session.PaymentMethod = &req.PaymentMethod
 		session.PaymentGateway = &req.PaymentGateway
 
 		// Update status to order_placed
@@ -313,11 +312,6 @@ func (s *checkoutSessionService) PlaceOrder(
 			paymentGateway = *updatedSession.PaymentGateway
 		}
 
-		paymentMethod := ""
-		if updatedSession.PaymentMethod != nil {
-			paymentMethod = *updatedSession.PaymentMethod
-		}
-
 		// Publish domain event via outbox pattern
 		evt := producer.NewCheckoutSessionOrderPlacedEvent(
 			updatedSession.ID,
@@ -326,7 +320,6 @@ func (s *checkoutSessionService) PlaceOrder(
 			updatedSession.CustomerID,
 			updatedSession.Currency,
 			paymentGateway,
-			paymentMethod,
 			updatedSession.Items,
 			updatedSession.CreatedAt,
 		)

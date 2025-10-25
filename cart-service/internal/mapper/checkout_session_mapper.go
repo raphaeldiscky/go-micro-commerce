@@ -20,7 +20,6 @@ func MapToCheckoutSessionResponse(session *entity.CheckoutSession) *dto.Checkout
 		CarrierID:      session.CarrierID,
 		Status:         session.Status,
 		PaymentGateway: session.PaymentGateway,
-		PaymentMethod:  session.PaymentMethod,
 		Currency:       session.Currency,
 		Items:          MapToCheckoutSessionItemResponses(session.Items),
 		CreatedAt:      session.CreatedAt,

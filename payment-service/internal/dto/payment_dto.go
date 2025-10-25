@@ -14,7 +14,6 @@ import (
 type CreatePaymentRequest struct {
 	Amount           decimal.Decimal         `json:"amount"                       validate:"required,gt=0"`
 	Currency         string                  `json:"currency"                     validate:"required,len=3"`
-	PaymentMethod    constant.PaymentMethod  `json:"payment_method"               validate:"required"`
 	PaymentGateway   constant.PaymentGateway `json:"payment_gateway"              validate:"required"`
 	OrderID          uuid.UUID               `json:"order_id"                     validate:"required"`
 	PaymentMethodID  string                  `json:"payment_method_id,omitempty"`  // Optional Stripe PM ID
@@ -24,18 +23,16 @@ type CreatePaymentRequest struct {
 // ProcessPaymentRequest represents the request to process a payment.
 // Uses Stripe PaymentMethod ID (pm_xxx) created client-side for PCI compliance.
 type ProcessPaymentRequest struct {
-	PaymentMethodID string                 `json:"payment_method_id" validate:"required"` // Stripe PM ID (pm_xxx)
-	CustomerEmail   string                 `json:"customer_email"`
-	PaymentMethod   constant.PaymentMethod `json:"payment_method"    validate:"required"`
-	CustomerID      uuid.UUID              `json:"customer_id"`
-	IdempotencyKey  uuid.UUID              `json:"idempotency_key"   validate:"required"`
+	PaymentMethodID string    `json:"payment_method_id" validate:"required"` // Stripe PM ID (pm_xxx)
+	CustomerEmail   string    `json:"customer_email"`
+	CustomerID      uuid.UUID `json:"customer_id"`
+	IdempotencyKey  uuid.UUID `json:"idempotency_key"   validate:"required"`
 }
 
 // PaymentResponse represents the response for payment operations.
 type PaymentResponse struct {
 	ID                 uuid.UUID               `json:"id"`
 	OrderID            uuid.UUID               `json:"order_id"`
-	PaymentMethod      constant.PaymentMethod  `json:"payment_method"`
 	Status             constant.PaymentStatus  `json:"status"`
 	PaymentGateway     constant.PaymentGateway `json:"payment_gateway"`
 	GatewayReferenceID *string                 `json:"gateway_reference_id,omitempty"`
@@ -46,6 +43,7 @@ type PaymentResponse struct {
 	NextActionType     *string                 `json:"next_action_type,omitempty"`   // Type of action required
 	Amount             decimal.Decimal         `json:"amount"`
 	Currency           string                  `json:"currency"`
+	ExpiresAt          *time.Time              `json:"expires_at,omitempty"` // 24-hour payment window expiry
 	CompletedAt        *time.Time              `json:"completed_at,omitempty"`
 	FailedAt           *time.Time              `json:"failed_at,omitempty"`
 	CreatedAt          time.Time               `json:"created_at"`

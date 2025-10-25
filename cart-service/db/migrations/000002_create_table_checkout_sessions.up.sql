@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS checkout_sessions (
     address_id UUID,
     carrier_id TEXT,
     payment_gateway VARCHAR(50),
-    payment_method VARCHAR(50),
     currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,

@@ -24,7 +24,6 @@ export interface PaymentDetails {
   amount: number
   currency: string
   paymentStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'timeout'
-  paymentMethod: string
   paymentGateway: string
   paymentDeadline: string
   order: {

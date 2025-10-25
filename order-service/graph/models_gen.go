@@ -18,7 +18,6 @@ type CreateOrderInput struct {
 	IdempotencyKey uuid.UUID               `json:"idempotencyKey"`
 	Items          []*CreateOrderItemInput `json:"items"`
 	Shipping       *ShippingInput          `json:"shipping"`
-	PaymentMethod  constant.PaymentMethod  `json:"paymentMethod"`
 	PaymentGateway constant.PaymentGateway `json:"paymentGateway"`
 	Currency       string                  `json:"currency"`
 }
@@ -52,13 +51,13 @@ type Order struct {
 	Status         constant.OrderStatus    `json:"status"`
 	Currency       string                  `json:"currency"`
 	PaymentGateway constant.PaymentGateway `json:"paymentGateway"`
-	PaymentMethod  constant.PaymentMethod  `json:"paymentMethod"`
 	ShippingCost   decimal.Decimal         `json:"shippingCost"`
 	Subtotal       decimal.Decimal         `json:"subtotal"`
 	TotalPrice     decimal.Decimal         `json:"totalPrice"`
 	TotalTax       decimal.Decimal         `json:"totalTax"`
 	TotalDiscount  decimal.Decimal         `json:"totalDiscount"`
 	Items          []*OrderItem            `json:"items"`
+	Payment        *Payment                `json:"payment,omitempty"`
 	CreatedAt      time.Time               `json:"createdAt"`
 	UpdatedAt      time.Time               `json:"updatedAt"`
 }
@@ -93,6 +92,12 @@ type PageInfo struct {
 	StartCursor     *string `json:"startCursor,omitempty"`
 	EndCursor       *string `json:"endCursor,omitempty"`
 }
+
+type Payment struct {
+	OrderID uuid.UUID `json:"orderId"`
+}
+
+func (Payment) IsEntity() {}
 
 type Query struct {
 }

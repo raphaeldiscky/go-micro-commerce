@@ -23,7 +23,6 @@ type CreateOrderRequest struct {
 	IdempotencyKey uuid.UUID                `json:"idempotency_key" validate:"required"` // generated from client
 	Items          []CreateOrderItemRequest `json:"items"           validate:"required,min=1,dive"`
 	Shipping       Shipping                 `json:"shipping"        validate:"required"`
-	PaymentMethod  constant.PaymentMethod   `json:"payment_method"  validate:"required"`
 	PaymentGateway constant.PaymentGateway  `json:"payment_gateway" validate:"required"`
 	Currency       string                   `json:"currency"        validate:"required,len=3"`
 }
@@ -89,7 +88,6 @@ type OrderResponse struct {
 	Status         constant.OrderStatus    `json:"status"`
 	Currency       string                  `json:"currency"`
 	PaymentGateway constant.PaymentGateway `json:"payment_gateway"`
-	PaymentMethod  constant.PaymentMethod  `json:"payment_method"`
 	ShippingCost   decimal.Decimal         `json:"shipping_cost"`
 	Subtotal       decimal.Decimal         `json:"subtotal"`
 	TotalPrice     decimal.Decimal         `json:"total_price"`

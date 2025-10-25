@@ -13,7 +13,6 @@ export const GET_CHECKOUT_SESSION_QUERY = gql`
       carrierId
       status
       paymentGateway
-      paymentMethod
       currency
       items {
         id
@@ -41,7 +40,6 @@ export const CREATE_CHECKOUT_SESSION_MUTATION = gql`
       carrierId
       status
       paymentGateway
-      paymentMethod
       currency
       items {
         id
@@ -69,7 +67,6 @@ export const PLACE_ORDER_MUTATION = gql`
       carrierId
       status
       paymentGateway
-      paymentMethod
       currency
       items {
         id
@@ -97,7 +94,6 @@ export const CANCEL_CHECKOUT_SESSION_MUTATION = gql`
       carrierId
       status
       paymentGateway
-      paymentMethod
       currency
       items {
         id

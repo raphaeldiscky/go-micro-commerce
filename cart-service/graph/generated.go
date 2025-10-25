@@ -83,7 +83,6 @@ type ComplexityRoot struct {
 		IdempotencyKey func(childComplexity int) int
 		Items          func(childComplexity int) int
 		PaymentGateway func(childComplexity int) int
-		PaymentMethod  func(childComplexity int) int
 		Status         func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
 	}
@@ -284,12 +283,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.CheckoutSession.PaymentGateway(childComplexity), true
-	case "CheckoutSession.paymentMethod":
-		if e.complexity.CheckoutSession.PaymentMethod == nil {
-			break
-		}
-
-		return e.complexity.CheckoutSession.PaymentMethod(childComplexity), true
 	case "CheckoutSession.status":
 		if e.complexity.CheckoutSession.Status == nil {
 			break
@@ -1407,35 +1400,6 @@ func (ec *executionContext) fieldContext_CheckoutSession_paymentGateway(_ contex
 	return fc, nil
 }
 
-func (ec *executionContext) _CheckoutSession_paymentMethod(ctx context.Context, field graphql.CollectedField, obj *CheckoutSession) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_CheckoutSession_paymentMethod,
-		func(ctx context.Context) (any, error) {
-			return obj.PaymentMethod, nil
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_CheckoutSession_paymentMethod(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "CheckoutSession",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _CheckoutSession_currency(ctx context.Context, field graphql.CollectedField, obj *CheckoutSession) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2033,8 +1997,6 @@ func (ec *executionContext) fieldContext_Mutation_createCheckoutSession(ctx cont
 				return ec.fieldContext_CheckoutSession_status(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_CheckoutSession_paymentMethod(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
 			case "items":
@@ -2113,8 +2075,6 @@ func (ec *executionContext) fieldContext_Mutation_placeOrder(ctx context.Context
 				return ec.fieldContext_CheckoutSession_status(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_CheckoutSession_paymentMethod(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
 			case "items":
@@ -2193,8 +2153,6 @@ func (ec *executionContext) fieldContext_Mutation_cancelCheckoutSession(ctx cont
 				return ec.fieldContext_CheckoutSession_status(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_CheckoutSession_paymentMethod(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
 			case "items":
@@ -2329,8 +2287,6 @@ func (ec *executionContext) fieldContext_Query_getCheckoutSession(ctx context.Co
 				return ec.fieldContext_CheckoutSession_status(ctx, field)
 			case "paymentGateway":
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
-			case "paymentMethod":
-				return ec.fieldContext_CheckoutSession_paymentMethod(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
 			case "items":
@@ -4048,7 +4004,7 @@ func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"idempotencyKey", "addressId", "carrierId", "paymentMethod", "paymentGateway"}
+	fieldsInOrder := [...]string{"idempotencyKey", "addressId", "carrierId", "paymentGateway"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4076,13 +4032,6 @@ func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, o
 				return it, err
 			}
 			it.CarrierID = data
-		case "paymentMethod":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentMethod"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PaymentMethod = data
 		case "paymentGateway":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentGateway"))
 			data, err := ec.unmarshalNString2string(ctx, v)
@@ -4328,8 +4277,6 @@ func (ec *executionContext) _CheckoutSession(ctx context.Context, sel ast.Select
 			}
 		case "paymentGateway":
 			out.Values[i] = ec._CheckoutSession_paymentGateway(ctx, field, obj)
-		case "paymentMethod":
-			out.Values[i] = ec._CheckoutSession_paymentMethod(ctx, field, obj)
 		case "currency":
 			out.Values[i] = ec._CheckoutSession_currency(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

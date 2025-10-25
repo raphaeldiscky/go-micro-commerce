@@ -23,7 +23,6 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 		Status:         order.Status,
 		Currency:       order.Currency,
 		PaymentGateway: order.PaymentGateway,
-		PaymentMethod:  order.PaymentMethod,
 		ShippingCost:   order.ShippingCost,
 		Subtotal:       order.Subtotal,
 		TotalPrice:     order.TotalPrice,
@@ -132,7 +131,6 @@ func MapToCreateOrderRequest(
 				Unit:   input.Shipping.Dimensions.Unit,
 			},
 		},
-		PaymentMethod:  input.PaymentMethod,
 		PaymentGateway: input.PaymentGateway,
 		Currency:       input.Currency,
 	}, nil

@@ -4,7 +4,6 @@ import {
   OrderReview,
   OrderSummary,
   PaymentGatewaySelector,
-  PaymentMethods,
   ShippingOptions,
 } from '@/components/checkout'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -41,7 +40,6 @@ function RouteComponent() {
     checkoutSession,
     selectedAddress,
     selectedShippingOption,
-    selectedPaymentMethod,
     selectedPaymentGateway,
     isLoading: isCheckoutLoading,
     fetchCheckoutSession,
@@ -71,7 +69,6 @@ function RouteComponent() {
     checkoutItems.length > 0 &&
     selectedAddress &&
     selectedShippingOption &&
-    selectedPaymentMethod &&
     selectedPaymentGateway
 
   const handlePlaceOrder = async () => {
@@ -244,16 +241,16 @@ function RouteComponent() {
 
               <div className="h-px w-4 lg:w-8 bg-gray-300" />
 
-              {/* Payment Method Step */}
+              {/* Payment Gateway Step */}
               <div className="flex items-center">
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    selectedPaymentMethod
+                    selectedPaymentGateway
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {selectedPaymentMethod ? (
+                  {selectedPaymentGateway ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
                     <span>3</span>
@@ -261,32 +258,6 @@ function RouteComponent() {
                 </div>
                 <span className="ml-2 text-sm font-medium hidden lg:inline">
                   Payment
-                </span>
-              </div>
-
-              <div className="h-px w-4 lg:w-8 bg-gray-300" />
-
-              {/* Payment Gateway Step */}
-              <div className="flex items-center">
-                <div
-                  className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    selectedPaymentMethod && selectedPaymentGateway
-                      ? 'bg-green-600 text-white'
-                      : selectedPaymentMethod
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {selectedPaymentMethod && selectedPaymentGateway ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : selectedPaymentMethod ? (
-                    <span>4</span>
-                  ) : (
-                    <span>4</span>
-                  )}
-                </div>
-                <span className="ml-2 text-sm font-medium hidden lg:inline">
-                  Gateway
                 </span>
               </div>
 
@@ -304,7 +275,7 @@ function RouteComponent() {
                   {isCheckoutReady ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
-                    <span>5</span>
+                    <span>4</span>
                   )}
                 </div>
                 <span className="ml-2 text-sm font-medium hidden lg:inline">
@@ -338,9 +309,6 @@ function RouteComponent() {
 
               {/* Shipping Options */}
               <ShippingOptions />
-
-              {/* Payment Methods */}
-              <PaymentMethods />
 
               {/* Payment Gateway */}
               <PaymentGatewaySelector />
@@ -389,9 +357,6 @@ function RouteComponent() {
                       )}
                       {!selectedShippingOption && (
                         <p>• Please select a shipping method</p>
-                      )}
-                      {!selectedPaymentMethod && (
-                        <p>• Please select a payment method</p>
                       )}
                       {!selectedPaymentGateway && (
                         <p>• Please select a payment gateway</p>

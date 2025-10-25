@@ -21,7 +21,9 @@ func SetupPaymentRoutes(e *echo.Echo, h *handler.PaymentHandler) {
 	// Process a payment
 	protected.POST("/order/:orderID/process", h.ProcessPayment)
 
+	// Get payment by order ID (for payment page - users can see their own payments)
+	protected.GET("/order/:orderID", h.GetPaymentByOrderID)
+
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)
-	admin.GET("/order/:orderID", h.GetPaymentByOrderID)
 }

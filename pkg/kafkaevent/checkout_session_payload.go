@@ -16,7 +16,6 @@ type CheckoutSessionOrderPlacedPayload struct {
 	Status            string                `json:"status"`
 	Currency          string                `json:"currency"`
 	PaymentGateway    string                `json:"payment_gateway"`
-	PaymentMethod     string                `json:"payment_method"`
 	CreatedAt         time.Time             `json:"created_at"`
 }
 

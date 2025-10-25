@@ -198,7 +198,6 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 		order.CustomerID,
 		order.IdempotencyKey,
 		order.PaymentGateway,
-		order.PaymentMethod,
 		order.Currency,
 		orderItems,
 	)
@@ -279,8 +278,7 @@ func (a *orderActivities) CreatePayment(
 			order.CustomerID,
 			order.TotalPrice,
 			order.Currency,
-			order.PaymentMethod,  // Default payment method for saga
-			order.PaymentGateway, // Default payment gateway for saga
+			order.PaymentGateway,
 		)
 
 		payload, err := json.Marshal(paymentEvent)

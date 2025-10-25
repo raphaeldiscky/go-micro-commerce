@@ -10,10 +10,14 @@ import Decimal from 'decimal.js'
  */
 export function fCurrency(
   value: Decimal | string | number,
-  currency: string = 'USD',
-  locale: string = 'en-US',
+  currency: string = 'IDR',
 ): string {
-  const num: number =
+  const localeOptions: Record<string, string> = {
+    USD: 'en-US',
+    IDR: 'id-ID',
+  }
+  const locale = localeOptions[currency] || 'en-US'
+  const num =
     typeof value === 'string'
       ? Number(value)
       : value instanceof Decimal

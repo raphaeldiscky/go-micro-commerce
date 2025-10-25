@@ -20,17 +20,6 @@ export interface ShippingOptionUI {
   isActive: boolean
 }
 
-// Payment methods - UI-specific type for displaying payment options
-export interface PaymentMethodUI {
-  id: string
-  name: string
-  type: 'card' | 'bank_transfer' | 'ewallet' | 'cod'
-  icon?: string
-  isActive: boolean
-  description?: string
-  supportedGateways: Array<PaymentGatewayUI>
-}
-
 export interface PaymentGatewayUI {
   id: string
   name: string

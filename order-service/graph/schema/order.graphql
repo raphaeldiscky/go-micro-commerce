@@ -12,15 +12,14 @@ enum OrderStatus {
   FAILED
 }
 
-# PaymentMethod enum
-enum PaymentMethod {
-  CARD
-}
-
 # PaymentGateway enum
 enum PaymentGateway {
   STRIPE
-  MOCK
+}
+
+# Payment type reference from payment-service (Federation)
+type Payment @key(fields: "orderId") {
+  orderId: UUID!
 }
 
 # Order entity
@@ -31,13 +30,13 @@ type Order {
   status: OrderStatus!
   currency: String!
   paymentGateway: PaymentGateway!
-  paymentMethod: PaymentMethod!
   shippingCost: Decimal!
   subtotal: Decimal!
   totalPrice: Decimal!
   totalTax: Decimal!
   totalDiscount: Decimal!
   items: [OrderItem!]!
+  payment: Payment # Payment details from payment-service (includes clientSecret and expiresAt)
   createdAt: Time!
   updatedAt: Time!
 }
@@ -121,7 +120,6 @@ input CreateOrderInput {
   idempotencyKey: UUID!
   items: [CreateOrderItemInput!]!
   shipping: ShippingInput!
-  paymentMethod: PaymentMethod!
   paymentGateway: PaymentGateway!
   currency: String!
 }

@@ -46,12 +46,12 @@ func (r *checkoutSessionRepository) Create(
 	insertSessionQuery := `
         INSERT INTO checkout_sessions (
             id, idempotency_key, customer_id, cart_id, address_id, carrier_id,
-            status, payment_gateway, payment_method, currency,
+            status, payment_gateway, currency,
             created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING id, idempotency_key, customer_id, cart_id, address_id, carrier_id,
-                  status, payment_gateway, payment_method, currency,
+                  status, payment_gateway, currency,
                   created_at, updated_at
     `
 
@@ -68,7 +68,6 @@ func (r *checkoutSessionRepository) Create(
 		session.CarrierID,
 		session.Status,
 		session.PaymentGateway,
-		session.PaymentMethod,
 		session.Currency,
 		session.CreatedAt,
 		session.UpdatedAt,
@@ -81,7 +80,6 @@ func (r *checkoutSessionRepository) Create(
 		&createdSession.CarrierID,
 		&createdSession.Status,
 		&createdSession.PaymentGateway,
-		&createdSession.PaymentMethod,
 		&createdSession.Currency,
 		&createdSession.CreatedAt,
 		&createdSession.UpdatedAt,
@@ -129,7 +127,7 @@ func (r *checkoutSessionRepository) GetByID(
 	// Get checkout session
 	sessionQuery := `
 		SELECT id, idempotency_key, customer_id, cart_id, address_id, carrier_id,
-		       status, payment_gateway, payment_method, currency,
+		       status, payment_gateway, currency,
 		       created_at, updated_at
 		FROM checkout_sessions
 		WHERE id = $1
@@ -148,7 +146,6 @@ func (r *checkoutSessionRepository) GetByID(
 		&session.CarrierID,
 		&session.Status,
 		&session.PaymentGateway,
-		&session.PaymentMethod,
 		&session.Currency,
 		&session.CreatedAt,
 		&session.UpdatedAt,
@@ -209,7 +206,7 @@ func (r *checkoutSessionRepository) Update(
 		SET status = $1, updated_at = $2
 		WHERE id = $3
 		RETURNING id, idempotency_key, customer_id, cart_id, address_id, carrier_id,
-		          status, payment_gateway, payment_method, currency,
+		          status, payment_gateway, currency,
 		          created_at, updated_at
 	`
 
@@ -230,7 +227,6 @@ func (r *checkoutSessionRepository) Update(
 		&updatedSession.CarrierID,
 		&updatedSession.Status,
 		&updatedSession.PaymentGateway,
-		&updatedSession.PaymentMethod,
 		&updatedSession.Currency,
 		&updatedSession.UpdatedAt,
 		&updatedSession.CreatedAt,

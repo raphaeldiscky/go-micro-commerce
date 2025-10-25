@@ -15,11 +15,3 @@ const (
 	// PaymentStatusRefunded indicates that the payment has been refunded.
 	PaymentStatusRefunded PaymentStatus = "refunded"
 )
-
-// PaymentMethod represents the different payment methods available.
-type PaymentMethod string
-
-const (
-	// PaymentCreditCard represents the card payment method.
-	PaymentCreditCard PaymentMethod = "card"
-)
