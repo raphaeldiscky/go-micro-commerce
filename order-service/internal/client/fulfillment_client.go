@@ -23,7 +23,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
 // FulfillmentClient defines the interface for fulfillment service integration.
@@ -32,7 +31,6 @@ type FulfillmentClient interface {
 	GetShippingCost(
 		ctx context.Context,
 		order *entity.Order,
-		shipping *dto.Shipping,
 	) (decimal.Decimal, error)
 	// WaitForFulfillmentResponse waits for fulfillment service response with timeout
 	WaitForFulfillmentResponse(
@@ -84,7 +82,6 @@ func NewFulfillmentClient(
 func (c *fulfillmentClient) GetShippingCost(
 	ctx context.Context,
 	order *entity.Order,
-	shipping *dto.Shipping,
 ) (decimal.Decimal, error) {
 	c.logger.Infof("Getting shipping cost for order: %s", order.ID)
 
@@ -93,7 +90,26 @@ func (c *fulfillmentClient) GetShippingCost(
 
 	req := connect.NewRequest(&pb.GetShippingCostRequest{
 		Currency: order.Currency,
-		Shipping: mapper.MapShippingDtoToProto(shipping),
+		Package: &pb.Package{
+			WeightKg: order.Package.WeightKG.String(),
+			Height:   order.Package.Height.String(),
+			Length:   order.Package.Length.String(),
+			Width:    order.Package.Width.String(),
+			Unit:     order.Package.Unit,
+		},
+		Courier: &pb.Courier{CourierId: order.Courier.CourierID},
+		Destination: &pb.Destination{
+			State:      order.Destination.State,
+			City:       order.Destination.City,
+			Country:    order.Destination.Country,
+			PostalCode: order.Destination.PostalCode,
+		},
+		Origin: &pb.Origin{
+			State:      order.Origin.State,
+			City:       order.Origin.City,
+			Country:    order.Origin.Country,
+			PostalCode: order.Origin.PostalCode,
+		},
 	})
 	pkgconnect.AddAuthHeaders(ctx, req)
 

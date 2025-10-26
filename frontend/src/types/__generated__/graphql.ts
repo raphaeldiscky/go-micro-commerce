@@ -303,6 +303,7 @@ export type Mutation = {
   sendTypingIndicator: TypingIndicator
   setDefaultAddress: Address
   updateAddress: Address
+  updateCheckoutSession: CheckoutSession
   updateItemQuantity: Cart
   updatePresence: PresenceUpdate
 }
@@ -401,6 +402,11 @@ export type MutationSetDefaultAddressArgs = {
 export type MutationUpdateAddressArgs = {
   id: Scalars['UUID']['input']
   input: UpdateAddressInput
+}
+
+export type MutationUpdateCheckoutSessionArgs = {
+  input: UpdateCheckoutSessionInput
+  sessionId: Scalars['UUID']['input']
 }
 
 export type MutationUpdateItemQuantityArgs = {
@@ -630,7 +636,9 @@ export enum PushNotificationType {
   OrderDelivered = 'ORDER_DELIVERED',
   OrderShipped = 'ORDER_SHIPPED',
   OrderUpdate = 'ORDER_UPDATE',
+  PaymentFailed = 'PAYMENT_FAILED',
   PaymentSuccess = 'PAYMENT_SUCCESS',
+  PaymentTimeout = 'PAYMENT_TIMEOUT',
   SystemAlert = 'SYSTEM_ALERT',
 }
 
@@ -823,6 +831,12 @@ export type UpdateAddressInput = {
 
 export type UpdateCartItemQuantityInput = {
   quantity: Scalars['Int']['input']
+}
+
+export type UpdateCheckoutSessionInput = {
+  addressId?: InputMaybe<Scalars['UUID']['input']>
+  carrierId?: InputMaybe<Scalars['String']['input']>
+  paymentGateway?: InputMaybe<Scalars['String']['input']>
 }
 
 export type User = {

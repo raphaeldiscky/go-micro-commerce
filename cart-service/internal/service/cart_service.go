@@ -136,7 +136,7 @@ func (s *cartService) GetUserActiveCart(
 
 	cart, err := cartRepo.FindActiveCartByUserID(ctx, userID)
 	if err != nil {
-		return nil, httperror.NewInternalServerError("failed to get cart")
+		return nil, httperror.NewInternalServerError("failed to get active cart")
 	}
 
 	if cart == nil {

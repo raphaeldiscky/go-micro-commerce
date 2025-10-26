@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { timestampToDate } from '@/lib/utils/date'
+import { fCurrency } from '@/lib/utils/number'
 import type { Product } from '@/proto/product/v1/product_pb'
 import { useCartStore } from '@/store/cartStore'
 import { format } from 'date-fns'
@@ -98,7 +99,7 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Price */}
         <div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            Rp {product.price.toFixed(2)}
+            {fCurrency(product.price, 'IDR')}
           </p>
         </div>
 

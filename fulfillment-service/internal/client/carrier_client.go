@@ -8,8 +8,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/dto"
 )
 
-// CarrierClient defines the interface for carrier service integration.
-type CarrierClient interface {
+// CourierClient defines the interface for Courier service integration.
+type CourierClient interface {
 	// GetRates retrieves shipping rates for a package.
 	GetRates(ctx context.Context, req *dto.ShippingRequest) ([]dto.ShippingRate, error)
 
@@ -23,9 +23,9 @@ type CarrierClient interface {
 	GetTracking(
 		ctx context.Context,
 		trackingNumber string,
-		carrierID constant.CarrierID,
+		courierID constant.CourierID,
 	) (*dto.TrackingInfo, error)
 
 	// CancelShipment cancels a shipment and voids the label.
-	CancelShipment(ctx context.Context, trackingNumber string, carrier constant.CarrierID) error
+	CancelShipment(ctx context.Context, trackingNumber string, Courier constant.CourierID) error
 }

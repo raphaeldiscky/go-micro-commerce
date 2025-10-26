@@ -26,7 +26,7 @@ import {
   MapPin,
   Package,
 } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 export const Route = createFileRoute('/checkout/$checkoutId')({
@@ -41,9 +41,11 @@ function RouteComponent() {
     selectedAddress,
     selectedShippingOption,
     selectedPaymentGateway,
-    isLoading: isCheckoutLoading,
     fetchCheckoutSession,
+    placeOrder,
   } = useCheckoutSessionStore()
+
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false)
 
   console.log('====CHECKOUT DATA====', checkoutSession)
   const data = useCheckoutSession()
@@ -77,10 +79,23 @@ function RouteComponent() {
       return
     }
 
+    setIsPlacingOrder(true)
     try {
-      await alert('TODO: Implement place order')
+      const result = await placeOrder(checkoutId)
+
+      if (result.success) {
+        toast.success('Order placed successfully!')
+        // Navigate to payment page - use checkoutId which becomes the orderId
+        navigate({ to: `/orders/${checkoutId}` })
+      } else {
+        toast.error(result.error || 'Failed to place order')
+      }
     } catch (error) {
-      toast.error('An unexpected error occurred')
+      toast.error(
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+      )
+    } finally {
+      setIsPlacingOrder(false)
     }
   }
 
@@ -327,11 +342,11 @@ function RouteComponent() {
                 <CardContent className="pt-6">
                   <Button
                     onClick={handlePlaceOrder}
-                    disabled={!isCheckoutReady || isCheckoutLoading}
+                    disabled={!isCheckoutReady || isPlacingOrder}
                     size="lg"
                     className="w-full h-12 text-base font-medium"
                   >
-                    {isCheckoutLoading ? (
+                    {isPlacingOrder ? (
                       <>
                         <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         Placing Order...

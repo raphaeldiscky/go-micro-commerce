@@ -351,6 +351,7 @@ type Mutation
   updateItemQuantity(itemId: UUID!, input: UpdateCartItemQuantityInput!): Cart! @join__field(graph: CART_SERVICE)
   selectItemForCheckout(itemId: UUID!, input: SelectItemForCheckoutInput!): Cart! @join__field(graph: CART_SERVICE)
   createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
+  updateCheckoutSession(sessionId: UUID!, input: UpdateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
   placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
   cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @join__field(graph: CART_SERVICE)
   requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
@@ -625,6 +626,8 @@ enum PushNotificationType
   ORDER_DELIVERED @join__enumValue(graph: NOTIFICATION_SERVICE)
   ORDER_CANCELLED @join__enumValue(graph: NOTIFICATION_SERVICE)
   PAYMENT_SUCCESS @join__enumValue(graph: NOTIFICATION_SERVICE)
+  PAYMENT_FAILED @join__enumValue(graph: NOTIFICATION_SERVICE)
+  PAYMENT_TIMEOUT @join__enumValue(graph: NOTIFICATION_SERVICE)
   SYSTEM_ALERT @join__enumValue(graph: NOTIFICATION_SERVICE)
 }
 
@@ -803,6 +806,14 @@ input UpdateCartItemQuantityInput
   @join__type(graph: CART_SERVICE)
 {
   quantity: Int!
+}
+
+input UpdateCheckoutSessionInput
+  @join__type(graph: CART_SERVICE)
+{
+  addressId: UUID
+  carrierId: String
+  paymentGateway: String
 }
 
 type User

@@ -21,9 +21,8 @@ export interface ShippingOptionUI {
 }
 
 export interface PaymentGatewayUI {
-  id: string
+  id: 'stripe' | 'paypal'
   name: string
-  type: 'stripe' | 'paypal'
 }
 
 // Order summary for checkout - calculated on frontend

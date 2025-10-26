@@ -4,8 +4,8 @@ import type { ShippingCarrier } from '@/types/order'
 // Mock shipping options
 export const mockShippingOptions: Array<ShippingOptionUI> = [
   {
-    id: 'ship-1',
-    name: 'Standard Delivery',
+    id: 'jne',
+    name: 'JNE Standard Delivery',
     description: 'Standard shipping within 5-7 business days',
     price: 9.99,
     estimatedDays: { min: 5, max: 7 },
@@ -39,14 +39,12 @@ export const mockShippingOptions: Array<ShippingOptionUI> = [
 
 export const mockPaymentGateways: Array<PaymentGatewayUI> = [
   {
-    id: 'gateway-1',
+    id: 'stripe',
     name: 'Stripe',
-    type: 'stripe',
   },
   {
-    id: 'gateway-2',
+    id: 'paypal',
     name: 'PayPal',
-    type: 'paypal',
   },
 ]
 

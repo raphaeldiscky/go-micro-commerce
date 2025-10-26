@@ -55,6 +55,36 @@ export const CREATE_CHECKOUT_SESSION_MUTATION = gql`
 `
 
 /**
+ * Mutation to update a checkout session with address, carrier, or payment gateway
+ */
+export const UPDATE_CHECKOUT_SESSION_MUTATION = gql`
+  mutation UpdateCheckoutSession(
+    $sessionId: UUID!
+    $input: UpdateCheckoutSessionInput!
+  ) {
+    updateCheckoutSession(sessionId: $sessionId, input: $input) {
+      id
+      idempotencyKey
+      customerId
+      addressId
+      carrierId
+      status
+      paymentGateway
+      currency
+      items {
+        id
+        productId
+        productName
+        quantity
+        unitPrice
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+/**
  * Mutation to place an order from a checkout session
  */
 export const PLACE_ORDER_MUTATION = gql`

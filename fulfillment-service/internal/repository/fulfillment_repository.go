@@ -52,33 +52,29 @@ func (r *fulfillmentRepository) Create(
 	ctx context.Context,
 	fulfillment *entity.Fulfillment,
 ) (*entity.Fulfillment, error) {
-	var dimensionsJSON []byte
-
-	var err error
-
-	dimensionsJSON, err = json.Marshal(fulfillment.Dimensions)
+	originJSON, err := json.Marshal(fulfillment.Origin)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal dimensions: %w", err)
+		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	fromAddressJSON, err := json.Marshal(fulfillment.FromAddress)
+	destinationJSON, err := json.Marshal(fulfillment.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal from_address: %w", err)
+		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	toAddressJSON, err := json.Marshal(fulfillment.ToAddress)
+	packageJSON, err := json.Marshal(fulfillment.Package)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal to_address: %w", err)
+		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
 
 	query := `
 		INSERT INTO fulfillments (
-			id, order_id, status, tracking_number, carrier_id, 
-			shipping_label_url, currency, shipping_cost, from_address, to_address, weight_kg, dimensions,
+			id, order_id, status, tracking_number, courier_id,
+			shipping_label_url, currency, shipping_cost, origin, destination, package,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-		RETURNING id, order_id, status, tracking_number, carrier_id,
-			shipping_label_url, currency, shipping_cost, from_address, to_address, weight_kg, dimensions,
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		RETURNING id, order_id, status, tracking_number, courier_id,
+			shipping_label_url, currency, shipping_cost, origin, destination, package,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 	`
 
@@ -89,14 +85,13 @@ func (r *fulfillmentRepository) Create(
 		fulfillment.OrderID,
 		fulfillment.Status,
 		fulfillment.TrackingNumber,
-		fulfillment.CarrierID,
+		fulfillment.CourierID,
 		fulfillment.ShippingLabelURL,
 		fulfillment.Currency,
 		fulfillment.ShippingCost,
-		fromAddressJSON,
-		toAddressJSON,
-		fulfillment.WeightKG,
-		dimensionsJSON,
+		originJSON,
+		destinationJSON,
+		packageJSON,
 		fulfillment.EstimatedDeliveryAt,
 		fulfillment.ActualDeliveryAt,
 		fulfillment.CreatedAt,
@@ -112,8 +107,8 @@ func (r *fulfillmentRepository) FindByID(
 	id uuid.UUID,
 ) (*entity.Fulfillment, error) {
 	query := `
-		SELECT id, order_id, status, tracking_number, carrier_id,
-			shipping_label_url, currency, shipping_cost, from_address, to_address, weight_kg, dimensions,
+		SELECT id, order_id, status, tracking_number, courier_id,
+			shipping_label_url, currency, shipping_cost, origin, destination, package,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 		FROM fulfillments
 		WHERE id = $1
@@ -130,8 +125,8 @@ func (r *fulfillmentRepository) FindByOrderID(
 	orderID uuid.UUID,
 ) (*entity.Fulfillment, error) {
 	query := `
-		SELECT id, order_id, status, tracking_number, carrier_id,
-			shipping_label_url, currency, shipping_cost, from_address, to_address, weight_kg, dimensions,
+		SELECT id, order_id, status, tracking_number, courier_id,
+			shipping_label_url, currency, shipping_cost, origin, destination, package,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 		FROM fulfillments
 		WHERE order_id = $1
@@ -148,8 +143,8 @@ func (r *fulfillmentRepository) FindByTrackingNumber(
 	trackingNumber string,
 ) (*entity.Fulfillment, error) {
 	query := `
-		SELECT id, order_id, status, tracking_number, carrier_id,
-			shipping_label_url, currency, shipping_cost, from_address, to_address, weight_kg, dimensions,
+		SELECT id, order_id, status, tracking_number, courier_id,
+			shipping_label_url, currency, shipping_cost, origin, destination, package,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 		FROM fulfillments
 		WHERE tracking_number = $1
@@ -165,23 +160,19 @@ func (r *fulfillmentRepository) Update(
 	ctx context.Context,
 	fulfillment *entity.Fulfillment,
 ) (*entity.Fulfillment, error) {
-	var dimensionsJSON []byte
-
-	var err error
-
-	dimensionsJSON, err = json.Marshal(fulfillment.Dimensions)
+	originJSON, err := json.Marshal(fulfillment.Origin)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal dimensions: %w", err)
+		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	fromAddressJSON, err := json.Marshal(fulfillment.FromAddress)
+	destinationJSON, err := json.Marshal(fulfillment.Destination)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal from_address: %w", err)
+		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	toAddressJSON, err := json.Marshal(fulfillment.ToAddress)
+	packageJSON, err := json.Marshal(fulfillment.Package)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal to_address: %w", err)
+		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
 
 	query := `
@@ -189,20 +180,19 @@ func (r *fulfillmentRepository) Update(
 		SET order_id = $2,
 			status = $3,
 			tracking_number = $4,
-			carrier_id = $5,
+			courier_id = $5,
 			shipping_label_url = $6,
 			currency = $7,
 			shipping_cost = $8,
-			from_address = $9,
-			to_address = $10,
-			weight_kg = $11,
-			dimensions = $12,
-			estimated_delivery_at = $13,
-			actual_delivery_at = $14,
-			updated_at = $15
+			origin = $9,
+			destination = $10,
+			package = $11,
+			estimated_delivery_at = $12,
+			actual_delivery_at = $13,
+			updated_at = $14
 		WHERE id = $1
-		RETURNING id, order_id, status, tracking_number, carrier_id,
-			shipping_label_url, currency, shipping_cost, from_address, to_address, weight_kg, dimensions,
+		RETURNING id, order_id, status, tracking_number, courier_id,
+			shipping_label_url, currency, shipping_cost, origin, destination, package,
 			estimated_delivery_at, actual_delivery_at, created_at, updated_at
 	`
 
@@ -213,14 +203,13 @@ func (r *fulfillmentRepository) Update(
 		fulfillment.OrderID,
 		fulfillment.Status,
 		fulfillment.TrackingNumber,
-		fulfillment.CarrierID,
+		fulfillment.CourierID,
 		fulfillment.ShippingLabelURL,
 		fulfillment.Currency,
 		fulfillment.ShippingCost,
-		fromAddressJSON,
-		toAddressJSON,
-		fulfillment.WeightKG,
-		dimensionsJSON,
+		originJSON,
+		destinationJSON,
+		packageJSON,
 		fulfillment.EstimatedDeliveryAt,
 		fulfillment.ActualDeliveryAt,
 		fulfillment.UpdatedAt,
@@ -259,25 +248,24 @@ func (r *fulfillmentRepository) UpdateStatus(
 func (r *fulfillmentRepository) scanFulfillment(row pgx.Row) (*entity.Fulfillment, error) {
 	var fulfillment entity.Fulfillment
 
-	var dimensionsJSON []byte
+	var originJSON []byte
 
-	var fromAddressJSON []byte
+	var destinationJSON []byte
 
-	var toAddressJSON []byte
+	var packageJSON []byte
 
 	err := row.Scan(
 		&fulfillment.ID,
 		&fulfillment.OrderID,
 		&fulfillment.Status,
 		&fulfillment.TrackingNumber,
-		&fulfillment.CarrierID,
+		&fulfillment.CourierID,
 		&fulfillment.ShippingLabelURL,
 		&fulfillment.Currency,
 		&fulfillment.ShippingCost,
-		&fromAddressJSON,
-		&toAddressJSON,
-		&fulfillment.WeightKG,
-		&dimensionsJSON,
+		&originJSON,
+		&destinationJSON,
+		&packageJSON,
 		&fulfillment.EstimatedDeliveryAt,
 		&fulfillment.ActualDeliveryAt,
 		&fulfillment.CreatedAt,
@@ -291,24 +279,19 @@ func (r *fulfillmentRepository) scanFulfillment(row pgx.Row) (*entity.Fulfillmen
 		return nil, fmt.Errorf("failed to scan fulfillment: %w", err)
 	}
 
-	// Unmarshal from_address
-	if err = json.Unmarshal(fromAddressJSON, &fulfillment.FromAddress); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal from_address: %w", err)
+	// Unmarshal origin
+	if err = json.Unmarshal(originJSON, &fulfillment.Origin); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	// Unmarshal to_address
-	if err = json.Unmarshal(toAddressJSON, &fulfillment.ToAddress); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to_address: %w", err)
+	// Unmarshal destination
+	if err = json.Unmarshal(destinationJSON, &fulfillment.Destination); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	// Unmarshal dimensions if present
-	if dimensionsJSON != nil {
-		var dimensions entity.Dimensions
-		if err = json.Unmarshal(dimensionsJSON, &dimensions); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal dimensions: %w", err)
-		}
-
-		fulfillment.Dimensions = dimensions
+	// Unmarshal package
+	if err = json.Unmarshal(packageJSON, &fulfillment.Package); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
 	return &fulfillment, nil

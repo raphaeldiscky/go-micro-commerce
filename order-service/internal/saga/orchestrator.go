@@ -3,7 +3,6 @@ package saga
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -19,7 +18,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -213,12 +211,8 @@ func (o *orchestrator) RecoverFailedSagas(ctx context.Context) error {
 			recoveryCtx, cancel := context.WithTimeout(ctx, o.executionTimeout)
 			defer cancel()
 
-			// Extract shipping data from saga state using JSON serialization
-			shipping := o.extractShippingFromSagaState(sagaState)
-
 			payload := &Payload{
-				Order:    order,
-				Shipping: shipping,
+				Order: order,
 			}
 
 			if execErr := o.executor.Execute(recoveryCtx, payload); execErr != nil {
@@ -243,35 +237,6 @@ func (o *orchestrator) RecoverFailedSagas(ctx context.Context) error {
 func (o *orchestrator) handleSagaFailure(orderID uuid.UUID, err error) {
 	// TODO: Implement order status update through proper event handling
 	o.logger.Errorf("Handling saga failure for order %s: %v", orderID, err)
-}
-
-// extractShippingFromSagaState extracts shipping data from saga state using JSON serialization.
-func (o *orchestrator) extractShippingFromSagaState(sagaState *entity.SagaState) dto.Shipping {
-	var shipping dto.Shipping
-
-	if shippingData, ok := sagaState.Data["shipping"]; ok {
-		shippingBytes, err := json.Marshal(shippingData)
-		if err != nil {
-			o.logger.Warnf("Failed to marshal shipping data for saga %s: %v", sagaState.ID, err)
-			return shipping
-		}
-
-		if unmarshalErr := json.Unmarshal(shippingBytes, &shipping); unmarshalErr != nil {
-			o.logger.Warnf(
-				"Failed to unmarshal shipping data for saga %s: %v",
-				sagaState.ID,
-				unmarshalErr,
-			)
-
-			return shipping
-		}
-
-		o.logger.Infof("Successfully extracted shipping data for saga %s", sagaState.ID)
-	} else {
-		o.logger.Warnf("No shipping data found in saga state %s", sagaState.ID)
-	}
-
-	return shipping
 }
 
 // addUserAuthToSagaContext adds user authentication to context.
@@ -390,8 +355,6 @@ func (o *orchestrator) TriggerSagaCompensation(
 	// Create saga payload for compensation
 	payload := &Payload{
 		Order: order,
-		// Note: We don't have shipping data in this context, but compensation doesn't need it
-		Shipping: dto.Shipping{},
 	}
 
 	// Mark saga as compensating first

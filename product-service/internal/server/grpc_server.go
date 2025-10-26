@@ -128,9 +128,17 @@ func (s *GRPCServer) ValidateProducts(
 			)
 		}
 
+		price, err := decimal.NewFromString(item.GetPrice())
+		if err != nil {
+			return nil, connect.NewError(
+				connect.CodeInvalidArgument,
+				fmt.Errorf("invalid product price: %s", item.GetPrice()),
+			)
+		}
+
 		validateReq.Products[i] = dto.ProductValidationItem{
 			ID:       productID,
-			Price:    decimal.NewFromFloat(item.GetPrice()),
+			Price:    price,
 			Quantity: item.GetQuantity(),
 		}
 	}

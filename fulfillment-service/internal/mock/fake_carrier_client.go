@@ -1,4 +1,4 @@
-// Package mock provides a mock implementation of the CarrierClient interface.
+// Package mock provides a mock implementation of the CourierClient interface.
 package mock
 
 import (
@@ -16,91 +16,91 @@ import (
 )
 
 const (
-	fakeCarrierDelay             = time.Millisecond * 100
-	fakeCarrierBaseDateAdd       = 24 * time.Hour
-	fakeCarrierShippingCost      = 25000
-	fakeCarrierTransitDays       = 2
-	fakeCarrierLastUpdateAdd     = 24 * time.Hour
-	fakeCarrierDeliveredAtAdd    = 24 * time.Hour
-	fakeCarrierTrackingNumberMax = 999999999
+	fakeCourierDelay             = time.Millisecond * 100
+	fakeCourierBaseDateAdd       = 24 * time.Hour
+	fakeCourierShippingCost      = 25000
+	fakeCourierTransitDays       = 2
+	fakeCourierLastUpdateAdd     = 24 * time.Hour
+	fakeCourierDeliveredAtAdd    = 24 * time.Hour
+	fakeCourierTrackingNumberMax = 999999999
 )
 
-// fakeCarrierClient provides a mock implementation of CarrierClient interface for testing.
-type fakeCarrierClient struct {
+// fakeCourierClient provides a mock implementation of CourierClient interface for testing.
+type fakeCourierClient struct {
 	shouldFail bool
 	delay      time.Duration
 }
 
-// NewFakeCarrierClient creates a new instance of fakeCarrierClient.
-func NewFakeCarrierClient() client.CarrierClient {
-	return &fakeCarrierClient{
+// NewFakeCourierClient creates a new instance of fakeCourierClient.
+func NewFakeCourierClient() client.CourierClient {
+	return &fakeCourierClient{
 		shouldFail: false,
-		delay:      fakeCarrierDelay, // Simulate network delay
+		delay:      fakeCourierDelay, // Simulate network delay
 	}
 }
 
 // SetShouldFail configures the client to simulate failures.
-func (c *fakeCarrierClient) SetShouldFail(shouldFail bool) {
+func (c *fakeCourierClient) SetShouldFail(shouldFail bool) {
 	c.shouldFail = shouldFail
 }
 
 // SetDelay configures the simulated network delay.
-func (c *fakeCarrierClient) SetDelay(delay time.Duration) {
+func (c *fakeCourierClient) SetDelay(delay time.Duration) {
 	c.delay = delay
 }
 
-// GetRates returns mock shipping rates for different carriers.
-func (c *fakeCarrierClient) GetRates(
+// GetRates returns mock shipping rates for different Couriers.
+func (c *fakeCourierClient) GetRates(
 	_ context.Context,
 	_ *dto.ShippingRequest,
 ) ([]dto.ShippingRate, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, errors.New("simulated carrier API error")
+		return nil, errors.New("simulated Courier API error")
 	}
 
-	baseDate := time.Now().Add(fakeCarrierBaseDateAdd)
+	baseDate := time.Now().Add(fakeCourierBaseDateAdd)
 
 	rates := []dto.ShippingRate{
 		{
-			CarrierID:         constant.CarrierJNE,
-			Service:           "JNE Regular",
-			ShippingCost:      decimal.NewFromFloat(fakeCarrierShippingCost),
-			Currency:          "USD",
-			EstimatedDelivery: baseDate.Add(2 * 24 * time.Hour),
-			TransitDays:       fakeCarrierTransitDays,
+			CourierID:          constant.CourierJNE,
+			CourierServiceName: "JNE Regular",
+			ShippingCost:       decimal.NewFromFloat(fakeCourierShippingCost),
+			Currency:           "USD",
+			EstimatedDelivery:  baseDate.Add(2 * 24 * time.Hour),
+			TransitDays:        fakeCourierTransitDays,
 		},
 		{
-			CarrierID:         constant.CarrierJT,
-			Service:           "J&T Express",
-			ShippingCost:      decimal.NewFromFloat(fakeCarrierShippingCost),
-			Currency:          "USD",
-			EstimatedDelivery: baseDate.Add(3 * 24 * time.Hour),
-			TransitDays:       fakeCarrierTransitDays,
+			CourierID:          constant.CourierJT,
+			CourierServiceName: "J&T Express",
+			ShippingCost:       decimal.NewFromFloat(fakeCourierShippingCost),
+			Currency:           "USD",
+			EstimatedDelivery:  baseDate.Add(3 * 24 * time.Hour),
+			TransitDays:        fakeCourierTransitDays,
 		},
 		{
-			CarrierID:         constant.CarrierSiCepat,
-			Service:           "SiCepat REG",
-			ShippingCost:      decimal.NewFromFloat(fakeCarrierShippingCost),
-			Currency:          "USD",
-			EstimatedDelivery: baseDate.Add(4 * 24 * time.Hour),
-			TransitDays:       fakeCarrierTransitDays,
+			CourierID:          constant.CourierSiCepat,
+			CourierServiceName: "SiCepat REG",
+			ShippingCost:       decimal.NewFromFloat(fakeCourierShippingCost),
+			Currency:           "USD",
+			EstimatedDelivery:  baseDate.Add(4 * 24 * time.Hour),
+			TransitDays:        fakeCourierTransitDays,
 		},
 	}
 
 	return rates, nil
 }
 
-// GetRate returns a mock shipping rate for a specific carrier.
-func (c *fakeCarrierClient) GetRate(
+// GetRate returns a mock shipping rate for a specific Courier.
+func (c *fakeCourierClient) GetRate(
 	ctx context.Context,
 	req *dto.ShippingRequest,
 ) (*dto.ShippingRate, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, errors.New("simulated carrier API error")
+		return nil, errors.New("simulated Courier API error")
 	}
 
 	rates, err := c.GetRates(ctx, req)
@@ -109,7 +109,7 @@ func (c *fakeCarrierClient) GetRate(
 	}
 
 	for _, rate := range rates {
-		if rate.CarrierID == req.CarrierID {
+		if rate.CourierID == req.CourierID {
 			return &rate, nil
 		}
 	}
@@ -118,37 +118,37 @@ func (c *fakeCarrierClient) GetRate(
 }
 
 // CreateShipment creates a mock shipping label.
-func (c *fakeCarrierClient) CreateShipment(
+func (c *fakeCourierClient) CreateShipment(
 	_ context.Context,
 	req *dto.ShippingRequest,
 ) (*dto.ShippingLabel, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, errors.New("failed to create shipment: carrier API error")
+		return nil, errors.New("failed to create shipment: Courier API error")
 	}
 
-	carrierService := c.getCarrierInfo(req.CarrierID)
-	trackingNumber := c.generateTrackingNumber(req.CarrierID)
+	courierServiceName := c.getCourierInfo(req.CourierID)
+	trackingNumber := c.generateTrackingNumber(req.CourierID)
 
 	return &dto.ShippingLabel{
-		TrackingNumber: trackingNumber,
-		LabelURL:       fmt.Sprintf("https://fake-carrier.com/labels/%s.pdf", trackingNumber),
-		CarrierID:      req.CarrierID,
-		Service:        carrierService,
+		TrackingNumber:     trackingNumber,
+		LabelURL:           fmt.Sprintf("https://fake-Courier.com/labels/%s.pdf", trackingNumber),
+		CourierID:          req.CourierID,
+		CourierServiceName: courierServiceName,
 	}, nil
 }
 
-// getCarrierInfo get carrier name and service.
-func (c *fakeCarrierClient) getCarrierInfo(carrierID constant.CarrierID) string {
-	switch carrierID {
-	case constant.CarrierJNE:
+// getCourierInfo get Courier name and service.
+func (c *fakeCourierClient) getCourierInfo(courierID constant.CourierID) string {
+	switch courierID {
+	case constant.CourierJNE:
 		return "JNE Regular"
-	case constant.CarrierJT:
+	case constant.CourierJT:
 		return "J&T Express"
-	case constant.CarrierSiCepat:
+	case constant.CourierSiCepat:
 		return "SiCepat REG"
-	case constant.CarrierPOS:
+	case constant.CourierPOS:
 		return "POS Indonesia"
 	default:
 		return ""
@@ -156,15 +156,15 @@ func (c *fakeCarrierClient) getCarrierInfo(carrierID constant.CarrierID) string 
 }
 
 // GetTracking returns mock tracking information.
-func (c *fakeCarrierClient) GetTracking(
+func (c *fakeCourierClient) GetTracking(
 	_ context.Context,
 	trackingNumber string,
-	carrierID constant.CarrierID,
+	courierID constant.CourierID,
 ) (*dto.TrackingInfo, error) {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
-		return nil, errors.New("failed to get tracking: carrier API error")
+		return nil, errors.New("failed to get tracking: Courier API error")
 	}
 
 	statuses := []constant.FulfillmentStatus{
@@ -183,14 +183,14 @@ func (c *fakeCarrierClient) GetTracking(
 	info := &dto.TrackingInfo{
 		TrackingNumber: trackingNumber,
 		Status:         status,
-		CarrierID:      carrierID,
-		LastUpdate:     time.Now().Add(fakeCarrierLastUpdateAdd),
+		CourierID:      courierID,
+		LastUpdate:     time.Now().Add(fakeCourierLastUpdateAdd),
 		Location:       location,
 		Description:    description,
 	}
 
 	if status == constant.FulfillmentStatusDelivered {
-		deliveredAt := time.Now().Add(fakeCarrierDeliveredAtAdd)
+		deliveredAt := time.Now().Add(fakeCourierDeliveredAtAdd)
 		info.DeliveredAt = &deliveredAt
 	}
 
@@ -198,18 +198,18 @@ func (c *fakeCarrierClient) GetTracking(
 }
 
 // CancelShipment cancels a mock shipment.
-func (c *fakeCarrierClient) CancelShipment(
+func (c *fakeCourierClient) CancelShipment(
 	_ context.Context,
 	trackingNumber string,
-	carrierID constant.CarrierID,
+	courierID constant.CourierID,
 ) error {
 	time.Sleep(c.delay)
 
 	if c.shouldFail {
 		return fmt.Errorf(
-			"failed to cancel shipment: TrackingNumber: %s, CarrierID: %s",
+			"failed to cancel shipment: TrackingNumber: %s, CourierID: %s",
 			trackingNumber,
-			carrierID,
+			courierID,
 		)
 	}
 
@@ -217,15 +217,15 @@ func (c *fakeCarrierClient) CancelShipment(
 }
 
 // generateTrackingNumber creates a mock tracking number.
-func (c *fakeCarrierClient) generateTrackingNumber(carrierID constant.CarrierID) string {
-	prefix := carrierID
-	randomSuffix := random.Int(fakeCarrierTrackingNumberMax)
+func (c *fakeCourierClient) generateTrackingNumber(courierID constant.CourierID) string {
+	prefix := courierID
+	randomSuffix := random.Int(fakeCourierTrackingNumberMax)
 
 	return fmt.Sprintf("%s-%09d", prefix, randomSuffix)
 }
 
 // generateLocation creates a mock location.
-func (c *fakeCarrierClient) generateLocation() string {
+func (c *fakeCourierClient) generateLocation() string {
 	locations := []string{
 		"Jakarta, Indonesia",
 		"Surabaya, Indonesia",
@@ -240,10 +240,10 @@ func (c *fakeCarrierClient) generateLocation() string {
 }
 
 // generateDescription creates a status description.
-func (c *fakeCarrierClient) generateDescription(status constant.FulfillmentStatus) string {
+func (c *fakeCourierClient) generateDescription(status constant.FulfillmentStatus) string {
 	descriptions := map[constant.FulfillmentStatus]string{
 		constant.FulfillmentStatusProcessing: "Package is being prepared for shipment",
-		constant.FulfillmentStatusShipped:    "Package has been picked up by carrier",
+		constant.FulfillmentStatusShipped:    "Package has been picked up by Courier",
 		constant.FulfillmentStatusInTransit:  "Package is in transit to destination",
 		constant.FulfillmentStatusDelivered:  "Package has been delivered successfully",
 	}

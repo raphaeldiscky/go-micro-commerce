@@ -21,7 +21,6 @@ func executeSagaSteps(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
-	shipping *dto.Shipping,
 ) error {
 	steps := []stepHandler{
 		{name: "ReserveProducts", handler: executeReserveProductsStep, critical: true},
@@ -40,7 +39,7 @@ func executeSagaSteps(
 	}
 
 	for _, step := range steps {
-		if err := step.handler(ctx, order, state, userAuth, shipping); err != nil {
+		if err := step.handler(ctx, order, state, userAuth); err != nil {
 			if step.critical {
 				return err
 			}
@@ -82,7 +81,6 @@ type stepExecutor func(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
-	shipping *dto.Shipping,
 ) error
 
 // executeReserveProductsStep handles product reservation and calculation.
@@ -91,7 +89,6 @@ func executeReserveProductsStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing ReserveProducts", "orderID", order.ID)
@@ -125,14 +122,12 @@ func executeGetShippingCostStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
-	shipping *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing GetShippingCost", "orderID", order.ID)
 
 	shippingRequest := dto.GetShippingCostRequest{
 		Order:    order,
-		Shipping: shipping,
 		UserAuth: &userAuth,
 	}
 
@@ -153,7 +148,6 @@ func executeSetFinalPricesStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	_ pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing SetFinalOrderPrices", "orderID", order.ID)
@@ -185,7 +179,6 @@ func executeCreatePaymentStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	_ pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing CreatePayment", "orderID", order.ID)
@@ -207,7 +200,6 @@ func executeSendPaymentNotificationStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	_ pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing SendPaymentRequiredNotification", "orderID", order.ID)
@@ -238,7 +230,6 @@ func executeWaitForPaymentStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	_ pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Waiting for payment confirmation with reminders", "orderID", order.ID)
@@ -265,13 +256,12 @@ func executeProcessFulfillmentStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	_ pkgdto.UserAuthInfo,
-	shipping *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
 
 	var fulfillmentResult dto.ProcessFulfillmentResponse
-	if err := workflow.ExecuteActivity(ctx, string(constant.ProcessFulfillmentStep), order, shipping).Get(ctx, &fulfillmentResult); err != nil {
+	if err := workflow.ExecuteActivity(ctx, string(constant.ProcessFulfillmentStep), order).Get(ctx, &fulfillmentResult); err != nil {
 		return err
 	}
 
@@ -288,7 +278,6 @@ func executeConfirmDeductionStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	userAuth pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing ConfirmProductsDeduction", "orderID", order.ID)
@@ -314,7 +303,6 @@ func executeSendConfirmationStep(
 	order *entity.Order,
 	state *dto.TemporalWorkflowState,
 	_ pkgdto.UserAuthInfo,
-	_ *dto.Shipping,
 ) error {
 	logger := workflow.GetLogger(ctx)
 	logger.Info("Executing SendOrderConfirmedNotification", "orderID", order.ID)

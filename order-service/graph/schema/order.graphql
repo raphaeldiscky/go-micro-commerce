@@ -22,14 +22,49 @@ type Payment @key(fields: "orderId") {
   orderId: UUID!
 }
 
+# Courier type
+type Courier {
+  courierId: String!
+}
+
+# Package type
+type Package {
+  weightKg: Decimal!
+  length: Decimal!
+  height: Decimal!
+  width: Decimal!
+  unit: String!
+}
+
+# Origin address type
+type Origin {
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+}
+
+# Destination address type
+type Destination {
+  city: String!
+  state: String!
+  postalCode: String!
+  country: String!
+}
+
 # Order entity
 type Order {
   id: UUID!
   idempotencyKey: UUID!
+  checkoutSessionId: UUID!
   customerId: UUID!
   status: OrderStatus!
   currency: String!
   paymentGateway: PaymentGateway!
+  courier: Courier!
+  package: Package!
+  origin: Origin!
+  destination: Destination!
   shippingCost: Decimal!
   subtotal: Decimal!
   totalPrice: Decimal!

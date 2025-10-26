@@ -632,8 +632,8 @@ func (s *productService) ValidateProducts(
 
 	// Validate each product
 	for _, product := range products {
-		// Price validation
-		if product.Price != expectedPrices[product.ID] {
+		// Price validation - use Equal() for numeric comparison
+		if !product.Price.Equal(expectedPrices[product.ID]) {
 			return nil, httperror.NewBadRequestError(
 				fmt.Sprintf(
 					"price changed for product %s: expected %.2f, current %.2f",

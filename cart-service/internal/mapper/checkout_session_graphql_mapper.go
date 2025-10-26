@@ -20,8 +20,28 @@ func MapToGraphQLCheckoutSessionFromDTO(
 		ID:             session.ID,
 		IdempotencyKey: session.IdempotencyKey,
 		CustomerID:     session.CustomerID,
-		AddressID:      session.AddressID,
-		CarrierID:      session.CarrierID,
+		Courier: &graph.Courier{
+			CourierID: session.Courier.CourierID,
+		},
+		Destination: &graph.Destination{
+			City:       session.Destination.City,
+			State:      session.Destination.State,
+			PostalCode: session.Destination.PostalCode,
+			Country:    session.Destination.Country,
+		},
+		Origin: &graph.Origin{
+			City:       session.Origin.City,
+			State:      session.Origin.State,
+			PostalCode: session.Origin.PostalCode,
+			Country:    session.Origin.Country,
+		},
+		Package: &graph.Package{
+			WeightKg: session.Package.WeightKG,
+			Width:    session.Package.Width,
+			Height:   session.Package.Height,
+			Length:   session.Package.Length,
+			Unit:     session.Package.Unit,
+		},
 		Status:         session.Status,
 		PaymentGateway: session.PaymentGateway,
 		Currency:       session.Currency,
@@ -56,6 +76,53 @@ func MapToCreateCheckoutSessionRequest(
 	}
 }
 
+// MapToUpdateCheckoutSessionRequest maps graph.UpdateCheckoutSessionInput to dto.UpdateCheckoutSessionRequest.
+func MapToUpdateCheckoutSessionRequest(
+	input graph.UpdateCheckoutSessionInput,
+	customerID uuid.UUID,
+) *dto.UpdateCheckoutSessionRequest {
+	req := &dto.UpdateCheckoutSessionRequest{
+		CustomerID:     customerID,
+		PaymentGateway: input.PaymentGateway,
+	}
+
+	if input.Courier != nil {
+		req.Courier = &dto.Courier{
+			CourierID: input.Courier.CourierID,
+		}
+	}
+
+	if input.Destination != nil {
+		req.Destination = &dto.Destination{
+			City:       input.Destination.City,
+			State:      input.Destination.State,
+			PostalCode: input.Destination.PostalCode,
+			Country:    input.Destination.Country,
+		}
+	}
+
+	if input.Origin != nil {
+		req.Origin = &dto.Origin{
+			City:       input.Origin.City,
+			State:      input.Origin.State,
+			PostalCode: input.Origin.PostalCode,
+			Country:    input.Origin.Country,
+		}
+	}
+
+	if input.Package != nil {
+		req.Package = &dto.Package{
+			WeightKG: input.Package.WeightKg,
+			Width:    input.Package.Width,
+			Height:   input.Package.Height,
+			Length:   input.Package.Length,
+			Unit:     input.Package.Unit,
+		}
+	}
+
+	return req
+}
+
 // MapToPlaceOrderRequest maps graph.PlaceOrderInput to dto.PlaceOrderRequest.
 func MapToPlaceOrderRequest(
 	input graph.PlaceOrderInput,
@@ -64,5 +131,28 @@ func MapToPlaceOrderRequest(
 	return &dto.PlaceOrderRequest{
 		CustomerID:     customerID,
 		IdempotencyKey: input.IdempotencyKey,
+		Courier: dto.Courier{
+			CourierID: input.Courier.CourierID,
+		},
+		Destination: dto.Destination{
+			City:       input.Destination.City,
+			State:      input.Destination.State,
+			PostalCode: input.Destination.PostalCode,
+			Country:    input.Destination.Country,
+		},
+		Origin: dto.Origin{
+			City:       input.Origin.City,
+			State:      input.Origin.State,
+			PostalCode: input.Origin.PostalCode,
+			Country:    input.Origin.Country,
+		},
+		Package: dto.Package{
+			WeightKG: input.Package.WeightKg,
+			Width:    input.Package.Width,
+			Height:   input.Package.Height,
+			Length:   input.Package.Length,
+			Unit:     input.Package.Unit,
+		},
+		PaymentGateway: input.PaymentGateway,
 	}
 }

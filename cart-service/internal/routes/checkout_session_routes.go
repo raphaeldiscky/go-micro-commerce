@@ -16,5 +16,6 @@ func SetupCheckoutSessionRoutes(e *echo.Echo, h *handler.CheckoutSessionHandler)
 	protected.Use(middleware.AuthMiddleware)
 	protected.POST("", h.CreateCheckoutSession)
 	protected.GET("/:sessionID", h.GetCheckoutSessionByID)
+	protected.PATCH("/:sessionID", h.UpdateCheckoutSession)
 	protected.POST("/:sessionID/place-order", h.PlaceOrder)
 }

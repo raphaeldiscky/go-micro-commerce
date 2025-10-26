@@ -10,21 +10,33 @@ import { CheckCircle, MapPin, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function AddressSelector() {
-  const { selectedAddress, setAddress } = useCheckoutSessionStore()
+  const { selectedAddress, selectedAddressId, setAddress } =
+    useCheckoutSessionStore()
   const { data, isLoading } = useAddresses(10)
   const [_isAddingNew, setIsAddingNew] = useState(false)
 
   const addresses = data?.edges.map((edge) => edge.node) || []
 
+  // Reconstruct selectedAddress from selectedAddressId after fetch
+  useEffect(() => {
+    if (selectedAddressId && !selectedAddress && addresses.length > 0) {
+      const address = addresses.find((addr) => addr.id === selectedAddressId)
+      if (address) {
+        // Just update the UI object in store (not calling backend)
+        useCheckoutSessionStore.setState({ selectedAddress: address })
+      }
+    }
+  }, [selectedAddressId, selectedAddress, addresses])
+
   // Auto-select default address on mount
   useEffect(() => {
-    if (!selectedAddress && addresses.length > 0) {
+    if (!selectedAddress && !selectedAddressId && addresses.length > 0) {
       const defaultAddress = addresses.find((addr) => addr.isDefault)
       if (defaultAddress) {
         setAddress(defaultAddress.id, defaultAddress)
       }
     }
-  }, [addresses, selectedAddress, setAddress])
+  }, [addresses, selectedAddress, selectedAddressId, setAddress])
 
   const handleAddressChange = (addressId: string) => {
     const address = addresses.find((addr) => addr.id === addressId)
@@ -82,7 +94,7 @@ export function AddressSelector() {
       </CardHeader>
       <CardContent className="space-y-4">
         <RadioGroup
-          value={selectedAddress?.id || ''}
+          value={selectedAddress?.id || selectedAddressId || ''}
           onValueChange={handleAddressChange}
         >
           {addresses.map((address: Address) => (

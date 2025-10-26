@@ -61,8 +61,7 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				Data: &Metadata{
 					ReservedProducts: reservedProducts,
 					CustomerEmail:    email,
-					Shipping:         &payload.Shipping, // Store shipping data for recovery and later steps
-					UserAuth:         &userAuth,         // Store user auth for all subsequent steps
+					UserAuth:         &userAuth, // Store user auth for all subsequent steps
 				},
 			}, nil
 		},
@@ -81,14 +80,9 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
-			if data.Shipping == nil {
-				return nil, errors.New("shipping data not found in saga state")
-			}
-
 			shippingCost, err := s.activities.GetShippingCost(
 				ctx.Context(),
 				payload.Order,
-				data.Shipping,
 			)
 			if err != nil {
 				return nil, err
@@ -99,7 +93,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				Data: &Metadata{
 					ReservedProducts: data.ReservedProducts,
 					CustomerEmail:    data.CustomerEmail,
-					Shipping:         data.Shipping,
 					UserAuth:         data.UserAuth,
 					ShippingCost:     &shippingCost,
 				},
@@ -158,7 +151,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				Data: &Metadata{
 					ReservedProducts: data.ReservedProducts,
 					CustomerEmail:    data.CustomerEmail,
-					Shipping:         data.Shipping,
 					ShippingCost:     data.ShippingCost,
 					UserAuth:         data.UserAuth,
 					PaymentID:        &paymentID,
@@ -250,7 +242,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				Data: &Metadata{
 					ReservedProducts: data.ReservedProducts,
 					CustomerEmail:    data.CustomerEmail,
-					Shipping:         data.Shipping,
 					ShippingCost:     data.ShippingCost,
 					UserAuth:         data.UserAuth,
 					PaymentID:        &paymentID,
@@ -285,7 +276,6 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 				Data: &Metadata{
 					ReservedProducts: data.ReservedProducts,
 					CustomerEmail:    data.CustomerEmail,
-					Shipping:         data.Shipping,
 					UserAuth:         data.UserAuth,
 					PaymentID:        data.PaymentID,
 					FulfillmentID:    &fulfillmentID,

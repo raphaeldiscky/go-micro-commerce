@@ -8,6 +8,10 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+	"github.com/shopspring/decimal"
+
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -141,21 +145,90 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 
 	orderRepo := ds.OrderRepository()
 
+	// Check for existing order with same idempotency key (idempotent processing)
+	existingOrder, err := orderRepo.FindByIdempotencyKey(ctx, evt.Payload.IdempotencyKey)
+	if err != nil && err.Error() != constant.OrderNotFoundErrorMessage {
+		return fmt.Errorf("failed to check existing order: %w", err)
+	}
+
+	// If order already exists for this customer, skip creation (idempotent)
+	if existingOrder != nil && existingOrder.CustomerID == evt.Payload.UserID {
+		c.logger.Infof(
+			"Order %s already exists for idempotency key, skipping creation (idempotent)",
+			existingOrder.ID,
+		)
+
+		// Trigger saga if needed (saga execution is also idempotent)
+		userAuth := pkgdto.UserAuthInfo{
+			UserID: evt.Payload.UserID,
+			Email:  "system@order-service.internal", // Placeholder for event-driven saga
+			Roles:  []string{"user"},                // Default role
+		}
+		sagaCtx := echoutils.AddUserAuthToContexts(ctx, userAuth)
+		payload := &saga.Payload{Order: existingOrder}
+		c.sagaOrchestrator.ExecuteOrderSagaAsync(sagaCtx, payload)
+
+		c.logger.Infof(
+			"Triggered saga for existing order %s from checkout session %s",
+			existingOrder.ID,
+			evt.Payload.CheckoutSessionID,
+		)
+
+		return nil // Success - idempotent behavior
+	}
+
 	// Create order items from checkout session items
 	orderItems := make([]entity.OrderItem, len(evt.Payload.Items))
 	for i := range evt.Payload.Items {
+		item := evt.Payload.Items[i]
 		orderItems[i] = entity.OrderItem{
-			ProductID: evt.Payload.Items[i].ProductID,
-			Quantity:  evt.Payload.Items[i].Quantity,
+			ProductID:     item.ProductID,
+			Quantity:      item.Quantity,
+			UnitPrice:     item.UnitPrice,
+			TaxRate:       decimal.Zero,
+			TotalTax:      decimal.Zero,
+			TotalDiscount: decimal.Zero,
+			TotalPrice:    item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)),
 		}
+	}
+
+	// Map shipping data from event to entity
+	courier := entity.Courier{
+		CourierID: evt.Payload.Courier.CourierID,
+	}
+
+	destination := entity.Destination{
+		City:       evt.Payload.Destination.City,
+		State:      evt.Payload.Destination.State,
+		PostalCode: evt.Payload.Destination.PostalCode,
+		Country:    evt.Payload.Destination.Country,
+	}
+
+	origin := entity.Origin{
+		City:       evt.Payload.Origin.City,
+		State:      evt.Payload.Origin.State,
+		PostalCode: evt.Payload.Origin.PostalCode,
+		Country:    evt.Payload.Origin.Country,
+	}
+
+	packageData := entity.Package{
+		WeightKG: evt.Payload.Package.WeightKG,
+		Width:    evt.Payload.Package.Width,
+		Height:   evt.Payload.Package.Height,
+		Length:   evt.Payload.Package.Length,
+		Unit:     evt.Payload.Package.Unit,
 	}
 
 	// Create order entity
 	order, err := entity.NewOrder(
-		evt.Payload.IdempotencyKey,
 		evt.Payload.UserID,
+		evt.Payload.IdempotencyKey,
 		constant.PaymentGateway(evt.Payload.PaymentGateway),
 		evt.Payload.Currency,
+		courier,
+		destination,
+		origin,
+		packageData,
 		orderItems,
 	)
 	if err != nil {
@@ -174,15 +247,25 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 		evt.Payload.CheckoutSessionID,
 	)
 
-	// Create saga payload
-	// Note: Shipping info should be added to CheckoutSessionOrderPlacedPayload in the future
-	payload := &saga.Payload{
-		Order: createdOrder,
-		// Shipping will be handled by the saga when it retrieves product and fulfillment info
+	// Create user auth context for saga execution from event payload
+	userAuth := pkgdto.UserAuthInfo{
+		UserID: evt.Payload.UserID,
+		Email:  "system@order-service.internal", // Placeholder for event-driven saga
+		Roles:  []string{"user"},                // Default role
 	}
 
-	// Trigger order saga asynchronously
-	c.sagaOrchestrator.ExecuteOrderSagaAsync(ctx, payload)
+	// Add user auth to context for async saga execution
+	sagaCtx := echoutils.AddUserAuthToContexts(ctx, userAuth)
+
+	// Create saga payload
+	payload := &saga.Payload{
+		Order: createdOrder,
+	}
+
+	c.logger.Debugf("Saga payload: %+v", payload)
+
+	// Trigger order saga asynchronously with user auth context
+	c.sagaOrchestrator.ExecuteOrderSagaAsync(sagaCtx, payload)
 
 	c.logger.Infof(
 		"Successfully triggered order creation saga for checkout session ID: %s, Order ID: %s",

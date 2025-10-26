@@ -41,7 +41,7 @@ func SetupKafkaConsumers(
 		mq.NewFulfillmentRequestConsumer(
 			appLogger,
 			providers.DataStore,
-			providers.CarrierClient,
+			providers.CourierClient,
 		).Handler,
 		appLogger,
 	)

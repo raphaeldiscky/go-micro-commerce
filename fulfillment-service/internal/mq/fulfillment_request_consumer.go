@@ -40,19 +40,19 @@ func (e *FulfillmentRequestEvent) GetPayload() any {
 type FulfillmentRequestConsumer struct {
 	logger        logger.Logger
 	datastore     repository.DataStore
-	carrierClient client.CarrierClient
+	courierClient client.CourierClient
 }
 
 // NewFulfillmentRequestConsumer creates a new consumer for fulfillment request events.
 func NewFulfillmentRequestConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-	carrierClient client.CarrierClient,
+	courierClient client.CourierClient,
 ) *FulfillmentRequestConsumer {
 	return &FulfillmentRequestConsumer{
 		logger:        appLogger,
 		datastore:     ds,
-		carrierClient: carrierClient,
+		courierClient: courierClient,
 	}
 }
 
@@ -194,48 +194,46 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 	evt *FulfillmentRequestEvent,
 ) (*entity.Fulfillment, error) {
 	// Mock for now
-	toAddress := entity.ToAddress{
-		City:       evt.Payload.Shipping.ToAddress.City,
-		State:      evt.Payload.Shipping.ToAddress.State,
-		PostalCode: evt.Payload.Shipping.ToAddress.PostalCode,
-		Country:    evt.Payload.Shipping.ToAddress.Country,
+	destination := entity.Destination{
+		City:       evt.Payload.Destination.City,
+		State:      evt.Payload.Destination.State,
+		PostalCode: evt.Payload.Destination.PostalCode,
+		Country:    evt.Payload.Destination.Country,
 	}
-	fromAddress := entity.FromAddress{
-		City:       evt.Payload.Shipping.FromAddress.City,
-		State:      evt.Payload.Shipping.FromAddress.State,
-		PostalCode: evt.Payload.Shipping.FromAddress.PostalCode,
-		Country:    evt.Payload.Shipping.FromAddress.Country,
-	}
-
-	dimensions := entity.Dimensions{
-		Length: evt.Payload.Shipping.Dimensions.Length,
-		Height: evt.Payload.Shipping.Dimensions.Height,
-		Width:  evt.Payload.Shipping.Dimensions.Width,
-		Unit:   evt.Payload.Shipping.Dimensions.Unit,
+	origin := entity.Origin{
+		City:       evt.Payload.Origin.City,
+		State:      evt.Payload.Origin.State,
+		PostalCode: evt.Payload.Origin.PostalCode,
+		Country:    evt.Payload.Origin.Country,
 	}
 
-	weightKG := evt.Payload.Shipping.WeightKG
+	packageData := entity.Package{
+		WeightKG: evt.Payload.Package.WeightKG,
+		Length:   evt.Payload.Package.Length,
+		Height:   evt.Payload.Package.Height,
+		Width:    evt.Payload.Package.Width,
+		Unit:     evt.Payload.Package.Unit,
+	}
 
 	// Create shipping request
 	shippingRequest := &dto.ShippingRequest{
 		OrderID:     evt.Payload.OrderID,
-		CarrierID:   constant.CarrierID(evt.Payload.Shipping.CarrierID),
-		FromAddress: fromAddress,
-		ToAddress:   toAddress,
-		WeightKG:    weightKG,
-		Dimensions:  dimensions,
+		CourierID:   constant.CourierID(evt.Payload.Courier.CourierID),
+		Destination: destination,
+		Origin:      origin,
+		Package:     packageData,
 	}
 
-	rate, err := c.carrierClient.GetRate(ctx, shippingRequest)
+	rate, err := c.courierClient.GetRate(ctx, shippingRequest)
 	if err != nil {
 		c.logger.Warnf("Failed to get shipping rates: %v, using default values", err)
 	}
 
-	shippingRequest.CarrierID = rate.CarrierID
+	shippingRequest.CourierID = rate.CourierID
 	shippingCost := rate.ShippingCost
 	estimatedDelivery := rate.EstimatedDelivery
 
-	label, err := c.carrierClient.CreateShipment(ctx, shippingRequest)
+	label, err := c.courierClient.CreateShipment(ctx, shippingRequest)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create shipping label: %w", err)
 	}
@@ -247,9 +245,9 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 		trackingNumber,
 		evt.Payload.Currency,
 		shippingCost,
-		weightKG,
-		fromAddress,
-		toAddress,
+		packageData,
+		destination,
+		origin,
 		estimatedDelivery,
 	)
 	if err != nil {

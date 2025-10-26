@@ -16,6 +16,10 @@ type CheckoutSessionOrderPlacedPayload struct {
 	Status            string                `json:"status"`
 	Currency          string                `json:"currency"`
 	PaymentGateway    string                `json:"payment_gateway"`
+	Courier           Courier               `json:"courier"`
+	Destination       Destination           `json:"destination"`
+	Origin            Origin                `json:"origin"`
+	Package           Package               `json:"package"`
 	CreatedAt         time.Time             `json:"created_at"`
 }
 

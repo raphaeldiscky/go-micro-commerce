@@ -16,8 +16,28 @@ func MapToCheckoutSessionResponse(session *entity.CheckoutSession) *dto.Checkout
 		ID:             session.ID,
 		IdempotencyKey: session.IdempotencyKey,
 		CustomerID:     session.CustomerID,
-		AddressID:      session.AddressID,
-		CarrierID:      session.CarrierID,
+		Courier: dto.Courier{
+			CourierID: session.Courier.CourierID,
+		},
+		Destination: dto.Destination{
+			City:       session.Destination.City,
+			State:      session.Destination.State,
+			PostalCode: session.Destination.PostalCode,
+			Country:    session.Destination.Country,
+		},
+		Origin: dto.Origin{
+			City:       session.Origin.City,
+			State:      session.Origin.State,
+			PostalCode: session.Origin.PostalCode,
+			Country:    session.Origin.Country,
+		},
+		Package: dto.Package{
+			WeightKG: session.Package.WeightKG,
+			Width:    session.Package.Width,
+			Height:   session.Package.Height,
+			Length:   session.Package.Length,
+			Unit:     session.Package.Unit,
+		},
 		Status:         session.Status,
 		PaymentGateway: session.PaymentGateway,
 		Currency:       session.Currency,
@@ -78,4 +98,42 @@ func MapCheckoutSessionItemsToPayload(
 	}
 
 	return payloadItems
+}
+
+// MapCourierToPayload maps entity.Courier to kafkaevent.Courier.
+func MapCourierToPayload(courier entity.Courier) kafkaevent.Courier {
+	return kafkaevent.Courier{
+		CourierID: courier.CourierID,
+	}
+}
+
+// MapDestinationToPayload maps entity.Destination to kafkaevent.Destination.
+func MapDestinationToPayload(destination entity.Destination) kafkaevent.Destination {
+	return kafkaevent.Destination{
+		City:       destination.City,
+		State:      destination.State,
+		PostalCode: destination.PostalCode,
+		Country:    destination.Country,
+	}
+}
+
+// MapOriginToPayload maps entity.Origin to kafkaevent.Origin.
+func MapOriginToPayload(origin entity.Origin) kafkaevent.Origin {
+	return kafkaevent.Origin{
+		City:       origin.City,
+		State:      origin.State,
+		PostalCode: origin.PostalCode,
+		Country:    origin.Country,
+	}
+}
+
+// MapPackageToPayload maps entity.Package to kafkaevent.Package.
+func MapPackageToPayload(packageData entity.Package) kafkaevent.Package {
+	return kafkaevent.Package{
+		WeightKG: packageData.WeightKG,
+		Width:    packageData.Width,
+		Height:   packageData.Height,
+		Length:   packageData.Length,
+		Unit:     packageData.Unit,
+	}
 }

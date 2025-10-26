@@ -17,7 +17,6 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 )
@@ -31,15 +30,17 @@ type StepResult struct {
 
 // Payload represents the payload for a saga execution.
 type Payload struct {
-	Order    *entity.Order
-	Shipping dto.Shipping
+	Order *entity.Order
 }
 
 // Metadata represents the metadata for a saga execution.
 type Metadata struct {
 	ReservedProducts []entity.Product     `json:"reserved_products"`
 	CustomerEmail    string               `json:"customer_email"`
-	Shipping         *dto.Shipping        `json:"shipping"`
+	Courier          *entity.Courier      `json:"courier"`
+	Origin           *entity.Origin       `json:"origin"`
+	Destination      *entity.Destination  `json:"destination"`
+	Package          *entity.Package      `json:"package"`
 	ShippingCost     *decimal.Decimal     `json:"shipping_cost"`
 	FulfillmentID    *uuid.UUID           `json:"fulfillment_id"`
 	TrackingNumber   *string              `json:"tracking_number"`

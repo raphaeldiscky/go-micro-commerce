@@ -104,7 +104,7 @@ func (pc *productClient) ValidateProducts(
 	for i, item := range items {
 		protoProducts[i] = &pb.ProductForValidation{
 			Id:       item.ProductID.String(),
-			Price:    item.UnitPrice.InexactFloat64(),
+			Price:    item.UnitPrice.String(),
 			Quantity: item.Quantity,
 		}
 	}

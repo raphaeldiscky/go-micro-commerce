@@ -4,9 +4,14 @@ CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     idempotency_key UUID NOT NULL UNIQUE,
     customer_id UUID NOT NULL,
+    checkout_session_id UUID NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
     payment_gateway VARCHAR(50) NOT NULL,
     currency VARCHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
+    destination JSONB, -- from checkout session
+    origin JSONB, -- from checkout session
+    courier JSONB, -- from checkout session
+    package JSONB, -- from checkout session
     shipping_cost DECIMAL(10, 2) NOT NULL CHECK (shipping_cost >= 0), -- generated from fulfillment-service
     subtotal DECIMAL(10, 2) NOT NULL CHECK (subtotal >= 0), -- SUM(unit_price * quantity) for all items
     total_tax DECIMAL(10, 2) NOT NULL CHECK (total_tax >= 0), -- SUM(total_tax) for all items
@@ -15,6 +20,18 @@ CREATE TABLE IF NOT EXISTS orders (
     total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
+
+    CHECK (
+        jsonb_type(courier) = 'object'
+        AND jsonb_type(destination) = 'object'
+        AND jsonb_type(origin) = 'object'
+        AND jsonb_type(package) = 'object'
+    )
+    CHECK (
+        destination ?& ARRAY['city', 'country']
+        AND origin ?& ARRAY['city', 'country']
+        AND courier ?& ARRAY['courier_id']
+    )
 );
 
 ALTER TABLE orders

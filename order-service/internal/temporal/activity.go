@@ -55,7 +55,6 @@ type OrderActivities interface {
 	ProcessFulfillment(
 		ctx context.Context,
 		order *entity.Order,
-		shipping *dto.Shipping,
 	) (dto.ProcessFulfillmentResponse, error)
 	ConfirmProductsDeduction(ctx context.Context, req *dto.ConfirmProductsDeductionRequest) error
 	SendOrderConfirmedNotification(
@@ -207,6 +206,10 @@ func (ta *orderActivities) ReserveProducts(
 		order.IdempotencyKey,
 		order.PaymentGateway,
 		order.Currency,
+		order.Courier,
+		order.Destination,
+		order.Origin,
+		order.Package,
 		orderItems,
 	)
 	if err != nil {
@@ -239,7 +242,7 @@ func (ta *orderActivities) GetShippingCost(
 	// Add user authentication info to context for gRPC calls
 	ctx = echoutils.AddUserAuthToContexts(ctx, *req.UserAuth)
 
-	shippingCost, err := ta.fulfillmentClient.GetShippingCost(ctx, req.Order, req.Shipping)
+	shippingCost, err := ta.fulfillmentClient.GetShippingCost(ctx, req.Order)
 	if err != nil {
 		logger.Error("Failed to get shipping cost", "orderID", req.Order.ID, "error", err)
 
@@ -514,7 +517,6 @@ func (ta *orderActivities) WaitForPaymentConfirmation(
 func (ta *orderActivities) ProcessFulfillment(
 	ctx context.Context,
 	order *entity.Order,
-	shipping *dto.Shipping,
 ) (dto.ProcessFulfillmentResponse, error) {
 	logger := activity.GetLogger(ctx)
 	logger.Info("Executing ProcessFulfillment", "orderID", order.ID)
@@ -523,7 +525,7 @@ func (ta *orderActivities) ProcessFulfillment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Create fulfillment request event
-		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order, shipping)
+		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order)
 
 		payload, err := json.Marshal(fulfillmentEvent)
 		if err != nil {

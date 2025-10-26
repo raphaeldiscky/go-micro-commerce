@@ -3,7 +3,9 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
@@ -28,6 +30,11 @@ type CheckoutSessionService interface {
 		req *dto.CreateCheckoutSessionRequest,
 	) (*dto.CheckoutSessionResponse, error)
 	GetCheckoutSession(ctx context.Context, id uuid.UUID) (*dto.CheckoutSessionResponse, error)
+	UpdateCheckoutSession(
+		ctx context.Context,
+		sessionID uuid.UUID,
+		req *dto.UpdateCheckoutSessionRequest,
+	) (*dto.CheckoutSessionResponse, error)
 	PlaceOrder(
 		ctx context.Context,
 		sessionID uuid.UUID,
@@ -171,12 +178,16 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 			checkoutItems = append(checkoutItems, *checkoutItem)
 		}
 
-		// Create checkout session entity with simplified signature
+		// Create checkout session entity with empty shipping data (to be filled later)
 		session, errSession := entity.NewCheckoutSession(
 			req.IdempotencyKey,
 			req.CustomerID,
 			req.CartID,
 			"IDR", // Default currency
+			entity.Courier{},
+			entity.Destination{},
+			entity.Package{},
+			entity.Origin{},
 			checkoutItems,
 		)
 		if errSession != nil {
@@ -222,6 +233,92 @@ func (s *checkoutSessionService) GetCheckoutSession(
 	return mapper.MapToCheckoutSessionResponse(session), nil
 }
 
+// UpdateCheckoutSession updates a checkout session with address, carrier, or payment gateway.
+func (s *checkoutSessionService) UpdateCheckoutSession(
+	ctx context.Context,
+	sessionID uuid.UUID,
+	req *dto.UpdateCheckoutSessionRequest,
+) (*dto.CheckoutSessionResponse, error) {
+	var updatedSession *entity.CheckoutSession
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		checkoutSessionRepo := ds.CheckoutSessionRepository()
+
+		// Get checkout session
+		session, errSession := checkoutSessionRepo.GetByID(ctx, sessionID)
+		if errSession != nil {
+			return httperror.NewInternalServerError("failed to get checkout session")
+		}
+
+		if session == nil {
+			return httperror.NewBadRequestError("checkout session not found")
+		}
+
+		// Validate session belongs to the customer
+		if session.CustomerID != req.CustomerID {
+			return httperror.NewForbiddenError("checkout session does not belong to customer")
+		}
+
+		// Validate session can be updated (must be in pending status)
+		if session.Status != constant.CheckoutSessionStatusPending {
+			return httperror.NewBadRequestError("checkout session cannot be updated")
+		}
+
+		// Update only provided fields
+		if req.Courier != nil {
+			session.Courier = entity.Courier{
+				CourierID: req.Courier.CourierID,
+			}
+		}
+
+		if req.Destination != nil {
+			session.Destination = entity.Destination{
+				City:       req.Destination.City,
+				State:      req.Destination.State,
+				PostalCode: req.Destination.PostalCode,
+				Country:    req.Destination.Country,
+			}
+		}
+
+		if req.Origin != nil {
+			session.Origin = entity.Origin{
+				City:       req.Origin.City,
+				State:      req.Origin.State,
+				PostalCode: req.Origin.PostalCode,
+				Country:    req.Origin.Country,
+			}
+		}
+
+		if req.Package != nil {
+			session.Package = entity.Package{
+				WeightKG: req.Package.WeightKG,
+				Width:    req.Package.Width,
+				Height:   req.Package.Height,
+				Length:   req.Package.Length,
+				Unit:     req.Package.Unit,
+			}
+		}
+
+		if req.PaymentGateway != nil {
+			session.PaymentGateway = req.PaymentGateway
+		}
+
+		updated, errUpdate := checkoutSessionRepo.Update(ctx, session)
+		if errUpdate != nil {
+			return httperror.NewInternalServerError("failed to update checkout session")
+		}
+
+		updatedSession = updated
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
+}
+
 // PlaceOrder places an order from a checkout session.
 func (s *checkoutSessionService) PlaceOrder(
 	ctx context.Context,
@@ -253,7 +350,6 @@ func (s *checkoutSessionService) PlaceOrder(
 
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		checkoutSessionRepo := ds.CheckoutSessionRepository()
-		cartRepo := ds.CartRepository()
 
 		// Get checkout session
 		session, errSession := checkoutSessionRepo.GetByID(ctx, sessionID)
@@ -288,8 +384,28 @@ func (s *checkoutSessionService) PlaceOrder(
 		}
 
 		// Update session with order details
-		session.AddressID = &req.AddressID
-		session.CarrierID = &req.CarrierID
+		session.Courier = entity.Courier{
+			CourierID: req.Courier.CourierID,
+		}
+		session.Destination = entity.Destination{
+			City:       req.Destination.City,
+			State:      req.Destination.State,
+			PostalCode: req.Destination.PostalCode,
+			Country:    req.Destination.Country,
+		}
+		session.Origin = entity.Origin{
+			City:       req.Origin.City,
+			State:      req.Origin.State,
+			PostalCode: req.Origin.PostalCode,
+			Country:    req.Origin.Country,
+		}
+		session.Package = entity.Package{
+			WeightKG: req.Package.WeightKG,
+			Width:    req.Package.Width,
+			Height:   req.Package.Height,
+			Length:   req.Package.Length,
+			Unit:     req.Package.Unit,
+		}
 		session.PaymentGateway = &req.PaymentGateway
 
 		// Update status to order_placed
@@ -302,9 +418,6 @@ func (s *checkoutSessionService) PlaceOrder(
 		if err != nil {
 			return httperror.NewInternalServerError("failed to update checkout session")
 		}
-
-		// Migrate cart: archive checked out cart and create new active cart with unselected items
-		s.migrateCartAfterOrderPlacement(ctx, cartRepo, req.CustomerID)
 
 		// Dereference nullable fields for event
 		paymentGateway := ""
@@ -321,12 +434,40 @@ func (s *checkoutSessionService) PlaceOrder(
 			updatedSession.Currency,
 			paymentGateway,
 			updatedSession.Items,
+			updatedSession.Courier,
+			updatedSession.Destination,
+			updatedSession.Origin,
+			updatedSession.Package,
 			updatedSession.CreatedAt,
 		)
 
-		if err = s.checkoutSessionOrderPlacedProducer.Send(ctx, evt); err != nil {
+		// Marshal event to JSON for storage in outbox
+		eventJSON, errMarshal := json.Marshal(evt)
+		if errMarshal != nil {
+			return httperror.NewInternalServerError("failed to marshal checkout session event")
+		}
+
+		// Get outbox repository from DataStore (uses same transaction)
+		outboxRepo := ds.OutboxRepository()
+
+		// Create outbox event
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "checkout_session",
+			AggregateID:   updatedSession.ID,
+			EventType:     evt.Metadata.EventType,
+			Topic:         s.checkoutSessionOrderPlacedProducer.Topic(),
+			Payload:       eventJSON,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now(),
+			ScheduledFor:  time.Now(),
+			Attempts:      0,
+		}
+
+		// Save to outbox table (within same transaction)
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
 			return httperror.NewInternalServerError(
-				"failed to send checkout session order placed event",
+				fmt.Sprintf("failed to save event to outbox: %v", err),
 			)
 		}
 
@@ -335,6 +476,11 @@ func (s *checkoutSessionService) PlaceOrder(
 	if err != nil {
 		return nil, err
 	}
+
+	// Migrate cart after successful order placement (non-critical operation)
+	// This runs outside the transaction so failures won't affect order placement
+	cartRepo := s.dataStore.CartRepository()
+	s.migrateCartAfterOrderPlacement(ctx, cartRepo, req.CustomerID)
 
 	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
 }

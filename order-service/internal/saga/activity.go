@@ -33,7 +33,6 @@ type OrderActivities interface {
 	GetShippingCost(
 		ctx context.Context,
 		order *entity.Order,
-		shipping *dto.Shipping,
 	) (shippingCost decimal.Decimal, err error)
 	SetFinalOrderPrices(ctx context.Context, order *entity.Order) error
 	CreatePayment(ctx context.Context, order *entity.Order) (paymentID uuid.UUID, err error)
@@ -199,6 +198,10 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 		order.IdempotencyKey,
 		order.PaymentGateway,
 		order.Currency,
+		order.Courier,
+		order.Destination,
+		order.Origin,
+		order.Package,
 		orderItems,
 	)
 	if err != nil {
@@ -214,7 +217,6 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 func (a *orderActivities) GetShippingCost(
 	ctx context.Context,
 	order *entity.Order,
-	shipping *dto.Shipping,
 ) (decimal.Decimal, error) {
 	a.logger.Infof(
 		"Getting shipping cost from fulfillment service for order: %s with shipping details",
@@ -224,7 +226,7 @@ func (a *orderActivities) GetShippingCost(
 	// Add user authentication info to context for gRPC calls
 	ctx = addUserAuthToContext(ctx, a.logger, order.ID)
 
-	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order, shipping)
+	shippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order)
 	if err != nil {
 		a.logger.Errorf("Failed to get shipping cost for order %s: %v", order.ID, err)
 		return decimal.Zero, fmt.Errorf("failed to get shipping cost: %w", err)
@@ -614,7 +616,7 @@ func (a *orderActivities) ProcessFulfillment(
 		outboxRepo := ds.OutboxRepository()
 
 		// Create fulfillment request event
-		fulfillmentEvent := producer.NewFulfillmentRequestEvent(payload.Order, &payload.Shipping)
+		fulfillmentEvent := producer.NewFulfillmentRequestEvent(payload.Order)
 
 		evtPayload, err := json.Marshal(fulfillmentEvent)
 		if err != nil {

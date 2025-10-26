@@ -1,20 +1,20 @@
+import { PaymentCountdownTimer } from '@/components/payment/PaymentCountdownTimer'
+import { PaymentStatusBadge } from '@/components/payment/PaymentStatusBadge'
+import { StripePaymentElement } from '@/components/payment/StripePaymentElement'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
-import { useCreateCheckoutSession } from '@/hooks/order'
-import { fCurrency } from '@/lib/utils/number'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { env } from '@/env'
 import {
-  AlertCircle,
-  Clock,
-  CreditCard,
-  MapPin,
-  Package,
-  ShieldCheck,
-} from 'lucide-react'
+  usePaymentByOrderId,
+  usePaymentStatusSubscription,
+} from '@/hooks/payment'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { AlertCircle, CheckCircle, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -22,395 +22,275 @@ export const Route = createFileRoute('/orders/$paymentId')({
   component: RouteComponent,
 })
 
-// Mock payment details hook (will be replaced with real hook in Phase 10)
-function useMockPaymentDetails(paymentId: string) {
-  return {
-    data: {
-      paymentId,
-      orderId: 'order-123',
-      amount: 359.97,
-      currency: 'USD',
-      paymentStatus: 'pending' as const,
-      paymentGateway: 'stripe',
-      paymentDeadline: new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString(),
-      order: {
-        orderId: 'order-123',
-        items: [
-          {
-            productId: 'prod-1',
-            productName: 'Wireless Bluetooth Headphones',
-            quantity: 1,
-            price: 299.99,
-          },
-          {
-            productId: 'prod-2',
-            productName: 'Smart Watch Pro',
-            quantity: 1,
-            price: 49.99,
-          },
-        ],
-        subtotal: 349.98,
-        shippingCost: 9.99,
-        total: 359.97,
-        shippingAddress: {
-          receiverName: 'John Doe',
-          addressLine1: '123 Main Street',
-          addressLine2: 'Apt 4B',
-          city: 'San Francisco',
-          state: 'CA',
-          postalCode: '94103',
-          countryCode: 'US',
-        },
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    isLoading: false,
-    error: null,
-  }
-}
-
-// Mock countdown timer (will be replaced with real component in Phase 9)
-function MockCountdownTimer({ deadline }: { deadline: string }) {
-  const timeRemaining = Math.max(0, new Date(deadline).getTime() - Date.now())
-  const hours = Math.floor(timeRemaining / (1000 * 60 * 60))
-  const minutes = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((timeRemaining % (1000 * 60)) / 1000)
-
-  const isExpired = timeRemaining === 0
-  const isUrgent = hours < 1
-  const isWarning = hours < 2 && !isUrgent
-
-  const colorClass = isExpired
-    ? 'text-red-600'
-    : isUrgent
-      ? 'text-red-600'
-      : isWarning
-        ? 'text-yellow-600'
-        : 'text-green-600'
-
-  if (isExpired) {
-    return <span className={colorClass}>Expired</span>
-  }
-
-  return (
-    <span className={colorClass}>
-      {hours}h {minutes}m {seconds}s remaining
-    </span>
-  )
-}
+const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 function RouteComponent() {
   const { paymentId } = Route.useParams()
   const navigate = useNavigate()
-  const { data: payment, isLoading } = useMockPaymentDetails(paymentId)
-  const createCheckoutSession = useCreateCheckoutSession()
-  const [isCreatingSession, setIsCreatingSession] = useState(false)
 
-  const handlePayNow = async () => {
-    setIsCreatingSession(true)
-    try {
-      const result = await createCheckoutSession.mutateAsync({ paymentId })
-      // Redirect to Stripe Checkout
-      window.location.href = result.checkoutUrl
-    } catch (err) {
-      toast.error('Failed to create checkout session')
-      setIsCreatingSession(false)
-    }
+  // Fetch payment data (paymentId param is actually orderId)
+  const orderId = paymentId
+  const {
+    data: payment,
+    isLoading,
+    error,
+    refetch,
+  } = usePaymentByOrderId(orderId, {
+    enabled: true,
+    refetchInterval: false, // Don't poll - use SSE instead
+  })
+
+  const [paymentCompleted, setPaymentCompleted] = useState(false)
+
+  // Subscribe to real-time payment status updates via SSE
+  usePaymentStatusSubscription(orderId, {
+    enabled: !!payment && payment.status !== 'COMPLETED',
+    onPaymentSuccess: () => {
+      toast.success('Payment completed successfully!')
+      setPaymentCompleted(true)
+      // Redirect to order confirmation after 2 seconds
+      setTimeout(() => {
+        navigate({ to: `/orders/${orderId}/confirmation` })
+      }, 2000)
+    },
+    onPaymentFailed: (errorMsg) => {
+      toast.error(errorMsg || 'Payment failed. Please try again.')
+      refetch()
+    },
+    onPaymentTimeout: () => {
+      toast.error('Payment window expired. Please create a new order.')
+      refetch()
+    },
+  })
+
+  // Handle payment expiry
+  const handleExpired = () => {
+    toast.error('Payment window has expired')
+    refetch()
   }
 
-  const handleCreateNewOrder = () => {
-    // TODO: Pre-fill cart with same items
-    navigate({ to: PATH.products.root })
+  // Handle successful payment confirmation
+  const handlePaymentSuccess = () => {
+    toast.success('Payment submitted! Awaiting confirmation...')
+  }
+
+  // Handle payment error
+  const handlePaymentError = (errorMsg: string) => {
+    toast.error(errorMsg)
   }
 
   // Loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50/40 p-4 sm:p-6 lg:p-8">
-        <div className="mx-auto max-w-6xl">
-          <Skeleton className="h-8 w-64 mb-8" />
-          <div className="grid gap-6 lg:grid-cols-3">
-            <div className="lg:col-span-2 space-y-6">
-              <Skeleton className="h-64 w-full" />
-              <Skeleton className="h-48 w-full" />
-            </div>
-            <div className="space-y-6">
-              <Skeleton className="h-48 w-full" />
-              <Skeleton className="h-32 w-full" />
-            </div>
-          </div>
+        <div className="mx-auto max-w-4xl space-y-6">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-96 w-full" />
+          <Skeleton className="h-32 w-full" />
         </div>
       </div>
     )
   }
 
-  const isExpired =
-    new Date(payment.paymentDeadline).getTime() < Date.now() || false
+  // Error state
+  if (error || !payment) {
+    return (
+      <div className="min-h-screen bg-gray-50/40 flex items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              Payment Not Found
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground mb-4">
+              We couldn't find this payment. It may have expired or been
+              cancelled.
+            </p>
+            <Button onClick={() => navigate({ to: PATH.products.root })}>
+              Return to Shop
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
-  const canPay = !isExpired && !isCreatingSession
+  const isExpired = payment.expiresAt
+    ? new Date(payment.expiresAt).getTime() < Date.now()
+    : false
+  const isCompleted = payment.status === 'COMPLETED' || paymentCompleted
+  const isFailed = payment.status === 'FAILED'
+  const isTimeout = payment.status === 'TIMEOUT'
+  const canPay =
+    !isExpired &&
+    !isCompleted &&
+    !isFailed &&
+    !isTimeout &&
+    payment.clientSecret
 
   return (
     <div className="min-h-screen bg-gray-50/40">
       {/* Header */}
       <div className="border-b bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-6">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold tracking-tight">
-                Payment Pending
+                {isCompleted ? 'Payment Successful' : 'Complete Payment'}
               </h1>
               <p className="text-sm text-muted-foreground">
-                Payment ID: {payment.paymentId}
+                Order ID: {payment.orderId}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={'default'} className="flex items-center gap-1">
-                {isExpired && <AlertCircle className="h-3 w-3" />}
-                {!isExpired && <Clock className="h-3 w-3" />}
-                {payment.paymentStatus}
-              </Badge>
-            </div>
+            <PaymentStatusBadge status={payment.status} />
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Success Alert */}
+        {isCompleted && (
+          <Alert className="border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertTitle className="text-green-600">
+              Payment Completed!
+            </AlertTitle>
+            <AlertDescription className="text-green-600">
+              Your payment has been processed successfully. Redirecting to order
+              confirmation...
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Expired Alert */}
-        {isExpired && (
-          <Alert className="mb-6" variant="destructive">
+        {(isExpired || isTimeout) && (
+          <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Payment Window Expired</AlertTitle>
             <AlertDescription>
               Your payment window has closed. Please create a new order to
               continue.
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => navigate({ to: PATH.products.root })}
+              >
+                Return to Shop
+              </Button>
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Left Column - Order Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Order Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Package className="h-5 w-5" />
-                  Order Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  {payment.order.items.map((item) => (
-                    <div
-                      key={item.productId}
-                      className="flex items-center justify-between py-2"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium">{item.productName}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Quantity: {item.quantity}
-                        </p>
-                      </div>
-                      <p className="font-medium">
-                        {fCurrency(item.price * item.quantity)}
-                      </p>
-                    </div>
-                  ))}
+        {/* Failed Alert */}
+        {isFailed && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Payment Failed</AlertTitle>
+            <AlertDescription>
+              Your payment could not be processed. Please try again or contact
+              support.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Countdown Timer */}
+        {payment.expiresAt && !isCompleted && !isTimeout && (
+          <PaymentCountdownTimer
+            expiresAt={payment.expiresAt}
+            onExpired={handleExpired}
+          />
+        )}
+
+        {/* Payment Form */}
+        {canPay && payment.clientSecret && (
+          <Elements
+            stripe={stripePromise}
+            options={{
+              clientSecret: payment.clientSecret,
+              appearance: {
+                theme: 'stripe',
+                variables: {
+                  colorPrimary: '#0F172A',
+                  colorBackground: '#ffffff',
+                  colorText: '#0F172A',
+                  colorDanger: '#dc2626',
+                  fontFamily: 'system-ui, sans-serif',
+                  spacingUnit: '4px',
+                  borderRadius: '8px',
+                },
+              },
+            }}
+          >
+            <StripePaymentElement
+              orderId={payment.orderId}
+              amount={payment.amount}
+              currency={payment.currency}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+            />
+          </Elements>
+        )}
+
+        {/* Payment Info */}
+        {canPay && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center space-y-2">
+                <div className="mx-auto h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <ShieldCheck className="h-4 w-4 text-green-600" />
                 </div>
+                <h4 className="text-sm font-medium">Secure Payment</h4>
+                <p className="text-xs text-muted-foreground">
+                  Your payment is secured by Stripe. We never see your card
+                  details.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-                <div className="border-t pt-4 space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>{fCurrency(payment.order.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span>{fCurrency(payment.order.shippingCost)}</span>
-                  </div>
-                  <div className="flex justify-between text-base font-bold pt-2 border-t">
-                    <span>Total</span>
-                    <span>{fCurrency(payment.order.total)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Shipping Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  Shipping Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm space-y-1">
-                  <p className="font-medium">
-                    {payment.order.shippingAddress.receiverName}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {payment.order.shippingAddress.addressLine1}
-                  </p>
-                  {payment.order.shippingAddress.addressLine2 && (
-                    <p className="text-muted-foreground">
-                      {payment.order.shippingAddress.addressLine2}
-                    </p>
-                  )}
-                  <p className="text-muted-foreground">
-                    {payment.order.shippingAddress.city},{' '}
-                    {payment.order.shippingAddress.state}{' '}
-                    {payment.order.shippingAddress.postalCode}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {payment.order.shippingAddress.countryCode}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Payment Action */}
-          <div className="space-y-6">
-            {/* Payment Status */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="h-5 w-5" />
-                  Payment Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Gateway</span>
-                    <span className="capitalize">{payment.paymentGateway}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Status</span>
-                    <Badge variant={'default'}>{payment.paymentStatus}</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Countdown Timer */}
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Time Remaining
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="text-center py-4">
-                  <div className="text-3xl font-bold mb-2">
-                    <MockCountdownTimer deadline={payment.paymentDeadline} />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Payment expires at{' '}
-                    {new Date(payment.paymentDeadline).toLocaleString()}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Pay Now Button */}
-            {canPay && (
-              <Card>
-                <CardContent className="pt-6">
-                  <Button
-                    onClick={handlePayNow}
-                    disabled={isCreatingSession}
-                    size="lg"
-                    className="w-full h-12 text-base font-medium"
-                  >
-                    <CreditCard className="mr-2 h-5 w-5" />
-                    Pay with {payment.paymentGateway}
-                  </Button>
-                </CardContent>
-              </Card>
+        {/* Payment Details Summary */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Payment Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Payment ID</span>
+              <span className="font-mono text-xs">{payment.id}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Gateway</span>
+              <span className="capitalize">{payment.paymentGateway}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Amount</span>
+              <span className="font-semibold">
+                {payment.currency.toUpperCase()} {payment.amount}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Status</span>
+              <PaymentStatusBadge status={payment.status} />
+            </div>
+            {payment.createdAt && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Created</span>
+                <span>{new Date(payment.createdAt).toLocaleString()}</span>
+              </div>
             )}
-
-            {/* New Order Button for Expired */}
-            {isExpired && (
-              <Card>
-                <CardContent className="pt-6">
-                  <Button
-                    onClick={handleCreateNewOrder}
-                    size="lg"
-                    className="w-full h-12 text-base font-medium"
-                  >
-                    Create New Order
-                  </Button>
-                </CardContent>
-              </Card>
+            {payment.completedAt && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Completed</span>
+                <span>{new Date(payment.completedAt).toLocaleString()}</span>
+              </div>
             )}
-
-            {/* Payment Instructions */}
-            {!isExpired && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">How to Pay</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="space-y-2 text-sm">
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                        1
-                      </div>
-                      <p className="text-muted-foreground">
-                        Click "Pay with Stripe" button
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                        2
-                      </div>
-                      <p className="text-muted-foreground">
-                        You'll be redirected to secure Stripe checkout
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                        3
-                      </div>
-                      <p className="text-muted-foreground">
-                        Complete your payment
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                        4
-                      </div>
-                      <p className="text-muted-foreground">
-                        You'll be redirected back automatically
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Security Badge */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center space-y-2">
-                  <div className="mx-auto h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                    <ShieldCheck className="h-4 w-4 text-green-600" />
-                  </div>
-                  <h4 className="text-sm font-medium">Secure Payment</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Powered by Stripe. Your payment information is encrypted and
-                    secure.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

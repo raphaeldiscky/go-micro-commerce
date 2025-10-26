@@ -29,10 +29,15 @@ func MapProtoToProduct(p *pb.Product) (entity.Product, error) {
 		updatedAt = p.GetUpdatedAt().AsTime()
 	}
 
+	price, err := decimal.NewFromString(p.GetPrice())
+	if err != nil {
+		return entity.Product{}, fmt.Errorf("invalid product price from product-service: %w", err)
+	}
+
 	return entity.Product{
 		ID:               uid,
 		Name:             p.GetName(),
-		UnitPrice:        decimal.NewFromFloat(p.GetPrice()), // safely convert double → decimal
+		UnitPrice:        price,
 		Quantity:         p.GetQuantity(),
 		Version:          p.GetVersion(),
 		ReservedQuantity: p.GetReservedQuantity(),

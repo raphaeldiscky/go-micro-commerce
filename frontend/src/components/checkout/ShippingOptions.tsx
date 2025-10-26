@@ -5,10 +5,28 @@ import { mockShippingOptions } from '@/mocks/shipping'
 import { useCheckoutSessionStore } from '@/store/checkoutSessionStore'
 import type { ShippingOptionUI } from '@/types/cart'
 import { Clock, Truck } from 'lucide-react'
+import { useEffect } from 'react'
 
 export function ShippingOptions() {
-  const { selectedAddress, selectedShippingOption, setShippingMethod } =
-    useCheckoutSessionStore()
+  const {
+    selectedAddress,
+    selectedShippingOption,
+    selectedCarrierId,
+    setShippingMethod,
+  } = useCheckoutSessionStore()
+
+  // Reconstruct selectedShippingOption from selectedCarrierId after fetch
+  useEffect(() => {
+    if (selectedCarrierId && !selectedShippingOption) {
+      const option = mockShippingOptions.find(
+        (opt) => opt.id === selectedCarrierId,
+      )
+      if (option) {
+        // Just update the UI object in store (not calling backend)
+        useCheckoutSessionStore.setState({ selectedShippingOption: option })
+      }
+    }
+  }, [selectedCarrierId, selectedShippingOption])
 
   const isDisabled = !selectedAddress
 
@@ -42,7 +60,7 @@ export function ShippingOptions() {
           </p>
         )}
         <RadioGroup
-          value={selectedShippingOption?.id || ''}
+          value={selectedShippingOption?.id || selectedCarrierId || ''}
           onValueChange={handleShippingChange}
           disabled={isDisabled}
         >

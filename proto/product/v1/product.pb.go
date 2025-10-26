@@ -569,7 +569,7 @@ type Product struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name             string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Price            float64                `protobuf:"fixed64,3,opt,name=price,proto3" json:"price,omitempty"`
+	Price            string                 `protobuf:"bytes,3,opt,name=price,proto3" json:"price,omitempty"`
 	Quantity         int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	Version          int64                  `protobuf:"varint,5,opt,name=version,proto3" json:"version,omitempty"`                                           // for optimistic locking
 	ReservedQuantity int64                  `protobuf:"varint,6,opt,name=reserved_quantity,json=reservedQuantity,proto3" json:"reserved_quantity,omitempty"` // quantity reserved for orders
@@ -623,11 +623,11 @@ func (x *Product) GetName() string {
 	return ""
 }
 
-func (x *Product) GetPrice() float64 {
+func (x *Product) GetPrice() string {
 	if x != nil {
 		return x.Price
 	}
-	return 0
+	return ""
 }
 
 func (x *Product) GetQuantity() int64 {
@@ -1084,7 +1084,7 @@ func (x *ValidateProductsResponse) GetMessage() string {
 type ProductForValidation struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Price         float64                `protobuf:"fixed64,2,opt,name=price,proto3" json:"price,omitempty"`
+	Price         string                 `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
 	Quantity      int64                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1127,11 +1127,11 @@ func (x *ProductForValidation) GetId() string {
 	return ""
 }
 
-func (x *ProductForValidation) GetPrice() float64 {
+func (x *ProductForValidation) GetPrice() string {
 	if x != nil {
 		return x.Price
 	}
-	return 0
+	return ""
 }
 
 func (x *ProductForValidation) GetQuantity() int64 {
@@ -1269,12 +1269,12 @@ const file_product_v1_product_proto_rawDesc = "" +
 	"\x17ReserveProductsResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12@\n" +
 	"\x11reserved_products\x18\x02 \x03(\v2\x13.product.v1.ProductR\x10reservedProducts\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"\xdd\x02\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\xed\x02\n" +
 	"\aProduct\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12\x1e\n" +
 	"\x04name\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04name\x12$\n" +
-	"\x05price\x18\x03 \x01(\x01B\x0e\xbaH\v\x12\t!\x00\x00\x00\x00\x00\x00\x00\x00R\x05price\x12#\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04name\x124\n" +
+	"\x05price\x18\x03 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x05price\x12#\n" +
 	"\bquantity\x18\x04 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\bquantity\x12!\n" +
 	"\aversion\x18\x05 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\aversion\x124\n" +
 	"\x11reserved_quantity\x18\x06 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\x10reservedQuantity\x129\n" +
@@ -1309,10 +1309,10 @@ const file_product_v1_product_proto_rawDesc = "" +
 	"\x18ValidateProductsResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12/\n" +
 	"\bproducts\x18\x02 \x03(\v2\x13.product.v1.ProductR\bproducts\x12\x18\n" +
-	"\amessage\x18\x03 \x01(\tR\amessage\"{\n" +
+	"\amessage\x18\x03 \x01(\tR\amessage\"\x8b\x01\n" +
 	"\x14ProductForValidation\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12$\n" +
-	"\x05price\x18\x02 \x01(\x01B\x0e\xbaH\v\x12\t!\x00\x00\x00\x00\x00\x00\x00\x00R\x05price\x12#\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x124\n" +
+	"\x05price\x18\x02 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x05price\x12#\n" +
 	"\bquantity\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x00R\bquantity\"\x0f\n" +
 	"\rHealthRequest\"B\n" +
 	"\x0eHealthResponse\x120\n" +

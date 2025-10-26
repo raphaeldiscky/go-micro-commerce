@@ -20,7 +20,7 @@ import (
 type Providers struct {
 	DataStore          repository.DataStore
 	KafkaAdmin         *kafka.Admin
-	CarrierClient      client.CarrierClient
+	CourierClient      client.CourierClient
 	FulfillmentService service.FulfillmentService
 }
 
@@ -71,12 +71,12 @@ func SetupGlobal(
 
 		return nil, err
 	}
-	// Initialize carrier client (using fake client for now)
-	carrierClient := mock.NewFakeCarrierClient()
+	// Initialize courier client (using fake client for now)
+	courierClient := mock.NewFakeCourierClient()
 
 	return &Providers{
 		DataStore:     dataStore,
 		KafkaAdmin:    kafkaAdmin,
-		CarrierClient: carrierClient,
+		CourierClient: courierClient,
 	}, nil
 }

@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 export const env = createEnv({
   client: {
+    VITE_APP_TITLE: z.string().min(1).optional(),
     VITE_API_GATEWAY_URL: z.url().default('http://localhost:8080'),
     VITE_GRAPHQL_GATEWAY_URL: z.url().default('http://localhost:8080/graph'),
     VITE_GRAPHQL_SUBSCRIPTION_WS_URL: z
@@ -12,7 +13,6 @@ export const env = createEnv({
       .url()
       .default('http://localhost:8080/graph/subscriptions/sse'),
     VITE_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
-    VITE_APP_TITLE: z.string().min(1).optional(),
   },
 
   /**

@@ -10,9 +10,7 @@ import (
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
 // FulfillmentRequestEvent is the envelope for fulfillment request events.
@@ -30,7 +28,6 @@ type FulfillmentRequestProducer struct {
 // NewFulfillmentRequestEvent creates a new FulfillmentRequestEvent.
 func NewFulfillmentRequestEvent(
 	order *entity.Order,
-	shipping *dto.Shipping,
 ) *FulfillmentRequestEvent {
 	// Convert order items to fulfillment items
 	fulfillmentItems := make([]kafkaevent.FulfillmentItemPayload, len(order.Items))
@@ -54,7 +51,29 @@ func NewFulfillmentRequestEvent(
 			CustomerID: order.CustomerID,
 			Currency:   order.Currency,
 			Items:      fulfillmentItems,
-			Shipping:   mapper.MapShippingDtoToEventPayload(shipping),
+			Courier: kafkaevent.Courier{
+				CourierID: order.Courier.CourierID,
+			},
+
+			Destination: kafkaevent.Destination{
+				Country:    order.Destination.Country,
+				City:       order.Destination.City,
+				State:      order.Destination.State,
+				PostalCode: order.Destination.PostalCode,
+			},
+			Origin: kafkaevent.Origin{
+				Country:    order.Origin.Country,
+				City:       order.Origin.City,
+				State:      order.Origin.State,
+				PostalCode: order.Origin.PostalCode,
+			},
+			Package: kafkaevent.Package{
+				WeightKG: order.Package.WeightKG,
+				Length:   order.Package.Length,
+				Height:   order.Package.Height,
+				Width:    order.Package.Width,
+				Unit:     order.Package.Unit,
+			},
 		},
 	}
 }
