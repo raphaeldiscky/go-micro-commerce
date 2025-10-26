@@ -3,8 +3,10 @@ package consumer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -143,6 +145,18 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 		evt.Payload.CheckoutSessionID,
 	)
 
+	// Validate checkout session ID is not nil
+	if evt.Payload.CheckoutSessionID == uuid.Nil {
+		return errors.New("checkout session ID is nil in event payload")
+	}
+
+	c.logger.Debugf(
+		"Event payload - CheckoutSessionID: %s, IdempotencyKey: %s, UserID: %s",
+		evt.Payload.CheckoutSessionID,
+		evt.Payload.IdempotencyKey,
+		evt.Payload.UserID,
+	)
+
 	orderRepo := ds.OrderRepository()
 
 	// Check for existing order with same idempotency key (idempotent processing)
@@ -235,6 +249,13 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 	if err != nil {
 		return fmt.Errorf("failed to create order entity: %w", err)
 	}
+
+	c.logger.Debugf(
+		"Created order entity - OrderID: %s, CheckoutSessionID: %s, CustomerID: %s",
+		order.ID,
+		order.CheckoutSessionID,
+		order.CustomerID,
+	)
 
 	// Save order to database
 	createdOrder, err := orderRepo.Create(ctx, order)

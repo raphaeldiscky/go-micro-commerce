@@ -412,6 +412,13 @@ func (s *checkoutSessionService) PlaceOrder(
 		}
 
 		// Publish domain event via outbox pattern
+		s.logger.Debugf(
+			"Creating checkout session order placed event - SessionID: %s, CustomerID: %s, IdempotencyKey: %s",
+			updatedSession.ID,
+			updatedSession.CustomerID,
+			req.IdempotencyKey,
+		)
+
 		evt := producer.NewCheckoutSessionOrderPlacedEvent(
 			updatedSession.ID,
 			req.IdempotencyKey,
@@ -425,6 +432,12 @@ func (s *checkoutSessionService) PlaceOrder(
 			updatedSession.Origin,
 			updatedSession.Package,
 			updatedSession.CreatedAt,
+		)
+
+		s.logger.Debugf(
+			"Created event payload - CheckoutSessionID: %s, EventType: %s",
+			evt.Payload.CheckoutSessionID,
+			evt.Metadata.EventType,
 		)
 
 		// Marshal event to JSON for storage in outbox

@@ -106,6 +106,7 @@ func registerWebSocketMiddlewares(e *echo.Echo, cfg *config.Config) {
 		AllowOrigins: []string{
 			"http://localhost:3001", // React development server
 			"http://127.0.0.1:3001",
+			"https://go.micro.commerce:3001",
 			"http://localhost:3002",
 			"http://127.0.0.1:3002",
 			"http://localhost:3003",

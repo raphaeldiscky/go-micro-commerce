@@ -9,17 +9,17 @@ tasks:
   build:
     desc: Build the application binary
     cmds:
-      - npm run build
+      - pnpm run build
 
   run:
     desc: Run the application
     cmds:
-      - npm run dev
+      - pnpm run dev
 
   lint:
     desc: Run linters
     cmds:
-      - npm run lint
+      - pnpm run lint
 
   knip:
     desc: Run knip
@@ -29,14 +29,20 @@ tasks:
   format:
     desc: Run formatters
     cmds:
-      - npm run format
+      - pnpm run format
 
   test:
     desc: Run tests with verbose output and coverage
     cmds:
-      - npm run test
+      - pnpm run test
 
   codegen:
     desc: Generate graphql types
     cmds:
-      - npm run codegen
+      - pnpm run codegen
+
+  mkcert:
+    desc: Generate custom ssl proxy for custom domain
+    cmds:
+      - mkcert -install
+      - mkcert go.micro.commerce

@@ -225,7 +225,7 @@ func (r *orderRepository) FindByID(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE id = $1
 	`
@@ -240,6 +240,7 @@ func (r *orderRepository) FindByID(
 	err := row.Scan(
 		&order.ID,
 		&order.IdempotencyKey,
+		&order.CheckoutSessionID,
 		&order.CustomerID,
 		&order.Status,
 		&order.PaymentGateway,
