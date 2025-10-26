@@ -5,23 +5,30 @@ import fs from 'node:fs'
 import path, { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
-// https://vitejs.dev/config/
+const isLocal = process.env.VITE_ENVIRONMENT === 'dev'
+const keyPath = path.resolve(__dirname, 'go.micro.commerce-key.pem')
+const certPath = path.resolve(__dirname, 'go.micro.commerce.pem')
+
+// Only enable HTTPS if certs exist and we're running locally
+const httpsConfig =
+  isLocal && fs.existsSync(keyPath) && fs.existsSync(certPath)
+    ? {
+        key: fs.readFileSync(keyPath),
+        cert: fs.readFileSync(certPath),
+      }
+    : undefined
+
 export default defineConfig({
   server: {
     allowedHosts: ['go.micro.commerce'],
-    https: {
-      key: fs.readFileSync(
-        path.resolve(__dirname, 'go.micro.commerce-key.pem'),
-      ),
-      cert: fs.readFileSync(path.resolve(__dirname, 'go.micro.commerce.pem')),
-    },
-    port: 3031, // your Vite dev port
+    https: httpsConfig,
+    port: 3031,
     proxy: {
       '/graph': {
-        target: 'http://localhost:8080', // your GraphQL backend
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
-        ws: true, // Enable WebSocket proxy
+        ws: true,
       },
       '/product.v1.ProductService': {
         target: 'http://localhost:8080',
@@ -35,7 +42,6 @@ export default defineConfig({
     viteReact(),
     tailwindcss(),
   ],
-
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

@@ -9,6 +9,7 @@ export const env = createEnv({
     VITE_GRAPHQL_SUBSCRIPTION_WS_URL: z.url(),
     VITE_GRAPHQL_SUBSCRIPTION_SSE_URL: z.url(),
     VITE_STRIPE_PUBLISHABLE_KEY: z.string().min(1),
+    VITE_ENVIRONMENT: z.enum(['dev', 'prod']).default('dev'),
   },
 
   /**
