@@ -111,9 +111,9 @@ func (r *orderRepository) Create(
 
 	// Insert order
 	insertOrderQuery := `
-        INSERT INTO orders (id, idempotency_key, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
-        RETURNING id, idempotency_key, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+        INSERT INTO orders (id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        RETURNING id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
     `
 
 	var (
@@ -126,6 +126,7 @@ func (r *orderRepository) Create(
 		insertOrderQuery,
 		order.ID,
 		order.IdempotencyKey,
+		order.CheckoutSessionID,
 		order.CustomerID,
 		order.Status,
 		order.PaymentGateway,
@@ -144,6 +145,7 @@ func (r *orderRepository) Create(
 	).Scan(
 		&createdOrder.ID,
 		&createdOrder.IdempotencyKey,
+		&createdOrder.CheckoutSessionID,
 		&createdOrder.CustomerID,
 		&createdOrder.Status,
 		&createdOrder.PaymentGateway,

@@ -671,12 +671,7 @@ export enum PaymentStatus {
 }
 
 export type PlaceOrderInput = {
-  courier: CourierInput
-  destination: DestinationInput
   idempotencyKey: Scalars['UUID']['input']
-  origin: OriginInput
-  package: PackageInput
-  paymentGateway: Scalars['String']['input']
 }
 
 export enum PresenceStatus {

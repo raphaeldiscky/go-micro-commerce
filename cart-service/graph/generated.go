@@ -4942,7 +4942,7 @@ func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"idempotencyKey", "courier", "destination", "origin", "package", "paymentGateway"}
+	fieldsInOrder := [...]string{"idempotencyKey"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4956,41 +4956,6 @@ func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, o
 				return it, err
 			}
 			it.IdempotencyKey = data
-		case "courier":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("courier"))
-			data, err := ec.unmarshalNCourierInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCourierInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Courier = data
-		case "destination":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("destination"))
-			data, err := ec.unmarshalNDestinationInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐDestinationInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Destination = data
-		case "origin":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("origin"))
-			data, err := ec.unmarshalNOriginInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐOriginInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Origin = data
-		case "package":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("package"))
-			data, err := ec.unmarshalNPackageInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPackageInput(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Package = data
-		case "paymentGateway":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("paymentGateway"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.PaymentGateway = data
 		}
 	}
 
@@ -6374,11 +6339,6 @@ func (ec *executionContext) marshalNCourier2ᚖgithubᚗcomᚋraphaeldisckyᚋgo
 	return ec._Courier(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNCourierInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCourierInput(ctx context.Context, v any) (*CourierInput, error) {
-	res, err := ec.unmarshalInputCourierInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNCreateCheckoutSessionInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCreateCheckoutSessionInput(ctx context.Context, v any) (CreateCheckoutSessionInput, error) {
 	res, err := ec.unmarshalInputCreateCheckoutSessionInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6408,11 +6368,6 @@ func (ec *executionContext) marshalNDestination2ᚖgithubᚗcomᚋraphaeldiscky�
 		return graphql.Null
 	}
 	return ec._Destination(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNDestinationInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐDestinationInput(ctx context.Context, v any) (*DestinationInput, error) {
-	res, err := ec.unmarshalInputDestinationInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v any) (string, error) {
@@ -6457,11 +6412,6 @@ func (ec *executionContext) marshalNOrigin2ᚖgithubᚗcomᚋraphaeldisckyᚋgo�
 	return ec._Origin(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNOriginInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐOriginInput(ctx context.Context, v any) (*OriginInput, error) {
-	res, err := ec.unmarshalInputOriginInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNPackage2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPackage(ctx context.Context, sel ast.SelectionSet, v *Package) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -6470,11 +6420,6 @@ func (ec *executionContext) marshalNPackage2ᚖgithubᚗcomᚋraphaeldisckyᚋgo
 		return graphql.Null
 	}
 	return ec._Package(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNPackageInput2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPackageInput(ctx context.Context, v any) (*PackageInput, error) {
-	res, err := ec.unmarshalInputPackageInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNPlaceOrderInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPlaceOrderInput(ctx context.Context, v any) (PlaceOrderInput, error) {

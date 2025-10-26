@@ -246,7 +246,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 UPDATE_CHECKOUT_SESSION_MUTATION,
                 {
                   sessionId,
-                  input: { courierId },
+                  input: { courier: { courierId } },
                 },
               )
             } catch (error) {
@@ -331,9 +331,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 sessionId,
                 input: {
                   idempotencyKey: crypto.randomUUID(),
-                  destination: state.selectedDestination,
-                  courier: state.selectedCourier,
-                  paymentGateway: state.selectedPaymentGateway,
                 },
               },
             )

@@ -79,6 +79,7 @@ func (s *orderService) CreateOrderWithSaga(
 		newOrder, newOrderErr := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
+			req.CheckoutSessionID,
 			req.PaymentGateway,
 			req.Currency,
 			entity.Courier{

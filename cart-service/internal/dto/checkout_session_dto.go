@@ -59,13 +59,9 @@ type UpdateCheckoutSessionRequest struct {
 
 // PlaceOrderRequest represents the request to place an order from a checkout session.
 type PlaceOrderRequest struct {
-	CustomerID     uuid.UUID   `json:"-"` // from context or header
-	IdempotencyKey uuid.UUID   `json:"idempotency_key" validate:"required"`
-	Courier        Courier     `json:"courier"         validate:"required"`
-	Destination    Destination `json:"destination"     validate:"required"`
-	Origin         Origin      `json:"origin"          validate:"required"`
-	Package        Package     `json:"package"         validate:"required"`
-	PaymentGateway string      `json:"payment_gateway" validate:"required"`
+	CustomerID        uuid.UUID `json:"-"` // from context or header
+	CheckoutSessionID uuid.UUID `json:"-"` // from param URL
+	IdempotencyKey    uuid.UUID `json:"idempotency_key" validate:"required"`
 }
 
 // CheckoutSessionItemResponse represents a checkout session item in API responses.

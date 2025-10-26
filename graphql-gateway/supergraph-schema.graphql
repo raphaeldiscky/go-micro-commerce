@@ -672,11 +672,6 @@ input PlaceOrderInput
   @join__type(graph: CART_SERVICE)
 {
   idempotencyKey: UUID!
-  courier: CourierInput!
-  destination: DestinationInput!
-  origin: OriginInput!
-  package: PackageInput!
-  paymentGateway: String!
 }
 
 enum PresenceStatus

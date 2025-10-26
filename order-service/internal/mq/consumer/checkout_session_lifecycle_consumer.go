@@ -223,6 +223,7 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 	order, err := entity.NewOrder(
 		evt.Payload.UserID,
 		evt.Payload.IdempotencyKey,
+		evt.Payload.CheckoutSessionID,
 		constant.PaymentGateway(evt.Payload.PaymentGateway),
 		evt.Payload.Currency,
 		courier,

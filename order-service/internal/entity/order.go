@@ -83,7 +83,7 @@ type OrderItem struct {
 
 // NewOrder creates a new order with validation.
 func NewOrder(
-	customerID, idempotencyKey uuid.UUID,
+	customerID, idempotencyKey, checkoutSessionID uuid.UUID,
 	paymentGateway constant.PaymentGateway,
 	currency string,
 	courier Courier,
@@ -126,24 +126,25 @@ func NewOrder(
 
 	// 5. Create the order
 	order := &Order{
-		ID:             orderID,
-		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		CustomerID:     customerID,
-		Status:         constant.OrderStatusPending,
-		PaymentGateway: paymentGateway,
-		Currency:       currency,
-		Courier:        courier,
-		Destination:    destination,
-		Origin:         origin,
-		Package:        packageData,
-		ShippingCost:   shippingCost,
-		Subtotal:       subtotal.Round(constant.DefaultPricingScale),
-		TotalPrice:     totalPrice,
-		TotalTax:       totalTax.Round(constant.DefaultPricingScale),
-		TotalDiscount:  totalDiscount.Round(constant.DefaultPricingScale),
-		Items:          items,
+		ID:                orderID,
+		IdempotencyKey:    idempotencyKey,
+		CheckoutSessionID: checkoutSessionID,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+		CustomerID:        customerID,
+		Status:            constant.OrderStatusPending,
+		PaymentGateway:    paymentGateway,
+		Currency:          currency,
+		Courier:           courier,
+		Destination:       destination,
+		Origin:            origin,
+		Package:           packageData,
+		ShippingCost:      shippingCost,
+		Subtotal:          subtotal.Round(constant.DefaultPricingScale),
+		TotalPrice:        totalPrice,
+		TotalTax:          totalTax.Round(constant.DefaultPricingScale),
+		TotalDiscount:     totalDiscount.Round(constant.DefaultPricingScale),
+		Items:             items,
 	}
 
 	if err := order.validate(); err != nil {

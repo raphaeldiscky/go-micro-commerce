@@ -123,12 +123,7 @@ type PackageInput struct {
 }
 
 type PlaceOrderInput struct {
-	IdempotencyKey uuid.UUID         `json:"idempotencyKey"`
-	Courier        *CourierInput     `json:"courier"`
-	Destination    *DestinationInput `json:"destination"`
-	Origin         *OriginInput      `json:"origin"`
-	Package        *PackageInput     `json:"package"`
-	PaymentGateway string            `json:"paymentGateway"`
+	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
 }
 
 type Query struct {

@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
@@ -37,7 +38,6 @@ type CheckoutSessionService interface {
 	) (*dto.CheckoutSessionResponse, error)
 	PlaceOrder(
 		ctx context.Context,
-		sessionID uuid.UUID,
 		req *dto.PlaceOrderRequest,
 	) (*dto.CheckoutSessionResponse, error)
 	CancelCheckoutSession(
@@ -69,6 +69,13 @@ func NewCheckoutSessionService(
 		checkoutSessionOrderPlacedProducer: checkoutSessionOrderPlacedProducer,
 	}
 }
+
+const (
+	mockWeightKG = 0.1
+	mockHeightCM = 10
+	mockLengthCM = 10
+	mockWidthCM  = 10
+)
 
 // CreateCheckoutSession creates a new checkout session from a cart.
 //
@@ -183,11 +190,22 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 			req.IdempotencyKey,
 			req.CustomerID,
 			req.CartID,
-			"IDR", // Default currency
-			entity.Courier{},
-			entity.Destination{},
-			entity.Package{},
-			entity.Origin{},
+			"IDR",                // @TODO: Mock currency first
+			entity.Courier{},     // will be added on checkout page
+			entity.Destination{}, // will be added on checkout page
+			entity.Package{ // @TODO: Mock package first
+				WeightKG: decimal.NewFromFloat(mockWeightKG),
+				Length:   decimal.NewFromFloat(mockLengthCM),
+				Width:    decimal.NewFromFloat(mockWidthCM),
+				Height:   decimal.NewFromFloat(mockHeightCM),
+				Unit:     "cm",
+			},
+			entity.Origin{ // @TODO: Mock origin first
+				State:       "Central Java",
+				City:        "Muntilan",
+				PostalCode:  "45212",
+				CountryCode: "ID",
+			},
 			checkoutItems,
 		)
 		if errSession != nil {
@@ -322,7 +340,6 @@ func (s *checkoutSessionService) UpdateCheckoutSession(
 // PlaceOrder places an order from a checkout session.
 func (s *checkoutSessionService) PlaceOrder(
 	ctx context.Context,
-	sessionID uuid.UUID,
 	req *dto.PlaceOrderRequest,
 ) (*dto.CheckoutSessionResponse, error) {
 	lockRepo := s.dataStore.LockRepository()
@@ -352,7 +369,7 @@ func (s *checkoutSessionService) PlaceOrder(
 		checkoutSessionRepo := ds.CheckoutSessionRepository()
 
 		// Get checkout session
-		session, errSession := checkoutSessionRepo.GetByID(ctx, sessionID)
+		session, errSession := checkoutSessionRepo.GetByID(ctx, req.CheckoutSessionID)
 		if errSession != nil {
 			return httperror.NewInternalServerError("failed to get checkout session")
 		}
@@ -383,31 +400,6 @@ func (s *checkoutSessionService) PlaceOrder(
 			)
 		}
 
-		// Update session with order details
-		session.Courier = entity.Courier{
-			CourierID: req.Courier.CourierID,
-		}
-		session.Destination = entity.Destination{
-			City:        req.Destination.City,
-			State:       req.Destination.State,
-			PostalCode:  req.Destination.PostalCode,
-			CountryCode: req.Destination.CountryCode,
-		}
-		session.Origin = entity.Origin{
-			City:        req.Origin.City,
-			State:       req.Origin.State,
-			PostalCode:  req.Origin.PostalCode,
-			CountryCode: req.Origin.CountryCode,
-		}
-		session.Package = entity.Package{
-			WeightKG: req.Package.WeightKG,
-			Width:    req.Package.Width,
-			Height:   req.Package.Height,
-			Length:   req.Package.Length,
-			Unit:     req.Package.Unit,
-		}
-		session.PaymentGateway = &req.PaymentGateway
-
 		// Update status to order_placed
 		if err = session.UpdateStatus(constant.CheckoutSessionStatusOrderPlaced); err != nil {
 			return httperror.NewBadRequestError("failed to update checkout session status")
@@ -419,12 +411,6 @@ func (s *checkoutSessionService) PlaceOrder(
 			return httperror.NewInternalServerError("failed to update checkout session")
 		}
 
-		// Dereference nullable fields for event
-		paymentGateway := ""
-		if updatedSession.PaymentGateway != nil {
-			paymentGateway = *updatedSession.PaymentGateway
-		}
-
 		// Publish domain event via outbox pattern
 		evt := producer.NewCheckoutSessionOrderPlacedEvent(
 			updatedSession.ID,
@@ -432,7 +418,7 @@ func (s *checkoutSessionService) PlaceOrder(
 			constant.CheckoutSessionStatusOrderPlaced,
 			updatedSession.CustomerID,
 			updatedSession.Currency,
-			paymentGateway,
+			*updatedSession.PaymentGateway,
 			updatedSession.Items,
 			updatedSession.Courier,
 			updatedSession.Destination,

@@ -115,6 +115,7 @@ func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 
 	var req dto.PlaceOrderRequest
 
+	req.CheckoutSessionID = sessionID
 	if err = c.Bind(&req); err != nil {
 		return err
 	}
@@ -128,7 +129,6 @@ func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 
 	session, err := h.checkoutSessionService.PlaceOrder(
 		echoutils.ContextWithUserInfo(c),
-		sessionID,
 		&req,
 	)
 	if err != nil {

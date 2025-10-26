@@ -102,11 +102,6 @@ input UpdateCheckoutSessionInput {
 # Input type for placing order
 input PlaceOrderInput {
   idempotencyKey: UUID!
-  courier: CourierInput!
-  destination: DestinationInput!
-  origin: OriginInput!
-  package: PackageInput!
-  paymentGateway: String!
 }
 
 extend type Query {

@@ -172,6 +172,7 @@ func (s *orderService) CreateOrderWithTemporal(
 		newOrder, newErr := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
+			req.CheckoutSessionID,
 			req.PaymentGateway,
 			req.Currency,
 			entity.Courier{

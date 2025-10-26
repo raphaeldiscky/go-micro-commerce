@@ -71,10 +71,10 @@ func (r *mutationResolver) PlaceOrder(
 	}
 
 	// Map GraphQL input to service DTO
-	req := mapper.MapToPlaceOrderRequest(input, user.UserID)
+	req := mapper.MapToPlaceOrderRequest(input, user.UserID, sessionID)
 
 	// Place order
-	session, err := r.checkoutSessionService.PlaceOrder(ctx, sessionID, req)
+	session, err := r.checkoutSessionService.PlaceOrder(ctx, req)
 	if err != nil {
 		return nil, err
 	}

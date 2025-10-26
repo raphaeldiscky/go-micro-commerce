@@ -127,32 +127,11 @@ func MapToUpdateCheckoutSessionRequest(
 func MapToPlaceOrderRequest(
 	input graph.PlaceOrderInput,
 	customerID uuid.UUID,
+	sessionID uuid.UUID,
 ) *dto.PlaceOrderRequest {
 	return &dto.PlaceOrderRequest{
-		CustomerID:     customerID,
-		IdempotencyKey: input.IdempotencyKey,
-		Courier: dto.Courier{
-			CourierID: input.Courier.CourierID,
-		},
-		Destination: dto.Destination{
-			City:        input.Destination.City,
-			State:       input.Destination.State,
-			PostalCode:  input.Destination.PostalCode,
-			CountryCode: input.Destination.CountryCode,
-		},
-		Origin: dto.Origin{
-			City:        input.Origin.City,
-			State:       input.Origin.State,
-			PostalCode:  input.Origin.PostalCode,
-			CountryCode: input.Origin.CountryCode,
-		},
-		Package: dto.Package{
-			WeightKG: input.Package.WeightKg,
-			Width:    input.Package.Width,
-			Height:   input.Package.Height,
-			Length:   input.Package.Length,
-			Unit:     input.Package.Unit,
-		},
-		PaymentGateway: input.PaymentGateway,
+		CustomerID:        customerID,
+		CheckoutSessionID: sessionID,
+		IdempotencyKey:    input.IdempotencyKey,
 	}
 }

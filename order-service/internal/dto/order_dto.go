@@ -18,16 +18,17 @@ type CreateOrderItemRequest struct {
 
 // CreateOrderRequest represents the request to create a new order.
 type CreateOrderRequest struct {
-	CustomerID     uuid.UUID                `json:"-"`                                   // from context or header
-	CustomerEmail  string                   `json:"-"`                                   // from context or header
-	IdempotencyKey uuid.UUID                `json:"idempotency_key" validate:"required"` // generated from client
-	Items          []CreateOrderItemRequest `json:"items"           validate:"required,min=1,dive"`
-	Courier        Courier                  `json:"courier"         validate:"required"`
-	Destination    ToAddress                `json:"destination"     validate:"required"`
-	Origin         FromAddress              `json:"origin"          validate:"required"`
-	Package        Package                  `json:"package"         validate:"required"`
-	PaymentGateway constant.PaymentGateway  `json:"payment_gateway" validate:"required"`
-	Currency       string                   `json:"currency"        validate:"required,len=3"`
+	CustomerID        uuid.UUID                `json:"-"`                                       // from context or header
+	CustomerEmail     string                   `json:"-"`                                       // from context or header
+	IdempotencyKey    uuid.UUID                `json:"idempotency_key"     validate:"required"` // generated from client
+	CheckoutSessionID uuid.UUID                `json:"checkout_session_id" validate:"required"`
+	Items             []CreateOrderItemRequest `json:"items"               validate:"required,min=1,dive"`
+	Courier           Courier                  `json:"courier"             validate:"required"`
+	Destination       ToAddress                `json:"destination"         validate:"required"`
+	Origin            FromAddress              `json:"origin"              validate:"required"`
+	Package           Package                  `json:"package"             validate:"required"`
+	PaymentGateway    constant.PaymentGateway  `json:"payment_gateway"     validate:"required"`
+	Currency          string                   `json:"currency"            validate:"required,len=3"`
 }
 
 // Courier represents the courier data for an order.

@@ -196,6 +196,7 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 	newOrder, err := entity.NewOrder(
 		order.CustomerID,
 		order.IdempotencyKey,
+		order.CheckoutSessionID,
 		order.PaymentGateway,
 		order.Currency,
 		order.Courier,
