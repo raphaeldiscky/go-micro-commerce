@@ -17,6 +17,23 @@ export function AddressSelector() {
 
   const addresses = data?.edges.map((edge) => edge.node) || []
 
+  // Reconstruct selectedAddressData from selectedDestination after fetch
+  useEffect(() => {
+    if (selectedDestination && !selectedAddressData && addresses.length > 0) {
+      const address = addresses.find(
+        (addr) =>
+          addr.city === selectedDestination.city &&
+          addr.state === selectedDestination.state &&
+          addr.postalCode === selectedDestination.postalCode &&
+          addr.countryCode === selectedDestination.countryCode,
+      )
+      if (address) {
+        // Just update the UI object in store (not calling backend)
+        useCheckoutSessionStore.setState({ selectedAddressData: address })
+      }
+    }
+  }, [selectedDestination, selectedAddressData, addresses])
+
   // Auto-select default address on mount
   useEffect(() => {
     if (!selectedAddressData && !selectedDestination && addresses.length > 0) {

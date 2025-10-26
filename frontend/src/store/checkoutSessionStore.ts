@@ -193,13 +193,14 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           const sessionId = get().checkoutSession?.id
 
           // Update local state immediately for responsive UI
+          const destination = {
+            city: address.city,
+            state: address.state || '',
+            postalCode: address.postalCode,
+            countryCode: address.countryCode,
+          }
           set({
-            selectedDestination: {
-              city: address.city,
-              state: address.state || '',
-              postalCode: address.postalCode,
-              countryCode: address.countryCode,
-            },
+            selectedDestination: destination,
             selectedAddressData: address,
           })
 
@@ -210,7 +211,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 UPDATE_CHECKOUT_SESSION_MUTATION,
                 {
                   sessionId,
-                  input: { destination: address },
+                  input: { destination },
                 },
               )
             } catch (error) {
