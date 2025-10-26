@@ -22,18 +22,18 @@ type Package struct {
 
 // Destination represents a customer shipping address.
 type Destination struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // Origin represents a warehouse address.
 type Origin struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // Fulfillment represents a fulfillment record in the marketplace.

@@ -343,7 +343,7 @@ type Destination struct {
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
 	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	PostalCode    string                 `protobuf:"bytes,3,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
-	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
+	CountryCode   string                 `protobuf:"bytes,4,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -399,9 +399,9 @@ func (x *Destination) GetPostalCode() string {
 	return ""
 }
 
-func (x *Destination) GetCountry() string {
+func (x *Destination) GetCountryCode() string {
 	if x != nil {
-		return x.Country
+		return x.CountryCode
 	}
 	return ""
 }
@@ -412,7 +412,7 @@ type Origin struct {
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
 	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	PostalCode    string                 `protobuf:"bytes,3,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
-	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
+	CountryCode   string                 `protobuf:"bytes,4,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -468,9 +468,9 @@ func (x *Origin) GetPostalCode() string {
 	return ""
 }
 
-func (x *Origin) GetCountry() string {
+func (x *Origin) GetCountryCode() string {
 	if x != nil {
-		return x.Country
+		return x.CountryCode
 	}
 	return ""
 }
@@ -580,19 +580,19 @@ const file_fulfillment_v1_fulfillment_proto_rawDesc = "" +
 	"\x06height\x18\x03 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x06height\x126\n" +
 	"\x06length\x18\x04 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x06length\x12\x1e\n" +
 	"\x04unit\x18\x05 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04unit\"r\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04unit\"\x85\x01\n" +
 	"\vDestination\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1f\n" +
 	"\vpostal_code\x18\x03 \x01(\tR\n" +
-	"postalCode\x12\x18\n" +
-	"\acountry\x18\x04 \x01(\tR\acountry\"m\n" +
+	"postalCode\x12+\n" +
+	"\fcountry_code\x18\x04 \x01(\tB\b\xbaH\x05r\x03\x98\x01\x02R\vcountryCode\"\x80\x01\n" +
 	"\x06Origin\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1f\n" +
 	"\vpostal_code\x18\x03 \x01(\tR\n" +
-	"postalCode\x12\x18\n" +
-	"\acountry\x18\x04 \x01(\tR\acountry\"\x0f\n" +
+	"postalCode\x12+\n" +
+	"\fcountry_code\x18\x04 \x01(\tB\b\xbaH\x05r\x03\x98\x01\x02R\vcountryCode\"\x0f\n" +
 	"\rHealthRequest\"F\n" +
 	"\x0eHealthResponse\x124\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1c.fulfillment.v1.HealthStatusR\x06status*g\n" +

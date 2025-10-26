@@ -20,16 +20,16 @@ func MapToCheckoutSessionResponse(session *entity.CheckoutSession) *dto.Checkout
 			CourierID: session.Courier.CourierID,
 		},
 		Destination: dto.Destination{
-			City:       session.Destination.City,
-			State:      session.Destination.State,
-			PostalCode: session.Destination.PostalCode,
-			Country:    session.Destination.Country,
+			City:        session.Destination.City,
+			State:       session.Destination.State,
+			PostalCode:  session.Destination.PostalCode,
+			CountryCode: session.Destination.CountryCode,
 		},
 		Origin: dto.Origin{
-			City:       session.Origin.City,
-			State:      session.Origin.State,
-			PostalCode: session.Origin.PostalCode,
-			Country:    session.Origin.Country,
+			City:        session.Origin.City,
+			State:       session.Origin.State,
+			PostalCode:  session.Origin.PostalCode,
+			CountryCode: session.Origin.CountryCode,
 		},
 		Package: dto.Package{
 			WeightKG: session.Package.WeightKG,
@@ -110,20 +110,20 @@ func MapCourierToPayload(courier entity.Courier) kafkaevent.Courier {
 // MapDestinationToPayload maps entity.Destination to kafkaevent.Destination.
 func MapDestinationToPayload(destination entity.Destination) kafkaevent.Destination {
 	return kafkaevent.Destination{
-		City:       destination.City,
-		State:      destination.State,
-		PostalCode: destination.PostalCode,
-		Country:    destination.Country,
+		City:        destination.City,
+		State:       destination.State,
+		PostalCode:  destination.PostalCode,
+		CountryCode: destination.CountryCode,
 	}
 }
 
 // MapOriginToPayload maps entity.Origin to kafkaevent.Origin.
 func MapOriginToPayload(origin entity.Origin) kafkaevent.Origin {
 	return kafkaevent.Origin{
-		City:       origin.City,
-		State:      origin.State,
-		PostalCode: origin.PostalCode,
-		Country:    origin.Country,
+		City:        origin.City,
+		State:       origin.State,
+		PostalCode:  origin.PostalCode,
+		CountryCode: origin.CountryCode,
 	}
 }
 

@@ -32,10 +32,10 @@ type CreateOrderItemInput struct {
 }
 
 type Destination struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type DimensionsInput struct {
@@ -46,10 +46,10 @@ type DimensionsInput struct {
 }
 
 type FromAddressInput struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Mutation struct {
@@ -103,10 +103,10 @@ type OrderItem struct {
 }
 
 type Origin struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Package struct {
@@ -142,10 +142,10 @@ type ShippingInput struct {
 }
 
 type ToAddressInput struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Role string

@@ -24,16 +24,16 @@ func MapToGraphQLCheckoutSessionFromDTO(
 			CourierID: session.Courier.CourierID,
 		},
 		Destination: &graph.Destination{
-			City:       session.Destination.City,
-			State:      session.Destination.State,
-			PostalCode: session.Destination.PostalCode,
-			Country:    session.Destination.Country,
+			City:        session.Destination.City,
+			State:       session.Destination.State,
+			PostalCode:  session.Destination.PostalCode,
+			CountryCode: session.Destination.CountryCode,
 		},
 		Origin: &graph.Origin{
-			City:       session.Origin.City,
-			State:      session.Origin.State,
-			PostalCode: session.Origin.PostalCode,
-			Country:    session.Origin.Country,
+			City:        session.Origin.City,
+			State:       session.Origin.State,
+			PostalCode:  session.Origin.PostalCode,
+			CountryCode: session.Origin.CountryCode,
 		},
 		Package: &graph.Package{
 			WeightKg: session.Package.WeightKG,
@@ -94,19 +94,19 @@ func MapToUpdateCheckoutSessionRequest(
 
 	if input.Destination != nil {
 		req.Destination = &dto.Destination{
-			City:       input.Destination.City,
-			State:      input.Destination.State,
-			PostalCode: input.Destination.PostalCode,
-			Country:    input.Destination.Country,
+			City:        input.Destination.City,
+			State:       input.Destination.State,
+			PostalCode:  input.Destination.PostalCode,
+			CountryCode: input.Destination.CountryCode,
 		}
 	}
 
 	if input.Origin != nil {
 		req.Origin = &dto.Origin{
-			City:       input.Origin.City,
-			State:      input.Origin.State,
-			PostalCode: input.Origin.PostalCode,
-			Country:    input.Origin.Country,
+			City:        input.Origin.City,
+			State:       input.Origin.State,
+			PostalCode:  input.Origin.PostalCode,
+			CountryCode: input.Origin.CountryCode,
 		}
 	}
 
@@ -135,16 +135,16 @@ func MapToPlaceOrderRequest(
 			CourierID: input.Courier.CourierID,
 		},
 		Destination: dto.Destination{
-			City:       input.Destination.City,
-			State:      input.Destination.State,
-			PostalCode: input.Destination.PostalCode,
-			Country:    input.Destination.Country,
+			City:        input.Destination.City,
+			State:       input.Destination.State,
+			PostalCode:  input.Destination.PostalCode,
+			CountryCode: input.Destination.CountryCode,
 		},
 		Origin: dto.Origin{
-			City:       input.Origin.City,
-			State:      input.Origin.State,
-			PostalCode: input.Origin.PostalCode,
-			Country:    input.Origin.Country,
+			City:        input.Origin.City,
+			State:       input.Origin.State,
+			PostalCode:  input.Origin.PostalCode,
+			CountryCode: input.Origin.CountryCode,
 		},
 		Package: dto.Package{
 			WeightKG: input.Package.WeightKg,

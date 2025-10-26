@@ -116,8 +116,10 @@ type CheckoutSession
   id: UUID!
   idempotencyKey: UUID!
   customerId: UUID!
-  addressId: UUID
-  carrierId: String
+  courier: Courier!
+  destination: Destination!
+  origin: Origin!
+  package: Package!
   status: CheckoutSessionStatus!
   paymentGateway: String
   currency: String!
@@ -173,6 +175,19 @@ enum ConversationStatus
   WAITING @join__enumValue(graph: CHAT_SERVICE)
   ACTIVE @join__enumValue(graph: CHAT_SERVICE)
   ENDED @join__enumValue(graph: CHAT_SERVICE)
+}
+
+type Courier
+  @join__type(graph: CART_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
+{
+  courierId: String!
+}
+
+input CourierInput
+  @join__type(graph: CART_SERVICE)
+{
+  courierId: String!
 }
 
 input CreateAddressInput
@@ -237,6 +252,25 @@ type DeliveryReceipt
   deliveredAt: Time!
 }
 
+type Destination
+  @join__type(graph: CART_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
+{
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+input DestinationInput
+  @join__type(graph: CART_SERVICE)
+{
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
 input DimensionsInput
   @join__type(graph: ORDER_SERVICE)
 {
@@ -252,7 +286,7 @@ input FromAddressInput
   city: String!
   state: String!
   postalCode: String!
-  country: String!
+  countryCode: String!
 }
 
 scalar join__FieldSet
@@ -458,10 +492,15 @@ type Order
 {
   id: UUID!
   idempotencyKey: UUID!
+  checkoutSessionId: UUID!
   customerId: UUID!
   status: OrderStatus!
   currency: String!
   paymentGateway: PaymentGateway!
+  courier: Courier!
+  package: Package!
+  origin: Origin!
+  destination: Destination!
   shippingCost: Decimal!
   subtotal: Decimal!
   totalPrice: Decimal!
@@ -516,6 +555,46 @@ enum OrderStatus
   DELIVERED @join__enumValue(graph: ORDER_SERVICE)
   CANCELED @join__enumValue(graph: ORDER_SERVICE)
   FAILED @join__enumValue(graph: ORDER_SERVICE)
+}
+
+type Origin
+  @join__type(graph: CART_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
+{
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+input OriginInput
+  @join__type(graph: CART_SERVICE)
+{
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+type Package
+  @join__type(graph: CART_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
+{
+  weightKg: Decimal!
+  width: Decimal!
+  height: Decimal!
+  length: Decimal!
+  unit: String!
+}
+
+input PackageInput
+  @join__type(graph: CART_SERVICE)
+{
+  weightKg: Decimal!
+  width: Decimal!
+  height: Decimal!
+  length: Decimal!
+  unit: String!
 }
 
 type PageInfo
@@ -593,8 +672,10 @@ input PlaceOrderInput
   @join__type(graph: CART_SERVICE)
 {
   idempotencyKey: UUID!
-  addressId: UUID!
-  carrierId: String!
+  courier: CourierInput!
+  destination: DestinationInput!
+  origin: OriginInput!
+  package: PackageInput!
   paymentGateway: String!
 }
 
@@ -762,7 +843,7 @@ input ToAddressInput
   city: String!
   state: String!
   postalCode: String!
-  country: String!
+  countryCode: String!
 }
 
 type TypingIndicator
@@ -811,8 +892,10 @@ input UpdateCartItemQuantityInput
 input UpdateCheckoutSessionInput
   @join__type(graph: CART_SERVICE)
 {
-  addressId: UUID
-  carrierId: String
+  courier: CourierInput
+  destination: DestinationInput
+  origin: OriginInput
+  package: PackageInput
   paymentGateway: String
 }
 

@@ -20,18 +20,6 @@ CREATE TABLE IF NOT EXISTS orders (
     total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp
-
-    CHECK (
-        jsonb_type(courier) = 'object'
-        AND jsonb_type(destination) = 'object'
-        AND jsonb_type(origin) = 'object'
-        AND jsonb_type(package) = 'object'
-    )
-    CHECK (
-        destination ?& ARRAY['city', 'country']
-        AND origin ?& ARRAY['city', 'country']
-        AND courier ?& ARRAY['courier_id']
-    )
 );
 
 ALTER TABLE orders

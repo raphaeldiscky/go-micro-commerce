@@ -76,34 +76,34 @@ type CreateCheckoutSessionInput struct {
 }
 
 type Destination struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type DestinationInput struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Mutation struct {
 }
 
 type Origin struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type OriginInput struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Package struct {

@@ -28,13 +28,13 @@ import { useShallow } from 'zustand/react/shallow'
 export interface CheckoutSessionState {
   checkoutSession: CheckoutSession | null
   isLoading: boolean
-  selectedAddressId: string | null
-  selectedCarrierId: string | null
+  selectedDestination: CheckoutSession['destination'] | null
+  selectedCourier: CheckoutSession['courier'] | null
   selectedPaymentGateway: string | null
   orderNote?: string
 
   // UI-specific selections for display purposes
-  selectedAddress: Address | null
+  selectedAddressData: Address | null
   selectedShippingOption: ShippingOptionUI | null
   selectedPaymentGatewayData: PaymentGatewayUI | null
 }
@@ -50,9 +50,9 @@ export interface CheckoutSessionActions {
   cancelCheckout: (sessionId: string) => Promise<void>
 
   // Set selections for checkout (auto-saves to backend)
-  setAddress: (addressId: string, address: Address) => Promise<void>
+  setDestination: (address: Address) => Promise<void>
   setShippingMethod: (
-    carrierId: string,
+    courierId: string,
     method: ShippingOptionUI,
   ) => Promise<void>
   setPaymentGateway: (
@@ -82,10 +82,11 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         // Initial state
         checkoutSession: null,
         isLoading: false,
-        selectedAddressId: null,
-        selectedCarrierId: null,
+        selectedDestination: null,
+        selectedCourier: null,
+        selectedPackage: null,
         selectedPaymentGateway: null,
-        selectedAddress: null,
+        selectedAddressData: null,
         selectedShippingOption: null,
         selectedPaymentGatewayData: null,
         orderNote: '',
@@ -102,8 +103,8 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
             const session = data.getCheckoutSession
             set({
               checkoutSession: session,
-              selectedAddressId: session?.addressId,
-              selectedCarrierId: session?.carrierId,
+              selectedDestination: session?.destination,
+              selectedCourier: session?.courier,
               selectedPaymentGateway: session?.paymentGateway,
               isLoading: false,
             })
@@ -143,8 +144,8 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
             set({
               checkoutSession: session,
               isLoading: false,
-              selectedAddressId: null,
-              selectedCarrierId: null,
+              selectedDestination: null,
+              selectedCourier: null,
               selectedPaymentGateway: null,
             })
 
@@ -188,13 +189,18 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         },
 
         // Set selections for checkout (auto-saves to backend)
-        setAddress: async (addressId: string, address: Address) => {
+        setDestination: async (address: Address) => {
           const sessionId = get().checkoutSession?.id
 
           // Update local state immediately for responsive UI
           set({
-            selectedAddressId: addressId,
-            selectedAddress: address,
+            selectedDestination: {
+              city: address.city,
+              state: address.state || '',
+              postalCode: address.postalCode,
+              countryCode: address.countryCode,
+            },
+            selectedAddressData: address,
           })
 
           // Persist to backend
@@ -204,7 +210,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 UPDATE_CHECKOUT_SESSION_MUTATION,
                 {
                   sessionId,
-                  input: { addressId },
+                  input: { destination: address },
                 },
               )
             } catch (error) {
@@ -219,14 +225,16 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         },
 
         setShippingMethod: async (
-          carrierId: string,
+          courierId: string,
           method: ShippingOptionUI,
         ) => {
           const sessionId = get().checkoutSession?.id
 
           // Update local state immediately for responsive UI
           set({
-            selectedCarrierId: carrierId,
+            selectedCourier: {
+              courierId,
+            },
             selectedShippingOption: method,
           })
 
@@ -237,12 +245,12 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 UPDATE_CHECKOUT_SESSION_MUTATION,
                 {
                   sessionId,
-                  input: { carrierId },
+                  input: { courierId },
                 },
               )
             } catch (error) {
               console.error(
-                'Failed to update carrier in checkout session:',
+                'Failed to update courier in checkout session:',
                 error,
               )
               // Silent failure - user selection is saved locally
@@ -301,11 +309,11 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           const state = get()
 
           // Validation
-          if (!state.selectedAddressId) {
+          if (!state.selectedAddressData) {
             return { success: false, error: 'Please select a delivery address' }
           }
 
-          if (!state.selectedCarrierId) {
+          if (!state.selectedCourier) {
             return { success: false, error: 'Please select a shipping method' }
           }
 
@@ -322,8 +330,8 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
                 sessionId,
                 input: {
                   idempotencyKey: crypto.randomUUID(),
-                  addressId: state.selectedAddressId,
-                  carrierId: state.selectedCarrierId,
+                  destination: state.selectedDestination,
+                  courier: state.selectedCourier,
                   paymentGateway: state.selectedPaymentGateway,
                 },
               },
@@ -378,10 +386,10 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           set({
             checkoutSession: null,
             isLoading: false,
-            selectedAddressId: null,
-            selectedCarrierId: null,
+            selectedDestination: null,
+            selectedCourier: null,
             selectedPaymentGateway: null,
-            selectedAddress: null,
+            selectedAddressData: null,
             selectedShippingOption: null,
             selectedPaymentGatewayData: null,
             orderNote: '',
@@ -391,10 +399,8 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
       {
         name: 'checkout-session-store',
         partialize: (state) => ({
-          // Persist only the session ID and selections
-          // Full session data should be refetched
-          selectedAddressId: state.selectedAddressId,
-          selectedCarrierId: state.selectedCarrierId,
+          selectedDestination: state.selectedDestination,
+          selectedCourier: state.selectedCourier,
           selectedPaymentGateway: state.selectedPaymentGateway,
         }),
       },
@@ -407,12 +413,12 @@ export const useCheckoutSession = () =>
   useCheckoutSessionStore((state) => state.checkoutSession)
 export const useIsCheckoutLoading = () =>
   useCheckoutSessionStore((state) => state.isLoading)
-export const useSelectedAddressId = () =>
-  useCheckoutSessionStore((state) => state.selectedAddressId)
-export const useSelectedAddress = () =>
-  useCheckoutSessionStore((state) => state.selectedAddress)
-export const useSelectedCarrierId = () =>
-  useCheckoutSessionStore((state) => state.selectedCarrierId)
+export const useSelectedDestination = () =>
+  useCheckoutSessionStore((state) => state.selectedDestination)
+export const useSelectedAddressData = () =>
+  useCheckoutSessionStore((state) => state.selectedAddressData)
+export const useSelectedCourier = () =>
+  useCheckoutSessionStore((state) => state.selectedCourier)
 export const useSelectedShippingOption = () =>
   useCheckoutSessionStore((state) => state.selectedShippingOption)
 export const useSelectedPaymentGateway = () =>

@@ -56,16 +56,16 @@ func NewFulfillmentRequestEvent(
 			},
 
 			Destination: kafkaevent.Destination{
-				Country:    order.Destination.Country,
-				City:       order.Destination.City,
-				State:      order.Destination.State,
-				PostalCode: order.Destination.PostalCode,
+				CountryCode: order.Destination.CountryCode,
+				City:        order.Destination.City,
+				State:       order.Destination.State,
+				PostalCode:  order.Destination.PostalCode,
 			},
 			Origin: kafkaevent.Origin{
-				Country:    order.Origin.Country,
-				City:       order.Origin.City,
-				State:      order.Origin.State,
-				PostalCode: order.Origin.PostalCode,
+				CountryCode: order.Origin.CountryCode,
+				City:        order.Origin.City,
+				State:       order.Origin.State,
+				PostalCode:  order.Origin.PostalCode,
 			},
 			Package: kafkaevent.Package{
 				WeightKG: order.Package.WeightKG,

@@ -102,10 +102,10 @@ type ComplexityRoot struct {
 	}
 
 	Destination struct {
-		City       func(childComplexity int) int
-		Country    func(childComplexity int) int
-		PostalCode func(childComplexity int) int
-		State      func(childComplexity int) int
+		City        func(childComplexity int) int
+		CountryCode func(childComplexity int) int
+		PostalCode  func(childComplexity int) int
+		State       func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -120,10 +120,10 @@ type ComplexityRoot struct {
 	}
 
 	Origin struct {
-		City       func(childComplexity int) int
-		Country    func(childComplexity int) int
-		PostalCode func(childComplexity int) int
-		State      func(childComplexity int) int
+		City        func(childComplexity int) int
+		CountryCode func(childComplexity int) int
+		PostalCode  func(childComplexity int) int
+		State       func(childComplexity int) int
 	}
 
 	Package struct {
@@ -382,12 +382,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Destination.City(childComplexity), true
-	case "Destination.country":
-		if e.complexity.Destination.Country == nil {
+	case "Destination.countryCode":
+		if e.complexity.Destination.CountryCode == nil {
 			break
 		}
 
-		return e.complexity.Destination.Country(childComplexity), true
+		return e.complexity.Destination.CountryCode(childComplexity), true
 	case "Destination.postalCode":
 		if e.complexity.Destination.PostalCode == nil {
 			break
@@ -496,12 +496,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Origin.City(childComplexity), true
-	case "Origin.country":
-		if e.complexity.Origin.Country == nil {
+	case "Origin.countryCode":
+		if e.complexity.Origin.CountryCode == nil {
 			break
 		}
 
-		return e.complexity.Origin.Country(childComplexity), true
+		return e.complexity.Origin.CountryCode(childComplexity), true
 	case "Origin.postalCode":
 		if e.complexity.Origin.PostalCode == nil {
 			break
@@ -1509,8 +1509,8 @@ func (ec *executionContext) fieldContext_CheckoutSession_destination(_ context.C
 				return ec.fieldContext_Destination_state(ctx, field)
 			case "postalCode":
 				return ec.fieldContext_Destination_postalCode(ctx, field)
-			case "country":
-				return ec.fieldContext_Destination_country(ctx, field)
+			case "countryCode":
+				return ec.fieldContext_Destination_countryCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Destination", field.Name)
 		},
@@ -1548,8 +1548,8 @@ func (ec *executionContext) fieldContext_CheckoutSession_origin(_ context.Contex
 				return ec.fieldContext_Origin_state(ctx, field)
 			case "postalCode":
 				return ec.fieldContext_Origin_postalCode(ctx, field)
-			case "country":
-				return ec.fieldContext_Origin_country(ctx, field)
+			case "countryCode":
+				return ec.fieldContext_Origin_countryCode(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Origin", field.Name)
 		},
@@ -2045,14 +2045,14 @@ func (ec *executionContext) fieldContext_Destination_postalCode(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Destination_country(ctx context.Context, field graphql.CollectedField, obj *Destination) (ret graphql.Marshaler) {
+func (ec *executionContext) _Destination_countryCode(ctx context.Context, field graphql.CollectedField, obj *Destination) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Destination_country,
+		ec.fieldContext_Destination_countryCode,
 		func(ctx context.Context) (any, error) {
-			return obj.Country, nil
+			return obj.CountryCode, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -2061,7 +2061,7 @@ func (ec *executionContext) _Destination_country(ctx context.Context, field grap
 	)
 }
 
-func (ec *executionContext) fieldContext_Destination_country(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Destination_countryCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Destination",
 		Field:      field,
@@ -2761,14 +2761,14 @@ func (ec *executionContext) fieldContext_Origin_postalCode(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Origin_country(ctx context.Context, field graphql.CollectedField, obj *Origin) (ret graphql.Marshaler) {
+func (ec *executionContext) _Origin_countryCode(ctx context.Context, field graphql.CollectedField, obj *Origin) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Origin_country,
+		ec.fieldContext_Origin_countryCode,
 		func(ctx context.Context) (any, error) {
-			return obj.Country, nil
+			return obj.CountryCode, nil
 		},
 		nil,
 		ec.marshalNString2string,
@@ -2777,7 +2777,7 @@ func (ec *executionContext) _Origin_country(ctx context.Context, field graphql.C
 	)
 }
 
-func (ec *executionContext) fieldContext_Origin_country(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Origin_countryCode(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Origin",
 		Field:      field,
@@ -4791,7 +4791,7 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"city", "state", "postalCode", "country"}
+	fieldsInOrder := [...]string{"city", "state", "postalCode", "countryCode"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4819,13 +4819,13 @@ func (ec *executionContext) unmarshalInputDestinationInput(ctx context.Context, 
 				return it, err
 			}
 			it.PostalCode = data
-		case "country":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("country"))
+		case "countryCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("countryCode"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Country = data
+			it.CountryCode = data
 		}
 	}
 
@@ -4839,7 +4839,7 @@ func (ec *executionContext) unmarshalInputOriginInput(ctx context.Context, obj a
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"city", "state", "postalCode", "country"}
+	fieldsInOrder := [...]string{"city", "state", "postalCode", "countryCode"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4867,13 +4867,13 @@ func (ec *executionContext) unmarshalInputOriginInput(ctx context.Context, obj a
 				return it, err
 			}
 			it.PostalCode = data
-		case "country":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("country"))
+		case "countryCode":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("countryCode"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-			it.Country = data
+			it.CountryCode = data
 		}
 	}
 
@@ -5467,8 +5467,8 @@ func (ec *executionContext) _Destination(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "country":
-			out.Values[i] = ec._Destination_country(ctx, field, obj)
+		case "countryCode":
+			out.Values[i] = ec._Destination_countryCode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -5619,8 +5619,8 @@ func (ec *executionContext) _Origin(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "country":
-			out.Values[i] = ec._Origin_country(ctx, field, obj)
+		case "countryCode":
+			out.Values[i] = ec._Origin_countryCode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

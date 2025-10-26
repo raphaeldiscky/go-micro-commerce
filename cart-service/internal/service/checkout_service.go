@@ -273,19 +273,19 @@ func (s *checkoutSessionService) UpdateCheckoutSession(
 
 		if req.Destination != nil {
 			session.Destination = entity.Destination{
-				City:       req.Destination.City,
-				State:      req.Destination.State,
-				PostalCode: req.Destination.PostalCode,
-				Country:    req.Destination.Country,
+				City:        req.Destination.City,
+				State:       req.Destination.State,
+				PostalCode:  req.Destination.PostalCode,
+				CountryCode: req.Destination.CountryCode,
 			}
 		}
 
 		if req.Origin != nil {
 			session.Origin = entity.Origin{
-				City:       req.Origin.City,
-				State:      req.Origin.State,
-				PostalCode: req.Origin.PostalCode,
-				Country:    req.Origin.Country,
+				City:        req.Origin.City,
+				State:       req.Origin.State,
+				PostalCode:  req.Origin.PostalCode,
+				CountryCode: req.Origin.CountryCode,
 			}
 		}
 
@@ -388,16 +388,16 @@ func (s *checkoutSessionService) PlaceOrder(
 			CourierID: req.Courier.CourierID,
 		}
 		session.Destination = entity.Destination{
-			City:       req.Destination.City,
-			State:      req.Destination.State,
-			PostalCode: req.Destination.PostalCode,
-			Country:    req.Destination.Country,
+			City:        req.Destination.City,
+			State:       req.Destination.State,
+			PostalCode:  req.Destination.PostalCode,
+			CountryCode: req.Destination.CountryCode,
 		}
 		session.Origin = entity.Origin{
-			City:       req.Origin.City,
-			State:      req.Origin.State,
-			PostalCode: req.Origin.PostalCode,
-			Country:    req.Origin.Country,
+			City:        req.Origin.City,
+			State:       req.Origin.State,
+			PostalCode:  req.Origin.PostalCode,
+			CountryCode: req.Origin.CountryCode,
 		}
 		session.Package = entity.Package{
 			WeightKG: req.Package.WeightKG,

@@ -9,26 +9,26 @@ import { useEffect } from 'react'
 
 export function ShippingOptions() {
   const {
-    selectedAddress,
+    selectedDestination,
     selectedShippingOption,
-    selectedCarrierId,
+    selectedCourier,
     setShippingMethod,
   } = useCheckoutSessionStore()
 
   // Reconstruct selectedShippingOption from selectedCarrierId after fetch
   useEffect(() => {
-    if (selectedCarrierId && !selectedShippingOption) {
+    if (selectedCourier && !selectedShippingOption) {
       const option = mockShippingOptions.find(
-        (opt) => opt.id === selectedCarrierId,
+        (opt) => opt.id === selectedCourier.courierId,
       )
       if (option) {
         // Just update the UI object in store (not calling backend)
         useCheckoutSessionStore.setState({ selectedShippingOption: option })
       }
     }
-  }, [selectedCarrierId, selectedShippingOption])
+  }, [selectedCourier, selectedShippingOption])
 
-  const isDisabled = !selectedAddress
+  const isDisabled = !selectedDestination
 
   const handleShippingChange = (optionId: string) => {
     const option = mockShippingOptions.find((opt) => opt.id === optionId)
@@ -60,7 +60,7 @@ export function ShippingOptions() {
           </p>
         )}
         <RadioGroup
-          value={selectedShippingOption?.id || selectedCarrierId || ''}
+          value={selectedShippingOption?.id || selectedCourier?.courierId || ''}
           onValueChange={handleShippingChange}
           disabled={isDisabled}
         >

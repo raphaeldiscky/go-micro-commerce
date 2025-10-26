@@ -99,16 +99,16 @@ func (c *fulfillmentClient) GetShippingCost(
 		},
 		Courier: &pb.Courier{CourierId: order.Courier.CourierID},
 		Destination: &pb.Destination{
-			State:      order.Destination.State,
-			City:       order.Destination.City,
-			Country:    order.Destination.Country,
-			PostalCode: order.Destination.PostalCode,
+			State:       order.Destination.State,
+			City:        order.Destination.City,
+			CountryCode: order.Destination.CountryCode,
+			PostalCode:  order.Destination.PostalCode,
 		},
 		Origin: &pb.Origin{
-			State:      order.Origin.State,
-			City:       order.Origin.City,
-			Country:    order.Origin.Country,
-			PostalCode: order.Origin.PostalCode,
+			State:       order.Origin.State,
+			City:        order.Origin.City,
+			CountryCode: order.Origin.CountryCode,
+			PostalCode:  order.Origin.PostalCode,
 		},
 	})
 	pkgconnect.AddAuthHeaders(ctx, req)

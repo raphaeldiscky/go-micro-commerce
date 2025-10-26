@@ -38,7 +38,7 @@ function RouteComponent() {
   const navigate = useNavigate()
   const {
     checkoutSession,
-    selectedAddress,
+    selectedDestination,
     selectedShippingOption,
     selectedPaymentGateway,
     fetchCheckoutSession,
@@ -69,7 +69,7 @@ function RouteComponent() {
   // Check if checkout is ready
   const isCheckoutReady =
     checkoutItems.length > 0 &&
-    selectedAddress &&
+    selectedDestination &&
     selectedShippingOption &&
     selectedPaymentGateway
 
@@ -216,12 +216,12 @@ function RouteComponent() {
               <div className="flex items-center">
                 <div
                   className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                    selectedAddress
+                    selectedDestination
                       ? 'bg-green-600 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {selectedAddress ? (
+                  {selectedDestination ? (
                     <CheckCircle className="h-4 w-4" />
                   ) : (
                     <MapPin className="h-4 w-4" />
@@ -367,7 +367,7 @@ function RouteComponent() {
 
                   {!isCheckoutReady && (
                     <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-                      {!selectedAddress && (
+                      {!selectedDestination && (
                         <p>• Please select a delivery address</p>
                       )}
                       {!selectedShippingOption && (

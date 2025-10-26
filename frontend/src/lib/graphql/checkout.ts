@@ -9,8 +9,28 @@ export const GET_CHECKOUT_SESSION_QUERY = gql`
       id
       idempotencyKey
       customerId
-      addressId
-      carrierId
+      courier {
+        courierId
+      }
+      package {
+        weightKg
+        width
+        height
+        length
+        unit
+      }
+      origin {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      destination {
+        city
+        state
+        postalCode
+        countryCode
+      }
       status
       paymentGateway
       currency
@@ -36,8 +56,28 @@ export const CREATE_CHECKOUT_SESSION_MUTATION = gql`
       id
       idempotencyKey
       customerId
-      addressId
-      carrierId
+      courier {
+        courierId
+      }
+      package {
+        weightKg
+        width
+        height
+        length
+        unit
+      }
+      origin {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      destination {
+        city
+        state
+        postalCode
+        countryCode
+      }
       status
       paymentGateway
       currency
@@ -66,8 +106,28 @@ export const UPDATE_CHECKOUT_SESSION_MUTATION = gql`
       id
       idempotencyKey
       customerId
-      addressId
-      carrierId
+      courier {
+        courierId
+      }
+      package {
+        weightKg
+        width
+        height
+        length
+        unit
+      }
+      origin {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      destination {
+        city
+        state
+        postalCode
+        countryCode
+      }
       status
       paymentGateway
       currency
@@ -93,8 +153,28 @@ export const PLACE_ORDER_MUTATION = gql`
       id
       idempotencyKey
       customerId
-      addressId
-      carrierId
+      courier {
+        courierId
+      }
+      package {
+        weightKg
+        width
+        height
+        length
+        unit
+      }
+      origin {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      destination {
+        city
+        state
+        postalCode
+        countryCode
+      }
       status
       paymentGateway
       currency
@@ -120,8 +200,28 @@ export const CANCEL_CHECKOUT_SESSION_MUTATION = gql`
       id
       idempotencyKey
       customerId
-      addressId
-      carrierId
+      courier {
+        courierId
+      }
+      package {
+        weightKg
+        width
+        height
+        length
+        unit
+      }
+      origin {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      destination {
+        city
+        state
+        postalCode
+        countryCode
+      }
       status
       paymentGateway
       currency

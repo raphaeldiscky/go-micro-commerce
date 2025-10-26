@@ -43,18 +43,18 @@ type Courier struct {
 
 // Origin represents the origin of an order.
 type Origin struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // Destination represents the destination of an order.
 type Destination struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // Package represents the package of an order.

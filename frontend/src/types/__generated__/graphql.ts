@@ -113,14 +113,16 @@ export type ChatConnection = {
 
 export type CheckoutSession = {
   __typename?: 'CheckoutSession'
-  addressId?: Maybe<Scalars['UUID']['output']>
-  carrierId?: Maybe<Scalars['String']['output']>
+  courier: Courier
   createdAt: Scalars['Time']['output']
   currency: Scalars['String']['output']
   customerId: Scalars['UUID']['output']
+  destination: Destination
   id: Scalars['UUID']['output']
   idempotencyKey: Scalars['UUID']['output']
   items: Array<CheckoutSessionItem>
+  origin: Origin
+  package: Package
   paymentGateway?: Maybe<Scalars['String']['output']>
   status: CheckoutSessionStatus
   updatedAt: Scalars['Time']['output']
@@ -172,6 +174,15 @@ export enum ConversationStatus {
   Waiting = 'WAITING',
 }
 
+export type Courier = {
+  __typename?: 'Courier'
+  courierId: Scalars['String']['output']
+}
+
+export type CourierInput = {
+  courierId: Scalars['String']['input']
+}
+
 export type CreateAddressInput = {
   addressLine1: Scalars['String']['input']
   addressLine2?: InputMaybe<Scalars['String']['input']>
@@ -218,6 +229,21 @@ export type DeliveryReceipt = {
   recipientId: Scalars['UUID']['output']
 }
 
+export type Destination = {
+  __typename?: 'Destination'
+  city: Scalars['String']['output']
+  countryCode: Scalars['String']['output']
+  postalCode: Scalars['String']['output']
+  state: Scalars['String']['output']
+}
+
+export type DestinationInput = {
+  city: Scalars['String']['input']
+  countryCode: Scalars['String']['input']
+  postalCode: Scalars['String']['input']
+  state: Scalars['String']['input']
+}
+
 export type DimensionsInput = {
   height: Scalars['Decimal']['input']
   length: Scalars['Decimal']['input']
@@ -227,7 +253,7 @@ export type DimensionsInput = {
 
 export type FromAddressInput = {
   city: Scalars['String']['input']
-  country: Scalars['String']['input']
+  countryCode: Scalars['String']['input']
   postalCode: Scalars['String']['input']
   state: Scalars['String']['input']
 }
@@ -493,12 +519,17 @@ export type OnlineStatus = {
 
 export type Order = {
   __typename?: 'Order'
+  checkoutSessionId: Scalars['UUID']['output']
+  courier: Courier
   createdAt: Scalars['Time']['output']
   currency: Scalars['String']['output']
   customerId: Scalars['UUID']['output']
+  destination: Destination
   id: Scalars['UUID']['output']
   idempotencyKey: Scalars['UUID']['output']
   items: Array<OrderItem>
+  origin: Origin
+  package: Package
   payment?: Maybe<Payment>
   paymentGateway: PaymentGateway
   shippingCost: Scalars['Decimal']['output']
@@ -548,6 +579,38 @@ export enum OrderStatus {
   Pending = 'PENDING',
   Processing = 'PROCESSING',
   Shipped = 'SHIPPED',
+}
+
+export type Origin = {
+  __typename?: 'Origin'
+  city: Scalars['String']['output']
+  countryCode: Scalars['String']['output']
+  postalCode: Scalars['String']['output']
+  state: Scalars['String']['output']
+}
+
+export type OriginInput = {
+  city: Scalars['String']['input']
+  countryCode: Scalars['String']['input']
+  postalCode: Scalars['String']['input']
+  state: Scalars['String']['input']
+}
+
+export type Package = {
+  __typename?: 'Package'
+  height: Scalars['Decimal']['output']
+  length: Scalars['Decimal']['output']
+  unit: Scalars['String']['output']
+  weightKg: Scalars['Decimal']['output']
+  width: Scalars['Decimal']['output']
+}
+
+export type PackageInput = {
+  height: Scalars['Decimal']['input']
+  length: Scalars['Decimal']['input']
+  unit: Scalars['String']['input']
+  weightKg: Scalars['Decimal']['input']
+  width: Scalars['Decimal']['input']
 }
 
 export type PageInfo = {
@@ -608,9 +671,11 @@ export enum PaymentStatus {
 }
 
 export type PlaceOrderInput = {
-  addressId: Scalars['UUID']['input']
-  carrierId: Scalars['String']['input']
+  courier: CourierInput
+  destination: DestinationInput
   idempotencyKey: Scalars['UUID']['input']
+  origin: OriginInput
+  package: PackageInput
   paymentGateway: Scalars['String']['input']
 }
 
@@ -793,7 +858,7 @@ export type TabCounts = {
 
 export type ToAddressInput = {
   city: Scalars['String']['input']
-  country: Scalars['String']['input']
+  countryCode: Scalars['String']['input']
   postalCode: Scalars['String']['input']
   state: Scalars['String']['input']
 }
@@ -834,8 +899,10 @@ export type UpdateCartItemQuantityInput = {
 }
 
 export type UpdateCheckoutSessionInput = {
-  addressId?: InputMaybe<Scalars['UUID']['input']>
-  carrierId?: InputMaybe<Scalars['String']['input']>
+  courier?: InputMaybe<CourierInput>
+  destination?: InputMaybe<DestinationInput>
+  origin?: InputMaybe<OriginInput>
+  package?: InputMaybe<PackageInput>
   paymentGateway?: InputMaybe<Scalars['String']['input']>
 }
 

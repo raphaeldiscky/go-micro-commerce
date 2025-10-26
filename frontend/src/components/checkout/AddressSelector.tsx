@@ -10,38 +10,27 @@ import { CheckCircle, MapPin, Plus } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 export function AddressSelector() {
-  const { selectedAddress, selectedAddressId, setAddress } =
+  const { selectedAddressData, selectedDestination, setDestination } =
     useCheckoutSessionStore()
   const { data, isLoading } = useAddresses(10)
   const [_isAddingNew, setIsAddingNew] = useState(false)
 
   const addresses = data?.edges.map((edge) => edge.node) || []
 
-  // Reconstruct selectedAddress from selectedAddressId after fetch
-  useEffect(() => {
-    if (selectedAddressId && !selectedAddress && addresses.length > 0) {
-      const address = addresses.find((addr) => addr.id === selectedAddressId)
-      if (address) {
-        // Just update the UI object in store (not calling backend)
-        useCheckoutSessionStore.setState({ selectedAddress: address })
-      }
-    }
-  }, [selectedAddressId, selectedAddress, addresses])
-
   // Auto-select default address on mount
   useEffect(() => {
-    if (!selectedAddress && !selectedAddressId && addresses.length > 0) {
+    if (!selectedAddressData && !selectedDestination && addresses.length > 0) {
       const defaultAddress = addresses.find((addr) => addr.isDefault)
       if (defaultAddress) {
-        setAddress(defaultAddress.id, defaultAddress)
+        setDestination(defaultAddress)
       }
     }
-  }, [addresses, selectedAddress, selectedAddressId, setAddress])
+  }, [addresses, selectedAddressData, selectedDestination, setDestination])
 
   const handleAddressChange = (addressId: string) => {
     const address = addresses.find((addr) => addr.id === addressId)
     if (address) {
-      setAddress(addressId, address)
+      setDestination(address)
     }
   }
 
@@ -94,7 +83,7 @@ export function AddressSelector() {
       </CardHeader>
       <CardContent className="space-y-4">
         <RadioGroup
-          value={selectedAddress?.id || selectedAddressId || ''}
+          value={selectedAddressData?.id || ''}
           onValueChange={handleAddressChange}
         >
           {addresses.map((address: Address) => (
@@ -117,7 +106,7 @@ export function AddressSelector() {
                           Default
                         </Badge>
                       )}
-                      {selectedAddress?.id === address.id && (
+                      {selectedAddressData?.id === address.id && (
                         <CheckCircle className="h-4 w-4 text-green-600" />
                       )}
                     </div>
@@ -156,7 +145,7 @@ export function AddressSelector() {
           </Button>
         </div>
 
-        {!selectedAddress && (
+        {!selectedAddressData && (
           <p className="text-sm text-muted-foreground">
             Please select a delivery address to continue
           </p>

@@ -59,7 +59,7 @@ message Destination {
   string city = 1;
   string state = 2;
   string postal_code = 3;
-  string country = 4;
+  string country_code = 4 [(buf.validate.field).string.len = 2];
 }
 
 // Warehouse address
@@ -67,7 +67,7 @@ message Origin {
   string city = 1;
   string state = 2;
   string postal_code = 3;
-  string country = 4;
+  string country_code = 4 [(buf.validate.field).string.len = 2];
 }
 
 message HealthRequest {}

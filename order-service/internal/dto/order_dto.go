@@ -46,18 +46,18 @@ type Package struct {
 
 // ToAddress represents an address in create order request.
 type ToAddress struct {
-	City       string `json:"city"        validate:"required"`
-	State      string `json:"state"       validate:"required"`
-	PostalCode string `json:"postal_code" validate:"required"`
-	Country    string `json:"country"     validate:"required"`
+	City        string `json:"city"         validate:"required"`
+	State       string `json:"state"        validate:"required"`
+	PostalCode  string `json:"postal_code"  validate:"required"`
+	CountryCode string `json:"country_code" validate:"required,len=2,uppercase"`
 }
 
 // FromAddress represents an address in create order request.
 type FromAddress struct {
-	City       string `json:"city"        validate:"required"`
-	State      string `json:"state"       validate:"required"`
-	PostalCode string `json:"postal_code" validate:"required"`
-	Country    string `json:"country"     validate:"required"`
+	City        string `json:"city"         validate:"required"`
+	State       string `json:"state"        validate:"required"`
+	PostalCode  string `json:"postal_code"  validate:"required"`
+	CountryCode string `json:"country_code" validate:"required,len=2,uppercase"`
 }
 
 // ClientCreateOrderRequest represents the request to create a new order from the client.

@@ -195,16 +195,16 @@ func (c *FulfillmentRequestConsumer) createFulfillmentFromEvent(
 ) (*entity.Fulfillment, error) {
 	// Mock for now
 	destination := entity.Destination{
-		City:       evt.Payload.Destination.City,
-		State:      evt.Payload.Destination.State,
-		PostalCode: evt.Payload.Destination.PostalCode,
-		Country:    evt.Payload.Destination.Country,
+		City:        evt.Payload.Destination.City,
+		State:       evt.Payload.Destination.State,
+		PostalCode:  evt.Payload.Destination.PostalCode,
+		CountryCode: evt.Payload.Destination.CountryCode,
 	}
 	origin := entity.Origin{
-		City:       evt.Payload.Origin.City,
-		State:      evt.Payload.Origin.State,
-		PostalCode: evt.Payload.Origin.PostalCode,
-		Country:    evt.Payload.Origin.Country,
+		City:        evt.Payload.Origin.City,
+		State:       evt.Payload.Origin.State,
+		PostalCode:  evt.Payload.Origin.PostalCode,
+		CountryCode: evt.Payload.Origin.CountryCode,
 	}
 
 	packageData := entity.Package{

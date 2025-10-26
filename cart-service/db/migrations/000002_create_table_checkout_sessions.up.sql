@@ -9,27 +9,15 @@ CREATE TABLE IF NOT EXISTS checkout_sessions (
     customer_id UUID NOT NULL,
     cart_id UUID NOT NULL REFERENCES carts (id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    destination JSONB,
-    origin JSONB,
-    courier JSONB,
-    package JSONB,
+    destination JSONB, -- will be added in checkout page
+    origin JSONB, -- will be added in checkout page
+    courier JSONB, -- will be added in checkout page
+    package JSONB, -- will be added in checkout page
     payment_gateway VARCHAR(50),
     currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     expired_at TIMESTAMPTZ
-
-    CHECK (
-        jsonb_type(destination) = 'object'
-        AND jsonb_type(origin) = 'object'
-        AND jsonb_type(courier) = 'object'
-        AND jsonb_type(package) = 'object'
-    )
-    CHECK (
-        destination ?& ARRAY['city', 'country']
-        AND origin ?& ARRAY['city', 'country']
-        AND courier ?& ARRAY['courier_id']
-    )
 );
 
 ALTER TABLE checkout_sessions

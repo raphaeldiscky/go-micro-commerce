@@ -60,16 +60,16 @@ func MapToCalculateShippingRateRequest(
 	return &dto.CalculateShippingRateRequest{
 		CourierID: constant.CourierID(courier.GetCourierId()),
 		Destination: entity.Destination{
-			City:       req.GetDestination().GetCity(),
-			State:      req.GetDestination().GetState(),
-			PostalCode: req.GetDestination().GetPostalCode(),
-			Country:    req.GetDestination().GetCountry(),
+			City:        req.GetDestination().GetCity(),
+			State:       req.GetDestination().GetState(),
+			PostalCode:  req.GetDestination().GetPostalCode(),
+			CountryCode: req.GetDestination().GetCountryCode(),
 		},
 		Origin: entity.Origin{
-			City:       req.GetOrigin().GetCity(),
-			State:      req.GetOrigin().GetState(),
-			PostalCode: req.GetOrigin().GetPostalCode(),
-			Country:    req.GetOrigin().GetCountry(),
+			City:        req.GetOrigin().GetCity(),
+			State:       req.GetOrigin().GetState(),
+			PostalCode:  req.GetOrigin().GetPostalCode(),
+			CountryCode: req.GetOrigin().GetCountryCode(),
 		},
 		Package: entity.Package{
 			WeightKG: weightKG,

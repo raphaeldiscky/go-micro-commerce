@@ -8,7 +8,7 @@ type Origin {
   city: String!
   state: String!
   postalCode: String!
-  country: String!
+  countryCode: String!
 }
 
 # Destination entity
@@ -16,7 +16,7 @@ type Destination {
   city: String!
   state: String!
   postalCode: String!
-  country: String!
+  countryCode: String!
 }
 
 # Package entity
@@ -70,7 +70,7 @@ input OriginInput {
   city: String!
   state: String!
   postalCode: String!
-  country: String!
+  countryCode: String!
 }
 
 # Input type for destination
@@ -78,7 +78,7 @@ input DestinationInput {
   city: String!
   state: String!
   postalCode: String!
-  country: String!
+  countryCode: String!
 }
 
 # Input type for package

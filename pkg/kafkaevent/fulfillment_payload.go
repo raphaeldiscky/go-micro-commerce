@@ -41,18 +41,18 @@ type Courier struct {
 
 // Destination holds the shipping address information.
 type Destination struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // Origin holds the warehouse address information.
 type Origin struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // FulfillmentLifecyclePayload holds the data for the Fulfillment Lifecycle event.
