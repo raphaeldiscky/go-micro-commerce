@@ -13,21 +13,51 @@ import (
 )
 
 // CheckoutSession represents a checkout session in the marketplace.
-// CheckoutSession is a lightweight snapshot of selected cart items.
-// No cart_id reference - uses snapshot pattern for immutability.
 type CheckoutSession struct {
 	ID             uuid.UUID
 	IdempotencyKey uuid.UUID
 	CustomerID     uuid.UUID
 	CartID         uuid.UUID
-	AddressID      *uuid.UUID
-	CarrierID      *string
+	Courier        Courier
+	Destination    Destination
+	Origin         Origin
+	Package        Package
 	Status         constant.CheckoutSessionStatus
 	PaymentGateway *string
 	Currency       string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Items          []CheckoutSessionItem
+}
+
+// Courier represents a courier in the marketplace.
+type Courier struct {
+	CourierID string `json:"courier_id"`
+}
+
+// Origin represents the origin of the package.
+type Origin struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
+}
+
+// Destination represents the destination of the package.
+type Destination struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
+}
+
+// Package represents a package in the marketplace.
+type Package struct {
+	WeightKG decimal.Decimal `json:"weight_kg"`
+	Width    decimal.Decimal `json:"width"`
+	Height   decimal.Decimal `json:"height"`
+	Length   decimal.Decimal `json:"length"`
+	Unit     string          `json:"unit"`
 }
 
 // CheckoutSessionItem represents an item in a checkout session.
@@ -47,6 +77,10 @@ func NewCheckoutSession(
 	customerID uuid.UUID,
 	cartID uuid.UUID,
 	currency string,
+	courier Courier,
+	destination Destination,
+	packageData Package,
+	origin Origin,
 	items []CheckoutSessionItem,
 ) (*CheckoutSession, error) {
 	checkoutSessionID := uuid.New()
@@ -62,8 +96,10 @@ func NewCheckoutSession(
 		IdempotencyKey: idempotencyKey,
 		CustomerID:     customerID,
 		CartID:         cartID,
-		AddressID:      nil,
-		CarrierID:      nil,
+		Package:        packageData,
+		Courier:        courier,
+		Destination:    destination,
+		Origin:         origin,
 		Status:         constant.CheckoutSessionStatusPending,
 		PaymentGateway: nil,
 		Currency:       currency,

@@ -95,8 +95,8 @@ message Product {
     min_len: 1,
     max_len: 255
   }];
-  double price = 3 [(buf.validate.field).double = {
-    gt: 0
+  string price = 3 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
   }];
   int64 quantity = 4 [(buf.validate.field).int64.gte = 0];
   int64 version = 5 [(buf.validate.field).int64.gte = 0]; // for optimistic locking
@@ -160,8 +160,8 @@ message ValidateProductsResponse {
 
 message ProductForValidation {
   string id = 1 [(buf.validate.field).string.uuid = true];
-  double price = 2 [(buf.validate.field).double = {
-    gt: 0
+  string price = 2 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
   }];
   int64 quantity = 3 [(buf.validate.field).int64.gte = 0];
 }

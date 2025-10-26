@@ -31,7 +31,7 @@ func NewStripeClient(
 ) client.PaymentGatewayClient {
 	// Set global Stripe API key for SDK functions
 	//nolint:reassign // Stripe SDK requires setting the global Key
-	stripe.Key = cfg.StripeAPIKey
+	stripe.Key = cfg.StripeSecretKey
 
 	return &stripeClient{
 		logger: appLogger,
@@ -72,12 +72,13 @@ func (c *stripeClient) ProcessPayment(
 	}
 
 	params := &stripe.PaymentIntentParams{
-		Amount:        stripe.Int64(amountInCents),
-		Currency:      stripe.String(req.Currency),
-		Description:   stripe.String(req.Description),
-		PaymentMethod: stripe.String(req.PaymentMethodID), // PM ID tokenized client-side
-		Confirm:       stripe.Bool(false),                 // Client confirms with Stripe.js
-		Metadata:      metadata,
+		Amount:      stripe.Int64(amountInCents),
+		Currency:    stripe.String(req.Currency),
+		Description: stripe.String(req.Description),
+		Confirm: stripe.Bool(
+			false,
+		), // Client selects payment method and confirms with Stripe.js
+		Metadata: metadata,
 	}
 
 	// Set customer email for receipts

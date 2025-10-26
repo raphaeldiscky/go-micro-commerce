@@ -172,8 +172,31 @@ func (s *orderService) CreateOrderWithTemporal(
 		newOrder, newErr := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
+			req.CheckoutSessionID,
 			req.PaymentGateway,
 			req.Currency,
+			entity.Courier{
+				CourierID: req.Courier.CourierID,
+			},
+			entity.Destination{
+				City:        req.Destination.City,
+				State:       req.Destination.State,
+				PostalCode:  req.Destination.PostalCode,
+				CountryCode: req.Destination.CountryCode,
+			},
+			entity.Origin{
+				City:        req.Origin.City,
+				State:       req.Origin.State,
+				PostalCode:  req.Origin.PostalCode,
+				CountryCode: req.Origin.CountryCode,
+			},
+			entity.Package{
+				WeightKG: req.Package.WeightKG,
+				Width:    req.Package.Width,
+				Height:   req.Package.Height,
+				Length:   req.Package.Length,
+				Unit:     req.Package.Unit,
+			},
 			orderItems,
 		)
 		if newErr != nil {
@@ -198,7 +221,6 @@ func (s *orderService) CreateOrderWithTemporal(
 		// Start Temporal workflow
 		temporalReq := dto.TemporalOrderSagaRequest{
 			Order:    savedOrder,
-			Shipping: &req.Shipping,
 			UserAuth: &userAuth,
 		}
 

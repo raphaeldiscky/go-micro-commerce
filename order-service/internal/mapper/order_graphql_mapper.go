@@ -17,20 +17,43 @@ func MapToGraphQLOrderFromDTO(order *dto.OrderResponse) *graph.Order {
 	}
 
 	return &graph.Order{
-		ID:             order.ID,
-		IdempotencyKey: order.IdempotencyKey,
-		CustomerID:     order.CustomerID,
-		Status:         order.Status,
-		Currency:       order.Currency,
-		PaymentGateway: order.PaymentGateway,
-		ShippingCost:   order.ShippingCost,
-		Subtotal:       order.Subtotal,
-		TotalPrice:     order.TotalPrice,
-		TotalTax:       order.TotalTax,
-		TotalDiscount:  order.TotalDiscount,
-		Items:          items,
-		CreatedAt:      order.CreatedAt,
-		UpdatedAt:      order.UpdatedAt,
+		ID:                order.ID,
+		IdempotencyKey:    order.IdempotencyKey,
+		CheckoutSessionID: order.CheckoutSessionID,
+		CustomerID:        order.CustomerID,
+		Status:            order.Status,
+		Currency:          order.Currency,
+		PaymentGateway:    order.PaymentGateway,
+		Courier: &graph.Courier{
+			CourierID: order.Courier.CourierID,
+		},
+		Package: &graph.Package{
+			WeightKg: order.Package.WeightKG,
+			Length:   order.Package.Length,
+			Height:   order.Package.Height,
+			Width:    order.Package.Width,
+			Unit:     order.Package.Unit,
+		},
+		Origin: &graph.Origin{
+			City:        order.Origin.City,
+			State:       order.Origin.State,
+			PostalCode:  order.Origin.PostalCode,
+			CountryCode: order.Origin.CountryCode,
+		},
+		Destination: &graph.Destination{
+			City:        order.Destination.City,
+			State:       order.Destination.State,
+			PostalCode:  order.Destination.PostalCode,
+			CountryCode: order.Destination.CountryCode,
+		},
+		ShippingCost:  order.ShippingCost,
+		Subtotal:      order.Subtotal,
+		TotalPrice:    order.TotalPrice,
+		TotalTax:      order.TotalTax,
+		TotalDiscount: order.TotalDiscount,
+		Items:         items,
+		CreatedAt:     order.CreatedAt,
+		UpdatedAt:     order.UpdatedAt,
 	}
 }
 
@@ -109,28 +132,6 @@ func MapToCreateOrderRequest(
 		CustomerEmail:  customerEmail,
 		IdempotencyKey: input.IdempotencyKey,
 		Items:          items,
-		Shipping: dto.Shipping{
-			CarrierID: input.Shipping.CarrierID,
-			FromAddress: dto.FromAddress{
-				City:       input.Shipping.FromAddress.City,
-				State:      input.Shipping.FromAddress.State,
-				PostalCode: input.Shipping.FromAddress.PostalCode,
-				Country:    input.Shipping.FromAddress.Country,
-			},
-			ToAddress: dto.ToAddress{
-				City:       input.Shipping.ToAddress.City,
-				State:      input.Shipping.ToAddress.State,
-				PostalCode: input.Shipping.ToAddress.PostalCode,
-				Country:    input.Shipping.ToAddress.Country,
-			},
-			WeightKG: input.Shipping.WeightKg,
-			Dimensions: dto.Dimensions{
-				Length: input.Shipping.Dimensions.Length,
-				Height: input.Shipping.Dimensions.Height,
-				Width:  input.Shipping.Dimensions.Width,
-				Unit:   input.Shipping.Dimensions.Unit,
-			},
-		},
 		PaymentGateway: input.PaymentGateway,
 		Currency:       input.Currency,
 	}, nil

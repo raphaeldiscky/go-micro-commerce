@@ -73,6 +73,37 @@ func (h *CheckoutSessionHandler) GetCheckoutSessionByID(c echo.Context) error {
 	return echoutils.ResponseOK(c, session)
 }
 
+// UpdateCheckoutSession handles PATCH /checkout-sessions/:sessionID.
+// Updates checkout session with address, carrier, or payment gateway.
+func (h *CheckoutSessionHandler) UpdateCheckoutSession(c echo.Context) error {
+	param := c.Param("sessionID")
+
+	sessionID, err := uuid.Parse(param)
+	if err != nil {
+		return err
+	}
+
+	var req dto.UpdateCheckoutSessionRequest
+
+	if err = c.Bind(&req); err != nil {
+		return err
+	}
+
+	// Set customer info from JWT token
+	req.CustomerID = echoutils.GetUserIDFromContext(c)
+
+	session, err := h.checkoutSessionService.UpdateCheckoutSession(
+		echoutils.ContextWithUserInfo(c),
+		sessionID,
+		&req,
+	)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseOK(c, session)
+}
+
 // PlaceOrder handles POST /checkout-sessions/:sessionID/place-order.
 func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 	param := c.Param("sessionID")
@@ -84,6 +115,7 @@ func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 
 	var req dto.PlaceOrderRequest
 
+	req.CheckoutSessionID = sessionID
 	if err = c.Bind(&req); err != nil {
 		return err
 	}
@@ -97,7 +129,6 @@ func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 
 	session, err := h.checkoutSessionService.PlaceOrder(
 		echoutils.ContextWithUserInfo(c),
-		sessionID,
 		&req,
 	)
 	if err != nil {

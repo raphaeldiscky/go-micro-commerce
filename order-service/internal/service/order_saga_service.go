@@ -79,8 +79,31 @@ func (s *orderService) CreateOrderWithSaga(
 		newOrder, newOrderErr := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
+			req.CheckoutSessionID,
 			req.PaymentGateway,
 			req.Currency,
+			entity.Courier{
+				CourierID: req.Courier.CourierID,
+			},
+			entity.Destination{
+				City:        req.Destination.City,
+				State:       req.Destination.State,
+				PostalCode:  req.Destination.PostalCode,
+				CountryCode: req.Destination.CountryCode,
+			},
+			entity.Origin{
+				City:        req.Origin.City,
+				State:       req.Origin.State,
+				PostalCode:  req.Origin.PostalCode,
+				CountryCode: req.Origin.CountryCode,
+			},
+			entity.Package{
+				WeightKG: req.Package.WeightKG,
+				Width:    req.Package.Width,
+				Height:   req.Package.Height,
+				Length:   req.Package.Length,
+				Unit:     req.Package.Unit,
+			},
 			orderItems,
 		)
 		if newOrderErr != nil {
@@ -106,7 +129,7 @@ func (s *orderService) CreateOrderWithSaga(
 		return nil, err
 	}
 
-	return s.executeSagaWorkflow(ctx, res, req)
+	return s.executeSagaWorkflow(ctx, res)
 }
 
 // handleExistingOrder checks for duplicate orders and handles saga state.
@@ -161,13 +184,12 @@ func (s *orderService) handleExistingOrder(
 func (s *orderService) executeSagaWorkflow(
 	ctx context.Context,
 	res *dto.OrderResponse,
-	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
 	if s.config.Saga.ExecutionMode == "sync" {
-		return s.executeSagaSynchronously(ctx, res, req)
+		return s.executeSagaSynchronously(ctx, res)
 	}
 
-	s.executeSagaAsynchronously(ctx, res, req)
+	s.executeSagaAsynchronously(ctx, res)
 	res.Status = constant.OrderStatusProcessing
 
 	s.logger.Infof(
@@ -181,7 +203,6 @@ func (s *orderService) executeSagaWorkflow(
 func (s *orderService) executeSagaSynchronously(
 	ctx context.Context,
 	res *dto.OrderResponse,
-	req *dto.CreateOrderRequest,
 ) (*dto.OrderResponse, error) {
 	orderRepo := s.dataStore.OrderRepository()
 
@@ -192,8 +213,7 @@ func (s *orderService) executeSagaSynchronously(
 
 	// Create payload with order and shipping data from original request
 	payload := &saga.Payload{
-		Order:    order,
-		Shipping: req.Shipping,
+		Order: order,
 	}
 
 	if err = s.sagaOrchestrator.ExecuteOrderSaga(ctx, payload); err != nil {
@@ -220,7 +240,6 @@ func (s *orderService) executeSagaSynchronously(
 func (s *orderService) executeSagaAsynchronously(
 	ctx context.Context,
 	res *dto.OrderResponse,
-	req *dto.CreateOrderRequest,
 ) {
 	go func() {
 		// Create background context with user authentication for async saga execution
@@ -243,10 +262,9 @@ func (s *orderService) executeSagaAsynchronously(
 
 		s.logger.Infof("Starting async saga for order %s", res.ID)
 
-		// Create payload with order and shipping data from original request
+		// Create payload with order
 		payload := &saga.Payload{
-			Order:    order,
-			Shipping: req.Shipping,
+			Order: order,
 		}
 
 		if sagaErr := s.sagaOrchestrator.ExecuteOrderSaga(bgCtx, payload); sagaErr != nil {

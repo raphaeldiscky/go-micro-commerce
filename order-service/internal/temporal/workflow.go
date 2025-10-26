@@ -62,7 +62,7 @@ func OrderSagaWorkflow(
 	ctx = workflow.WithActivityOptions(ctx, activityOptions)
 
 	// Execute saga steps with compensation on failure
-	if err := executeSagaSteps(ctx, req.Order, state, *req.UserAuth, req.Shipping); err != nil {
+	if err := executeSagaSteps(ctx, req.Order, state, *req.UserAuth); err != nil {
 		logger.Error(
 			"Saga execution failed, starting compensation",
 			"error",

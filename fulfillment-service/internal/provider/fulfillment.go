@@ -52,7 +52,7 @@ func SetupFulfillment(
 		providers.DataStore,
 		appLogger,
 		fulfillmentLifecycleProducer,
-		providers.CarrierClient,
+		providers.CourierClient,
 	)
 	providers.FulfillmentService = fulfillmentService
 	fulfillmentHandler := handler.NewFulfillmentHandler(fulfillmentService)

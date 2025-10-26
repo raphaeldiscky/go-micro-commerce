@@ -3,11 +3,11 @@ CREATE TABLE fulfillments (
     order_id UUID NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending',
     tracking_number TEXT UNIQUE NOT NULL,
-    carrier_id TEXT NOT NULL,
+    courier_id TEXT NOT NULL, -- jne, pos, etc
     shipping_label_url TEXT NOT NULL,
     shipping_cost DECIMAL(10, 2) NOT NULL,
-    from_address JSONB NOT NULL, -- server generated
-    to_address JSONB NOT NULL,
+    origin JSONB NOT NULL,
+    destination JSONB NOT NULL,
     --  {
     --      "city": string,
     --      "state": string,
@@ -15,8 +15,7 @@ CREATE TABLE fulfillments (
     --      "country": string,
     --  }
     currency VARCHAR(3) NOT NULL,
-    weight_kg DECIMAL(8, 3) NOT NULL DEFAULT 0,
-    dimensions JSONB NOT NULL, -- {width: 0, height: 0, length: 0, unit: "cm"}
+    package JSONB NOT NULL, -- {weight_kg: 0, width: 0, height: 0, length: 0, unit: "cm"}
     estimated_delivery_at TIMESTAMPTZ NOT NULL,
     actual_delivery_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),

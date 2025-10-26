@@ -42,8 +42,10 @@ type CheckoutSession struct {
 	ID             uuid.UUID                      `json:"id"`
 	IdempotencyKey uuid.UUID                      `json:"idempotencyKey"`
 	CustomerID     uuid.UUID                      `json:"customerId"`
-	AddressID      *uuid.UUID                     `json:"addressId,omitempty"`
-	CarrierID      *string                        `json:"carrierId,omitempty"`
+	Courier        *Courier                       `json:"courier"`
+	Destination    *Destination                   `json:"destination"`
+	Origin         *Origin                        `json:"origin"`
+	Package        *Package                       `json:"package"`
 	Status         constant.CheckoutSessionStatus `json:"status"`
 	PaymentGateway *string                        `json:"paymentGateway,omitempty"`
 	Currency       string                         `json:"currency"`
@@ -60,19 +62,68 @@ type CheckoutSessionItem struct {
 	UnitPrice   decimal.Decimal `json:"unitPrice"`
 }
 
+type Courier struct {
+	CourierID string `json:"courierId"`
+}
+
+type CourierInput struct {
+	CourierID string `json:"courierId"`
+}
+
 type CreateCheckoutSessionInput struct {
 	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
 	CartID         uuid.UUID `json:"cartId"`
 }
 
+type Destination struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
+}
+
+type DestinationInput struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
+}
+
 type Mutation struct {
+}
+
+type Origin struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
+}
+
+type OriginInput struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
+}
+
+type Package struct {
+	WeightKg decimal.Decimal `json:"weightKg"`
+	Width    decimal.Decimal `json:"width"`
+	Height   decimal.Decimal `json:"height"`
+	Length   decimal.Decimal `json:"length"`
+	Unit     string          `json:"unit"`
+}
+
+type PackageInput struct {
+	WeightKg decimal.Decimal `json:"weightKg"`
+	Width    decimal.Decimal `json:"width"`
+	Height   decimal.Decimal `json:"height"`
+	Length   decimal.Decimal `json:"length"`
+	Unit     string          `json:"unit"`
 }
 
 type PlaceOrderInput struct {
 	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
-	AddressID      uuid.UUID `json:"addressId"`
-	CarrierID      string    `json:"carrierId"`
-	PaymentGateway string    `json:"paymentGateway"`
 }
 
 type Query struct {
@@ -84,6 +135,14 @@ type SelectItemForCheckoutInput struct {
 
 type UpdateCartItemQuantityInput struct {
 	Quantity int `json:"quantity"`
+}
+
+type UpdateCheckoutSessionInput struct {
+	Courier        *CourierInput     `json:"courier,omitempty"`
+	Destination    *DestinationInput `json:"destination,omitempty"`
+	Origin         *OriginInput      `json:"origin,omitempty"`
+	Package        *PackageInput     `json:"package,omitempty"`
+	PaymentGateway *string           `json:"paymentGateway,omitempty"`
 }
 
 type Role string

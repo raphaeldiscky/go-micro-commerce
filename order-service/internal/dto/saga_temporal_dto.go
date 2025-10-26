@@ -33,7 +33,6 @@ type RefundPaymentGatewayRequest struct {
 // TemporalOrderSagaRequest represents the input for the order saga workflow.
 type TemporalOrderSagaRequest struct {
 	Order    *entity.Order        `json:"order"`
-	Shipping *Shipping            `json:"shipping"`
 	UserAuth *pkgdto.UserAuthInfo `json:"user_auth"`
 }
 
@@ -119,7 +118,6 @@ type RestoreProductsRequest struct {
 // GetShippingCostRequest represents input for getting shipping cost.
 type GetShippingCostRequest struct {
 	Order    *entity.Order        `json:"order"`
-	Shipping *Shipping            `json:"shipping"`
 	UserAuth *pkgdto.UserAuthInfo `json:"user_auth"`
 }
 

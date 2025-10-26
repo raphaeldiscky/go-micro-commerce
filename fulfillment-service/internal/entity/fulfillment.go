@@ -11,28 +11,29 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
 )
 
-// Dimensions represents the package dimensions.
-type Dimensions struct {
-	Width  decimal.Decimal `json:"width"`
-	Height decimal.Decimal `json:"height"`
-	Length decimal.Decimal `json:"length"`
-	Unit   string          `json:"unit"` // cm or inch
+// Package represents the package dimensions and weight in kg.
+type Package struct {
+	WeightKG decimal.Decimal `json:"weight_kg"`
+	Width    decimal.Decimal `json:"width"`
+	Height   decimal.Decimal `json:"height"`
+	Length   decimal.Decimal `json:"length"`
+	Unit     string          `json:"unit"` // cm or inch
 }
 
-// ToAddress represents a customer shipping address.
-type ToAddress struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+// Destination represents a customer shipping address.
+type Destination struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
-// FromAddress represents a warehouse address.
-type FromAddress struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+// Origin represents a warehouse address.
+type Origin struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // Fulfillment represents a fulfillment record in the marketplace.
@@ -41,14 +42,13 @@ type Fulfillment struct {
 	OrderID             uuid.UUID // Reference to order from order-service
 	Status              constant.FulfillmentStatus
 	TrackingNumber      string
-	CarrierID           constant.CarrierID
+	CourierID           constant.CourierID
 	ShippingLabelURL    string
 	Currency            string
 	ShippingCost        decimal.Decimal
-	ToAddress           ToAddress
-	FromAddress         FromAddress
-	WeightKG            decimal.Decimal
-	Dimensions          Dimensions // JSONB data
+	Destination         Destination
+	Origin              Origin
+	Package             Package
 	EstimatedDeliveryAt time.Time
 	ActualDeliveryAt    *time.Time
 	CreatedAt           time.Time
@@ -59,9 +59,10 @@ type Fulfillment struct {
 func NewFulfillment(
 	orderID uuid.UUID,
 	trackingNumber, currency string,
-	shippingCost, weightKG decimal.Decimal,
-	fromAddress FromAddress,
-	toAddress ToAddress,
+	shippingCost decimal.Decimal,
+	packageData Package,
+	destination Destination,
+	origin Origin,
 	estimatedDeliveryAt time.Time,
 ) (*Fulfillment, error) {
 	now := time.Now()
@@ -72,10 +73,10 @@ func NewFulfillment(
 		TrackingNumber:      trackingNumber,
 		Currency:            currency,
 		ShippingCost:        shippingCost.Round(constant.DefaultPricingScale),
-		WeightKG:            weightKG.Round(constant.DefaultPricingScale),
+		Package:             packageData,
+		Destination:         destination,
+		Origin:              origin,
 		EstimatedDeliveryAt: estimatedDeliveryAt,
-		ToAddress:           toAddress,
-		FromAddress:         fromAddress,
 		CreatedAt:           now,
 		UpdatedAt:           now,
 	}
@@ -101,18 +102,18 @@ func (f *Fulfillment) UpdateStatus(status constant.FulfillmentStatus) error {
 	return f.validate()
 }
 
-// SetCarrierInfo sets the carrier and shipping label information.
-func (f *Fulfillment) SetCarrierInfo(carrierID constant.CarrierID, shippingLabelURL string) error {
-	f.CarrierID = carrierID
+// SetCourierInfo sets the Courier and shipping label information.
+func (f *Fulfillment) SetCourierInfo(courierID constant.CourierID, shippingLabelURL string) error {
+	f.CourierID = courierID
 	f.ShippingLabelURL = shippingLabelURL
 	f.UpdatedAt = time.Now()
 
 	return f.validate()
 }
 
-// SetDimensions sets the package dimensions.
-func (f *Fulfillment) SetDimensions(dimensions Dimensions) error {
-	f.Dimensions = dimensions
+// SetPackage sets the package dimensions and weight.
+func (f *Fulfillment) SetPackage(packageData Package) error {
+	f.Package = packageData
 	f.UpdatedAt = time.Now()
 
 	return f.validate()
@@ -165,10 +166,6 @@ func (f *Fulfillment) validate() error {
 
 	if f.ShippingCost.LessThan(decimal.Zero) {
 		return errors.New("shipping_cost must not be negative")
-	}
-
-	if f.WeightKG.LessThanOrEqual(decimal.Zero) {
-		return errors.New("weight_kg must be greater than zero")
 	}
 
 	if f.EstimatedDeliveryAt.Before(f.CreatedAt) {

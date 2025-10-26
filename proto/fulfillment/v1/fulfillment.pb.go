@@ -11,8 +11,10 @@ import (
 	sync "sync"
 	unsafe "unsafe"
 
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const (
@@ -74,7 +76,10 @@ func (HealthStatus) EnumDescriptor() ([]byte, []int) {
 type GetShippingCostRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Currency      string                 `protobuf:"bytes,1,opt,name=currency,proto3" json:"currency,omitempty"`
-	Shipping      *Shipping              `protobuf:"bytes,2,opt,name=shipping,proto3" json:"shipping,omitempty"`
+	Courier       *Courier               `protobuf:"bytes,2,opt,name=courier,proto3" json:"courier,omitempty"`
+	Destination   *Destination           `protobuf:"bytes,3,opt,name=destination,proto3" json:"destination,omitempty"`
+	Origin        *Origin                `protobuf:"bytes,4,opt,name=origin,proto3" json:"origin,omitempty"`
+	Package       *Package               `protobuf:"bytes,5,opt,name=package,proto3" json:"package,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -116,9 +121,30 @@ func (x *GetShippingCostRequest) GetCurrency() string {
 	return ""
 }
 
-func (x *GetShippingCostRequest) GetShipping() *Shipping {
+func (x *GetShippingCostRequest) GetCourier() *Courier {
 	if x != nil {
-		return x.Shipping
+		return x.Courier
+	}
+	return nil
+}
+
+func (x *GetShippingCostRequest) GetDestination() *Destination {
+	if x != nil {
+		return x.Destination
+	}
+	return nil
+}
+
+func (x *GetShippingCostRequest) GetOrigin() *Origin {
+	if x != nil {
+		return x.Origin
+	}
+	return nil
+}
+
+func (x *GetShippingCostRequest) GetPackage() *Package {
+	if x != nil {
+		return x.Package
 	}
 	return nil
 }
@@ -191,31 +217,27 @@ func (x *GetShippingCostResponse) GetErrorMessage() string {
 	return ""
 }
 
-type Shipping struct {
+type Courier struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	CarrierId     string                 `protobuf:"bytes,1,opt,name=carrier_id,json=carrierId,proto3" json:"carrier_id,omitempty"`
-	FromAddress   *FromAddress           `protobuf:"bytes,2,opt,name=from_address,json=fromAddress,proto3" json:"from_address,omitempty"`
-	ToAddress     *ToAddress             `protobuf:"bytes,3,opt,name=to_address,json=toAddress,proto3" json:"to_address,omitempty"`
-	WeightKg      float64                `protobuf:"fixed64,4,opt,name=weight_kg,json=weightKg,proto3" json:"weight_kg,omitempty"`
-	Dimensions    *Dimensions            `protobuf:"bytes,5,opt,name=dimensions,proto3" json:"dimensions,omitempty"`
+	CourierId     string                 `protobuf:"bytes,1,opt,name=courier_id,json=courierId,proto3" json:"courier_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Shipping) Reset() {
-	*x = Shipping{}
+func (x *Courier) Reset() {
+	*x = Courier{}
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Shipping) String() string {
+func (x *Courier) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Shipping) ProtoMessage() {}
+func (*Courier) ProtoMessage() {}
 
-func (x *Shipping) ProtoReflect() protoreflect.Message {
+func (x *Courier) ProtoReflect() protoreflect.Message {
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -227,70 +249,43 @@ func (x *Shipping) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Shipping.ProtoReflect.Descriptor instead.
-func (*Shipping) Descriptor() ([]byte, []int) {
+// Deprecated: Use Courier.ProtoReflect.Descriptor instead.
+func (*Courier) Descriptor() ([]byte, []int) {
 	return file_fulfillment_v1_fulfillment_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Shipping) GetCarrierId() string {
+func (x *Courier) GetCourierId() string {
 	if x != nil {
-		return x.CarrierId
+		return x.CourierId
 	}
 	return ""
 }
 
-func (x *Shipping) GetFromAddress() *FromAddress {
-	if x != nil {
-		return x.FromAddress
-	}
-	return nil
-}
-
-func (x *Shipping) GetToAddress() *ToAddress {
-	if x != nil {
-		return x.ToAddress
-	}
-	return nil
-}
-
-func (x *Shipping) GetWeightKg() float64 {
-	if x != nil {
-		return x.WeightKg
-	}
-	return 0
-}
-
-func (x *Shipping) GetDimensions() *Dimensions {
-	if x != nil {
-		return x.Dimensions
-	}
-	return nil
-}
-
-type Dimensions struct {
+type Package struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Width         float64                `protobuf:"fixed64,1,opt,name=width,proto3" json:"width,omitempty"`
-	Height        float64                `protobuf:"fixed64,2,opt,name=height,proto3" json:"height,omitempty"`
-	Length        float64                `protobuf:"fixed64,3,opt,name=length,proto3" json:"length,omitempty"`
-	Unit          string                 `protobuf:"bytes,4,opt,name=unit,proto3" json:"unit,omitempty"`
+	WeightKg      string                 `protobuf:"bytes,1,opt,name=weight_kg,json=weightKg,proto3" json:"weight_kg,omitempty"`
+	Width         string                 `protobuf:"bytes,2,opt,name=width,proto3" json:"width,omitempty"`
+	Height        string                 `protobuf:"bytes,3,opt,name=height,proto3" json:"height,omitempty"`
+	Length        string                 `protobuf:"bytes,4,opt,name=length,proto3" json:"length,omitempty"`
+	Unit          string                 `protobuf:"bytes,5,opt,name=unit,proto3" json:"unit,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Dimensions) Reset() {
-	*x = Dimensions{}
+func (x *Package) Reset() {
+	*x = Package{}
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Dimensions) String() string {
+func (x *Package) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Dimensions) ProtoMessage() {}
+func (*Package) ProtoMessage() {}
 
-func (x *Dimensions) ProtoReflect() protoreflect.Message {
+func (x *Package) ProtoReflect() protoreflect.Message {
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -302,33 +297,40 @@ func (x *Dimensions) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Dimensions.ProtoReflect.Descriptor instead.
-func (*Dimensions) Descriptor() ([]byte, []int) {
+// Deprecated: Use Package.ProtoReflect.Descriptor instead.
+func (*Package) Descriptor() ([]byte, []int) {
 	return file_fulfillment_v1_fulfillment_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *Dimensions) GetWidth() float64 {
+func (x *Package) GetWeightKg() string {
+	if x != nil {
+		return x.WeightKg
+	}
+	return ""
+}
+
+func (x *Package) GetWidth() string {
 	if x != nil {
 		return x.Width
 	}
-	return 0
+	return ""
 }
 
-func (x *Dimensions) GetHeight() float64 {
+func (x *Package) GetHeight() string {
 	if x != nil {
 		return x.Height
 	}
-	return 0
+	return ""
 }
 
-func (x *Dimensions) GetLength() float64 {
+func (x *Package) GetLength() string {
 	if x != nil {
 		return x.Length
 	}
-	return 0
+	return ""
 }
 
-func (x *Dimensions) GetUnit() string {
+func (x *Package) GetUnit() string {
 	if x != nil {
 		return x.Unit
 	}
@@ -336,30 +338,30 @@ func (x *Dimensions) GetUnit() string {
 }
 
 // Customer address
-type ToAddress struct {
+type Destination struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
 	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	PostalCode    string                 `protobuf:"bytes,3,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
-	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
+	CountryCode   string                 `protobuf:"bytes,4,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ToAddress) Reset() {
-	*x = ToAddress{}
+func (x *Destination) Reset() {
+	*x = Destination{}
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ToAddress) String() string {
+func (x *Destination) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ToAddress) ProtoMessage() {}
+func (*Destination) ProtoMessage() {}
 
-func (x *ToAddress) ProtoReflect() protoreflect.Message {
+func (x *Destination) ProtoReflect() protoreflect.Message {
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -371,64 +373,64 @@ func (x *ToAddress) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ToAddress.ProtoReflect.Descriptor instead.
-func (*ToAddress) Descriptor() ([]byte, []int) {
+// Deprecated: Use Destination.ProtoReflect.Descriptor instead.
+func (*Destination) Descriptor() ([]byte, []int) {
 	return file_fulfillment_v1_fulfillment_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ToAddress) GetCity() string {
+func (x *Destination) GetCity() string {
 	if x != nil {
 		return x.City
 	}
 	return ""
 }
 
-func (x *ToAddress) GetState() string {
+func (x *Destination) GetState() string {
 	if x != nil {
 		return x.State
 	}
 	return ""
 }
 
-func (x *ToAddress) GetPostalCode() string {
+func (x *Destination) GetPostalCode() string {
 	if x != nil {
 		return x.PostalCode
 	}
 	return ""
 }
 
-func (x *ToAddress) GetCountry() string {
+func (x *Destination) GetCountryCode() string {
 	if x != nil {
-		return x.Country
+		return x.CountryCode
 	}
 	return ""
 }
 
 // Warehouse address
-type FromAddress struct {
+type Origin struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
 	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
 	PostalCode    string                 `protobuf:"bytes,3,opt,name=postal_code,json=postalCode,proto3" json:"postal_code,omitempty"`
-	Country       string                 `protobuf:"bytes,4,opt,name=country,proto3" json:"country,omitempty"`
+	CountryCode   string                 `protobuf:"bytes,4,opt,name=country_code,json=countryCode,proto3" json:"country_code,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *FromAddress) Reset() {
-	*x = FromAddress{}
+func (x *Origin) Reset() {
+	*x = Origin{}
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *FromAddress) String() string {
+func (x *Origin) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*FromAddress) ProtoMessage() {}
+func (*Origin) ProtoMessage() {}
 
-func (x *FromAddress) ProtoReflect() protoreflect.Message {
+func (x *Origin) ProtoReflect() protoreflect.Message {
 	mi := &file_fulfillment_v1_fulfillment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -440,35 +442,35 @@ func (x *FromAddress) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use FromAddress.ProtoReflect.Descriptor instead.
-func (*FromAddress) Descriptor() ([]byte, []int) {
+// Deprecated: Use Origin.ProtoReflect.Descriptor instead.
+func (*Origin) Descriptor() ([]byte, []int) {
 	return file_fulfillment_v1_fulfillment_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *FromAddress) GetCity() string {
+func (x *Origin) GetCity() string {
 	if x != nil {
 		return x.City
 	}
 	return ""
 }
 
-func (x *FromAddress) GetState() string {
+func (x *Origin) GetState() string {
 	if x != nil {
 		return x.State
 	}
 	return ""
 }
 
-func (x *FromAddress) GetPostalCode() string {
+func (x *Origin) GetPostalCode() string {
 	if x != nil {
 		return x.PostalCode
 	}
 	return ""
 }
 
-func (x *FromAddress) GetCountry() string {
+func (x *Origin) GetCountryCode() string {
 	if x != nil {
-		return x.Country
+		return x.CountryCode
 	}
 	return ""
 }
@@ -557,43 +559,40 @@ var File_fulfillment_v1_fulfillment_proto protoreflect.FileDescriptor
 
 const file_fulfillment_v1_fulfillment_proto_rawDesc = "" +
 	"\n" +
-	" fulfillment/v1/fulfillment.proto\x12\x0efulfillment.v1\"j\n" +
-	"\x16GetShippingCostRequest\x12\x1a\n" +
-	"\bcurrency\x18\x01 \x01(\tR\bcurrency\x124\n" +
-	"\bshipping\x18\x02 \x01(\v2\x18.fulfillment.v1.ShippingR\bshipping\"\x99\x01\n" +
+	" fulfillment/v1/fulfillment.proto\x12\x0efulfillment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\"\x94\x02\n" +
+	"\x16GetShippingCostRequest\x12%\n" +
+	"\bcurrency\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x03\x18\x03R\bcurrency\x121\n" +
+	"\acourier\x18\x02 \x01(\v2\x17.fulfillment.v1.CourierR\acourier\x12=\n" +
+	"\vdestination\x18\x03 \x01(\v2\x1b.fulfillment.v1.DestinationR\vdestination\x12.\n" +
+	"\x06origin\x18\x04 \x01(\v2\x16.fulfillment.v1.OriginR\x06origin\x121\n" +
+	"\apackage\x18\x05 \x01(\v2\x17.fulfillment.v1.PackageR\apackage\"\x99\x01\n" +
 	"\x17GetShippingCostResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12#\n" +
 	"\rshipping_cost\x18\x02 \x01(\x01R\fshippingCost\x12\x1a\n" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12#\n" +
-	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"\xfc\x01\n" +
-	"\bShipping\x12\x1d\n" +
+	"\rerror_message\x18\x04 \x01(\tR\ferrorMessage\"2\n" +
+	"\aCourier\x12'\n" +
 	"\n" +
-	"carrier_id\x18\x01 \x01(\tR\tcarrierId\x12>\n" +
-	"\ffrom_address\x18\x02 \x01(\v2\x1b.fulfillment.v1.FromAddressR\vfromAddress\x128\n" +
-	"\n" +
-	"to_address\x18\x03 \x01(\v2\x19.fulfillment.v1.ToAddressR\ttoAddress\x12\x1b\n" +
-	"\tweight_kg\x18\x04 \x01(\x01R\bweightKg\x12:\n" +
-	"\n" +
-	"dimensions\x18\x05 \x01(\v2\x1a.fulfillment.v1.DimensionsR\n" +
-	"dimensions\"f\n" +
-	"\n" +
-	"Dimensions\x12\x14\n" +
-	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
-	"\x06height\x18\x02 \x01(\x01R\x06height\x12\x16\n" +
-	"\x06length\x18\x03 \x01(\x01R\x06length\x12\x12\n" +
-	"\x04unit\x18\x04 \x01(\tR\x04unit\"p\n" +
-	"\tToAddress\x12\x12\n" +
+	"courier_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tcourierId\"\x8c\x02\n" +
+	"\aPackage\x12;\n" +
+	"\tweight_kg\x18\x01 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\bweightKg\x124\n" +
+	"\x05width\x18\x02 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x05width\x126\n" +
+	"\x06height\x18\x03 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x06height\x126\n" +
+	"\x06length\x18\x04 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\x06length\x12\x1e\n" +
+	"\x04unit\x18\x05 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04unit\"\x85\x01\n" +
+	"\vDestination\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1f\n" +
 	"\vpostal_code\x18\x03 \x01(\tR\n" +
-	"postalCode\x12\x18\n" +
-	"\acountry\x18\x04 \x01(\tR\acountry\"r\n" +
-	"\vFromAddress\x12\x12\n" +
+	"postalCode\x12+\n" +
+	"\fcountry_code\x18\x04 \x01(\tB\b\xbaH\x05r\x03\x98\x01\x02R\vcountryCode\"\x80\x01\n" +
+	"\x06Origin\x12\x12\n" +
 	"\x04city\x18\x01 \x01(\tR\x04city\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\x12\x1f\n" +
 	"\vpostal_code\x18\x03 \x01(\tR\n" +
-	"postalCode\x12\x18\n" +
-	"\acountry\x18\x04 \x01(\tR\acountry\"\x0f\n" +
+	"postalCode\x12+\n" +
+	"\fcountry_code\x18\x04 \x01(\tB\b\xbaH\x05r\x03\x98\x01\x02R\vcountryCode\"\x0f\n" +
 	"\rHealthRequest\"F\n" +
 	"\x0eHealthResponse\x124\n" +
 	"\x06status\x18\x01 \x01(\x0e2\x1c.fulfillment.v1.HealthStatusR\x06status*g\n" +
@@ -624,18 +623,18 @@ var file_fulfillment_v1_fulfillment_proto_goTypes = []any{
 	(HealthStatus)(0),               // 0: fulfillment.v1.HealthStatus
 	(*GetShippingCostRequest)(nil),  // 1: fulfillment.v1.GetShippingCostRequest
 	(*GetShippingCostResponse)(nil), // 2: fulfillment.v1.GetShippingCostResponse
-	(*Shipping)(nil),                // 3: fulfillment.v1.Shipping
-	(*Dimensions)(nil),              // 4: fulfillment.v1.Dimensions
-	(*ToAddress)(nil),               // 5: fulfillment.v1.ToAddress
-	(*FromAddress)(nil),             // 6: fulfillment.v1.FromAddress
+	(*Courier)(nil),                 // 3: fulfillment.v1.Courier
+	(*Package)(nil),                 // 4: fulfillment.v1.Package
+	(*Destination)(nil),             // 5: fulfillment.v1.Destination
+	(*Origin)(nil),                  // 6: fulfillment.v1.Origin
 	(*HealthRequest)(nil),           // 7: fulfillment.v1.HealthRequest
 	(*HealthResponse)(nil),          // 8: fulfillment.v1.HealthResponse
 }
 var file_fulfillment_v1_fulfillment_proto_depIdxs = []int32{
-	3, // 0: fulfillment.v1.GetShippingCostRequest.shipping:type_name -> fulfillment.v1.Shipping
-	6, // 1: fulfillment.v1.Shipping.from_address:type_name -> fulfillment.v1.FromAddress
-	5, // 2: fulfillment.v1.Shipping.to_address:type_name -> fulfillment.v1.ToAddress
-	4, // 3: fulfillment.v1.Shipping.dimensions:type_name -> fulfillment.v1.Dimensions
+	3, // 0: fulfillment.v1.GetShippingCostRequest.courier:type_name -> fulfillment.v1.Courier
+	5, // 1: fulfillment.v1.GetShippingCostRequest.destination:type_name -> fulfillment.v1.Destination
+	6, // 2: fulfillment.v1.GetShippingCostRequest.origin:type_name -> fulfillment.v1.Origin
+	4, // 3: fulfillment.v1.GetShippingCostRequest.package:type_name -> fulfillment.v1.Package
 	0, // 4: fulfillment.v1.HealthResponse.status:type_name -> fulfillment.v1.HealthStatus
 	1, // 5: fulfillment.v1.FulfillmentService.GetShippingCost:input_type -> fulfillment.v1.GetShippingCostRequest
 	7, // 6: fulfillment.v1.FulfillmentService.Health:input_type -> fulfillment.v1.HealthRequest

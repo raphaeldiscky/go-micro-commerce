@@ -33,7 +33,7 @@ func SetupPayment(
 	webhookService := service.NewWebhookService(
 		providers.DataStore,
 		appLogger,
-		cfg.PaymentGateway.StripeWebhookSecret,
+		cfg.PaymentGateway.StripeWebhookEndpointSecret,
 	)
 	webhookHandler := handler.NewWebhookHandler(webhookService, appLogger)
 	routes.SetupWebhookRoutes(e, webhookHandler)

@@ -18,11 +18,12 @@ func MapToFulfillmentResponse(fulfillment *entity.Fulfillment) *dto.FulfillmentR
 		OrderID:             fulfillment.OrderID,
 		Status:              fulfillment.Status,
 		TrackingNumber:      fulfillment.TrackingNumber,
-		CarrierID:           fulfillment.CarrierID,
+		CourierID:           fulfillment.CourierID,
 		ShippingLabelURL:    fulfillment.ShippingLabelURL,
 		ShippingCost:        fulfillment.ShippingCost,
-		WeightKG:            fulfillment.WeightKG,
-		Dimensions:          fulfillment.Dimensions,
+		Package:             fulfillment.Package,
+		Destination:         fulfillment.Destination,
+		Origin:              fulfillment.Origin,
 		EstimatedDeliveryAt: fulfillment.EstimatedDeliveryAt,
 		ActualDeliveryAt:    fulfillment.ActualDeliveryAt,
 		CreatedAt:           fulfillment.CreatedAt,
@@ -34,27 +35,49 @@ func MapToFulfillmentResponse(fulfillment *entity.Fulfillment) *dto.FulfillmentR
 func MapToCalculateShippingRateRequest(
 	req *pb.GetShippingCostRequest,
 ) *dto.CalculateShippingRateRequest {
+	courier := req.GetCourier()
+
+	weightKG, err := decimal.NewFromString(req.GetPackage().GetWeightKg())
+	if err != nil {
+		return nil
+	}
+
+	length, err := decimal.NewFromString(req.GetPackage().GetLength())
+	if err != nil {
+		return nil
+	}
+
+	width, err := decimal.NewFromString(req.GetPackage().GetWidth())
+	if err != nil {
+		return nil
+	}
+
+	height, err := decimal.NewFromString(req.GetPackage().GetHeight())
+	if err != nil {
+		return nil
+	}
+
 	return &dto.CalculateShippingRateRequest{
-		CarrierID: constant.CarrierID(req.GetShipping().GetCarrierId()),
-		Dimensions: entity.Dimensions{
-			Width:  decimal.NewFromFloat(req.GetShipping().GetDimensions().GetWidth()),
-			Height: decimal.NewFromFloat(req.GetShipping().GetDimensions().GetHeight()),
-			Length: decimal.NewFromFloat(req.GetShipping().GetDimensions().GetLength()),
-			Unit:   req.GetShipping().GetDimensions().GetUnit(),
+		CourierID: constant.CourierID(courier.GetCourierId()),
+		Destination: entity.Destination{
+			City:        req.GetDestination().GetCity(),
+			State:       req.GetDestination().GetState(),
+			PostalCode:  req.GetDestination().GetPostalCode(),
+			CountryCode: req.GetDestination().GetCountryCode(),
 		},
-		WeightKG: decimal.NewFromFloat(req.GetShipping().GetWeightKg()),
+		Origin: entity.Origin{
+			City:        req.GetOrigin().GetCity(),
+			State:       req.GetOrigin().GetState(),
+			PostalCode:  req.GetOrigin().GetPostalCode(),
+			CountryCode: req.GetOrigin().GetCountryCode(),
+		},
+		Package: entity.Package{
+			WeightKG: weightKG,
+			Length:   length,
+			Width:    width,
+			Height:   height,
+			Unit:     req.GetPackage().GetUnit(),
+		},
 		Currency: req.GetCurrency(),
-		FromAddress: entity.FromAddress{
-			City:       req.GetShipping().GetFromAddress().GetCity(),
-			State:      req.GetShipping().GetFromAddress().GetState(),
-			PostalCode: req.GetShipping().GetFromAddress().GetPostalCode(),
-			Country:    req.GetShipping().GetFromAddress().GetCountry(),
-		},
-		ToAddress: entity.ToAddress{
-			City:       req.GetShipping().GetToAddress().GetCity(),
-			State:      req.GetShipping().GetToAddress().GetState(),
-			PostalCode: req.GetShipping().GetToAddress().GetPostalCode(),
-			Country:    req.GetShipping().GetToAddress().GetCountry(),
-		},
 	}
 }

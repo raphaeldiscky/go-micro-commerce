@@ -14,21 +14,56 @@ import (
 
 // Order represents an order in the marketplace.
 type Order struct {
-	ID             uuid.UUID
-	IdempotencyKey uuid.UUID // generated from client
-	CustomerID     uuid.UUID
-	Status         constant.OrderStatus
-	Reason         *string
-	PaymentGateway constant.PaymentGateway
-	Currency       string
-	ShippingCost   decimal.Decimal // generated from fulfillment-service
-	Subtotal       decimal.Decimal // SUM(unit_price * quantity) for all items
-	TotalPrice     decimal.Decimal // SUM(unit_price * quantity) + SUM(total_tax) - SUM(total_discount) + shipping_cost
-	TotalTax       decimal.Decimal // SUM(total_tax) for all items
-	TotalDiscount  decimal.Decimal // SUM(total_discount) for all items
-	Items          []OrderItem
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID                uuid.UUID
+	IdempotencyKey    uuid.UUID // generated from client request and received from cart-service event
+	CheckoutSessionID uuid.UUID
+	CustomerID        uuid.UUID
+	Status            constant.OrderStatus
+	Reason            *string
+	PaymentGateway    constant.PaymentGateway
+	Currency          string
+	Courier           Courier         // from checkout session
+	Destination       Destination     // from checkout session
+	Origin            Origin          // from checkout session
+	Package           Package         // from checkout session
+	ShippingCost      decimal.Decimal // generated from fulfillment-service
+	Subtotal          decimal.Decimal // SUM(unit_price * quantity) for all items
+	TotalPrice        decimal.Decimal // SUM(unit_price * quantity) + SUM(total_tax) - SUM(total_discount) + shipping_cost
+	TotalTax          decimal.Decimal // SUM(total_tax) for all items
+	TotalDiscount     decimal.Decimal // SUM(total_discount) for all items
+	Items             []OrderItem
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+}
+
+// Courier represents a courier in the marketplace.
+type Courier struct {
+	CourierID string `json:"courier_id"`
+}
+
+// Origin represents the origin of an order.
+type Origin struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
+}
+
+// Destination represents the destination of an order.
+type Destination struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
+}
+
+// Package represents the package of an order.
+type Package struct {
+	WeightKG decimal.Decimal `json:"weight_kg"`
+	Width    decimal.Decimal `json:"width"`
+	Height   decimal.Decimal `json:"height"`
+	Length   decimal.Decimal `json:"length"`
+	Unit     string          `json:"unit"`
 }
 
 // OrderItem represents an item in an order.
@@ -48,9 +83,13 @@ type OrderItem struct {
 
 // NewOrder creates a new order with validation.
 func NewOrder(
-	customerID, idempotencyKey uuid.UUID,
+	customerID, idempotencyKey, checkoutSessionID uuid.UUID,
 	paymentGateway constant.PaymentGateway,
 	currency string,
+	courier Courier,
+	destination Destination,
+	origin Origin,
+	packageData Package,
 	items []OrderItem,
 ) (*Order, error) {
 	// 1. Calculate core values from items
@@ -77,8 +116,9 @@ func NewOrder(
 
 	orderID := uuid.New()
 
-	// 4. Initialize items with OrderID
+	// 4. Initialize items with OrderID and unique IDs
 	for i := range items {
+		items[i].ID = uuid.New()
 		items[i].OrderID = orderID
 		items[i].CreatedAt = time.Now()
 		items[i].UpdatedAt = time.Now()
@@ -86,20 +126,25 @@ func NewOrder(
 
 	// 5. Create the order
 	order := &Order{
-		ID:             orderID,
-		IdempotencyKey: idempotencyKey,
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-		CustomerID:     customerID,
-		Status:         constant.OrderStatusPending,
-		PaymentGateway: paymentGateway,
-		Currency:       currency,
-		ShippingCost:   shippingCost,
-		Subtotal:       subtotal.Round(constant.DefaultPricingScale),
-		TotalPrice:     totalPrice,
-		TotalTax:       totalTax.Round(constant.DefaultPricingScale),
-		TotalDiscount:  totalDiscount.Round(constant.DefaultPricingScale),
-		Items:          items,
+		ID:                orderID,
+		IdempotencyKey:    idempotencyKey,
+		CheckoutSessionID: checkoutSessionID,
+		CreatedAt:         time.Now(),
+		UpdatedAt:         time.Now(),
+		CustomerID:        customerID,
+		Status:            constant.OrderStatusPending,
+		PaymentGateway:    paymentGateway,
+		Currency:          currency,
+		Courier:           courier,
+		Destination:       destination,
+		Origin:            origin,
+		Package:           packageData,
+		ShippingCost:      shippingCost,
+		Subtotal:          subtotal.Round(constant.DefaultPricingScale),
+		TotalPrice:        totalPrice,
+		TotalTax:          totalTax.Round(constant.DefaultPricingScale),
+		TotalDiscount:     totalDiscount.Round(constant.DefaultPricingScale),
+		Items:             items,
 	}
 
 	if err := order.validate(); err != nil {

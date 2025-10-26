@@ -20,18 +20,18 @@ const (
 	FulfillmentStatusReturned FulfillmentStatus = "returned"
 )
 
-// CarrierID represents the different carriers available for shipping.
-type CarrierID string
+// CourierID represents the different curiers available for shipping.
+type CourierID string
 
 const (
-	// CarrierJNE represents the JNE carrier.
-	CarrierJNE CarrierID = "jne"
-	// CarrierJT represents the J&T carrier.
-	CarrierJT CarrierID = "jt"
-	// CarrierPOS represents the POS Indonesia carrier.
-	CarrierPOS CarrierID = "pos"
-	// CarrierSiCepat represents the SiCepat carrier.
-	CarrierSiCepat CarrierID = "sicepat"
+	// CourierJNE represents the JNE Courier.
+	CourierJNE CourierID = "jne"
+	// CourierJT represents the J&T Courier.
+	CourierJT CourierID = "jt"
+	// CourierPOS represents the POS Indonesia Courier.
+	CourierPOS CourierID = "pos"
+	// CourierSiCepat represents the SiCepat Courier.
+	CourierSiCepat CourierID = "sicepat"
 )
 
 const (

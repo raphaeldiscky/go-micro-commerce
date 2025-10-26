@@ -1,10 +1,42 @@
+# Courier entity
+type Courier {
+  courierId: String!
+}
+
+# Origin entity
+type Origin {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Destination entity
+type Destination {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Package entity
+type Package {
+  weightKg: Decimal!
+  width: Decimal!
+  height: Decimal!
+  length: Decimal!
+  unit: String!
+}
+
 # CheckoutSession entity
 type CheckoutSession {
   id: UUID!
   idempotencyKey: UUID!
   customerId: UUID!
-  addressId: UUID
-  carrierId: String
+  courier: Courier!
+  destination: Destination!
+  origin: Origin!
+  package: Package!
   status: CheckoutSessionStatus!
   paymentGateway: String
   currency: String!
@@ -28,12 +60,48 @@ input CreateCheckoutSessionInput {
   cartId: UUID!
 }
 
+# Input type for courier
+input CourierInput {
+  courierId: String!
+}
+
+# Input type for origin
+input OriginInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Input type for destination
+input DestinationInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Input type for package
+input PackageInput {
+  weightKg: Decimal!
+  width: Decimal!
+  height: Decimal!
+  length: Decimal!
+  unit: String!
+}
+
+# Input type for updating checkout session
+input UpdateCheckoutSessionInput {
+  courier: CourierInput
+  destination: DestinationInput
+  origin: OriginInput
+  package: PackageInput
+  paymentGateway: String
+}
+
 # Input type for placing order
 input PlaceOrderInput {
   idempotencyKey: UUID!
-  addressId: UUID!
-  carrierId: String!
-  paymentGateway: String!
 }
 
 extend type Query {
@@ -45,6 +113,12 @@ extend type Mutation {
   # Create checkout session from authenticated user's cart
   createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession!
     @requiresAuth
+
+  # Update checkout session with address, carrier, or payment gateway
+  updateCheckoutSession(
+    sessionId: UUID!
+    input: UpdateCheckoutSessionInput!
+  ): CheckoutSession! @requiresAuth
 
   # Place order from checkout session
   placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession!

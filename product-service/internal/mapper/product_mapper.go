@@ -31,7 +31,7 @@ func MapDTOToProtobufProduct(product *dto.ProductResponse) *pb.Product {
 	return &pb.Product{
 		Id:               product.ID.String(),
 		Name:             product.Name,
-		Price:            product.Price.InexactFloat64(),
+		Price:            product.Price.String(),
 		Quantity:         product.Quantity,
 		Version:          product.Version,
 		ReservedQuantity: product.ReservedQuantity,

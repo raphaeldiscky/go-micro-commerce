@@ -3,6 +3,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -87,24 +88,53 @@ func (r *orderRepository) Create(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, error) {
+	// Marshal JSONB fields
+	courierJSON, err := json.Marshal(order.Courier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal courier: %w", err)
+	}
+
+	destinationJSON, err := json.Marshal(order.Destination)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal destination: %w", err)
+	}
+
+	originJSON, err := json.Marshal(order.Origin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal origin: %w", err)
+	}
+
+	packageJSON, err := json.Marshal(order.Package)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal package: %w", err)
+	}
+
 	// Insert order
 	insertOrderQuery := `
-        INSERT INTO orders (id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-        RETURNING id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+        INSERT INTO orders (id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        RETURNING id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
     `
 
-	var createdOrder entity.Order
-	// Scan into the existing order object to ensure consistency
-	err := r.db.QueryRow(
+	var (
+		createdOrder                                          entity.Order
+		courierData, destinationData, originData, packageData []byte
+	)
+
+	err = r.db.QueryRow(
 		ctx,
 		insertOrderQuery,
 		order.ID,
 		order.IdempotencyKey,
+		order.CheckoutSessionID,
 		order.CustomerID,
 		order.Status,
 		order.PaymentGateway,
 		order.Currency,
+		courierJSON,
+		destinationJSON,
+		originJSON,
+		packageJSON,
 		order.ShippingCost,
 		order.Subtotal,
 		order.TotalTax,
@@ -115,10 +145,15 @@ func (r *orderRepository) Create(
 	).Scan(
 		&createdOrder.ID,
 		&createdOrder.IdempotencyKey,
+		&createdOrder.CheckoutSessionID,
 		&createdOrder.CustomerID,
 		&createdOrder.Status,
 		&createdOrder.PaymentGateway,
 		&createdOrder.Currency,
+		&courierData,
+		&destinationData,
+		&originData,
+		&packageData,
 		&createdOrder.ShippingCost,
 		&createdOrder.Subtotal,
 		&createdOrder.TotalTax,
@@ -129,6 +164,23 @@ func (r *orderRepository) Create(
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create order: %w", err)
+	}
+
+	// Unmarshal JSONB fields
+	if err = json.Unmarshal(courierData, &createdOrder.Courier); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+	}
+
+	if err = json.Unmarshal(destinationData, &createdOrder.Destination); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+	}
+
+	if err = json.Unmarshal(originData, &createdOrder.Origin); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+	}
+
+	if err = json.Unmarshal(packageData, &createdOrder.Package); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
 	if len(order.Items) > 0 {
@@ -173,22 +225,30 @@ func (r *orderRepository) FindByID(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE id = $1
 	`
 
 	row := r.db.QueryRow(ctx, orderQuery, id)
 
-	var order entity.Order
+	var (
+		order                                                 entity.Order
+		courierData, destinationData, originData, packageData []byte
+	)
 
 	err := row.Scan(
 		&order.ID,
 		&order.IdempotencyKey,
+		&order.CheckoutSessionID,
 		&order.CustomerID,
 		&order.Status,
 		&order.PaymentGateway,
 		&order.Currency,
+		&courierData,
+		&destinationData,
+		&originData,
+		&packageData,
 		&order.ShippingCost,
 		&order.Subtotal,
 		&order.TotalTax,
@@ -203,6 +263,23 @@ func (r *orderRepository) FindByID(
 		}
 
 		return nil, fmt.Errorf("failed to scan order: %w", err)
+	}
+
+	// Unmarshal JSONB fields
+	if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+	}
+
+	if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+	}
+
+	if err = json.Unmarshal(originData, &order.Origin); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+	}
+
+	if err = json.Unmarshal(packageData, &order.Package); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
 	// Get order items
@@ -255,22 +332,30 @@ func (r *orderRepository) FindByIdempotencyKey(
 ) (*entity.Order, error) {
 	// Get order
 	orderQuery := `
-		SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE idempotency_key = $1
 	`
 
 	row := r.db.QueryRow(ctx, orderQuery, idempotencyKey)
 
-	var order entity.Order
+	var (
+		order                                                 entity.Order
+		courierData, destinationData, originData, packageData []byte
+	)
 
 	err := row.Scan(
 		&order.ID,
 		&order.IdempotencyKey,
+		&order.CheckoutSessionID,
 		&order.CustomerID,
 		&order.Status,
 		&order.PaymentGateway,
 		&order.Currency,
+		&courierData,
+		&destinationData,
+		&originData,
+		&packageData,
 		&order.ShippingCost,
 		&order.Subtotal,
 		&order.TotalTax,
@@ -285,6 +370,23 @@ func (r *orderRepository) FindByIdempotencyKey(
 		}
 
 		return nil, fmt.Errorf("failed to scan order: %w", err)
+	}
+
+	// Unmarshal JSONB fields
+	if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+	}
+
+	if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+	}
+
+	if err = json.Unmarshal(originData, &order.Origin); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+	}
+
+	if err = json.Unmarshal(packageData, &order.Package); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
 	// Get order items
@@ -337,7 +439,7 @@ func (r *orderRepository) FindByCustomerID(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		WHERE customer_id = $1
 		ORDER BY created_at DESC
@@ -353,15 +455,23 @@ func (r *orderRepository) FindByCustomerID(
 	var orders []*entity.Order
 
 	for rows.Next() {
-		var order entity.Order
+		var (
+			order                                                 entity.Order
+			courierData, destinationData, originData, packageData []byte
+		)
 
 		err = rows.Scan(
 			&order.ID,
 			&order.IdempotencyKey,
+			&order.CheckoutSessionID,
 			&order.CustomerID,
 			&order.Status,
 			&order.PaymentGateway,
 			&order.Currency,
+			&courierData,
+			&destinationData,
+			&originData,
+			&packageData,
 			&order.ShippingCost,
 			&order.Subtotal,
 			&order.TotalTax,
@@ -372,6 +482,23 @@ func (r *orderRepository) FindByCustomerID(
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		// Unmarshal JSONB fields
+		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+		}
+
+		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+		}
+
+		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+		}
+
+		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
 		orders = append(orders, &order)
@@ -396,7 +523,7 @@ func (r *orderRepository) FindAll(
 	limit, offset int64,
 ) ([]*entity.Order, error) {
 	query := `
-		SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 		FROM orders
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -411,15 +538,23 @@ func (r *orderRepository) FindAll(
 	var orders []*entity.Order
 
 	for rows.Next() {
-		var order entity.Order
+		var (
+			order                                                 entity.Order
+			courierData, destinationData, originData, packageData []byte
+		)
 
 		err = rows.Scan(
 			&order.ID,
 			&order.IdempotencyKey,
+			&order.CheckoutSessionID,
 			&order.CustomerID,
 			&order.Status,
 			&order.PaymentGateway,
 			&order.Currency,
+			&courierData,
+			&destinationData,
+			&originData,
+			&packageData,
 			&order.ShippingCost,
 			&order.Subtotal,
 			&order.TotalTax,
@@ -430,6 +565,23 @@ func (r *orderRepository) FindAll(
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		// Unmarshal JSONB fields
+		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+		}
+
+		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+		}
+
+		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+		}
+
+		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
 		orders = append(orders, &order)
@@ -453,50 +605,89 @@ func (r *orderRepository) Update(
 	ctx context.Context,
 	order *entity.Order,
 ) (*entity.Order, error) {
+	// Marshal JSONB fields
+	courierJSON, err := json.Marshal(order.Courier)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal courier: %w", err)
+	}
+
+	destinationJSON, err := json.Marshal(order.Destination)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal destination: %w", err)
+	}
+
+	originJSON, err := json.Marshal(order.Origin)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal origin: %w", err)
+	}
+
+	packageJSON, err := json.Marshal(order.Package)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal package: %w", err)
+	}
+
 	// Update the order itself
 	updateOrderQuery := `
 		UPDATE orders
 		SET customer_id = $1,
 			idempotency_key = $2,
-			status = $3,
-			payment_gateway = $4,
-			currency = $5,
-			shipping_cost = $6,
-			subtotal = $7,
-			total_tax = $8,
-			total_discount = $9,
-			total_price = $10,
-			updated_at = $11
-		WHERE id = $12
-		RETURNING id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			checkout_session_id = $3,
+			status = $4,
+			payment_gateway = $5,
+			currency = $6,
+			courier = $7,
+			destination = $8,
+			origin = $9,
+			package = $10,
+			shipping_cost = $11,
+			subtotal = $12,
+			total_tax = $13,
+			total_discount = $14,
+			total_price = $15,
+			updated_at = $16
+		WHERE id = $17
+		RETURNING id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 	`
 
 	row := r.db.QueryRow(
 		ctx,
 		updateOrderQuery,
-		order.CustomerID,     // $1
-		order.IdempotencyKey, // $2
-		order.Status,         // $3
-		order.PaymentGateway, // $4
-		order.Currency,       // $5
-		order.ShippingCost,   // $6
-		order.Subtotal,       // $7
-		order.TotalTax,       // $8
-		order.TotalDiscount,  // $9
-		order.TotalPrice,     // $10
-		order.UpdatedAt,      // $11
-		order.ID,             // $12
+		order.CustomerID,        // $1
+		order.IdempotencyKey,    // $2
+		order.CheckoutSessionID, // $3
+		order.Status,            // $4
+		order.PaymentGateway,    // $5
+		order.Currency,          // $6
+		courierJSON,             // $7
+		destinationJSON,         // $8
+		originJSON,              // $9
+		packageJSON,             // $10
+		order.ShippingCost,      // $11
+		order.Subtotal,          // $12
+		order.TotalTax,          // $13
+		order.TotalDiscount,     // $14
+		order.TotalPrice,        // $15
+		order.UpdatedAt,         // $16
+		order.ID,                // $17
 	)
 
-	var updatedOrder entity.Order
+	var (
+		updatedOrder                                          entity.Order
+		courierData, destinationData, originData, packageData []byte
+	)
 
-	err := row.Scan(
+	err = row.Scan(
 		&updatedOrder.ID,
 		&updatedOrder.IdempotencyKey,
+		&updatedOrder.CheckoutSessionID,
 		&updatedOrder.CustomerID,
 		&updatedOrder.Status,
 		&updatedOrder.PaymentGateway,
 		&updatedOrder.Currency,
+		&courierData,
+		&destinationData,
+		&originData,
+		&packageData,
 		&updatedOrder.ShippingCost,
 		&updatedOrder.Subtotal,
 		&updatedOrder.TotalTax,
@@ -511,6 +702,23 @@ func (r *orderRepository) Update(
 		}
 
 		return nil, fmt.Errorf("failed to scan updated order: %w", err)
+	}
+
+	// Unmarshal JSONB fields
+	if err = json.Unmarshal(courierData, &updatedOrder.Courier); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+	}
+
+	if err = json.Unmarshal(destinationData, &updatedOrder.Destination); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+	}
+
+	if err = json.Unmarshal(originData, &updatedOrder.Origin); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+	}
+
+	if err = json.Unmarshal(packageData, &updatedOrder.Package); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
 	// Delete existing items
@@ -661,7 +869,7 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 	// If cursor is provided, use it for pagination
 	if cursorID != "" && cursorTimestamp > 0 {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			WHERE customer_id = $1
 			  AND (EXTRACT(EPOCH FROM created_at) < $2 OR (EXTRACT(EPOCH FROM created_at) = $2 AND id < $3))
@@ -671,7 +879,7 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 		args = []interface{}{customerID, cursorTimestamp, cursorID, limit}
 	} else {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			WHERE customer_id = $1
 			ORDER BY created_at DESC, id DESC
@@ -689,15 +897,23 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 	var orders []*entity.Order
 
 	for rows.Next() {
-		var order entity.Order
+		var (
+			order                                                 entity.Order
+			courierData, destinationData, originData, packageData []byte
+		)
 
 		err = rows.Scan(
 			&order.ID,
 			&order.IdempotencyKey,
+			&order.CheckoutSessionID,
 			&order.CustomerID,
 			&order.Status,
 			&order.PaymentGateway,
 			&order.Currency,
+			&courierData,
+			&destinationData,
+			&originData,
+			&packageData,
 			&order.ShippingCost,
 			&order.Subtotal,
 			&order.TotalTax,
@@ -708,6 +924,23 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		// Unmarshal JSONB fields
+		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+		}
+
+		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+		}
+
+		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+		}
+
+		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
 		orders = append(orders, &order)
@@ -740,7 +973,7 @@ func (r *orderRepository) FindAllWithCursor(
 	// If cursor is provided, use it for pagination
 	if cursorID != "" && cursorTimestamp > 0 {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			WHERE (EXTRACT(EPOCH FROM created_at) < $1 OR (EXTRACT(EPOCH FROM created_at) = $1 AND id < $2))
 			ORDER BY created_at DESC, id DESC
@@ -749,7 +982,7 @@ func (r *orderRepository) FindAllWithCursor(
 		args = []interface{}{cursorTimestamp, cursorID, limit}
 	} else {
 		query = `
-			SELECT id, idempotency_key, customer_id, status, payment_gateway, currency, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
+			SELECT id, idempotency_key, checkout_session_id, customer_id, status, payment_gateway, currency, courier, destination, origin, package, shipping_cost, subtotal, total_tax, total_discount, total_price, created_at, updated_at
 			FROM orders
 			ORDER BY created_at DESC, id DESC
 			LIMIT $1
@@ -766,15 +999,23 @@ func (r *orderRepository) FindAllWithCursor(
 	var orders []*entity.Order
 
 	for rows.Next() {
-		var order entity.Order
+		var (
+			order                                                 entity.Order
+			courierData, destinationData, originData, packageData []byte
+		)
 
 		err = rows.Scan(
 			&order.ID,
 			&order.IdempotencyKey,
+			&order.CheckoutSessionID,
 			&order.CustomerID,
 			&order.Status,
 			&order.PaymentGateway,
 			&order.Currency,
+			&courierData,
+			&destinationData,
+			&originData,
+			&packageData,
 			&order.ShippingCost,
 			&order.Subtotal,
 			&order.TotalTax,
@@ -785,6 +1026,23 @@ func (r *orderRepository) FindAllWithCursor(
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan order: %w", err)
+		}
+
+		// Unmarshal JSONB fields
+		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
+		}
+
+		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
+		}
+
+		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
+		}
+
+		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
 		orders = append(orders, &order)

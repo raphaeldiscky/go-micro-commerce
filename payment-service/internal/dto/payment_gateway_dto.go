@@ -11,11 +11,11 @@ import (
 
 // Address represents a billing/shipping address (non-sensitive data, safe to transmit).
 type Address struct {
-	Street     string `json:"street"`
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postal_code"`
-	Country    string `json:"country"`
+	Street      string `json:"street"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postal_code"`
+	CountryCode string `json:"country_code"`
 }
 
 // PaymentGatewayRequest represents a payment processing request.

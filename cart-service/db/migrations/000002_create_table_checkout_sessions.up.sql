@@ -9,8 +9,10 @@ CREATE TABLE IF NOT EXISTS checkout_sessions (
     customer_id UUID NOT NULL,
     cart_id UUID NOT NULL REFERENCES carts (id) ON DELETE CASCADE,
     status VARCHAR(20) NOT NULL DEFAULT 'pending',
-    address_id UUID,
-    carrier_id TEXT,
+    destination JSONB, -- will be added in checkout page
+    origin JSONB, -- will be added in checkout page
+    courier JSONB, -- will be added in checkout page
+    package JSONB, -- will be added in checkout page
     payment_gateway VARCHAR(50),
     currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,

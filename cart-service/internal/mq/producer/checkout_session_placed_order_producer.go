@@ -37,6 +37,10 @@ func NewCheckoutSessionOrderPlacedEvent(
 	currency string,
 	paymentGateway string,
 	items []entity.CheckoutSessionItem,
+	courier entity.Courier,
+	destination entity.Destination,
+	origin entity.Origin,
+	packageData entity.Package,
 	createdAt time.Time,
 ) *CheckoutSessionOrderPlacedEvent {
 	return &CheckoutSessionOrderPlacedEvent{
@@ -54,6 +58,10 @@ func NewCheckoutSessionOrderPlacedEvent(
 			Status:            string(newStatus),
 			Currency:          currency,
 			PaymentGateway:    paymentGateway,
+			Courier:           mapper.MapCourierToPayload(courier),
+			Destination:       mapper.MapDestinationToPayload(destination),
+			Origin:            mapper.MapOriginToPayload(origin),
+			Package:           mapper.MapPackageToPayload(packageData),
 			Items:             mapper.MapCheckoutSessionItemsToPayload(items),
 			CreatedAt:         createdAt,
 		},

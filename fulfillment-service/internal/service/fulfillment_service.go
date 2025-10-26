@@ -35,17 +35,17 @@ type FulfillmentService interface {
 		orderID uuid.UUID,
 		req dto.UpdateFulfillmentStatusRequest,
 	) (*dto.FulfillmentResponse, error)
-	// SetCarrierInfo sets carrier and shipping label information
-	SetCarrierInfo(
+	// SetCourierInfo sets Courier and shipping label information
+	SetCourierInfo(
 		ctx context.Context,
 		fulfillmentID uuid.UUID,
-		req dto.SetCarrierInfoRequest,
+		req dto.SetCourierInfoRequest,
 	) (*dto.FulfillmentResponse, error)
-	// SetDimensions sets package dimensions
-	SetDimensions(
+	// SetPackage sets package Package
+	SetPackage(
 		ctx context.Context,
 		fulfillmentID uuid.UUID,
-		req dto.SetDimensionsRequest,
+		req dto.SetPackageRequest,
 	) (*dto.FulfillmentResponse, error)
 	// SetActualDelivery sets the actual delivery time
 	SetActualDelivery(
@@ -80,13 +80,13 @@ type FulfillmentService interface {
 		ctx context.Context,
 		req *dto.CalculateShippingRateRequest,
 	) (*dto.ShippingRateResponse, error)
-	// CreateShipment creates a shipment with carrier and generates tracking number
+	// CreateShipment creates a shipment with Courier and generates tracking number
 	CreateShipment(
 		ctx context.Context,
 		fulfillmentID uuid.UUID,
 		req *dto.CreateShipmentRequest,
 	) (*dto.FulfillmentResponse, error)
-	// UpdateTrackingStatus updates fulfillment status based on carrier tracking
+	// UpdateTrackingStatus updates fulfillment status based on Courier tracking
 	UpdateTrackingStatus(
 		ctx context.Context,
 		trackingNumber string,
@@ -98,7 +98,7 @@ type fulfillmentService struct {
 	dataStore                    repository.DataStore
 	logger                       logger.Logger
 	fulfillmentLifecycleProducer kafka.Producer
-	carrierClient                client.CarrierClient
+	CourierClient                client.CourierClient
 }
 
 // NewFulfillmentService creates a new instance of fulfillmentService.
@@ -106,13 +106,13 @@ func NewFulfillmentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
 	fulfillmentLifecycleProducer kafka.Producer,
-	carrierClient client.CarrierClient,
+	courierClient client.CourierClient,
 ) FulfillmentService {
 	return &fulfillmentService{
 		dataStore:                    dataStore,
 		logger:                       appLogger,
 		fulfillmentLifecycleProducer: fulfillmentLifecycleProducer,
-		carrierClient:                carrierClient,
+		CourierClient:                courierClient,
 	}
 }
 
@@ -146,9 +146,9 @@ func (s *fulfillmentService) CreateFulfillment(
 			req.TrackingNumber,
 			req.Currency,
 			req.ShippingCost,
-			req.WeightKG,
-			req.FromAddress,
-			req.ToAddress,
+			req.Package,
+			req.Destination,
+			req.Origin,
 			req.EstimatedDeliveryAt,
 		)
 		if err != nil {
@@ -274,11 +274,11 @@ func (s *fulfillmentService) UpdateFulfillmentStatusByOrderID(
 	return res, nil
 }
 
-// SetCarrierInfo sets carrier and shipping label information.
-func (s *fulfillmentService) SetCarrierInfo(
+// SetCourierInfo sets Courier and shipping label information.
+func (s *fulfillmentService) SetCourierInfo(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
-	req dto.SetCarrierInfoRequest,
+	req dto.SetCourierInfoRequest,
 ) (*dto.FulfillmentResponse, error) {
 	fulfillmentRepo := s.dataStore.FulfillmentRepository()
 
@@ -291,8 +291,8 @@ func (s *fulfillmentService) SetCarrierInfo(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err = fulfillment.SetCarrierInfo(req.CarrierID, req.ShippingLabelURL); err != nil {
-		return nil, httperror.NewBadRequestError("failed to set carrier info")
+	if err = fulfillment.SetCourierInfo(req.CourierID, req.ShippingLabelURL); err != nil {
+		return nil, httperror.NewBadRequestError("failed to set Courier info")
 	}
 
 	updatedFulfillment, err := fulfillmentRepo.Update(ctx, fulfillment)
@@ -303,11 +303,11 @@ func (s *fulfillmentService) SetCarrierInfo(
 	return mapper.MapToFulfillmentResponse(updatedFulfillment), nil
 }
 
-// SetDimensions sets package dimensions.
-func (s *fulfillmentService) SetDimensions(
+// SetPackage sets package Package.
+func (s *fulfillmentService) SetPackage(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
-	req dto.SetDimensionsRequest,
+	req dto.SetPackageRequest,
 ) (*dto.FulfillmentResponse, error) {
 	fulfillmentRepo := s.dataStore.FulfillmentRepository()
 
@@ -320,8 +320,8 @@ func (s *fulfillmentService) SetDimensions(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	if err = fulfillment.SetDimensions(req.Dimensions); err != nil {
-		return nil, httperror.NewBadRequestError("failed to set dimensions")
+	if err = fulfillment.SetPackage(req.Package); err != nil {
+		return nil, httperror.NewBadRequestError("failed to set Package")
 	}
 
 	updatedFulfillment, err := fulfillmentRepo.Update(ctx, fulfillment)
@@ -411,9 +411,6 @@ func (s *fulfillmentService) HandleOrderFulfillmentRequested(
 		OrderID:        orderID,
 		TrackingNumber: trackingNumber,
 		ShippingCost:   shippingCost,
-		WeightKG: decimal.NewFromFloat(
-			1.0,
-		), // Default 1kg
 		EstimatedDeliveryAt: time.Now().
 			AddDate(0, 0, constant.MockEstimatedDeliveryDays),
 		// 7 days from now
@@ -437,20 +434,19 @@ func (s *fulfillmentService) CalculateShippingRates(
 	req *dto.CalculateShippingRatesRequest,
 ) ([]dto.ShippingRateResponse, error) {
 	s.logger.Infof(
-		"Calculating shipping rates for weight: %s kg, currency: %s",
-		req.WeightKG,
+		"Calculating shipping rates for currency: %s",
 		req.Currency,
 	)
 
-	// Create shipping request for carrier client
+	// Create shipping request for Courier client
 	shipReq := dto.ShippingRequest{
-		FromAddress: req.FromAddress,
-		ToAddress:   req.ToAddress,
-		WeightKG:    req.WeightKG,
-		Dimensions:  req.Dimensions,
+		CourierID:   req.CourierID,
+		Origin:      req.Origin,
+		Destination: req.Destination,
+		Package:     req.Package,
 	}
 
-	rates, err := s.carrierClient.GetRates(ctx, &shipReq)
+	rates, err := s.CourierClient.GetRates(ctx, &shipReq)
 	if err != nil {
 		s.logger.Errorf("Failed to calculate shipping rates: %v", err)
 
@@ -463,7 +459,7 @@ func (s *fulfillmentService) CalculateShippingRates(
 		return []dto.ShippingRateResponse{}, nil
 	}
 
-	// Convert carrier rates to response format
+	// Convert Courier rates to response format
 	response := make([]dto.ShippingRateResponse, len(rates))
 	for i, rate := range rates {
 		response[i] = dto.ShippingRateResponse(rate)
@@ -480,24 +476,23 @@ func (s *fulfillmentService) CalculateShippingRate(
 	req *dto.CalculateShippingRateRequest,
 ) (*dto.ShippingRateResponse, error) {
 	s.logger.Infof(
-		"Calculating shipping rates for weight: %s kg, currency: %s, carrierID: %s",
-		req.WeightKG,
+		"Calculating shipping rates for currency: %s, CourierID: %s",
+
 		req.Currency,
-		req.CarrierID,
+		req.CourierID,
 	)
 
-	// Create shipping request for carrier client
+	// Create shipping request for Courier client
 	shipReq := dto.ShippingRequest{
-		CarrierID:   req.CarrierID,
-		FromAddress: req.FromAddress,
-		ToAddress:   req.ToAddress,
-		WeightKG:    req.WeightKG,
-		Dimensions:  req.Dimensions,
+		CourierID:   req.CourierID,
+		Origin:      req.Origin,
+		Destination: req.Destination,
+		Package:     req.Package,
 	}
 
-	s.logger.Infof("Created shipReq with CarrierID: %s", shipReq.CarrierID)
+	s.logger.Infof("Created shipReq with CourierID: %s", shipReq.CourierID)
 
-	rate, err := s.carrierClient.GetRate(ctx, &shipReq)
+	rate, err := s.CourierClient.GetRate(ctx, &shipReq)
 	if err != nil {
 		s.logger.Errorf("Failed to calculate shipping rates: %v", err)
 
@@ -505,18 +500,18 @@ func (s *fulfillmentService) CalculateShippingRate(
 	}
 
 	response := &dto.ShippingRateResponse{
-		CarrierID:         rate.CarrierID,
-		Service:           rate.Service,
-		ShippingCost:      rate.ShippingCost,
-		Currency:          rate.Currency,
-		EstimatedDelivery: rate.EstimatedDelivery,
-		TransitDays:       rate.TransitDays,
+		CourierID:          rate.CourierID,
+		CourierServiceName: rate.CourierServiceName,
+		ShippingCost:       rate.ShippingCost,
+		Currency:           rate.Currency,
+		EstimatedDelivery:  rate.EstimatedDelivery,
+		TransitDays:        rate.TransitDays,
 	}
 
 	return response, nil
 }
 
-// CreateShipment creates a shipment with carrier and generates tracking number.
+// CreateShipment creates a shipment with Courier and generates tracking number.
 func (s *fulfillmentService) CreateShipment(
 	ctx context.Context,
 	fulfillmentID uuid.UUID,
@@ -533,17 +528,16 @@ func (s *fulfillmentService) CreateShipment(
 	}
 
 	shipReq := dto.ShippingRequest{
-		CarrierID:   req.CarrierID,
-		FromAddress: req.FromAddress,
-		ToAddress:   req.ToAddress,
-		WeightKG:    req.WeightKG,
-		Dimensions:  req.Dimensions,
+		CourierID:   req.CourierID,
+		Origin:      req.Origin,
+		Destination: req.Destination,
+		Package:     req.Package,
 	}
 
-	// Create shipment with carrier
-	label, err := s.carrierClient.CreateShipment(ctx, &shipReq)
+	// Create shipment with Courier
+	label, err := s.CourierClient.CreateShipment(ctx, &shipReq)
 	if err != nil {
-		s.logger.Errorf("Failed to create shipment with carrier: %v", err)
+		s.logger.Errorf("Failed to create shipment with Courier: %v", err)
 
 		return nil, fmt.Errorf("failed to create shipment: %w", err)
 	}
@@ -552,7 +546,7 @@ func (s *fulfillmentService) CreateShipment(
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		fulfillmentRepo = ds.FulfillmentRepository()
 
-		// Update with carrier information
+		// Update with Courier information
 		existingFulfillment.ShippingLabelURL = label.LabelURL
 		existingFulfillment.TrackingNumber = label.TrackingNumber
 		existingFulfillment.Status = constant.FulfillmentStatusShipped
@@ -581,7 +575,7 @@ func (s *fulfillmentService) CreateShipment(
 	return mapper.MapToFulfillmentResponse(existingFulfillment), nil
 }
 
-// UpdateTrackingStatus updates fulfillment status based on carrier tracking.
+// UpdateTrackingStatus updates fulfillment status based on Courier tracking.
 func (s *fulfillmentService) UpdateTrackingStatus(
 	ctx context.Context,
 	trackingNumber string,
@@ -596,10 +590,10 @@ func (s *fulfillmentService) UpdateTrackingStatus(
 		return nil, httperror.NewFulfillmentNotFoundError()
 	}
 
-	// Get carrier tracking information
-	carrier := existingFulfillment.CarrierID
+	// Get Courier tracking information
+	courier := existingFulfillment.CourierID
 
-	trackingInfo, err := s.carrierClient.GetTracking(ctx, trackingNumber, carrier)
+	trackingInfo, err := s.CourierClient.GetTracking(ctx, trackingNumber, courier)
 	if err != nil {
 		s.logger.Errorf("Failed to get tracking info for %s: %v", trackingNumber, err)
 

@@ -12,3 +12,4 @@ CLAUDE.md
 # GraphQL Code Generator - operation files next to components
 **/*.generated.ts
 .claude/*
+*.pem

@@ -18,46 +18,47 @@ type CreateOrderItemRequest struct {
 
 // CreateOrderRequest represents the request to create a new order.
 type CreateOrderRequest struct {
-	CustomerID     uuid.UUID                // from context or header
-	CustomerEmail  string                   // from context or header
-	IdempotencyKey uuid.UUID                `json:"idempotency_key" validate:"required"` // generated from client
-	Items          []CreateOrderItemRequest `json:"items"           validate:"required,min=1,dive"`
-	Shipping       Shipping                 `json:"shipping"        validate:"required"`
-	PaymentGateway constant.PaymentGateway  `json:"payment_gateway" validate:"required"`
-	Currency       string                   `json:"currency"        validate:"required,len=3"`
+	CustomerID        uuid.UUID                `json:"-"`                                       // from context or header
+	CustomerEmail     string                   `json:"-"`                                       // from context or header
+	IdempotencyKey    uuid.UUID                `json:"idempotency_key"     validate:"required"` // generated from client
+	CheckoutSessionID uuid.UUID                `json:"checkout_session_id" validate:"required"`
+	Items             []CreateOrderItemRequest `json:"items"               validate:"required,min=1,dive"`
+	Courier           Courier                  `json:"courier"             validate:"required"`
+	Destination       ToAddress                `json:"destination"         validate:"required"`
+	Origin            FromAddress              `json:"origin"              validate:"required"`
+	Package           Package                  `json:"package"             validate:"required"`
+	PaymentGateway    constant.PaymentGateway  `json:"payment_gateway"     validate:"required"`
+	Currency          string                   `json:"currency"            validate:"required,len=3"`
 }
 
-// Shipping represents the shipping data for an order.
-type Shipping struct {
-	CarrierID   string          `json:"carrier_id"   validate:"required"`
-	FromAddress FromAddress     `json:"from_address" validate:"required"`
-	ToAddress   ToAddress       `json:"to_address"   validate:"required"`
-	WeightKG    decimal.Decimal `json:"weight_kg"    validate:"required"`
-	Dimensions  Dimensions      `json:"dimensions"   validate:"required"`
+// Courier represents the courier data for an order.
+type Courier struct {
+	CourierID string `json:"courier_id" validate:"required"`
+}
+
+// Package represents the package data for an order.
+type Package struct {
+	WeightKG decimal.Decimal `json:"weight_kg" validate:"required"`
+	Length   decimal.Decimal `json:"length"    validate:"required"`
+	Height   decimal.Decimal `json:"height"    validate:"required"`
+	Width    decimal.Decimal `json:"width"     validate:"required"`
+	Unit     string          `json:"unit"      validate:"required"`
 }
 
 // ToAddress represents an address in create order request.
 type ToAddress struct {
-	City       string `json:"city"        validate:"required"`
-	State      string `json:"state"       validate:"required"`
-	PostalCode string `json:"postal_code" validate:"required"`
-	Country    string `json:"country"     validate:"required"`
+	City        string `json:"city"         validate:"required"`
+	State       string `json:"state"        validate:"required"`
+	PostalCode  string `json:"postal_code"  validate:"required"`
+	CountryCode string `json:"country_code" validate:"required,len=2,uppercase"`
 }
 
 // FromAddress represents an address in create order request.
 type FromAddress struct {
-	City       string `json:"city"        validate:"required"`
-	State      string `json:"state"       validate:"required"`
-	PostalCode string `json:"postal_code" validate:"required"`
-	Country    string `json:"country"     validate:"required"`
-}
-
-// Dimensions represents dimensions in create order request.
-type Dimensions struct {
-	Length decimal.Decimal `json:"length" validate:"required"`
-	Height decimal.Decimal `json:"height" validate:"required"`
-	Width  decimal.Decimal `json:"width"  validate:"required"`
-	Unit   string          `json:"unit"   validate:"required"`
+	City        string `json:"city"         validate:"required"`
+	State       string `json:"state"        validate:"required"`
+	PostalCode  string `json:"postal_code"  validate:"required"`
+	CountryCode string `json:"country_code" validate:"required,len=2,uppercase"`
 }
 
 // ClientCreateOrderRequest represents the request to create a new order from the client.
@@ -82,20 +83,25 @@ type OrderItemResponse struct {
 
 // OrderResponse represents an order in API responses.
 type OrderResponse struct {
-	ID             uuid.UUID               `json:"id"`
-	IdempotencyKey uuid.UUID               `json:"idempotency_key"`
-	CustomerID     uuid.UUID               `json:"customer_id"`
-	Status         constant.OrderStatus    `json:"status"`
-	Currency       string                  `json:"currency"`
-	PaymentGateway constant.PaymentGateway `json:"payment_gateway"`
-	ShippingCost   decimal.Decimal         `json:"shipping_cost"`
-	Subtotal       decimal.Decimal         `json:"subtotal"`
-	TotalPrice     decimal.Decimal         `json:"total_price"`
-	TotalTax       decimal.Decimal         `json:"total_tax"`
-	TotalDiscount  decimal.Decimal         `json:"total_discount"`
-	Items          []OrderItemResponse     `json:"items"`
-	CreatedAt      time.Time               `json:"created_at"`
-	UpdatedAt      time.Time               `json:"updated_at"`
+	ID                uuid.UUID               `json:"id"`
+	IdempotencyKey    uuid.UUID               `json:"idempotency_key"`
+	CheckoutSessionID uuid.UUID               `json:"checkout_session_id"`
+	CustomerID        uuid.UUID               `json:"customer_id"`
+	Status            constant.OrderStatus    `json:"status"`
+	Currency          string                  `json:"currency"`
+	PaymentGateway    constant.PaymentGateway `json:"payment_gateway"`
+	Courier           Courier                 `json:"courier"`
+	Package           Package                 `json:"package"`
+	Origin            FromAddress             `json:"origin"`
+	Destination       ToAddress               `json:"destination"`
+	ShippingCost      decimal.Decimal         `json:"shipping_cost"`
+	Subtotal          decimal.Decimal         `json:"subtotal"`
+	TotalPrice        decimal.Decimal         `json:"total_price"`
+	TotalTax          decimal.Decimal         `json:"total_tax"`
+	TotalDiscount     decimal.Decimal         `json:"total_discount"`
+	Items             []OrderItemResponse     `json:"items"`
+	CreatedAt         time.Time               `json:"created_at"`
+	UpdatedAt         time.Time               `json:"updated_at"`
 }
 
 // GetOrdersRequest represents pagination and filtering parameters.

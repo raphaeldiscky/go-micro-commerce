@@ -26,21 +26,21 @@ type WebhookService interface {
 
 // webhookService implements the WebhookService.
 type webhookService struct {
-	dataStore           repository.DataStore
-	logger              logger.Logger
-	stripeWebhookSecret string
+	dataStore                   repository.DataStore
+	logger                      logger.Logger
+	stripeWebhookEndpointSecret string
 }
 
 // NewWebhookService creates a new instance of webhookService.
 func NewWebhookService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	stripeWebhookSecret string,
+	stripeWebhookEndpointSecret string,
 ) WebhookService {
 	return &webhookService{
-		dataStore:           dataStore,
-		logger:              appLogger,
-		stripeWebhookSecret: stripeWebhookSecret,
+		dataStore:                   dataStore,
+		logger:                      appLogger,
+		stripeWebhookEndpointSecret: stripeWebhookEndpointSecret,
 	}
 }
 
@@ -51,7 +51,7 @@ func (s *webhookService) HandleStripeWebhook(
 	signature string,
 ) error {
 	// Verify webhook signature for security
-	event, err := webhook.ConstructEvent(payload, signature, s.stripeWebhookSecret)
+	event, err := webhook.ConstructEvent(payload, signature, s.stripeWebhookEndpointSecret)
 	if err != nil {
 		s.logger.Errorf("Failed to verify Stripe webhook signature: %v", err)
 		return httperror.NewBadRequestError("invalid webhook signature")

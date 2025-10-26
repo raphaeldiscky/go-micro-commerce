@@ -14,6 +14,10 @@ import (
 	"github.com/shopspring/decimal"
 )
 
+type Courier struct {
+	CourierID string `json:"courierId"`
+}
+
 type CreateOrderInput struct {
 	IdempotencyKey uuid.UUID               `json:"idempotencyKey"`
 	Items          []*CreateOrderItemInput `json:"items"`
@@ -27,6 +31,13 @@ type CreateOrderItemInput struct {
 	Quantity  int       `json:"quantity"`
 }
 
+type Destination struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
+}
+
 type DimensionsInput struct {
 	Length decimal.Decimal `json:"length"`
 	Height decimal.Decimal `json:"height"`
@@ -35,31 +46,36 @@ type DimensionsInput struct {
 }
 
 type FromAddressInput struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Mutation struct {
 }
 
 type Order struct {
-	ID             uuid.UUID               `json:"id"`
-	IdempotencyKey uuid.UUID               `json:"idempotencyKey"`
-	CustomerID     uuid.UUID               `json:"customerId"`
-	Status         constant.OrderStatus    `json:"status"`
-	Currency       string                  `json:"currency"`
-	PaymentGateway constant.PaymentGateway `json:"paymentGateway"`
-	ShippingCost   decimal.Decimal         `json:"shippingCost"`
-	Subtotal       decimal.Decimal         `json:"subtotal"`
-	TotalPrice     decimal.Decimal         `json:"totalPrice"`
-	TotalTax       decimal.Decimal         `json:"totalTax"`
-	TotalDiscount  decimal.Decimal         `json:"totalDiscount"`
-	Items          []*OrderItem            `json:"items"`
-	Payment        *Payment                `json:"payment,omitempty"`
-	CreatedAt      time.Time               `json:"createdAt"`
-	UpdatedAt      time.Time               `json:"updatedAt"`
+	ID                uuid.UUID               `json:"id"`
+	IdempotencyKey    uuid.UUID               `json:"idempotencyKey"`
+	CheckoutSessionID uuid.UUID               `json:"checkoutSessionId"`
+	CustomerID        uuid.UUID               `json:"customerId"`
+	Status            constant.OrderStatus    `json:"status"`
+	Currency          string                  `json:"currency"`
+	PaymentGateway    constant.PaymentGateway `json:"paymentGateway"`
+	Courier           *Courier                `json:"courier"`
+	Package           *Package                `json:"package"`
+	Origin            *Origin                 `json:"origin"`
+	Destination       *Destination            `json:"destination"`
+	ShippingCost      decimal.Decimal         `json:"shippingCost"`
+	Subtotal          decimal.Decimal         `json:"subtotal"`
+	TotalPrice        decimal.Decimal         `json:"totalPrice"`
+	TotalTax          decimal.Decimal         `json:"totalTax"`
+	TotalDiscount     decimal.Decimal         `json:"totalDiscount"`
+	Items             []*OrderItem            `json:"items"`
+	Payment           *Payment                `json:"payment,omitempty"`
+	CreatedAt         time.Time               `json:"createdAt"`
+	UpdatedAt         time.Time               `json:"updatedAt"`
 }
 
 type OrderConnection struct {
@@ -84,6 +100,21 @@ type OrderItem struct {
 	TotalDiscount decimal.Decimal `json:"totalDiscount"`
 	CreatedAt     time.Time       `json:"createdAt"`
 	UpdatedAt     time.Time       `json:"updatedAt"`
+}
+
+type Origin struct {
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
+}
+
+type Package struct {
+	WeightKg decimal.Decimal `json:"weightKg"`
+	Length   decimal.Decimal `json:"length"`
+	Height   decimal.Decimal `json:"height"`
+	Width    decimal.Decimal `json:"width"`
+	Unit     string          `json:"unit"`
 }
 
 type PageInfo struct {
@@ -111,10 +142,10 @@ type ShippingInput struct {
 }
 
 type ToAddressInput struct {
-	City       string `json:"city"`
-	State      string `json:"state"`
-	PostalCode string `json:"postalCode"`
-	Country    string `json:"country"`
+	City        string `json:"city"`
+	State       string `json:"state"`
+	PostalCode  string `json:"postalCode"`
+	CountryCode string `json:"countryCode"`
 }
 
 type Role string

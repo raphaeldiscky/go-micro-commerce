@@ -14,6 +14,8 @@ import {
   messageDesc,
   serviceDesc,
 } from '@bufbuild/protobuf/codegenv2'
+import { file_google_protobuf_timestamp } from '@bufbuild/protobuf/wkt'
+import { file_buf_validate_validate } from '../../buf/validate/validate_pb'
 import type { Message } from '@bufbuild/protobuf'
 
 /**
@@ -22,7 +24,8 @@ import type { Message } from '@bufbuild/protobuf'
 export const file_fulfillment_v1_fulfillment: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'CiBmdWxmaWxsbWVudC92MS9mdWxmaWxsbWVudC5wcm90bxIOZnVsZmlsbG1lbnQudjEiVgoWR2V0U2hpcHBpbmdDb3N0UmVxdWVzdBIQCghjdXJyZW5jeRgBIAEoCRIqCghzaGlwcGluZxgCIAEoCzIYLmZ1bGZpbGxtZW50LnYxLlNoaXBwaW5nImoKF0dldFNoaXBwaW5nQ29zdFJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSFQoNc2hpcHBpbmdfY29zdBgCIAEoARIQCghjdXJyZW5jeRgDIAEoCRIVCg1lcnJvcl9tZXNzYWdlGAQgASgJIsMBCghTaGlwcGluZxISCgpjYXJyaWVyX2lkGAEgASgJEjEKDGZyb21fYWRkcmVzcxgCIAEoCzIbLmZ1bGZpbGxtZW50LnYxLkZyb21BZGRyZXNzEi0KCnRvX2FkZHJlc3MYAyABKAsyGS5mdWxmaWxsbWVudC52MS5Ub0FkZHJlc3MSEQoJd2VpZ2h0X2tnGAQgASgBEi4KCmRpbWVuc2lvbnMYBSABKAsyGi5mdWxmaWxsbWVudC52MS5EaW1lbnNpb25zIkkKCkRpbWVuc2lvbnMSDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBEg4KBmxlbmd0aBgDIAEoARIMCgR1bml0GAQgASgJIk4KCVRvQWRkcmVzcxIMCgRjaXR5GAEgASgJEg0KBXN0YXRlGAIgASgJEhMKC3Bvc3RhbF9jb2RlGAMgASgJEg8KB2NvdW50cnkYBCABKAkiUAoLRnJvbUFkZHJlc3MSDAoEY2l0eRgBIAEoCRINCgVzdGF0ZRgCIAEoCRITCgtwb3N0YWxfY29kZRgDIAEoCRIPCgdjb3VudHJ5GAQgASgJIg8KDUhlYWx0aFJlcXVlc3QiPgoOSGVhbHRoUmVzcG9uc2USLAoGc3RhdHVzGAEgASgOMhwuZnVsZmlsbG1lbnQudjEuSGVhbHRoU3RhdHVzKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMsEBChJGdWxmaWxsbWVudFNlcnZpY2USYgoPR2V0U2hpcHBpbmdDb3N0EiYuZnVsZmlsbG1lbnQudjEuR2V0U2hpcHBpbmdDb3N0UmVxdWVzdBonLmZ1bGZpbGxtZW50LnYxLkdldFNoaXBwaW5nQ29zdFJlc3BvbnNlEkcKBkhlYWx0aBIdLmZ1bGZpbGxtZW50LnYxLkhlYWx0aFJlcXVlc3QaHi5mdWxmaWxsbWVudC52MS5IZWFsdGhSZXNwb25zZULOAQoSY29tLmZ1bGZpbGxtZW50LnYxQhBGdWxmaWxsbWVudFByb3RvUAFaTWdpdGh1Yi5jb20vcmFwaGFlbGRpc2NreS9nby1taWNyby1jb21tZXJjZS9wcm90by9mdWxmaWxsbWVudC92MTtmdWxmaWxsbWVudHYxogIDRlhYqgIORnVsZmlsbG1lbnQuVjHKAg5GdWxmaWxsbWVudFxWMeICGkZ1bGZpbGxtZW50XFYxXEdQQk1ldGFkYXRh6gIPRnVsZmlsbG1lbnQ6OlYxYgZwcm90bzM',
+    'CiBmdWxmaWxsbWVudC92MS9mdWxmaWxsbWVudC5wcm90bxIOZnVsZmlsbG1lbnQudjEi4wEKFkdldFNoaXBwaW5nQ29zdFJlcXVlc3QSGwoIY3VycmVuY3kYASABKAlCCbpIBnIEEAMYAxIoCgdjb3VyaWVyGAIgASgLMhcuZnVsZmlsbG1lbnQudjEuQ291cmllchIwCgtkZXN0aW5hdGlvbhgDIAEoCzIbLmZ1bGZpbGxtZW50LnYxLkRlc3RpbmF0aW9uEiYKBm9yaWdpbhgEIAEoCzIWLmZ1bGZpbGxtZW50LnYxLk9yaWdpbhIoCgdwYWNrYWdlGAUgASgLMhcuZnVsZmlsbG1lbnQudjEuUGFja2FnZSJqChdHZXRTaGlwcGluZ0Nvc3RSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDXNoaXBwaW5nX2Nvc3QYAiABKAESEAoIY3VycmVuY3kYAyABKAkSFQoNZXJyb3JfbWVzc2FnZRgEIAEoCSInCgdDb3VyaWVyEhwKCmNvdXJpZXJfaWQYASABKAlCCLpIBXIDsAEBIuUBCgdQYWNrYWdlEjEKCXdlaWdodF9rZxgBIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi0KBXdpZHRoGAIgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGaGVpZ2h0GAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGbGVuZ3RoGAQgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGAoEdW5pdBgFIAEoCUIKukgHcgUQARj/ASJfCgtEZXN0aW5hdGlvbhIMCgRjaXR5GAEgASgJEg0KBXN0YXRlGAIgASgJEhMKC3Bvc3RhbF9jb2RlGAMgASgJEh4KDGNvdW50cnlfY29kZRgEIAEoCUIIukgFcgOYAQIiWgoGT3JpZ2luEgwKBGNpdHkYASABKAkSDQoFc3RhdGUYAiABKAkSEwoLcG9zdGFsX2NvZGUYAyABKAkSHgoMY291bnRyeV9jb2RlGAQgASgJQgi6SAVyA5gBAiIPCg1IZWFsdGhSZXF1ZXN0Ij4KDkhlYWx0aFJlc3BvbnNlEiwKBnN0YXR1cxgBIAEoDjIcLmZ1bGZpbGxtZW50LnYxLkhlYWx0aFN0YXR1cypnCgxIZWFsdGhTdGF0dXMSHQoZSEVBTFRIX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFQUxUSF9TVEFUVVNfU0VSVklORxABEh0KGUhFQUxUSF9TVEFUVVNfTk9UX1NFUlZJTkcQAjLBAQoSRnVsZmlsbG1lbnRTZXJ2aWNlEmIKD0dldFNoaXBwaW5nQ29zdBImLmZ1bGZpbGxtZW50LnYxLkdldFNoaXBwaW5nQ29zdFJlcXVlc3QaJy5mdWxmaWxsbWVudC52MS5HZXRTaGlwcGluZ0Nvc3RSZXNwb25zZRJHCgZIZWFsdGgSHS5mdWxmaWxsbWVudC52MS5IZWFsdGhSZXF1ZXN0Gh4uZnVsZmlsbG1lbnQudjEuSGVhbHRoUmVzcG9uc2VCzgEKEmNvbS5mdWxmaWxsbWVudC52MUIQRnVsZmlsbG1lbnRQcm90b1ABWk1naXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vZnVsZmlsbG1lbnQvdjE7ZnVsZmlsbG1lbnR2MaICA0ZYWKoCDkZ1bGZpbGxtZW50LlYxygIORnVsZmlsbG1lbnRcVjHiAhpGdWxmaWxsbWVudFxWMVxHUEJNZXRhZGF0YeoCD0Z1bGZpbGxtZW50OjpWMWIGcHJvdG8z',
+    [file_google_protobuf_timestamp, file_buf_validate_validate],
   )
 
 /**
@@ -36,9 +39,24 @@ export type GetShippingCostRequest =
     currency: string
 
     /**
-     * @generated from field: fulfillment.v1.Shipping shipping = 2;
+     * @generated from field: fulfillment.v1.Courier courier = 2;
      */
-    shipping?: Shipping
+    courier?: Courier
+
+    /**
+     * @generated from field: fulfillment.v1.Destination destination = 3;
+     */
+    destination?: Destination
+
+    /**
+     * @generated from field: fulfillment.v1.Origin origin = 4;
+     */
+    origin?: Origin
+
+    /**
+     * @generated from field: fulfillment.v1.Package package = 5;
+     */
+    package?: Package
   }
 
 /**
@@ -84,82 +102,67 @@ export const GetShippingCostResponseSchema: GenMessage<GetShippingCostResponse> 
   messageDesc(file_fulfillment_v1_fulfillment, 1)
 
 /**
- * @generated from message fulfillment.v1.Shipping
+ * @generated from message fulfillment.v1.Courier
  */
-export type Shipping = Message<'fulfillment.v1.Shipping'> & {
+export type Courier = Message<'fulfillment.v1.Courier'> & {
   /**
-   * @generated from field: string carrier_id = 1;
+   * @generated from field: string courier_id = 1;
    */
-  carrierId: string
-
-  /**
-   * @generated from field: fulfillment.v1.FromAddress from_address = 2;
-   */
-  fromAddress?: FromAddress
-
-  /**
-   * @generated from field: fulfillment.v1.ToAddress to_address = 3;
-   */
-  toAddress?: ToAddress
-
-  /**
-   * @generated from field: double weight_kg = 4;
-   */
-  weightKg: number
-
-  /**
-   * @generated from field: fulfillment.v1.Dimensions dimensions = 5;
-   */
-  dimensions?: Dimensions
+  courierId: string
 }
 
 /**
- * Describes the message fulfillment.v1.Shipping.
- * Use `create(ShippingSchema)` to create a new message.
+ * Describes the message fulfillment.v1.Courier.
+ * Use `create(CourierSchema)` to create a new message.
  */
-export const ShippingSchema: GenMessage<Shipping> =
+export const CourierSchema: GenMessage<Courier> =
   /*@__PURE__*/
   messageDesc(file_fulfillment_v1_fulfillment, 2)
 
 /**
- * @generated from message fulfillment.v1.Dimensions
+ * @generated from message fulfillment.v1.Package
  */
-export type Dimensions = Message<'fulfillment.v1.Dimensions'> & {
+export type Package = Message<'fulfillment.v1.Package'> & {
   /**
-   * @generated from field: double width = 1;
+   * @generated from field: string weight_kg = 1;
    */
-  width: number
+  weightKg: string
 
   /**
-   * @generated from field: double height = 2;
+   * @generated from field: string width = 2;
    */
-  height: number
+  width: string
 
   /**
-   * @generated from field: double length = 3;
+   * @generated from field: string height = 3;
    */
-  length: number
+  height: string
 
   /**
-   * @generated from field: string unit = 4;
+   * @generated from field: string length = 4;
+   */
+  length: string
+
+  /**
+   * @generated from field: string unit = 5;
    */
   unit: string
 }
 
 /**
- * Describes the message fulfillment.v1.Dimensions.
- * Use `create(DimensionsSchema)` to create a new message.
+ * Describes the message fulfillment.v1.Package.
+ * Use `create(PackageSchema)` to create a new message.
  */
-export const DimensionsSchema: GenMessage<Dimensions> =
+export const PackageSchema: GenMessage<Package> =
   /*@__PURE__*/
   messageDesc(file_fulfillment_v1_fulfillment, 3)
 
 /**
  *  Customer address
  *
- * @generated from message fulfillment.v1.ToAddress
+ * @generated from message fulfillment.v1.Destination
  */
-export type ToAddress = Message<'fulfillment.v1.ToAddress'> & {
+export type Destination = Message<'fulfillment.v1.Destination'> & {
   /**
    * @generated from field: string city = 1;
    */
@@ -176,25 +179,25 @@ export type ToAddress = Message<'fulfillment.v1.ToAddress'> & {
   postalCode: string
 
   /**
-   * @generated from field: string country = 4;
+   * @generated from field: string country_code = 4;
    */
-  country: string
+  countryCode: string
 }
 
 /**
- * Describes the message fulfillment.v1.ToAddress.
- * Use `create(ToAddressSchema)` to create a new message.
+ * Describes the message fulfillment.v1.Destination.
+ * Use `create(DestinationSchema)` to create a new message.
  */
-export const ToAddressSchema: GenMessage<ToAddress> =
+export const DestinationSchema: GenMessage<Destination> =
   /*@__PURE__*/
   messageDesc(file_fulfillment_v1_fulfillment, 4)
 
 /**
  * Warehouse address
  *
- * @generated from message fulfillment.v1.FromAddress
+ * @generated from message fulfillment.v1.Origin
  */
-export type FromAddress = Message<'fulfillment.v1.FromAddress'> & {
+export type Origin = Message<'fulfillment.v1.Origin'> & {
   /**
    * @generated from field: string city = 1;
    */
@@ -211,16 +214,16 @@ export type FromAddress = Message<'fulfillment.v1.FromAddress'> & {
   postalCode: string
 
   /**
-   * @generated from field: string country = 4;
+   * @generated from field: string country_code = 4;
    */
-  country: string
+  countryCode: string
 }
 
 /**
- * Describes the message fulfillment.v1.FromAddress.
- * Use `create(FromAddressSchema)` to create a new message.
+ * Describes the message fulfillment.v1.Origin.
+ * Use `create(OriginSchema)` to create a new message.
  */
-export const FromAddressSchema: GenMessage<FromAddress> =
+export const OriginSchema: GenMessage<Origin> =
   /*@__PURE__*/
   messageDesc(file_fulfillment_v1_fulfillment, 5)
 

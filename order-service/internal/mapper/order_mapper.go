@@ -5,8 +5,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 
-	pb "github.com/raphaeldiscky/go-micro-commerce/proto/fulfillment/v1"
-
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
@@ -15,20 +13,43 @@ import (
 // MapToOrderResponse converts domain entity to DTO response.
 func MapToOrderResponse(order *entity.Order) *dto.OrderResponse {
 	return &dto.OrderResponse{
-		ID:             order.ID,
-		IdempotencyKey: order.IdempotencyKey,
-		CustomerID:     order.CustomerID,
-		Status:         order.Status,
-		Currency:       order.Currency,
-		PaymentGateway: order.PaymentGateway,
-		ShippingCost:   order.ShippingCost,
-		Subtotal:       order.Subtotal,
-		TotalPrice:     order.TotalPrice,
-		TotalTax:       order.TotalTax,
-		TotalDiscount:  order.TotalDiscount,
-		Items:          MapToOrderItemResponses(order.Items),
-		CreatedAt:      order.CreatedAt,
-		UpdatedAt:      order.UpdatedAt,
+		ID:                order.ID,
+		IdempotencyKey:    order.IdempotencyKey,
+		CheckoutSessionID: order.CheckoutSessionID,
+		CustomerID:        order.CustomerID,
+		Status:            order.Status,
+		Currency:          order.Currency,
+		PaymentGateway:    order.PaymentGateway,
+		Courier: dto.Courier{
+			CourierID: order.Courier.CourierID,
+		},
+		Package: dto.Package{
+			WeightKG: order.Package.WeightKG,
+			Length:   order.Package.Length,
+			Height:   order.Package.Height,
+			Width:    order.Package.Width,
+			Unit:     order.Package.Unit,
+		},
+		Origin: dto.FromAddress{
+			City:        order.Origin.City,
+			State:       order.Origin.State,
+			PostalCode:  order.Origin.PostalCode,
+			CountryCode: order.Origin.CountryCode,
+		},
+		Destination: dto.ToAddress{
+			City:        order.Destination.City,
+			State:       order.Destination.State,
+			PostalCode:  order.Destination.PostalCode,
+			CountryCode: order.Destination.CountryCode,
+		},
+		ShippingCost:  order.ShippingCost,
+		Subtotal:      order.Subtotal,
+		TotalPrice:    order.TotalPrice,
+		TotalTax:      order.TotalTax,
+		TotalDiscount: order.TotalDiscount,
+		Items:         MapToOrderItemResponses(order.Items),
+		CreatedAt:     order.CreatedAt,
+		UpdatedAt:     order.UpdatedAt,
 	}
 }
 
@@ -97,56 +118,4 @@ func MapOrderItemsToPayload(items []entity.OrderItem) []kafkaevent.OrderItemPayl
 	}
 
 	return payloadItems
-}
-
-// MapShippingDtoToEventPayload maps shipping details to their payload representation.
-func MapShippingDtoToEventPayload(shipping *dto.Shipping) kafkaevent.Shipping {
-	return kafkaevent.Shipping{
-		CarrierID: shipping.CarrierID,
-		FromAddress: kafkaevent.FromAddressPayload{
-			City:       shipping.FromAddress.City,
-			State:      shipping.FromAddress.State,
-			PostalCode: shipping.FromAddress.PostalCode,
-			Country:    shipping.FromAddress.Country,
-		},
-		ToAddress: kafkaevent.ToAddressPayload{
-			City:       shipping.ToAddress.City,
-			State:      shipping.ToAddress.State,
-			PostalCode: shipping.ToAddress.PostalCode,
-			Country:    shipping.ToAddress.Country,
-		},
-		WeightKG: shipping.WeightKG,
-		Dimensions: kafkaevent.Dimensions{
-			Width:  shipping.Dimensions.Width,
-			Height: shipping.Dimensions.Height,
-			Length: shipping.Dimensions.Length,
-			Unit:   shipping.Dimensions.Unit,
-		},
-	}
-}
-
-// MapShippingDtoToProto maps shipping details to their protobuf representation.
-func MapShippingDtoToProto(shipping *dto.Shipping) *pb.Shipping {
-	return &pb.Shipping{
-		CarrierId: shipping.CarrierID,
-		FromAddress: &pb.FromAddress{
-			City:       shipping.FromAddress.City,
-			State:      shipping.FromAddress.State,
-			PostalCode: shipping.FromAddress.PostalCode,
-			Country:    shipping.FromAddress.Country,
-		},
-		ToAddress: &pb.ToAddress{
-			City:       shipping.ToAddress.City,
-			State:      shipping.ToAddress.State,
-			PostalCode: shipping.ToAddress.PostalCode,
-			Country:    shipping.ToAddress.Country,
-		},
-		WeightKg: shipping.WeightKG.InexactFloat64(),
-		Dimensions: &pb.Dimensions{
-			Width:  shipping.Dimensions.Width.InexactFloat64(),
-			Height: shipping.Dimensions.Height.InexactFloat64(),
-			Length: shipping.Dimensions.Length.InexactFloat64(),
-			Unit:   shipping.Dimensions.Unit,
-		},
-	}
 }
