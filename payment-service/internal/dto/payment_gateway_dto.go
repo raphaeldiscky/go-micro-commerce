@@ -30,7 +30,7 @@ type PaymentGatewayRequest struct {
 	CustomerEmail   string            `json:"customer_email"`
 	IdempotencyKey  string            `json:"idempotency_key"`
 	ExpiresAt       *time.Time        `json:"expires_at,omitempty"` // 24-hour payment window expiry
-	TransactionID   uuid.UUID         `json:"transaction_id"`
+	PaymentID       uuid.UUID         `json:"payment_id"`
 	CustomerID      uuid.UUID         `json:"customer_id"`
 }
 
@@ -48,7 +48,7 @@ type PaymentGatewayResponse struct {
 	Amount          decimal.Decimal               `json:"amount"`
 	Currency        string                        `json:"currency"`
 	FailureReason   string                        `json:"failure_reason,omitempty"`
-	TransactionID   uuid.UUID                     `json:"transaction_id"`
+	PaymentID       uuid.UUID                     `json:"payment_id"`
 	RequiresAction  bool                          `json:"requires_action,omitempty"` // Indicates 3DS needed
 }
 
@@ -61,12 +61,12 @@ type PaymentAction struct {
 
 // RefundRequest represents a refund request.
 type RefundRequest struct {
-	GatewayID     string          `json:"gateway_id"`
-	Amount        decimal.Decimal `json:"amount"`
-	Currency      string          `json:"currency"`
-	Reason        string          `json:"reason,omitempty"`
-	RefundID      uuid.UUID       `json:"refund_id"`
-	TransactionID uuid.UUID       `json:"transaction_id"`
+	GatewayID string          `json:"gateway_id"`
+	Amount    decimal.Decimal `json:"amount"`
+	Currency  string          `json:"currency"`
+	Reason    string          `json:"reason,omitempty"`
+	RefundID  uuid.UUID       `json:"refund_id"`
+	PaymentID uuid.UUID       `json:"payment_id"`
 }
 
 // RefundResponse represents the result of a refund.
@@ -78,25 +78,5 @@ type RefundResponse struct {
 	Amount          decimal.Decimal       `json:"amount"`
 	Currency        string                `json:"currency"`
 	RefundID        uuid.UUID             `json:"refund_id"`
-	TransactionID   uuid.UUID             `json:"transaction_id"`
-}
-
-// SetupIntentRequest represents a request to create a SetupIntent for collecting payment method.
-// Used for delayed payment confirmation pattern (save now, charge later).
-type SetupIntentRequest struct {
-	CustomerID    uuid.UUID `json:"customer_id"`
-	CustomerEmail string    `json:"customer_email"`
-	OrderID       uuid.UUID `json:"order_id"`
-}
-
-// ChargeOffSessionRequest represents a request to charge a saved payment method without customer present.
-// Used for delayed payment confirmation when customer already provided payment details.
-type ChargeOffSessionRequest struct {
-	PaymentMethodID  string          `json:"payment_method_id"`  // Stripe PM ID (pm_xxx)
-	StripeCustomerID string          `json:"stripe_customer_id"` // Stripe Customer ID (cus_xxx)
-	Amount           decimal.Decimal `json:"amount"`
-	Currency         string          `json:"currency"`
-	TransactionID    uuid.UUID       `json:"transaction_id"`
-	OrderID          uuid.UUID       `json:"order_id"`
-	Description      string          `json:"description"`
+	PaymentID       uuid.UUID             `json:"payment_id"`
 }

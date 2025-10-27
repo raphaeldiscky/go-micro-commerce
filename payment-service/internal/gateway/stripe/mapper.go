@@ -1,8 +1,6 @@
 package stripe
 
 import (
-	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,7 +14,7 @@ import (
 // MapPaymentIntentToResponse converts a Stripe PaymentIntent to PaymentGatewayResponse.
 func MapPaymentIntentToResponse(
 	pi *stripe.PaymentIntent,
-	transactionID uuid.UUID,
+	paymentID uuid.UUID,
 ) (*dto.PaymentGatewayResponse, error) {
 	// Convert amount from cents to decimal
 	amount := decimal.NewFromInt(pi.Amount).Div(decimal.NewFromInt(multiplyAmount))
@@ -50,7 +48,7 @@ func MapPaymentIntentToResponse(
 	}
 
 	response := &dto.PaymentGatewayResponse{
-		TransactionID:   transactionID,
+		PaymentID:       paymentID,
 		GatewayID:       pi.ID,
 		Status:          status,
 		Amount:          amount,
@@ -85,7 +83,7 @@ func MapPaymentIntentToResponse(
 // MapRefundToResponse converts a Stripe Refund to RefundResponse.
 func MapRefundToResponse(
 	r *stripe.Refund,
-	refundID, transactionID uuid.UUID,
+	refundID, paymentID uuid.UUID,
 ) (*dto.RefundResponse, error) {
 	// Convert amount from cents to decimal
 	amount := decimal.NewFromInt(r.Amount).Div(decimal.NewFromInt(multiplyAmount))
@@ -95,7 +93,7 @@ func MapRefundToResponse(
 
 	response := &dto.RefundResponse{
 		RefundID:        refundID,
-		TransactionID:   transactionID,
+		PaymentID:       paymentID,
 		GatewayRefundID: r.ID,
 		Status:          status,
 		Amount:          amount,
@@ -151,46 +149,4 @@ func mapStripeRefundStatus(stripeStatus string) constant.RefundStatus {
 	default:
 		return constant.RefundStatusFailed
 	}
-}
-
-// parseTransactionIDFromMetadata extracts transaction ID from Stripe metadata.
-func parseTransactionIDFromMetadata(metadata map[string]string) (uuid.UUID, error) {
-	transactionIDStr, ok := metadata["transaction_id"]
-	if !ok {
-		return uuid.Nil, errors.New("transaction_id not found in metadata")
-	}
-
-	transactionID, err := uuid.Parse(transactionIDStr)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("invalid transaction_id in metadata: %w", err)
-	}
-
-	return transactionID, nil
-}
-
-// parseRefundMetadata extracts refund and transaction IDs from Stripe refund metadata.
-func parseRefundMetadata(
-	metadata map[string]string,
-) (uuid.UUID, uuid.UUID, error) {
-	refundIDStr, ok := metadata["refund_id"]
-	if !ok {
-		return uuid.Nil, uuid.Nil, errors.New("refund_id not found in metadata")
-	}
-
-	refundID, err := uuid.Parse(refundIDStr)
-	if err != nil {
-		return uuid.Nil, uuid.Nil, fmt.Errorf("invalid refund_id in metadata: %w", err)
-	}
-
-	transactionIDStr, ok := metadata["transaction_id"]
-	if !ok {
-		return uuid.Nil, uuid.Nil, errors.New("transaction_id not found in metadata")
-	}
-
-	transactionID, err := uuid.Parse(transactionIDStr)
-	if err != nil {
-		return uuid.Nil, uuid.Nil, fmt.Errorf("invalid transaction_id in metadata: %w", err)
-	}
-
-	return refundID, transactionID, nil
 }

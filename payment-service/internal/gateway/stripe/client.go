@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
 	"github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/customer"
 	"github.com/stripe/stripe-go/v83/paymentintent"
 	"github.com/stripe/stripe-go/v83/refund"
-	"github.com/stripe/stripe-go/v83/setupintent"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
@@ -51,8 +51,8 @@ func (c *stripeClient) ProcessPayment(
 	req *dto.PaymentGatewayRequest,
 ) (*dto.PaymentGatewayResponse, error) {
 	c.logger.Infof(
-		"Creating Stripe PaymentIntent for transaction %s, amount: %s %s, payment_method: %s",
-		req.TransactionID,
+		"Creating Stripe PaymentIntent for payment %s, amount: %s %s, payment_method: %s",
+		req.PaymentID,
 		req.Amount.String(),
 		req.Currency,
 		req.PaymentMethodID,
@@ -61,9 +61,10 @@ func (c *stripeClient) ProcessPayment(
 	// Convert amount to smallest currency unit (cents for USD, yen for JPY, etc.)
 	amountInCents := req.Amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
 
+	// Metadata for Stripe - store only essential customer-facing data
+	// payment_id lookup is done via database using gateway_transaction_id (indexed)
 	metadata := map[string]string{
-		"transaction_id": req.TransactionID.String(),
-		"customer_id":    req.CustomerID.String(),
+		"customer_id": req.CustomerID.String(),
 	}
 
 	// Add expiry timestamp if provided for 24-hour payment window tracking
@@ -115,16 +116,17 @@ func (c *stripeClient) ProcessPayment(
 			pi.Status == stripe.PaymentIntentStatusRequiresPaymentMethod,
 	)
 
-	return MapPaymentIntentToResponse(pi, req.TransactionID)
+	return MapPaymentIntentToResponse(pi, req.PaymentID)
 }
 
 // GetPaymentStatus retrieves the status of a Stripe PaymentIntent.
 // Context is used for request timeout and cancellation.
 func (c *stripeClient) GetPaymentStatus(
 	ctx context.Context,
+	paymentID uuid.UUID,
 	gatewayID string,
 ) (*dto.PaymentGatewayResponse, error) {
-	c.logger.Infof("Retrieving Stripe payment status for: %s", gatewayID)
+	c.logger.Infof("Retrieving Stripe payment status for: %s (payment_id: %s)", gatewayID, paymentID)
 
 	params := &stripe.PaymentIntentParams{}
 	params.Context = ctx
@@ -135,24 +137,23 @@ func (c *stripeClient) GetPaymentStatus(
 		return nil, fmt.Errorf("failed to get payment intent: %w", err)
 	}
 
-	// Extract transaction ID from metadata
-	transactionID, err := parseTransactionIDFromMetadata(pi.Metadata)
-	if err != nil {
-		c.logger.Errorf("Failed to parse transaction ID from metadata: %v", err)
-		return nil, err
-	}
-
-	return MapPaymentIntentToResponse(pi, transactionID)
+	return MapPaymentIntentToResponse(pi, paymentID)
 }
 
 // CapturePayment captures an authorized Stripe PaymentIntent.
 // Context is used for request timeout and cancellation.
 func (c *stripeClient) CapturePayment(
 	ctx context.Context,
+	paymentID uuid.UUID,
 	gatewayID string,
 	amount decimal.Decimal,
 ) (*dto.PaymentGatewayResponse, error) {
-	c.logger.Infof("Capturing Stripe payment: %s, amount: %s", gatewayID, amount.String())
+	c.logger.Infof(
+		"Capturing Stripe payment: %s, amount: %s (payment_id: %s)",
+		gatewayID,
+		amount.String(),
+		paymentID,
+	)
 
 	// Convert amount to smallest currency unit
 	amountInCents := amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
@@ -168,14 +169,7 @@ func (c *stripeClient) CapturePayment(
 		return nil, fmt.Errorf("failed to capture payment intent: %w", err)
 	}
 
-	// Extract transaction ID from metadata
-	transactionID, err := parseTransactionIDFromMetadata(pi.Metadata)
-	if err != nil {
-		c.logger.Errorf("Failed to parse transaction ID from metadata: %v", err)
-		return nil, err
-	}
-
-	return MapPaymentIntentToResponse(pi, transactionID)
+	return MapPaymentIntentToResponse(pi, paymentID)
 }
 
 // CancelPayment cancels a Stripe PaymentIntent.
@@ -213,20 +207,23 @@ func (c *stripeClient) RefundPayment(
 	// Convert amount to smallest currency unit
 	amountInCents := req.Amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
 
+	// Metadata for Stripe - store refund_id for reconciliation
+	// payment_id lookup is done via database using gateway refund ID
+	metadata := map[string]string{
+		"refund_id": req.RefundID.String(),
+	}
+
+	if req.Reason != "" {
+		metadata["reason"] = req.Reason
+	}
+
 	params := &stripe.RefundParams{
 		PaymentIntent: stripe.String(req.GatewayID),
 		Amount:        stripe.Int64(amountInCents),
 		Reason:        stripe.String(stripe.RefundReasonRequestedByCustomer),
-		Metadata: map[string]string{
-			"refund_id":      req.RefundID.String(),
-			"transaction_id": req.TransactionID.String(),
-		},
+		Metadata:      metadata,
 	}
 	params.Context = ctx
-
-	if req.Reason != "" {
-		params.Metadata["reason"] = req.Reason
-	}
 
 	r, err := refund.New(params)
 	if err != nil {
@@ -236,16 +233,23 @@ func (c *stripeClient) RefundPayment(
 
 	c.logger.Infof("Stripe refund created: %s, status: %s", r.ID, r.Status)
 
-	return MapRefundToResponse(r, req.RefundID, req.TransactionID)
+	return MapRefundToResponse(r, req.RefundID, req.PaymentID)
 }
 
 // GetRefundStatus retrieves the status of a Stripe refund.
 // Context is used for request timeout and cancellation.
 func (c *stripeClient) GetRefundStatus(
 	ctx context.Context,
+	refundID uuid.UUID,
+	paymentID uuid.UUID,
 	gatewayRefundID string,
 ) (*dto.RefundResponse, error) {
-	c.logger.Infof("Retrieving Stripe refund status for: %s", gatewayRefundID)
+	c.logger.Infof(
+		"Retrieving Stripe refund status for: %s (refund_id: %s, payment_id: %s)",
+		gatewayRefundID,
+		refundID,
+		paymentID,
+	)
 
 	params := &stripe.RefundParams{}
 	params.Context = ctx
@@ -256,110 +260,7 @@ func (c *stripeClient) GetRefundStatus(
 		return nil, fmt.Errorf("failed to get refund: %w", err)
 	}
 
-	// Extract IDs from metadata
-	refundID, transactionID, err := parseRefundMetadata(r.Metadata)
-	if err != nil {
-		c.logger.Errorf("Failed to parse refund metadata: %v", err)
-		return nil, err
-	}
-
-	return MapRefundToResponse(r, refundID, transactionID)
-}
-
-// CreateSetupIntent creates a SetupIntent for collecting payment method without charging.
-// Used for delayed payment confirmation pattern (save now, charge later).
-func (c *stripeClient) CreateSetupIntent(
-	ctx context.Context,
-	req *dto.SetupIntentRequest,
-) (*dto.SetupIntentResponse, error) {
-	c.logger.Infof("Creating SetupIntent for customer: %s, order: %s", req.CustomerID, req.OrderID)
-
-	// 1. Create or retrieve Stripe Customer
-	customerID, err := c.CreateOrRetrieveCustomer(ctx, req.CustomerID.String(), req.CustomerEmail)
-	if err != nil {
-		c.logger.Errorf("Failed to create/retrieve customer: %v", err)
-		return nil, fmt.Errorf("failed to create customer: %w", err)
-	}
-
-	// 2. Create SetupIntent
-	params := &stripe.SetupIntentParams{
-		Customer: stripe.String(customerID),
-		PaymentMethodTypes: stripe.StringSlice([]string{
-			"card",
-			"link",       // Stripe Link
-			"apple_pay",  // Apple Pay (if available)
-			"google_pay", // Google Pay (if available)
-		}),
-		Usage: stripe.String("off_session"), // Critical: allows charging without customer present
-		Metadata: map[string]string{
-			"order_id":    req.OrderID.String(),
-			"customer_id": req.CustomerID.String(),
-		},
-	}
-	params.Context = ctx
-
-	si, err := setupintent.New(params)
-	if err != nil {
-		c.logger.Errorf("Failed to create SetupIntent: %v", err)
-		return nil, fmt.Errorf("failed to create setup intent: %w", err)
-	}
-
-	c.logger.Infof("SetupIntent created: %s for customer: %s", si.ID, customerID)
-
-	return &dto.SetupIntentResponse{
-		SetupIntentID:    si.ID,
-		ClientSecret:     si.ClientSecret,
-		StripeCustomerID: customerID,
-	}, nil
-}
-
-// ChargeOffSession charges a saved payment method without customer present.
-// Used for delayed payment confirmation when customer already provided payment details.
-// Context is used for request timeout and cancellation.
-func (c *stripeClient) ChargeOffSession(
-	ctx context.Context,
-	req *dto.ChargeOffSessionRequest,
-) (*dto.PaymentGatewayResponse, error) {
-	c.logger.Infof(
-		"Charging off-session: PM=%s, Customer=%s, Amount=%s %s",
-		req.PaymentMethodID,
-		req.StripeCustomerID,
-		req.Amount.String(),
-		req.Currency,
-	)
-
-	// Convert amount to smallest currency unit (cents)
-	amountInCents := req.Amount.Mul(decimal.NewFromInt(multiplyAmount)).IntPart()
-
-	params := &stripe.PaymentIntentParams{
-		Amount:        stripe.Int64(amountInCents),
-		Currency:      stripe.String(req.Currency),
-		Customer:      stripe.String(req.StripeCustomerID),
-		PaymentMethod: stripe.String(req.PaymentMethodID),
-		Confirm:       stripe.Bool(true), // Charge immediately on creation
-		OffSession:    stripe.Bool(true), // Critical: charge without customer present
-		Description:   stripe.String(req.Description),
-		Metadata: map[string]string{
-			"transaction_id": req.TransactionID.String(),
-			"order_id":       req.OrderID.String(),
-		},
-	}
-	params.Context = ctx
-
-	// Create and confirm PaymentIntent in one call
-	pi, err := paymentintent.New(params)
-	if err != nil {
-		c.logger.Errorf("Off-session charge failed: %v", err)
-		return nil, fmt.Errorf("failed to charge off-session: %w", err)
-	}
-
-	c.logger.Infof(
-		"Off-session charge successful: %s, status: %s",
-		pi.ID,
-		pi.Status,
-	)
-
-	return MapPaymentIntentToResponse(pi, req.TransactionID)
+	return MapRefundToResponse(r, refundID, paymentID)
 }
 
 // CreateOrRetrieveCustomer ensures a Stripe Customer exists for the given customer ID.

@@ -603,7 +603,10 @@ func (s *checkoutSessionService) PlaceOrder(
 				ClientSecret:    paymentResponse.ClientSecret,
 				PaymentIntentID: paymentResponse.PaymentIntentID,
 			}
-			metadataBytes, _ := json.Marshal(stripeData)
+			metadataBytes, err := json.Marshal(stripeData)
+			if err != nil {
+				return nil, httperror.NewInternalServerError("failed to marshal gateway metadata")
+			}
 			finalGatewayMetadata = json.RawMessage(metadataBytes)
 			transactionID = paymentResponse.PaymentIntentID
 			redirectURL = "" // Stripe uses client_secret, not redirect URL

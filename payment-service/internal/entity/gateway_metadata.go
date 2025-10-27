@@ -11,7 +11,6 @@ type StripeMetadata struct {
 	PaymentMethodID *string `json:"payment_method_id,omitempty"` // pm_xxx - Stripe PaymentMethod ID
 	CustomerID      *string `json:"customer_id,omitempty"`       // cus_xxx - Stripe Customer ID
 	ClientSecret    *string `json:"client_secret,omitempty"`     // For frontend Stripe.js
-	SetupIntentID   *string `json:"setup_intent_id,omitempty"`   // seti_xxx - SetupIntent ID
 	PaymentIntentID *string `json:"payment_intent_id,omitempty"` // pi_xxx - PaymentIntent ID (can differ from gateway_transaction_id)
 	ChargeID        *string `json:"charge_id,omitempty"`         // ch_xxx - Charge ID
 }

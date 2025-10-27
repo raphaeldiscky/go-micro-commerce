@@ -56,7 +56,7 @@ func (c *mockClient) ProcessPayment(
 	// Check if payment method ID is present
 	if req.PaymentMethodID == "" {
 		return &dto.PaymentGatewayResponse{
-			TransactionID:   req.TransactionID,
+			PaymentID:       req.PaymentID,
 			GatewayID:       gatewayID,
 			Status:          constant.PaymentGatewayStatusPending,
 			Amount:          req.Amount,
@@ -77,7 +77,7 @@ func (c *mockClient) ProcessPayment(
 	fees := req.Amount.Mul(decimal.NewFromFloat(fakeGatewayFee)) // 2.9% fee
 
 	return &dto.PaymentGatewayResponse{
-		TransactionID:  req.TransactionID,
+		PaymentID:      req.PaymentID,
 		GatewayID:      gatewayID,
 		Status:         status,
 		Amount:         req.Amount,
@@ -97,11 +97,13 @@ func (c *mockClient) ProcessPayment(
 // GetPaymentStatus retrieves payment status.
 func (c *mockClient) GetPaymentStatus(
 	_ context.Context,
+	paymentID uuid.UUID,
 	gatewayID string,
 ) (*dto.PaymentGatewayResponse, error) {
 	time.Sleep(c.delay)
 
 	return &dto.PaymentGatewayResponse{
+		PaymentID:   paymentID,
 		GatewayID:   gatewayID,
 		Status:      constant.PaymentGatewayStatusSucceeded,
 		ProcessedAt: time.Now(),
@@ -111,12 +113,14 @@ func (c *mockClient) GetPaymentStatus(
 // CapturePayment captures an authorized payment.
 func (c *mockClient) CapturePayment(
 	_ context.Context,
+	paymentID uuid.UUID,
 	gatewayID string,
 	amount decimal.Decimal,
 ) (*dto.PaymentGatewayResponse, error) {
 	time.Sleep(c.delay)
 
 	return &dto.PaymentGatewayResponse{
+		PaymentID:   paymentID,
 		GatewayID:   gatewayID,
 		Status:      constant.PaymentGatewayStatusSucceeded,
 		Amount:      amount,
@@ -140,7 +144,7 @@ func (c *mockClient) RefundPayment(
 
 	return &dto.RefundResponse{
 		RefundID:        req.RefundID,
-		TransactionID:   req.TransactionID,
+		PaymentID:       req.PaymentID,
 		GatewayRefundID: uuid.NewString(),
 		Status:          constant.RefundStatusSucceeded,
 		Amount:          req.Amount,
@@ -152,63 +156,18 @@ func (c *mockClient) RefundPayment(
 // GetRefundStatus retrieves refund status.
 func (c *mockClient) GetRefundStatus(
 	_ context.Context,
+	refundID uuid.UUID,
+	paymentID uuid.UUID,
 	gatewayRefundID string,
 ) (*dto.RefundResponse, error) {
 	time.Sleep(c.delay)
 
 	return &dto.RefundResponse{
+		RefundID:        refundID,
+		PaymentID:       paymentID,
 		GatewayRefundID: gatewayRefundID,
 		Status:          constant.RefundStatusSucceeded,
 		ProcessedAt:     time.Now(),
-	}, nil
-}
-
-// CreateSetupIntent creates a mock SetupIntent for testing delayed payment flow.
-func (c *mockClient) CreateSetupIntent(
-	_ context.Context,
-	_ *dto.SetupIntentRequest,
-) (*dto.SetupIntentResponse, error) {
-	time.Sleep(c.delay)
-
-	return &dto.SetupIntentResponse{
-		SetupIntentID:    "seti_mock_" + uuid.NewString(),
-		ClientSecret:     "seti_mock_secret_" + uuid.NewString(),
-		StripeCustomerID: "cus_mock_" + uuid.NewString(),
-	}, nil
-}
-
-// ChargeOffSession simulates charging a saved payment method without customer present.
-func (c *mockClient) ChargeOffSession(
-	_ context.Context,
-	req *dto.ChargeOffSessionRequest,
-) (*dto.PaymentGatewayResponse, error) {
-	time.Sleep(c.delay)
-
-	if c.shouldFail {
-		return nil, errors.New("mock off-session charge failed")
-	}
-
-	// Generate fake gateway ID
-	gatewayID := "pi_mock_offses_" + uuid.NewString()
-
-	// Simulate successful off-session charge
-	fees := req.Amount.Mul(decimal.NewFromFloat(fakeGatewayFee))
-
-	return &dto.PaymentGatewayResponse{
-		TransactionID: req.TransactionID,
-		GatewayID:     gatewayID,
-		Status:        constant.PaymentGatewayStatusSucceeded, // Off-session charge succeeds immediately
-		Amount:        req.Amount,
-		Currency:      req.Currency,
-		ProcessedAt:   time.Now(),
-		Fees:          &fees,
-		GatewayResponse: map[string]any{
-			"status":              "succeeded",
-			"payment_method":      req.PaymentMethodID,
-			"customer":            req.StripeCustomerID,
-			"off_session":         true,
-			"confirmation_method": "automatic",
-		},
 	}, nil
 }
 

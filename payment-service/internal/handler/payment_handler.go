@@ -75,32 +75,3 @@ func (h *PaymentHandler) GetPaymentByOrderID(c echo.Context) error {
 
 	return echoutils.ResponseOK(c, payment)
 }
-
-// CreateSetupIntent handles POST /payments/setup-intent.
-// Creates a SetupIntent for collecting payment method without charging.
-// Used for delayed payment confirmation pattern.
-//
-// Route: POST /payments/setup-intent
-//
-// Authentication: Requires user authentication.
-func (h *PaymentHandler) CreateSetupIntent(c echo.Context) error {
-	req := dto.CreateSetupIntentRequest{
-		CustomerID:    echoutils.GetUserIDFromContext(c),
-		CustomerEmail: echoutils.GetEmailFromContext(c),
-	}
-
-	if err := c.Bind(&req); err != nil {
-		return err
-	}
-
-	if err := c.Validate(&req); err != nil {
-		return err
-	}
-
-	setupIntent, err := h.paymentService.CreateSetupIntent(c.Request().Context(), req)
-	if err != nil {
-		return err
-	}
-
-	return echoutils.ResponseOK(c, setupIntent)
-}
