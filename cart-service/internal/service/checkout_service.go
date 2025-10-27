@@ -3,14 +3,13 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/client"
@@ -19,8 +18,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/task"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/utils/redisutils"
 )
 
@@ -49,10 +48,11 @@ type CheckoutSessionService interface {
 
 // checkoutSessionService implements the CheckoutSessionService.
 type checkoutSessionService struct {
-	dataStore                          repository.DataStore
-	logger                             logger.Logger
-	productClient                      client.ProductClient
-	checkoutSessionOrderPlacedProducer kafka.Producer
+	dataStore               repository.DataStore
+	logger                  logger.Logger
+	productClient           client.ProductClient
+	asynqClient             asynq.Client
+	taskCancellationService asynq.TaskCancellationService
 }
 
 // NewCheckoutSessionService creates a new instance of checkoutSessionService.
@@ -60,13 +60,15 @@ func NewCheckoutSessionService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
 	productClient client.ProductClient,
-	checkoutSessionOrderPlacedProducer kafka.Producer,
+	asynqClient asynq.Client,
+	taskCancellationService asynq.TaskCancellationService,
 ) CheckoutSessionService {
 	return &checkoutSessionService{
-		dataStore:                          dataStore,
-		logger:                             appLogger,
-		productClient:                      productClient,
-		checkoutSessionOrderPlacedProducer: checkoutSessionOrderPlacedProducer,
+		dataStore:               dataStore,
+		logger:                  appLogger,
+		productClient:           productClient,
+		asynqClient:             asynqClient,
+		taskCancellationService: taskCancellationService,
 	}
 }
 
@@ -227,6 +229,16 @@ func (s *checkoutSessionService) CreateCheckoutSession(
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Schedule checkout session reminder task
+	if err = s.scheduleCheckoutSessionReminder(ctx, createdSession.ID); err != nil {
+		// Log error but don't fail the checkout session creation
+		s.logger.Warnf(
+			"Failed to schedule checkout session reminder for session %s: %v",
+			createdSession.ID,
+			err,
+		)
 	}
 
 	return mapper.MapToCheckoutSessionResponse(createdSession), nil
@@ -411,69 +423,20 @@ func (s *checkoutSessionService) PlaceOrder(
 			return httperror.NewInternalServerError("failed to update checkout session")
 		}
 
-		// Publish domain event via outbox pattern
-		s.logger.Debugf(
-			"Creating checkout session order placed event - SessionID: %s, CustomerID: %s, IdempotencyKey: %s",
-			updatedSession.ID,
-			updatedSession.CustomerID,
-			req.IdempotencyKey,
-		)
-
-		evt := producer.NewCheckoutSessionOrderPlacedEvent(
-			updatedSession.ID,
-			req.IdempotencyKey,
-			constant.CheckoutSessionStatusOrderPlaced,
-			updatedSession.CustomerID,
-			updatedSession.Currency,
-			*updatedSession.PaymentGateway,
-			updatedSession.Items,
-			updatedSession.Courier,
-			updatedSession.Destination,
-			updatedSession.Origin,
-			updatedSession.Package,
-			updatedSession.CreatedAt,
-		)
-
-		s.logger.Debugf(
-			"Created event payload - CheckoutSessionID: %s, EventType: %s",
-			evt.Payload.CheckoutSessionID,
-			evt.Metadata.EventType,
-		)
-
-		// Marshal event to JSON for storage in outbox
-		eventJSON, errMarshal := json.Marshal(evt)
-		if errMarshal != nil {
-			return httperror.NewInternalServerError("failed to marshal checkout session event")
-		}
-
-		// Get outbox repository from DataStore (uses same transaction)
-		outboxRepo := ds.OutboxRepository()
-
-		// Create outbox event
-		outboxEvent := &entity.OutboxEvent{
-			ID:            uuid.New(),
-			AggregateType: "checkout_session",
-			AggregateID:   updatedSession.ID,
-			EventType:     evt.Metadata.EventType,
-			Topic:         s.checkoutSessionOrderPlacedProducer.Topic(),
-			Payload:       eventJSON,
-			Status:        constant.OutboxStatusPending,
-			CreatedAt:     time.Now(),
-			ScheduledFor:  time.Now(),
-			Attempts:      0,
-		}
-
-		// Save to outbox table (within same transaction)
-		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
-			return httperror.NewInternalServerError(
-				fmt.Sprintf("failed to save event to outbox: %v", err),
-			)
-		}
-
 		return nil
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Cancel checkout session reminder task since order was placed
+	if err = s.cancelCheckoutSessionReminder(ctx, req.CheckoutSessionID); err != nil {
+		// Log error but don't fail the order placement
+		s.logger.Warnf(
+			"Failed to cancel checkout session reminder for session %s: %v",
+			req.CheckoutSessionID,
+			err,
+		)
 	}
 
 	// Migrate cart after successful order placement (non-critical operation)
@@ -482,6 +445,67 @@ func (s *checkoutSessionService) PlaceOrder(
 	s.migrateCartAfterOrderPlacement(ctx, cartRepo, req.CustomerID)
 
 	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
+}
+
+// scheduleCheckoutSessionReminder schedules a reminder task for a checkout session.
+func (s *checkoutSessionService) scheduleCheckoutSessionReminder(
+	ctx context.Context,
+	checkoutSessionID uuid.UUID,
+) error {
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get user auth contexts: %w", err)
+	}
+	// Create reminder task request
+	reminderRequest := &dto.CheckoutSessionReminderRequest{
+		CheckoutSessionID: checkoutSessionID,
+		CustomerEmail:     user.Email,
+	}
+
+	// Create the task
+	reminderTask, err := task.NewCheckoutSessionReminderTask(reminderRequest)
+	if err != nil {
+		return fmt.Errorf("failed to create reminder task: %w", err)
+	}
+
+	// Enqueue the task with a delay
+	_, err = s.asynqClient.EnqueueIn(
+		constant.CheckoutSessionReminderDelay,
+		reminderTask,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to enqueue reminder task: %w", err)
+	}
+
+	s.logger.Infof(
+		"Scheduled checkout session reminder for session %s in %v",
+		checkoutSessionID,
+		constant.CheckoutSessionReminderDelay,
+	)
+
+	return nil
+}
+
+// cancelCheckoutSessionReminder cancels a pending reminder task for a checkout session.
+func (s *checkoutSessionService) cancelCheckoutSessionReminder(
+	ctx context.Context,
+	checkoutSessionID uuid.UUID,
+) error {
+	// Create cancellation helper
+	cancellationHelper := task.NewCancellationHelper(
+		s.taskCancellationService,
+		s.logger,
+	)
+
+	// Cancel the reminder task
+	err := cancellationHelper.CancelCheckoutSessionReminderTask(ctx, checkoutSessionID)
+	if err != nil {
+		return fmt.Errorf("failed to cancel checkout session reminder task: %w", err)
+	}
+
+	s.logger.Infof("Cancelled checkout session reminder for session: %s", checkoutSessionID)
+
+	return nil
 }
 
 // migrateCartAfterOrderPlacement archives the checked out cart and creates a new active cart with unselected items.
@@ -596,6 +620,16 @@ func (s *checkoutSessionService) CancelCheckoutSession(
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	// Cancel checkout session reminder task since session was canceled
+	if err = s.cancelCheckoutSessionReminder(ctx, sessionID); err != nil {
+		// Log error but don't fail the cancellation
+		s.logger.Warnf(
+			"Failed to cancel checkout session reminder for session %s: %v",
+			sessionID,
+			err,
+		)
 	}
 
 	return mapper.MapToCheckoutSessionResponse(updatedSession), nil

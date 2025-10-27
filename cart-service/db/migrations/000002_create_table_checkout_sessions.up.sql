@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS checkout_sessions (
     currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
-    expired_at TIMESTAMPTZ
+    expires_at TIMESTAMPTZ -- What time the checkout session expires
 );
 
 ALTER TABLE checkout_sessions

@@ -53,29 +53,10 @@ func SetupKafkaConsumers(
 		return nil
 	}
 
-	// Checkout Session Lifecycle Consumer
-	checkoutSessionLifecycleConsumer, err := kafka.NewConsumer(
-		cfg.Kafka.Brokers,
-		kafka.CheckoutSessionLifecycleTopic,
-		kafka.OrderCartEventsConsumerGroup, // Consumer group for order service consuming cart events
-		consumer.NewCheckoutSessionLifecycleConsumer(
-			appLogger,
-			providers.DataStore,
-			providers.SagaOrchestrator,
-		).Handler,
-		appLogger,
-	)
-	if err != nil {
-		appLogger.Errorf("failed to create checkout session lifecycle consumer: %v", err)
-
-		return nil
-	}
-
 	consumers = append(
 		consumers,
 		paymentLifecycleConsumer,
 		fulfillmentLifecycleConsumer,
-		checkoutSessionLifecycleConsumer,
 	)
 
 	appLogger.Infof("successfully created %d Kafka consumers", len(consumers))

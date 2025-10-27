@@ -5,6 +5,7 @@ import (
 
 	"github.com/IBM/sarama"
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
@@ -25,9 +26,9 @@ func SetupCheckoutSession(
 	providers *Providers,
 ) {
 	err := providers.KafkaAdmin.CreateTopic(
-		kafka.CheckoutSessionLifecycleTopic,
-		constant.CheckoutSessionLifecycleTopicNumPartitions,
-		constant.CheckoutSessionLifecycleTopicReplicationFactor,
+		kafka.NotificationRequestTopic,
+		constant.NotificationRequestedTopicNumPartitions,
+		constant.NotificationRequestedTopicReplicationFactor,
 	)
 	if err != nil {
 		appLogger.Fatalf("failed to create Kafka topic: %v", err)
@@ -46,17 +47,19 @@ func SetupCheckoutSession(
 		appLogger.Fatalf("failed to create Kafka async producer: %v", err)
 	}
 
-	checkoutSessionOrderPlacedProducer := producer.NewCheckoutSessionOrderPlacedProducer(
+	notificationRequestedProducer := producer.NewNotificationRequestProducer(
 		asyncProducer,
 	)
 
-	providers.CheckoutSessionOrderPlacedProducer = checkoutSessionOrderPlacedProducer
+	providers.NotificationRequestProducer = notificationRequestedProducer
+	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector)
 
 	checkoutSessionService := service.NewCheckoutSessionService(
 		providers.DataStore,
 		appLogger,
 		providers.ProductClient,
-		checkoutSessionOrderPlacedProducer,
+		providers.AsynqClient,
+		taskCancellationService,
 	)
 	providers.CheckoutSessionService = checkoutSessionService
 	checkoutSessionHandler := handler.NewCheckoutSessionHandler(checkoutSessionService)
