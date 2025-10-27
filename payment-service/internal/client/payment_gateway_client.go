@@ -4,6 +4,7 @@ package client
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
@@ -18,11 +19,16 @@ type PaymentGatewayClient interface {
 	) (*dto.PaymentGatewayResponse, error)
 
 	// GetPaymentStatus retrieves the status of a payment
-	GetPaymentStatus(ctx context.Context, gatewayID string) (*dto.PaymentGatewayResponse, error)
+	GetPaymentStatus(
+		ctx context.Context,
+		paymentID uuid.UUID,
+		gatewayID string,
+	) (*dto.PaymentGatewayResponse, error)
 
 	// CapturePayment captures an authorized payment
 	CapturePayment(
 		ctx context.Context,
+		paymentID uuid.UUID,
 		gatewayID string,
 		amount decimal.Decimal,
 	) (*dto.PaymentGatewayResponse, error)
@@ -34,27 +40,10 @@ type PaymentGatewayClient interface {
 	RefundPayment(ctx context.Context, req *dto.RefundRequest) (*dto.RefundResponse, error)
 
 	// GetRefundStatus retrieves the status of a refund
-	GetRefundStatus(ctx context.Context, gatewayRefundID string) (*dto.RefundResponse, error)
-
-	// CreateSetupIntent creates a SetupIntent for collecting payment method without charging
-	// Used for delayed payment confirmation pattern (save now, charge later)
-	CreateSetupIntent(
+	GetRefundStatus(
 		ctx context.Context,
-		req *dto.SetupIntentRequest,
-	) (*dto.SetupIntentResponse, error)
-
-	// ChargeOffSession charges a saved payment method without customer present
-	// Used after SetupIntent to charge the card when order status changes
-	ChargeOffSession(
-		ctx context.Context,
-		req *dto.ChargeOffSessionRequest,
-	) (*dto.PaymentGatewayResponse, error)
-
-	// CreateOrRetrieveCustomer ensures a Stripe Customer exists for the given customer ID
-	// Returns the Stripe Customer ID (cus_xxx)
-	CreateOrRetrieveCustomer(
-		ctx context.Context,
-		customerID string,
-		email string,
-	) (string, error)
+		refundID uuid.UUID,
+		paymentID uuid.UUID,
+		gatewayRefundID string,
+	) (*dto.RefundResponse, error)
 }

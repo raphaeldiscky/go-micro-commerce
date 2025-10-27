@@ -61,19 +61,3 @@ type PaymentMethodInfo struct {
 	ExpiryYear  int    `json:"expiry_year"`  // Safe to store per PCI DSS
 	Country     string `json:"country"`      // Card issuing country
 }
-
-// CreateSetupIntentRequest represents the request to create a SetupIntent.
-// SetupIntent is used to collect payment method details without charging.
-type CreateSetupIntentRequest struct {
-	OrderID       uuid.UUID `json:"order_id"       validate:"required"`
-	CustomerID    uuid.UUID `json:"customer_id"    validate:"required"`
-	CustomerEmail string    `json:"customer_email" validate:"required,email"`
-}
-
-// SetupIntentResponse represents the response from creating a SetupIntent.
-// Frontend uses client_secret to collect payment details with Stripe.js.
-type SetupIntentResponse struct {
-	SetupIntentID    string `json:"setup_intent_id"`
-	ClientSecret     string `json:"client_secret"`      // For Stripe.js confirmSetup()
-	StripeCustomerID string `json:"stripe_customer_id"` // For reference
-}

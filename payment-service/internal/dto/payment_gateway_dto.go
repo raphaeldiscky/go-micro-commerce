@@ -30,7 +30,7 @@ type PaymentGatewayRequest struct {
 	CustomerEmail   string            `json:"customer_email"`
 	IdempotencyKey  string            `json:"idempotency_key"`
 	ExpiresAt       *time.Time        `json:"expires_at,omitempty"` // 24-hour payment window expiry
-	TransactionID   uuid.UUID         `json:"transaction_id"`
+	PaymentID       uuid.UUID         `json:"payment_id"`           // Internal payment record ID
 	CustomerID      uuid.UUID         `json:"customer_id"`
 }
 
@@ -43,12 +43,12 @@ type PaymentGatewayResponse struct {
 	GatewayResponse map[string]any                `json:"gateway_response,omitempty"`
 	NextAction      *PaymentAction                `json:"next_action,omitempty"`
 	ClientSecret    *string                       `json:"client_secret,omitempty"` // For stripe.confirmCardPayment()
-	GatewayID       string                        `json:"gateway_id"`              // PaymentIntent ID (pi_xxx)
+	PaymentIntentID string                        `json:"payment_intent_id"`       // Stripe PaymentIntent ID (pi_xxx)
 	Status          constant.PaymentGatewayStatus `json:"status"`
 	Amount          decimal.Decimal               `json:"amount"`
 	Currency        string                        `json:"currency"`
 	FailureReason   string                        `json:"failure_reason,omitempty"`
-	TransactionID   uuid.UUID                     `json:"transaction_id"`
+	PaymentID       uuid.UUID                     `json:"payment_id"`                // Internal payment record ID
 	RequiresAction  bool                          `json:"requires_action,omitempty"` // Indicates 3DS needed
 }
 
@@ -61,42 +61,22 @@ type PaymentAction struct {
 
 // RefundRequest represents a refund request.
 type RefundRequest struct {
-	GatewayID     string          `json:"gateway_id"`
-	Amount        decimal.Decimal `json:"amount"`
-	Currency      string          `json:"currency"`
-	Reason        string          `json:"reason,omitempty"`
-	RefundID      uuid.UUID       `json:"refund_id"`
-	TransactionID uuid.UUID       `json:"transaction_id"`
+	PaymentIntentID string          `json:"payment_intent_id"` // Stripe PaymentIntent ID (pi_xxx) to refund
+	Amount          decimal.Decimal `json:"amount"`
+	Currency        string          `json:"currency"`
+	Reason          string          `json:"reason,omitempty"`
+	RefundID        uuid.UUID       `json:"refund_id"`
+	PaymentID       uuid.UUID       `json:"payment_id"` // Internal payment record ID
 }
 
 // RefundResponse represents the result of a refund.
 type RefundResponse struct {
-	ProcessedAt     time.Time             `json:"processed_at"`
-	Fees            *decimal.Decimal      `json:"fees,omitempty"`
-	GatewayRefundID string                `json:"gateway_refund_id"`
-	Status          constant.RefundStatus `json:"status"`
-	Amount          decimal.Decimal       `json:"amount"`
-	Currency        string                `json:"currency"`
-	RefundID        uuid.UUID             `json:"refund_id"`
-	TransactionID   uuid.UUID             `json:"transaction_id"`
-}
-
-// SetupIntentRequest represents a request to create a SetupIntent for collecting payment method.
-// Used for delayed payment confirmation pattern (save now, charge later).
-type SetupIntentRequest struct {
-	CustomerID    uuid.UUID `json:"customer_id"`
-	CustomerEmail string    `json:"customer_email"`
-	OrderID       uuid.UUID `json:"order_id"`
-}
-
-// ChargeOffSessionRequest represents a request to charge a saved payment method without customer present.
-// Used for delayed payment confirmation when customer already provided payment details.
-type ChargeOffSessionRequest struct {
-	PaymentMethodID  string          `json:"payment_method_id"`  // Stripe PM ID (pm_xxx)
-	StripeCustomerID string          `json:"stripe_customer_id"` // Stripe Customer ID (cus_xxx)
-	Amount           decimal.Decimal `json:"amount"`
-	Currency         string          `json:"currency"`
-	TransactionID    uuid.UUID       `json:"transaction_id"`
-	OrderID          uuid.UUID       `json:"order_id"`
-	Description      string          `json:"description"`
+	ProcessedAt    time.Time             `json:"processed_at"`
+	Fees           *decimal.Decimal      `json:"fees,omitempty"`
+	StripeRefundID string                `json:"stripe_refund_id"` // Stripe Refund ID (re_xxx)
+	Status         constant.RefundStatus `json:"status"`
+	Amount         decimal.Decimal       `json:"amount"`
+	Currency       string                `json:"currency"`
+	RefundID       uuid.UUID             `json:"refund_id"`
+	PaymentID      uuid.UUID             `json:"payment_id"` // Internal payment record ID
 }
