@@ -31,3 +31,8 @@ const (
 	// PlaceOrderRetryInterval is the retry interval for placing an order.
 	PlaceOrderRetryInterval = 500 * time.Millisecond
 )
+
+const (
+	// CheckoutSessionExpirationTime is the expiration time for checkout sessions.
+	CheckoutSessionExpirationTime = 30 * time.Minute
+)

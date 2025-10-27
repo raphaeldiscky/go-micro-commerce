@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/bsm/redislock"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
@@ -17,14 +18,16 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore     repository.DataStore
-	KafkaAdmin    *kafka.Admin
-	ProductClient client.ProductClient
+	DataStore      repository.DataStore
+	KafkaAdmin     *kafka.Admin
+	ProductClient  client.ProductClient
+	AsynqClient    asynq.Client
+	AsynqInspector asynq.Inspector
 
-	NotificationRequestProducer        kafka.Producer
-	CheckoutSessionOrderPlacedProducer kafka.Producer
-	CartService                        service.CartService
-	CheckoutSessionService             service.CheckoutSessionService
+	NotificationRequestProducer    kafka.Producer
+	CartService                    service.CartService
+	CheckoutSessionService         service.CheckoutSessionService
+	CheckoutSessionReminderService service.CheckoutSessionReminderService
 }
 
 // SetupGlobal initializes all providers.

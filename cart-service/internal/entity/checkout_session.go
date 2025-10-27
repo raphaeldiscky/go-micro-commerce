@@ -27,6 +27,7 @@ type CheckoutSession struct {
 	Currency       string
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
+	ExpiresAt      *time.Time
 	Items          []CheckoutSessionItem
 }
 
@@ -85,12 +86,7 @@ func NewCheckoutSession(
 ) (*CheckoutSession, error) {
 	checkoutSessionID := uuid.New()
 	now := time.Now()
-
-	// Initialize items with UUIDv7 for chronological ordering
-	for i := range items {
-		items[i].ID = uuid.New() // Using UUIDv7 provides natural ordering
-	}
-
+	expiresAt := now.Add(constant.CheckoutSessionExpirationTime)
 	session := &CheckoutSession{
 		ID:             checkoutSessionID,
 		IdempotencyKey: idempotencyKey,
@@ -105,6 +101,7 @@ func NewCheckoutSession(
 		Currency:       currency,
 		CreatedAt:      now,
 		UpdatedAt:      now,
+		ExpiresAt:      &expiresAt, // 30 minutes from now
 		Items:          items,
 	}
 

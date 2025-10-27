@@ -12,8 +12,8 @@ const (
 )
 
 const (
-	// CheckoutSessionLifecycleTopicNumPartitions is the number of partitions for the CheckoutSession lifecycle .
-	CheckoutSessionLifecycleTopicNumPartitions = 3
-	// CheckoutSessionLifecycleTopicReplicationFactor is the replication factor for the CheckoutSession lifecycle .
-	CheckoutSessionLifecycleTopicReplicationFactor = 1
+	// NotificationRequestedTopicNumPartitions is the number of partitions for the CheckoutSession lifecycle .
+	NotificationRequestedTopicNumPartitions = 3
+	// NotificationRequestedTopicReplicationFactor is the replication factor for the CheckoutSession lifecycle .
+	NotificationRequestedTopicReplicationFactor = 1
 )

@@ -16,27 +16,27 @@ import (
 
 // OutboxPublisher is responsible for publishing outbox events.
 type OutboxPublisher struct {
-	dataStore                         repository.DataStore
-	logger                            logger.Logger
-	checkoutSesssionLifecycleProducer kafka.Producer
-	config                            config.OutboxPublisherConfig
-	eventRegistry                     *kafka.EventRegistry
+	dataStore                   repository.DataStore
+	logger                      logger.Logger
+	notificationRequestProducer kafka.Producer
+	config                      config.OutboxPublisherConfig
+	eventRegistry               *kafka.EventRegistry
 }
 
 // NewOutboxPublisher creates a new instance of OutboxPublisher.
 func NewOutboxPublisher(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	checkoutSesssionLifecycleProducer kafka.Producer,
+	notificationRequestProducer kafka.Producer,
 	cfg config.OutboxPublisherConfig,
 	eventRegistry *kafka.EventRegistry,
 ) *OutboxPublisher {
 	return &OutboxPublisher{
-		dataStore:                         dataStore,
-		logger:                            appLogger,
-		checkoutSesssionLifecycleProducer: checkoutSesssionLifecycleProducer,
-		config:                            cfg,
-		eventRegistry:                     eventRegistry,
+		dataStore:                   dataStore,
+		logger:                      appLogger,
+		notificationRequestProducer: notificationRequestProducer,
+		config:                      cfg,
+		eventRegistry:               eventRegistry,
 	}
 }
 
@@ -130,8 +130,8 @@ func (p *OutboxPublisher) processEvent(ctx context.Context, outboxEvent *entity.
 	var selectedProducer kafka.Producer
 
 	switch outboxEvent.EventType {
-	case kafka.CheckoutSessionOrderPlacedEventType:
-		selectedProducer = p.checkoutSesssionLifecycleProducer
+	case kafka.NotificationRequestedEventType:
+		selectedProducer = p.notificationRequestProducer
 	default:
 		return fmt.Errorf("unknown topic: %s", outboxEvent.Topic)
 	}
