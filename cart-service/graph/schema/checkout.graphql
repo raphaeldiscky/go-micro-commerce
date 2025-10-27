@@ -40,6 +40,8 @@ type CheckoutSession {
   status: CheckoutSessionStatus!
   paymentGateway: String
   currency: String!
+  shippingCost: Decimal!
+  totalAmount: Decimal!
   items: [CheckoutSessionItem!]!
   createdAt: Time!
   updatedAt: Time!
@@ -52,6 +54,17 @@ type CheckoutSessionItem {
   productName: String!
   quantity: Int!
   unitPrice: Decimal!
+}
+
+# PlaceOrder response with standardized fields for immediate redirect
+type PlaceOrderResponse {
+  checkoutSession: CheckoutSession!
+  transactionId: String! # Standardized: gateway transaction identifier
+  amount: String! # Standardized: final amount charged
+  currency: String! # Standardized: currency code
+  status: String! # Standardized: payment status
+  redirectUrl: String # Optional: for redirect-based gateways
+  gatewayMetadata: Any # Gateway-specific data (clientSecret, approvalUrl, etc.)
 }
 
 # Input type for creating checkout session
@@ -121,7 +134,7 @@ extend type Mutation {
   ): CheckoutSession! @requiresAuth
 
   # Place order from checkout session
-  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession!
+  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): PlaceOrderResponse!
     @requiresAuth
 
   # Cancel checkout session

@@ -15,10 +15,17 @@ CREATE TABLE IF NOT EXISTS checkout_sessions (
     package JSONB, -- will be added in checkout page
     payment_gateway VARCHAR(50),
     currency VARCHAR(3) NOT NULL DEFAULT 'IDR',
+    total_amount DECIMAL(10, 2) NOT NULL CHECK (total_amount >= 0),
+    shipping_cost DECIMAL(10, 2) NOT NULL CHECK (shipping_cost >= 0),
     created_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT current_timestamp,
     expired_at TIMESTAMPTZ
 );
+
+COMMENT ON COLUMN checkout_sessions.shipping_cost IS
+'Pre-calculated shipping cost from fulfillment service, used for immediate PaymentIntent creation';
+COMMENT ON COLUMN checkout_sessions.total_amount IS
+'Pre-calculated total amount (items + shipping), used for immediate PaymentIntent creation';
 
 ALTER TABLE checkout_sessions
 ADD CONSTRAINT chk_checkout_session_status

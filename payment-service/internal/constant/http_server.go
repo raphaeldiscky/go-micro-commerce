@@ -9,6 +9,8 @@ import (
 const (
 	// HTTPServerPort is the port for the HTTP server.
 	HTTPServerPort = 8084
+	// GRPCServerPort is the port for the gRPC server.
+	GRPCServerPort = 9084
 	// HTTPServerGracePeriod is the grace period for the HTTP server.
 	HTTPServerGracePeriod = 10 * time.Second
 	// HTTPServerRequestTimeoutPeriod is the request timeout period for the HTTP server.

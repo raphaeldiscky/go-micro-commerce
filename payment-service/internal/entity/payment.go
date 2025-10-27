@@ -86,11 +86,11 @@ func (p *Payment) UpdateStatus(status constant.PaymentStatus) error {
 // The metadata parameter should contain gateway-specific data as a map.
 func (p *Payment) SetGatewayReference(
 	gateway constant.PaymentGateway,
-	transactionID string,
+	gatewayTransactionID string,
 	metadata map[string]any,
 ) error {
 	p.PaymentGateway = gateway
-	p.GatewayTransactionID = &transactionID
+	p.GatewayTransactionID = &gatewayTransactionID
 	p.GatewayMetadata = metadata
 	p.UpdatedAt = time.Now()
 
@@ -123,20 +123,6 @@ func (p *Payment) GetStripeMetadata() (*StripeMetadata, error) {
 
 // SetStripeMetadata sets Stripe-specific metadata with type safety.
 func (p *Payment) SetStripeMetadata(metadata *StripeMetadata) error {
-	return p.SetGatewayMetadataTyped(metadata)
-}
-
-// GetMidtransMetadata retrieves Midtrans-specific metadata with type safety.
-func (p *Payment) GetMidtransMetadata() (*MidtransMetadata, error) {
-	if p.GatewayMetadata == nil {
-		return &MidtransMetadata{}, nil
-	}
-
-	return NewMidtransMetadataFromMap(p.GatewayMetadata)
-}
-
-// SetMidtransMetadata sets Midtrans-specific metadata with type safety.
-func (p *Payment) SetMidtransMetadata(metadata *MidtransMetadata) error {
 	return p.SetGatewayMetadataTyped(metadata)
 }
 

@@ -8,16 +8,12 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
 )
 
 // FindConversationByID is the resolver for the findConversationByID field.
-func (r *entityResolver) FindConversationByID(
-	ctx context.Context,
-	id uuid.UUID,
-) (*graph.Conversation, error) {
+func (r *entityResolver) FindConversationByID(ctx context.Context, id uuid.UUID) (*graph.Conversation, error) {
 	conversation, err := r.chatService.GetConversationByID(ctx, id)
 	if err != nil {
 		r.logger.Error("Failed to find conversation by ID", "id", id, "error", err)
@@ -28,10 +24,7 @@ func (r *entityResolver) FindConversationByID(
 }
 
 // FindMessageByID is the resolver for the findMessageByID field.
-func (r *entityResolver) FindMessageByID(
-	ctx context.Context,
-	id uuid.UUID,
-) (*graph.Message, error) {
+func (r *entityResolver) FindMessageByID(ctx context.Context, id uuid.UUID) (*graph.Message, error) {
 	message, err := r.chatService.GetMessageByID(ctx, id)
 	if err != nil {
 		r.logger.Error("Failed to find message by ID", "id", id, "error", err)

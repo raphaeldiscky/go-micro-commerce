@@ -39,7 +39,7 @@ type CheckoutSessionService interface {
 	PlaceOrder(
 		ctx context.Context,
 		req *dto.PlaceOrderRequest,
-	) (*dto.CheckoutSessionResponse, error)
+	) (*dto.PlaceOrderResponse, error)
 	CancelCheckoutSession(
 		ctx context.Context,
 		sessionID uuid.UUID,
@@ -52,6 +52,8 @@ type checkoutSessionService struct {
 	dataStore                          repository.DataStore
 	logger                             logger.Logger
 	productClient                      client.ProductClient
+	paymentClient                      client.PaymentClient
+	fulfillmentClient                  client.FulfillmentClient
 	checkoutSessionOrderPlacedProducer kafka.Producer
 }
 
@@ -60,12 +62,16 @@ func NewCheckoutSessionService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
 	productClient client.ProductClient,
+	paymentClient client.PaymentClient,
+	fulfillmentClient client.FulfillmentClient,
 	checkoutSessionOrderPlacedProducer kafka.Producer,
 ) CheckoutSessionService {
 	return &checkoutSessionService{
 		dataStore:                          dataStore,
 		logger:                             appLogger,
 		productClient:                      productClient,
+		paymentClient:                      paymentClient,
+		fulfillmentClient:                  fulfillmentClient,
 		checkoutSessionOrderPlacedProducer: checkoutSessionOrderPlacedProducer,
 	}
 }
@@ -338,10 +344,12 @@ func (s *checkoutSessionService) UpdateCheckoutSession(
 }
 
 // PlaceOrder places an order from a checkout session.
+//
+//nolint:gocyclo,cyclop,funlen // ignore complexity
 func (s *checkoutSessionService) PlaceOrder(
 	ctx context.Context,
 	req *dto.PlaceOrderRequest,
-) (*dto.CheckoutSessionResponse, error) {
+) (*dto.PlaceOrderResponse, error) {
 	lockRepo := s.dataStore.LockRepository()
 	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
 	ttl := constant.PlaceOrderTTL
@@ -364,6 +372,8 @@ func (s *checkoutSessionService) PlaceOrder(
 	}()
 
 	var updatedSession *entity.CheckoutSession
+	var paymentResponse *dto.CreatePaymentIntentResponse
+	var paymentGateway string
 
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		checkoutSessionRepo := ds.CheckoutSessionRepository()
@@ -400,6 +410,72 @@ func (s *checkoutSessionService) PlaceOrder(
 			)
 		}
 
+		// Calculate shipping cost via fulfillment service
+		shippingCost, shippingErr := s.calculateShippingCost(ctx, session)
+		if shippingErr != nil {
+			return httperror.NewInternalServerError(
+				fmt.Sprintf("failed to calculate shipping cost: %v", shippingErr),
+			)
+		}
+
+		// Create PaymentIntent immediately for frontend redirect
+		totalAmount := decimal.Zero
+		for _, item := range session.Items {
+			totalAmount = totalAmount.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
+		}
+		// Add shipping cost to total amount
+		totalAmount = totalAmount.Add(shippingCost)
+
+		// Update session with calculated costs
+		if setErr := session.SetShippingCost(shippingCost); setErr != nil {
+			return httperror.NewInternalServerError(
+				fmt.Sprintf("failed to set shipping cost: %v", setErr),
+			)
+		}
+
+		// Prepare items for payment request
+		paymentItems := make([]dto.PaymentItemDTO, len(session.Items))
+		for i, item := range session.Items {
+			paymentItems[i] = dto.PaymentItemDTO{
+				ProductID:   item.ProductID,
+				ProductName: item.ProductName,
+				Quantity:    item.Quantity,
+				UnitPrice:   item.UnitPrice,
+				Currency:    session.Currency,
+			}
+		}
+
+		// Create PaymentIntent via payment client
+		paymentResp, paymentErr := s.paymentClient.CreatePaymentIntent(
+			ctx,
+			&dto.CreatePaymentIntentRequest{
+				OrderID:           session.ID,
+				CustomerID:        req.CustomerID,
+				CustomerEmail:     req.CustomerEmail,
+				Amount:            totalAmount,
+				Currency:          session.Currency,
+				PaymentGateway:    *session.PaymentGateway,
+				IdempotencyKey:    req.IdempotencyKey,
+				Items:             paymentItems,
+				CheckoutSessionID: session.ID,
+			},
+		)
+		if paymentErr != nil {
+			s.logger.Errorf("Failed to create PaymentIntent: %v", paymentErr)
+			return httperror.NewInternalServerError("failed to create payment intent")
+		}
+
+		s.logger.Infof(
+			"PaymentIntent created successfully - PaymentIntentID: %s, OrderID: %s, Amount: %s",
+			paymentResp.PaymentIntentID,
+			session.ID,
+			totalAmount.String(),
+		)
+
+		// Capture payment response data for frontend response
+		paymentResponse = paymentResp
+		paymentGateway = *session.PaymentGateway
+
 		// Update status to order_placed
 		if err = session.UpdateStatus(constant.CheckoutSessionStatusOrderPlaced); err != nil {
 			return httperror.NewBadRequestError("failed to update checkout session status")
@@ -409,6 +485,30 @@ func (s *checkoutSessionService) PlaceOrder(
 		updatedSession, err = checkoutSessionRepo.Update(ctx, session)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to update checkout session")
+		}
+
+		// Build gateway metadata with PaymentIntent details for Stripe
+		var gatewayMetadata json.RawMessage
+
+		if *updatedSession.PaymentGateway == "stripe" && paymentResp != nil {
+			// Use same structure as payment-service entity.StripeMetadata
+			stripeMetadata := struct {
+				PaymentIntentID *string `json:"payment_intent_id,omitempty"`
+			}{
+				PaymentIntentID: &paymentResp.PaymentIntentID,
+			}
+
+			metadataBytes, errMarshal := json.Marshal(stripeMetadata)
+			if errMarshal != nil {
+				s.logger.Errorf("Failed to marshal gateway metadata: %v", errMarshal)
+				// Use empty metadata if marshaling fails
+				gatewayMetadata = json.RawMessage("{}")
+			} else {
+				gatewayMetadata = json.RawMessage(metadataBytes)
+			}
+		} else {
+			// Empty metadata for non-Stripe gateways
+			gatewayMetadata = json.RawMessage("{}")
 		}
 
 		// Publish domain event via outbox pattern
@@ -427,11 +527,14 @@ func (s *checkoutSessionService) PlaceOrder(
 			updatedSession.Currency,
 			*updatedSession.PaymentGateway,
 			updatedSession.Items,
+			updatedSession.ShippingCost,
+			updatedSession.TotalAmount,
 			updatedSession.Courier,
 			updatedSession.Destination,
 			updatedSession.Origin,
 			updatedSession.Package,
 			updatedSession.CreatedAt,
+			gatewayMetadata, // Include PaymentIntent details for Stripe
 		)
 
 		s.logger.Debugf(
@@ -481,7 +584,45 @@ func (s *checkoutSessionService) PlaceOrder(
 	cartRepo := s.dataStore.CartRepository()
 	s.migrateCartAfterOrderPlacement(ctx, cartRepo, req.CustomerID)
 
-	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
+	// Build standardized PlaceOrderResponse for immediate frontend redirect
+	// Build gateway metadata for frontend consumption
+	var finalGatewayMetadata json.RawMessage
+	var transactionID, redirectURL string
+
+	if paymentResponse != nil {
+		// Build gateway-specific metadata for frontend
+		if paymentGateway == "stripe" {
+			stripeData := struct {
+				ClientSecret    string `json:"client_secret"`
+				PaymentIntentID string `json:"payment_intent_id"`
+			}{
+				ClientSecret:    paymentResponse.ClientSecret,
+				PaymentIntentID: paymentResponse.PaymentIntentID,
+			}
+			metadataBytes, _ := json.Marshal(stripeData)
+			finalGatewayMetadata = json.RawMessage(metadataBytes)
+			transactionID = paymentResponse.PaymentIntentID
+			redirectURL = "" // Stripe uses client_secret, not redirect URL
+		} else {
+			finalGatewayMetadata = json.RawMessage("{}")
+		}
+	} else {
+		finalGatewayMetadata = json.RawMessage("{}")
+	}
+
+	// Create standardized response
+	checkoutSessionResp := mapper.MapToCheckoutSessionResponse(updatedSession)
+	placeOrderResp := &dto.PlaceOrderResponse{
+		CheckoutSession: *checkoutSessionResp,
+		TransactionID:   transactionID,
+		Amount:          updatedSession.TotalAmount.String(),
+		Currency:        updatedSession.Currency,
+		Status:          "pending", // PaymentIntent is created but awaiting confirmation
+		RedirectURL:     redirectURL,
+		GatewayMetadata: finalGatewayMetadata,
+	}
+
+	return placeOrderResp, nil
 }
 
 // migrateCartAfterOrderPlacement archives the checked out cart and creates a new active cart with unselected items.
@@ -599,4 +740,51 @@ func (s *checkoutSessionService) CancelCheckoutSession(
 	}
 
 	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
+}
+
+// calculateShippingCost calculates the shipping cost for the given checkout session.
+func (s *checkoutSessionService) calculateShippingCost(
+	ctx context.Context,
+	session *entity.CheckoutSession,
+) (decimal.Decimal, error) {
+	// Create shipping cost request
+	req := &dto.GetShippingCostRequest{
+		Currency:               session.Currency,
+		CourierID:              session.Courier.CourierID,
+		DestinationCity:        session.Destination.City,
+		DestinationState:       session.Destination.State,
+		DestinationPostalCode:  session.Destination.PostalCode,
+		DestinationCountryCode: session.Destination.CountryCode,
+		OriginCity:             session.Origin.City,
+		OriginState:            session.Origin.State,
+		OriginPostalCode:       session.Origin.PostalCode,
+		OriginCountryCode:      session.Origin.CountryCode,
+		WeightKG:               session.Package.WeightKG.String(),
+		Width:                  session.Package.Width.String(),
+		Height:                 session.Package.Height.String(),
+		Length:                 session.Package.Length.String(),
+		Unit:                   session.Package.Unit,
+	}
+
+	// Call fulfillment service
+	resp, err := s.fulfillmentClient.GetShippingCost(ctx, req)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("failed to get shipping cost: %w", err)
+	}
+
+	if !resp.Success {
+		return decimal.Zero, fmt.Errorf("shipping cost calculation failed: %s", resp.ErrorMessage)
+	}
+
+	// Convert float64 to decimal for financial precision
+	shippingCost := decimal.NewFromFloat(resp.ShippingCost)
+
+	s.logger.Infof(
+		"Shipping cost calculated successfully - SessionID: %s, Cost: %s %s",
+		session.ID,
+		shippingCost.String(),
+		session.Currency,
+	)
+
+	return shippingCost, nil
 }

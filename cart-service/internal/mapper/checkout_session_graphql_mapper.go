@@ -45,6 +45,8 @@ func MapToGraphQLCheckoutSessionFromDTO(
 		Status:         session.Status,
 		PaymentGateway: session.PaymentGateway,
 		Currency:       session.Currency,
+		ShippingCost:   session.ShippingCost,
+		TotalAmount:    session.TotalAmount,
 		Items:          items,
 		CreatedAt:      session.CreatedAt,
 		UpdatedAt:      session.UpdatedAt,
@@ -133,5 +135,27 @@ func MapToPlaceOrderRequest(
 		CustomerID:        customerID,
 		CheckoutSessionID: sessionID,
 		IdempotencyKey:    input.IdempotencyKey,
+	}
+}
+
+// MapToGraphQLPlaceOrderResponseFromDTO maps dto.PlaceOrderResponse to graph.PlaceOrderResponse.
+func MapToGraphQLPlaceOrderResponseFromDTO(
+	resp *dto.PlaceOrderResponse,
+) *graph.PlaceOrderResponse {
+	checkoutSession := MapToGraphQLCheckoutSessionFromDTO(&resp.CheckoutSession)
+
+	var redirectURL *string
+	if resp.RedirectURL != "" {
+		redirectURL = &resp.RedirectURL
+	}
+
+	return &graph.PlaceOrderResponse{
+		CheckoutSession: checkoutSession,
+		TransactionID:   resp.TransactionID,
+		Amount:          resp.Amount,
+		Currency:        resp.Currency,
+		Status:          resp.Status,
+		RedirectURL:     redirectURL,
+		GatewayMetadata:  resp.GatewayMetadata,
 	}
 }

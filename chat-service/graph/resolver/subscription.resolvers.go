@@ -9,19 +9,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // UpdatePresence is the resolver for the updatePresence field.
-func (r *mutationResolver) UpdatePresence(
-	ctx context.Context,
-	status constant.PresenceStatus,
-) (*graph.PresenceUpdate, error) {
+func (r *mutationResolver) UpdatePresence(ctx context.Context, status constant.PresenceStatus) (*graph.PresenceUpdate, error) {
 	// Get authenticated user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -70,10 +66,7 @@ func (r *mutationResolver) UpdatePresence(
 }
 
 // SendTypingIndicator is the resolver for the sendTypingIndicator field.
-func (r *mutationResolver) SendTypingIndicator(
-	ctx context.Context,
-	input graph.TypingIndicatorInput,
-) (*graph.TypingIndicator, error) {
+func (r *mutationResolver) SendTypingIndicator(ctx context.Context, input graph.TypingIndicatorInput) (*graph.TypingIndicator, error) {
 	// Get authenticated user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -126,10 +119,7 @@ func (r *mutationResolver) SendTypingIndicator(
 }
 
 // ConversationEvents is the resolver for the conversationEvents field.
-func (r *subscriptionResolver) ConversationEvents(
-	ctx context.Context,
-	conversationID uuid.UUID,
-) (<-chan graph.ConversationEvent, error) {
+func (r *subscriptionResolver) ConversationEvents(ctx context.Context, conversationID uuid.UUID) (<-chan graph.ConversationEvent, error) {
 	r.logger.Info("GraphQL subscription request received",
 		"conversation_id", conversationID)
 

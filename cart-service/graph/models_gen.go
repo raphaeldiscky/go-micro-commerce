@@ -49,6 +49,8 @@ type CheckoutSession struct {
 	Status         constant.CheckoutSessionStatus `json:"status"`
 	PaymentGateway *string                        `json:"paymentGateway,omitempty"`
 	Currency       string                         `json:"currency"`
+	ShippingCost   decimal.Decimal                `json:"shippingCost"`
+	TotalAmount    decimal.Decimal                `json:"totalAmount"`
 	Items          []*CheckoutSessionItem         `json:"items"`
 	CreatedAt      time.Time                      `json:"createdAt"`
 	UpdatedAt      time.Time                      `json:"updatedAt"`
@@ -124,6 +126,16 @@ type PackageInput struct {
 
 type PlaceOrderInput struct {
 	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
+}
+
+type PlaceOrderResponse struct {
+	CheckoutSession *CheckoutSession `json:"checkoutSession"`
+	TransactionID   string           `json:"transactionId"`
+	Amount          string           `json:"amount"`
+	Currency        string           `json:"currency"`
+	Status          string           `json:"status"`
+	RedirectURL     *string          `json:"redirectUrl,omitempty"`
+	GatewayMetadata any              `json:"gatewayMetadata,omitempty"`
 }
 
 type Query struct {

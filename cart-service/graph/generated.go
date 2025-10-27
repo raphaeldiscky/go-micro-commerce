@@ -85,7 +85,9 @@ type ComplexityRoot struct {
 		Origin         func(childComplexity int) int
 		Package        func(childComplexity int) int
 		PaymentGateway func(childComplexity int) int
+		ShippingCost   func(childComplexity int) int
 		Status         func(childComplexity int) int
+		TotalAmount    func(childComplexity int) int
 		UpdatedAt      func(childComplexity int) int
 	}
 
@@ -134,6 +136,16 @@ type ComplexityRoot struct {
 		Width    func(childComplexity int) int
 	}
 
+	PlaceOrderResponse struct {
+		Amount          func(childComplexity int) int
+		CheckoutSession func(childComplexity int) int
+		Currency        func(childComplexity int) int
+		GatewayMetadata func(childComplexity int) int
+		RedirectURL     func(childComplexity int) int
+		Status          func(childComplexity int) int
+		TransactionID   func(childComplexity int) int
+	}
+
 	Query struct {
 		GetCheckoutSession func(childComplexity int, id uuid.UUID) int
 		GetMyCart          func(childComplexity int) int
@@ -152,7 +164,7 @@ type MutationResolver interface {
 	SelectItemForCheckout(ctx context.Context, itemID uuid.UUID, input SelectItemForCheckoutInput) (*Cart, error)
 	CreateCheckoutSession(ctx context.Context, input CreateCheckoutSessionInput) (*CheckoutSession, error)
 	UpdateCheckoutSession(ctx context.Context, sessionID uuid.UUID, input UpdateCheckoutSessionInput) (*CheckoutSession, error)
-	PlaceOrder(ctx context.Context, sessionID uuid.UUID, input PlaceOrderInput) (*CheckoutSession, error)
+	PlaceOrder(ctx context.Context, sessionID uuid.UUID, input PlaceOrderInput) (*PlaceOrderResponse, error)
 	CancelCheckoutSession(ctx context.Context, sessionID uuid.UUID) (*CheckoutSession, error)
 }
 type QueryResolver interface {
@@ -325,12 +337,24 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.CheckoutSession.PaymentGateway(childComplexity), true
+	case "CheckoutSession.shippingCost":
+		if e.complexity.CheckoutSession.ShippingCost == nil {
+			break
+		}
+
+		return e.complexity.CheckoutSession.ShippingCost(childComplexity), true
 	case "CheckoutSession.status":
 		if e.complexity.CheckoutSession.Status == nil {
 			break
 		}
 
 		return e.complexity.CheckoutSession.Status(childComplexity), true
+	case "CheckoutSession.totalAmount":
+		if e.complexity.CheckoutSession.TotalAmount == nil {
+			break
+		}
+
+		return e.complexity.CheckoutSession.TotalAmount(childComplexity), true
 	case "CheckoutSession.updatedAt":
 		if e.complexity.CheckoutSession.UpdatedAt == nil {
 			break
@@ -545,6 +569,49 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Package.Width(childComplexity), true
+
+	case "PlaceOrderResponse.amount":
+		if e.complexity.PlaceOrderResponse.Amount == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.Amount(childComplexity), true
+	case "PlaceOrderResponse.checkoutSession":
+		if e.complexity.PlaceOrderResponse.CheckoutSession == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.CheckoutSession(childComplexity), true
+	case "PlaceOrderResponse.currency":
+		if e.complexity.PlaceOrderResponse.Currency == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.Currency(childComplexity), true
+	case "PlaceOrderResponse.gatewayMetadata":
+		if e.complexity.PlaceOrderResponse.GatewayMetadata == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.GatewayMetadata(childComplexity), true
+	case "PlaceOrderResponse.redirectUrl":
+		if e.complexity.PlaceOrderResponse.RedirectURL == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.RedirectURL(childComplexity), true
+	case "PlaceOrderResponse.status":
+		if e.complexity.PlaceOrderResponse.Status == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.Status(childComplexity), true
+	case "PlaceOrderResponse.transactionId":
+		if e.complexity.PlaceOrderResponse.TransactionID == nil {
+			break
+		}
+
+		return e.complexity.PlaceOrderResponse.TransactionID(childComplexity), true
 
 	case "Query.getCheckoutSession":
 		if e.complexity.Query.GetCheckoutSession == nil {
@@ -1685,6 +1752,64 @@ func (ec *executionContext) fieldContext_CheckoutSession_currency(_ context.Cont
 	return fc, nil
 }
 
+func (ec *executionContext) _CheckoutSession_shippingCost(ctx context.Context, field graphql.CollectedField, obj *CheckoutSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CheckoutSession_shippingCost,
+		func(ctx context.Context) (any, error) {
+			return obj.ShippingCost, nil
+		},
+		nil,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CheckoutSession_shippingCost(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckoutSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Decimal does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckoutSession_totalAmount(ctx context.Context, field graphql.CollectedField, obj *CheckoutSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CheckoutSession_totalAmount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalAmount, nil
+		},
+		nil,
+		ec.marshalNDecimal2githubᚗcomᚋshopspringᚋdecimalᚐDecimal,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CheckoutSession_totalAmount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckoutSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Decimal does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CheckoutSession_items(ctx context.Context, field graphql.CollectedField, obj *CheckoutSession) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2404,6 +2529,10 @@ func (ec *executionContext) fieldContext_Mutation_createCheckoutSession(ctx cont
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
+			case "shippingCost":
+				return ec.fieldContext_CheckoutSession_shippingCost(ctx, field)
+			case "totalAmount":
+				return ec.fieldContext_CheckoutSession_totalAmount(ctx, field)
 			case "items":
 				return ec.fieldContext_CheckoutSession_items(ctx, field)
 			case "createdAt":
@@ -2486,6 +2615,10 @@ func (ec *executionContext) fieldContext_Mutation_updateCheckoutSession(ctx cont
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
+			case "shippingCost":
+				return ec.fieldContext_CheckoutSession_shippingCost(ctx, field)
+			case "totalAmount":
+				return ec.fieldContext_CheckoutSession_totalAmount(ctx, field)
 			case "items":
 				return ec.fieldContext_CheckoutSession_items(ctx, field)
 			case "createdAt":
@@ -2525,7 +2658,7 @@ func (ec *executionContext) _Mutation_placeOrder(ctx context.Context, field grap
 
 			directive1 := func(ctx context.Context) (any, error) {
 				if ec.directives.RequiresAuth == nil {
-					var zeroVal *CheckoutSession
+					var zeroVal *PlaceOrderResponse
 					return zeroVal, errors.New("directive requiresAuth is not implemented")
 				}
 				return ec.directives.RequiresAuth(ctx, nil, directive0)
@@ -2534,7 +2667,7 @@ func (ec *executionContext) _Mutation_placeOrder(ctx context.Context, field grap
 			next = directive1
 			return next
 		},
-		ec.marshalNCheckoutSession2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCheckoutSession,
+		ec.marshalNPlaceOrderResponse2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPlaceOrderResponse,
 		true,
 		true,
 	)
@@ -2548,34 +2681,22 @@ func (ec *executionContext) fieldContext_Mutation_placeOrder(ctx context.Context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_CheckoutSession_id(ctx, field)
-			case "idempotencyKey":
-				return ec.fieldContext_CheckoutSession_idempotencyKey(ctx, field)
-			case "customerId":
-				return ec.fieldContext_CheckoutSession_customerId(ctx, field)
-			case "courier":
-				return ec.fieldContext_CheckoutSession_courier(ctx, field)
-			case "destination":
-				return ec.fieldContext_CheckoutSession_destination(ctx, field)
-			case "origin":
-				return ec.fieldContext_CheckoutSession_origin(ctx, field)
-			case "package":
-				return ec.fieldContext_CheckoutSession_package(ctx, field)
-			case "status":
-				return ec.fieldContext_CheckoutSession_status(ctx, field)
-			case "paymentGateway":
-				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
+			case "checkoutSession":
+				return ec.fieldContext_PlaceOrderResponse_checkoutSession(ctx, field)
+			case "transactionId":
+				return ec.fieldContext_PlaceOrderResponse_transactionId(ctx, field)
+			case "amount":
+				return ec.fieldContext_PlaceOrderResponse_amount(ctx, field)
 			case "currency":
-				return ec.fieldContext_CheckoutSession_currency(ctx, field)
-			case "items":
-				return ec.fieldContext_CheckoutSession_items(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_CheckoutSession_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_CheckoutSession_updatedAt(ctx, field)
+				return ec.fieldContext_PlaceOrderResponse_currency(ctx, field)
+			case "status":
+				return ec.fieldContext_PlaceOrderResponse_status(ctx, field)
+			case "redirectUrl":
+				return ec.fieldContext_PlaceOrderResponse_redirectUrl(ctx, field)
+			case "gatewayMetadata":
+				return ec.fieldContext_PlaceOrderResponse_gatewayMetadata(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckoutSession", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type PlaceOrderResponse", field.Name)
 		},
 	}
 	defer func() {
@@ -2650,6 +2771,10 @@ func (ec *executionContext) fieldContext_Mutation_cancelCheckoutSession(ctx cont
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
+			case "shippingCost":
+				return ec.fieldContext_CheckoutSession_shippingCost(ctx, field)
+			case "totalAmount":
+				return ec.fieldContext_CheckoutSession_totalAmount(ctx, field)
 			case "items":
 				return ec.fieldContext_CheckoutSession_items(ctx, field)
 			case "createdAt":
@@ -2935,6 +3060,241 @@ func (ec *executionContext) fieldContext_Package_unit(_ context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _PlaceOrderResponse_checkoutSession(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_checkoutSession,
+		func(ctx context.Context) (any, error) {
+			return obj.CheckoutSession, nil
+		},
+		nil,
+		ec.marshalNCheckoutSession2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCheckoutSession,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_checkoutSession(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CheckoutSession_id(ctx, field)
+			case "idempotencyKey":
+				return ec.fieldContext_CheckoutSession_idempotencyKey(ctx, field)
+			case "customerId":
+				return ec.fieldContext_CheckoutSession_customerId(ctx, field)
+			case "courier":
+				return ec.fieldContext_CheckoutSession_courier(ctx, field)
+			case "destination":
+				return ec.fieldContext_CheckoutSession_destination(ctx, field)
+			case "origin":
+				return ec.fieldContext_CheckoutSession_origin(ctx, field)
+			case "package":
+				return ec.fieldContext_CheckoutSession_package(ctx, field)
+			case "status":
+				return ec.fieldContext_CheckoutSession_status(ctx, field)
+			case "paymentGateway":
+				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
+			case "currency":
+				return ec.fieldContext_CheckoutSession_currency(ctx, field)
+			case "shippingCost":
+				return ec.fieldContext_CheckoutSession_shippingCost(ctx, field)
+			case "totalAmount":
+				return ec.fieldContext_CheckoutSession_totalAmount(ctx, field)
+			case "items":
+				return ec.fieldContext_CheckoutSession_items(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CheckoutSession_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CheckoutSession_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckoutSession", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlaceOrderResponse_transactionId(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_transactionId,
+		func(ctx context.Context) (any, error) {
+			return obj.TransactionID, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_transactionId(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlaceOrderResponse_amount(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_amount,
+		func(ctx context.Context) (any, error) {
+			return obj.Amount, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_amount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlaceOrderResponse_currency(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_currency,
+		func(ctx context.Context) (any, error) {
+			return obj.Currency, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_currency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlaceOrderResponse_status(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlaceOrderResponse_redirectUrl(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_redirectUrl,
+		func(ctx context.Context) (any, error) {
+			return obj.RedirectURL, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_redirectUrl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlaceOrderResponse_gatewayMetadata(ctx context.Context, field graphql.CollectedField, obj *PlaceOrderResponse) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlaceOrderResponse_gatewayMetadata,
+		func(ctx context.Context) (any, error) {
+			return obj.GatewayMetadata, nil
+		},
+		nil,
+		ec.marshalOAny2interface,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlaceOrderResponse_gatewayMetadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlaceOrderResponse",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Any does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_getMyCart(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -3049,6 +3409,10 @@ func (ec *executionContext) fieldContext_Query_getCheckoutSession(ctx context.Co
 				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
 			case "currency":
 				return ec.fieldContext_CheckoutSession_currency(ctx, field)
+			case "shippingCost":
+				return ec.fieldContext_CheckoutSession_shippingCost(ctx, field)
+			case "totalAmount":
+				return ec.fieldContext_CheckoutSession_totalAmount(ctx, field)
 			case "items":
 				return ec.fieldContext_CheckoutSession_items(ctx, field)
 			case "createdAt":
@@ -5270,6 +5634,16 @@ func (ec *executionContext) _CheckoutSession(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "shippingCost":
+			out.Values[i] = ec._CheckoutSession_shippingCost(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalAmount":
+			out.Values[i] = ec._CheckoutSession_totalAmount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "items":
 			out.Values[i] = ec._CheckoutSession_items(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -5648,6 +6022,69 @@ func (ec *executionContext) _Package(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var placeOrderResponseImplementors = []string{"PlaceOrderResponse"}
+
+func (ec *executionContext) _PlaceOrderResponse(ctx context.Context, sel ast.SelectionSet, obj *PlaceOrderResponse) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, placeOrderResponseImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PlaceOrderResponse")
+		case "checkoutSession":
+			out.Values[i] = ec._PlaceOrderResponse_checkoutSession(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "transactionId":
+			out.Values[i] = ec._PlaceOrderResponse_transactionId(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "amount":
+			out.Values[i] = ec._PlaceOrderResponse_amount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "currency":
+			out.Values[i] = ec._PlaceOrderResponse_currency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._PlaceOrderResponse_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "redirectUrl":
+			out.Values[i] = ec._PlaceOrderResponse_redirectUrl(ctx, field, obj)
+		case "gatewayMetadata":
+			out.Values[i] = ec._PlaceOrderResponse_gatewayMetadata(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6427,6 +6864,20 @@ func (ec *executionContext) unmarshalNPlaceOrderInput2githubᚗcomᚋraphaeldisc
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNPlaceOrderResponse2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPlaceOrderResponse(ctx context.Context, sel ast.SelectionSet, v PlaceOrderResponse) graphql.Marshaler {
+	return ec._PlaceOrderResponse(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPlaceOrderResponse2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPlaceOrderResponse(ctx context.Context, sel ast.SelectionSet, v *PlaceOrderResponse) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PlaceOrderResponse(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {
 	var res Role
 	err := res.UnmarshalGQL(v)
@@ -6907,6 +7358,24 @@ func (ec *executionContext) marshalNfederation__Scope2ᚕᚕstringᚄ(ctx contex
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalOAny2interface(ctx context.Context, v any) (any, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalAny(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOAny2interface(ctx context.Context, sel ast.SelectionSet, v any) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalAny(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {

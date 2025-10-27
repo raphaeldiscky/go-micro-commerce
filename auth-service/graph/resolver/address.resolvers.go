@@ -8,19 +8,15 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
-
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
 )
 
 // CreateAddress is the resolver for the createAddress field.
-func (r *mutationResolver) CreateAddress(
-	ctx context.Context,
-	input graph.CreateAddressInput,
-) (*graph.Address, error) {
+func (r *mutationResolver) CreateAddress(ctx context.Context, input graph.CreateAddressInput) (*graph.Address, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -48,11 +44,7 @@ func (r *mutationResolver) CreateAddress(
 }
 
 // UpdateAddress is the resolver for the updateAddress field.
-func (r *mutationResolver) UpdateAddress(
-	ctx context.Context,
-	id uuid.UUID,
-	input graph.UpdateAddressInput,
-) (*graph.Address, error) {
+func (r *mutationResolver) UpdateAddress(ctx context.Context, id uuid.UUID, input graph.UpdateAddressInput) (*graph.Address, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -98,10 +90,7 @@ func (r *mutationResolver) DeleteAddress(ctx context.Context, id uuid.UUID) (boo
 }
 
 // SetDefaultAddress is the resolver for the setDefaultAddress field.
-func (r *mutationResolver) SetDefaultAddress(
-	ctx context.Context,
-	id uuid.UUID,
-) (*graph.Address, error) {
+func (r *mutationResolver) SetDefaultAddress(ctx context.Context, id uuid.UUID) (*graph.Address, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
@@ -122,11 +111,7 @@ func (r *mutationResolver) SetDefaultAddress(
 }
 
 // ListAddresses is the resolver for the listAddresses field.
-func (r *queryResolver) ListAddresses(
-	ctx context.Context,
-	limit int,
-	cursor *string,
-) (*graph.AddressConnection, error) {
+func (r *queryResolver) ListAddresses(ctx context.Context, limit int, cursor *string) (*graph.AddressConnection, error) {
 	// Get user from context
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {

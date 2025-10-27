@@ -68,12 +68,12 @@ func (r *checkoutSessionRepository) Create(
 	insertSessionQuery := `
         INSERT INTO checkout_sessions (
             id, idempotency_key, customer_id, cart_id, courier, destination, origin, package,
-            status, payment_gateway, currency,
+            status, payment_gateway, currency, shipping_cost, total_amount,
             created_at, updated_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
         RETURNING id, idempotency_key, customer_id, cart_id, courier, destination, origin, package,
-                  status, payment_gateway, currency,
+                  status, payment_gateway, currency, shipping_cost, total_amount,
                   created_at, updated_at
     `
 
@@ -96,6 +96,8 @@ func (r *checkoutSessionRepository) Create(
 		session.Status,
 		session.PaymentGateway,
 		session.Currency,
+		session.ShippingCost,
+		session.TotalAmount,
 		session.CreatedAt,
 		session.UpdatedAt,
 	).Scan(
@@ -110,6 +112,8 @@ func (r *checkoutSessionRepository) Create(
 		&createdSession.Status,
 		&createdSession.PaymentGateway,
 		&createdSession.Currency,
+		&createdSession.ShippingCost,
+		&createdSession.TotalAmount,
 		&createdSession.CreatedAt,
 		&createdSession.UpdatedAt,
 	)
@@ -173,7 +177,7 @@ func (r *checkoutSessionRepository) GetByID(
 	// Get checkout session
 	sessionQuery := `
 		SELECT id, idempotency_key, customer_id, cart_id, courier, destination, origin, package,
-		       status, payment_gateway, currency,
+		       status, payment_gateway, currency, shipping_cost, total_amount,
 		       created_at, updated_at
 		FROM checkout_sessions
 		WHERE id = $1
@@ -198,6 +202,8 @@ func (r *checkoutSessionRepository) GetByID(
 		&session.Status,
 		&session.PaymentGateway,
 		&session.Currency,
+		&session.ShippingCost,
+		&session.TotalAmount,
 		&session.CreatedAt,
 		&session.UpdatedAt,
 	)
@@ -293,10 +299,10 @@ func (r *checkoutSessionRepository) Update(
 	updateQuery := `
 		UPDATE checkout_sessions
 		SET courier = $1, destination = $2, origin = $3, package = $4, payment_gateway = $5,
-		    status = $6, updated_at = $7
-		WHERE id = $8
+		    status = $6, shipping_cost = $7, total_amount = $8, updated_at = $9
+		WHERE id = $10
 		RETURNING id, idempotency_key, customer_id, cart_id, courier, destination, origin, package,
-		          status, payment_gateway, currency,
+		          status, payment_gateway, currency, shipping_cost, total_amount,
 		          created_at, updated_at
 	`
 
@@ -314,6 +320,8 @@ func (r *checkoutSessionRepository) Update(
 		packageJSON,
 		session.PaymentGateway,
 		session.Status,
+		session.ShippingCost,
+		session.TotalAmount,
 		session.UpdatedAt,
 		session.ID,
 	).Scan(
@@ -328,6 +336,8 @@ func (r *checkoutSessionRepository) Update(
 		&updatedSession.Status,
 		&updatedSession.PaymentGateway,
 		&updatedSession.Currency,
+		&updatedSession.ShippingCost,
+		&updatedSession.TotalAmount,
 		&updatedSession.CreatedAt,
 		&updatedSession.UpdatedAt,
 	)

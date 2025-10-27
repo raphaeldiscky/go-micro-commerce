@@ -7,17 +7,13 @@ package resolver
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // CreateOrder is the resolver for the createOrder field.
-func (r *mutationResolver) CreateOrder(
-	ctx context.Context,
-	input graph.CreateOrderInput,
-) (*graph.Order, error) {
+func (r *mutationResolver) CreateOrder(ctx context.Context, input graph.CreateOrderInput) (*graph.Order, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -39,11 +35,7 @@ func (r *mutationResolver) CreateOrder(
 }
 
 // ListOrders is the resolver for the listOrders field.
-func (r *queryResolver) ListOrders(
-	ctx context.Context,
-	limit int,
-	cursor *string,
-) (*graph.OrderConnection, error) {
+func (r *queryResolver) ListOrders(ctx context.Context, limit int, cursor *string) (*graph.OrderConnection, error) {
 	var cursorStr string
 
 	if cursor != nil {
@@ -63,11 +55,7 @@ func (r *queryResolver) ListOrders(
 }
 
 // ListMyOrders is the resolver for the listMyOrders field.
-func (r *queryResolver) ListMyOrders(
-	ctx context.Context,
-	limit int,
-	cursor *string,
-) (*graph.OrderConnection, error) {
+func (r *queryResolver) ListMyOrders(ctx context.Context, limit int, cursor *string) (*graph.OrderConnection, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err

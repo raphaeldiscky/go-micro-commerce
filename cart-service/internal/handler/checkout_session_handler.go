@@ -122,6 +122,7 @@ func (h *CheckoutSessionHandler) PlaceOrder(c echo.Context) error {
 
 	// Set customer info from JWT token
 	req.CustomerID = echoutils.GetUserIDFromContext(c)
+	req.CustomerEmail = echoutils.GetEmailFromContext(c)
 
 	if err = c.Validate(&req); err != nil {
 		return err

@@ -8,17 +8,13 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // CreateCheckoutSession is the resolver for the createCheckoutSession field.
-func (r *mutationResolver) CreateCheckoutSession(
-	ctx context.Context,
-	input graph.CreateCheckoutSessionInput,
-) (*graph.CheckoutSession, error) {
+func (r *mutationResolver) CreateCheckoutSession(ctx context.Context, input graph.CreateCheckoutSessionInput) (*graph.CheckoutSession, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -37,11 +33,7 @@ func (r *mutationResolver) CreateCheckoutSession(
 }
 
 // UpdateCheckoutSession is the resolver for the updateCheckoutSession field.
-func (r *mutationResolver) UpdateCheckoutSession(
-	ctx context.Context,
-	sessionID uuid.UUID,
-	input graph.UpdateCheckoutSessionInput,
-) (*graph.CheckoutSession, error) {
+func (r *mutationResolver) UpdateCheckoutSession(ctx context.Context, sessionID uuid.UUID, input graph.UpdateCheckoutSessionInput) (*graph.CheckoutSession, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -60,11 +52,7 @@ func (r *mutationResolver) UpdateCheckoutSession(
 }
 
 // PlaceOrder is the resolver for the placeOrder field.
-func (r *mutationResolver) PlaceOrder(
-	ctx context.Context,
-	sessionID uuid.UUID,
-	input graph.PlaceOrderInput,
-) (*graph.CheckoutSession, error) {
+func (r *mutationResolver) PlaceOrder(ctx context.Context, sessionID uuid.UUID, input graph.PlaceOrderInput) (*graph.PlaceOrderResponse, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -79,14 +67,11 @@ func (r *mutationResolver) PlaceOrder(
 		return nil, err
 	}
 
-	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
+	return mapper.MapToGraphQLPlaceOrderResponseFromDTO(session), nil
 }
 
 // CancelCheckoutSession is the resolver for the cancelCheckoutSession field.
-func (r *mutationResolver) CancelCheckoutSession(
-	ctx context.Context,
-	sessionID uuid.UUID,
-) (*graph.CheckoutSession, error) {
+func (r *mutationResolver) CancelCheckoutSession(ctx context.Context, sessionID uuid.UUID) (*graph.CheckoutSession, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -102,10 +87,7 @@ func (r *mutationResolver) CancelCheckoutSession(
 }
 
 // GetCheckoutSession is the resolver for the getCheckoutSession field.
-func (r *queryResolver) GetCheckoutSession(
-	ctx context.Context,
-	id uuid.UUID,
-) (*graph.CheckoutSession, error) {
+func (r *queryResolver) GetCheckoutSession(ctx context.Context, id uuid.UUID) (*graph.CheckoutSession, error) {
 	// Get checkout session
 	session, err := r.checkoutSessionService.GetCheckoutSession(ctx, id)
 	if err != nil {

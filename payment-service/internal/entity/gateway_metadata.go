@@ -27,18 +27,6 @@ type XenditMetadata struct {
 	EwalletType    *string `json:"ewallet_type,omitempty"` // OVO, DANA, etc.
 }
 
-// MidtransMetadata contains Midtrans-specific payment metadata (future use).
-type MidtransMetadata struct {
-	OrderID           *string `json:"order_id,omitempty"`
-	TransactionID     *string `json:"transaction_id,omitempty"`
-	TransactionStatus *string `json:"transaction_status,omitempty"`
-	PaymentType       *string `json:"payment_type,omitempty"`
-	VANumber          *string `json:"va_number,omitempty"`   // Virtual Account number
-	BankType          *string `json:"bank_type,omitempty"`   // Bank type (BCA, BNI, etc.)
-	BillerCode        *string `json:"biller_code,omitempty"` // For e-wallet
-	BillKey           *string `json:"bill_key,omitempty"`    // For e-wallet
-}
-
 // GatewayMetadata is a marker interface for type-safe gateway metadata.
 type GatewayMetadata interface {
 	ToMap() (map[string]any, error)
@@ -73,40 +61,6 @@ func (m *StripeMetadata) ToMap() (map[string]any, error) {
 	var result map[string]any
 	if err = json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal StripeMetadata to map: %w", err)
-	}
-
-	return result, nil
-}
-
-// NewMidtransMetadataFromMap creates MidtransMetadata from a map.
-func NewMidtransMetadataFromMap(data map[string]any) (*MidtransMetadata, error) {
-	if data == nil {
-		return &MidtransMetadata{}, nil
-	}
-
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal map: %w", err)
-	}
-
-	var metadata MidtransMetadata
-	if err = json.Unmarshal(jsonData, &metadata); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to MidtransMetadata: %w", err)
-	}
-
-	return &metadata, nil
-}
-
-// ToMap converts MidtransMetadata to map[string]any for database storage.
-func (m *MidtransMetadata) ToMap() (map[string]any, error) {
-	data, err := json.Marshal(m)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal MidtransMetadata: %w", err)
-	}
-
-	var result map[string]any
-	if err = json.Unmarshal(data, &result); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal MidtransMetadata to map: %w", err)
 	}
 
 	return result, nil

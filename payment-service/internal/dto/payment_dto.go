@@ -77,3 +77,38 @@ type SetupIntentResponse struct {
 	ClientSecret     string `json:"client_secret"`      // For Stripe.js confirmSetup()
 	StripeCustomerID string `json:"stripe_customer_id"` // For reference
 }
+
+// CreatePaymentIntentRequest represents the request to create a PaymentIntent with Stripe.
+type CreatePaymentIntentRequest struct {
+	OrderID           uuid.UUID               `json:"order_id"            validate:"required"`
+	CustomerID        uuid.UUID               `json:"customer_id"         validate:"required"`
+	CustomerEmail     string                  `json:"customer_email"      validate:"required,email"`
+	Amount            decimal.Decimal         `json:"amount"              validate:"required,gt=0"`
+	Currency          string                  `json:"currency"            validate:"required,len=3"`
+	PaymentGateway    constant.PaymentGateway `json:"payment_gateway"     validate:"required"`
+	IdempotencyKey    uuid.UUID               `json:"idempotency_key"     validate:"required"`
+	Items             []PaymentItemDTO        `json:"items"               validate:"required,min=1"`
+	CheckoutSessionID uuid.UUID               `json:"checkout_session_id" validate:"required"`
+}
+
+// PaymentItemDTO represents a payment item for PaymentIntent creation.
+type PaymentItemDTO struct {
+	ProductID   uuid.UUID       `json:"product_id"   validate:"required"`
+	ProductName string          `json:"product_name" validate:"required,min=1"`
+	Quantity    int64           `json:"quantity"     validate:"required,gt=0"`
+	UnitPrice   decimal.Decimal `json:"unit_price"   validate:"required,gt=0"`
+	Currency    string          `json:"currency"     validate:"required,len=3"`
+}
+
+// CreatePaymentIntentResponse represents the response from creating a PaymentIntent.
+type CreatePaymentIntentResponse struct {
+	PaymentIntentID string            `json:"payment_intent_id"`
+	ClientSecret    string            `json:"client_secret"`
+	PaymentGateway  string            `json:"payment_gateway"`
+	Status          string            `json:"status"`
+	Amount          string            `json:"amount"`
+	Currency        string            `json:"currency"`
+	OrderID         string            `json:"order_id"`
+	ExpiresAt       *time.Time        `json:"expires_at,omitempty"`
+	GatewayMetadata map[string]string `json:"gateway_metadata,omitempty"`
+}

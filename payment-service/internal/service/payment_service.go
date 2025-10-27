@@ -31,6 +31,11 @@ type PaymentService interface {
 		ctx context.Context,
 		req dto.CreatePaymentRequest,
 	) (*dto.PaymentResponse, error)
+	// CreatePaymentIntent creates a PaymentIntent with Stripe and stores payment record
+	CreatePaymentIntent(
+		ctx context.Context,
+		req dto.CreatePaymentIntentRequest,
+	) (*dto.CreatePaymentIntentResponse, error)
 	// ProcessPayment processes a payment transaction
 	ProcessPayment(
 		ctx context.Context,
@@ -181,6 +186,192 @@ func (s *paymentService) CreatePayment(
 		}
 
 		res = mapper.MapToPaymentResponse(savedPayment)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// CreatePaymentIntent creates a PaymentIntent with Stripe and stores payment record
+// This method combines database record creation with Stripe PaymentIntent creation.
+//
+//nolint:gocognit,gocyclo,cyclop,funlen // ignore complexity
+func (s *paymentService) CreatePaymentIntent(
+	ctx context.Context,
+	req dto.CreatePaymentIntentRequest,
+) (*dto.CreatePaymentIntentResponse, error) {
+	s.logger.Infof(
+		"Creating PaymentIntent - OrderID: %s, Amount: %s %s, Customer: %s",
+		req.OrderID,
+		req.Amount.String(),
+		req.Currency,
+		req.CustomerID,
+	)
+
+	res := new(dto.CreatePaymentIntentResponse)
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		paymentRepo := ds.PaymentRepository()
+		outboxRepo := ds.OutboxRepository()
+
+		// Check if payment already exists for this order
+		existingPayment, err := paymentRepo.FindByOrderID(ctx, req.OrderID)
+		if err != nil && err.Error() != constant.PaymentNotFoundErrorMessage {
+			return httperror.NewInternalServerError("failed to check existing payment")
+		}
+
+		//nolint:nestif // ignore complexity
+		if existingPayment != nil {
+			// Payment already exists, return existing payment details
+			if existingPayment.GatewayTransactionID != nil {
+				res.PaymentIntentID = *existingPayment.GatewayTransactionID
+				res.PaymentGateway = string(existingPayment.PaymentGateway)
+				res.Status = string(existingPayment.Status)
+				res.Amount = existingPayment.Amount.String()
+				res.Currency = existingPayment.Currency
+				res.OrderID = existingPayment.OrderID.String()
+				res.ExpiresAt = existingPayment.ExpiresAt
+
+				// Extract ClientSecret from Stripe metadata
+				if existingPayment.PaymentGateway == constant.PaymentGatewayStripe {
+					stripeMetadata, metadataErr := existingPayment.GetStripeMetadata()
+					if metadataErr == nil && stripeMetadata.ClientSecret != nil {
+						res.ClientSecret = *stripeMetadata.ClientSecret
+					}
+				}
+			}
+
+			return nil
+		}
+
+		// Create new payment entity first
+		payment, err := entity.NewPayment(
+			req.OrderID,
+			req.Amount,
+			req.Currency,
+			req.PaymentGateway,
+		)
+		if err != nil {
+			return httperror.NewBadRequestError(fmt.Sprintf("failed to create payment: %v", err))
+		}
+
+		// Create Stripe PaymentIntent via gateway client
+		gatewayClient, err := s.getGatewayClient(req.PaymentGateway)
+		if err != nil {
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("failed to get payment gateway client: %v", err),
+			)
+		}
+
+		// Build gateway request for Stripe
+		gatewayReq := &dto.PaymentGatewayRequest{
+			TransactionID:  payment.ID,
+			CustomerID:     req.CustomerID,
+			CustomerEmail:  req.CustomerEmail,
+			Amount:         req.Amount,
+			Currency:       req.Currency,
+			Description:    fmt.Sprintf("Order %s", req.OrderID),
+			IdempotencyKey: req.IdempotencyKey.String(),
+			ExpiresAt:      payment.ExpiresAt,
+		}
+
+		gatewayResp, err := gatewayClient.ProcessPayment(ctx, gatewayReq)
+		if err != nil {
+			return httperror.NewInternalServerError(
+				fmt.Sprintf("failed to create Stripe PaymentIntent: %v", err),
+			)
+		}
+
+		// Create Stripe metadata from gateway response
+		stripeMetadata := &entity.StripeMetadata{
+			PaymentIntentID: &gatewayResp.GatewayID,
+			ClientSecret:    gatewayResp.ClientSecret,
+		}
+
+		// Store payment method info from gateway metadata if available
+		if gatewayResp.GatewayResponse != nil {
+			if paymentMethodID, ok := gatewayResp.GatewayResponse["payment_method_id"].(string); ok &&
+				paymentMethodID != "" {
+				stripeMetadata.PaymentMethodID = &paymentMethodID
+			}
+
+			if customerID, ok := gatewayResp.GatewayResponse["customer_id"].(string); ok &&
+				customerID != "" {
+				stripeMetadata.CustomerID = &customerID
+			}
+		}
+
+		// Update payment with Stripe response details
+		payment.GatewayTransactionID = &gatewayResp.GatewayID
+		payment.Status = constant.PaymentStatus(gatewayResp.Status)
+
+		// Store Stripe metadata in payment entity
+		if err = payment.SetStripeMetadata(stripeMetadata); err != nil {
+			return httperror.NewBadRequestError("failed to set payment metadata")
+		}
+
+		// Save payment with Stripe details
+		savedPayment, err := paymentRepo.Create(ctx, payment)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to save payment")
+		}
+
+		// Publish payment created event
+		evt := producer.NewPaymentLifecycleEvent(
+			savedPayment.ID,
+			savedPayment.OrderID,
+			constant.PaymentStatusPending,
+			savedPayment.Amount,
+			gatewayResp.ClientSecret,
+			savedPayment.ExpiresAt, // 24-hour payment window expiry
+		)
+
+		payload, err := json.Marshal(evt)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to marshal payment event")
+		}
+
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "payment",
+			AggregateID:   savedPayment.ID,
+			EventType:     kafka.PaymentCreatedEventType,
+			Topic:         kafka.PaymentLifecycleTopic,
+			Payload:       payload,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			return httperror.NewInternalServerError("failed to create outbox event")
+		}
+
+		// Build response
+		res.PaymentIntentID = gatewayResp.GatewayID
+		res.ClientSecret = *gatewayResp.ClientSecret
+		res.PaymentGateway = string(req.PaymentGateway)
+		res.Status = string(gatewayResp.Status)
+		res.Amount = gatewayResp.Amount.String()
+		res.Currency = gatewayResp.Currency
+		res.OrderID = req.OrderID.String()
+		res.ExpiresAt = savedPayment.ExpiresAt
+
+		// Convert gateway metadata from map[string]any to map[string]string
+		if gatewayResp.GatewayResponse != nil {
+			res.GatewayMetadata = make(map[string]string)
+
+			for k, v := range gatewayResp.GatewayResponse {
+				if v != nil {
+					res.GatewayMetadata[k] = fmt.Sprintf("%v", v)
+				}
+			}
+		}
 
 		return nil
 	})

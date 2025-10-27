@@ -34,6 +34,8 @@ export const GET_CHECKOUT_SESSION_QUERY = gql`
       status
       paymentGateway
       currency
+      shippingCost
+      totalAmount
       items {
         id
         productId
@@ -81,6 +83,8 @@ export const CREATE_CHECKOUT_SESSION_MUTATION = gql`
       status
       paymentGateway
       currency
+      shippingCost
+      totalAmount
       items {
         id
         productId
@@ -131,6 +135,8 @@ export const UPDATE_CHECKOUT_SESSION_MUTATION = gql`
       status
       paymentGateway
       currency
+      shippingCost
+      totalAmount
       items {
         id
         productId
@@ -150,43 +156,53 @@ export const UPDATE_CHECKOUT_SESSION_MUTATION = gql`
 export const PLACE_ORDER_MUTATION = gql`
   mutation PlaceOrder($sessionId: UUID!, $input: PlaceOrderInput!) {
     placeOrder(sessionId: $sessionId, input: $input) {
-      id
-      idempotencyKey
-      customerId
-      courier {
-        courierId
-      }
-      package {
-        weightKg
-        width
-        height
-        length
-        unit
-      }
-      origin {
-        city
-        state
-        postalCode
-        countryCode
-      }
-      destination {
-        city
-        state
-        postalCode
-        countryCode
-      }
-      status
-      paymentGateway
-      currency
-      items {
+      checkoutSession {
         id
-        productId
-        productName
-        quantity
-        unitPrice
+        idempotencyKey
+        customerId
+        courier {
+          courierId
+        }
+        package {
+          weightKg
+          width
+          height
+          length
+          unit
+        }
+        origin {
+          city
+          state
+          postalCode
+          countryCode
+        }
+        destination {
+          city
+          state
+          postalCode
+          countryCode
+        }
+        status
+        paymentGateway
+        currency
+        shippingCost
+        totalAmount
+        items {
+          id
+          productId
+          productName
+          quantity
+          unitPrice
+        }
+        createdAt
+        updatedAt
       }
-      createdAt
-      updatedAt
+      transactionId
+      amount
+      currency
+      status
+      redirectUrl
+      gatewayMetadata
     }
   }
 `
@@ -225,6 +241,8 @@ export const CANCEL_CHECKOUT_SESSION_MUTATION = gql`
       status
       paymentGateway
       currency
+      shippingCost
+      totalAmount
       items {
         id
         productId

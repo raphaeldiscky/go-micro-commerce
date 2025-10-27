@@ -8,16 +8,12 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/graph/mapper"
 )
 
 // GetPaymentByOrderID is the resolver for the getPaymentByOrderId field.
-func (r *queryResolver) GetPaymentByOrderID(
-	ctx context.Context,
-	orderID uuid.UUID,
-) (*graph.Payment, error) {
+func (r *queryResolver) GetPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*graph.Payment, error) {
 	paymentDTO, err := r.paymentService.GetPaymentByOrderID(ctx, orderID)
 	if err != nil {
 		return nil, err

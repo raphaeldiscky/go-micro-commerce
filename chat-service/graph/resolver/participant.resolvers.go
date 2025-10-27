@@ -8,18 +8,14 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // JoinConversation is the resolver for the joinConversation field.
-func (r *mutationResolver) JoinConversation(
-	ctx context.Context,
-	input graph.JoinConversationInput,
-) (*graph.Participant, error) {
+func (r *mutationResolver) JoinConversation(ctx context.Context, input graph.JoinConversationInput) (*graph.Participant, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
@@ -42,10 +38,7 @@ func (r *mutationResolver) JoinConversation(
 }
 
 // LeaveConversation is the resolver for the leaveConversation field.
-func (r *mutationResolver) LeaveConversation(
-	ctx context.Context,
-	conversationID uuid.UUID,
-) (bool, error) {
+func (r *mutationResolver) LeaveConversation(ctx context.Context, conversationID uuid.UUID) (bool, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
@@ -62,10 +55,7 @@ func (r *mutationResolver) LeaveConversation(
 }
 
 // ConversationParticipants is the resolver for the conversationParticipants field.
-func (r *queryResolver) ConversationParticipants(
-	ctx context.Context,
-	conversationID uuid.UUID,
-) ([]*graph.Participant, error) {
+func (r *queryResolver) ConversationParticipants(ctx context.Context, conversationID uuid.UUID) ([]*graph.Participant, error) {
 	participants, err := r.chatService.GetConversationParticipants(ctx, conversationID)
 	if err != nil {
 		r.logger.Error("Failed to get conversation participants", "error", err)

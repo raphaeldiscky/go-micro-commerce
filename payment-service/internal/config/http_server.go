@@ -9,10 +9,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 )
 
-// HTTPServerConfig holds the configuration for the HTTP server.
+// HTTPServerConfig holds the configuration for the HTTP and gRPC servers.
 type HTTPServerConfig struct {
 	Host                 string        `mapstructure:"HTTP_SERVER_HOST"`
 	Port                 int           `mapstructure:"HTTP_SERVER_PORT"`
+	GRPCPort             int           `mapstructure:"GRPC_SERVER_PORT"`
 	GracePeriod          time.Duration `mapstructure:"HTTP_SERVER_GRACE_PERIOD"`
 	RequestTimeoutPeriod time.Duration `mapstructure:"HTTP_SERVER_REQUEST_TIMEOUT_PERIOD"`
 	ReadTimeout          time.Duration `mapstructure:"HTTP_SERVER_READ_TIMEOUT"`
@@ -29,6 +30,7 @@ func initHTTPServerConfig() *HTTPServerConfig {
 	// Set defaults
 	viper.SetDefault("HTTP_SERVER_HOST", "localhost")
 	viper.SetDefault("HTTP_SERVER_PORT", constant.HTTPServerPort)
+	viper.SetDefault("GRPC_SERVER_PORT", constant.GRPCServerPort)
 	viper.SetDefault("HTTP_SERVER_GRACE_PERIOD", constant.HTTPServerGracePeriod)
 	viper.SetDefault("HTTP_SERVER_REQUEST_TIMEOUT_PERIOD", constant.HTTPServerRequestTimeoutPeriod)
 	viper.SetDefault("HTTP_SERVER_READ_TIMEOUT", constant.HTTPServerReadTimeout)

@@ -8,17 +8,13 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/mapper"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // MarkAsRead is the resolver for the markAsRead field.
-func (r *mutationResolver) MarkAsRead(
-	ctx context.Context,
-	id uuid.UUID,
-) (*graph.Notification, error) {
+func (r *mutationResolver) MarkAsRead(ctx context.Context, id uuid.UUID) (*graph.Notification, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -52,11 +48,7 @@ func (r *mutationResolver) MarkAllAsRead(ctx context.Context) (bool, error) {
 }
 
 // ListNotifications is the resolver for the listNotifications field.
-func (r *queryResolver) ListNotifications(
-	ctx context.Context,
-	limit int,
-	cursor *string,
-) (*graph.NotificationConnection, error) {
+func (r *queryResolver) ListNotifications(ctx context.Context, limit int, cursor *string) (*graph.NotificationConnection, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -113,11 +105,7 @@ func (r *queryResolver) ListNotifications(
 }
 
 // ListUnreadNotifications is the resolver for the listUnreadNotifications field.
-func (r *queryResolver) ListUnreadNotifications(
-	ctx context.Context,
-	limit int,
-	cursor *string,
-) (*graph.NotificationConnection, error) {
+func (r *queryResolver) ListUnreadNotifications(ctx context.Context, limit int, cursor *string) (*graph.NotificationConnection, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err

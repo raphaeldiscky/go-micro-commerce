@@ -26,6 +26,14 @@ import (
 // OrderActivities defines the interface for order saga activities.
 type OrderActivities interface {
 	// Execution
+	ValidatePreCalculatedPrices(
+		ctx context.Context,
+		order *entity.Order,
+	) (reservedProducts []entity.Product, err error)
+	ValidatePreCalculatedShippingCost(
+		ctx context.Context,
+		order *entity.Order,
+	) error
 	ReserveProductsAndCalculate(
 		ctx context.Context,
 		order *entity.Order,
@@ -105,6 +113,92 @@ func NewOrderActivities(
 		taskCancellationHelper: taskCancellationHelper,
 		logger:                 appLogger,
 	}
+}
+
+// ValidatePreCalculatedPrices validates product prices against cart-service pre-calculated values and reserves products.
+func (a *orderActivities) ValidatePreCalculatedPrices(
+	ctx context.Context,
+	order *entity.Order,
+) ([]entity.Product, error) {
+	a.logger.Infof("Validating pre-calculated prices and reserving products for order: %s", order.ID)
+
+	productIDs := make([]uuid.UUID, len(order.Items))
+	for i := range order.Items {
+		productIDs[i] = order.Items[i].ProductID
+	}
+
+	// Add user authentication info to context for gRPC calls
+	ctx = addUserAuthToContext(ctx, a.logger, order.ID)
+
+	products, err := a.productClient.GetProducts(ctx, productIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(products) != len(productIDs) {
+		return nil, NewNonRetriableError(
+			constant.ReserveProductsStep,
+			"not all products found",
+			nil,
+		)
+	}
+
+	// Create product map for quick lookup
+	productMap := make(map[uuid.UUID]*entity.Product)
+	for i, product := range products {
+		productMap[product.ID] = &products[i]
+	}
+
+	// Validate that cart-service prices match current product prices
+	for i := range order.Items {
+		item := &order.Items[i]
+		product, exists := productMap[item.ProductID]
+
+		if !exists {
+			return nil, NewNonRetriableError(
+				constant.ReserveProductsStep,
+				fmt.Sprintf("product %s not found", item.ProductID),
+				nil,
+			)
+		}
+
+		// Validate price match with tolerance (allowing small price differences)
+		if !item.UnitPrice.Equal(product.UnitPrice) {
+			return nil, NewNonRetriableError(
+				constant.ReserveProductsStep,
+				fmt.Sprintf("price mismatch for product %s: cart-service price %s vs current price %s",
+					item.ProductID, item.UnitPrice.String(), product.UnitPrice.String()),
+				nil,
+			)
+		}
+	}
+
+	// Create reservation items for product service
+	reservations := make([]dto.ProductReservationItem, len(order.Items))
+	for i := range order.Items {
+		item := &order.Items[i]
+		product := productMap[item.ProductID]
+		reservations[i] = dto.ProductReservationItem{
+			ProductID:       item.ProductID,
+			Quantity:        item.Quantity,
+			ExpectedVersion: product.Version,
+		}
+	}
+
+	// Reserve products using product service
+	reservedProducts, err := a.productClient.ReserveProducts(
+		ctx,
+		order.IdempotencyKey,
+		reservations,
+	)
+	if err != nil {
+		a.logger.Errorf("Failed to reserve stock for order key %s: %v", order.IdempotencyKey, err)
+		// Categorize error based on type
+		return nil, CategorizeError(constant.ReserveProductsStep, err)
+	}
+
+	a.logger.Infof("Successfully validated prices and reserved products for order: %s", order.ID)
+	return reservedProducts, nil
 }
 
 // ReserveProductsAndCalculate reserves products for the order items.
@@ -237,6 +331,41 @@ func (a *orderActivities) GetShippingCost(
 		order.ID, shippingCost, order.Currency)
 
 	return shippingCost, nil
+}
+
+// ValidatePreCalculatedShippingCost validates shipping cost against cart-service pre-calculated value.
+func (a *orderActivities) ValidatePreCalculatedShippingCost(
+	ctx context.Context,
+	order *entity.Order,
+) error {
+	a.logger.Infof(
+		"Validating pre-calculated shipping cost for order: %s with shipping details",
+		order.ID,
+	)
+
+	// Add user authentication info to context for gRPC calls
+	ctx = addUserAuthToContext(ctx, a.logger, order.ID)
+
+	currentShippingCost, err := a.fulfillmentClient.GetShippingCost(ctx, order)
+	if err != nil {
+		a.logger.Errorf("Failed to get current shipping cost for order %s: %v", order.ID, err)
+		return fmt.Errorf("failed to get current shipping cost: %w", err)
+	}
+
+	// Validate that cart-service shipping cost matches current fulfillment service cost
+	if !order.ShippingCost.Equal(currentShippingCost) {
+		return NewNonRetriableError(
+			constant.GetShippingCostStep,
+			fmt.Sprintf("shipping cost mismatch for order %s: cart-service cost %s vs current cost %s",
+				order.ID, order.ShippingCost.String(), currentShippingCost.String()),
+			nil,
+		)
+	}
+
+	a.logger.Infof("Successfully validated pre-calculated shipping cost for order %s: %s %s",
+		order.ID, order.ShippingCost, order.Currency)
+
+	return nil
 }
 
 // SetFinalOrderPrices updates the order with shipping cost and final prices in the database.

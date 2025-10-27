@@ -25,6 +25,8 @@ type CheckoutSession struct {
 	Status         constant.CheckoutSessionStatus
 	PaymentGateway *string
 	Currency       string
+	ShippingCost   decimal.Decimal
+	TotalAmount    decimal.Decimal
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 	Items          []CheckoutSessionItem
@@ -103,6 +105,8 @@ func NewCheckoutSession(
 		Status:         constant.CheckoutSessionStatusPending,
 		PaymentGateway: nil,
 		Currency:       currency,
+		ShippingCost:   decimal.Zero, // Will be calculated later
+		TotalAmount:    decimal.Zero, // Will be calculated later
 		CreatedAt:      now,
 		UpdatedAt:      now,
 		Items:          items,
@@ -206,4 +210,49 @@ func (cs *CheckoutSession) CanPlaceOrder() bool {
 // CanBeCanceled checks if the checkout session can be canceled.
 func (cs *CheckoutSession) CanBeCanceled() bool {
 	return cs.Status == constant.CheckoutSessionStatusPending
+}
+
+// SetShippingCost updates the shipping cost and recalculates the total amount.
+func (cs *CheckoutSession) SetShippingCost(shippingCost decimal.Decimal) error {
+	if shippingCost.LessThan(decimal.Zero) {
+		return errors.New("shipping cost cannot be negative")
+	}
+
+	cs.ShippingCost = shippingCost
+	cs.calculateTotalAmount()
+	cs.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// SetTotalAmount directly sets the total amount (used when calculated externally).
+func (cs *CheckoutSession) SetTotalAmount(totalAmount decimal.Decimal) error {
+	if totalAmount.LessThan(decimal.Zero) {
+		return errors.New("total amount cannot be negative")
+	}
+
+	cs.TotalAmount = totalAmount
+	cs.UpdatedAt = time.Now()
+
+	return nil
+}
+
+// calculateTotalAmount calculates the total amount from items and shipping cost.
+func (cs *CheckoutSession) calculateTotalAmount() {
+	itemsTotal := decimal.Zero
+	for _, item := range cs.Items {
+		itemsTotal = itemsTotal.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
+	}
+
+	cs.TotalAmount = itemsTotal.Add(cs.ShippingCost)
+}
+
+// GetItemsTotal returns the total cost of items (excluding shipping).
+func (cs *CheckoutSession) GetItemsTotal() decimal.Decimal {
+	itemsTotal := decimal.Zero
+	for _, item := range cs.Items {
+		itemsTotal = itemsTotal.Add(item.UnitPrice.Mul(decimal.NewFromInt(item.Quantity)))
+	}
+
+	return itemsTotal
 }

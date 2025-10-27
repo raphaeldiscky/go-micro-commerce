@@ -3,11 +3,13 @@ package producer
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
+	"github.com/shopspring/decimal"
 
 	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 
@@ -37,11 +39,14 @@ func NewCheckoutSessionOrderPlacedEvent(
 	currency string,
 	paymentGateway string,
 	items []entity.CheckoutSessionItem,
+	shippingCost decimal.Decimal,
+	totalAmount decimal.Decimal,
 	courier entity.Courier,
 	destination entity.Destination,
 	origin entity.Origin,
 	packageData entity.Package,
 	createdAt time.Time,
+	gatewayMetadata json.RawMessage, // Payment gateway metadata including PaymentIntent details
 ) *CheckoutSessionOrderPlacedEvent {
 	return &CheckoutSessionOrderPlacedEvent{
 		Metadata: kafkaevent.Metadata{
@@ -58,6 +63,9 @@ func NewCheckoutSessionOrderPlacedEvent(
 			Status:            string(newStatus),
 			Currency:          currency,
 			PaymentGateway:    paymentGateway,
+			GatewayMetadata:   gatewayMetadata, // Include PaymentIntent details
+			ShippingCost:      shippingCost,
+			TotalAmount:       totalAmount,
 			Courier:           mapper.MapCourierToPayload(courier),
 			Destination:       mapper.MapDestinationToPayload(destination),
 			Origin:            mapper.MapOriginToPayload(origin),

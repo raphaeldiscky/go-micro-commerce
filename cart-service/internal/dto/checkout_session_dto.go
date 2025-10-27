@@ -2,6 +2,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -62,6 +63,7 @@ type PlaceOrderRequest struct {
 	CustomerID        uuid.UUID `json:"-"` // from context or header
 	CheckoutSessionID uuid.UUID `json:"-"` // from param URL
 	IdempotencyKey    uuid.UUID `json:"idempotency_key" validate:"required"`
+	CustomerEmail     string    `json:"customer_email"  validate:"required,email"`
 }
 
 // CheckoutSessionItemResponse represents a checkout session item in API responses.
@@ -85,7 +87,25 @@ type CheckoutSessionResponse struct {
 	Status         constant.CheckoutSessionStatus `json:"status"`
 	PaymentGateway *string                        `json:"payment_gateway,omitempty"`
 	Currency       string                         `json:"currency"`
+	ShippingCost   decimal.Decimal                `json:"shipping_cost"`
+	TotalAmount    decimal.Decimal                `json:"total_amount"`
 	Items          []CheckoutSessionItemResponse  `json:"items"`
 	CreatedAt      time.Time                      `json:"created_at"`
 	UpdatedAt      time.Time                      `json:"updated_at"`
+}
+
+// GatewayMetadata represents gateway-specific payment data.
+type GatewayMetadata struct {
+	Data json.RawMessage `json:"data"`
+}
+
+// PlaceOrderResponse represents the response when placing an order with standardized payment fields.
+type PlaceOrderResponse struct {
+	CheckoutSession CheckoutSessionResponse `json:"checkout_session"`
+	TransactionID   string                  `json:"transaction_id"`    // Standardized: gateway transaction identifier
+	Amount          string                  `json:"amount"`           // Standardized: final amount charged
+	Currency        string                  `json:"currency"`         // Standardized: currency code
+	Status          string                  `json:"status"`           // Standardized: payment status
+	RedirectURL     string                  `json:"redirect_url"`     // Optional: for redirect-based gateways
+	GatewayMetadata json.RawMessage         `json:"gateway_metadata"` // Gateway-specific data
 }

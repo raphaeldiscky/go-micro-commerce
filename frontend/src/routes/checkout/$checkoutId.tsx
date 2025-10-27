@@ -17,6 +17,7 @@ import {
   useCheckoutSession,
   useCheckoutSessionStore,
 } from '@/store/checkoutSessionStore'
+import { loadStripe } from '@stripe/stripe-js'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   AlertCircle,
@@ -28,6 +29,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { env } from '../../env'
 
 export const Route = createFileRoute('/checkout/$checkoutId')({
   component: RouteComponent,
@@ -85,8 +87,29 @@ function RouteComponent() {
 
       if (result.success) {
         toast.success('Order placed successfully!')
-        // Navigate to payment page - use checkoutId which becomes the orderId
-        navigate({ to: `/orders/${checkoutId}` })
+
+        // Handle immediate redirect to payment gateway
+        if (result.gatewayMetadata && result.gatewayMetadata.client_secret) {
+          // Stripe redirect using client secret
+          const { client_secret } = result.gatewayMetadata
+
+          // Load Stripe and redirect to confirmation page
+          const stripe = await loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY)
+          if (stripe) {
+            await stripe.confirmPayment({
+              clientSecret: client_secret,
+              confirmParams: {
+                return_url: `${window.location.origin}/orders/${checkoutId}/status`,
+              },
+            })
+          }
+        } else if (result.redirectUrl) {
+          // Other payment gateways that use redirect URLs
+          window.location.href = result.redirectUrl
+        } else {
+          // Fallback to order status page if no payment redirect
+          navigate({ to: `/orders/${checkoutId}/status` })
+        }
       } else {
         toast.error(result.error || 'Failed to place order')
       }

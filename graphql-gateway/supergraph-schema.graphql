@@ -63,6 +63,9 @@ type AddressEdge
   cursor: String!
 }
 
+scalar Any
+  @join__type(graph: CART_SERVICE)
+
 type AuthPayload
   @join__type(graph: AUTH_SERVICE)
 {
@@ -123,6 +126,8 @@ type CheckoutSession
   status: CheckoutSessionStatus!
   paymentGateway: String
   currency: String!
+  shippingCost: Decimal!
+  totalAmount: Decimal!
   items: [CheckoutSessionItem!]!
   createdAt: Time!
   updatedAt: Time!
@@ -386,7 +391,7 @@ type Mutation
   selectItemForCheckout(itemId: UUID!, input: SelectItemForCheckoutInput!): Cart! @join__field(graph: CART_SERVICE)
   createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
   updateCheckoutSession(sessionId: UUID!, input: UpdateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
-  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
+  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): PlaceOrderResponse! @join__field(graph: CART_SERVICE)
   cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @join__field(graph: CART_SERVICE)
   requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
@@ -672,6 +677,18 @@ input PlaceOrderInput
   @join__type(graph: CART_SERVICE)
 {
   idempotencyKey: UUID!
+}
+
+type PlaceOrderResponse
+  @join__type(graph: CART_SERVICE)
+{
+  checkoutSession: CheckoutSession!
+  transactionId: String!
+  amount: String!
+  currency: String!
+  status: String!
+  redirectUrl: String
+  gatewayMetadata: Any
 }
 
 enum PresenceStatus

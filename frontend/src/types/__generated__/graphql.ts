@@ -26,6 +26,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean }
   Int: { input: number; output: number }
   Float: { input: number; output: number }
+  Any: { input: any; output: any }
   Decimal: { input: string; output: string }
   Time: { input: string; output: string }
   UUID: { input: string; output: string }
@@ -124,7 +125,9 @@ export type CheckoutSession = {
   origin: Origin
   package: Package
   paymentGateway?: Maybe<Scalars['String']['output']>
+  shippingCost: Scalars['Decimal']['output']
   status: CheckoutSessionStatus
+  totalAmount: Scalars['Decimal']['output']
   updatedAt: Scalars['Time']['output']
 }
 
@@ -317,7 +320,7 @@ export type Mutation = {
   logout: Scalars['Boolean']['output']
   markAllAsRead: Scalars['Boolean']['output']
   markAsRead: Notification
-  placeOrder: CheckoutSession
+  placeOrder: PlaceOrderResponse
   refreshToken: AuthPayload
   register: AuthPayload
   removeItemFromCart: Cart
@@ -672,6 +675,17 @@ export enum PaymentStatus {
 
 export type PlaceOrderInput = {
   idempotencyKey: Scalars['UUID']['input']
+}
+
+export type PlaceOrderResponse = {
+  __typename?: 'PlaceOrderResponse'
+  amount: Scalars['String']['output']
+  checkoutSession: CheckoutSession
+  currency: Scalars['String']['output']
+  gatewayMetadata?: Maybe<Scalars['Any']['output']>
+  redirectUrl?: Maybe<Scalars['String']['output']>
+  status: Scalars['String']['output']
+  transactionId: Scalars['String']['output']
 }
 
 export enum PresenceStatus {

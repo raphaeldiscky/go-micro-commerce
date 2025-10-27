@@ -65,6 +65,9 @@ export interface CheckoutSessionActions {
   placeOrder: (sessionId: string) => Promise<{
     success: boolean
     sessionId?: string
+    transactionId?: string
+    redirectUrl?: string
+    gatewayMetadata?: any
     error?: string
   }>
 
@@ -305,6 +308,9 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         ): Promise<{
           success: boolean
           sessionId?: string
+          transactionId?: string
+          redirectUrl?: string
+          gatewayMetadata?: any
           error?: string
         }> => {
           const state = get()
@@ -335,11 +341,11 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
               },
             )
 
-            const session = data.placeOrder
+            const placeOrderResponse = data.placeOrder
 
             // Update checkout session with new status
             set({
-              checkoutSession: session,
+              checkoutSession: placeOrderResponse.checkoutSession,
               isLoading: false,
             })
 
@@ -347,7 +353,10 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
 
             return {
               success: true,
-              sessionId: session.id,
+              sessionId: placeOrderResponse.checkoutSession.id,
+              transactionId: placeOrderResponse.transactionId,
+              redirectUrl: placeOrderResponse.redirectUrl || undefined,
+              gatewayMetadata: placeOrderResponse.gatewayMetadata,
             }
           } catch (error) {
             set({ isLoading: false })

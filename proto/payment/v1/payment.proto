@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/payment/v1;paymentv1";
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/struct.proto";
+
+service PaymentService {
+  rpc CreatePaymentIntent(CreatePaymentIntentRequest) returns (CreatePaymentIntentResponse);
+}
+
+message CreatePaymentIntentRequest {
+  // Order information
+  string order_id = 1 [(buf.validate.field).string.uuid = true];
+  string customer_id = 2 [(buf.validate.field).string.uuid = true];
+  string customer_email = 3 [(buf.validate.field).string.email = true];
+
+  // Payment details - using string for decimal precision (matches database DECIMAL)
+  string amount = 4 [(buf.validate.field).string = {pattern: "^\\d+(\\.\\d{1,2})?$"}]; // Decimal amount with 2 decimal places
+  string currency = 5 [(buf.validate.field).string = {len: 3, pattern: "^[A-Z]{3}$"}];
+  string payment_gateway = 6 [(buf.validate.field).string = {in: ["stripe", "paypal"]}];
+
+  // Checkout session information
+  string checkout_session_id = 7 [(buf.validate.field).string.uuid = true];
+  string idempotency_key = 8 [(buf.validate.field).string.uuid = true];
+
+  // Line items for receipt/order summary (matches checkout_session_items table)
+  repeated PaymentItem items = 9;
+
+  // Additional metadata (maps to gateway_metadata JSONB)
+  google.protobuf.Struct metadata = 10;
+}
+
+message CreatePaymentIntentResponse {
+  // PaymentIntent details (maps to payments table)
+  string payment_intent_id = 1; // Will be stored as gateway_transaction_id
+  string client_secret = 2;     // From Stripe, goes into gateway_metadata
+  string payment_gateway = 3;
+  string status = 4;
+
+  // Payment details (echo of request)
+  string amount = 5;      // Decimal string to preserve precision
+  string currency = 6;
+  string order_id = 7;
+
+  // Expiration information (maps to expires_at column)
+  google.protobuf.Timestamp expires_at = 8;
+
+  // Additional gateway-specific data
+  google.protobuf.Struct gateway_metadata = 9;
+}
+
+message PaymentItem {
+  string product_id = 1 [(buf.validate.field).string.uuid = true];
+  string product_name = 2 [(buf.validate.field).string.min_len = 1];
+  int64 quantity = 3 [(buf.validate.field).int64.gt = 0];
+  string unit_price = 4 [(buf.validate.field).string = {pattern: "^\\d+(\\.\\d{1,2})?$"}]; // Decimal string for precision
+  string currency = 5 [(buf.validate.field).string = {len: 3, pattern: "^[A-Z]{3}$"}];
+}

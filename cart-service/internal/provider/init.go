@@ -17,9 +17,11 @@ import (
 
 // Providers holds all initialized providers.
 type Providers struct {
-	DataStore     repository.DataStore
-	KafkaAdmin    *kafka.Admin
-	ProductClient client.ProductClient
+	DataStore         repository.DataStore
+	KafkaAdmin        *kafka.Admin
+	ProductClient     client.ProductClient
+	PaymentClient     client.PaymentClient
+	FulfillmentClient client.FulfillmentClient
 
 	NotificationRequestProducer        kafka.Producer
 	CheckoutSessionOrderPlacedProducer kafka.Producer
@@ -87,9 +89,27 @@ func SetupGlobal(
 		return nil, err
 	}
 
+	// Setup payment client
+	paymentClient, err := client.NewPaymentClient(cfg)
+	if err != nil {
+		appLogger.Errorf("failed to create payment client: %v", err)
+
+		return nil, err
+	}
+
+	// Setup fulfillment client
+	fulfillmentClient, err := client.NewFulfillmentClient(cfg)
+	if err != nil {
+		appLogger.Errorf("failed to create fulfillment client: %v", err)
+
+		return nil, err
+	}
+
 	return &Providers{
-		DataStore:     dataStore,
-		KafkaAdmin:    kafkaAdmin,
-		ProductClient: productClient,
+		DataStore:         dataStore,
+		KafkaAdmin:        kafkaAdmin,
+		ProductClient:     productClient,
+		PaymentClient:     paymentClient,
+		FulfillmentClient: fulfillmentClient,
 	}, nil
 }

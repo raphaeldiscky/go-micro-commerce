@@ -24,26 +24,24 @@ func NewOrderSaga(activities OrderActivities) *OrderSaga {
 
 //nolint:funlen,revive,gocyclo,cyclop,gocognit // ConfigureSteps configures all steps for the order saga.
 func (s *OrderSaga) ConfigureSteps(executor *Executor) {
-	// Step 1: Reserve products
+	// Step 1: Validate pre-calculated prices and reserve products
 	executor.AddStep(&Step{
 		Name:        constant.ReserveProductsStep,
-		Description: "Reserve products",
+		Description: "Validate prices and reserve products",
 		MaxRetries:  constant.ReserveProductsStepMaxRetries,
 		RetryDelay:  constant.ReserveProductsStepRetryDelay,
 		Timeout:     constant.ReserveProductsStepTimeout,
 		Idempotent:  true,
 		Critical:    true,
 		Execute: func(ctx *WorkflowContext, payload *Payload, _ *Metadata) (*StepResult, error) {
-			newOrder, reservedProducts, err := s.activities.ReserveProductsAndCalculate(
+			// Validate pre-calculated prices from cart-service and reserve products
+			reservedProducts, err := s.activities.ValidatePreCalculatedPrices(
 				ctx.Context(),
 				payload.Order,
 			)
 			if err != nil {
 				return nil, err
 			}
-
-			// Update the original order with new order items from the reservation, save in memory
-			payload.Order.Items = newOrder.Items
 
 			email, err := ctx.GetXEmail()
 			if err != nil {
@@ -70,23 +68,27 @@ func (s *OrderSaga) ConfigureSteps(executor *Executor) {
 		},
 	})
 
-	// Step 2: Get Shipping Cost
+	// Step 2: Validate Pre-Calculated Shipping Cost
 	executor.AddStep(&Step{
 		Name:        constant.GetShippingCostStep,
-		Description: "Get shipping cost from shipping service",
+		Description: "Validate pre-calculated shipping cost from cart-service",
 		MaxRetries:  constant.GetShippingCostStepMaxRetries,
 		RetryDelay:  constant.GetShippingCostStepRetryDelay,
 		Timeout:     constant.GetShippingCostStepTimeout,
 		Idempotent:  true,
 		Critical:    false,
 		Execute: func(ctx *WorkflowContext, payload *Payload, data *Metadata) (*StepResult, error) {
-			shippingCost, err := s.activities.GetShippingCost(
+			// Validate pre-calculated shipping cost from cart-service
+			err := s.activities.ValidatePreCalculatedShippingCost(
 				ctx.Context(),
 				payload.Order,
 			)
 			if err != nil {
 				return nil, err
 			}
+
+			// Use the pre-calculated shipping cost from the order
+			shippingCost := payload.Order.ShippingCost
 
 			return &StepResult{
 				Success: true,

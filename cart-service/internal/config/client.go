@@ -10,6 +10,8 @@ import (
 type ClientConfig struct {
 	ProductGRPCHost     string `mapstructure:"CLIENT_PRODUCT_GRPC_HOST"`
 	ProductGRPCPort     int    `mapstructure:"CLIENT_PRODUCT_GRPC_PORT"`
+	PaymentGRPCHost     string `mapstructure:"CLIENT_PAYMENT_GRPC_HOST"`
+	PaymentGRPCPort     int    `mapstructure:"CLIENT_PAYMENT_GRPC_PORT"`
 	FulfillmentGRPCPort int    `mapstructure:"CLIENT_FULFILLMENT_GRPC_PORT"`
 	FulfillmentGRPCHost string `mapstructure:"CLIENT_FULFILLMENT_GRPC_HOST"`
 	UseServiceDiscovery bool   `mapstructure:"CLIENT_USE_SERVICE_DISCOVERY"`
@@ -19,6 +21,8 @@ type ClientConfig struct {
 func initClientConfig() *ClientConfig {
 	viper.SetDefault("CLIENT_PRODUCT_GRPC_HOST", "172.19.0.1")
 	viper.SetDefault("CLIENT_PRODUCT_GRPC_PORT", constant.ClientProductGRPCPort)
+	viper.SetDefault("CLIENT_PAYMENT_GRPC_HOST", "172.19.0.1")
+	viper.SetDefault("CLIENT_PAYMENT_GRPC_PORT", constant.ClientPaymentGRPCPort)
 	viper.SetDefault("CLIENT_FULFILLMENT_GRPC_HOST", "172.19.0.1")
 	viper.SetDefault("CLIENT_FULFILLMENT_GRPC_PORT", constant.ClientFulfillmentGRPCPort)
 	viper.SetDefault("CLIENT_USE_SERVICE_DISCOVERY", true)

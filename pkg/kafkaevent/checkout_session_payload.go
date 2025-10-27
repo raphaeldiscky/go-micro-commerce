@@ -1,6 +1,7 @@
 package kafkaevent
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +17,9 @@ type CheckoutSessionOrderPlacedPayload struct {
 	Status            string                `json:"status"`
 	Currency          string                `json:"currency"`
 	PaymentGateway    string                `json:"payment_gateway"`
+	GatewayMetadata   json.RawMessage       `json:"gateway_metadata"`
+	ShippingCost      decimal.Decimal       `json:"shipping_cost"`
+	TotalAmount       decimal.Decimal       `json:"total_amount"`
 	Courier           Courier               `json:"courier"`
 	Destination       Destination           `json:"destination"`
 	Origin            Origin                `json:"origin"`

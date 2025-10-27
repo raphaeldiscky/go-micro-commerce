@@ -233,7 +233,7 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 		Unit:     evt.Payload.Package.Unit,
 	}
 
-	// Create order entity
+	// Create order entity with pre-calculated values from cart-service
 	order, err := entity.NewOrder(
 		evt.Payload.UserID,
 		evt.Payload.IdempotencyKey,
@@ -249,6 +249,17 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 	if err != nil {
 		return fmt.Errorf("failed to create order entity: %w", err)
 	}
+
+	// Set pre-calculated shipping cost and total amount from cart-service
+	order.ShippingCost = evt.Payload.ShippingCost
+	order.TotalPrice = evt.Payload.TotalAmount
+
+	// Calculate and set subtotal from items (for consistency)
+	subtotal := decimal.Zero
+	for _, item := range orderItems {
+		subtotal = subtotal.Add(item.TotalPrice)
+	}
+	order.Subtotal = subtotal
 
 	c.logger.Debugf(
 		"Created order entity - OrderID: %s, CheckoutSessionID: %s, CustomerID: %s",
