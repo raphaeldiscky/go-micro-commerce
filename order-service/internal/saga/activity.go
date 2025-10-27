@@ -120,7 +120,10 @@ func (a *orderActivities) ValidatePreCalculatedPrices(
 	ctx context.Context,
 	order *entity.Order,
 ) ([]entity.Product, error) {
-	a.logger.Infof("Validating pre-calculated prices and reserving products for order: %s", order.ID)
+	a.logger.Infof(
+		"Validating pre-calculated prices and reserving products for order: %s",
+		order.ID,
+	)
 
 	productIDs := make([]uuid.UUID, len(order.Items))
 	for i := range order.Items {
@@ -166,8 +169,12 @@ func (a *orderActivities) ValidatePreCalculatedPrices(
 		if !item.UnitPrice.Equal(product.UnitPrice) {
 			return nil, NewNonRetriableError(
 				constant.ReserveProductsStep,
-				fmt.Sprintf("price mismatch for product %s: cart-service price %s vs current price %s",
-					item.ProductID, item.UnitPrice.String(), product.UnitPrice.String()),
+				fmt.Sprintf(
+					"price mismatch for product %s: cart-service price %s vs current price %s",
+					item.ProductID,
+					item.UnitPrice.String(),
+					product.UnitPrice.String(),
+				),
 				nil,
 			)
 		}
@@ -198,6 +205,7 @@ func (a *orderActivities) ValidatePreCalculatedPrices(
 	}
 
 	a.logger.Infof("Successfully validated prices and reserved products for order: %s", order.ID)
+
 	return reservedProducts, nil
 }
 
@@ -356,8 +364,12 @@ func (a *orderActivities) ValidatePreCalculatedShippingCost(
 	if !order.ShippingCost.Equal(currentShippingCost) {
 		return NewNonRetriableError(
 			constant.GetShippingCostStep,
-			fmt.Sprintf("shipping cost mismatch for order %s: cart-service cost %s vs current cost %s",
-				order.ID, order.ShippingCost.String(), currentShippingCost.String()),
+			fmt.Sprintf(
+				"shipping cost mismatch for order %s: cart-service cost %s vs current cost %s",
+				order.ID,
+				order.ShippingCost.String(),
+				currentShippingCost.String(),
+			),
 			nil,
 		)
 	}

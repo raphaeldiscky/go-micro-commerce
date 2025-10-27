@@ -156,6 +156,6 @@ func MapToGraphQLPlaceOrderResponseFromDTO(
 		Currency:        resp.Currency,
 		Status:          resp.Status,
 		RedirectURL:     redirectURL,
-		GatewayMetadata:  resp.GatewayMetadata,
+		GatewayMetadata: resp.GatewayMetadata,
 	}
 }

@@ -7,15 +7,19 @@ package resolver
 import (
 	"context"
 
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
+	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
-	pkgconstant "github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // RequestChatConnection is the resolver for the requestChatConnection field.
-func (r *mutationResolver) RequestChatConnection(ctx context.Context) (*graph.ChatConnection, error) {
+func (r *mutationResolver) RequestChatConnection(
+	ctx context.Context,
+) (*graph.ChatConnection, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)

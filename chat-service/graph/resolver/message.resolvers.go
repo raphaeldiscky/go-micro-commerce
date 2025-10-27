@@ -9,17 +9,21 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
 	chatwebsocket "github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/websocket"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // SendMessage is the resolver for the sendMessage field.
-func (r *mutationResolver) SendMessage(ctx context.Context, input graph.SendMessageInput) (*graph.Message, error) {
+func (r *mutationResolver) SendMessage(
+	ctx context.Context,
+	input graph.SendMessageInput,
+) (*graph.Message, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
@@ -114,7 +118,10 @@ func (r *mutationResolver) SendMessage(ctx context.Context, input graph.SendMess
 }
 
 // SendDeliveryReceipt is the resolver for the sendDeliveryReceipt field.
-func (r *mutationResolver) SendDeliveryReceipt(ctx context.Context, input graph.SendDeliveryReceiptInput) (*graph.DeliveryReceipt, error) {
+func (r *mutationResolver) SendDeliveryReceipt(
+	ctx context.Context,
+	input graph.SendDeliveryReceiptInput,
+) (*graph.DeliveryReceipt, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
@@ -161,7 +168,10 @@ func (r *mutationResolver) SendDeliveryReceipt(ctx context.Context, input graph.
 }
 
 // SendReadReceipt is the resolver for the sendReadReceipt field.
-func (r *mutationResolver) SendReadReceipt(ctx context.Context, input graph.SendReadReceiptInput) (*graph.ReadReceipt, error) {
+func (r *mutationResolver) SendReadReceipt(
+	ctx context.Context,
+	input graph.SendReadReceiptInput,
+) (*graph.ReadReceipt, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
@@ -208,7 +218,14 @@ func (r *mutationResolver) SendReadReceipt(ctx context.Context, input graph.Send
 }
 
 // ConversationMessages is the resolver for the conversationMessages field.
-func (r *queryResolver) ConversationMessages(ctx context.Context, conversationID uuid.UUID, first *int, after *string, last *int, before *string) (*graph.MessageConnection, error) {
+func (r *queryResolver) ConversationMessages(
+	ctx context.Context,
+	conversationID uuid.UUID,
+	first *int,
+	after *string,
+	last *int,
+	before *string,
+) (*graph.MessageConnection, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)

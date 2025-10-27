@@ -102,7 +102,7 @@ type GatewayMetadata struct {
 // PlaceOrderResponse represents the response when placing an order with standardized payment fields.
 type PlaceOrderResponse struct {
 	CheckoutSession CheckoutSessionResponse `json:"checkout_session"`
-	TransactionID   string                  `json:"transaction_id"`    // Standardized: gateway transaction identifier
+	TransactionID   string                  `json:"transaction_id"`   // Standardized: gateway transaction identifier
 	Amount          string                  `json:"amount"`           // Standardized: final amount charged
 	Currency        string                  `json:"currency"`         // Standardized: currency code
 	Status          string                  `json:"status"`           // Standardized: payment status

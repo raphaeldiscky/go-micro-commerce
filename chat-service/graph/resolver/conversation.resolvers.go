@@ -8,15 +8,19 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // CreateConversation is the resolver for the createConversation field.
-func (r *mutationResolver) CreateConversation(ctx context.Context, input graph.CreateConversationInput) (*graph.Conversation, error) {
+func (r *mutationResolver) CreateConversation(
+	ctx context.Context,
+	input graph.CreateConversationInput,
+) (*graph.Conversation, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)
@@ -43,7 +47,10 @@ func (r *mutationResolver) CreateConversation(ctx context.Context, input graph.C
 }
 
 // EndConversation is the resolver for the endConversation field.
-func (r *mutationResolver) EndConversation(ctx context.Context, conversationID uuid.UUID) (*graph.Conversation, error) {
+func (r *mutationResolver) EndConversation(
+	ctx context.Context,
+	conversationID uuid.UUID,
+) (*graph.Conversation, error) {
 	conversation, err := r.chatService.EndConversation(ctx, conversationID)
 	if err != nil {
 		r.logger.Error("Failed to end conversation", "error", err)
@@ -54,7 +61,11 @@ func (r *mutationResolver) EndConversation(ctx context.Context, conversationID u
 }
 
 // AssignConversationToAdmin is the resolver for the assignConversationToAdmin field.
-func (r *mutationResolver) AssignConversationToAdmin(ctx context.Context, conversationID uuid.UUID, adminID uuid.UUID) (*graph.Conversation, error) {
+func (r *mutationResolver) AssignConversationToAdmin(
+	ctx context.Context,
+	conversationID uuid.UUID,
+	adminID uuid.UUID,
+) (*graph.Conversation, error) {
 	conversation, err := r.chatService.AssignConversationToAdmin(ctx, conversationID, adminID)
 	if err != nil {
 		r.logger.Error("Failed to assign conversation to admin", "error", err)
@@ -65,7 +76,10 @@ func (r *mutationResolver) AssignConversationToAdmin(ctx context.Context, conver
 }
 
 // Conversation is the resolver for the conversation field.
-func (r *queryResolver) Conversation(ctx context.Context, id uuid.UUID) (*graph.Conversation, error) {
+func (r *queryResolver) Conversation(
+	ctx context.Context,
+	id uuid.UUID,
+) (*graph.Conversation, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)

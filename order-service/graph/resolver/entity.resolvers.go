@@ -8,13 +8,17 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
 )
 
 // FindPaymentByOrderID is the resolver for the findPaymentByOrderID field.
 // This is a Federation reference resolver - it returns a stub that the gateway
 // uses to fetch the full Payment entity from payment-service.
-func (r *entityResolver) FindPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*graph.Payment, error) {
+func (r *entityResolver) FindPaymentByOrderID(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (*graph.Payment, error) {
 	_ = ctx
 	// Return a stub with just the key field (orderId)
 	// The GraphQL gateway will use this to fetch the full entity from payment-service

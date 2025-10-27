@@ -371,9 +371,11 @@ func (s *checkoutSessionService) PlaceOrder(
 		}
 	}()
 
-	var updatedSession *entity.CheckoutSession
-	var paymentResponse *dto.CreatePaymentIntentResponse
-	var paymentGateway string
+	var (
+		updatedSession  *entity.CheckoutSession
+		paymentResponse *dto.CreatePaymentIntentResponse
+		paymentGateway  string
+	)
 
 	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		checkoutSessionRepo := ds.CheckoutSessionRepository()
@@ -586,8 +588,10 @@ func (s *checkoutSessionService) PlaceOrder(
 
 	// Build standardized PlaceOrderResponse for immediate frontend redirect
 	// Build gateway metadata for frontend consumption
-	var finalGatewayMetadata json.RawMessage
-	var transactionID, redirectURL string
+	var (
+		finalGatewayMetadata       json.RawMessage
+		transactionID, redirectURL string
+	)
 
 	if paymentResponse != nil {
 		// Build gateway-specific metadata for frontend

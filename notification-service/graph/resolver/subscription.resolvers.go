@@ -7,12 +7,15 @@ package resolver
 import (
 	"context"
 
-	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/graph"
 )
 
 // NotificationEvents is the resolver for the notificationEvents field.
-func (r *subscriptionResolver) NotificationEvents(ctx context.Context) (<-chan graph.NotificationEvent, error) {
+func (r *subscriptionResolver) NotificationEvents(
+	ctx context.Context,
+) (<-chan graph.NotificationEvent, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		r.logger.Error("Failed to get user from context", "error", err)

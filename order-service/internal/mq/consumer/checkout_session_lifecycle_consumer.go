@@ -259,6 +259,7 @@ func (c *CheckoutSessionLifecycleConsumer) processCheckoutSessionOrderPlaced(
 	for _, item := range orderItems {
 		subtotal = subtotal.Add(item.TotalPrice)
 	}
+
 	order.Subtotal = subtotal
 
 	c.logger.Debugf(

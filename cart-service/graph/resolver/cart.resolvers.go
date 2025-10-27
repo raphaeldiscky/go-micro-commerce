@@ -8,13 +8,17 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/mapper"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 )
 
 // AddItemToCart is the resolver for the addItemToCart field.
-func (r *mutationResolver) AddItemToCart(ctx context.Context, input graph.AddCartItemInput) (*graph.Cart, error) {
+func (r *mutationResolver) AddItemToCart(
+	ctx context.Context,
+	input graph.AddCartItemInput,
+) (*graph.Cart, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -33,7 +37,10 @@ func (r *mutationResolver) AddItemToCart(ctx context.Context, input graph.AddCar
 }
 
 // RemoveItemFromCart is the resolver for the removeItemFromCart field.
-func (r *mutationResolver) RemoveItemFromCart(ctx context.Context, itemID uuid.UUID) (*graph.Cart, error) {
+func (r *mutationResolver) RemoveItemFromCart(
+	ctx context.Context,
+	itemID uuid.UUID,
+) (*graph.Cart, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -49,7 +56,11 @@ func (r *mutationResolver) RemoveItemFromCart(ctx context.Context, itemID uuid.U
 }
 
 // UpdateItemQuantity is the resolver for the updateItemQuantity field.
-func (r *mutationResolver) UpdateItemQuantity(ctx context.Context, itemID uuid.UUID, input graph.UpdateCartItemQuantityInput) (*graph.Cart, error) {
+func (r *mutationResolver) UpdateItemQuantity(
+	ctx context.Context,
+	itemID uuid.UUID,
+	input graph.UpdateCartItemQuantityInput,
+) (*graph.Cart, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err
@@ -70,7 +81,11 @@ func (r *mutationResolver) UpdateItemQuantity(ctx context.Context, itemID uuid.U
 }
 
 // SelectItemForCheckout is the resolver for the selectItemForCheckout field.
-func (r *mutationResolver) SelectItemForCheckout(ctx context.Context, itemID uuid.UUID, input graph.SelectItemForCheckoutInput) (*graph.Cart, error) {
+func (r *mutationResolver) SelectItemForCheckout(
+	ctx context.Context,
+	itemID uuid.UUID,
+	input graph.SelectItemForCheckoutInput,
+) (*graph.Cart, error) {
 	user, err := echoutils.GetUserAuthContexts(ctx)
 	if err != nil {
 		return nil, err

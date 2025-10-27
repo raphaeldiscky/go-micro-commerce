@@ -8,13 +8,17 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/graph"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/graph/mapper"
 )
 
 // FindPaymentByOrderID is the resolver for the findPaymentByOrderID field.
 // This is a Federation entity resolver - called by the gateway to resolve Payment references.
-func (r *entityResolver) FindPaymentByOrderID(ctx context.Context, orderID uuid.UUID) (*graph.Payment, error) {
+func (r *entityResolver) FindPaymentByOrderID(
+	ctx context.Context,
+	orderID uuid.UUID,
+) (*graph.Payment, error) {
 	// Fetch the full payment entity using the same logic as the query resolver
 	paymentDTO, err := r.paymentService.GetPaymentByOrderID(ctx, orderID)
 	if err != nil {
