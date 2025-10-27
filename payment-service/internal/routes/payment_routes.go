@@ -15,9 +15,6 @@ func SetupPaymentRoutes(e *echo.Echo, h *handler.PaymentHandler) {
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
-	// Create SetupIntent for delayed payment confirmation
-	protected.POST("/setup-intent", h.CreateSetupIntent)
-
 	// Process a payment
 	protected.POST("/order/:orderID/process", h.ProcessPayment)
 

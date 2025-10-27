@@ -196,11 +196,11 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		)
 
 		gatewayReq := &dto.PaymentGatewayRequest{
-			TransactionID: savedPayment.ID,
-			CustomerID:    evt.Payload.CustomerID,
-			Amount:        savedPayment.Amount,
-			Currency:      savedPayment.Currency,
-			ExpiresAt:     savedPayment.ExpiresAt, // 24-hour payment window expiry
+			PaymentID:  savedPayment.ID,
+			CustomerID: evt.Payload.CustomerID,
+			Amount:     savedPayment.Amount,
+			Currency:   savedPayment.Currency,
+			ExpiresAt:  savedPayment.ExpiresAt, // 24-hour payment window expiry
 		}
 
 		// Call payment gateway (Stripe) to create PaymentIntent
@@ -220,7 +220,7 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 			// Update payment with gateway reference
 			if err = savedPayment.SetGatewayReference(
 				savedPayment.PaymentGateway,
-				gwResp.GatewayID,
+				gwResp.PaymentIntentID,
 				gwResp.GatewayResponse,
 			); err != nil {
 				c.logger.Errorf("Failed to set gateway reference: %v", err)

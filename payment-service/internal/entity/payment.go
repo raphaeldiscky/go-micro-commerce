@@ -126,20 +126,6 @@ func (p *Payment) SetStripeMetadata(metadata *StripeMetadata) error {
 	return p.SetGatewayMetadataTyped(metadata)
 }
 
-// GetMidtransMetadata retrieves Midtrans-specific metadata with type safety.
-func (p *Payment) GetMidtransMetadata() (*MidtransMetadata, error) {
-	if p.GatewayMetadata == nil {
-		return &MidtransMetadata{}, nil
-	}
-
-	return NewMidtransMetadataFromMap(p.GatewayMetadata)
-}
-
-// SetMidtransMetadata sets Midtrans-specific metadata with type safety.
-func (p *Payment) SetMidtransMetadata(metadata *MidtransMetadata) error {
-	return p.SetGatewayMetadataTyped(metadata)
-}
-
 // GetXenditMetadata retrieves Xendit-specific metadata with type safety.
 func (p *Payment) GetXenditMetadata() (*XenditMetadata, error) {
 	if p.GatewayMetadata == nil {

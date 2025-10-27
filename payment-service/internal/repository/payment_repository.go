@@ -30,6 +30,13 @@ type PaymentRepository interface {
 	// FindByOrderID retrieves a payment by its order ID.
 	FindByOrderID(ctx context.Context, orderID uuid.UUID) (*entity.Payment, error)
 
+	// FindByGatewayTransactionID retrieves a payment by its gateway and transaction ID.
+	FindByGatewayTransactionID(
+		ctx context.Context,
+		gateway constant.PaymentGateway,
+		transactionID string,
+	) (*entity.Payment, error)
+
 	// FindExpiredPayments finds all pending payments that have expired
 	FindExpiredPayments(ctx context.Context, limit int) ([]*entity.Payment, error)
 }
@@ -161,6 +168,50 @@ func (r *paymentRepositoryPostgres) FindByOrderID(
 	`
 
 	row := r.db.QueryRow(ctx, query, orderID)
+
+	var payment entity.Payment
+
+	err := row.Scan(
+		&payment.ID,
+		&payment.OrderID,
+		&payment.Amount,
+		&payment.Currency,
+		&payment.Status,
+		&payment.PaymentGateway,
+		&payment.GatewayTransactionID,
+		&payment.GatewayMetadata,
+		&payment.CreatedAt,
+		&payment.UpdatedAt,
+		&payment.CompletedAt,
+		&payment.FailedAt,
+		&payment.ExpiresAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, constant.ErrPaymentNotFound
+		}
+
+		return nil, fmt.Errorf("failed to scan payment: %w", err)
+	}
+
+	return &payment, nil
+}
+
+// FindByGatewayTransactionID retrieves a payment by its gateway and transaction ID.
+func (r *paymentRepositoryPostgres) FindByGatewayTransactionID(
+	ctx context.Context,
+	gateway constant.PaymentGateway,
+	transactionID string,
+) (*entity.Payment, error) {
+	query := `
+		SELECT id, order_id, amount, currency, status,
+			payment_gateway, gateway_transaction_id, gateway_metadata,
+			created_at, updated_at, completed_at, failed_at, expires_at
+		FROM payments
+		WHERE payment_gateway = $1 AND gateway_transaction_id = $2
+	`
+
+	row := r.db.QueryRow(ctx, query, gateway, transactionID)
 
 	var payment entity.Payment
 

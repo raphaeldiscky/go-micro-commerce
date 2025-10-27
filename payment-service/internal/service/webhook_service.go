@@ -205,38 +205,32 @@ func (s *webhookService) handleChargeRefunded(
 
 // updatePaymentStatus updates payment status based on webhook event.
 //
-//nolint:cyclop // ignore complexity
+
 func (s *webhookService) updatePaymentStatus(
 	ctx context.Context,
 	gatewayID string,
 	newStatus constant.PaymentStatus,
-	metadata map[string]string,
+	_ map[string]string,
 ) error {
-	// Extract transaction ID from metadata
-	transactionIDStr, ok := metadata["transaction_id"]
-	if !ok {
-		s.logger.Errorf(
-			"transaction_id not found in webhook metadata for gateway ID: %s",
-			gatewayID,
-		)
-
-		return httperror.NewBadRequestError("transaction_id not found in metadata")
-	}
-
-	transactionID, err := uuid.Parse(transactionIDStr)
-	if err != nil {
-		s.logger.Errorf("Invalid transaction_id in webhook metadata: %v", err)
-		return httperror.NewBadRequestError("invalid transaction_id")
-	}
-
 	return s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		var err error
+
 		paymentRepo := ds.PaymentRepository()
 		outboxRepo := ds.OutboxRepository()
 
-		// Get payment by ID
-		payment, errFind := paymentRepo.FindByID(ctx, transactionID)
+		// Get payment by gateway transaction ID (Stripe PaymentIntent ID)
+		payment, errFind := paymentRepo.FindByGatewayTransactionID(
+			ctx,
+			constant.PaymentGatewayStripe,
+			gatewayID,
+		)
 		if errFind != nil {
-			s.logger.Errorf("Payment not found: %s, error: %v", transactionID, errFind)
+			s.logger.Errorf(
+				"Payment not found for gateway ID %s, error: %v",
+				gatewayID,
+				errFind,
+			)
+
 			return httperror.NewNotFoundError("payment not found")
 		}
 
@@ -248,7 +242,7 @@ func (s *webhookService) updatePaymentStatus(
 		if payment.Status == newStatus {
 			s.logger.Infof(
 				"Payment %s already in status %s, skipping update",
-				transactionID,
+				payment.ID,
 				newStatus,
 			)
 
@@ -319,10 +313,11 @@ func (s *webhookService) updatePaymentStatus(
 		}
 
 		s.logger.Infof(
-			"Payment %s status updated from %s to %s via webhook",
-			transactionID,
+			"Payment %s status updated from %s to %s via webhook (gateway ID: %s)",
+			payment.ID,
 			payment.Status,
 			newStatus,
+			gatewayID,
 		)
 
 		return nil
