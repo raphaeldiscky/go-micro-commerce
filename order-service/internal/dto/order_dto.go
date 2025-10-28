@@ -71,6 +71,7 @@ type OrderItemResponse struct {
 	ID            uuid.UUID       `json:"id"`
 	OrderID       uuid.UUID       `json:"order_id"`
 	ProductID     uuid.UUID       `json:"product_id"`
+	ProductName   string          `json:"product_name"`
 	Quantity      int64           `json:"quantity"`
 	UnitPrice     decimal.Decimal `json:"unit_price"`
 	TotalPrice    decimal.Decimal `json:"total_price"`

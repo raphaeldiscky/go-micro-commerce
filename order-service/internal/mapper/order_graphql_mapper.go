@@ -64,6 +64,7 @@ func MapToGraphQLOrderItemFromDTO(item *dto.OrderItemResponse) *graph.OrderItem 
 		ID:            item.ID,
 		OrderID:       item.OrderID,
 		ProductID:     item.ProductID,
+		ProductName:   item.ProductName,
 		Quantity:      int(item.Quantity),
 		UnitPrice:     item.UnitPrice,
 		TotalPrice:    item.TotalPrice,

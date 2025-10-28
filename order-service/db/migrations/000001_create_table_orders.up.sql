@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
     product_id UUID NOT NULL,
+    product_name TEXT NOT NULL,
     quantity BIGINT NOT NULL CHECK (quantity > 0),
     unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0), -- Price per unit
     tax_rate DECIMAL(5, 4) NOT NULL CHECK (tax_rate >= 0),

@@ -63,6 +63,7 @@ func MapToOrderItemResponses(items []entity.OrderItem) []dto.OrderItemResponse {
 			ID:            item.ID,
 			OrderID:       item.OrderID,
 			ProductID:     item.ProductID,
+			ProductName:   item.ProductName,
 			Quantity:      item.Quantity,
 			UnitPrice:     item.UnitPrice,
 			TaxRate:       item.TaxRate,

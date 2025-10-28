@@ -38,7 +38,10 @@ export function OrderCard({ order, className }: OrderCardProps) {
 
   return (
     <Card
-      className={cn('w-full transition-all hover:shadow-lg cursor-pointer hover:bg-accent/50', className)}
+      className={cn(
+        'w-full transition-all hover:shadow-lg cursor-pointer hover:bg-accent/50',
+        className,
+      )}
       onClick={handleClick}
     >
       <CardHeader className="pb-3">

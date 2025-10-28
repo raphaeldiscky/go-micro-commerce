@@ -559,6 +559,7 @@ export type OrderItem = {
   id: Scalars['UUID']['output']
   orderId: Scalars['UUID']['output']
   productId: Scalars['UUID']['output']
+  productName: Scalars['String']['output']
   quantity: Scalars['Int']['output']
   taxRate: Scalars['Decimal']['output']
   totalDiscount: Scalars['Decimal']['output']
@@ -729,6 +730,7 @@ export type Query = {
   getCheckoutSession?: Maybe<CheckoutSession>
   getDefaultAddress: Address
   getMyCart?: Maybe<Cart>
+  getOrderById: Order
   getPaymentByOrderId?: Maybe<Payment>
   getTabCounts: TabCounts
   getUnreadCount: UnreadCount
@@ -764,6 +766,10 @@ export type QueryGetAddressArgs = {
 }
 
 export type QueryGetCheckoutSessionArgs = {
+  id: Scalars['UUID']['input']
+}
+
+export type QueryGetOrderByIdArgs = {
   id: Scalars['UUID']['input']
 }
 

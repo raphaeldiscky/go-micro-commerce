@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-	"github.com/shopspring/decimal"
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
@@ -200,19 +199,24 @@ func (s *orderService) PlaceOrder(
 			return httperror.NewBadRequestError(fmt.Sprintf("failed to reserve products: %v", errn))
 		}
 
-		// Create order items using reserved product prices
+		// Create order items using reserved product prices and product names
 		orderItems := make([]entity.OrderItem, len(reservedProducts))
 		for i, product := range reservedProducts {
 			quantity := checkoutSession.Items[i].Quantity
 
-			orderItems[i] = entity.OrderItem{
-				ProductID:     product.ID,
-				Quantity:      quantity,
-				UnitPrice:     product.UnitPrice,
-				TaxRate:       decimal.Zero,
-				TotalTax:      decimal.Zero,
-				TotalDiscount: decimal.Zero,
+			orderItem, err := entity.NewOrderItem(
+				product.ID,
+				product.Name, // Add product name snapshot
+				quantity,
+				product.UnitPrice,
+			)
+			if err != nil {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf("failed to create order item for product %s: %v", product.ID, err),
+				)
 			}
+
+			orderItems[i] = *orderItem
 		}
 
 		// Step 4: Calculate shipping cost

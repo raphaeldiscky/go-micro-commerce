@@ -88,9 +88,6 @@ function RouteComponent() {
         // Navigate to payment page with client secret for Stripe payment
         navigate({
           to: PATH.payment.detail(result.orderId),
-          search: {
-            clientSecret: result.clientSecret,
-          },
         })
       } else {
         toast.error(result.error || 'Failed to place order')

@@ -81,6 +81,7 @@ type OrderItem {
   id: UUID!
   orderId: UUID!
   productId: UUID!
+  productName: String!
   quantity: Int!
   unitPrice: Decimal!
   totalPrice: Decimal!
@@ -189,6 +190,9 @@ extend type Query {
 
   # List authenticated user's orders with cursor pagination
   listMyOrders(limit: Int!, cursor: String): OrderConnection! @requiresAuth
+
+  # Get order by ID (authenticated user's orders only)
+  getOrderById(id: UUID!): Order! @requiresAuth
 }
 
 # Order mutations

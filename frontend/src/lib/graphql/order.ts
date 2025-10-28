@@ -46,6 +46,7 @@ export const LIST_MY_ORDERS_QUERY = gql`
             id
             orderId
             productId
+            productName
             quantity
             unitPrice
             totalPrice
@@ -114,6 +115,67 @@ export const CREATE_ORDER_MUTATION = gql`
         id
         orderId
         productId
+        productName
+        quantity
+        unitPrice
+        totalPrice
+        taxRate
+        totalTax
+        totalDiscount
+        createdAt
+        updatedAt
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`
+
+/**
+ * Get order by ID (authenticated user's orders only)
+ */
+export const GET_ORDER_BY_ID_QUERY = gql`
+  query GetOrderById($id: UUID!) {
+    getOrderById(id: $id) {
+      id
+      idempotencyKey
+      checkoutSessionId
+      customerId
+      status
+      currency
+      paymentGateway
+      courier {
+        courierId
+      }
+      destination {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      origin {
+        city
+        state
+        postalCode
+        countryCode
+      }
+      package {
+        weightKg
+        length
+        height
+        width
+        unit
+      }
+      shippingCost
+      subtotal
+      totalPrice
+      totalTax
+      totalDiscount
+      items {
+        id
+        orderId
+        productId
+        productName
         quantity
         unitPrice
         totalPrice
@@ -174,6 +236,7 @@ export const PLACE_ORDER_MUTATION = gql`
           id
           orderId
           productId
+          productName
           quantity
           unitPrice
           totalPrice

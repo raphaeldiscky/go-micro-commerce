@@ -92,6 +92,7 @@ type OrderItem struct {
 	ID            uuid.UUID       `json:"id"`
 	OrderID       uuid.UUID       `json:"orderId"`
 	ProductID     uuid.UUID       `json:"productId"`
+	ProductName   string          `json:"productName"`
 	Quantity      int             `json:"quantity"`
 	UnitPrice     decimal.Decimal `json:"unitPrice"`
 	TotalPrice    decimal.Decimal `json:"totalPrice"`

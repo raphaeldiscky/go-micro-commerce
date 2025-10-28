@@ -14,7 +14,7 @@ import {
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { AlertCircle, ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react'
+import { AlertCircle, CheckCircle, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
@@ -77,10 +77,6 @@ function RouteComponent() {
     toast.error(errorMsg)
   }
 
-  const handleBack = () => {
-    window.history.back()
-  }
-
   // Loading state
   if (isLoading) {
     return (
@@ -139,15 +135,6 @@ function RouteComponent() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBack}
-                className="text-muted-foreground hover:text-foreground mb-4"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back
-              </Button>
               <h1 className="text-2xl font-bold tracking-tight">
                 {isCompleted ? 'Payment Successful' : 'Complete Payment'}
               </h1>

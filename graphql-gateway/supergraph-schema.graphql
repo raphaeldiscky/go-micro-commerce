@@ -535,6 +535,7 @@ type OrderItem
   id: UUID!
   orderId: UUID!
   productId: UUID!
+  productName: String!
   quantity: Int!
   unitPrice: Decimal!
   totalPrice: Decimal!
@@ -756,6 +757,7 @@ type Query
   getTabCounts: TabCounts! @join__field(graph: NOTIFICATION_SERVICE)
   listOrders(limit: Int!, cursor: String): OrderConnection! @join__field(graph: ORDER_SERVICE)
   listMyOrders(limit: Int!, cursor: String): OrderConnection! @join__field(graph: ORDER_SERVICE)
+  getOrderById(id: UUID!): Order! @join__field(graph: ORDER_SERVICE)
   getPaymentByOrderId(orderId: UUID!): Payment @join__field(graph: PAYMENT_SERVICE)
 }
 

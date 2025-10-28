@@ -185,8 +185,8 @@ func (r *orderRepository) Create(
 
 	if len(order.Items) > 0 {
 		const insertItemQuery = `
-            INSERT INTO order_items (id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            INSERT INTO order_items (id, order_id, product_id, product_name, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `
 
 		for i := range len(order.Items) {
@@ -198,6 +198,7 @@ func (r *orderRepository) Create(
 				item.ID,
 				createdOrder.ID,
 				item.ProductID,
+				item.ProductName,
 				item.Quantity,
 				item.TaxRate,
 				item.UnitPrice,
@@ -284,7 +285,7 @@ func (r *orderRepository) FindByID(
 
 	// Get order items
 	const itemsQuery = `
-		SELECT id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, order_id, product_id, product_name, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -304,6 +305,7 @@ func (r *orderRepository) FindByID(
 			&item.ID,
 			&item.OrderID,
 			&item.ProductID,
+			&item.ProductName,
 			&item.Quantity,
 			&item.TaxRate,
 			&item.UnitPrice,
@@ -391,7 +393,7 @@ func (r *orderRepository) FindByIdempotencyKey(
 
 	// Get order items
 	const itemsQuery = `
-		SELECT id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, order_id, product_id, product_name, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -411,6 +413,7 @@ func (r *orderRepository) FindByIdempotencyKey(
 			&item.ID,
 			&item.OrderID,
 			&item.ProductID,
+			&item.ProductName,
 			&item.Quantity,
 			&item.TaxRate,
 			&item.UnitPrice,
@@ -1067,7 +1070,7 @@ func (r *orderRepository) loadOrderItems(
 	orderID uuid.UUID,
 ) ([]entity.OrderItem, error) {
 	query := `
-		SELECT id, order_id, product_id, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
+		SELECT id, order_id, product_id, product_name, quantity, tax_rate, unit_price, total_tax, total_discount, total_price, created_at, updated_at
 		FROM order_items
 		WHERE order_id = $1
 	`
@@ -1087,6 +1090,7 @@ func (r *orderRepository) loadOrderItems(
 			&item.ID,
 			&item.OrderID,
 			&item.ProductID,
+			&item.ProductName,
 			&item.Quantity,
 			&item.TaxRate,
 			&item.UnitPrice,

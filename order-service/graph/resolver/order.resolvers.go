@@ -6,7 +6,9 @@ package resolver
 
 import (
 	"context"
+	"errors"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
@@ -123,4 +125,27 @@ func (r *queryResolver) ListMyOrders(
 		pagination.NextCursor,
 		pagination.HasNext,
 	), nil
+}
+
+// GetOrderByID is the resolver for the getOrderById field.
+func (r *queryResolver) GetOrderByID(ctx context.Context, id uuid.UUID) (*graph.Order, error) {
+	// Get authenticated user to ensure they can only access their own orders
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get order by ID using service
+	orderResponse, err := r.orderService.GetOrder(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the order belongs to the authenticated user
+	if orderResponse.CustomerID != user.UserID {
+		return nil, errors.New("access denied: order does not belong to user")
+	}
+
+	// Map to GraphQL order
+	return mapper.MapToGraphQLOrderFromDTO(orderResponse), nil
 }
