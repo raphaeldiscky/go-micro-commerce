@@ -187,6 +187,8 @@ type GetCheckoutSessionResponse struct {
 	CreatedAt         *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt         *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	ExpiresAt         *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
+	Items             []*CheckoutSessionItem `protobuf:"bytes,14,rep,name=items,proto3" json:"items,omitempty"`
+	PaymentGateway    *string                `protobuf:"bytes,15,opt,name=payment_gateway,json=paymentGateway,proto3,oneof" json:"payment_gateway,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -312,6 +314,96 @@ func (x *GetCheckoutSessionResponse) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *GetCheckoutSessionResponse) GetItems() []*CheckoutSessionItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+func (x *GetCheckoutSessionResponse) GetPaymentGateway() string {
+	if x != nil && x.PaymentGateway != nil {
+		return *x.PaymentGateway
+	}
+	return ""
+}
+
+type CheckoutSessionItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	ProductId     string                 `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	ProductName   string                 `protobuf:"bytes,3,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
+	Quantity      int64                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPrice     string                 `protobuf:"bytes,5,opt,name=unit_price,json=unitPrice,proto3" json:"unit_price,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckoutSessionItem) Reset() {
+	*x = CheckoutSessionItem{}
+	mi := &file_cart_v1_cart_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckoutSessionItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckoutSessionItem) ProtoMessage() {}
+
+func (x *CheckoutSessionItem) ProtoReflect() protoreflect.Message {
+	mi := &file_cart_v1_cart_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckoutSessionItem.ProtoReflect.Descriptor instead.
+func (*CheckoutSessionItem) Descriptor() ([]byte, []int) {
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CheckoutSessionItem) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CheckoutSessionItem) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *CheckoutSessionItem) GetProductName() string {
+	if x != nil {
+		return x.ProductName
+	}
+	return ""
+}
+
+func (x *CheckoutSessionItem) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *CheckoutSessionItem) GetUnitPrice() string {
+	if x != nil {
+		return x.UnitPrice
+	}
+	return ""
+}
+
 type Destination struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	City          string                 `protobuf:"bytes,1,opt,name=city,proto3" json:"city,omitempty"`
@@ -324,7 +416,7 @@ type Destination struct {
 
 func (x *Destination) Reset() {
 	*x = Destination{}
-	mi := &file_cart_v1_cart_proto_msgTypes[2]
+	mi := &file_cart_v1_cart_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -336,7 +428,7 @@ func (x *Destination) String() string {
 func (*Destination) ProtoMessage() {}
 
 func (x *Destination) ProtoReflect() protoreflect.Message {
-	mi := &file_cart_v1_cart_proto_msgTypes[2]
+	mi := &file_cart_v1_cart_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -349,7 +441,7 @@ func (x *Destination) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Destination.ProtoReflect.Descriptor instead.
 func (*Destination) Descriptor() ([]byte, []int) {
-	return file_cart_v1_cart_proto_rawDescGZIP(), []int{2}
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Destination) GetCity() string {
@@ -392,7 +484,7 @@ type Origin struct {
 
 func (x *Origin) Reset() {
 	*x = Origin{}
-	mi := &file_cart_v1_cart_proto_msgTypes[3]
+	mi := &file_cart_v1_cart_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -404,7 +496,7 @@ func (x *Origin) String() string {
 func (*Origin) ProtoMessage() {}
 
 func (x *Origin) ProtoReflect() protoreflect.Message {
-	mi := &file_cart_v1_cart_proto_msgTypes[3]
+	mi := &file_cart_v1_cart_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -417,7 +509,7 @@ func (x *Origin) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Origin.ProtoReflect.Descriptor instead.
 func (*Origin) Descriptor() ([]byte, []int) {
-	return file_cart_v1_cart_proto_rawDescGZIP(), []int{3}
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Origin) GetCity() string {
@@ -457,7 +549,7 @@ type Courier struct {
 
 func (x *Courier) Reset() {
 	*x = Courier{}
-	mi := &file_cart_v1_cart_proto_msgTypes[4]
+	mi := &file_cart_v1_cart_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -469,7 +561,7 @@ func (x *Courier) String() string {
 func (*Courier) ProtoMessage() {}
 
 func (x *Courier) ProtoReflect() protoreflect.Message {
-	mi := &file_cart_v1_cart_proto_msgTypes[4]
+	mi := &file_cart_v1_cart_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -482,7 +574,7 @@ func (x *Courier) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Courier.ProtoReflect.Descriptor instead.
 func (*Courier) Descriptor() ([]byte, []int) {
-	return file_cart_v1_cart_proto_rawDescGZIP(), []int{4}
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Courier) GetCourierId() string {
@@ -505,7 +597,7 @@ type Package struct {
 
 func (x *Package) Reset() {
 	*x = Package{}
-	mi := &file_cart_v1_cart_proto_msgTypes[5]
+	mi := &file_cart_v1_cart_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -517,7 +609,7 @@ func (x *Package) String() string {
 func (*Package) ProtoMessage() {}
 
 func (x *Package) ProtoReflect() protoreflect.Message {
-	mi := &file_cart_v1_cart_proto_msgTypes[5]
+	mi := &file_cart_v1_cart_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -530,7 +622,7 @@ func (x *Package) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Package.ProtoReflect.Descriptor instead.
 func (*Package) Descriptor() ([]byte, []int) {
-	return file_cart_v1_cart_proto_rawDescGZIP(), []int{5}
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Package) GetWeightKg() string {
@@ -576,7 +668,7 @@ type HealthRequest struct {
 
 func (x *HealthRequest) Reset() {
 	*x = HealthRequest{}
-	mi := &file_cart_v1_cart_proto_msgTypes[6]
+	mi := &file_cart_v1_cart_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -588,7 +680,7 @@ func (x *HealthRequest) String() string {
 func (*HealthRequest) ProtoMessage() {}
 
 func (x *HealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_cart_v1_cart_proto_msgTypes[6]
+	mi := &file_cart_v1_cart_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -601,7 +693,7 @@ func (x *HealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthRequest.ProtoReflect.Descriptor instead.
 func (*HealthRequest) Descriptor() ([]byte, []int) {
-	return file_cart_v1_cart_proto_rawDescGZIP(), []int{6}
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{7}
 }
 
 type HealthResponse struct {
@@ -613,7 +705,7 @@ type HealthResponse struct {
 
 func (x *HealthResponse) Reset() {
 	*x = HealthResponse{}
-	mi := &file_cart_v1_cart_proto_msgTypes[7]
+	mi := &file_cart_v1_cart_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -625,7 +717,7 @@ func (x *HealthResponse) String() string {
 func (*HealthResponse) ProtoMessage() {}
 
 func (x *HealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_cart_v1_cart_proto_msgTypes[7]
+	mi := &file_cart_v1_cart_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -638,7 +730,7 @@ func (x *HealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HealthResponse.ProtoReflect.Descriptor instead.
 func (*HealthResponse) Descriptor() ([]byte, []int) {
-	return file_cart_v1_cart_proto_rawDescGZIP(), []int{7}
+	return file_cart_v1_cart_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *HealthResponse) GetStatus() HealthStatus {
@@ -654,7 +746,7 @@ const file_cart_v1_cart_proto_rawDesc = "" +
 	"\n" +
 	"\x12cart/v1/cart.proto\x12\acart.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\"U\n" +
 	"\x19GetCheckoutSessionRequest\x128\n" +
-	"\x13checkout_session_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x11checkoutSessionId\"\x9b\x05\n" +
+	"\x13checkout_session_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x11checkoutSessionId\"\x9d\x06\n" +
 	"\x1aGetCheckoutSessionResponse\x128\n" +
 	"\x13checkout_session_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x11checkoutSessionId\x121\n" +
 	"\x0fidempotency_key\x18\x02 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x0eidempotencyKey\x12)\n" +
@@ -673,7 +765,20 @@ const file_cart_v1_cart_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\f \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x129\n" +
 	"\n" +
-	"expires_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\xab\x01\n" +
+	"expires_at\x18\r \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x122\n" +
+	"\x05items\x18\x0e \x03(\v2\x1c.cart.v1.CheckoutSessionItemR\x05items\x128\n" +
+	"\x0fpayment_gateway\x18\x0f \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01H\x00R\x0epaymentGateway\x88\x01\x01B\x12\n" +
+	"\x10_payment_gateway\"\xeb\x01\n" +
+	"\x13CheckoutSessionItem\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12'\n" +
+	"\n" +
+	"product_id\x18\x02 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tproductId\x12-\n" +
+	"\fproduct_name\x18\x03 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\vproductName\x12#\n" +
+	"\bquantity\x18\x04 \x01(\x03B\a\xbaH\x04\"\x02(\x01R\bquantity\x12=\n" +
+	"\n" +
+	"unit_price\x18\x05 \x01(\tB\x1e\xbaH\x1br\x192\x17^[0-9]+(\\.[0-9]{1,2})?$R\tunitPrice\"\xab\x01\n" +
 	"\vDestination\x12\x1e\n" +
 	"\x04city\x18\x01 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04city\x12 \n" +
@@ -735,39 +840,41 @@ func file_cart_v1_cart_proto_rawDescGZIP() []byte {
 }
 
 var file_cart_v1_cart_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_cart_v1_cart_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_cart_v1_cart_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_cart_v1_cart_proto_goTypes = []any{
 	(Status)(0),                        // 0: cart.v1.Status
 	(HealthStatus)(0),                  // 1: cart.v1.HealthStatus
 	(*GetCheckoutSessionRequest)(nil),  // 2: cart.v1.GetCheckoutSessionRequest
 	(*GetCheckoutSessionResponse)(nil), // 3: cart.v1.GetCheckoutSessionResponse
-	(*Destination)(nil),                // 4: cart.v1.Destination
-	(*Origin)(nil),                     // 5: cart.v1.Origin
-	(*Courier)(nil),                    // 6: cart.v1.Courier
-	(*Package)(nil),                    // 7: cart.v1.Package
-	(*HealthRequest)(nil),              // 8: cart.v1.HealthRequest
-	(*HealthResponse)(nil),             // 9: cart.v1.HealthResponse
-	(*timestamppb.Timestamp)(nil),      // 10: google.protobuf.Timestamp
+	(*CheckoutSessionItem)(nil),        // 4: cart.v1.CheckoutSessionItem
+	(*Destination)(nil),                // 5: cart.v1.Destination
+	(*Origin)(nil),                     // 6: cart.v1.Origin
+	(*Courier)(nil),                    // 7: cart.v1.Courier
+	(*Package)(nil),                    // 8: cart.v1.Package
+	(*HealthRequest)(nil),              // 9: cart.v1.HealthRequest
+	(*HealthResponse)(nil),             // 10: cart.v1.HealthResponse
+	(*timestamppb.Timestamp)(nil),      // 11: google.protobuf.Timestamp
 }
 var file_cart_v1_cart_proto_depIdxs = []int32{
 	0,  // 0: cart.v1.GetCheckoutSessionResponse.status:type_name -> cart.v1.Status
-	4,  // 1: cart.v1.GetCheckoutSessionResponse.destination:type_name -> cart.v1.Destination
-	5,  // 2: cart.v1.GetCheckoutSessionResponse.origin:type_name -> cart.v1.Origin
-	6,  // 3: cart.v1.GetCheckoutSessionResponse.courier:type_name -> cart.v1.Courier
-	7,  // 4: cart.v1.GetCheckoutSessionResponse.package:type_name -> cart.v1.Package
-	10, // 5: cart.v1.GetCheckoutSessionResponse.created_at:type_name -> google.protobuf.Timestamp
-	10, // 6: cart.v1.GetCheckoutSessionResponse.updated_at:type_name -> google.protobuf.Timestamp
-	10, // 7: cart.v1.GetCheckoutSessionResponse.expires_at:type_name -> google.protobuf.Timestamp
-	1,  // 8: cart.v1.HealthResponse.status:type_name -> cart.v1.HealthStatus
-	2,  // 9: cart.v1.CartService.GetCheckoutSession:input_type -> cart.v1.GetCheckoutSessionRequest
-	8,  // 10: cart.v1.CartService.Health:input_type -> cart.v1.HealthRequest
-	3,  // 11: cart.v1.CartService.GetCheckoutSession:output_type -> cart.v1.GetCheckoutSessionResponse
-	9,  // 12: cart.v1.CartService.Health:output_type -> cart.v1.HealthResponse
-	11, // [11:13] is the sub-list for method output_type
-	9,  // [9:11] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	5,  // 1: cart.v1.GetCheckoutSessionResponse.destination:type_name -> cart.v1.Destination
+	6,  // 2: cart.v1.GetCheckoutSessionResponse.origin:type_name -> cart.v1.Origin
+	7,  // 3: cart.v1.GetCheckoutSessionResponse.courier:type_name -> cart.v1.Courier
+	8,  // 4: cart.v1.GetCheckoutSessionResponse.package:type_name -> cart.v1.Package
+	11, // 5: cart.v1.GetCheckoutSessionResponse.created_at:type_name -> google.protobuf.Timestamp
+	11, // 6: cart.v1.GetCheckoutSessionResponse.updated_at:type_name -> google.protobuf.Timestamp
+	11, // 7: cart.v1.GetCheckoutSessionResponse.expires_at:type_name -> google.protobuf.Timestamp
+	4,  // 8: cart.v1.GetCheckoutSessionResponse.items:type_name -> cart.v1.CheckoutSessionItem
+	1,  // 9: cart.v1.HealthResponse.status:type_name -> cart.v1.HealthStatus
+	2,  // 10: cart.v1.CartService.GetCheckoutSession:input_type -> cart.v1.GetCheckoutSessionRequest
+	9,  // 11: cart.v1.CartService.Health:input_type -> cart.v1.HealthRequest
+	3,  // 12: cart.v1.CartService.GetCheckoutSession:output_type -> cart.v1.GetCheckoutSessionResponse
+	10, // 13: cart.v1.CartService.Health:output_type -> cart.v1.HealthResponse
+	12, // [12:14] is the sub-list for method output_type
+	10, // [10:12] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_cart_v1_cart_proto_init() }
@@ -775,13 +882,14 @@ func file_cart_v1_cart_proto_init() {
 	if File_cart_v1_cart_proto != nil {
 		return
 	}
+	file_cart_v1_cart_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_cart_v1_cart_proto_rawDesc), len(file_cart_v1_cart_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

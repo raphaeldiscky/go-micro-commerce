@@ -25,7 +25,7 @@ import type { Message } from '@bufbuild/protobuf'
 export const file_cart_v1_cart: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'ChJjYXJ0L3YxL2NhcnQucHJvdG8SB2NhcnQudjEiQgoZR2V0Q2hlY2tvdXRTZXNzaW9uUmVxdWVzdBIlChNjaGVja291dF9zZXNzaW9uX2lkGAEgASgJQgi6SAVyA7ABASKKBAoaR2V0Q2hlY2tvdXRTZXNzaW9uUmVzcG9uc2USJQoTY2hlY2tvdXRfc2Vzc2lvbl9pZBgBIAEoCUIIukgFcgOwAQESIQoPaWRlbXBvdGVuY3lfa2V5GAIgASgJQgi6SAVyA7ABARIdCgtjdXN0b21lcl9pZBgDIAEoCUIIukgFcgOwAQESGQoHY2FydF9pZBgEIAEoCUIIukgFcgOwAQESKQoGc3RhdHVzGAUgASgOMg8uY2FydC52MS5TdGF0dXNCCLpIBYIBAhABEikKC2Rlc3RpbmF0aW9uGAYgASgLMhQuY2FydC52MS5EZXN0aW5hdGlvbhIfCgZvcmlnaW4YByABKAsyDy5jYXJ0LnYxLk9yaWdpbhIhCgdjb3VyaWVyGAggASgLMhAuY2FydC52MS5Db3VyaWVyEiEKB3BhY2thZ2UYCSABKAsyEC5jYXJ0LnYxLlBhY2thZ2USGwoIY3VycmVuY3kYCiABKAlCCbpIBnIEEAMYAxIuCgpjcmVhdGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpleHBpcmVzX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKFAQoLRGVzdGluYXRpb24SGAoEY2l0eRgBIAEoCUIKukgHcgUQARj/ARIZCgVzdGF0ZRgCIAEoCUIKukgHcgUQARj/ARIfCgtwb3N0YWxfY29kZRgDIAEoCUIKukgHcgUQARj/ARIgCgxjb3VudHJ5X2NvZGUYBCABKAlCCrpIB3IFEAEY/wEigAEKBk9yaWdpbhIYCgRjaXR5GAEgASgJQgq6SAdyBRABGP8BEhkKBXN0YXRlGAIgASgJQgq6SAdyBRABGP8BEh8KC3Bvc3RhbF9jb2RlGAMgASgJQgq6SAdyBRABGP8BEiAKDGNvdW50cnlfY29kZRgEIAEoCUIKukgHcgUQARj/ASInCgdDb3VyaWVyEhwKCmNvdXJpZXJfaWQYASABKAlCCLpIBXIDsAEBIuUBCgdQYWNrYWdlEjEKCXdlaWdodF9rZxgBIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi4KBmxlbmd0aBgCIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi0KBXdpZHRoGAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGaGVpZ2h0GAQgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGAoEdW5pdBgFIAEoCUIKukgHcgUQARj/ASIPCg1IZWFsdGhSZXF1ZXN0IjcKDkhlYWx0aFJlc3BvbnNlEiUKBnN0YXR1cxgBIAEoDjIVLmNhcnQudjEuSGVhbHRoU3RhdHVzKnYKBlN0YXR1cxIWChJTVEFUVVNfVU5TUEVDSUZJRUQQABISCg5TVEFUVVNfUEVORElORxABEhcKE1NUQVRVU19PUkRFUl9QTEFDRUQQAhITCg9TVEFUVVNfQ0FOQ0VMRUQQAxISCg5TVEFUVVNfRVhQSVJFRBAEKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMqcBCgtDYXJ0U2VydmljZRJdChJHZXRDaGVja291dFNlc3Npb24SIi5jYXJ0LnYxLkdldENoZWNrb3V0U2Vzc2lvblJlcXVlc3QaIy5jYXJ0LnYxLkdldENoZWNrb3V0U2Vzc2lvblJlc3BvbnNlEjkKBkhlYWx0aBIWLmNhcnQudjEuSGVhbHRoUmVxdWVzdBoXLmNhcnQudjEuSGVhbHRoUmVzcG9uc2VClgEKC2NvbS5jYXJ0LnYxQglDYXJ0UHJvdG9QAVo/Z2l0aHViLmNvbS9yYXBoYWVsZGlzY2t5L2dvLW1pY3JvLWNvbW1lcmNlL3Byb3RvL2NhcnQvdjE7Y2FydHYxogIDQ1hYqgIHQ2FydC5WMcoCB0NhcnRcVjHiAhNDYXJ0XFYxXEdQQk1ldGFkYXRh6gIIQ2FydDo6VjFiBnByb3RvMw',
+    'ChJjYXJ0L3YxL2NhcnQucHJvdG8SB2NhcnQudjEiQgoZR2V0Q2hlY2tvdXRTZXNzaW9uUmVxdWVzdBIlChNjaGVja291dF9zZXNzaW9uX2lkGAEgASgJQgi6SAVyA7ABASL1BAoaR2V0Q2hlY2tvdXRTZXNzaW9uUmVzcG9uc2USJQoTY2hlY2tvdXRfc2Vzc2lvbl9pZBgBIAEoCUIIukgFcgOwAQESIQoPaWRlbXBvdGVuY3lfa2V5GAIgASgJQgi6SAVyA7ABARIdCgtjdXN0b21lcl9pZBgDIAEoCUIIukgFcgOwAQESGQoHY2FydF9pZBgEIAEoCUIIukgFcgOwAQESKQoGc3RhdHVzGAUgASgOMg8uY2FydC52MS5TdGF0dXNCCLpIBYIBAhABEikKC2Rlc3RpbmF0aW9uGAYgASgLMhQuY2FydC52MS5EZXN0aW5hdGlvbhIfCgZvcmlnaW4YByABKAsyDy5jYXJ0LnYxLk9yaWdpbhIhCgdjb3VyaWVyGAggASgLMhAuY2FydC52MS5Db3VyaWVyEiEKB3BhY2thZ2UYCSABKAsyEC5jYXJ0LnYxLlBhY2thZ2USGwoIY3VycmVuY3kYCiABKAlCCbpIBnIEEAMYAxIuCgpjcmVhdGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpleHBpcmVzX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIrCgVpdGVtcxgOIAMoCzIcLmNhcnQudjEuQ2hlY2tvdXRTZXNzaW9uSXRlbRIoCg9wYXltZW50X2dhdGV3YXkYDyABKAlCCrpIB3IFEAEY/wFIAIgBAUISChBfcGF5bWVudF9nYXRld2F5IroBChNDaGVja291dFNlc3Npb25JdGVtEhQKAmlkGAEgASgJQgi6SAVyA7ABARIcCgpwcm9kdWN0X2lkGAIgASgJQgi6SAVyA7ABARIgCgxwcm9kdWN0X25hbWUYAyABKAlCCrpIB3IFEAEY/wESGQoIcXVhbnRpdHkYBCABKANCB7pIBCICKAESMgoKdW5pdF9wcmljZRgFIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kIoUBCgtEZXN0aW5hdGlvbhIYCgRjaXR5GAEgASgJQgq6SAdyBRABGP8BEhkKBXN0YXRlGAIgASgJQgq6SAdyBRABGP8BEh8KC3Bvc3RhbF9jb2RlGAMgASgJQgq6SAdyBRABGP8BEiAKDGNvdW50cnlfY29kZRgEIAEoCUIKukgHcgUQARj/ASKAAQoGT3JpZ2luEhgKBGNpdHkYASABKAlCCrpIB3IFEAEY/wESGQoFc3RhdGUYAiABKAlCCrpIB3IFEAEY/wESHwoLcG9zdGFsX2NvZGUYAyABKAlCCrpIB3IFEAEY/wESIAoMY291bnRyeV9jb2RlGAQgASgJQgq6SAdyBRABGP8BIicKB0NvdXJpZXISHAoKY291cmllcl9pZBgBIAEoCUIIukgFcgOwAQEi5QEKB1BhY2thZ2USMQoJd2VpZ2h0X2tnGAEgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGbGVuZ3RoGAIgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLQoFd2lkdGgYAyABKAlCHrpIG3IZMhdeWzAtOV0rKFwuWzAtOV17MSwyfSk/JBIuCgZoZWlnaHQYBCABKAlCHrpIG3IZMhdeWzAtOV0rKFwuWzAtOV17MSwyfSk/JBIYCgR1bml0GAUgASgJQgq6SAdyBRABGP8BIg8KDUhlYWx0aFJlcXVlc3QiNwoOSGVhbHRoUmVzcG9uc2USJQoGc3RhdHVzGAEgASgOMhUuY2FydC52MS5IZWFsdGhTdGF0dXMqdgoGU3RhdHVzEhYKElNUQVRVU19VTlNQRUNJRklFRBAAEhIKDlNUQVRVU19QRU5ESU5HEAESFwoTU1RBVFVTX09SREVSX1BMQUNFRBACEhMKD1NUQVRVU19DQU5DRUxFRBADEhIKDlNUQVRVU19FWFBJUkVEEAQqZwoMSGVhbHRoU3RhdHVzEh0KGUhFQUxUSF9TVEFUVVNfVU5TUEVDSUZJRUQQABIZChVIRUFMVEhfU1RBVFVTX1NFUlZJTkcQARIdChlIRUFMVEhfU1RBVFVTX05PVF9TRVJWSU5HEAIypwEKC0NhcnRTZXJ2aWNlEl0KEkdldENoZWNrb3V0U2Vzc2lvbhIiLmNhcnQudjEuR2V0Q2hlY2tvdXRTZXNzaW9uUmVxdWVzdBojLmNhcnQudjEuR2V0Q2hlY2tvdXRTZXNzaW9uUmVzcG9uc2USOQoGSGVhbHRoEhYuY2FydC52MS5IZWFsdGhSZXF1ZXN0GhcuY2FydC52MS5IZWFsdGhSZXNwb25zZUKWAQoLY29tLmNhcnQudjFCCUNhcnRQcm90b1ABWj9naXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vY2FydC92MTtjYXJ0djGiAgNDWFiqAgdDYXJ0LlYxygIHQ2FydFxWMeICE0NhcnRcVjFcR1BCTWV0YWRhdGHqAghDYXJ0OjpWMWIGcHJvdG8z',
     [file_google_protobuf_timestamp, file_buf_validate_validate],
   )
 
@@ -117,6 +117,16 @@ export type GetCheckoutSessionResponse =
      * @generated from field: google.protobuf.Timestamp expires_at = 13;
      */
     expiresAt?: Timestamp
+
+    /**
+     * @generated from field: repeated cart.v1.CheckoutSessionItem items = 14;
+     */
+    items: CheckoutSessionItem[]
+
+    /**
+     * @generated from field: optional string payment_gateway = 15;
+     */
+    paymentGateway?: string
   }
 
 /**
@@ -126,6 +136,44 @@ export type GetCheckoutSessionResponse =
 export const GetCheckoutSessionResponseSchema: GenMessage<GetCheckoutSessionResponse> =
   /*@__PURE__*/
   messageDesc(file_cart_v1_cart, 1)
+
+/**
+ * @generated from message cart.v1.CheckoutSessionItem
+ */
+export type CheckoutSessionItem = Message<'cart.v1.CheckoutSessionItem'> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string
+
+  /**
+   * @generated from field: string product_id = 2;
+   */
+  productId: string
+
+  /**
+   * @generated from field: string product_name = 3;
+   */
+  productName: string
+
+  /**
+   * @generated from field: int64 quantity = 4;
+   */
+  quantity: bigint
+
+  /**
+   * @generated from field: string unit_price = 5;
+   */
+  unitPrice: string
+}
+
+/**
+ * Describes the message cart.v1.CheckoutSessionItem.
+ * Use `create(CheckoutSessionItemSchema)` to create a new message.
+ */
+export const CheckoutSessionItemSchema: GenMessage<CheckoutSessionItem> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 2)
 
 /**
  * @generated from message cart.v1.Destination
@@ -158,7 +206,7 @@ export type Destination = Message<'cart.v1.Destination'> & {
  */
 export const DestinationSchema: GenMessage<Destination> =
   /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 2)
+  messageDesc(file_cart_v1_cart, 3)
 
 /**
  * @generated from message cart.v1.Origin
@@ -191,7 +239,7 @@ export type Origin = Message<'cart.v1.Origin'> & {
  */
 export const OriginSchema: GenMessage<Origin> =
   /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 3)
+  messageDesc(file_cart_v1_cart, 4)
 
 /**
  * @generated from message cart.v1.Courier
@@ -209,7 +257,7 @@ export type Courier = Message<'cart.v1.Courier'> & {
  */
 export const CourierSchema: GenMessage<Courier> =
   /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 4)
+  messageDesc(file_cart_v1_cart, 5)
 
 /**
  * @generated from message cart.v1.Package
@@ -247,7 +295,7 @@ export type Package = Message<'cart.v1.Package'> & {
  */
 export const PackageSchema: GenMessage<Package> =
   /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 5)
+  messageDesc(file_cart_v1_cart, 6)
 
 /**
  * @generated from message cart.v1.HealthRequest
@@ -260,7 +308,7 @@ export type HealthRequest = Message<'cart.v1.HealthRequest'> & {}
  */
 export const HealthRequestSchema: GenMessage<HealthRequest> =
   /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 6)
+  messageDesc(file_cart_v1_cart, 7)
 
 /**
  * @generated from message cart.v1.HealthResponse
@@ -278,7 +326,7 @@ export type HealthResponse = Message<'cart.v1.HealthResponse'> & {
  */
 export const HealthResponseSchema: GenMessage<HealthResponse> =
   /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 7)
+  messageDesc(file_cart_v1_cart, 8)
 
 /**
  * @generated from enum cart.v1.Status

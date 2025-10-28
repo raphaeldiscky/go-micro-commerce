@@ -30,6 +30,18 @@ message GetCheckoutSessionResponse {
   google.protobuf.Timestamp created_at = 11;
   google.protobuf.Timestamp updated_at = 12;
   google.protobuf.Timestamp expires_at = 13;
+  repeated CheckoutSessionItem items = 14;
+  optional string payment_gateway = 15 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+}
+
+message CheckoutSessionItem {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string product_id = 2 [(buf.validate.field).string.uuid = true];
+  string product_name = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  int64 quantity = 4 [(buf.validate.field).int64 = {gte: 1}];
+  string unit_price = 5 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+  }];
 }
 
 message Destination {
