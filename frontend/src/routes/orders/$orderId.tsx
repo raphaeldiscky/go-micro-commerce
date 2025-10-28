@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { useEffect } from 'react'
 import { toast } from 'sonner'
+import { OrderStatus } from '../../types/__generated__/graphql'
 
 export const Route = createFileRoute(PATH.orders.$orderId)({
   component: RouteComponent,
@@ -75,19 +76,13 @@ function RouteComponent() {
 
   // Show success message when order is paid/completed
   useEffect(() => {
-    if (order?.status === 'PAID' || order?.status === 'COMPLETED') {
+    if (
+      order?.status === OrderStatus.Paid ||
+      order?.status === OrderStatus.Completed
+    ) {
       toast.success('Order confirmed! Your payment has been processed.')
     }
   }, [order?.status])
-
-  const handleBackToShop = () => {
-    navigate({ to: PATH.products.root })
-  }
-
-  const handleTrackOrder = () => {
-    // TODO: Navigate to order tracking page when implemented
-    toast.info('Order tracking feature coming soon!')
-  }
 
   // Loading state
   if (isOrderLoading || isPaymentLoading) {
