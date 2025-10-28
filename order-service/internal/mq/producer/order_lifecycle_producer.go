@@ -31,9 +31,11 @@ type OrderLifecycleProducer struct {
 // NewOrderLifecycleEvent creates a new OrderLifecycleEvent.
 func NewOrderLifecycleEvent(
 	orderID uuid.UUID,
+	checkoutSessionID uuid.UUID,
 	newStatus constant.OrderStatus,
 	userID uuid.UUID,
 	totalPrice decimal.Decimal,
+	currency string,
 	items []entity.OrderItem,
 ) *OrderLifecycleEvent {
 	return &OrderLifecycleEvent{
@@ -45,11 +47,13 @@ func NewOrderLifecycleEvent(
 			Source:      pkgconstant.OrderServiceName,
 		},
 		Payload: kafkaevent.OrderLifecyclePayload{
-			OrderID:    orderID,
-			UserID:     userID,
-			Status:     string(newStatus),
-			TotalPrice: totalPrice,
-			Items:      mapper.MapOrderItemsToPayload(items),
+			OrderID:           orderID,
+			CheckoutSessionID: checkoutSessionID,
+			UserID:            userID,
+			Status:            string(newStatus),
+			TotalPrice:        totalPrice,
+			Currency:          currency,
+			Items:             mapper.MapOrderItemsToPayload(items),
 		},
 	}
 }

@@ -14,6 +14,7 @@ func SetupOrderRoutes(e *echo.Echo, h *handler.OrderHandler) {
 
 	protected := v1.Group("")
 	protected.Use(middleware.AuthMiddleware)
+	protected.POST("/place-order", h.PlaceOrder)
 	protected.POST("/saga", h.CreateOrderWithSaga)
 	protected.POST("/temporal", h.CreateOrderWithTemporal)
 	protected.GET("/user", h.GetLoggedInOrders)

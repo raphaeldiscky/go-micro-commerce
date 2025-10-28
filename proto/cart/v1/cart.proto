@@ -1,0 +1,99 @@
+syntax = "proto3";
+
+package cart.v1;
+
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/cart/v1;cartv1";
+
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+
+service CartService {
+  rpc GetCheckoutSession(GetCheckoutSessionRequest) returns (GetCheckoutSessionResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message GetCheckoutSessionRequest {
+  string checkout_session_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message GetCheckoutSessionResponse {
+  string checkout_session_id = 1 [(buf.validate.field).string.uuid = true];
+  string idempotency_key = 2 [(buf.validate.field).string.uuid = true];
+  string customer_id = 3 [(buf.validate.field).string.uuid = true];
+  string cart_id = 4 [(buf.validate.field).string.uuid = true];
+  Status status = 5 [(buf.validate.field).enum.defined_only = true];
+  Destination destination = 6;
+  Origin origin = 7;
+  Courier courier = 8;
+  Package package = 9;
+  string currency = 10 [(buf.validate.field).string = {min_len: 3, max_len: 3}];
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+  google.protobuf.Timestamp expires_at = 13;
+  repeated CheckoutSessionItem items = 14;
+  optional string payment_gateway = 15 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+}
+
+message CheckoutSessionItem {
+  string id = 1 [(buf.validate.field).string.uuid = true];
+  string product_id = 2 [(buf.validate.field).string.uuid = true];
+  string product_name = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  int64 quantity = 4 [(buf.validate.field).int64 = {gte: 1}];
+  string unit_price = 5 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+  }];
+}
+
+message Destination {
+  string city = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string state = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string postal_code = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string country_code = 4 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+}
+
+message Origin {
+  string city = 1 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string state = 2 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string postal_code = 3 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  string country_code = 4 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+}
+
+message Courier {
+  string courier_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message Package {
+  string weight_kg = 1 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+  }];
+  string length = 2 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+  }];
+  string width = 3 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+  }];
+  string height = 4 [(buf.validate.field).string = {
+    pattern: "^[0-9]+(\\.[0-9]{1,2})?$"
+  }];
+  string unit = 5 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+}
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_PENDING = 1;
+  STATUS_ORDER_PLACED = 2;
+  STATUS_CANCELED = 3;
+  STATUS_EXPIRED = 4;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  HealthStatus status = 1;
+}
+
+enum HealthStatus {
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_SERVING = 1;
+  HEALTH_STATUS_NOT_SERVING = 2;
+}

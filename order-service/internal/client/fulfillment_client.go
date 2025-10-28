@@ -32,6 +32,11 @@ type FulfillmentClient interface {
 		ctx context.Context,
 		order *entity.Order,
 	) (decimal.Decimal, error)
+	// CalculateShipping calculates shipping cost without requiring an order entity
+	CalculateShipping(
+		ctx context.Context,
+		req dto.CalculateShippingRequest,
+	) (*dto.CalculateShippingResponse, error)
 	// WaitForFulfillmentResponse waits for fulfillment service response with timeout
 	WaitForFulfillmentResponse(
 		ctx context.Context,
@@ -131,6 +136,63 @@ func (c *fulfillmentClient) GetShippingCost(
 	c.logger.Infof("Got shipping cost for order %s: %s %s", order.ID, shippingCost, order.Currency)
 
 	return shippingCost, nil
+}
+
+// CalculateShipping calculates shipping cost without requiring an order entity.
+func (c *fulfillmentClient) CalculateShipping(
+	ctx context.Context,
+	req dto.CalculateShippingRequest,
+) (*dto.CalculateShippingResponse, error) {
+	c.logger.Infof("Calculating shipping cost")
+
+	ctx, cancel := context.WithTimeout(ctx, constant.FulfillmentClientTimeout)
+	defer cancel()
+
+	grpcReq := connect.NewRequest(&pb.GetShippingCostRequest{
+		Currency: req.Currency,
+		Package: &pb.Package{
+			WeightKg: req.Package.WeightKG.String(),
+			Height:   req.Package.Height.String(),
+			Length:   req.Package.Length.String(),
+			Width:    req.Package.Width.String(),
+			Unit:     req.Package.Unit,
+		},
+		Courier: &pb.Courier{CourierId: req.Courier.CourierID},
+		Destination: &pb.Destination{
+			State:       req.Destination.State,
+			City:        req.Destination.City,
+			CountryCode: req.Destination.CountryCode,
+			PostalCode:  req.Destination.PostalCode,
+		},
+		Origin: &pb.Origin{
+			State:       req.Origin.State,
+			City:        req.Origin.City,
+			CountryCode: req.Origin.CountryCode,
+			PostalCode:  req.Origin.PostalCode,
+		},
+	})
+	pkgconnect.AddAuthHeaders(ctx, grpcReq)
+
+	resp, err := c.client.GetShippingCost(ctx, grpcReq)
+	if err != nil {
+		c.logger.Errorf("Failed to calculate shipping cost: %v", err)
+		return nil, fmt.Errorf("failed to calculate shipping cost: %w", err)
+	}
+
+	if !resp.Msg.GetSuccess() {
+		return nil, fmt.Errorf(
+			"shipping cost calculation failed: %s",
+			resp.Msg.GetErrorMessage(),
+		)
+	}
+
+	shippingCost := decimal.NewFromFloat(resp.Msg.GetShippingCost())
+	c.logger.Infof("Calculated shipping cost: %s %s", shippingCost, req.Currency)
+
+	return &dto.CalculateShippingResponse{
+		Cost:     shippingCost,
+		Currency: req.Currency,
+	}, nil
 }
 
 // WaitForFulfillmentResponse waits for fulfillment service response with timeout.

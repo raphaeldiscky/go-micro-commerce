@@ -7,6 +7,7 @@ WORKDIR /workspace
 
 # Copy only the necessary files for this service
 COPY pkg/ ./pkg/
+COPY proto/ ./proto/
 COPY payment-service/go.mod payment-service/go.sum ./payment-service/
 
 # Change to the service directory for building
@@ -34,7 +35,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/payment-service/main .
 
-EXPOSE 8084
+EXPOSE 8084 50054
 
 # Switch to the non-root user
 USER appuser

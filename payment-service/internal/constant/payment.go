@@ -26,6 +26,8 @@ type PaymentGateway string
 const (
 	// PaymentGatewayStripe represents the Stripe payment gateway.
 	PaymentGatewayStripe PaymentGateway = "stripe"
+	// PaymentGatewayXendit represents the Xendit payment gateway.
+	PaymentGatewayXendit PaymentGateway = "xendit"
 	// PaymentGatewayMock represents the Mock payment gateway for testing.
 	PaymentGatewayMock PaymentGateway = "mock"
 )

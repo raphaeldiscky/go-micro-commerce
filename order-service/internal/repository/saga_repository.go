@@ -23,8 +23,14 @@ type SagaStateRepository interface {
 	Update(ctx context.Context, state *entity.SagaState) error
 	// FindByID finds a saga state by ID.
 	FindByID(ctx context.Context, id uuid.UUID) (*entity.SagaState, error)
-	// FindByOrderID finds a saga state by order ID.
+	// FindByOrderID finds a saga state by order ID (returns most recent).
 	FindByOrderID(ctx context.Context, orderID uuid.UUID) (*entity.SagaState, error)
+	// FindByOrderIDAndWorkflow finds a saga state by order ID and workflow name.
+	FindByOrderIDAndWorkflow(
+		ctx context.Context,
+		orderID uuid.UUID,
+		workflowName constant.WorkflowName,
+	) (*entity.SagaState, error)
 	// FindPendingOrFailed finds pending or failed sagas for recovery.
 	FindPendingOrFailed(ctx context.Context, limit int64) ([]*entity.SagaState, error)
 	// FindTimeoutSagas finds sagas that have timed out.
@@ -59,12 +65,12 @@ func NewSagaStateRepository(db DBTX) SagaStateRepository {
 func (r *sagaStateRepository) Create(ctx context.Context, state *entity.SagaState) error {
 	query := `
 		INSERT INTO saga_states (
-			id, order_id, status, current_step, 
+			id, workflow_name, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
 			version, retry_count, timeout_at,
 			created_at, updated_at
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 		)`
 
 	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
@@ -86,6 +92,7 @@ func (r *sagaStateRepository) Create(ctx context.Context, state *entity.SagaStat
 		ctx,
 		query,
 		state.ID,
+		state.WorkflowName,
 		state.OrderID,
 		string(state.Status),
 		state.CurrentStep,
@@ -110,17 +117,18 @@ func (r *sagaStateRepository) Create(ctx context.Context, state *entity.SagaStat
 func (r *sagaStateRepository) Update(ctx context.Context, state *entity.SagaState) error {
 	query := `
 		UPDATE saga_states SET
-			status = $2,
-			current_step = $3,
-			executed_steps = $4,
-			compensated_steps = $5,
-			data = $6,
-			error = $7,
+			workflow_name = $2,
+			status = $3,
+			current_step = $4,
+			executed_steps = $5,
+			compensated_steps = $6,
+			data = $7,
+			error = $8,
 			version = version + 1,
-			retry_count = $8,
-			last_retry_at = $9,
-			updated_at = $10,
-			completed_at = $11
+			retry_count = $9,
+			last_retry_at = $10,
+			updated_at = $11,
+			completed_at = $12
 		WHERE id = $1`
 
 	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
@@ -142,6 +150,7 @@ func (r *sagaStateRepository) Update(ctx context.Context, state *entity.SagaStat
 		ctx,
 		query,
 		state.ID,
+		state.WorkflowName,
 		string(state.Status),
 		state.CurrentStep,
 		executedStepsJSON,
@@ -170,8 +179,8 @@ func (r *sagaStateRepository) FindByID(
 	id uuid.UUID,
 ) (*entity.SagaState, error) {
 	query := `
-		SELECT 
-			id, order_id, status, current_step,
+		SELECT
+			id, workflow_name, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
 			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
@@ -183,14 +192,14 @@ func (r *sagaStateRepository) FindByID(
 	return scanSagaState(row)
 }
 
-// FindByOrderID finds a saga state by order ID.
+// FindByOrderID finds a saga state by order ID (returns most recent).
 func (r *sagaStateRepository) FindByOrderID(
 	ctx context.Context,
 	orderID uuid.UUID,
 ) (*entity.SagaState, error) {
 	query := `
-		SELECT 
-			id, order_id, status, current_step,
+		SELECT
+			id, workflow_name, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
 			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
@@ -204,14 +213,36 @@ func (r *sagaStateRepository) FindByOrderID(
 	return scanSagaState(row)
 }
 
+// FindByOrderIDAndWorkflow finds a saga state by order ID and workflow name.
+func (r *sagaStateRepository) FindByOrderIDAndWorkflow(
+	ctx context.Context,
+	orderID uuid.UUID,
+	workflowName constant.WorkflowName,
+) (*entity.SagaState, error) {
+	query := `
+		SELECT
+			id, workflow_name, order_id, status, current_step,
+			executed_steps, compensated_steps, data, error,
+			version, retry_count, last_retry_at, timeout_at,
+			created_at, updated_at, completed_at
+		FROM saga_states
+		WHERE order_id = $1 AND workflow_name = $2
+		ORDER BY created_at DESC
+		LIMIT 1`
+
+	row := r.db.QueryRow(ctx, query, orderID, workflowName)
+
+	return scanSagaState(row)
+}
+
 // FindPendingOrFailed finds pending or failed sagas for recovery.
 func (r *sagaStateRepository) FindPendingOrFailed(
 	ctx context.Context,
 	limit int64,
 ) ([]*entity.SagaState, error) {
 	query := `
-		SELECT 
-			id, order_id, status, current_step,
+		SELECT
+			id, workflow_name, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
 			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
@@ -260,8 +291,8 @@ func (r *sagaStateRepository) FindTimeoutSagas(
 	limit int64,
 ) ([]*entity.SagaState, error) {
 	query := `
-		SELECT 
-			id, order_id, status, current_step,
+		SELECT
+			id, workflow_name, order_id, status, current_step,
 			executed_steps, compensated_steps, data, error,
 			version, retry_count, last_retry_at, timeout_at,
 			created_at, updated_at, completed_at
@@ -325,23 +356,25 @@ func (r *sagaStateRepository) UpdateWithVersion(
 
 	query := `
 		UPDATE saga_states SET
-			status = $2,
-			current_step = $3,
-			executed_steps = $4,
-			compensated_steps = $5,
-			data = $6,
-			error = $7,
-			version = $8 + 1,
-			retry_count = $9,
-			last_retry_at = $10,
-			updated_at = $11,
-			completed_at = $12
-		WHERE id = $1 AND version = $8`
+			workflow_name = $2,
+			status = $3,
+			current_step = $4,
+			executed_steps = $5,
+			compensated_steps = $6,
+			data = $7,
+			error = $8,
+			version = $9 + 1,
+			retry_count = $10,
+			last_retry_at = $11,
+			updated_at = $12,
+			completed_at = $13
+		WHERE id = $1 AND version = $9`
 
 	result, err := r.db.Exec(
 		ctx,
 		query,
 		state.ID,
+		state.WorkflowName,
 		string(state.Status),
 		state.CurrentStep,
 		executedStepsJSON,
@@ -492,6 +525,7 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 
 	err := row.Scan(
 		&state.ID,
+		&state.WorkflowName,
 		&state.OrderID,
 		&statusStr,
 		&state.CurrentStep,
