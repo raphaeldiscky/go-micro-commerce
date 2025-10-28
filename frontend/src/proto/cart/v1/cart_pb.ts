@@ -2,260 +2,283 @@
 // @generated from file cart/v1/cart.proto (package cart.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Timestamp } from "@bufbuild/protobuf/wkt";
-import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
-import { file_buf_validate_validate } from "../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+  GenEnum,
+  GenFile,
+  GenMessage,
+  GenService,
+} from '@bufbuild/protobuf/codegenv2'
+import {
+  enumDesc,
+  fileDesc,
+  messageDesc,
+  serviceDesc,
+} from '@bufbuild/protobuf/codegenv2'
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
+import { file_google_protobuf_timestamp } from '@bufbuild/protobuf/wkt'
+import { file_buf_validate_validate } from '../../buf/validate/validate_pb'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file cart/v1/cart.proto.
  */
-export const file_cart_v1_cart: GenFile = /*@__PURE__*/
-  fileDesc("ChJjYXJ0L3YxL2NhcnQucHJvdG8SB2NhcnQudjEiQgoZR2V0Q2hlY2tvdXRTZXNzaW9uUmVxdWVzdBIlChNjaGVja291dF9zZXNzaW9uX2lkGAEgASgJQgi6SAVyA7ABASKKBAoaR2V0Q2hlY2tvdXRTZXNzaW9uUmVzcG9uc2USJQoTY2hlY2tvdXRfc2Vzc2lvbl9pZBgBIAEoCUIIukgFcgOwAQESIQoPaWRlbXBvdGVuY3lfa2V5GAIgASgJQgi6SAVyA7ABARIdCgtjdXN0b21lcl9pZBgDIAEoCUIIukgFcgOwAQESGQoHY2FydF9pZBgEIAEoCUIIukgFcgOwAQESKQoGc3RhdHVzGAUgASgOMg8uY2FydC52MS5TdGF0dXNCCLpIBYIBAhABEikKC2Rlc3RpbmF0aW9uGAYgASgLMhQuY2FydC52MS5EZXN0aW5hdGlvbhIfCgZvcmlnaW4YByABKAsyDy5jYXJ0LnYxLk9yaWdpbhIhCgdjb3VyaWVyGAggASgLMhAuY2FydC52MS5Db3VyaWVyEiEKB3BhY2thZ2UYCSABKAsyEC5jYXJ0LnYxLlBhY2thZ2USGwoIY3VycmVuY3kYCiABKAlCCbpIBnIEEAMYAxIuCgpjcmVhdGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpleHBpcmVzX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKFAQoLRGVzdGluYXRpb24SGAoEY2l0eRgBIAEoCUIKukgHcgUQARj/ARIZCgVzdGF0ZRgCIAEoCUIKukgHcgUQARj/ARIfCgtwb3N0YWxfY29kZRgDIAEoCUIKukgHcgUQARj/ARIgCgxjb3VudHJ5X2NvZGUYBCABKAlCCrpIB3IFEAEY/wEigAEKBk9yaWdpbhIYCgRjaXR5GAEgASgJQgq6SAdyBRABGP8BEhkKBXN0YXRlGAIgASgJQgq6SAdyBRABGP8BEh8KC3Bvc3RhbF9jb2RlGAMgASgJQgq6SAdyBRABGP8BEiAKDGNvdW50cnlfY29kZRgEIAEoCUIKukgHcgUQARj/ASInCgdDb3VyaWVyEhwKCmNvdXJpZXJfaWQYASABKAlCCLpIBXIDsAEBIuUBCgdQYWNrYWdlEjEKCXdlaWdodF9rZxgBIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi4KBmxlbmd0aBgCIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi0KBXdpZHRoGAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGaGVpZ2h0GAQgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGAoEdW5pdBgFIAEoCUIKukgHcgUQARj/ASIPCg1IZWFsdGhSZXF1ZXN0IjcKDkhlYWx0aFJlc3BvbnNlEiUKBnN0YXR1cxgBIAEoDjIVLmNhcnQudjEuSGVhbHRoU3RhdHVzKnYKBlN0YXR1cxIWChJTVEFUVVNfVU5TUEVDSUZJRUQQABISCg5TVEFUVVNfUEVORElORxABEhcKE1NUQVRVU19PUkRFUl9QTEFDRUQQAhITCg9TVEFUVVNfQ0FOQ0VMRUQQAxISCg5TVEFUVVNfRVhQSVJFRBAEKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMqcBCgtDYXJ0U2VydmljZRJdChJHZXRDaGVja291dFNlc3Npb24SIi5jYXJ0LnYxLkdldENoZWNrb3V0U2Vzc2lvblJlcXVlc3QaIy5jYXJ0LnYxLkdldENoZWNrb3V0U2Vzc2lvblJlc3BvbnNlEjkKBkhlYWx0aBIWLmNhcnQudjEuSGVhbHRoUmVxdWVzdBoXLmNhcnQudjEuSGVhbHRoUmVzcG9uc2VClgEKC2NvbS5jYXJ0LnYxQglDYXJ0UHJvdG9QAVo/Z2l0aHViLmNvbS9yYXBoYWVsZGlzY2t5L2dvLW1pY3JvLWNvbW1lcmNlL3Byb3RvL2NhcnQvdjE7Y2FydHYxogIDQ1hYqgIHQ2FydC5WMcoCB0NhcnRcVjHiAhNDYXJ0XFYxXEdQQk1ldGFkYXRh6gIIQ2FydDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_buf_validate_validate]);
+export const file_cart_v1_cart: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'ChJjYXJ0L3YxL2NhcnQucHJvdG8SB2NhcnQudjEiQgoZR2V0Q2hlY2tvdXRTZXNzaW9uUmVxdWVzdBIlChNjaGVja291dF9zZXNzaW9uX2lkGAEgASgJQgi6SAVyA7ABASKKBAoaR2V0Q2hlY2tvdXRTZXNzaW9uUmVzcG9uc2USJQoTY2hlY2tvdXRfc2Vzc2lvbl9pZBgBIAEoCUIIukgFcgOwAQESIQoPaWRlbXBvdGVuY3lfa2V5GAIgASgJQgi6SAVyA7ABARIdCgtjdXN0b21lcl9pZBgDIAEoCUIIukgFcgOwAQESGQoHY2FydF9pZBgEIAEoCUIIukgFcgOwAQESKQoGc3RhdHVzGAUgASgOMg8uY2FydC52MS5TdGF0dXNCCLpIBYIBAhABEikKC2Rlc3RpbmF0aW9uGAYgASgLMhQuY2FydC52MS5EZXN0aW5hdGlvbhIfCgZvcmlnaW4YByABKAsyDy5jYXJ0LnYxLk9yaWdpbhIhCgdjb3VyaWVyGAggASgLMhAuY2FydC52MS5Db3VyaWVyEiEKB3BhY2thZ2UYCSABKAsyEC5jYXJ0LnYxLlBhY2thZ2USGwoIY3VycmVuY3kYCiABKAlCCbpIBnIEEAMYAxIuCgpjcmVhdGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAwgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgpleHBpcmVzX2F0GA0gASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCKFAQoLRGVzdGluYXRpb24SGAoEY2l0eRgBIAEoCUIKukgHcgUQARj/ARIZCgVzdGF0ZRgCIAEoCUIKukgHcgUQARj/ARIfCgtwb3N0YWxfY29kZRgDIAEoCUIKukgHcgUQARj/ARIgCgxjb3VudHJ5X2NvZGUYBCABKAlCCrpIB3IFEAEY/wEigAEKBk9yaWdpbhIYCgRjaXR5GAEgASgJQgq6SAdyBRABGP8BEhkKBXN0YXRlGAIgASgJQgq6SAdyBRABGP8BEh8KC3Bvc3RhbF9jb2RlGAMgASgJQgq6SAdyBRABGP8BEiAKDGNvdW50cnlfY29kZRgEIAEoCUIKukgHcgUQARj/ASInCgdDb3VyaWVyEhwKCmNvdXJpZXJfaWQYASABKAlCCLpIBXIDsAEBIuUBCgdQYWNrYWdlEjEKCXdlaWdodF9rZxgBIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi4KBmxlbmd0aBgCIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi0KBXdpZHRoGAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGaGVpZ2h0GAQgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGAoEdW5pdBgFIAEoCUIKukgHcgUQARj/ASIPCg1IZWFsdGhSZXF1ZXN0IjcKDkhlYWx0aFJlc3BvbnNlEiUKBnN0YXR1cxgBIAEoDjIVLmNhcnQudjEuSGVhbHRoU3RhdHVzKnYKBlN0YXR1cxIWChJTVEFUVVNfVU5TUEVDSUZJRUQQABISCg5TVEFUVVNfUEVORElORxABEhcKE1NUQVRVU19PUkRFUl9QTEFDRUQQAhITCg9TVEFUVVNfQ0FOQ0VMRUQQAxISCg5TVEFUVVNfRVhQSVJFRBAEKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMqcBCgtDYXJ0U2VydmljZRJdChJHZXRDaGVja291dFNlc3Npb24SIi5jYXJ0LnYxLkdldENoZWNrb3V0U2Vzc2lvblJlcXVlc3QaIy5jYXJ0LnYxLkdldENoZWNrb3V0U2Vzc2lvblJlc3BvbnNlEjkKBkhlYWx0aBIWLmNhcnQudjEuSGVhbHRoUmVxdWVzdBoXLmNhcnQudjEuSGVhbHRoUmVzcG9uc2VClgEKC2NvbS5jYXJ0LnYxQglDYXJ0UHJvdG9QAVo/Z2l0aHViLmNvbS9yYXBoYWVsZGlzY2t5L2dvLW1pY3JvLWNvbW1lcmNlL3Byb3RvL2NhcnQvdjE7Y2FydHYxogIDQ1hYqgIHQ2FydC5WMcoCB0NhcnRcVjHiAhNDYXJ0XFYxXEdQQk1ldGFkYXRh6gIIQ2FydDo6VjFiBnByb3RvMw',
+    [file_google_protobuf_timestamp, file_buf_validate_validate],
+  )
 
 /**
  * @generated from message cart.v1.GetCheckoutSessionRequest
  */
-export type GetCheckoutSessionRequest = Message<"cart.v1.GetCheckoutSessionRequest"> & {
-  /**
-   * @generated from field: string checkout_session_id = 1;
-   */
-  checkoutSessionId: string;
-};
+export type GetCheckoutSessionRequest =
+  Message<'cart.v1.GetCheckoutSessionRequest'> & {
+    /**
+     * @generated from field: string checkout_session_id = 1;
+     */
+    checkoutSessionId: string
+  }
 
 /**
  * Describes the message cart.v1.GetCheckoutSessionRequest.
  * Use `create(GetCheckoutSessionRequestSchema)` to create a new message.
  */
-export const GetCheckoutSessionRequestSchema: GenMessage<GetCheckoutSessionRequest> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 0);
+export const GetCheckoutSessionRequestSchema: GenMessage<GetCheckoutSessionRequest> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 0)
 
 /**
  * @generated from message cart.v1.GetCheckoutSessionResponse
  */
-export type GetCheckoutSessionResponse = Message<"cart.v1.GetCheckoutSessionResponse"> & {
-  /**
-   * @generated from field: string checkout_session_id = 1;
-   */
-  checkoutSessionId: string;
+export type GetCheckoutSessionResponse =
+  Message<'cart.v1.GetCheckoutSessionResponse'> & {
+    /**
+     * @generated from field: string checkout_session_id = 1;
+     */
+    checkoutSessionId: string
 
-  /**
-   * @generated from field: string idempotency_key = 2;
-   */
-  idempotencyKey: string;
+    /**
+     * @generated from field: string idempotency_key = 2;
+     */
+    idempotencyKey: string
 
-  /**
-   * @generated from field: string customer_id = 3;
-   */
-  customerId: string;
+    /**
+     * @generated from field: string customer_id = 3;
+     */
+    customerId: string
 
-  /**
-   * @generated from field: string cart_id = 4;
-   */
-  cartId: string;
+    /**
+     * @generated from field: string cart_id = 4;
+     */
+    cartId: string
 
-  /**
-   * @generated from field: cart.v1.Status status = 5;
-   */
-  status: Status;
+    /**
+     * @generated from field: cart.v1.Status status = 5;
+     */
+    status: Status
 
-  /**
-   * @generated from field: cart.v1.Destination destination = 6;
-   */
-  destination?: Destination;
+    /**
+     * @generated from field: cart.v1.Destination destination = 6;
+     */
+    destination?: Destination
 
-  /**
-   * @generated from field: cart.v1.Origin origin = 7;
-   */
-  origin?: Origin;
+    /**
+     * @generated from field: cart.v1.Origin origin = 7;
+     */
+    origin?: Origin
 
-  /**
-   * @generated from field: cart.v1.Courier courier = 8;
-   */
-  courier?: Courier;
+    /**
+     * @generated from field: cart.v1.Courier courier = 8;
+     */
+    courier?: Courier
 
-  /**
-   * @generated from field: cart.v1.Package package = 9;
-   */
-  package?: Package;
+    /**
+     * @generated from field: cart.v1.Package package = 9;
+     */
+    package?: Package
 
-  /**
-   * @generated from field: string currency = 10;
-   */
-  currency: string;
+    /**
+     * @generated from field: string currency = 10;
+     */
+    currency: string
 
-  /**
-   * @generated from field: google.protobuf.Timestamp created_at = 11;
-   */
-  createdAt?: Timestamp;
+    /**
+     * @generated from field: google.protobuf.Timestamp created_at = 11;
+     */
+    createdAt?: Timestamp
 
-  /**
-   * @generated from field: google.protobuf.Timestamp updated_at = 12;
-   */
-  updatedAt?: Timestamp;
+    /**
+     * @generated from field: google.protobuf.Timestamp updated_at = 12;
+     */
+    updatedAt?: Timestamp
 
-  /**
-   * @generated from field: google.protobuf.Timestamp expires_at = 13;
-   */
-  expiresAt?: Timestamp;
-};
+    /**
+     * @generated from field: google.protobuf.Timestamp expires_at = 13;
+     */
+    expiresAt?: Timestamp
+  }
 
 /**
  * Describes the message cart.v1.GetCheckoutSessionResponse.
  * Use `create(GetCheckoutSessionResponseSchema)` to create a new message.
  */
-export const GetCheckoutSessionResponseSchema: GenMessage<GetCheckoutSessionResponse> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 1);
+export const GetCheckoutSessionResponseSchema: GenMessage<GetCheckoutSessionResponse> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 1)
 
 /**
  * @generated from message cart.v1.Destination
  */
-export type Destination = Message<"cart.v1.Destination"> & {
+export type Destination = Message<'cart.v1.Destination'> & {
   /**
    * @generated from field: string city = 1;
    */
-  city: string;
+  city: string
 
   /**
    * @generated from field: string state = 2;
    */
-  state: string;
+  state: string
 
   /**
    * @generated from field: string postal_code = 3;
    */
-  postalCode: string;
+  postalCode: string
 
   /**
    * @generated from field: string country_code = 4;
    */
-  countryCode: string;
-};
+  countryCode: string
+}
 
 /**
  * Describes the message cart.v1.Destination.
  * Use `create(DestinationSchema)` to create a new message.
  */
-export const DestinationSchema: GenMessage<Destination> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 2);
+export const DestinationSchema: GenMessage<Destination> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 2)
 
 /**
  * @generated from message cart.v1.Origin
  */
-export type Origin = Message<"cart.v1.Origin"> & {
+export type Origin = Message<'cart.v1.Origin'> & {
   /**
    * @generated from field: string city = 1;
    */
-  city: string;
+  city: string
 
   /**
    * @generated from field: string state = 2;
    */
-  state: string;
+  state: string
 
   /**
    * @generated from field: string postal_code = 3;
    */
-  postalCode: string;
+  postalCode: string
 
   /**
    * @generated from field: string country_code = 4;
    */
-  countryCode: string;
-};
+  countryCode: string
+}
 
 /**
  * Describes the message cart.v1.Origin.
  * Use `create(OriginSchema)` to create a new message.
  */
-export const OriginSchema: GenMessage<Origin> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 3);
+export const OriginSchema: GenMessage<Origin> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 3)
 
 /**
  * @generated from message cart.v1.Courier
  */
-export type Courier = Message<"cart.v1.Courier"> & {
+export type Courier = Message<'cart.v1.Courier'> & {
   /**
    * @generated from field: string courier_id = 1;
    */
-  courierId: string;
-};
+  courierId: string
+}
 
 /**
  * Describes the message cart.v1.Courier.
  * Use `create(CourierSchema)` to create a new message.
  */
-export const CourierSchema: GenMessage<Courier> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 4);
+export const CourierSchema: GenMessage<Courier> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 4)
 
 /**
  * @generated from message cart.v1.Package
  */
-export type Package = Message<"cart.v1.Package"> & {
+export type Package = Message<'cart.v1.Package'> & {
   /**
    * @generated from field: string weight_kg = 1;
    */
-  weightKg: string;
+  weightKg: string
 
   /**
    * @generated from field: string length = 2;
    */
-  length: string;
+  length: string
 
   /**
    * @generated from field: string width = 3;
    */
-  width: string;
+  width: string
 
   /**
    * @generated from field: string height = 4;
    */
-  height: string;
+  height: string
 
   /**
    * @generated from field: string unit = 5;
    */
-  unit: string;
-};
+  unit: string
+}
 
 /**
  * Describes the message cart.v1.Package.
  * Use `create(PackageSchema)` to create a new message.
  */
-export const PackageSchema: GenMessage<Package> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 5);
+export const PackageSchema: GenMessage<Package> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 5)
 
 /**
  * @generated from message cart.v1.HealthRequest
  */
-export type HealthRequest = Message<"cart.v1.HealthRequest"> & {
-};
+export type HealthRequest = Message<'cart.v1.HealthRequest'> & {}
 
 /**
  * Describes the message cart.v1.HealthRequest.
  * Use `create(HealthRequestSchema)` to create a new message.
  */
-export const HealthRequestSchema: GenMessage<HealthRequest> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 6);
+export const HealthRequestSchema: GenMessage<HealthRequest> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 6)
 
 /**
  * @generated from message cart.v1.HealthResponse
  */
-export type HealthResponse = Message<"cart.v1.HealthResponse"> & {
+export type HealthResponse = Message<'cart.v1.HealthResponse'> & {
   /**
    * @generated from field: cart.v1.HealthStatus status = 1;
    */
-  status: HealthStatus;
-};
+  status: HealthStatus
+}
 
 /**
  * Describes the message cart.v1.HealthResponse.
  * Use `create(HealthResponseSchema)` to create a new message.
  */
-export const HealthResponseSchema: GenMessage<HealthResponse> = /*@__PURE__*/
-  messageDesc(file_cart_v1_cart, 7);
+export const HealthResponseSchema: GenMessage<HealthResponse> =
+  /*@__PURE__*/
+  messageDesc(file_cart_v1_cart, 7)
 
 /**
  * @generated from enum cart.v1.Status
@@ -290,8 +313,9 @@ export enum Status {
 /**
  * Describes the enum cart.v1.Status.
  */
-export const StatusSchema: GenEnum<Status> = /*@__PURE__*/
-  enumDesc(file_cart_v1_cart, 0);
+export const StatusSchema: GenEnum<Status> =
+  /*@__PURE__*/
+  enumDesc(file_cart_v1_cart, 0)
 
 /**
  * @generated from enum cart.v1.HealthStatus
@@ -316,8 +340,9 @@ export enum HealthStatus {
 /**
  * Describes the enum cart.v1.HealthStatus.
  */
-export const HealthStatusSchema: GenEnum<HealthStatus> = /*@__PURE__*/
-  enumDesc(file_cart_v1_cart, 1);
+export const HealthStatusSchema: GenEnum<HealthStatus> =
+  /*@__PURE__*/
+  enumDesc(file_cart_v1_cart, 1)
 
 /**
  * @generated from service cart.v1.CartService
@@ -327,18 +352,16 @@ export const CartService: GenService<{
    * @generated from rpc cart.v1.CartService.GetCheckoutSession
    */
   getCheckoutSession: {
-    methodKind: "unary";
-    input: typeof GetCheckoutSessionRequestSchema;
-    output: typeof GetCheckoutSessionResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof GetCheckoutSessionRequestSchema
+    output: typeof GetCheckoutSessionResponseSchema
+  }
   /**
    * @generated from rpc cart.v1.CartService.Health
    */
   health: {
-    methodKind: "unary";
-    input: typeof HealthRequestSchema;
-    output: typeof HealthResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_cart_v1_cart, 0);
-
+    methodKind: 'unary'
+    input: typeof HealthRequestSchema
+    output: typeof HealthResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_cart_v1_cart, 0)

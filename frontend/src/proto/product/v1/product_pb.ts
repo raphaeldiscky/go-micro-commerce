@@ -2,528 +2,577 @@
 // @generated from file product/v1/product.proto (package product.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Timestamp } from "@bufbuild/protobuf/wkt";
-import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
-import { file_buf_validate_validate } from "../../buf/validate/validate_pb";
-import type { Message } from "@bufbuild/protobuf";
+import type {
+  GenEnum,
+  GenFile,
+  GenMessage,
+  GenService,
+} from '@bufbuild/protobuf/codegenv2'
+import {
+  enumDesc,
+  fileDesc,
+  messageDesc,
+  serviceDesc,
+} from '@bufbuild/protobuf/codegenv2'
+import type { Timestamp } from '@bufbuild/protobuf/wkt'
+import { file_google_protobuf_timestamp } from '@bufbuild/protobuf/wkt'
+import { file_buf_validate_validate } from '../../buf/validate/validate_pb'
+import type { Message } from '@bufbuild/protobuf'
 
 /**
  * Describes the file product/v1/product.proto.
  */
-export const file_product_v1_product: GenFile = /*@__PURE__*/
-  fileDesc("Chhwcm9kdWN0L3YxL3Byb2R1Y3QucHJvdG8SCnByb2R1Y3QudjEiZgoTTGlzdFByb2R1Y3RzUmVxdWVzdBIbCgVsaW1pdBgBIAEoCUIHukgEcgIYA0gAiAEBEhgKC25leHRfY3Vyc29yGAIgASgJSAGIAQFCCAoGX2xpbWl0Qg4KDF9uZXh0X2N1cnNvciJvChRMaXN0UHJvZHVjdHNSZXNwb25zZRIlCghwcm9kdWN0cxgBIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIwCgpwYWdpbmF0aW9uGAIgASgLMhwucHJvZHVjdC52MS5DdXJzb3JQYWdpbmF0aW9uIooBChBDdXJzb3JQYWdpbmF0aW9uEhgKC25leHRfY3Vyc29yGAEgASgJSACIAQESGAoLcHJldl9jdXJzb3IYAiABKAlIAYgBARIQCghoYXNfbmV4dBgDIAEoCBIQCghoYXNfcHJldhgEIAEoCEIOCgxfbmV4dF9jdXJzb3JCDgoMX3ByZXZfY3Vyc29yIj4KHEJhdGNoR2V0UHJvZHVjdHNCeUlEc1JlcXVlc3QSHgoDaWRzGAEgAygJQhG6SA6SAQsIARBkIgVyA7ABASJXCh1CYXRjaEdldFByb2R1Y3RzQnlJRHNSZXNwb25zZRIlCghwcm9kdWN0cxgBIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIPCgdtZXNzYWdlGAIgASgJIoABChZSZXNlcnZlUHJvZHVjdHNSZXF1ZXN0EiMKD2lkZW1wb3RlbmN5X2tleRgBIAEoCUIKukgHcgUQARj/ARJBCgVpdGVtcxgCIAMoCzImLnByb2R1Y3QudjEuUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb25CCrpIB5IBBAgBEDIibwoaUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb24SHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESGQoIcXVhbnRpdHkYAiABKANCB7pIBCICIAASGAoHdmVyc2lvbhgDIAEoA0IHukgEIgIoACJKCg9Qcm9kdWN0UXVhbnRpdHkSHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESGQoIcXVhbnRpdHkYAiABKANCB7pIBCICIAAiawoXUmVzZXJ2ZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIuChFyZXNlcnZlZF9wcm9kdWN0cxgCIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIPCgdtZXNzYWdlGAMgASgJIqECCgdQcm9kdWN0EhQKAmlkGAEgASgJQgi6SAVyA7ABARIYCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BEi0KBXByaWNlGAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGQoIcXVhbnRpdHkYBCABKANCB7pIBCICKAASGAoHdmVyc2lvbhgFIAEoA0IHukgEIgIoABIiChFyZXNlcnZlZF9xdWFudGl0eRgGIAEoA0IHukgEIgIoABIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJQChZSZWxlYXNlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDIiOwoXUmVsZWFzZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIlkKH0NvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QSNgoFaXRlbXMYASADKAsyGy5wcm9kdWN0LnYxLlByb2R1Y3RRdWFudGl0eUIKukgHkgEECAEQMiJzCiBDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi0KEHVwZGF0ZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJsChZSZXN0b3JlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDISGgoGcmVhc29uGAIgASgJQgq6SAdyBRABGP8BImsKF1Jlc3RvcmVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLgoRcmVzdG9yZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJNChdWYWxpZGF0ZVByb2R1Y3RzUmVxdWVzdBIyCghwcm9kdWN0cxgBIAMoCzIgLnByb2R1Y3QudjEuUHJvZHVjdEZvclZhbGlkYXRpb24iYwoYVmFsaWRhdGVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSJQoIcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJ2ChRQcm9kdWN0Rm9yVmFsaWRhdGlvbhIUCgJpZBgBIAEoCUIIukgFcgOwAQESLQoFcHJpY2UYAiABKAlCHrpIG3IZMhdeWzAtOV0rKFwuWzAtOV17MSwyfSk/JBIZCghxdWFudGl0eRgDIAEoA0IHukgEIgIoACIPCg1IZWFsdGhSZXF1ZXN0IjoKDkhlYWx0aFJlc3BvbnNlEigKBnN0YXR1cxgBIAEoDjIYLnByb2R1Y3QudjEuSGVhbHRoU3RhdHVzKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMvwFCg5Qcm9kdWN0U2VydmljZRJRCgxMaXN0UHJvZHVjdHMSHy5wcm9kdWN0LnYxLkxpc3RQcm9kdWN0c1JlcXVlc3QaIC5wcm9kdWN0LnYxLkxpc3RQcm9kdWN0c1Jlc3BvbnNlEmwKFUJhdGNoR2V0UHJvZHVjdHNCeUlEcxIoLnByb2R1Y3QudjEuQmF0Y2hHZXRQcm9kdWN0c0J5SURzUmVxdWVzdBopLnByb2R1Y3QudjEuQmF0Y2hHZXRQcm9kdWN0c0J5SURzUmVzcG9uc2USWgoPUmVzZXJ2ZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZXNlcnZlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZXNlcnZlUHJvZHVjdHNSZXNwb25zZRJaCg9SZWxlYXNlUHJvZHVjdHMSIi5wcm9kdWN0LnYxLlJlbGVhc2VQcm9kdWN0c1JlcXVlc3QaIy5wcm9kdWN0LnYxLlJlbGVhc2VQcm9kdWN0c1Jlc3BvbnNlEnUKGENvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvbhIrLnByb2R1Y3QudjEuQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVxdWVzdBosLnByb2R1Y3QudjEuQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVzcG9uc2USWgoPUmVzdG9yZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZXN0b3JlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZXN0b3JlUHJvZHVjdHNSZXNwb25zZRJdChBWYWxpZGF0ZVByb2R1Y3RzEiMucHJvZHVjdC52MS5WYWxpZGF0ZVByb2R1Y3RzUmVxdWVzdBokLnByb2R1Y3QudjEuVmFsaWRhdGVQcm9kdWN0c1Jlc3BvbnNlEj8KBkhlYWx0aBIZLnByb2R1Y3QudjEuSGVhbHRoUmVxdWVzdBoaLnByb2R1Y3QudjEuSGVhbHRoUmVzcG9uc2VCrgEKDmNvbS5wcm9kdWN0LnYxQgxQcm9kdWN0UHJvdG9QAVpFZ2l0aHViLmNvbS9yYXBoYWVsZGlzY2t5L2dvLW1pY3JvLWNvbW1lcmNlL3Byb3RvL3Byb2R1Y3QvdjE7cHJvZHVjdHYxogIDUFhYqgIKUHJvZHVjdC5WMcoCClByb2R1Y3RcVjHiAhZQcm9kdWN0XFYxXEdQQk1ldGFkYXRh6gILUHJvZHVjdDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_buf_validate_validate]);
+export const file_product_v1_product: GenFile =
+  /*@__PURE__*/
+  fileDesc(
+    'Chhwcm9kdWN0L3YxL3Byb2R1Y3QucHJvdG8SCnByb2R1Y3QudjEiZgoTTGlzdFByb2R1Y3RzUmVxdWVzdBIbCgVsaW1pdBgBIAEoCUIHukgEcgIYA0gAiAEBEhgKC25leHRfY3Vyc29yGAIgASgJSAGIAQFCCAoGX2xpbWl0Qg4KDF9uZXh0X2N1cnNvciJvChRMaXN0UHJvZHVjdHNSZXNwb25zZRIlCghwcm9kdWN0cxgBIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIwCgpwYWdpbmF0aW9uGAIgASgLMhwucHJvZHVjdC52MS5DdXJzb3JQYWdpbmF0aW9uIooBChBDdXJzb3JQYWdpbmF0aW9uEhgKC25leHRfY3Vyc29yGAEgASgJSACIAQESGAoLcHJldl9jdXJzb3IYAiABKAlIAYgBARIQCghoYXNfbmV4dBgDIAEoCBIQCghoYXNfcHJldhgEIAEoCEIOCgxfbmV4dF9jdXJzb3JCDgoMX3ByZXZfY3Vyc29yIj4KHEJhdGNoR2V0UHJvZHVjdHNCeUlEc1JlcXVlc3QSHgoDaWRzGAEgAygJQhG6SA6SAQsIARBkIgVyA7ABASJXCh1CYXRjaEdldFByb2R1Y3RzQnlJRHNSZXNwb25zZRIlCghwcm9kdWN0cxgBIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIPCgdtZXNzYWdlGAIgASgJIoABChZSZXNlcnZlUHJvZHVjdHNSZXF1ZXN0EiMKD2lkZW1wb3RlbmN5X2tleRgBIAEoCUIKukgHcgUQARj/ARJBCgVpdGVtcxgCIAMoCzImLnByb2R1Y3QudjEuUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb25CCrpIB5IBBAgBEDIibwoaUHJvZHVjdFF1YW50aXR5V2l0aFZlcnNpb24SHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESGQoIcXVhbnRpdHkYAiABKANCB7pIBCICIAASGAoHdmVyc2lvbhgDIAEoA0IHukgEIgIoACJKCg9Qcm9kdWN0UXVhbnRpdHkSHAoKcHJvZHVjdF9pZBgBIAEoCUIIukgFcgOwAQESGQoIcXVhbnRpdHkYAiABKANCB7pIBCICIAAiawoXUmVzZXJ2ZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIuChFyZXNlcnZlZF9wcm9kdWN0cxgCIAMoCzITLnByb2R1Y3QudjEuUHJvZHVjdBIPCgdtZXNzYWdlGAMgASgJIqECCgdQcm9kdWN0EhQKAmlkGAEgASgJQgi6SAVyA7ABARIYCgRuYW1lGAIgASgJQgq6SAdyBRABGP8BEi0KBXByaWNlGAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGQoIcXVhbnRpdHkYBCABKANCB7pIBCICKAASGAoHdmVyc2lvbhgFIAEoA0IHukgEIgIoABIiChFyZXNlcnZlZF9xdWFudGl0eRgGIAEoA0IHukgEIgIoABIuCgpjcmVhdGVkX2F0GAcgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIuCgp1cGRhdGVkX2F0GAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJQChZSZWxlYXNlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDIiOwoXUmVsZWFzZVByb2R1Y3RzUmVzcG9uc2USDwoHc3VjY2VzcxgBIAEoCBIPCgdtZXNzYWdlGAIgASgJIlkKH0NvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvblJlcXVlc3QSNgoFaXRlbXMYASADKAsyGy5wcm9kdWN0LnYxLlByb2R1Y3RRdWFudGl0eUIKukgHkgEECAEQMiJzCiBDb25maXJtUHJvZHVjdHNEZWR1Y3Rpb25SZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEi0KEHVwZGF0ZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJsChZSZXN0b3JlUHJvZHVjdHNSZXF1ZXN0EjYKBWl0ZW1zGAEgAygLMhsucHJvZHVjdC52MS5Qcm9kdWN0UXVhbnRpdHlCCrpIB5IBBAgBEDISGgoGcmVhc29uGAIgASgJQgq6SAdyBRABGP8BImsKF1Jlc3RvcmVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSLgoRcmVzdG9yZWRfcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJNChdWYWxpZGF0ZVByb2R1Y3RzUmVxdWVzdBIyCghwcm9kdWN0cxgBIAMoCzIgLnByb2R1Y3QudjEuUHJvZHVjdEZvclZhbGlkYXRpb24iYwoYVmFsaWRhdGVQcm9kdWN0c1Jlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSJQoIcHJvZHVjdHMYAiADKAsyEy5wcm9kdWN0LnYxLlByb2R1Y3QSDwoHbWVzc2FnZRgDIAEoCSJ2ChRQcm9kdWN0Rm9yVmFsaWRhdGlvbhIUCgJpZBgBIAEoCUIIukgFcgOwAQESLQoFcHJpY2UYAiABKAlCHrpIG3IZMhdeWzAtOV0rKFwuWzAtOV17MSwyfSk/JBIZCghxdWFudGl0eRgDIAEoA0IHukgEIgIoACIPCg1IZWFsdGhSZXF1ZXN0IjoKDkhlYWx0aFJlc3BvbnNlEigKBnN0YXR1cxgBIAEoDjIYLnByb2R1Y3QudjEuSGVhbHRoU3RhdHVzKmcKDEhlYWx0aFN0YXR1cxIdChlIRUFMVEhfU1RBVFVTX1VOU1BFQ0lGSUVEEAASGQoVSEVBTFRIX1NUQVRVU19TRVJWSU5HEAESHQoZSEVBTFRIX1NUQVRVU19OT1RfU0VSVklORxACMvwFCg5Qcm9kdWN0U2VydmljZRJRCgxMaXN0UHJvZHVjdHMSHy5wcm9kdWN0LnYxLkxpc3RQcm9kdWN0c1JlcXVlc3QaIC5wcm9kdWN0LnYxLkxpc3RQcm9kdWN0c1Jlc3BvbnNlEmwKFUJhdGNoR2V0UHJvZHVjdHNCeUlEcxIoLnByb2R1Y3QudjEuQmF0Y2hHZXRQcm9kdWN0c0J5SURzUmVxdWVzdBopLnByb2R1Y3QudjEuQmF0Y2hHZXRQcm9kdWN0c0J5SURzUmVzcG9uc2USWgoPUmVzZXJ2ZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZXNlcnZlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZXNlcnZlUHJvZHVjdHNSZXNwb25zZRJaCg9SZWxlYXNlUHJvZHVjdHMSIi5wcm9kdWN0LnYxLlJlbGVhc2VQcm9kdWN0c1JlcXVlc3QaIy5wcm9kdWN0LnYxLlJlbGVhc2VQcm9kdWN0c1Jlc3BvbnNlEnUKGENvbmZpcm1Qcm9kdWN0c0RlZHVjdGlvbhIrLnByb2R1Y3QudjEuQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVxdWVzdBosLnByb2R1Y3QudjEuQ29uZmlybVByb2R1Y3RzRGVkdWN0aW9uUmVzcG9uc2USWgoPUmVzdG9yZVByb2R1Y3RzEiIucHJvZHVjdC52MS5SZXN0b3JlUHJvZHVjdHNSZXF1ZXN0GiMucHJvZHVjdC52MS5SZXN0b3JlUHJvZHVjdHNSZXNwb25zZRJdChBWYWxpZGF0ZVByb2R1Y3RzEiMucHJvZHVjdC52MS5WYWxpZGF0ZVByb2R1Y3RzUmVxdWVzdBokLnByb2R1Y3QudjEuVmFsaWRhdGVQcm9kdWN0c1Jlc3BvbnNlEj8KBkhlYWx0aBIZLnByb2R1Y3QudjEuSGVhbHRoUmVxdWVzdBoaLnByb2R1Y3QudjEuSGVhbHRoUmVzcG9uc2VCrgEKDmNvbS5wcm9kdWN0LnYxQgxQcm9kdWN0UHJvdG9QAVpFZ2l0aHViLmNvbS9yYXBoYWVsZGlzY2t5L2dvLW1pY3JvLWNvbW1lcmNlL3Byb3RvL3Byb2R1Y3QvdjE7cHJvZHVjdHYxogIDUFhYqgIKUHJvZHVjdC5WMcoCClByb2R1Y3RcVjHiAhZQcm9kdWN0XFYxXEdQQk1ldGFkYXRh6gILUHJvZHVjdDo6VjFiBnByb3RvMw',
+    [file_google_protobuf_timestamp, file_buf_validate_validate],
+  )
 
 /**
  * @generated from message product.v1.ListProductsRequest
  */
-export type ListProductsRequest = Message<"product.v1.ListProductsRequest"> & {
+export type ListProductsRequest = Message<'product.v1.ListProductsRequest'> & {
   /**
    * @generated from field: optional string limit = 1;
    */
-  limit?: string;
+  limit?: string
 
   /**
    * @generated from field: optional string next_cursor = 2;
    */
-  nextCursor?: string;
-};
+  nextCursor?: string
+}
 
 /**
  * Describes the message product.v1.ListProductsRequest.
  * Use `create(ListProductsRequestSchema)` to create a new message.
  */
-export const ListProductsRequestSchema: GenMessage<ListProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 0);
+export const ListProductsRequestSchema: GenMessage<ListProductsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 0)
 
 /**
  * @generated from message product.v1.ListProductsResponse
  */
-export type ListProductsResponse = Message<"product.v1.ListProductsResponse"> & {
-  /**
-   * @generated from field: repeated product.v1.Product products = 1;
-   */
-  products: Product[];
+export type ListProductsResponse =
+  Message<'product.v1.ListProductsResponse'> & {
+    /**
+     * @generated from field: repeated product.v1.Product products = 1;
+     */
+    products: Product[]
 
-  /**
-   * @generated from field: product.v1.CursorPagination pagination = 2;
-   */
-  pagination?: CursorPagination;
-};
+    /**
+     * @generated from field: product.v1.CursorPagination pagination = 2;
+     */
+    pagination?: CursorPagination
+  }
 
 /**
  * Describes the message product.v1.ListProductsResponse.
  * Use `create(ListProductsResponseSchema)` to create a new message.
  */
-export const ListProductsResponseSchema: GenMessage<ListProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 1);
+export const ListProductsResponseSchema: GenMessage<ListProductsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 1)
 
 /**
  * @generated from message product.v1.CursorPagination
  */
-export type CursorPagination = Message<"product.v1.CursorPagination"> & {
+export type CursorPagination = Message<'product.v1.CursorPagination'> & {
   /**
    * @generated from field: optional string next_cursor = 1;
    */
-  nextCursor?: string;
+  nextCursor?: string
 
   /**
    * @generated from field: optional string prev_cursor = 2;
    */
-  prevCursor?: string;
+  prevCursor?: string
 
   /**
    * @generated from field: bool has_next = 3;
    */
-  hasNext: boolean;
+  hasNext: boolean
 
   /**
    * @generated from field: bool has_prev = 4;
    */
-  hasPrev: boolean;
-};
+  hasPrev: boolean
+}
 
 /**
  * Describes the message product.v1.CursorPagination.
  * Use `create(CursorPaginationSchema)` to create a new message.
  */
-export const CursorPaginationSchema: GenMessage<CursorPagination> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 2);
+export const CursorPaginationSchema: GenMessage<CursorPagination> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 2)
 
 /**
  * @generated from message product.v1.BatchGetProductsByIDsRequest
  */
-export type BatchGetProductsByIDsRequest = Message<"product.v1.BatchGetProductsByIDsRequest"> & {
-  /**
-   * @generated from field: repeated string ids = 1;
-   */
-  ids: string[];
-};
+export type BatchGetProductsByIDsRequest =
+  Message<'product.v1.BatchGetProductsByIDsRequest'> & {
+    /**
+     * @generated from field: repeated string ids = 1;
+     */
+    ids: string[]
+  }
 
 /**
  * Describes the message product.v1.BatchGetProductsByIDsRequest.
  * Use `create(BatchGetProductsByIDsRequestSchema)` to create a new message.
  */
-export const BatchGetProductsByIDsRequestSchema: GenMessage<BatchGetProductsByIDsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 3);
+export const BatchGetProductsByIDsRequestSchema: GenMessage<BatchGetProductsByIDsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 3)
 
 /**
  * @generated from message product.v1.BatchGetProductsByIDsResponse
  */
-export type BatchGetProductsByIDsResponse = Message<"product.v1.BatchGetProductsByIDsResponse"> & {
-  /**
-   * @generated from field: repeated product.v1.Product products = 1;
-   */
-  products: Product[];
+export type BatchGetProductsByIDsResponse =
+  Message<'product.v1.BatchGetProductsByIDsResponse'> & {
+    /**
+     * @generated from field: repeated product.v1.Product products = 1;
+     */
+    products: Product[]
 
-  /**
-   * @generated from field: string message = 2;
-   */
-  message: string;
-};
+    /**
+     * @generated from field: string message = 2;
+     */
+    message: string
+  }
 
 /**
  * Describes the message product.v1.BatchGetProductsByIDsResponse.
  * Use `create(BatchGetProductsByIDsResponseSchema)` to create a new message.
  */
-export const BatchGetProductsByIDsResponseSchema: GenMessage<BatchGetProductsByIDsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 4);
+export const BatchGetProductsByIDsResponseSchema: GenMessage<BatchGetProductsByIDsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 4)
 
 /**
  * @generated from message product.v1.ReserveProductsRequest
  */
-export type ReserveProductsRequest = Message<"product.v1.ReserveProductsRequest"> & {
-  /**
-   * @generated from field: string idempotency_key = 1;
-   */
-  idempotencyKey: string;
+export type ReserveProductsRequest =
+  Message<'product.v1.ReserveProductsRequest'> & {
+    /**
+     * @generated from field: string idempotency_key = 1;
+     */
+    idempotencyKey: string
 
-  /**
-   * @generated from field: repeated product.v1.ProductQuantityWithVersion items = 2;
-   */
-  items: ProductQuantityWithVersion[];
-};
+    /**
+     * @generated from field: repeated product.v1.ProductQuantityWithVersion items = 2;
+     */
+    items: ProductQuantityWithVersion[]
+  }
 
 /**
  * Describes the message product.v1.ReserveProductsRequest.
  * Use `create(ReserveProductsRequestSchema)` to create a new message.
  */
-export const ReserveProductsRequestSchema: GenMessage<ReserveProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 5);
+export const ReserveProductsRequestSchema: GenMessage<ReserveProductsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 5)
 
 /**
  * @generated from message product.v1.ProductQuantityWithVersion
  */
-export type ProductQuantityWithVersion = Message<"product.v1.ProductQuantityWithVersion"> & {
-  /**
-   * @generated from field: string product_id = 1;
-   */
-  productId: string;
+export type ProductQuantityWithVersion =
+  Message<'product.v1.ProductQuantityWithVersion'> & {
+    /**
+     * @generated from field: string product_id = 1;
+     */
+    productId: string
 
-  /**
-   * @generated from field: int64 quantity = 2;
-   */
-  quantity: bigint;
+    /**
+     * @generated from field: int64 quantity = 2;
+     */
+    quantity: bigint
 
-  /**
-   * for optimistic locking
-   *
-   * @generated from field: int64 version = 3;
-   */
-  version: bigint;
-};
+    /**
+     * for optimistic locking
+     *
+     * @generated from field: int64 version = 3;
+     */
+    version: bigint
+  }
 
 /**
  * Describes the message product.v1.ProductQuantityWithVersion.
  * Use `create(ProductQuantityWithVersionSchema)` to create a new message.
  */
-export const ProductQuantityWithVersionSchema: GenMessage<ProductQuantityWithVersion> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 6);
+export const ProductQuantityWithVersionSchema: GenMessage<ProductQuantityWithVersion> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 6)
 
 /**
  * @generated from message product.v1.ProductQuantity
  */
-export type ProductQuantity = Message<"product.v1.ProductQuantity"> & {
+export type ProductQuantity = Message<'product.v1.ProductQuantity'> & {
   /**
    * @generated from field: string product_id = 1;
    */
-  productId: string;
+  productId: string
 
   /**
    * @generated from field: int64 quantity = 2;
    */
-  quantity: bigint;
-};
+  quantity: bigint
+}
 
 /**
  * Describes the message product.v1.ProductQuantity.
  * Use `create(ProductQuantitySchema)` to create a new message.
  */
-export const ProductQuantitySchema: GenMessage<ProductQuantity> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 7);
+export const ProductQuantitySchema: GenMessage<ProductQuantity> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 7)
 
 /**
  * @generated from message product.v1.ReserveProductsResponse
  */
-export type ReserveProductsResponse = Message<"product.v1.ReserveProductsResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type ReserveProductsResponse =
+  Message<'product.v1.ReserveProductsResponse'> & {
+    /**
+     * @generated from field: bool success = 1;
+     */
+    success: boolean
 
-  /**
-   * @generated from field: repeated product.v1.Product reserved_products = 2;
-   */
-  reservedProducts: Product[];
+    /**
+     * @generated from field: repeated product.v1.Product reserved_products = 2;
+     */
+    reservedProducts: Product[]
 
-  /**
-   * @generated from field: string message = 3;
-   */
-  message: string;
-};
+    /**
+     * @generated from field: string message = 3;
+     */
+    message: string
+  }
 
 /**
  * Describes the message product.v1.ReserveProductsResponse.
  * Use `create(ReserveProductsResponseSchema)` to create a new message.
  */
-export const ReserveProductsResponseSchema: GenMessage<ReserveProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 8);
+export const ReserveProductsResponseSchema: GenMessage<ReserveProductsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 8)
 
 /**
  * @generated from message product.v1.Product
  */
-export type Product = Message<"product.v1.Product"> & {
+export type Product = Message<'product.v1.Product'> & {
   /**
    * @generated from field: string id = 1;
    */
-  id: string;
+  id: string
 
   /**
    * @generated from field: string name = 2;
    */
-  name: string;
+  name: string
 
   /**
    * @generated from field: string price = 3;
    */
-  price: string;
+  price: string
 
   /**
    * @generated from field: int64 quantity = 4;
    */
-  quantity: bigint;
+  quantity: bigint
 
   /**
    * for optimistic locking
    *
    * @generated from field: int64 version = 5;
    */
-  version: bigint;
+  version: bigint
 
   /**
    * quantity reserved for orders
    *
    * @generated from field: int64 reserved_quantity = 6;
    */
-  reservedQuantity: bigint;
+  reservedQuantity: bigint
 
   /**
    * @generated from field: google.protobuf.Timestamp created_at = 7;
    */
-  createdAt?: Timestamp;
+  createdAt?: Timestamp
 
   /**
    * @generated from field: google.protobuf.Timestamp updated_at = 8;
    */
-  updatedAt?: Timestamp;
-};
+  updatedAt?: Timestamp
+}
 
 /**
  * Describes the message product.v1.Product.
  * Use `create(ProductSchema)` to create a new message.
  */
-export const ProductSchema: GenMessage<Product> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 9);
+export const ProductSchema: GenMessage<Product> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 9)
 
 /**
  * @generated from message product.v1.ReleaseProductsRequest
  */
-export type ReleaseProductsRequest = Message<"product.v1.ReleaseProductsRequest"> & {
-  /**
-   * @generated from field: repeated product.v1.ProductQuantity items = 1;
-   */
-  items: ProductQuantity[];
-};
+export type ReleaseProductsRequest =
+  Message<'product.v1.ReleaseProductsRequest'> & {
+    /**
+     * @generated from field: repeated product.v1.ProductQuantity items = 1;
+     */
+    items: ProductQuantity[]
+  }
 
 /**
  * Describes the message product.v1.ReleaseProductsRequest.
  * Use `create(ReleaseProductsRequestSchema)` to create a new message.
  */
-export const ReleaseProductsRequestSchema: GenMessage<ReleaseProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 10);
+export const ReleaseProductsRequestSchema: GenMessage<ReleaseProductsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 10)
 
 /**
  * @generated from message product.v1.ReleaseProductsResponse
  */
-export type ReleaseProductsResponse = Message<"product.v1.ReleaseProductsResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type ReleaseProductsResponse =
+  Message<'product.v1.ReleaseProductsResponse'> & {
+    /**
+     * @generated from field: bool success = 1;
+     */
+    success: boolean
 
-  /**
-   * @generated from field: string message = 2;
-   */
-  message: string;
-};
+    /**
+     * @generated from field: string message = 2;
+     */
+    message: string
+  }
 
 /**
  * Describes the message product.v1.ReleaseProductsResponse.
  * Use `create(ReleaseProductsResponseSchema)` to create a new message.
  */
-export const ReleaseProductsResponseSchema: GenMessage<ReleaseProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 11);
+export const ReleaseProductsResponseSchema: GenMessage<ReleaseProductsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 11)
 
 /**
  * @generated from message product.v1.ConfirmProductsDeductionRequest
  */
-export type ConfirmProductsDeductionRequest = Message<"product.v1.ConfirmProductsDeductionRequest"> & {
-  /**
-   * @generated from field: repeated product.v1.ProductQuantity items = 1;
-   */
-  items: ProductQuantity[];
-};
+export type ConfirmProductsDeductionRequest =
+  Message<'product.v1.ConfirmProductsDeductionRequest'> & {
+    /**
+     * @generated from field: repeated product.v1.ProductQuantity items = 1;
+     */
+    items: ProductQuantity[]
+  }
 
 /**
  * Describes the message product.v1.ConfirmProductsDeductionRequest.
  * Use `create(ConfirmProductsDeductionRequestSchema)` to create a new message.
  */
-export const ConfirmProductsDeductionRequestSchema: GenMessage<ConfirmProductsDeductionRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 12);
+export const ConfirmProductsDeductionRequestSchema: GenMessage<ConfirmProductsDeductionRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 12)
 
 /**
  * @generated from message product.v1.ConfirmProductsDeductionResponse
  */
-export type ConfirmProductsDeductionResponse = Message<"product.v1.ConfirmProductsDeductionResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type ConfirmProductsDeductionResponse =
+  Message<'product.v1.ConfirmProductsDeductionResponse'> & {
+    /**
+     * @generated from field: bool success = 1;
+     */
+    success: boolean
 
-  /**
-   * @generated from field: repeated product.v1.Product updated_products = 2;
-   */
-  updatedProducts: Product[];
+    /**
+     * @generated from field: repeated product.v1.Product updated_products = 2;
+     */
+    updatedProducts: Product[]
 
-  /**
-   * @generated from field: string message = 3;
-   */
-  message: string;
-};
+    /**
+     * @generated from field: string message = 3;
+     */
+    message: string
+  }
 
 /**
  * Describes the message product.v1.ConfirmProductsDeductionResponse.
  * Use `create(ConfirmProductsDeductionResponseSchema)` to create a new message.
  */
-export const ConfirmProductsDeductionResponseSchema: GenMessage<ConfirmProductsDeductionResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 13);
+export const ConfirmProductsDeductionResponseSchema: GenMessage<ConfirmProductsDeductionResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 13)
 
 /**
  * @generated from message product.v1.RestoreProductsRequest
  */
-export type RestoreProductsRequest = Message<"product.v1.RestoreProductsRequest"> & {
-  /**
-   * @generated from field: repeated product.v1.ProductQuantity items = 1;
-   */
-  items: ProductQuantity[];
+export type RestoreProductsRequest =
+  Message<'product.v1.RestoreProductsRequest'> & {
+    /**
+     * @generated from field: repeated product.v1.ProductQuantity items = 1;
+     */
+    items: ProductQuantity[]
 
-  /**
-   * reason for restoration (e.g., "order_cancelled", "payment_failed")
-   *
-   * @generated from field: string reason = 2;
-   */
-  reason: string;
-};
+    /**
+     * reason for restoration (e.g., "order_cancelled", "payment_failed")
+     *
+     * @generated from field: string reason = 2;
+     */
+    reason: string
+  }
 
 /**
  * Describes the message product.v1.RestoreProductsRequest.
  * Use `create(RestoreProductsRequestSchema)` to create a new message.
  */
-export const RestoreProductsRequestSchema: GenMessage<RestoreProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 14);
+export const RestoreProductsRequestSchema: GenMessage<RestoreProductsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 14)
 
 /**
  * @generated from message product.v1.RestoreProductsResponse
  */
-export type RestoreProductsResponse = Message<"product.v1.RestoreProductsResponse"> & {
-  /**
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type RestoreProductsResponse =
+  Message<'product.v1.RestoreProductsResponse'> & {
+    /**
+     * @generated from field: bool success = 1;
+     */
+    success: boolean
 
-  /**
-   * @generated from field: repeated product.v1.Product restored_products = 2;
-   */
-  restoredProducts: Product[];
+    /**
+     * @generated from field: repeated product.v1.Product restored_products = 2;
+     */
+    restoredProducts: Product[]
 
-  /**
-   * @generated from field: string message = 3;
-   */
-  message: string;
-};
+    /**
+     * @generated from field: string message = 3;
+     */
+    message: string
+  }
 
 /**
  * Describes the message product.v1.RestoreProductsResponse.
  * Use `create(RestoreProductsResponseSchema)` to create a new message.
  */
-export const RestoreProductsResponseSchema: GenMessage<RestoreProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 15);
+export const RestoreProductsResponseSchema: GenMessage<RestoreProductsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 15)
 
 /**
  * @generated from message product.v1.ValidateProductsRequest
  */
-export type ValidateProductsRequest = Message<"product.v1.ValidateProductsRequest"> & {
-  /**
-   * @generated from field: repeated product.v1.ProductForValidation products = 1;
-   */
-  products: ProductForValidation[];
-};
+export type ValidateProductsRequest =
+  Message<'product.v1.ValidateProductsRequest'> & {
+    /**
+     * @generated from field: repeated product.v1.ProductForValidation products = 1;
+     */
+    products: ProductForValidation[]
+  }
 
 /**
  * Describes the message product.v1.ValidateProductsRequest.
  * Use `create(ValidateProductsRequestSchema)` to create a new message.
  */
-export const ValidateProductsRequestSchema: GenMessage<ValidateProductsRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 16);
+export const ValidateProductsRequestSchema: GenMessage<ValidateProductsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 16)
 
 /**
  * @generated from message product.v1.ValidateProductsResponse
  */
-export type ValidateProductsResponse = Message<"product.v1.ValidateProductsResponse"> & {
-  /**
-   * true if all products are valid
-   *
-   * @generated from field: bool success = 1;
-   */
-  success: boolean;
+export type ValidateProductsResponse =
+  Message<'product.v1.ValidateProductsResponse'> & {
+    /**
+     * true if all products are valid
+     *
+     * @generated from field: bool success = 1;
+     */
+    success: boolean
 
-  /**
-   * @generated from field: repeated product.v1.Product products = 2;
-   */
-  products: Product[];
+    /**
+     * @generated from field: repeated product.v1.Product products = 2;
+     */
+    products: Product[]
 
-  /**
-   * @generated from field: string message = 3;
-   */
-  message: string;
-};
+    /**
+     * @generated from field: string message = 3;
+     */
+    message: string
+  }
 
 /**
  * Describes the message product.v1.ValidateProductsResponse.
  * Use `create(ValidateProductsResponseSchema)` to create a new message.
  */
-export const ValidateProductsResponseSchema: GenMessage<ValidateProductsResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 17);
+export const ValidateProductsResponseSchema: GenMessage<ValidateProductsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 17)
 
 /**
  * @generated from message product.v1.ProductForValidation
  */
-export type ProductForValidation = Message<"product.v1.ProductForValidation"> & {
-  /**
-   * @generated from field: string id = 1;
-   */
-  id: string;
+export type ProductForValidation =
+  Message<'product.v1.ProductForValidation'> & {
+    /**
+     * @generated from field: string id = 1;
+     */
+    id: string
 
-  /**
-   * @generated from field: string price = 2;
-   */
-  price: string;
+    /**
+     * @generated from field: string price = 2;
+     */
+    price: string
 
-  /**
-   * @generated from field: int64 quantity = 3;
-   */
-  quantity: bigint;
-};
+    /**
+     * @generated from field: int64 quantity = 3;
+     */
+    quantity: bigint
+  }
 
 /**
  * Describes the message product.v1.ProductForValidation.
  * Use `create(ProductForValidationSchema)` to create a new message.
  */
-export const ProductForValidationSchema: GenMessage<ProductForValidation> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 18);
+export const ProductForValidationSchema: GenMessage<ProductForValidation> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 18)
 
 /**
  * @generated from message product.v1.HealthRequest
  */
-export type HealthRequest = Message<"product.v1.HealthRequest"> & {
-};
+export type HealthRequest = Message<'product.v1.HealthRequest'> & {}
 
 /**
  * Describes the message product.v1.HealthRequest.
  * Use `create(HealthRequestSchema)` to create a new message.
  */
-export const HealthRequestSchema: GenMessage<HealthRequest> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 19);
+export const HealthRequestSchema: GenMessage<HealthRequest> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 19)
 
 /**
  * @generated from message product.v1.HealthResponse
  */
-export type HealthResponse = Message<"product.v1.HealthResponse"> & {
+export type HealthResponse = Message<'product.v1.HealthResponse'> & {
   /**
    * e.g., "SERVING"
    *
    * @generated from field: product.v1.HealthStatus status = 1;
    */
-  status: HealthStatus;
-};
+  status: HealthStatus
+}
 
 /**
  * Describes the message product.v1.HealthResponse.
  * Use `create(HealthResponseSchema)` to create a new message.
  */
-export const HealthResponseSchema: GenMessage<HealthResponse> = /*@__PURE__*/
-  messageDesc(file_product_v1_product, 20);
+export const HealthResponseSchema: GenMessage<HealthResponse> =
+  /*@__PURE__*/
+  messageDesc(file_product_v1_product, 20)
 
 /**
  * @generated from enum product.v1.HealthStatus
@@ -548,8 +597,9 @@ export enum HealthStatus {
 /**
  * Describes the enum product.v1.HealthStatus.
  */
-export const HealthStatusSchema: GenEnum<HealthStatus> = /*@__PURE__*/
-  enumDesc(file_product_v1_product, 0);
+export const HealthStatusSchema: GenEnum<HealthStatus> =
+  /*@__PURE__*/
+  enumDesc(file_product_v1_product, 0)
 
 /**
  * Product service definition
@@ -563,78 +613,76 @@ export const ProductService: GenService<{
    * @generated from rpc product.v1.ProductService.ListProducts
    */
   listProducts: {
-    methodKind: "unary";
-    input: typeof ListProductsRequestSchema;
-    output: typeof ListProductsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ListProductsRequestSchema
+    output: typeof ListProductsResponseSchema
+  }
   /**
    * BatchGetProductsByIDs retrieves products by their IDs
    *
    * @generated from rpc product.v1.ProductService.BatchGetProductsByIDs
    */
   batchGetProductsByIDs: {
-    methodKind: "unary";
-    input: typeof BatchGetProductsByIDsRequestSchema;
-    output: typeof BatchGetProductsByIDsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof BatchGetProductsByIDsRequestSchema
+    output: typeof BatchGetProductsByIDsResponseSchema
+  }
   /**
    * ReserveProducts reduce quantity initially and adds reserved_quantity
    *
    * @generated from rpc product.v1.ProductService.ReserveProducts
    */
   reserveProducts: {
-    methodKind: "unary";
-    input: typeof ReserveProductsRequestSchema;
-    output: typeof ReserveProductsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ReserveProductsRequestSchema
+    output: typeof ReserveProductsResponseSchema
+  }
   /**
    * ReleaseProducts re-add quantity and remove reserved_quantity
    *
    * @generated from rpc product.v1.ProductService.ReleaseProducts
    */
   releaseProducts: {
-    methodKind: "unary";
-    input: typeof ReleaseProductsRequestSchema;
-    output: typeof ReleaseProductsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ReleaseProductsRequestSchema
+    output: typeof ReleaseProductsResponseSchema
+  }
   /**
    * ConfirmProductsDeduction confirm quantity and remove reserved_quantity
    *
    * @generated from rpc product.v1.ProductService.ConfirmProductsDeduction
    */
   confirmProductsDeduction: {
-    methodKind: "unary";
-    input: typeof ConfirmProductsDeductionRequestSchema;
-    output: typeof ConfirmProductsDeductionResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ConfirmProductsDeductionRequestSchema
+    output: typeof ConfirmProductsDeductionResponseSchema
+  }
   /**
    * RestoreProducts restore quantity
    *
    * @generated from rpc product.v1.ProductService.RestoreProducts
    */
   restoreProducts: {
-    methodKind: "unary";
-    input: typeof RestoreProductsRequestSchema;
-    output: typeof RestoreProductsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof RestoreProductsRequestSchema
+    output: typeof RestoreProductsResponseSchema
+  }
   /**
    * ValidateProducts validate products before place order if price not changed and stock still available
    *
    * @generated from rpc product.v1.ProductService.ValidateProducts
    */
   validateProducts: {
-    methodKind: "unary";
-    input: typeof ValidateProductsRequestSchema;
-    output: typeof ValidateProductsResponseSchema;
-  },
+    methodKind: 'unary'
+    input: typeof ValidateProductsRequestSchema
+    output: typeof ValidateProductsResponseSchema
+  }
   /**
    * @generated from rpc product.v1.ProductService.Health
    */
   health: {
-    methodKind: "unary";
-    input: typeof HealthRequestSchema;
-    output: typeof HealthResponseSchema;
-  },
-}> = /*@__PURE__*/
-  serviceDesc(file_product_v1_product, 0);
-
+    methodKind: 'unary'
+    input: typeof HealthRequestSchema
+    output: typeof HealthResponseSchema
+  }
+}> = /*@__PURE__*/ serviceDesc(file_product_v1_product, 0)
