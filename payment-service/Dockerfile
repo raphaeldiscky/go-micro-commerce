@@ -34,7 +34,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/payment-service/main .
 
-EXPOSE 8084
+EXPOSE 8084 50054
 
 # Switch to the non-root user
 USER appuser

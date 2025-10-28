@@ -35,7 +35,7 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/cart-service/main .
 
-EXPOSE 8089
+EXPOSE 8089 50059
 
 # Switch to the non-root user
 USER appuser
