@@ -8,7 +8,7 @@ CREATE TABLE payments (
     amount DECIMAL(12, 2) NOT NULL CHECK (amount > 0),
     currency VARCHAR(3) NOT NULL CHECK (currency ~ '^[A-Z]{3}$'),
     status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, processing, completed, etc
-    payment_gateway VARCHAR(50) NOT NULL, -- stripe, midtrans, xendit, etc.
+    payment_gateway VARCHAR(50) NOT NULL, -- stripe xendit, etc.
     gateway_transaction_id TEXT UNIQUE, -- transaction id from gateways (stripe Transaction `ipi_xxx`)
     gateway_metadata JSONB DEFAULT '{}'::JSONB, -- payment_method_id (pm_xxx), stripe_customer_id (cust_xxx), client_secret, etc
     created_at TIMESTAMPTZ DEFAULT now(),

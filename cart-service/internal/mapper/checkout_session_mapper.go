@@ -2,6 +2,9 @@
 package mapper
 
 import (
+	pb "github.com/raphaeldiscky/go-micro-commerce/proto/cart/v1"
+
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
 )
@@ -61,4 +64,18 @@ func MapToCheckoutSessionItemResponses(
 	}
 
 	return responses
+}
+
+// MapCheckoutSessionStatusToProto converts checkout session status to protobuf enum.
+func MapCheckoutSessionStatusToProto(status constant.CheckoutSessionStatus) pb.Status {
+	switch status {
+	case constant.CheckoutSessionStatusPending:
+		return pb.Status_STATUS_PENDING
+	case constant.CheckoutSessionStatusOrderPlaced:
+		return pb.Status_STATUS_ORDER_PLACED
+	case constant.CheckoutSessionStatusCanceled:
+		return pb.Status_STATUS_CANCELED
+	default:
+		return pb.Status_STATUS_UNSPECIFIED
+	}
 }

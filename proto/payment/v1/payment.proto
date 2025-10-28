@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/raphaeldiscky/go-micro-commerce/proto/payment/v1;paymentv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+import "buf/validate/validate.proto";
+
+service PaymentService {
+  rpc CreatePaymentIntent(CreatePaymentIntentRequest) returns (CreatePaymentIntentResponse);
+  rpc Health(HealthRequest) returns (HealthResponse);
+}
+
+message CreatePaymentIntentRequest {
+  string order_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message CreatePaymentIntentResponse {
+  string payment_id = 1 [(buf.validate.field).string.uuid = true];
+  string order_id = 2 [(buf.validate.field).string.uuid = true];
+  double amount = 3 [(buf.validate.field).double = {gt: 0}];
+  string currency = 4 [(buf.validate.field).string = {min_len: 3, max_len: 3}];
+  PaymentGateway payment_gateway = 5 [(buf.validate.field).enum.defined_only = true];
+  string gateway_transaction_id = 6 [(buf.validate.field).string = {min_len: 1, max_len: 255}];
+  google.protobuf.Struct gateway_metadata = 7; // e.g., stripe -> { "client_secret": "...", "payment_intent_id": "pi_xx" }
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  google.protobuf.Timestamp expires_at = 10;
+}
+
+enum PaymentGateway {
+  PAYMENT_GATEWAY_UNSPECIFIED = 0;
+  PAYMENT_GATEWAY_STRIPE = 1;
+  PAYMENT_GATEWAY_XENDIT = 2;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  HealthStatus status = 1;
+}
+
+enum HealthStatus {
+  HEALTH_STATUS_UNSPECIFIED = 0;
+  HEALTH_STATUS_SERVING = 1;
+  HEALTH_STATUS_NOT_SERVING = 2;
+}

@@ -2,263 +2,240 @@
 // @generated from file fulfillment/v1/fulfillment.proto (package fulfillment.v1, syntax proto3)
 /* eslint-disable */
 
-import type {
-  GenEnum,
-  GenFile,
-  GenMessage,
-  GenService,
-} from '@bufbuild/protobuf/codegenv2'
-import {
-  enumDesc,
-  fileDesc,
-  messageDesc,
-  serviceDesc,
-} from '@bufbuild/protobuf/codegenv2'
-import { file_google_protobuf_timestamp } from '@bufbuild/protobuf/wkt'
-import { file_buf_validate_validate } from '../../buf/validate/validate_pb'
-import type { Message } from '@bufbuild/protobuf'
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
+import { file_buf_validate_validate } from "../../buf/validate/validate_pb";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file fulfillment/v1/fulfillment.proto.
  */
-export const file_fulfillment_v1_fulfillment: GenFile =
-  /*@__PURE__*/
-  fileDesc(
-    'CiBmdWxmaWxsbWVudC92MS9mdWxmaWxsbWVudC5wcm90bxIOZnVsZmlsbG1lbnQudjEi4wEKFkdldFNoaXBwaW5nQ29zdFJlcXVlc3QSGwoIY3VycmVuY3kYASABKAlCCbpIBnIEEAMYAxIoCgdjb3VyaWVyGAIgASgLMhcuZnVsZmlsbG1lbnQudjEuQ291cmllchIwCgtkZXN0aW5hdGlvbhgDIAEoCzIbLmZ1bGZpbGxtZW50LnYxLkRlc3RpbmF0aW9uEiYKBm9yaWdpbhgEIAEoCzIWLmZ1bGZpbGxtZW50LnYxLk9yaWdpbhIoCgdwYWNrYWdlGAUgASgLMhcuZnVsZmlsbG1lbnQudjEuUGFja2FnZSJqChdHZXRTaGlwcGluZ0Nvc3RSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDXNoaXBwaW5nX2Nvc3QYAiABKAESEAoIY3VycmVuY3kYAyABKAkSFQoNZXJyb3JfbWVzc2FnZRgEIAEoCSInCgdDb3VyaWVyEhwKCmNvdXJpZXJfaWQYASABKAlCCLpIBXIDsAEBIuUBCgdQYWNrYWdlEjEKCXdlaWdodF9rZxgBIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi0KBXdpZHRoGAIgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGaGVpZ2h0GAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGbGVuZ3RoGAQgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGAoEdW5pdBgFIAEoCUIKukgHcgUQARj/ASJfCgtEZXN0aW5hdGlvbhIMCgRjaXR5GAEgASgJEg0KBXN0YXRlGAIgASgJEhMKC3Bvc3RhbF9jb2RlGAMgASgJEh4KDGNvdW50cnlfY29kZRgEIAEoCUIIukgFcgOYAQIiWgoGT3JpZ2luEgwKBGNpdHkYASABKAkSDQoFc3RhdGUYAiABKAkSEwoLcG9zdGFsX2NvZGUYAyABKAkSHgoMY291bnRyeV9jb2RlGAQgASgJQgi6SAVyA5gBAiIPCg1IZWFsdGhSZXF1ZXN0Ij4KDkhlYWx0aFJlc3BvbnNlEiwKBnN0YXR1cxgBIAEoDjIcLmZ1bGZpbGxtZW50LnYxLkhlYWx0aFN0YXR1cypnCgxIZWFsdGhTdGF0dXMSHQoZSEVBTFRIX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFQUxUSF9TVEFUVVNfU0VSVklORxABEh0KGUhFQUxUSF9TVEFUVVNfTk9UX1NFUlZJTkcQAjLBAQoSRnVsZmlsbG1lbnRTZXJ2aWNlEmIKD0dldFNoaXBwaW5nQ29zdBImLmZ1bGZpbGxtZW50LnYxLkdldFNoaXBwaW5nQ29zdFJlcXVlc3QaJy5mdWxmaWxsbWVudC52MS5HZXRTaGlwcGluZ0Nvc3RSZXNwb25zZRJHCgZIZWFsdGgSHS5mdWxmaWxsbWVudC52MS5IZWFsdGhSZXF1ZXN0Gh4uZnVsZmlsbG1lbnQudjEuSGVhbHRoUmVzcG9uc2VCzgEKEmNvbS5mdWxmaWxsbWVudC52MUIQRnVsZmlsbG1lbnRQcm90b1ABWk1naXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vZnVsZmlsbG1lbnQvdjE7ZnVsZmlsbG1lbnR2MaICA0ZYWKoCDkZ1bGZpbGxtZW50LlYxygIORnVsZmlsbG1lbnRcVjHiAhpGdWxmaWxsbWVudFxWMVxHUEJNZXRhZGF0YeoCD0Z1bGZpbGxtZW50OjpWMWIGcHJvdG8z',
-    [file_google_protobuf_timestamp, file_buf_validate_validate],
-  )
+export const file_fulfillment_v1_fulfillment: GenFile = /*@__PURE__*/
+  fileDesc("CiBmdWxmaWxsbWVudC92MS9mdWxmaWxsbWVudC5wcm90bxIOZnVsZmlsbG1lbnQudjEi4wEKFkdldFNoaXBwaW5nQ29zdFJlcXVlc3QSGwoIY3VycmVuY3kYASABKAlCCbpIBnIEEAMYAxIoCgdjb3VyaWVyGAIgASgLMhcuZnVsZmlsbG1lbnQudjEuQ291cmllchIwCgtkZXN0aW5hdGlvbhgDIAEoCzIbLmZ1bGZpbGxtZW50LnYxLkRlc3RpbmF0aW9uEiYKBm9yaWdpbhgEIAEoCzIWLmZ1bGZpbGxtZW50LnYxLk9yaWdpbhIoCgdwYWNrYWdlGAUgASgLMhcuZnVsZmlsbG1lbnQudjEuUGFja2FnZSJqChdHZXRTaGlwcGluZ0Nvc3RSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEhUKDXNoaXBwaW5nX2Nvc3QYAiABKAESEAoIY3VycmVuY3kYAyABKAkSFQoNZXJyb3JfbWVzc2FnZRgEIAEoCSInCgdDb3VyaWVyEhwKCmNvdXJpZXJfaWQYASABKAlCCLpIBXIDsAEBIuUBCgdQYWNrYWdlEjEKCXdlaWdodF9rZxgBIAEoCUIeukgbchkyF15bMC05XSsoXC5bMC05XXsxLDJ9KT8kEi0KBXdpZHRoGAIgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGaGVpZ2h0GAMgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSLgoGbGVuZ3RoGAQgASgJQh66SBtyGTIXXlswLTldKyhcLlswLTldezEsMn0pPyQSGAoEdW5pdBgFIAEoCUIKukgHcgUQARj/ASJfCgtEZXN0aW5hdGlvbhIMCgRjaXR5GAEgASgJEg0KBXN0YXRlGAIgASgJEhMKC3Bvc3RhbF9jb2RlGAMgASgJEh4KDGNvdW50cnlfY29kZRgEIAEoCUIIukgFcgOYAQIiWgoGT3JpZ2luEgwKBGNpdHkYASABKAkSDQoFc3RhdGUYAiABKAkSEwoLcG9zdGFsX2NvZGUYAyABKAkSHgoMY291bnRyeV9jb2RlGAQgASgJQgi6SAVyA5gBAiIPCg1IZWFsdGhSZXF1ZXN0Ij4KDkhlYWx0aFJlc3BvbnNlEiwKBnN0YXR1cxgBIAEoDjIcLmZ1bGZpbGxtZW50LnYxLkhlYWx0aFN0YXR1cypnCgxIZWFsdGhTdGF0dXMSHQoZSEVBTFRIX1NUQVRVU19VTlNQRUNJRklFRBAAEhkKFUhFQUxUSF9TVEFUVVNfU0VSVklORxABEh0KGUhFQUxUSF9TVEFUVVNfTk9UX1NFUlZJTkcQAjLBAQoSRnVsZmlsbG1lbnRTZXJ2aWNlEmIKD0dldFNoaXBwaW5nQ29zdBImLmZ1bGZpbGxtZW50LnYxLkdldFNoaXBwaW5nQ29zdFJlcXVlc3QaJy5mdWxmaWxsbWVudC52MS5HZXRTaGlwcGluZ0Nvc3RSZXNwb25zZRJHCgZIZWFsdGgSHS5mdWxmaWxsbWVudC52MS5IZWFsdGhSZXF1ZXN0Gh4uZnVsZmlsbG1lbnQudjEuSGVhbHRoUmVzcG9uc2VCzgEKEmNvbS5mdWxmaWxsbWVudC52MUIQRnVsZmlsbG1lbnRQcm90b1ABWk1naXRodWIuY29tL3JhcGhhZWxkaXNja3kvZ28tbWljcm8tY29tbWVyY2UvcHJvdG8vZnVsZmlsbG1lbnQvdjE7ZnVsZmlsbG1lbnR2MaICA0ZYWKoCDkZ1bGZpbGxtZW50LlYxygIORnVsZmlsbG1lbnRcVjHiAhpGdWxmaWxsbWVudFxWMVxHUEJNZXRhZGF0YeoCD0Z1bGZpbGxtZW50OjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_buf_validate_validate]);
 
 /**
  * @generated from message fulfillment.v1.GetShippingCostRequest
  */
-export type GetShippingCostRequest =
-  Message<'fulfillment.v1.GetShippingCostRequest'> & {
-    /**
-     * @generated from field: string currency = 1;
-     */
-    currency: string
+export type GetShippingCostRequest = Message<"fulfillment.v1.GetShippingCostRequest"> & {
+  /**
+   * @generated from field: string currency = 1;
+   */
+  currency: string;
 
-    /**
-     * @generated from field: fulfillment.v1.Courier courier = 2;
-     */
-    courier?: Courier
+  /**
+   * @generated from field: fulfillment.v1.Courier courier = 2;
+   */
+  courier?: Courier;
 
-    /**
-     * @generated from field: fulfillment.v1.Destination destination = 3;
-     */
-    destination?: Destination
+  /**
+   * @generated from field: fulfillment.v1.Destination destination = 3;
+   */
+  destination?: Destination;
 
-    /**
-     * @generated from field: fulfillment.v1.Origin origin = 4;
-     */
-    origin?: Origin
+  /**
+   * @generated from field: fulfillment.v1.Origin origin = 4;
+   */
+  origin?: Origin;
 
-    /**
-     * @generated from field: fulfillment.v1.Package package = 5;
-     */
-    package?: Package
-  }
+  /**
+   * @generated from field: fulfillment.v1.Package package = 5;
+   */
+  package?: Package;
+};
 
 /**
  * Describes the message fulfillment.v1.GetShippingCostRequest.
  * Use `create(GetShippingCostRequestSchema)` to create a new message.
  */
-export const GetShippingCostRequestSchema: GenMessage<GetShippingCostRequest> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 0)
+export const GetShippingCostRequestSchema: GenMessage<GetShippingCostRequest> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 0);
 
 /**
  * @generated from message fulfillment.v1.GetShippingCostResponse
  */
-export type GetShippingCostResponse =
-  Message<'fulfillment.v1.GetShippingCostResponse'> & {
-    /**
-     * @generated from field: bool success = 1;
-     */
-    success: boolean
+export type GetShippingCostResponse = Message<"fulfillment.v1.GetShippingCostResponse"> & {
+  /**
+   * @generated from field: bool success = 1;
+   */
+  success: boolean;
 
-    /**
-     * @generated from field: double shipping_cost = 2;
-     */
-    shippingCost: number
+  /**
+   * @generated from field: double shipping_cost = 2;
+   */
+  shippingCost: number;
 
-    /**
-     * @generated from field: string currency = 3;
-     */
-    currency: string
+  /**
+   * @generated from field: string currency = 3;
+   */
+  currency: string;
 
-    /**
-     * @generated from field: string error_message = 4;
-     */
-    errorMessage: string
-  }
+  /**
+   * @generated from field: string error_message = 4;
+   */
+  errorMessage: string;
+};
 
 /**
  * Describes the message fulfillment.v1.GetShippingCostResponse.
  * Use `create(GetShippingCostResponseSchema)` to create a new message.
  */
-export const GetShippingCostResponseSchema: GenMessage<GetShippingCostResponse> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 1)
+export const GetShippingCostResponseSchema: GenMessage<GetShippingCostResponse> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 1);
 
 /**
  * @generated from message fulfillment.v1.Courier
  */
-export type Courier = Message<'fulfillment.v1.Courier'> & {
+export type Courier = Message<"fulfillment.v1.Courier"> & {
   /**
    * @generated from field: string courier_id = 1;
    */
-  courierId: string
-}
+  courierId: string;
+};
 
 /**
  * Describes the message fulfillment.v1.Courier.
  * Use `create(CourierSchema)` to create a new message.
  */
-export const CourierSchema: GenMessage<Courier> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 2)
+export const CourierSchema: GenMessage<Courier> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 2);
 
 /**
  * @generated from message fulfillment.v1.Package
  */
-export type Package = Message<'fulfillment.v1.Package'> & {
+export type Package = Message<"fulfillment.v1.Package"> & {
   /**
    * @generated from field: string weight_kg = 1;
    */
-  weightKg: string
+  weightKg: string;
 
   /**
    * @generated from field: string width = 2;
    */
-  width: string
+  width: string;
 
   /**
    * @generated from field: string height = 3;
    */
-  height: string
+  height: string;
 
   /**
    * @generated from field: string length = 4;
    */
-  length: string
+  length: string;
 
   /**
    * @generated from field: string unit = 5;
    */
-  unit: string
-}
+  unit: string;
+};
 
 /**
  * Describes the message fulfillment.v1.Package.
  * Use `create(PackageSchema)` to create a new message.
  */
-export const PackageSchema: GenMessage<Package> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 3)
+export const PackageSchema: GenMessage<Package> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 3);
 
 /**
  *  Customer address
  *
  * @generated from message fulfillment.v1.Destination
  */
-export type Destination = Message<'fulfillment.v1.Destination'> & {
+export type Destination = Message<"fulfillment.v1.Destination"> & {
   /**
    * @generated from field: string city = 1;
    */
-  city: string
+  city: string;
 
   /**
    * @generated from field: string state = 2;
    */
-  state: string
+  state: string;
 
   /**
    * @generated from field: string postal_code = 3;
    */
-  postalCode: string
+  postalCode: string;
 
   /**
    * @generated from field: string country_code = 4;
    */
-  countryCode: string
-}
+  countryCode: string;
+};
 
 /**
  * Describes the message fulfillment.v1.Destination.
  * Use `create(DestinationSchema)` to create a new message.
  */
-export const DestinationSchema: GenMessage<Destination> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 4)
+export const DestinationSchema: GenMessage<Destination> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 4);
 
 /**
  * Warehouse address
  *
  * @generated from message fulfillment.v1.Origin
  */
-export type Origin = Message<'fulfillment.v1.Origin'> & {
+export type Origin = Message<"fulfillment.v1.Origin"> & {
   /**
    * @generated from field: string city = 1;
    */
-  city: string
+  city: string;
 
   /**
    * @generated from field: string state = 2;
    */
-  state: string
+  state: string;
 
   /**
    * @generated from field: string postal_code = 3;
    */
-  postalCode: string
+  postalCode: string;
 
   /**
    * @generated from field: string country_code = 4;
    */
-  countryCode: string
-}
+  countryCode: string;
+};
 
 /**
  * Describes the message fulfillment.v1.Origin.
  * Use `create(OriginSchema)` to create a new message.
  */
-export const OriginSchema: GenMessage<Origin> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 5)
+export const OriginSchema: GenMessage<Origin> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 5);
 
 /**
  * @generated from message fulfillment.v1.HealthRequest
  */
-export type HealthRequest = Message<'fulfillment.v1.HealthRequest'> & {}
+export type HealthRequest = Message<"fulfillment.v1.HealthRequest"> & {
+};
 
 /**
  * Describes the message fulfillment.v1.HealthRequest.
  * Use `create(HealthRequestSchema)` to create a new message.
  */
-export const HealthRequestSchema: GenMessage<HealthRequest> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 6)
+export const HealthRequestSchema: GenMessage<HealthRequest> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 6);
 
 /**
  * @generated from message fulfillment.v1.HealthResponse
  */
-export type HealthResponse = Message<'fulfillment.v1.HealthResponse'> & {
+export type HealthResponse = Message<"fulfillment.v1.HealthResponse"> & {
   /**
    * e.g., "SERVING"
    *
    * @generated from field: fulfillment.v1.HealthStatus status = 1;
    */
-  status: HealthStatus
-}
+  status: HealthStatus;
+};
 
 /**
  * Describes the message fulfillment.v1.HealthResponse.
  * Use `create(HealthResponseSchema)` to create a new message.
  */
-export const HealthResponseSchema: GenMessage<HealthResponse> =
-  /*@__PURE__*/
-  messageDesc(file_fulfillment_v1_fulfillment, 7)
+export const HealthResponseSchema: GenMessage<HealthResponse> = /*@__PURE__*/
+  messageDesc(file_fulfillment_v1_fulfillment, 7);
 
 /**
  * @generated from enum fulfillment.v1.HealthStatus
@@ -283,9 +260,8 @@ export enum HealthStatus {
 /**
  * Describes the enum fulfillment.v1.HealthStatus.
  */
-export const HealthStatusSchema: GenEnum<HealthStatus> =
-  /*@__PURE__*/
-  enumDesc(file_fulfillment_v1_fulfillment, 0)
+export const HealthStatusSchema: GenEnum<HealthStatus> = /*@__PURE__*/
+  enumDesc(file_fulfillment_v1_fulfillment, 0);
 
 /**
  * @generated from service fulfillment.v1.FulfillmentService
@@ -295,16 +271,18 @@ export const FulfillmentService: GenService<{
    * @generated from rpc fulfillment.v1.FulfillmentService.GetShippingCost
    */
   getShippingCost: {
-    methodKind: 'unary'
-    input: typeof GetShippingCostRequestSchema
-    output: typeof GetShippingCostResponseSchema
-  }
+    methodKind: "unary";
+    input: typeof GetShippingCostRequestSchema;
+    output: typeof GetShippingCostResponseSchema;
+  },
   /**
    * @generated from rpc fulfillment.v1.FulfillmentService.Health
    */
   health: {
-    methodKind: 'unary'
-    input: typeof HealthRequestSchema
-    output: typeof HealthResponseSchema
-  }
-}> = /*@__PURE__*/ serviceDesc(file_fulfillment_v1_fulfillment, 0)
+    methodKind: "unary";
+    input: typeof HealthRequestSchema;
+    output: typeof HealthResponseSchema;
+  },
+}> = /*@__PURE__*/
+  serviceDesc(file_fulfillment_v1_fulfillment, 0);
+

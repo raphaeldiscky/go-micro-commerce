@@ -76,6 +76,7 @@ type CheckoutSessionItemResponse struct {
 // CheckoutSessionResponse represents a checkout session in API responses.
 type CheckoutSessionResponse struct {
 	ID             uuid.UUID                      `json:"id"`
+	CartID         uuid.UUID                      `json:"cart_id"`
 	IdempotencyKey uuid.UUID                      `json:"idempotency_key"`
 	CustomerID     uuid.UUID                      `json:"customer_id"`
 	Courier        Courier                        `json:"courier"`

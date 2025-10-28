@@ -3,6 +3,9 @@ module github.com/raphaeldiscky/go-micro-commerce/payment-service
 go 1.24.7
 
 require (
+	connectrpc.com/connect v1.19.0
+	connectrpc.com/grpchealth v1.4.0
+	connectrpc.com/grpcreflect v1.3.0
 	github.com/99designs/gqlgen v0.17.81
 	github.com/IBM/sarama v1.45.2
 	github.com/bsm/redislock v0.9.4
@@ -13,18 +16,23 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20250822082838-0a883c017315
+	github.com/raphaeldiscky/go-micro-commerce/proto v0.0.0-00010101000000-000000000000
 	github.com/shopspring/decimal v1.4.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/stripe/stripe-go/v83 v83.0.1
 	github.com/vektah/gqlparser/v2 v2.5.30
+	golang.org/x/net v0.44.0
 	golang.org/x/time v0.11.0
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
 
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
+
 require (
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.9-20250912141014-52f32327d4b0.1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
@@ -97,9 +105,9 @@ require (
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

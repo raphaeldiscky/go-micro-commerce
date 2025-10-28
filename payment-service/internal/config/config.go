@@ -8,6 +8,7 @@ import (
 type Config struct {
 	App             *AppConfig
 	HTTPServer      *HTTPServerConfig
+	GRPCServer      *GRPCServerConfig
 	Postgres        *PostgresConfig
 	Kafka           *KafkaConfig
 	Redis           *RedisConfig
@@ -31,6 +32,7 @@ func LoadConfig() (*Config, error) {
 	cfg := &Config{
 		App:             initAppConfig(),
 		HTTPServer:      initHTTPServerConfig(),
+		GRPCServer:      initGRPCServerConfig(),
 		Postgres:        initPostgresConfig(),
 		Kafka:           initKafkaConfig(),
 		Redis:           initRedisConfig(),

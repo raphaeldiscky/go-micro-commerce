@@ -4,6 +4,8 @@ go 1.24.7
 
 require (
 	connectrpc.com/connect v1.19.0
+	connectrpc.com/grpchealth v1.4.0
+	connectrpc.com/grpcreflect v1.3.0
 	github.com/99designs/gqlgen v0.17.81
 	github.com/IBM/sarama v1.45.2
 	github.com/bsm/redislock v0.9.4
@@ -20,6 +22,7 @@ require (
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/vektah/gqlparser/v2 v2.5.30
+	golang.org/x/net v0.44.0
 	golang.org/x/time v0.11.0
 )
 
@@ -99,7 +102,6 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
-	golang.org/x/net v0.44.0 // indirect
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
