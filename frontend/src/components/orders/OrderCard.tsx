@@ -2,9 +2,11 @@ import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { PATH } from '@/constants/routes'
 import { cn } from '@/lib/utils'
 import { fCurrency } from '@/lib/utils/number'
 import type { Order } from '@/types/__generated__/graphql'
+import { useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import Decimal from 'decimal.js'
 import {
@@ -20,6 +22,8 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order, className }: OrderCardProps) {
+  const navigate = useNavigate()
+
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'MMM dd, yyyy HH:mm')
@@ -28,8 +32,15 @@ export function OrderCard({ order, className }: OrderCardProps) {
     }
   }
 
+  const handleClick = () => {
+    navigate({ to: PATH.orders.detail(order.id) })
+  }
+
   return (
-    <Card className={cn('w-full transition-shadow hover:shadow-md', className)}>
+    <Card
+      className={cn('w-full transition-all hover:shadow-lg cursor-pointer hover:bg-accent/50', className)}
+      onClick={handleClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">

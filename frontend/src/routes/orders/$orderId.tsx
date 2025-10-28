@@ -115,6 +115,10 @@ function RouteComponent() {
   const isFailed = payment.status === 'FAILED'
   const isPending =
     payment.status === 'PENDING' || payment.status === 'PROCESSING'
+  const isExpired = payment.expiresAt
+    ? new Date(payment.expiresAt).getTime() < Date.now()
+    : false
+  const canRetryPayment = isPending && !isExpired && payment.clientSecret
 
   return (
     <div className="min-h-screen bg-gray-50/40">
@@ -329,17 +333,31 @@ function RouteComponent() {
         {/* Action Buttons */}
         <Card>
           <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={handleBackToShop}
-                variant="outline"
-                className="flex-1"
-              >
-                Continue Shopping
-              </Button>
-              <Button onClick={handleTrackOrder} className="flex-1">
-                Track Order
-              </Button>
+            <div className="flex flex-col gap-4">
+              {/* Payment Retry Button */}
+              {canRetryPayment && (
+                <Button
+                  onClick={() => navigate({ to: PATH.payment.detail(orderId) })}
+                  className="w-full"
+                  size="lg"
+                >
+                  Complete Payment
+                </Button>
+              )}
+
+              {/* Default Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button
+                  onClick={handleBackToShop}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Continue Shopping
+                </Button>
+                <Button onClick={handleTrackOrder} className="flex-1">
+                  Track Order
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

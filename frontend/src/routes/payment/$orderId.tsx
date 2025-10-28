@@ -20,11 +20,6 @@ import { toast } from 'sonner'
 
 export const Route = createFileRoute(PATH.payment.$orderId)({
   component: RouteComponent,
-  validateSearch: (search: Record<string, unknown>) => {
-    return {
-      clientSecret: (search.clientSecret as string) || undefined,
-    }
-  },
 })
 
 const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY)
