@@ -9,7 +9,10 @@ import (
 	"github.com/bsm/redislock"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 	"github.com/shopspring/decimal"
+
+	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
@@ -18,6 +21,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/saga"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/utils/redisutils"
 )
 
@@ -125,14 +129,14 @@ func (s *orderService) PlaceOrder(
 			}
 		}
 
-		reservedProducts, err := s.productClient.ReserveProducts(
+		reservedProducts, errn := s.productClient.ReserveProducts(
 			ctx,
 			req.IdempotencyKey,
 			reservationItems,
 		)
-		if err != nil {
-			s.logger.Errorf("Failed to reserve products: %v", err)
-			return httperror.NewBadRequestError(fmt.Sprintf("failed to reserve products: %v", err))
+		if errn != nil {
+			s.logger.Errorf("Failed to reserve products: %v", errn)
+			return httperror.NewBadRequestError(fmt.Sprintf("failed to reserve products: %v", errn))
 		}
 
 		// Create order items using reserved product prices
@@ -179,9 +183,9 @@ func (s *orderService) PlaceOrder(
 			Currency: checkoutSession.Currency,
 		}
 
-		shippingResp, err := s.fulfillmentClient.CalculateShipping(ctx, shippingReq)
-		if err != nil {
-			s.logger.Errorf("Failed to calculate shipping: %v", err)
+		shippingResp, errn := s.fulfillmentClient.CalculateShipping(ctx, shippingReq)
+		if errn != nil {
+			s.logger.Errorf("Failed to calculate shipping: %v", errn)
 			// Compensate: Release reserved products
 			err = s.compensateProductReservation(ctx, reservationItems)
 			if err != nil {
@@ -194,7 +198,7 @@ func (s *orderService) PlaceOrder(
 		}
 
 		// Step 5: Create order entity using NewOrder (calculates subtotal and totals)
-		order, err := entity.NewOrder(
+		order, errn := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
 			req.CheckoutSessionID,
@@ -224,8 +228,8 @@ func (s *orderService) PlaceOrder(
 			},
 			orderItems,
 		)
-		if err != nil {
-			s.logger.Errorf("Failed to create order entity: %v", err)
+		if errn != nil {
+			s.logger.Errorf("Failed to create order entity: %v", errn)
 			// Compensate: Release reserved products
 			err = s.compensateProductReservation(ctx, reservationItems)
 			if err != nil {
@@ -314,7 +318,50 @@ func (s *orderService) PlaceOrder(
 
 		s.logger.Infof("Order created successfully: order_id=%s", savedOrder.ID)
 
-		// Step 9: Publish OrderCreatedEvent via outbox
+		// Step 9.5: Create saga state for post-payment workflow
+		// Store metadata that will be needed when payment succeeds
+		userAuth, errAuth := echoutils.GetUserAuthContexts(ctx)
+		if errAuth != nil {
+			s.logger.Warnf("Failed to extract user auth for saga state: %v", errAuth)
+			// Continue without user auth - saga can still proceed
+			userAuth = pkgdto.UserAuthInfo{}
+		}
+
+		sagaMetadata := &saga.Metadata{
+			ReservedProducts: reservedProducts,
+			CustomerEmail:    req.CustomerEmail,
+			PaymentID:        &paymentIntent.PaymentID,
+			UserAuth:         &userAuth,
+		}
+
+		sagaRepo := ds.SagaStateRepository()
+		sagaState := &entity.SagaState{
+			ID:               uuid.New(),
+			WorkflowName:     constant.PostPaymentSagaWorkflowName,
+			OrderID:          savedOrder.ID,
+			CurrentStep:      0,
+			Status:           constant.SagaStatusPending,
+			ExecutedSteps:    []string{},
+			CompensatedSteps: []string{},
+			Data:             sagaMetadata.ToMap(),
+			Version:          1,
+			RetryCount:       0,
+			CreatedAt:        time.Now().UTC(),
+			UpdatedAt:        time.Now().UTC(),
+		}
+
+		if err = sagaRepo.Create(ctx, sagaState); err != nil {
+			s.logger.Errorf("Failed to create post-payment saga state: %v", err)
+			// Don't fail the order creation - saga can be recovered later
+		} else {
+			s.logger.Infof(
+				"Created post-payment saga state %s for order %s",
+				sagaState.ID,
+				savedOrder.ID,
+			)
+		}
+
+		// Step 10: Publish OrderCreatedEvent via outbox
 		evt := producer.NewOrderLifecycleEvent(
 			savedOrder.ID,
 			savedOrder.CheckoutSessionID,
@@ -347,7 +394,7 @@ func (s *orderService) PlaceOrder(
 			return httperror.NewInternalServerError("failed to create outbox event")
 		}
 
-		// Step 10: Build response with order + payment metadata
+		// Step 11: Build response with order + payment metadata
 		res = &dto.PlaceOrderResponse{
 			Order: mapper.MapToOrderResponse(savedOrder),
 			PaymentMetadata: dto.PaymentMetadata{
@@ -390,4 +437,66 @@ func (s *orderService) compensateProductReservation(
 	}
 
 	return s.productClient.ReleaseProducts(ctx, restorationItems)
+}
+
+// ExecutePostPaymentSagaAsync executes post-payment saga in background.
+// This is called after payment succeeds to process fulfillment, deduct inventory, and send confirmation.
+func (s *orderService) ExecutePostPaymentSagaAsync(
+	ctx context.Context,
+	orderID uuid.UUID,
+) {
+	go func() {
+		// Create background context with user authentication for async saga execution
+		bgCtx := echoutils.PropagateUserContextToBackground(ctx)
+
+		// Copy trace ID if present
+		if traceID := ctx.Value(constant.CtxTraceIDKey); traceID != nil {
+			bgCtx = context.WithValue(bgCtx, constant.CtxTraceIDKey, traceID)
+		}
+
+		s.logger.Infof("Starting post-payment saga for order %s", orderID)
+
+		// Load order
+		orderRepo := s.dataStore.OrderRepository()
+
+		order, err := orderRepo.FindByID(bgCtx, orderID)
+		if err != nil {
+			s.logger.Errorf("Failed to retrieve order for post-payment saga: %v", err)
+
+			return
+		}
+
+		// Load saga state with metadata (reserved products, customer email, etc.)
+		sagaRepo := s.dataStore.SagaStateRepository()
+
+		sagaState, err := sagaRepo.FindByOrderIDAndWorkflow(
+			bgCtx,
+			orderID,
+			constant.PostPaymentSagaWorkflowName,
+		)
+		if err != nil {
+			if err.Error() == constant.SagaStateNotFoundErrorMessage {
+				s.logger.Warnf("No post-payment saga state found for order %s", orderID)
+
+				return
+			}
+
+			s.logger.Errorf("Failed to retrieve saga state: %v", err)
+
+			return
+		}
+
+		// Convert saga data to metadata
+		metadata := &saga.Metadata{}
+		metadata.FromMap(sagaState.Data)
+
+		payload := &saga.Payload{Order: order}
+
+		// Execute post-payment saga
+		if sagaErr := s.sagaOrchestrator.ExecutePostPaymentSaga(bgCtx, payload, metadata); sagaErr != nil {
+			s.logger.Errorf("Post-payment saga failed for order %s: %v", orderID, sagaErr)
+		} else {
+			s.logger.Infof("Post-payment saga completed successfully for order %s", orderID)
+		}
+	}()
 }

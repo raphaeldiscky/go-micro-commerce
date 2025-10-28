@@ -1,6 +1,7 @@
 -- Create saga_states table
 CREATE TABLE IF NOT EXISTS saga_states (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    workflow_name TEXT NOT NULL,
     order_id UUID NOT NULL,
     status VARCHAR(50) NOT NULL,
     current_step BIGINT NOT NULL DEFAULT 0,
@@ -25,6 +26,8 @@ CREATE TABLE IF NOT EXISTS saga_states (
 
 -- Create indexes for better query performance
 CREATE INDEX idx_saga_states_order_id ON saga_states (order_id);
+CREATE INDEX idx_saga_states_workflow_name ON saga_states (workflow_name);
+CREATE INDEX idx_saga_states_order_workflow ON saga_states (order_id, workflow_name);
 CREATE INDEX idx_saga_states_status ON saga_states (status);
 CREATE INDEX idx_saga_states_updated_at ON saga_states (updated_at);
 CREATE INDEX idx_saga_states_created_at ON saga_states (created_at);
@@ -50,6 +53,7 @@ WHERE status IN ('completed', 'compensated');
 
 COMMENT ON TABLE saga_states IS 'Stores the execution state of order processing sagas';
 COMMENT ON COLUMN saga_states.id IS 'Unique identifier for the saga instance';
+COMMENT ON COLUMN saga_states.workflow_name IS 'Name of the saga workflow (e.g., OrderSagaWorkflow, PostPaymentSagaWorkflow)';
 COMMENT ON COLUMN saga_states.order_id IS 'Reference to the order being processed';
 COMMENT ON COLUMN saga_states.status IS 'Current status of the saga';
 COMMENT ON COLUMN saga_states.current_step IS 'Index of the current/last executed step';

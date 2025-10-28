@@ -15,6 +15,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
 
 // PaymentLifecycleEvent is the envelope for payment lifecycle events.
@@ -28,6 +29,7 @@ type PaymentLifecycleConsumer struct {
 	logger        logger.Logger
 	datastore     repository.DataStore
 	paymentClient client.PaymentClient
+	orderService  service.OrderService
 }
 
 // NewPaymentLifecycleConsumer creates a new consumer for payment lifecycle events.
@@ -35,11 +37,13 @@ func NewPaymentLifecycleConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
 	paymentClient client.PaymentClient,
+	orderService service.OrderService,
 ) *PaymentLifecycleConsumer {
 	return &PaymentLifecycleConsumer{
 		logger:        appLogger,
 		datastore:     ds,
 		paymentClient: paymentClient,
+		orderService:  orderService,
 	}
 }
 
@@ -259,6 +263,9 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 		}
 		c.paymentClient.NotifyWaitingSaga(response)
 	}
+
+	// Trigger post-payment saga via service layer
+	c.orderService.ExecutePostPaymentSagaAsync(ctx, evt.Payload.OrderID)
 
 	return nil
 }

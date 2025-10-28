@@ -3,6 +3,7 @@ package saga
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -33,16 +34,19 @@ const (
 type Orchestrator interface {
 	ExecuteOrderSaga(ctx context.Context, payload *Payload) error
 	ExecuteOrderSagaAsync(ctx context.Context, payload *Payload)
+	ExecutePostPaymentSaga(ctx context.Context, payload *Payload, metadata *Metadata) error
 	RecoverFailedSagas(ctx context.Context) error
 	TriggerSagaCompensation(ctx context.Context, orderID uuid.UUID) error
 }
 
 // orchestrator manages saga workflow execution with state persistence.
 type orchestrator struct {
-	executor         *Executor
-	dataStore        repository.DataStore
-	logger           logger.Logger
-	executionTimeout time.Duration
+	executor            *Executor
+	postPaymentExecutor *Executor
+	dataStore           repository.DataStore
+	logger              logger.Logger
+	executionTimeout    time.Duration
+	postPaymentTimeout  time.Duration
 }
 
 // NewSagaOrchestrator creates a new orchestrator.
@@ -56,8 +60,16 @@ func NewSagaOrchestrator(
 	appLogger logger.Logger,
 	cfg *config.Config,
 ) Orchestrator {
-	// Create executor
-	executor := NewExecutor(dataStore, cfg, appLogger)
+	// Create executor for main order saga
+	executor := NewExecutor(dataStore, cfg, appLogger, constant.OrderSagaWorkflowName)
+
+	// Create executor for post-payment saga
+	postPaymentExecutor := NewExecutor(
+		dataStore,
+		cfg,
+		appLogger,
+		constant.PostPaymentSagaWorkflowName,
+	)
 
 	// Create activities
 	activities := NewOrderActivities(
@@ -70,17 +82,21 @@ func NewSagaOrchestrator(
 		appLogger,
 	)
 
-	// Create  order saga
+	// Create and configure order saga
 	orderSaga := NewOrderSaga(activities)
-
-	// Configure saga steps in executor
 	orderSaga.ConfigureSteps(executor)
 
+	// Create and configure post-payment saga
+	postPaymentSaga := NewPostPaymentSaga(activities)
+	postPaymentSaga.ConfigureSteps(postPaymentExecutor)
+
 	return &orchestrator{
-		executor:         executor,
-		dataStore:        dataStore,
-		logger:           appLogger,
-		executionTimeout: cfg.Saga.ExecutionTimeout,
+		executor:            executor,
+		postPaymentExecutor: postPaymentExecutor,
+		dataStore:           dataStore,
+		logger:              appLogger,
+		executionTimeout:    cfg.Saga.ExecutionTimeout,
+		postPaymentTimeout:  constant.PostPaymentSagaExecutionTimeout,
 	}
 }
 
@@ -157,6 +173,67 @@ func (o *orchestrator) ExecuteOrderSagaAsync(
 			o.logger.Infof("Async saga execution completed for order: %s", payload.Order.ID)
 		}
 	}()
+}
+
+// ExecutePostPaymentSaga executes post-payment saga (fulfillment, product confirmation, notification).
+// This is triggered after payment succeeds for PlaceOrder flow.
+func (o *orchestrator) ExecutePostPaymentSaga(
+	ctx context.Context,
+	payload *Payload,
+	metadata *Metadata,
+) error {
+	o.logger.Infof(
+		"Starting post-payment saga execution for order: %s",
+		payload.Order.ID,
+	)
+
+	// Create execution context with timeout
+	sagaCtx, cancel := context.WithTimeout(ctx, o.postPaymentTimeout)
+	defer cancel()
+
+	// Store cancel function in context for cleanup
+	sagaCtx = context.WithValue(sagaCtx, cancelFuncKey, cancel)
+
+	// Propagate user auth from metadata if available
+	if metadata.UserAuth != nil {
+		sagaCtx = o.addUserAuthToSagaContext(sagaCtx, *metadata.UserAuth)
+	}
+
+	var data map[string]any
+	if err := json.Unmarshal(metadata.ToJSON(), &data); err != nil {
+		o.logger.Errorf("Failed to convert metadata to map: %v", err)
+		return fmt.Errorf("failed to convert metadata to map: %w", err)
+	}
+
+	// Create saga state for post-payment saga
+	sagaRepo := o.dataStore.SagaStateRepository()
+	sagaState := &entity.SagaState{
+		ID:           uuid.New(),
+		WorkflowName: constant.PostPaymentSagaWorkflowName,
+		OrderID:      payload.Order.ID,
+		CurrentStep:  0, // Start from step 0 (ProcessFulfillment)
+		Status:       constant.SagaStatusExecuting,
+		Data:         data,
+	}
+
+	// Create saga state in database
+	err := sagaRepo.Create(sagaCtx, sagaState)
+	if err != nil {
+		o.logger.Errorf("Failed to create post-payment saga state: %v", err)
+		return fmt.Errorf("failed to create post-payment saga state: %w", err)
+	}
+
+	// Execute the post-payment saga using dedicated executor
+	// Execute will retrieve the saga state we just created
+	if execErr := o.postPaymentExecutor.Execute(sagaCtx, payload); execErr != nil {
+		o.logger.Errorf("Post-payment saga failed for order %s: %v", payload.Order.ID, execErr)
+
+		return fmt.Errorf("post-payment saga execution failed: %w", execErr)
+	}
+
+	o.logger.Infof("Post-payment saga completed successfully for order: %s", payload.Order.ID)
+
+	return nil
 }
 
 // RecoverFailedSagas recovers and retries failed sagas with controlled concurrency.

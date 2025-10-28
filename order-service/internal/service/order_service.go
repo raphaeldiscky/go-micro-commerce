@@ -82,6 +82,7 @@ type OrderService interface {
 		req dto.PayOrderRequest,
 		id uuid.UUID,
 	) (*dto.OrderResponse, error)
+	ExecutePostPaymentSagaAsync(ctx context.Context, orderID uuid.UUID)
 }
 
 // orderService implements the OrderService.

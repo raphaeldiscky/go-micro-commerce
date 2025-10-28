@@ -26,6 +26,7 @@ func SetupKafkaConsumers(
 			appLogger,
 			providers.DataStore,
 			providers.PaymentClient,
+			providers.OrderService,
 		).Handler,
 		appLogger,
 	)

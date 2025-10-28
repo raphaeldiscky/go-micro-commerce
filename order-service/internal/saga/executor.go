@@ -48,6 +48,16 @@ type Metadata struct {
 	UserAuth         *pkgdto.UserAuthInfo `json:"user_auth"`
 }
 
+// ToJSON converts metadata to JSON bytes for storage in saga state.
+func (m *Metadata) ToJSON() []byte {
+	data, err := json.Marshal(m)
+	if err != nil {
+		return []byte("{}")
+	}
+
+	return data
+}
+
 // Step represents an enhanced saga step with retry logic.
 type Step struct {
 	Name        constant.WorkflowStep
@@ -63,12 +73,13 @@ type Step struct {
 
 // Executor handles saga execution with state persistence and retry logic.
 type Executor struct {
-	steps      []Step
-	dataStore  repository.DataStore
-	logger     logger.Logger
-	config     *config.Config
-	maxRetries int
-	retryDelay time.Duration
+	steps        []Step
+	dataStore    repository.DataStore
+	logger       logger.Logger
+	config       *config.Config
+	maxRetries   int
+	retryDelay   time.Duration
+	workflowName constant.WorkflowName
 }
 
 // NewExecutor creates a new saga executor.
@@ -76,14 +87,16 @@ func NewExecutor(
 	dataStore repository.DataStore,
 	cfg *config.Config,
 	appLogger logger.Logger,
+	workflowName constant.WorkflowName,
 ) *Executor {
 	return &Executor{
-		steps:      make([]Step, 0),
-		dataStore:  dataStore,
-		logger:     appLogger,
-		config:     cfg,
-		maxRetries: cfg.Saga.DefaultMaxRetries,
-		retryDelay: cfg.Saga.DefaultRetryDelay,
+		steps:        make([]Step, 0),
+		dataStore:    dataStore,
+		logger:       appLogger,
+		config:       cfg,
+		maxRetries:   cfg.Saga.DefaultMaxRetries,
+		retryDelay:   cfg.Saga.DefaultRetryDelay,
+		workflowName: workflowName,
 	}
 }
 
@@ -550,15 +563,15 @@ func (e *Executor) getOrCreateSagaState(
 	orderID uuid.UUID,
 ) (*entity.SagaState, error) {
 	stateRepo := e.dataStore.SagaStateRepository()
-	// Try to find existing saga state
-	state, err := stateRepo.FindByOrderID(ctx, orderID)
+	// Try to find existing saga state for this workflow
+	state, err := stateRepo.FindByOrderIDAndWorkflow(ctx, orderID, e.workflowName)
 	if err != nil && err.Error() != constant.SagaStateNotFoundErrorMessage {
 		return nil, fmt.Errorf("failed to check existing saga state: %w", err)
 	}
 
 	if state != nil {
-		e.logger.Infof("Resuming saga %s for order %s from step %d",
-			state.ID, orderID, state.CurrentStep)
+		e.logger.Infof("Resuming %s saga %s for order %s from step %d",
+			e.workflowName, state.ID, orderID, state.CurrentStep)
 
 		return state, nil
 	}
@@ -566,6 +579,7 @@ func (e *Executor) getOrCreateSagaState(
 	// Create new saga state
 	state = &entity.SagaState{
 		ID:               uuid.New(),
+		WorkflowName:     e.workflowName,
 		OrderID:          orderID,
 		Status:           constant.SagaStatusPending,
 		CurrentStep:      0,
@@ -580,7 +594,7 @@ func (e *Executor) getOrCreateSagaState(
 		return nil, fmt.Errorf("failed to create saga state: %w", err)
 	}
 
-	e.logger.Infof("Created new saga %s for order %s", state.ID, orderID)
+	e.logger.Infof("Created new %s saga %s for order %s", e.workflowName, state.ID, orderID)
 
 	return state, nil
 }

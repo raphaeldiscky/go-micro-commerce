@@ -25,8 +25,15 @@ const (
 	SagaPurgeInterval = 24 * time.Hour
 )
 
-// OrderSagaWorkflowName defines the workflow name.
-const OrderSagaWorkflowName = "OrderSagaWorkflow"
+// WorkflowName represents the name of a workflow.
+type WorkflowName string
+
+const (
+	// OrderSagaWorkflowName defines the full order workflow name.
+	OrderSagaWorkflowName WorkflowName = "OrderSagaWorkflow"
+	// PostPaymentSagaWorkflowName defines the post-payment workflow name.
+	PostPaymentSagaWorkflowName WorkflowName = "PostPaymentSagaWorkflow"
+)
 
 // SagaStatus represents the status of a saga execution.
 type SagaStatus string
@@ -183,4 +190,23 @@ const (
 	SendOrderConfirmedNotificationStepRetryDelay = 1 * time.Second
 	// SendOrderConfirmedNotificationStepTimeout is the timeout for the SendOrderConfirmedNotificationStep.
 	SendOrderConfirmedNotificationStepTimeout = 10 * time.Second
+)
+
+// ====== Post-Payment Saga Configuration ======.
+// These constants configure retry behavior with exponential backoff for the post-payment saga.
+const (
+	// PostPaymentSagaExecutionTimeout is the execution timeout for post-payment saga.
+	PostPaymentSagaExecutionTimeout = 2 * time.Hour
+	// PostPaymentFulfillmentMaxRetries is the max retries for fulfillment in post-payment saga.
+	PostPaymentFulfillmentMaxRetries int = 5
+	// PostPaymentFulfillmentRetryDelay is the initial retry delay for fulfillment (exponential backoff).
+	PostPaymentFulfillmentRetryDelay = 2 * time.Minute
+	// PostPaymentProductsMaxRetries is the max retries for product deduction in post-payment saga.
+	PostPaymentProductsMaxRetries int = 5
+	// PostPaymentProductsRetryDelay is the initial retry delay for products (exponential backoff).
+	PostPaymentProductsRetryDelay = 2 * time.Minute
+	// PostPaymentNotificationMaxRetries is the max retries for notification in post-payment saga.
+	PostPaymentNotificationMaxRetries int = 3
+	// PostPaymentNotificationRetryDelay is the initial retry delay for notification.
+	PostPaymentNotificationRetryDelay = 1 * time.Minute
 )
