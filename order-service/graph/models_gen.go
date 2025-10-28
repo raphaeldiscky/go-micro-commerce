@@ -92,6 +92,7 @@ type OrderItem struct {
 	ID            uuid.UUID       `json:"id"`
 	OrderID       uuid.UUID       `json:"orderId"`
 	ProductID     uuid.UUID       `json:"productId"`
+	ProductName   string          `json:"productName"`
 	Quantity      int             `json:"quantity"`
 	UnitPrice     decimal.Decimal `json:"unitPrice"`
 	TotalPrice    decimal.Decimal `json:"totalPrice"`
@@ -129,6 +130,25 @@ type Payment struct {
 }
 
 func (Payment) IsEntity() {}
+
+type PaymentMetadata struct {
+	PaymentID            uuid.UUID               `json:"paymentId"`
+	PaymentGateway       constant.PaymentGateway `json:"paymentGateway"`
+	GatewayTransactionID string                  `json:"gatewayTransactionId"`
+	GatewayMetadata      any                     `json:"gatewayMetadata"`
+	Amount               decimal.Decimal         `json:"amount"`
+	Currency             string                  `json:"currency"`
+}
+
+type PlaceOrderInput struct {
+	CheckoutSessionID uuid.UUID `json:"checkoutSessionId"`
+	IdempotencyKey    uuid.UUID `json:"idempotencyKey"`
+}
+
+type PlaceOrderPayload struct {
+	Order           *Order           `json:"order"`
+	PaymentMetadata *PaymentMetadata `json:"paymentMetadata"`
+}
 
 type Query struct {
 }

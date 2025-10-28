@@ -81,6 +81,7 @@ type OrderItem {
   id: UUID!
   orderId: UUID!
   productId: UUID!
+  productName: String!
   quantity: Int!
   unitPrice: Decimal!
   totalPrice: Decimal!
@@ -159,6 +160,28 @@ input CreateOrderInput {
   currency: String!
 }
 
+# Input type for placing an order from checkout session
+input PlaceOrderInput {
+  checkoutSessionId: UUID!
+  idempotencyKey: UUID!
+}
+
+# Payment metadata for frontend payment processing
+type PaymentMetadata {
+  paymentId: UUID!
+  paymentGateway: PaymentGateway!
+  gatewayTransactionId: String!
+  gatewayMetadata: Any!
+  amount: Decimal!
+  currency: String!
+}
+
+# Response payload for placeOrder mutation
+type PlaceOrderPayload {
+  order: Order!
+  paymentMetadata: PaymentMetadata!
+}
+
 # Order queries
 extend type Query {
   # List all orders with cursor pagination (admin only)
@@ -167,10 +190,16 @@ extend type Query {
 
   # List authenticated user's orders with cursor pagination
   listMyOrders(limit: Int!, cursor: String): OrderConnection! @requiresAuth
+
+  # Get order by ID (authenticated user's orders only)
+  getOrderById(id: UUID!): Order! @requiresAuth
 }
 
 # Order mutations
 extend type Mutation {
   # Create a new order using saga workflow
   createOrder(input: CreateOrderInput!): Order! @requiresAuth
+
+  # Place order from checkout session with payment intent creation
+  placeOrder(input: PlaceOrderInput!): PlaceOrderPayload! @requiresAuth
 }

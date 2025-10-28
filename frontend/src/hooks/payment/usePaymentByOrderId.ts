@@ -33,5 +33,7 @@ export function usePaymentByOrderId(
     },
     enabled: options?.enabled,
     refetchInterval: options?.refetchInterval,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   })
 }

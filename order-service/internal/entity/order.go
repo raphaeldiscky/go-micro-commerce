@@ -71,6 +71,7 @@ type OrderItem struct {
 	ID            uuid.UUID
 	OrderID       uuid.UUID
 	ProductID     uuid.UUID
+	ProductName   string
 	Quantity      int64
 	UnitPrice     decimal.Decimal
 	TaxRate       decimal.Decimal
@@ -157,6 +158,7 @@ func NewOrder(
 // NewOrderItem creates a new order item with validation and proper defaults.
 func NewOrderItem(
 	productID uuid.UUID,
+	productName string,
 	quantity int64,
 	unitPrice decimal.Decimal,
 ) (*OrderItem, error) {
@@ -178,6 +180,7 @@ func NewOrderItem(
 	return &OrderItem{
 		ID:            uuid.New(),
 		ProductID:     productID,
+		ProductName:   productName,
 		Quantity:      quantity,
 		UnitPrice:     unitPrice,
 		TotalTax:      decimal.Zero, // Default to zero, can be updated later

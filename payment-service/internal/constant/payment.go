@@ -3,6 +3,8 @@ package constant
 import "time"
 
 // PaymentStatus represents the status of a payment transaction.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type PaymentStatus string
 
 const (
@@ -21,6 +23,8 @@ const (
 )
 
 // PaymentGateway represents the different payment gateways available.
+//
+//nolint:recvcheck // ignore for marshalling graphql
 type PaymentGateway string
 
 const (

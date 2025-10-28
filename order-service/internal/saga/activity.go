@@ -182,6 +182,7 @@ func (a *orderActivities) ReserveProductsAndCalculate(
 	for i, product := range reservedProducts {
 		orderItem, rowErr := entity.NewOrderItem(
 			product.ID,
+			product.Name,
 			order.Items[i].Quantity,
 			product.UnitPrice,
 		)

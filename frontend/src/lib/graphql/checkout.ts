@@ -145,53 +145,6 @@ export const UPDATE_CHECKOUT_SESSION_MUTATION = gql`
 `
 
 /**
- * Mutation to place an order from a checkout session
- */
-export const PLACE_ORDER_MUTATION = gql`
-  mutation PlaceOrder($sessionId: UUID!, $input: PlaceOrderInput!) {
-    placeOrder(sessionId: $sessionId, input: $input) {
-      id
-      idempotencyKey
-      customerId
-      courier {
-        courierId
-      }
-      package {
-        weightKg
-        width
-        height
-        length
-        unit
-      }
-      origin {
-        city
-        state
-        postalCode
-        countryCode
-      }
-      destination {
-        city
-        state
-        postalCode
-        countryCode
-      }
-      status
-      paymentGateway
-      currency
-      items {
-        id
-        productId
-        productName
-        quantity
-        unitPrice
-      }
-      createdAt
-      updatedAt
-    }
-  }
-`
-
-/**
  * Mutation to cancel a checkout session
  */
 export const CANCEL_CHECKOUT_SESSION_MUTATION = gql`

@@ -57,13 +57,6 @@ type UpdateCheckoutSessionRequest struct {
 	PaymentGateway *string      `json:"payment_gateway,omitempty"`
 }
 
-// PlaceOrderRequest represents the request to place an order from a checkout session.
-type PlaceOrderRequest struct {
-	CustomerID        uuid.UUID `json:"-"` // from context or header
-	CheckoutSessionID uuid.UUID `json:"-"` // from param URL
-	IdempotencyKey    uuid.UUID `json:"idempotency_key" validate:"required"`
-}
-
 // CheckoutSessionItemResponse represents a checkout session item in API responses.
 type CheckoutSessionItemResponse struct {
 	ID          uuid.UUID       `json:"id"`

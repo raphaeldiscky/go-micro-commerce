@@ -35,10 +35,6 @@ type CheckoutSessionService interface {
 		sessionID uuid.UUID,
 		req *dto.UpdateCheckoutSessionRequest,
 	) (*dto.CheckoutSessionResponse, error)
-	PlaceOrder(
-		ctx context.Context,
-		req *dto.PlaceOrderRequest,
-	) (*dto.CheckoutSessionResponse, error)
 	CancelCheckoutSession(
 		ctx context.Context,
 		sessionID uuid.UUID,
@@ -349,104 +345,6 @@ func (s *checkoutSessionService) UpdateCheckoutSession(
 	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
 }
 
-// PlaceOrder places an order from a checkout session.
-func (s *checkoutSessionService) PlaceOrder(
-	ctx context.Context,
-	req *dto.PlaceOrderRequest,
-) (*dto.CheckoutSessionResponse, error) {
-	lockRepo := s.dataStore.LockRepository()
-	lockKey := redisutils.NewLockKey(req.IdempotencyKey, req.CustomerID)
-	ttl := constant.PlaceOrderTTL
-	opt := &redislock.Options{
-		RetryStrategy: redislock.LimitRetry(
-			redislock.LinearBackoff(constant.PlaceOrderRetryInterval),
-			constant.PlaceOrderRetryLimit,
-		),
-	}
-
-	lock, err := lockRepo.Get(ctx, lockKey, ttl, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	defer func() {
-		if err = lockRepo.Release(ctx, lock); err != nil {
-			s.logger.Warnf("failed to release lock: %v", err)
-		}
-	}()
-
-	var updatedSession *entity.CheckoutSession
-
-	err = s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
-		checkoutSessionRepo := ds.CheckoutSessionRepository()
-
-		// Get checkout session
-		session, errSession := checkoutSessionRepo.GetByID(ctx, req.CheckoutSessionID)
-		if errSession != nil {
-			return httperror.NewInternalServerError("failed to get checkout session")
-		}
-
-		if session == nil {
-			return httperror.NewBadRequestError("checkout session not found")
-		}
-
-		// Validate session belongs to the customer
-		if session.CustomerID != req.CustomerID {
-			return httperror.NewForbiddenError("checkout session does not belong to customer")
-		}
-
-		// Validate session can place order
-		if !session.CanPlaceOrder() {
-			return httperror.NewBadRequestError(
-				fmt.Sprintf(
-					"checkout session cannot place order in current status: %s",
-					session.Status,
-				),
-			)
-		}
-
-		// Validate products before placing order (price & stock check)
-		if errValidate := s.productClient.ValidateProducts(ctx, session.Items); errValidate != nil {
-			return httperror.NewBadRequestError(
-				fmt.Sprintf("product validation failed: %v", errValidate),
-			)
-		}
-
-		// Update status to order_placed
-		if err = session.UpdateStatus(constant.CheckoutSessionStatusOrderPlaced); err != nil {
-			return httperror.NewBadRequestError("failed to update checkout session status")
-		}
-
-		// Save updated session
-		updatedSession, err = checkoutSessionRepo.Update(ctx, session)
-		if err != nil {
-			return httperror.NewInternalServerError("failed to update checkout session")
-		}
-
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// Cancel checkout session reminder task since order was placed
-	if err = s.cancelCheckoutSessionReminder(ctx, req.CheckoutSessionID); err != nil {
-		// Log error but don't fail the order placement
-		s.logger.Warnf(
-			"Failed to cancel checkout session reminder for session %s: %v",
-			req.CheckoutSessionID,
-			err,
-		)
-	}
-
-	// Migrate cart after successful order placement (non-critical operation)
-	// This runs outside the transaction so failures won't affect order placement
-	cartRepo := s.dataStore.CartRepository()
-	s.migrateCartAfterOrderPlacement(ctx, cartRepo, req.CustomerID)
-
-	return mapper.MapToCheckoutSessionResponse(updatedSession), nil
-}
-
 // scheduleCheckoutSessionReminder schedules a reminder task for a checkout session.
 func (s *checkoutSessionService) scheduleCheckoutSessionReminder(
 	ctx context.Context,
@@ -506,50 +404,6 @@ func (s *checkoutSessionService) cancelCheckoutSessionReminder(
 	s.logger.Infof("Cancelled checkout session reminder for session: %s", checkoutSessionID)
 
 	return nil
-}
-
-// migrateCartAfterOrderPlacement archives the checked out cart and creates a new active cart with unselected items.
-func (s *checkoutSessionService) migrateCartAfterOrderPlacement(
-	ctx context.Context,
-	cartRepo repository.CartRepository,
-	customerID uuid.UUID,
-) {
-	// Get checked out cart with unselected items for migration
-	cart, errCart := cartRepo.FindCheckedOutCartWithUnselectedItems(ctx, customerID)
-	if errCart != nil {
-		s.logger.Warnf("failed to get cart for migration: %v", errCart)
-		return
-	}
-
-	if cart == nil {
-		return
-	}
-
-	// Archive the old cart
-	if errArchive := cart.MarkAsArchived(); errArchive != nil {
-		s.logger.Warnf("failed to mark cart as archived: %v", errArchive)
-		return
-	}
-
-	if errUpdateStatus := cartRepo.UpdateStatus(ctx, cart.ID, constant.CartStatusArchived); errUpdateStatus != nil {
-		s.logger.Warnf("failed to update cart status to archived: %v", errUpdateStatus)
-		return
-	}
-
-	// Create new active cart only if there are unselected items
-	if len(cart.Items) == 0 {
-		return
-	}
-
-	newCart, errNewCart := entity.NewCart(customerID, cart.Items)
-	if errNewCart != nil {
-		s.logger.Warnf("failed to create new cart entity: %v", errNewCart)
-		return
-	}
-
-	if _, errCreate := cartRepo.Create(ctx, newCart); errCreate != nil {
-		s.logger.Warnf("failed to save new cart: %v", errCreate)
-	}
 }
 
 // CancelCheckoutSession cancels a checkout session and reverts the cart to active.

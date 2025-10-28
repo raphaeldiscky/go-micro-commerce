@@ -2,17 +2,17 @@ import {
   CANCEL_CHECKOUT_SESSION_MUTATION,
   CREATE_CHECKOUT_SESSION_MUTATION,
   GET_CHECKOUT_SESSION_QUERY,
-  PLACE_ORDER_MUTATION,
   UPDATE_CHECKOUT_SESSION_MUTATION,
 } from '@/lib/graphql/checkout'
 import type {
   CancelCheckoutSessionMutation,
   CreateCheckoutSessionMutation,
   GetCheckoutSessionQuery,
-  PlaceOrderMutation,
   UpdateCheckoutSessionMutation,
 } from '@/lib/graphql/checkout.generated'
 import { graphClient } from '@/lib/graphql/client'
+import { PLACE_ORDER_MUTATION } from '@/lib/graphql/order'
+import type { PlaceOrderMutation } from '@/lib/graphql/order.generated'
 import type { Address, CheckoutSession } from '@/types/__generated__/graphql'
 import type {
   OrderSummary,
@@ -64,7 +64,8 @@ export interface CheckoutSessionActions {
   // Place order
   placeOrder: (sessionId: string) => Promise<{
     success: boolean
-    sessionId?: string
+    orderId?: string
+    clientSecret?: string
     error?: string
   }>
 
@@ -304,7 +305,8 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
           sessionId: string,
         ): Promise<{
           success: boolean
-          sessionId?: string
+          orderId?: string
+          clientSecret?: string
           error?: string
         }> => {
           const state = get()
@@ -328,26 +330,29 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
             const data = await graphClient.request<PlaceOrderMutation>(
               PLACE_ORDER_MUTATION,
               {
-                sessionId,
                 input: {
+                  checkoutSessionId: sessionId,
                   idempotencyKey: crypto.randomUUID(),
                 },
               },
             )
 
-            const session = data.placeOrder
+            const { order, paymentMetadata } = data.placeOrder
 
-            // Update checkout session with new status
-            set({
-              checkoutSession: session,
-              isLoading: false,
-            })
+            // Parse client_secret from gatewayMetadata JSON string
+            const gatewayMetadata = JSON.parse(
+              paymentMetadata.gatewayMetadata as any,
+            )
+            const clientSecret = gatewayMetadata.client_secret as string
+
+            set({ isLoading: false })
 
             toast.success('Order placed successfully!')
 
             return {
               success: true,
-              sessionId: session.id,
+              orderId: order.id,
+              clientSecret,
             }
           } catch (error) {
             set({ isLoading: false })

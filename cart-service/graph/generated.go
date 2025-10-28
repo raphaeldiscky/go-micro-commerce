@@ -112,7 +112,6 @@ type ComplexityRoot struct {
 		AddItemToCart         func(childComplexity int, input AddCartItemInput) int
 		CancelCheckoutSession func(childComplexity int, sessionID uuid.UUID) int
 		CreateCheckoutSession func(childComplexity int, input CreateCheckoutSessionInput) int
-		PlaceOrder            func(childComplexity int, sessionID uuid.UUID, input PlaceOrderInput) int
 		RemoveItemFromCart    func(childComplexity int, itemID uuid.UUID) int
 		SelectItemForCheckout func(childComplexity int, itemID uuid.UUID, input SelectItemForCheckoutInput) int
 		UpdateCheckoutSession func(childComplexity int, sessionID uuid.UUID, input UpdateCheckoutSessionInput) int
@@ -152,7 +151,6 @@ type MutationResolver interface {
 	SelectItemForCheckout(ctx context.Context, itemID uuid.UUID, input SelectItemForCheckoutInput) (*Cart, error)
 	CreateCheckoutSession(ctx context.Context, input CreateCheckoutSessionInput) (*CheckoutSession, error)
 	UpdateCheckoutSession(ctx context.Context, sessionID uuid.UUID, input UpdateCheckoutSessionInput) (*CheckoutSession, error)
-	PlaceOrder(ctx context.Context, sessionID uuid.UUID, input PlaceOrderInput) (*CheckoutSession, error)
 	CancelCheckoutSession(ctx context.Context, sessionID uuid.UUID) (*CheckoutSession, error)
 }
 type QueryResolver interface {
@@ -434,17 +432,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.CreateCheckoutSession(childComplexity, args["input"].(CreateCheckoutSessionInput)), true
-	case "Mutation.placeOrder":
-		if e.complexity.Mutation.PlaceOrder == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_placeOrder_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.PlaceOrder(childComplexity, args["sessionId"].(uuid.UUID), args["input"].(PlaceOrderInput)), true
 	case "Mutation.removeItemFromCart":
 		if e.complexity.Mutation.RemoveItemFromCart == nil {
 			break
@@ -591,7 +578,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputDestinationInput,
 		ec.unmarshalInputOriginInput,
 		ec.unmarshalInputPackageInput,
-		ec.unmarshalInputPlaceOrderInput,
 		ec.unmarshalInputSelectItemForCheckoutInput,
 		ec.unmarshalInputUpdateCartItemQuantityInput,
 		ec.unmarshalInputUpdateCheckoutSessionInput,
@@ -814,22 +800,6 @@ func (ec *executionContext) field_Mutation_createCheckoutSession_args(ctx contex
 		return nil, err
 	}
 	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_placeOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "sessionId", ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
-	if err != nil {
-		return nil, err
-	}
-	args["sessionId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNPlaceOrderInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPlaceOrderInput)
-	if err != nil {
-		return nil, err
-	}
-	args["input"] = arg1
 	return args, nil
 }
 
@@ -2504,88 +2474,6 @@ func (ec *executionContext) fieldContext_Mutation_updateCheckoutSession(ctx cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateCheckoutSession_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_placeOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_placeOrder,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().PlaceOrder(ctx, fc.Args["sessionId"].(uuid.UUID), fc.Args["input"].(PlaceOrderInput))
-		},
-		func(ctx context.Context, next graphql.Resolver) graphql.Resolver {
-			directive0 := next
-
-			directive1 := func(ctx context.Context) (any, error) {
-				if ec.directives.RequiresAuth == nil {
-					var zeroVal *CheckoutSession
-					return zeroVal, errors.New("directive requiresAuth is not implemented")
-				}
-				return ec.directives.RequiresAuth(ctx, nil, directive0)
-			}
-
-			next = directive1
-			return next
-		},
-		ec.marshalNCheckoutSession2ᚖgithubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐCheckoutSession,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_placeOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_CheckoutSession_id(ctx, field)
-			case "idempotencyKey":
-				return ec.fieldContext_CheckoutSession_idempotencyKey(ctx, field)
-			case "customerId":
-				return ec.fieldContext_CheckoutSession_customerId(ctx, field)
-			case "courier":
-				return ec.fieldContext_CheckoutSession_courier(ctx, field)
-			case "destination":
-				return ec.fieldContext_CheckoutSession_destination(ctx, field)
-			case "origin":
-				return ec.fieldContext_CheckoutSession_origin(ctx, field)
-			case "package":
-				return ec.fieldContext_CheckoutSession_package(ctx, field)
-			case "status":
-				return ec.fieldContext_CheckoutSession_status(ctx, field)
-			case "paymentGateway":
-				return ec.fieldContext_CheckoutSession_paymentGateway(ctx, field)
-			case "currency":
-				return ec.fieldContext_CheckoutSession_currency(ctx, field)
-			case "items":
-				return ec.fieldContext_CheckoutSession_items(ctx, field)
-			case "createdAt":
-				return ec.fieldContext_CheckoutSession_createdAt(ctx, field)
-			case "updatedAt":
-				return ec.fieldContext_CheckoutSession_updatedAt(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type CheckoutSession", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_placeOrder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4935,33 +4823,6 @@ func (ec *executionContext) unmarshalInputPackageInput(ctx context.Context, obj 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputPlaceOrderInput(ctx context.Context, obj any) (PlaceOrderInput, error) {
-	var it PlaceOrderInput
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"idempotencyKey"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "idempotencyKey":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idempotencyKey"))
-			data, err := ec.unmarshalNUUID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.IdempotencyKey = data
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputSelectItemForCheckoutInput(ctx context.Context, obj any) (SelectItemForCheckoutInput, error) {
 	var it SelectItemForCheckoutInput
 	asMap := map[string]any{}
@@ -5517,13 +5378,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateCheckoutSession":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateCheckoutSession(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "placeOrder":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_placeOrder(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -6420,11 +6274,6 @@ func (ec *executionContext) marshalNPackage2ᚖgithubᚗcomᚋraphaeldisckyᚋgo
 		return graphql.Null
 	}
 	return ec._Package(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalNPlaceOrderInput2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐPlaceOrderInput(ctx context.Context, v any) (PlaceOrderInput, error) {
-	res, err := ec.unmarshalInputPlaceOrderInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋcartᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {

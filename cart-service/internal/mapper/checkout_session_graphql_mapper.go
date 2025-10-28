@@ -122,16 +122,3 @@ func MapToUpdateCheckoutSessionRequest(
 
 	return req
 }
-
-// MapToPlaceOrderRequest maps graph.PlaceOrderInput to dto.PlaceOrderRequest.
-func MapToPlaceOrderRequest(
-	input graph.PlaceOrderInput,
-	customerID uuid.UUID,
-	sessionID uuid.UUID,
-) *dto.PlaceOrderRequest {
-	return &dto.PlaceOrderRequest{
-		CustomerID:        customerID,
-		CheckoutSessionID: sessionID,
-		IdempotencyKey:    input.IdempotencyKey,
-	}
-}

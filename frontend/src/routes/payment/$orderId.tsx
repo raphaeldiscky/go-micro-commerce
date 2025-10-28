@@ -18,18 +18,16 @@ import { AlertCircle, CheckCircle, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-export const Route = createFileRoute('/orders/$paymentId')({
+export const Route = createFileRoute(PATH.payment.$orderId)({
   component: RouteComponent,
 })
 
 const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 function RouteComponent() {
-  const { paymentId } = Route.useParams()
+  const { orderId } = Route.useParams()
   const navigate = useNavigate()
 
-  // Fetch payment data (paymentId param is actually orderId)
-  const orderId = paymentId
   const {
     data: payment,
     isLoading,
@@ -50,7 +48,7 @@ function RouteComponent() {
       setPaymentCompleted(true)
       // Redirect to order confirmation after 2 seconds
       setTimeout(() => {
-        navigate({ to: `/orders/${orderId}/confirmation` })
+        navigate({ to: PATH.orders.detail(orderId) })
       }, 2000)
     },
     onPaymentFailed: (errorMsg) => {

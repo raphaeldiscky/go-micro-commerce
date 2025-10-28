@@ -43,8 +43,8 @@ models:
     model: github.com/raphaeldiscky/go-micro-commerce/payment-service/graph/scalar.Decimal
 
   # Map enums to existing constants
-  paymentStatus:
-    model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.paymentStatus
+  PaymentStatus:
+    model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.PaymentStatus
   PaymentGateway:
     model: github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant.PaymentGateway
 

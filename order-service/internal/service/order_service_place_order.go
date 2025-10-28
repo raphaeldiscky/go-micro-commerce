@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
-	"github.com/shopspring/decimal"
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
@@ -117,17 +116,78 @@ func (s *orderService) PlaceOrder(
 			paymentGateway = constant.PaymentGateway(*checkoutSession.PaymentGateway)
 		}
 
-		// Step 3: Reserve products and get prices
-		s.logger.Infof("Reserving %d products", len(checkoutSession.Items))
+		// Step 3: Fetch current products to get fresh versions and validate
+		s.logger.Infof("Fetching %d products for reservation", len(checkoutSession.Items))
 
+		// Extract product IDs from checkout session
+		productIDs := make([]uuid.UUID, len(checkoutSession.Items))
+		for i, item := range checkoutSession.Items {
+			productIDs[i] = item.ProductID
+		}
+
+		// Fetch current products from product-service
+		products, errFetch := s.productClient.GetProducts(ctx, productIDs)
+		if errFetch != nil {
+			s.logger.Errorf("Failed to fetch products: %v", errFetch)
+
+			return httperror.NewBadRequestError(
+				fmt.Sprintf("failed to fetch products: %v", errFetch),
+			)
+		}
+
+		// Create product map for quick lookup
+		productMap := make(map[uuid.UUID]*entity.Product)
+		for i := range products {
+			productMap[products[i].ID] = &products[i]
+		}
+
+		// Build reservation items with validation
 		reservationItems := make([]dto.ProductReservationItem, len(checkoutSession.Items))
 		for i, item := range checkoutSession.Items {
+			product, exists := productMap[item.ProductID]
+			if !exists {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf("product %s not found", item.ProductID),
+				)
+			}
+
+			// Validate price hasn't changed since checkout
+			if !product.UnitPrice.Equal(item.UnitPrice) {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf(
+						"price changed for product %s (%s): expected %s, current %s",
+						product.ID,
+						product.Name,
+						item.UnitPrice.String(),
+						product.UnitPrice.String(),
+					),
+				)
+			}
+
+			// Check available stock (total quantity - reserved quantity)
+			availableStock := product.Quantity - product.ReservedQuantity
+			if availableStock < item.Quantity {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf(
+						"insufficient stock for product %s (%s): requested %d, available %d",
+						product.ID,
+						product.Name,
+						item.Quantity,
+						availableStock,
+					),
+				)
+			}
+
+			// Use fresh version from product-service
 			reservationItems[i] = dto.ProductReservationItem{
 				ProductID:       item.ProductID,
 				Quantity:        item.Quantity,
-				ExpectedVersion: 0, // Will be validated by product-service
+				ExpectedVersion: product.Version,
 			}
 		}
+
+		// Reserve products with validated items and fresh versions
+		s.logger.Infof("Reserving %d products with fresh versions", len(reservationItems))
 
 		reservedProducts, errn := s.productClient.ReserveProducts(
 			ctx,
@@ -139,19 +199,24 @@ func (s *orderService) PlaceOrder(
 			return httperror.NewBadRequestError(fmt.Sprintf("failed to reserve products: %v", errn))
 		}
 
-		// Create order items using reserved product prices
+		// Create order items using reserved product prices and product names
 		orderItems := make([]entity.OrderItem, len(reservedProducts))
 		for i, product := range reservedProducts {
 			quantity := checkoutSession.Items[i].Quantity
 
-			orderItems[i] = entity.OrderItem{
-				ProductID:     product.ID,
-				Quantity:      quantity,
-				UnitPrice:     product.UnitPrice,
-				TaxRate:       decimal.Zero,
-				TotalTax:      decimal.Zero,
-				TotalDiscount: decimal.Zero,
+			orderItem, err := entity.NewOrderItem(
+				product.ID,
+				product.Name, // Add product name snapshot
+				quantity,
+				product.UnitPrice,
+			)
+			if err != nil {
+				return httperror.NewBadRequestError(
+					fmt.Sprintf("failed to create order item for product %s: %v", product.ID, err),
+				)
 			}
+
+			orderItems[i] = *orderItem
 		}
 
 		// Step 4: Calculate shipping cost
@@ -267,7 +332,7 @@ func (s *orderService) PlaceOrder(
 			order.Currency,
 		)
 
-		paymentIntent, err := s.paymentClientGRPC.CreatePaymentIntent(
+		paymentIntent, errn := s.paymentClientGRPC.CreatePaymentIntent(
 			ctx,
 			order.ID,
 			order.TotalPrice,
@@ -276,8 +341,8 @@ func (s *orderService) PlaceOrder(
 			req.CustomerID,
 			req.CustomerEmail,
 		)
-		if err != nil {
-			s.logger.Errorf("Failed to create payment intent: %v", err)
+		if errn != nil {
+			s.logger.Errorf("Failed to create payment intent: %v", errn)
 			// Compensate: Release reserved products
 			err = s.compensateProductReservation(ctx, reservationItems)
 			if err != nil {
@@ -304,9 +369,9 @@ func (s *orderService) PlaceOrder(
 		}
 
 		// Step 9: Save order to database
-		savedOrder, err := orderRepo.Create(ctx, order)
-		if err != nil {
-			s.logger.Errorf("Failed to save order: %v", err)
+		savedOrder, errn := orderRepo.Create(ctx, order)
+		if errn != nil {
+			s.logger.Errorf("Failed to save order: %v", errn)
 			// Compensate: Release reserved products
 			err = s.compensateProductReservation(ctx, reservationItems)
 			if err != nil {

@@ -1,7 +1,13 @@
 import { QUERY_KEY } from '@/constants/query-key'
 import { graphClient } from '@/lib/graphql/client'
-import { LIST_MY_ORDERS_QUERY } from '@/lib/graphql/order'
-import type { ListMyOrdersQuery } from '@/lib/graphql/order.generated'
+import {
+  GET_ORDER_BY_ID_QUERY,
+  LIST_MY_ORDERS_QUERY,
+} from '@/lib/graphql/order'
+import type {
+  GetOrderByIdQuery,
+  ListMyOrdersQuery,
+} from '@/lib/graphql/order.generated'
 import { useQuery } from '@tanstack/react-query'
 
 /**
@@ -17,6 +23,24 @@ export function useMyOrders(limit: number = 20, cursor?: string) {
       )
       return data.listMyOrders
     },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+}
+
+/**
+ * Hook to fetch a single order by ID (authenticated user's orders only)
+ */
+export function useOrderById(orderId: string) {
+  return useQuery({
+    queryKey: QUERY_KEY.order.detail(orderId),
+    queryFn: async () => {
+      const data = await graphClient.request<GetOrderByIdQuery>(
+        GET_ORDER_BY_ID_QUERY,
+        { id: orderId },
+      )
+      return data.getOrderById
+    },
+    enabled: !!orderId,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
