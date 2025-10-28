@@ -15,6 +15,11 @@ service PaymentService {
 
 message CreatePaymentIntentRequest {
   string order_id = 1 [(buf.validate.field).string.uuid = true];
+  double amount = 2 [(buf.validate.field).double = {gt: 0}];
+  string currency = 3 [(buf.validate.field).string = {min_len: 3, max_len: 3}];
+  PaymentGateway payment_gateway = 4 [(buf.validate.field).enum.defined_only = true];
+  string customer_email = 5 [(buf.validate.field).string.email = true];
+  string customer_id = 6 [(buf.validate.field).string.uuid = true];
 }
 
 message CreatePaymentIntentResponse {

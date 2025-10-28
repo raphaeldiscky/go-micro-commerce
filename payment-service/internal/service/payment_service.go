@@ -31,6 +31,11 @@ type PaymentService interface {
 		ctx context.Context,
 		req dto.CreatePaymentRequest,
 	) (*dto.PaymentResponse, error)
+	// CreatePaymentIntent creates a payment intent for synchronous order flow
+	CreatePaymentIntent(
+		ctx context.Context,
+		req dto.CreatePaymentIntentRequestDTO,
+	) (*dto.CreatePaymentIntentResponseDTO, error)
 	// ProcessPayment processes a payment transaction
 	ProcessPayment(
 		ctx context.Context,
@@ -171,6 +176,122 @@ func (s *paymentService) CreatePayment(
 		}
 
 		res = mapper.MapToPaymentResponse(savedPayment)
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+// CreatePaymentIntent creates a payment intent for synchronous order flow.
+// This creates a payment record and immediately creates a Stripe PaymentIntent,
+// returning the client_secret and payment data needed for frontend payment.
+func (s *paymentService) CreatePaymentIntent(
+	ctx context.Context,
+	req dto.CreatePaymentIntentRequestDTO,
+) (*dto.CreatePaymentIntentResponseDTO, error) {
+	res := new(dto.CreatePaymentIntentResponseDTO)
+
+	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
+		paymentRepo := ds.PaymentRepository()
+
+		// Check if payment already exists for this order (idempotency)
+		existingPayment, err := paymentRepo.FindByOrderID(ctx, req.OrderID)
+		if err != nil && err.Error() != constant.PaymentNotFoundErrorMessage {
+			return httperror.NewInternalServerError("failed to check existing payment")
+		}
+
+		if existingPayment != nil {
+			// Payment already exists, map to response DTO
+			res.PaymentID = existingPayment.ID
+			res.OrderID = existingPayment.OrderID
+			res.Amount = existingPayment.Amount
+			res.Currency = existingPayment.Currency
+			res.PaymentGateway = existingPayment.PaymentGateway
+			res.CreatedAt = existingPayment.CreatedAt
+			res.UpdatedAt = existingPayment.UpdatedAt
+			res.ExpiresAt = existingPayment.ExpiresAt
+
+			if existingPayment.GatewayTransactionID != nil {
+				res.GatewayTransactionID = *existingPayment.GatewayTransactionID
+			}
+
+			res.GatewayMetadata = existingPayment.GatewayMetadata
+
+			return nil
+		}
+
+		// Create new payment entity
+		payment, err := entity.NewPayment(
+			req.OrderID,
+			req.Amount,
+			req.Currency,
+			req.PaymentGateway,
+		)
+		if err != nil {
+			return httperror.NewBadRequestError(fmt.Sprintf("failed to create payment: %v", err))
+		}
+
+		// Get the appropriate gateway client
+		gatewayClient, err := s.getGatewayClient(req.PaymentGateway)
+		if err != nil {
+			return err
+		}
+
+		// Create PaymentIntent via gateway
+		gatewayRequest := &dto.PaymentGatewayRequest{
+			PaymentID:      payment.ID,
+			Amount:         payment.Amount,
+			Currency:       payment.Currency,
+			CustomerID:     req.CustomerID,
+			CustomerEmail:  req.CustomerEmail,
+			IdempotencyKey: payment.ID.String(), // Use payment ID as idempotency key
+			ExpiresAt:      payment.ExpiresAt,
+			Description:    fmt.Sprintf("Payment for order %s", req.OrderID),
+		}
+
+		gatewayResponse, err := gatewayClient.ProcessPayment(ctx, gatewayRequest)
+		if err != nil {
+			s.logger.Errorf("Failed to create payment intent: %v", err)
+			return httperror.NewInternalServerError("failed to create payment intent with gateway")
+		}
+
+		// Set gateway reference and metadata
+		if err = payment.SetGatewayReference(
+			req.PaymentGateway,
+			gatewayResponse.PaymentIntentID,
+			gatewayResponse.GatewayResponse,
+		); err != nil {
+			return httperror.NewBadRequestError("failed to set gateway reference")
+		}
+
+		// Save payment
+		savedPayment, err := paymentRepo.Create(ctx, payment)
+		if err != nil {
+			return httperror.NewInternalServerError("failed to save payment")
+		}
+
+		// Map to response DTO
+		res.PaymentID = savedPayment.ID
+		res.OrderID = savedPayment.OrderID
+		res.Amount = savedPayment.Amount
+		res.Currency = savedPayment.Currency
+		res.PaymentGateway = savedPayment.PaymentGateway
+		res.GatewayTransactionID = gatewayResponse.PaymentIntentID
+		res.GatewayMetadata = savedPayment.GatewayMetadata
+		res.CreatedAt = savedPayment.CreatedAt
+		res.UpdatedAt = savedPayment.UpdatedAt
+		res.ExpiresAt = savedPayment.ExpiresAt
+
+		s.logger.Infof(
+			"Payment intent created successfully: payment_id=%s, order_id=%s, gateway_transaction_id=%s",
+			savedPayment.ID,
+			savedPayment.OrderID,
+			gatewayResponse.PaymentIntentID,
+		)
 
 		return nil
 	})

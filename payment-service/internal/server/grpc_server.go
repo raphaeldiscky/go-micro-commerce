@@ -17,6 +17,7 @@ import (
 	pb "github.com/raphaeldiscky/go-micro-commerce/proto/payment/v1"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/service"
 )
 
@@ -37,10 +38,42 @@ func NewGRPCServer(
 	return &GRPCServer{cfg: cfg, paymentService: paymentService, logger: appLogger}
 }
 
+// CreatePaymentIntent creates a payment intent for synchronous order flow.
 func (s *GRPCServer) CreatePaymentIntent(
 	ctx context.Context,
 	req *connect.Request[pb.CreatePaymentIntentRequest],
-) (*connect.Response[pb.CreatePaymentIntentResponse], error)
+) (*connect.Response[pb.CreatePaymentIntentResponse], error) {
+	s.logger.Infof("Received CreatePaymentIntent request for order_id: %s", req.Msg.GetOrderId())
+
+	// Import mapper at the top of the file for this to work
+	dtoReq, err := mapper.MapCreatePaymentIntentRequestFromProto(req.Msg)
+	if err != nil {
+		s.logger.Errorf("Failed to map proto request to DTO: %v", err)
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	// Call service to create payment intent
+	dtoRes, err := s.paymentService.CreatePaymentIntent(ctx, *dtoReq)
+	if err != nil {
+		s.logger.Errorf("Failed to create payment intent: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	// Map DTO response to proto response
+	protoRes, err := mapper.MapCreatePaymentIntentResponseToProto(dtoRes)
+	if err != nil {
+		s.logger.Errorf("Failed to map DTO response to proto: %v", err)
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	s.logger.Infof(
+		"Payment intent created successfully: payment_id=%s, order_id=%s",
+		protoRes.GetPaymentId(),
+		protoRes.GetOrderId(),
+	)
+
+	return connect.NewResponse(protoRes), nil
+}
 
 // Health returns the health status of the product service.
 func (s *GRPCServer) Health(

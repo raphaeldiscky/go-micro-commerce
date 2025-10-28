@@ -56,11 +56,14 @@ func MapToPaymentResponse(payment *entity.Payment) *dto.PaymentResponse {
 			response.StripeCustomerID = stripeMetadata.CustomerID
 			response.ClientSecret = stripeMetadata.ClientSecret
 		}
+	case constant.PaymentGatewayXendit:
+	// Extract Xendit metadata
 	case constant.PaymentGatewayMock:
 	// Add other gateways here as needed
 	// case constant.PaymentGatewayMidtrans:
 	// 	midtransMetadata, err := payment.GetMidtransMetadata()
 	//  ...
+
 	default:
 		// For unknown gateways, try to extract common fields from raw metadata
 		if payment.GatewayMetadata != nil {

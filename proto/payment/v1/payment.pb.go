@@ -124,10 +124,15 @@ func (HealthStatus) EnumDescriptor() ([]byte, []int) {
 }
 
 type CreatePaymentIntentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	OrderId        string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	Amount         float64                `protobuf:"fixed64,2,opt,name=amount,proto3" json:"amount,omitempty"`
+	Currency       string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
+	PaymentGateway PaymentGateway         `protobuf:"varint,4,opt,name=payment_gateway,json=paymentGateway,proto3,enum=payment.v1.PaymentGateway" json:"payment_gateway,omitempty"`
+	CustomerEmail  string                 `protobuf:"bytes,5,opt,name=customer_email,json=customerEmail,proto3" json:"customer_email,omitempty"`
+	CustomerId     string                 `protobuf:"bytes,6,opt,name=customer_id,json=customerId,proto3" json:"customer_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *CreatePaymentIntentRequest) Reset() {
@@ -163,6 +168,41 @@ func (*CreatePaymentIntentRequest) Descriptor() ([]byte, []int) {
 func (x *CreatePaymentIntentRequest) GetOrderId() string {
 	if x != nil {
 		return x.OrderId
+	}
+	return ""
+}
+
+func (x *CreatePaymentIntentRequest) GetAmount() float64 {
+	if x != nil {
+		return x.Amount
+	}
+	return 0
+}
+
+func (x *CreatePaymentIntentRequest) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *CreatePaymentIntentRequest) GetPaymentGateway() PaymentGateway {
+	if x != nil {
+		return x.PaymentGateway
+	}
+	return PaymentGateway_PAYMENT_GATEWAY_UNSPECIFIED
+}
+
+func (x *CreatePaymentIntentRequest) GetCustomerEmail() string {
+	if x != nil {
+		return x.CustomerEmail
+	}
+	return ""
+}
+
+func (x *CreatePaymentIntentRequest) GetCustomerId() string {
+	if x != nil {
+		return x.CustomerId
 	}
 	return ""
 }
@@ -368,9 +408,15 @@ var File_payment_v1_payment_proto protoreflect.FileDescriptor
 const file_payment_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"\x18payment/v1/payment.proto\x12\n" +
-	"payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1bbuf/validate/validate.proto\"A\n" +
+	"payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x1bbuf/validate/validate.proto\"\xba\x02\n" +
 	"\x1aCreatePaymentIntentRequest\x12#\n" +
-	"\border_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\aorderId\"\xc0\x04\n" +
+	"\border_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\aorderId\x12&\n" +
+	"\x06amount\x18\x02 \x01(\x01B\x0e\xbaH\v\x12\t!\x00\x00\x00\x00\x00\x00\x00\x00R\x06amount\x12%\n" +
+	"\bcurrency\x18\x03 \x01(\tB\t\xbaH\x06r\x04\x10\x03\x18\x03R\bcurrency\x12M\n" +
+	"\x0fpayment_gateway\x18\x04 \x01(\x0e2\x1a.payment.v1.PaymentGatewayB\b\xbaH\x05\x82\x01\x02\x10\x01R\x0epaymentGateway\x12.\n" +
+	"\x0ecustomer_email\x18\x05 \x01(\tB\a\xbaH\x04r\x02`\x01R\rcustomerEmail\x12)\n" +
+	"\vcustomer_id\x18\x06 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\n" +
+	"customerId\"\xc0\x04\n" +
 	"\x1bCreatePaymentIntentResponse\x12'\n" +
 	"\n" +
 	"payment_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\tpaymentId\x12#\n" +
@@ -431,21 +477,22 @@ var file_payment_v1_payment_proto_goTypes = []any{
 	(*timestamppb.Timestamp)(nil),       // 7: google.protobuf.Timestamp
 }
 var file_payment_v1_payment_proto_depIdxs = []int32{
-	0, // 0: payment.v1.CreatePaymentIntentResponse.payment_gateway:type_name -> payment.v1.PaymentGateway
-	6, // 1: payment.v1.CreatePaymentIntentResponse.gateway_metadata:type_name -> google.protobuf.Struct
-	7, // 2: payment.v1.CreatePaymentIntentResponse.created_at:type_name -> google.protobuf.Timestamp
-	7, // 3: payment.v1.CreatePaymentIntentResponse.updated_at:type_name -> google.protobuf.Timestamp
-	7, // 4: payment.v1.CreatePaymentIntentResponse.expires_at:type_name -> google.protobuf.Timestamp
-	1, // 5: payment.v1.HealthResponse.status:type_name -> payment.v1.HealthStatus
-	2, // 6: payment.v1.PaymentService.CreatePaymentIntent:input_type -> payment.v1.CreatePaymentIntentRequest
-	4, // 7: payment.v1.PaymentService.Health:input_type -> payment.v1.HealthRequest
-	3, // 8: payment.v1.PaymentService.CreatePaymentIntent:output_type -> payment.v1.CreatePaymentIntentResponse
-	5, // 9: payment.v1.PaymentService.Health:output_type -> payment.v1.HealthResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0, // 0: payment.v1.CreatePaymentIntentRequest.payment_gateway:type_name -> payment.v1.PaymentGateway
+	0, // 1: payment.v1.CreatePaymentIntentResponse.payment_gateway:type_name -> payment.v1.PaymentGateway
+	6, // 2: payment.v1.CreatePaymentIntentResponse.gateway_metadata:type_name -> google.protobuf.Struct
+	7, // 3: payment.v1.CreatePaymentIntentResponse.created_at:type_name -> google.protobuf.Timestamp
+	7, // 4: payment.v1.CreatePaymentIntentResponse.updated_at:type_name -> google.protobuf.Timestamp
+	7, // 5: payment.v1.CreatePaymentIntentResponse.expires_at:type_name -> google.protobuf.Timestamp
+	1, // 6: payment.v1.HealthResponse.status:type_name -> payment.v1.HealthStatus
+	2, // 7: payment.v1.PaymentService.CreatePaymentIntent:input_type -> payment.v1.CreatePaymentIntentRequest
+	4, // 8: payment.v1.PaymentService.Health:input_type -> payment.v1.HealthRequest
+	3, // 9: payment.v1.PaymentService.CreatePaymentIntent:output_type -> payment.v1.CreatePaymentIntentResponse
+	5, // 10: payment.v1.PaymentService.Health:output_type -> payment.v1.HealthResponse
+	9, // [9:11] is the sub-list for method output_type
+	7, // [7:9] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_payment_v1_payment_proto_init() }
