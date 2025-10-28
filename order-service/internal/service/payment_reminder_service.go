@@ -178,9 +178,11 @@ func (s *paymentReminderService) ProcessOrderExpirePayment(
 		// Publish domain event
 		evt := producer.NewOrderLifecycleEvent(
 			order.ID,
+			order.CheckoutSessionID,
 			constant.OrderStatusPaymentExpired,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
+			updatedOrder.Currency,
 			updatedOrder.Items,
 		)
 		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {

@@ -28,3 +28,10 @@ func NewServiceUnavailableError(message string) *httperror.ResponseError {
 
 	return httperror.NewResponseError(err, http.StatusServiceUnavailable, message)
 }
+
+// NewForbiddenError returns a 403 error.
+func NewForbiddenError(message string) *httperror.ResponseError {
+	err := errors.New(message)
+
+	return httperror.NewResponseError(err, http.StatusForbidden, message)
+}

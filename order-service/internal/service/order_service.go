@@ -32,6 +32,10 @@ import (
 
 // OrderService defines the interface for order business operations.
 type OrderService interface {
+	PlaceOrder(
+		ctx context.Context,
+		req *dto.PlaceOrderRequest,
+	) (*dto.PlaceOrderResponse, error)
 	CreateOrderWithSaga(
 		ctx context.Context,
 		req *dto.CreateOrderRequest,
@@ -87,6 +91,10 @@ type orderService struct {
 	orderLifecycleProducer kafka.Producer
 	sagaOrchestrator       saga.Orchestrator
 	temporalClient         *client.TemporalClient
+	cartClient             client.CartClient
+	paymentClientGRPC      client.PaymentClientGRPC
+	productClient          client.ProductClient
+	fulfillmentClient      client.FulfillmentClient
 	config                 *config.Config
 }
 
@@ -98,6 +106,10 @@ func NewOrderService(
 	orderLifecycleProducer kafka.Producer,
 	sagaOrchestrator saga.Orchestrator,
 	temporalClient *client.TemporalClient,
+	cartClient client.CartClient,
+	paymentClientGRPC client.PaymentClientGRPC,
+	productClient client.ProductClient,
+	fulfillmentClient client.FulfillmentClient,
 ) OrderService {
 	return &orderService{
 		dataStore:              dataStore,
@@ -105,6 +117,10 @@ func NewOrderService(
 		orderLifecycleProducer: orderLifecycleProducer,
 		sagaOrchestrator:       sagaOrchestrator,
 		temporalClient:         temporalClient,
+		cartClient:             cartClient,
+		paymentClientGRPC:      paymentClientGRPC,
+		productClient:          productClient,
+		fulfillmentClient:      fulfillmentClient,
 		config:                 cfg,
 	}
 }
@@ -380,9 +396,11 @@ func (s *orderService) UpdateOrderStatus(
 		// Publish domain event
 		evt := producer.NewOrderLifecycleEvent(
 			updatedOrder.ID,
+			updatedOrder.CheckoutSessionID,
 			status,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
+			updatedOrder.Currency,
 			updatedOrder.Items,
 		)
 		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {
@@ -470,9 +488,11 @@ func (s *orderService) CancelOrder(
 		// Publish domain event
 		evt := producer.NewOrderLifecycleEvent(
 			existingOrder.ID,
+			existingOrder.CheckoutSessionID,
 			constant.OrderStatusCanceled,
 			updatedOrder.CustomerID,
 			updatedOrder.TotalPrice,
+			updatedOrder.Currency,
 			updatedOrder.Items,
 		)
 		if err = s.orderLifecycleProducer.Send(ctx, evt); err != nil {

@@ -26,6 +26,9 @@ type Providers struct {
 	TemporalClient              *client.TemporalClient
 	FulfillmentClient           client.FulfillmentClient
 	PaymentClient               client.PaymentClient
+	CartClient                  client.CartClient
+	PaymentClientGRPC           client.PaymentClientGRPC
+	ProductClient               client.ProductClient
 	NotificationRequestProducer kafka.Producer
 	OrderLifecycleProducer      kafka.Producer
 	OrderService                service.OrderService
@@ -100,11 +103,47 @@ func SetupGlobal(
 	// Setup payment client for event correlation
 	paymentClient := client.NewPaymentClient(appLogger)
 
+	// Setup cart client for checkout session retrieval
+	cartClient, err := client.NewCartClient(cfg)
+	if err != nil {
+		appLogger.Warnf(
+			"failed to create cart client: %v. Order service will start without cart client functionality.",
+			err,
+		)
+
+		cartClient = nil
+	}
+
+	// Setup payment gRPC client for synchronous payment intent creation
+	paymentClientGRPC, err := client.NewPaymentClientGRPC(cfg)
+	if err != nil {
+		appLogger.Warnf(
+			"failed to create payment gRPC client: %v. Order service will start without payment gRPC client functionality.",
+			err,
+		)
+
+		paymentClientGRPC = nil
+	}
+
+	// Setup product client
+	productClient, err := client.NewProductClient(cfg)
+	if err != nil {
+		appLogger.Warnf(
+			"failed to create product client: %v. Order service will start without product client functionality.",
+			err,
+		)
+
+		productClient = nil
+	}
+
 	return &Providers{
 		DataStore:         dataStore,
 		KafkaAdmin:        kafkaAdmin,
 		TemporalClient:    nil, // will be set up later in worker
 		FulfillmentClient: fulfillmentClient,
 		PaymentClient:     paymentClient,
+		CartClient:        cartClient,
+		PaymentClientGRPC: paymentClientGRPC,
+		ProductClient:     productClient,
 	}, nil
 }

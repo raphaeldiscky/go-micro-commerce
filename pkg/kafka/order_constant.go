@@ -45,4 +45,6 @@ const (
 	OrderFulfillmentEventsConsumerGroup = "order-service.fulfillment-events"
 	// OrderCartEventsConsumerGroup is the consumer group for order cart events.
 	OrderCartEventsConsumerGroup = "order-service.cart-events"
+	// CartOrderEventsConsumerGroup is the consumer group for cart-service listening to order events.
+	CartOrderEventsConsumerGroup = "cart-service.order-events"
 )

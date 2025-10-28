@@ -29,6 +29,32 @@ func NewOrderHandler(
 	}
 }
 
+// PlaceOrder handles POST /orders/place-order with synchronous payment intent creation.
+// This is the new recommended flow for order placement.
+func (h *OrderHandler) PlaceOrder(c echo.Context) error {
+	req := &dto.PlaceOrderRequest{
+		CustomerID:    echoutils.GetUserIDFromContext(c),
+		CustomerEmail: echoutils.GetEmailFromContext(c),
+	}
+
+	if err := c.Bind(req); err != nil {
+		return err
+	}
+
+	if err := c.Validate(req); err != nil {
+		return err
+	}
+
+	ctx := echoutils.ContextWithUserInfo(c)
+
+	response, err := h.orderService.PlaceOrder(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	return echoutils.ResponseCreated(c, response)
+}
+
 // CreateOrderWithSaga handles POST /orders/saga with saga pattern processing.
 func (h *OrderHandler) CreateOrderWithSaga(c echo.Context) error {
 	req := &dto.CreateOrderRequest{

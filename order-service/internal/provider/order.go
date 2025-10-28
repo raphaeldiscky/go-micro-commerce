@@ -9,7 +9,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/handler"
@@ -54,23 +53,13 @@ func SetupOrder(
 	providers.OrderLifecycleProducer = orderLifecycleProducer
 	providers.NotificationRequestProducer = notificationRequestProducer
 
-	productClient, err := client.NewProductClient(cfg)
-	if err != nil {
-		appLogger.Warnf(
-			"failed to create product client: %v. Order service will start without product client functionality.",
-			err,
-		)
-
-		productClient = nil
-	}
-
 	// Create task cancellation service
 	taskCancellationService := asynq.NewTaskCancellationService(providers.AsynqInspector)
 
 	// Create saga orchestrator
 	sagaOrchestrator := saga.NewSagaOrchestrator(
 		providers.DataStore,
-		productClient,
+		providers.ProductClient,
 		providers.FulfillmentClient,
 		providers.PaymentClient,
 		providers.AsynqClient,
@@ -93,6 +82,10 @@ func SetupOrder(
 		orderLifecycleProducer,
 		sagaOrchestrator,
 		temporalClient,
+		providers.CartClient,
+		providers.PaymentClientGRPC,
+		providers.ProductClient,
+		providers.FulfillmentClient,
 	)
 	providers.OrderService = orderService
 	orderHandler := handler.NewOrderHandler(orderService)

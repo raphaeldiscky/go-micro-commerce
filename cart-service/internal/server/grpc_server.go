@@ -61,6 +61,19 @@ func (s *GRPCServer) GetCheckoutSession(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	// Map items from DTO to proto
+	items := make([]*pb.CheckoutSessionItem, len(session.Items))
+	for i := range session.Items {
+		item := &session.Items[i]
+		items[i] = &pb.CheckoutSessionItem{
+			Id:          item.ID.String(),
+			ProductId:   item.ProductID.String(),
+			ProductName: item.ProductName,
+			Quantity:    item.Quantity,
+			UnitPrice:   item.UnitPrice.String(),
+		}
+	}
+
 	// Map DTO response to protobuf response
 	resp := &pb.GetCheckoutSessionResponse{
 		CheckoutSessionId: session.ID.String(),
@@ -93,7 +106,11 @@ func (s *GRPCServer) GetCheckoutSession(
 		Currency:  session.Currency,
 		CreatedAt: timestamppb.New(session.CreatedAt),
 		UpdatedAt: timestamppb.New(session.UpdatedAt),
-		ExpiresAt: timestamppb.New(session.CreatedAt.Add(constant.CheckoutSessionExpirationTime)),
+		ExpiresAt: timestamppb.New(
+			session.CreatedAt.Add(constant.CheckoutSessionExpirationTime),
+		),
+		Items:          items,
+		PaymentGateway: session.PaymentGateway,
 	}
 
 	return connect.NewResponse(resp), nil

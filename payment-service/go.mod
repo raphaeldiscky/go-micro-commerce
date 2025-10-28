@@ -25,6 +25,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.30
 	golang.org/x/net v0.44.0
 	golang.org/x/time v0.11.0
+	google.golang.org/protobuf v1.36.9
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
@@ -108,6 +109,5 @@ require (
 	golang.org/x/sync v0.17.0 // indirect
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
