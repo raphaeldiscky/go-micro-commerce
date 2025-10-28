@@ -122,10 +122,6 @@ type PackageInput struct {
 	Unit     string          `json:"unit"`
 }
 
-type PlaceOrderInput struct {
-	IdempotencyKey uuid.UUID `json:"idempotencyKey"`
-}
-
 type Query struct {
 }
 

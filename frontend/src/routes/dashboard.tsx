@@ -5,14 +5,11 @@ import { PATH_AUTH, PATH_ROOT } from '../constants/routes'
 import { useAuthStore } from '../store/authStore'
 
 export const Route = createFileRoute('/dashboard')({
-  beforeLoad: ({ location }) => {
+  beforeLoad: () => {
     const user = useAuthStore.getState().user
 
     if (!user) {
       throw redirect({
-        search: {
-          redirect: location.href,
-        },
         to: PATH_AUTH.login,
       })
     }

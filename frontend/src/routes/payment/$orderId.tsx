@@ -14,22 +14,25 @@ import {
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { AlertCircle, CheckCircle, ShieldCheck } from 'lucide-react'
+import { AlertCircle, ArrowLeft, CheckCircle, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { toast } from 'sonner'
 
-export const Route = createFileRoute('/orders/$paymentId')({
+export const Route = createFileRoute(PATH.payment.$orderId)({
   component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      clientSecret: (search.clientSecret as string) || undefined,
+    }
+  },
 })
 
 const stripePromise = loadStripe(env.VITE_STRIPE_PUBLISHABLE_KEY)
 
 function RouteComponent() {
-  const { paymentId } = Route.useParams()
+  const { orderId } = Route.useParams()
   const navigate = useNavigate()
 
-  // Fetch payment data (paymentId param is actually orderId)
-  const orderId = paymentId
   const {
     data: payment,
     isLoading,
@@ -50,7 +53,7 @@ function RouteComponent() {
       setPaymentCompleted(true)
       // Redirect to order confirmation after 2 seconds
       setTimeout(() => {
-        navigate({ to: `/orders/${orderId}/confirmation` })
+        navigate({ to: PATH.orders.detail(orderId) })
       }, 2000)
     },
     onPaymentFailed: (errorMsg) => {
@@ -77,6 +80,10 @@ function RouteComponent() {
   // Handle payment error
   const handlePaymentError = (errorMsg: string) => {
     toast.error(errorMsg)
+  }
+
+  const handleBack = () => {
+    window.history.back()
   }
 
   // Loading state
@@ -137,6 +144,15 @@ function RouteComponent() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleBack}
+                className="text-muted-foreground hover:text-foreground mb-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
               <h1 className="text-2xl font-bold tracking-tight">
                 {isCompleted ? 'Payment Successful' : 'Complete Payment'}
               </h1>

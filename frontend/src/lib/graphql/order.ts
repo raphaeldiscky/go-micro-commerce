@@ -128,3 +128,72 @@ export const CREATE_ORDER_MUTATION = gql`
     }
   }
 `
+
+/**
+ * Place an order from a checkout session with payment intent creation
+ */
+export const PLACE_ORDER_MUTATION = gql`
+  mutation PlaceOrder($input: PlaceOrderInput!) {
+    placeOrder(input: $input) {
+      order {
+        id
+        idempotencyKey
+        checkoutSessionId
+        customerId
+        status
+        currency
+        paymentGateway
+        courier {
+          courierId
+        }
+        package {
+          weightKg
+          length
+          height
+          width
+          unit
+        }
+        origin {
+          city
+          state
+          postalCode
+          countryCode
+        }
+        destination {
+          city
+          state
+          postalCode
+          countryCode
+        }
+        shippingCost
+        subtotal
+        totalPrice
+        totalTax
+        totalDiscount
+        items {
+          id
+          orderId
+          productId
+          quantity
+          unitPrice
+          totalPrice
+          taxRate
+          totalTax
+          totalDiscount
+          createdAt
+          updatedAt
+        }
+        createdAt
+        updatedAt
+      }
+      paymentMetadata {
+        paymentId
+        paymentGateway
+        gatewayTransactionId
+        gatewayMetadata
+        amount
+        currency
+      }
+    }
+  }
+`

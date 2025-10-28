@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -134,5 +135,38 @@ func MapToCreateOrderRequest(
 		Items:          items,
 		PaymentGateway: input.PaymentGateway,
 		Currency:       input.Currency,
+	}, nil
+}
+
+// MapToGraphQLPaymentMetadata maps dto.PaymentMetadata to graph.PaymentMetadata.
+func MapToGraphQLPaymentMetadata(metadata dto.PaymentMetadata) (*graph.PaymentMetadata, error) {
+	// Marshal gateway metadata map to JSON string
+	gatewayMetadataBytes, err := json.Marshal(metadata.GatewayMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal gateway metadata: %w", err)
+	}
+
+	return &graph.PaymentMetadata{
+		PaymentID:            metadata.PaymentID,
+		PaymentGateway:       metadata.PaymentGateway,
+		GatewayTransactionID: metadata.GatewayTransactionID,
+		GatewayMetadata:      string(gatewayMetadataBytes),
+		Amount:               metadata.Amount,
+		Currency:             metadata.Currency,
+	}, nil
+}
+
+// MapToGraphQLPlaceOrderPayload maps dto.PlaceOrderResponse to graph.PlaceOrderPayload.
+func MapToGraphQLPlaceOrderPayload(
+	response *dto.PlaceOrderResponse,
+) (*graph.PlaceOrderPayload, error) {
+	paymentMetadata, err := MapToGraphQLPaymentMetadata(response.PaymentMetadata)
+	if err != nil {
+		return nil, fmt.Errorf("failed to map payment metadata: %w", err)
+	}
+
+	return &graph.PlaceOrderPayload{
+		Order:           MapToGraphQLOrderFromDTO(response.Order),
+		PaymentMetadata: paymentMetadata,
 	}, nil
 }

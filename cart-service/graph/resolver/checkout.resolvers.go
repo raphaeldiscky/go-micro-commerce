@@ -59,29 +59,6 @@ func (r *mutationResolver) UpdateCheckoutSession(
 	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
 }
 
-// PlaceOrder is the resolver for the placeOrder field.
-func (r *mutationResolver) PlaceOrder(
-	ctx context.Context,
-	sessionID uuid.UUID,
-	input graph.PlaceOrderInput,
-) (*graph.CheckoutSession, error) {
-	user, err := echoutils.GetUserAuthContexts(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Map GraphQL input to service DTO
-	req := mapper.MapToPlaceOrderRequest(input, user.UserID, sessionID)
-
-	// Place order
-	session, err := r.checkoutSessionService.PlaceOrder(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return mapper.MapToGraphQLCheckoutSessionFromDTO(session), nil
-}
-
 // CancelCheckoutSession is the resolver for the cancelCheckoutSession field.
 func (r *mutationResolver) CancelCheckoutSession(
 	ctx context.Context,

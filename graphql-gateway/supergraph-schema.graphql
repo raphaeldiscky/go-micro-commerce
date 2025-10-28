@@ -63,6 +63,9 @@ type AddressEdge
   cursor: String!
 }
 
+scalar Any
+  @join__type(graph: ORDER_SERVICE)
+
 type AuthPayload
   @join__type(graph: AUTH_SERVICE)
 {
@@ -386,7 +389,6 @@ type Mutation
   selectItemForCheckout(itemId: UUID!, input: SelectItemForCheckoutInput!): Cart! @join__field(graph: CART_SERVICE)
   createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
   updateCheckoutSession(sessionId: UUID!, input: UpdateCheckoutSessionInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
-  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession! @join__field(graph: CART_SERVICE)
   cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @join__field(graph: CART_SERVICE)
   requestChatConnection: ChatConnection! @join__field(graph: CHAT_SERVICE)
   createConversation(input: CreateConversationInput!): Conversation! @join__field(graph: CHAT_SERVICE)
@@ -402,6 +404,7 @@ type Mutation
   markAsRead(id: UUID!): Notification! @join__field(graph: NOTIFICATION_SERVICE)
   markAllAsRead: Boolean! @join__field(graph: NOTIFICATION_SERVICE)
   createOrder(input: CreateOrderInput!): Order! @join__field(graph: ORDER_SERVICE)
+  placeOrder(input: PlaceOrderInput!): PlaceOrderPayload! @join__field(graph: ORDER_SERVICE)
 }
 
 type NewMessage
@@ -657,6 +660,17 @@ enum PaymentGateway
   STRIPE @join__enumValue(graph: ORDER_SERVICE) @join__enumValue(graph: PAYMENT_SERVICE)
 }
 
+type PaymentMetadata
+  @join__type(graph: ORDER_SERVICE)
+{
+  paymentId: UUID!
+  paymentGateway: PaymentGateway!
+  gatewayTransactionId: String!
+  gatewayMetadata: Any!
+  amount: Decimal!
+  currency: String!
+}
+
 enum PaymentStatus
   @join__type(graph: PAYMENT_SERVICE)
 {
@@ -669,9 +683,17 @@ enum PaymentStatus
 }
 
 input PlaceOrderInput
-  @join__type(graph: CART_SERVICE)
+  @join__type(graph: ORDER_SERVICE)
 {
+  checkoutSessionId: UUID!
   idempotencyKey: UUID!
+}
+
+type PlaceOrderPayload
+  @join__type(graph: ORDER_SERVICE)
+{
+  order: Order!
+  paymentMetadata: PaymentMetadata!
 }
 
 enum PresenceStatus

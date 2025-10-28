@@ -2,6 +2,7 @@
 scalar Time
 scalar UUID
 scalar Decimal
+scalar Any
 
 # Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
 directive @requiresAuth on FIELD_DEFINITION | OBJECT

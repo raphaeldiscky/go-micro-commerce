@@ -10,6 +10,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mapper"
 )
 
@@ -36,6 +37,34 @@ func (r *mutationResolver) CreateOrder(
 	}
 
 	return mapper.MapToGraphQLOrderFromDTO(orderResponse), nil
+}
+
+// PlaceOrder is the resolver for the placeOrder field.
+func (r *mutationResolver) PlaceOrder(
+	ctx context.Context,
+	input graph.PlaceOrderInput,
+) (*graph.PlaceOrderPayload, error) {
+	user, err := echoutils.GetUserAuthContexts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create place order request from GraphQL input
+	req := &dto.PlaceOrderRequest{
+		CustomerID:        user.UserID,
+		CustomerEmail:     user.Email,
+		CheckoutSessionID: input.CheckoutSessionID,
+		IdempotencyKey:    input.IdempotencyKey,
+	}
+
+	// Place order using order service
+	placeOrderResponse, err := r.orderService.PlaceOrder(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Map response to GraphQL payload
+	return mapper.MapToGraphQLPlaceOrderPayload(placeOrderResponse)
 }
 
 // ListOrders is the resolver for the listOrders field.

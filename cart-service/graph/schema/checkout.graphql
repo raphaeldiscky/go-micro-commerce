@@ -99,11 +99,6 @@ input UpdateCheckoutSessionInput {
   paymentGateway: String
 }
 
-# Input type for placing order
-input PlaceOrderInput {
-  idempotencyKey: UUID!
-}
-
 extend type Query {
   # Get checkout session by ID
   getCheckoutSession(id: UUID!): CheckoutSession @requiresAuth
@@ -119,10 +114,6 @@ extend type Mutation {
     sessionId: UUID!
     input: UpdateCheckoutSessionInput!
   ): CheckoutSession! @requiresAuth
-
-  # Place order from checkout session
-  placeOrder(sessionId: UUID!, input: PlaceOrderInput!): CheckoutSession!
-    @requiresAuth
 
   # Cancel checkout session
   cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @requiresAuth

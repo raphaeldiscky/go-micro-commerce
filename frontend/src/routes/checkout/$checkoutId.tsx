@@ -83,10 +83,15 @@ function RouteComponent() {
     try {
       const result = await placeOrder(checkoutId)
 
-      if (result.success) {
+      if (result.success && result.orderId && result.clientSecret) {
         toast.success('Order placed successfully!')
-        // Navigate to payment page - use checkoutId which becomes the orderId
-        navigate({ to: `/orders/${checkoutId}` })
+        // Navigate to payment page with client secret for Stripe payment
+        navigate({
+          to: PATH.payment.detail(result.orderId),
+          search: {
+            clientSecret: result.clientSecret,
+          },
+        })
       } else {
         toast.error(result.error || 'Failed to place order')
       }

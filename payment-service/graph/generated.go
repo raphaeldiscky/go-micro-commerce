@@ -3385,37 +3385,23 @@ func (ec *executionContext) marshalNPayment2ᚖgithubᚗcomᚋraphaeldisckyᚋgo
 }
 
 func (ec *executionContext) unmarshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx context.Context, v any) (constant.PaymentGateway, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.PaymentGateway(tmp)
+	var res constant.PaymentGateway
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPaymentGateway2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentGateway(ctx context.Context, sel ast.SelectionSet, v constant.PaymentGateway) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalNPaymentStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentStatus(ctx context.Context, v any) (constant.PaymentStatus, error) {
-	tmp, err := graphql.UnmarshalString(v)
-	res := constant.PaymentStatus(tmp)
+	var res constant.PaymentStatus
+	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNPaymentStatus2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋinternalᚋconstantᚐPaymentStatus(ctx context.Context, sel ast.SelectionSet, v constant.PaymentStatus) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalString(string(v))
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
+	return v
 }
 
 func (ec *executionContext) unmarshalNRole2githubᚗcomᚋraphaeldisckyᚋgoᚑmicroᚑcommerceᚋpaymentᚑserviceᚋgraphᚐRole(ctx context.Context, v any) (Role, error) {

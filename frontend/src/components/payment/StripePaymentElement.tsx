@@ -37,7 +37,7 @@ export function StripePaymentElement({
       return
     }
 
-    const returnUrl = `${window.location.origin}/orders/${orderId}/confirmation`
+    const returnUrl = `${window.location.origin}/orders/${orderId}`
 
     const result = await confirmPayment({
       returnUrl,

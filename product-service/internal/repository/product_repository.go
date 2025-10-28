@@ -632,7 +632,7 @@ func (r *productRepository) ReserveProducts(
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				return nil, fmt.Errorf(
-					"reservation failed for product %s: insufficient stock or version conflict",
+					"reservation failed for product %s: product may have been modified by another transaction (version conflict) or insufficient stock",
 					reservations[i].ProductID,
 				)
 			}

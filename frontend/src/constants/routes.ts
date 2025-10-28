@@ -43,10 +43,15 @@ export const PATH = {
     root: path(ROOTS, '/account'),
     detail: (id: string) => path(ROOTS, `/account/${id}`),
   },
+  payment: {
+    root: path(ROOTS, '/payment'),
+    detail: (orderId: string) => path(ROOTS, `/payment/${orderId}`),
+    $orderId: '/payment/$orderId' as const,
+  },
   orders: {
     root: path(ROOTS, '/orders'),
-    pendingPayment: (paymentId: string) => path(ROOTS, `/orders/${paymentId}`),
-    $pendingPayment: '/orders/$paymentId' as const,
+    detail: (orderId: string) => path(ROOTS, `/orders/${orderId}`),
+    $orderId: '/orders/$orderId' as const,
   },
 }
 

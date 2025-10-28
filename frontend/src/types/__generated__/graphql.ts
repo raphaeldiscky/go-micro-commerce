@@ -26,6 +26,7 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean }
   Int: { input: number; output: number }
   Float: { input: number; output: number }
+  Any: { input: any; output: any }
   Decimal: { input: string; output: string }
   Time: { input: string; output: string }
   UUID: { input: string; output: string }
@@ -317,7 +318,7 @@ export type Mutation = {
   logout: Scalars['Boolean']['output']
   markAllAsRead: Scalars['Boolean']['output']
   markAsRead: Notification
-  placeOrder: CheckoutSession
+  placeOrder: PlaceOrderPayload
   refreshToken: AuthPayload
   register: AuthPayload
   removeItemFromCart: Cart
@@ -389,7 +390,6 @@ export type MutationMarkAsReadArgs = {
 
 export type MutationPlaceOrderArgs = {
   input: PlaceOrderInput
-  sessionId: Scalars['UUID']['input']
 }
 
 export type MutationRegisterArgs = {
@@ -661,6 +661,16 @@ export enum PaymentGateway {
   Stripe = 'STRIPE',
 }
 
+export type PaymentMetadata = {
+  __typename?: 'PaymentMetadata'
+  amount: Scalars['Decimal']['output']
+  currency: Scalars['String']['output']
+  gatewayMetadata: Scalars['Any']['output']
+  gatewayTransactionId: Scalars['String']['output']
+  paymentGateway: PaymentGateway
+  paymentId: Scalars['UUID']['output']
+}
+
 export enum PaymentStatus {
   Completed = 'COMPLETED',
   Failed = 'FAILED',
@@ -671,7 +681,14 @@ export enum PaymentStatus {
 }
 
 export type PlaceOrderInput = {
+  checkoutSessionId: Scalars['UUID']['input']
   idempotencyKey: Scalars['UUID']['input']
+}
+
+export type PlaceOrderPayload = {
+  __typename?: 'PlaceOrderPayload'
+  order: Order
+  paymentMetadata: PaymentMetadata
 }
 
 export enum PresenceStatus {
