@@ -20,7 +20,6 @@ import { Route as OrdersIndexRouteImport } from './routes/orders/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ChatIndexRouteImport } from './routes/chat/index'
 import { Route as AccountIndexRouteImport } from './routes/account/index'
-import { Route as PaymentOrderIdRouteImport } from './routes/payment/$orderId'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
 import { Route as DashboardUsersRouteImport } from './routes/dashboard/users'
 import { Route as DashboardRevenueRouteImport } from './routes/dashboard/revenue'
@@ -30,6 +29,8 @@ import { Route as CheckoutCheckoutIdRouteImport } from './routes/checkout/$check
 import { Route as ChatConversationIdRouteImport } from './routes/chat/$conversationId'
 import { Route as AuthRegisterRouteImport } from './routes/auth/register'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
+import { Route as PaymentOrderIdIndexRouteImport } from './routes/payment/$orderId/index'
+import { Route as PaymentOrderIdSuccessRouteImport } from './routes/payment/$orderId/success'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -86,11 +87,6 @@ const AccountIndexRoute = AccountIndexRouteImport.update({
   path: '/account/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PaymentOrderIdRoute = PaymentOrderIdRouteImport.update({
-  id: '/payment/$orderId',
-  path: '/payment/$orderId',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const OrdersOrderIdRoute = OrdersOrderIdRouteImport.update({
   id: '/orders/$orderId',
   path: '/orders/$orderId',
@@ -136,6 +132,16 @@ const AuthLoginRoute = AuthLoginRouteImport.update({
   path: '/auth/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PaymentOrderIdIndexRoute = PaymentOrderIdIndexRouteImport.update({
+  id: '/payment/$orderId/',
+  path: '/payment/$orderId/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaymentOrderIdSuccessRoute = PaymentOrderIdSuccessRouteImport.update({
+  id: '/payment/$orderId/success',
+  path: '/payment/$orderId/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -153,12 +159,13 @@ export interface FileRoutesByFullPath {
   '/dashboard/revenue': typeof DashboardRevenueRoute
   '/dashboard/users': typeof DashboardUsersRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/payment/$orderId': typeof PaymentOrderIdRoute
   '/account': typeof AccountIndexRoute
   '/chat': typeof ChatIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
+  '/payment/$orderId/success': typeof PaymentOrderIdSuccessRoute
+  '/payment/$orderId': typeof PaymentOrderIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -175,12 +182,13 @@ export interface FileRoutesByTo {
   '/dashboard/revenue': typeof DashboardRevenueRoute
   '/dashboard/users': typeof DashboardUsersRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/payment/$orderId': typeof PaymentOrderIdRoute
   '/account': typeof AccountIndexRoute
   '/chat': typeof ChatIndexRoute
   '/dashboard': typeof DashboardIndexRoute
   '/orders': typeof OrdersIndexRoute
   '/products': typeof ProductsIndexRoute
+  '/payment/$orderId/success': typeof PaymentOrderIdSuccessRoute
+  '/payment/$orderId': typeof PaymentOrderIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -199,12 +207,13 @@ export interface FileRoutesById {
   '/dashboard/revenue': typeof DashboardRevenueRoute
   '/dashboard/users': typeof DashboardUsersRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
-  '/payment/$orderId': typeof PaymentOrderIdRoute
   '/account/': typeof AccountIndexRoute
   '/chat/': typeof ChatIndexRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/orders/': typeof OrdersIndexRoute
   '/products/': typeof ProductsIndexRoute
+  '/payment/$orderId/success': typeof PaymentOrderIdSuccessRoute
+  '/payment/$orderId/': typeof PaymentOrderIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -224,12 +233,13 @@ export interface FileRouteTypes {
     | '/dashboard/revenue'
     | '/dashboard/users'
     | '/orders/$orderId'
-    | '/payment/$orderId'
     | '/account'
     | '/chat'
     | '/dashboard/'
     | '/orders'
     | '/products'
+    | '/payment/$orderId/success'
+    | '/payment/$orderId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -246,12 +256,13 @@ export interface FileRouteTypes {
     | '/dashboard/revenue'
     | '/dashboard/users'
     | '/orders/$orderId'
-    | '/payment/$orderId'
     | '/account'
     | '/chat'
     | '/dashboard'
     | '/orders'
     | '/products'
+    | '/payment/$orderId/success'
+    | '/payment/$orderId'
   id:
     | '__root__'
     | '/'
@@ -269,12 +280,13 @@ export interface FileRouteTypes {
     | '/dashboard/revenue'
     | '/dashboard/users'
     | '/orders/$orderId'
-    | '/payment/$orderId'
     | '/account/'
     | '/chat/'
     | '/dashboard/'
     | '/orders/'
     | '/products/'
+    | '/payment/$orderId/success'
+    | '/payment/$orderId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -289,11 +301,12 @@ export interface RootRouteChildren {
   ChatConversationIdRoute: typeof ChatConversationIdRoute
   CheckoutCheckoutIdRoute: typeof CheckoutCheckoutIdRoute
   OrdersOrderIdRoute: typeof OrdersOrderIdRoute
-  PaymentOrderIdRoute: typeof PaymentOrderIdRoute
   AccountIndexRoute: typeof AccountIndexRoute
   ChatIndexRoute: typeof ChatIndexRoute
   OrdersIndexRoute: typeof OrdersIndexRoute
   ProductsIndexRoute: typeof ProductsIndexRoute
+  PaymentOrderIdSuccessRoute: typeof PaymentOrderIdSuccessRoute
+  PaymentOrderIdIndexRoute: typeof PaymentOrderIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -375,13 +388,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/payment/$orderId': {
-      id: '/payment/$orderId'
-      path: '/payment/$orderId'
-      fullPath: '/payment/$orderId'
-      preLoaderRoute: typeof PaymentOrderIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/orders/$orderId': {
       id: '/orders/$orderId'
       path: '/orders/$orderId'
@@ -445,6 +451,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/payment/$orderId/': {
+      id: '/payment/$orderId/'
+      path: '/payment/$orderId'
+      fullPath: '/payment/$orderId'
+      preLoaderRoute: typeof PaymentOrderIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/payment/$orderId/success': {
+      id: '/payment/$orderId/success'
+      path: '/payment/$orderId/success'
+      fullPath: '/payment/$orderId/success'
+      preLoaderRoute: typeof PaymentOrderIdSuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -480,11 +500,12 @@ const rootRouteChildren: RootRouteChildren = {
   ChatConversationIdRoute: ChatConversationIdRoute,
   CheckoutCheckoutIdRoute: CheckoutCheckoutIdRoute,
   OrdersOrderIdRoute: OrdersOrderIdRoute,
-  PaymentOrderIdRoute: PaymentOrderIdRoute,
   AccountIndexRoute: AccountIndexRoute,
   ChatIndexRoute: ChatIndexRoute,
   OrdersIndexRoute: OrdersIndexRoute,
   ProductsIndexRoute: ProductsIndexRoute,
+  PaymentOrderIdSuccessRoute: PaymentOrderIdSuccessRoute,
+  PaymentOrderIdIndexRoute: PaymentOrderIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

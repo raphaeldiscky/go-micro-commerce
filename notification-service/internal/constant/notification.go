@@ -15,6 +15,8 @@ const (
 	PushNotificationTypeOrderDelivered PushNotificationType = "order_delivered"
 	PushNotificationTypeOrderCancelled PushNotificationType = "order_cancelled"
 	PushNotificationTypePaymentSuccess PushNotificationType = "payment_success"
+	PushNotificationTypePaymentFailed  PushNotificationType = "payment_failed"
+	PushNotificationTypePaymentTimeout PushNotificationType = "payment_timeout"
 	PushNotificationTypeSystemAlert    PushNotificationType = "system_alert"
 )
 
@@ -29,6 +31,8 @@ func (e PushNotificationType) IsValid() bool {
 		PushNotificationTypeOrderDelivered,
 		PushNotificationTypeOrderCancelled,
 		PushNotificationTypePaymentSuccess,
+		PushNotificationTypePaymentFailed,
+		PushNotificationTypePaymentTimeout,
 		PushNotificationTypeSystemAlert:
 		return true
 	}

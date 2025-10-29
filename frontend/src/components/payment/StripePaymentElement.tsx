@@ -4,6 +4,7 @@ import { useStripePaymentConfirmation } from '@/hooks/payment'
 import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { PATH } from '../../constants'
 
 interface StripePaymentElementProps {
   orderId: string
@@ -37,10 +38,10 @@ export function StripePaymentElement({
       return
     }
 
-    const returnUrl = `${window.location.origin}/orders/${orderId}`
+    const domain = window.location.origin
 
     const result = await confirmPayment({
-      returnUrl,
+      returnUrl: domain + PATH.payment.success(orderId),
       onSuccess,
       onError,
     })

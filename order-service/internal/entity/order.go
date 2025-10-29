@@ -396,6 +396,11 @@ func (o *Order) CanBeCancelled() bool {
 		o.Status != constant.OrderStatusPaymentExpired
 }
 
+// CanBeExpired checks if order can be expired.
+func (o *Order) CanBeExpired() bool {
+	return o.Status == constant.OrderStatusPaymentPending
+}
+
 // CanBePaid checks if order can be paid.
 func (o *Order) CanBePaid() bool {
 	return o.Status == constant.OrderStatusPending

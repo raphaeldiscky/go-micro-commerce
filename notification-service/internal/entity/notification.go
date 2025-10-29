@@ -81,6 +81,8 @@ func (n *Notification) validate() error {
 		constant.PushNotificationTypeOrderDelivered,
 		constant.PushNotificationTypeOrderCancelled,
 		constant.PushNotificationTypePaymentSuccess,
+		constant.PushNotificationTypePaymentFailed,
+		constant.PushNotificationTypePaymentTimeout,
 		constant.PushNotificationTypeSystemAlert:
 		// valid types → no error
 		return nil

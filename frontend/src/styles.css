@@ -136,3 +136,7 @@ code {
     @apply bg-background text-foreground;
   }
 }
+
+[data-description] {
+  color: var(--text-secondary-foreground) !important;
+}

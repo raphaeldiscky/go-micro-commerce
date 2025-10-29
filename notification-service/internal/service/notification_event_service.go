@@ -641,10 +641,21 @@ func (s *notificationEventService) sendPushNotification(
 		message = payload.Subject
 	}
 
+	// Extract push notification type from data
+	pushTypeRaw, ok := payload.Data["push_notification_type"]
+	if !ok {
+		return errors.New("push_notification_type not found in notification data")
+	}
+
+	pushType, ok := pushTypeRaw.(string)
+	if !ok {
+		return errors.New("push_notification_type must be a string")
+	}
+
 	// Create push notification entity
 	notif, err := entity.NewPushNotification(
 		userID,
-		constant.PushNotificationType(payload.NotificationType),
+		constant.PushNotificationType(pushType),
 		payload.Subject,
 		message,
 		payload.Data,

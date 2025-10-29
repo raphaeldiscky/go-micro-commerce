@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -14,6 +16,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/repository"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/service"
 )
@@ -246,8 +249,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 	}
 
 	// Update order status to paid
-	order.Status = constant.OrderStatusPaid
-	if _, err = orderRepo.Update(ctx, order); err != nil {
+	if err = orderRepo.UpdateStatus(ctx, evt.Payload.OrderID, constant.OrderStatusPaid); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -262,6 +264,43 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 			Error:     nil,
 		}
 		c.paymentClient.NotifyWaitingSaga(response)
+	}
+
+	// Send payment success push notification
+	outboxRepo := ds.OutboxRepository()
+	notificationEvent := producer.NewPushNotificationEvent(
+		order.CustomerID,
+		order.ID,
+		"payment_success",
+		"Payment Successful",
+		fmt.Sprintf("Your payment for order %s has been processed successfully!", order.ID),
+		map[string]any{
+			"payment_id": evt.Payload.PaymentID.String(),
+			"amount":     order.TotalPrice.String(),
+			"currency":   order.Currency,
+		},
+	)
+
+	payloadBytes, err := json.Marshal(notificationEvent)
+	if err != nil {
+		c.logger.Error("Failed to marshal push notification event", "error", err)
+	} else {
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payloadBytes,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			c.logger.Error("Failed to create payment success notification event", "error", err)
+		}
 	}
 
 	// Trigger post-payment saga via service layer
@@ -302,8 +341,7 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 	}
 
 	// Update order status to failed
-	order.Status = constant.OrderStatusFailed
-	if _, err = orderRepo.Update(ctx, order); err != nil {
+	if err = orderRepo.UpdateStatus(ctx, evt.Payload.OrderID, constant.OrderStatusFailed); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -318,6 +356,43 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 			Error:     errors.New("payment failed"),
 		}
 		c.paymentClient.NotifyWaitingSaga(response)
+	}
+
+	// Send payment failed push notification
+	outboxRepo := ds.OutboxRepository()
+	notificationEvent := producer.NewPushNotificationEvent(
+		order.CustomerID,
+		order.ID,
+		"payment_failed",
+		"Payment Failed",
+		fmt.Sprintf("Your payment for order %s has failed. Please try again.", order.ID),
+		map[string]any{
+			"payment_id": evt.Payload.PaymentID.String(),
+			"amount":     order.TotalPrice.String(),
+			"currency":   order.Currency,
+		},
+	)
+
+	payloadBytes, err := json.Marshal(notificationEvent)
+	if err != nil {
+		c.logger.Error("Failed to marshal push notification event", "error", err)
+	} else {
+		outboxEvent := &entity.OutboxEvent{
+			ID:            uuid.New(),
+			AggregateType: "notification",
+			AggregateID:   order.ID,
+			EventType:     kafka.NotificationRequestedEventType,
+			Topic:         kafka.NotificationRequestTopic,
+			Payload:       payloadBytes,
+			Status:        constant.OutboxStatusPending,
+			CreatedAt:     time.Now().UTC(),
+			ScheduledFor:  time.Now().UTC(),
+			Attempts:      0,
+		}
+
+		if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+			c.logger.Error("Failed to create payment failed notification event", "error", err)
+		}
 	}
 
 	return nil
@@ -355,8 +430,7 @@ func (c *PaymentLifecycleConsumer) processPaymentRefunded(
 	}
 
 	// Update order status to canceled
-	order.Status = constant.OrderStatusCanceled
-	if _, err = orderRepo.Update(ctx, order); err != nil {
+	if err = orderRepo.UpdateStatus(ctx, evt.Payload.OrderID, constant.OrderStatusCanceled); err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
 	}
 
@@ -396,20 +470,63 @@ func (c *PaymentLifecycleConsumer) processPaymentTimeout(
 		return nil
 	}
 
-	// Only cancel if order is still waiting for payment
-	if order.Status == constant.OrderStatusPaymentPending ||
-		order.Status == constant.OrderStatusPending {
-		order.Status = constant.OrderStatusCanceled
-		if _, err = orderRepo.Update(ctx, order); err != nil {
-			return fmt.Errorf("failed to update order status: %w", err)
-		}
-
+	if !order.CanBeExpired() {
 		c.logger.Infof(
-			"Order %s status updated to canceled due to payment timeout (24h expiry)",
+			"Order %s is in status %s, skipping cancellation",
 			evt.Payload.OrderID,
+			order.Status,
 		)
-	} else {
-		c.logger.Infof("Order %s is in status %s, skipping cancellation", evt.Payload.OrderID, order.Status)
+
+		return nil
+	}
+
+	if err = orderRepo.UpdateStatus(ctx, evt.Payload.OrderID, constant.OrderStatusPaymentExpired); err != nil {
+		return fmt.Errorf("failed to update order status: %w", err)
+	}
+
+	c.logger.Infof(
+		"Order %s status updated to canceled due to payment timeout (24h expiry)",
+		evt.Payload.OrderID,
+	)
+
+	// Send payment timeout push notification
+	outboxRepo := ds.OutboxRepository()
+	notificationEvent := producer.NewPushNotificationEvent(
+		order.CustomerID,
+		order.ID,
+		"payment_timeout",
+		"Payment Window Expired",
+		fmt.Sprintf(
+			"Your payment window for order %s has expired. The order has been canceled.",
+			order.ID,
+		),
+		map[string]any{
+			"payment_id": evt.Payload.PaymentID.String(),
+			"amount":     order.TotalPrice.String(),
+			"currency":   order.Currency,
+		},
+	)
+
+	payloadBytes, errMarshal := json.Marshal(notificationEvent)
+	if errMarshal != nil {
+		c.logger.Error("Failed to marshal push notification event", "error", errMarshal)
+	}
+
+	outboxEvent := &entity.OutboxEvent{
+		ID:            uuid.New(),
+		AggregateType: "notification",
+		AggregateID:   order.ID,
+		EventType:     kafka.NotificationRequestedEventType,
+		Topic:         kafka.NotificationRequestTopic,
+		Payload:       payloadBytes,
+		Status:        constant.OutboxStatusPending,
+		CreatedAt:     time.Now().UTC(),
+		ScheduledFor:  time.Now().UTC(),
+		Attempts:      0,
+	}
+
+	if err = outboxRepo.Create(ctx, outboxEvent); err != nil {
+		c.logger.Error("Failed to create payment timeout notification event", "error", err)
 	}
 
 	return nil

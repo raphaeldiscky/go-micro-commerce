@@ -71,6 +71,7 @@ export function useNotificationSubscription(enabled = true) {
               // Show toast for new notification
               toast.info(event.title, {
                 description: event.message,
+                descriptionClassName: '!text-secondary-foreground',
               })
 
               // Invalidate notification queries to refresh data
