@@ -8,10 +8,13 @@ This application is primarily intended for exploring technical concepts. My goal
 
 - `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for message broadcasting, and `Asynq` for distributed task queues
 - Clean Architecture with `Domain-Driven Design (DDD)` and `Hexagonal Architecture` principles across all services
-- Dual Saga Orchestration with both `custom saga` implementation (Postgres-based) and managed workflow service using `Temporal`
-- Secure Authentication via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
+- Each microservice have own its dedicated `Postgres` database instance.
+- 3-node `Kafka Cluster` running on KRaft mode (ZooKeeper-free)
+- 6-node `Redis Cluster` (3 masters + 3 replicas)
+- Dual saga prchestration options with `custom saga` implementation (Postgres-based) and managed workflow service using `Temporal`
+- Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
 - Unified APIs with `GraphQL Federation` for type-safe client-server communication
-- `gRPC`-based internal communication for synchronous inter-service communication
+- Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
 - Database Management with schema migrations handled by `golang-migrate`
 - Robust Validation using `go-playground/validator` for input sanitization
 - Automated CI/CD pipeline using `GitHub Actions` with matrix strategy.
