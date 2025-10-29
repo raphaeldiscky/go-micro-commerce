@@ -121,6 +121,46 @@ func NewNotificationRequestEvent(
 	}
 }
 
+// NewPushNotificationEvent creates a new push notification event.
+func NewPushNotificationEvent(
+	userID uuid.UUID,
+	orderID uuid.UUID,
+	pushNotificationType string,
+	title string,
+	message string,
+	metadata map[string]any,
+) *NotificationRequestEvent {
+	// Add push notification type to metadata
+	if metadata == nil {
+		metadata = make(map[string]any)
+	}
+
+	metadata["push_notification_type"] = pushNotificationType
+	metadata["order_id"] = orderID.String()
+
+	payload := kafkaevent.NotificationRequestPayload{
+		ID:               uuid.New(),
+		RecipientUserID:  userID.String(),
+		NotificationType: kafkaevent.NotificationTypePush,
+		Subject:          title,
+		Message:          message,
+		Priority:         kafkaevent.NotificationPriorityHigh,
+		Data:             metadata,
+		CreatedAt:        time.Now().UTC(),
+	}
+
+	return &NotificationRequestEvent{
+		Metadata: kafkaevent.Metadata{
+			EventID:     uuid.New(),
+			EventType:   kafka.NotificationRequestedEventType,
+			AggregateID: orderID,
+			OccurredAt:  time.Now().UTC(),
+			Source:      pkgconstant.OrderServiceName,
+		},
+		Payload: payload,
+	}
+}
+
 // GetPayload returns the data associated with the NotificationRequestEvent.
 func (e *NotificationRequestEvent) GetPayload() any {
 	return e.Payload

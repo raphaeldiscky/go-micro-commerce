@@ -48,9 +48,7 @@ export function PaymentCountdownTimer({
   const hours = Math.floor(timeRemaining / 3600)
   const minutes = Math.floor((timeRemaining % 3600) / 60)
   const seconds = timeRemaining % 60
-
-  // Show warning when less than 1 hour remaining
-  const isLowTime = hours === 0 && minutes < 60
+  const isLowTime = timeRemaining > 0 && timeRemaining <= 3600
 
   if (isExpired) {
     return (
@@ -69,7 +67,8 @@ export function PaymentCountdownTimer({
       <AlertDescription>
         {isLowTime ? (
           <span className="font-semibold text-orange-600">
-            Payment expires in {minutes}m {seconds}s
+            Payment expires in {hours > 0 && `${hours}h `}
+            {minutes}m {seconds}s
           </span>
         ) : (
           <span>

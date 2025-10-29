@@ -7,18 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
 import { env } from '@/env'
-import {
-  usePaymentByOrderId,
-  usePaymentStatusSubscription,
-} from '@/hooks/payment'
+import { usePaymentByOrderId } from '@/hooks/payment'
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { AlertCircle, CheckCircle, ShieldCheck } from 'lucide-react'
-import { useState } from 'react'
 import { toast } from 'sonner'
 
-export const Route = createFileRoute(PATH.payment.$orderId)({
+export const Route = createFileRoute('/payment/$orderId/')({
   component: RouteComponent,
 })
 
@@ -35,46 +31,20 @@ function RouteComponent() {
     refetch,
   } = usePaymentByOrderId(orderId, {
     enabled: true,
-    refetchInterval: false, // Don't poll - use SSE instead
   })
 
-  const [paymentCompleted, setPaymentCompleted] = useState(false)
-
-  // Subscribe to real-time payment status updates via SSE
-  usePaymentStatusSubscription(orderId, {
-    enabled: !!payment && payment.status !== 'COMPLETED',
-    onPaymentSuccess: () => {
-      toast.success('Payment completed successfully!')
-      setPaymentCompleted(true)
-      // Redirect to order confirmation after 2 seconds
-      setTimeout(() => {
-        navigate({ to: PATH.orders.detail(orderId) })
-      }, 2000)
-    },
-    onPaymentFailed: (errorMsg) => {
-      toast.error(errorMsg || 'Payment failed. Please try again.')
-      refetch()
-    },
-    onPaymentTimeout: () => {
-      toast.error('Payment window expired. Please create a new order.')
-      refetch()
-    },
-  })
-
-  // Handle payment expiry
   const handleExpired = () => {
     toast.error('Payment window has expired')
     refetch()
   }
 
-  // Handle successful payment confirmation
-  const handlePaymentSuccess = () => {
-    toast.success('Payment submitted! Awaiting confirmation...')
-  }
-
-  // Handle payment error
   const handlePaymentError = (errorMsg: string) => {
     toast.error(errorMsg)
+  }
+
+  const handlePaymentSuccess = () => {
+    toast.success('Payment successful!')
+    navigate({ to: PATH.payment.success(orderId) })
   }
 
   // Loading state
@@ -118,7 +88,7 @@ function RouteComponent() {
   const isExpired = payment.expiresAt
     ? new Date(payment.expiresAt).getTime() < Date.now()
     : false
-  const isCompleted = payment.status === 'COMPLETED' || paymentCompleted
+  const isCompleted = payment.status === 'COMPLETED'
   const isFailed = payment.status === 'FAILED'
   const isTimeout = payment.status === 'TIMEOUT'
   const canPay =
@@ -146,6 +116,7 @@ function RouteComponent() {
           </div>
         </div>
       </div>
+      <Button onClick={handlePaymentSuccess}>red</Button>
 
       {/* Main Content */}
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -157,8 +128,7 @@ function RouteComponent() {
               Payment Completed!
             </AlertTitle>
             <AlertDescription className="text-green-600">
-              Your payment has been processed successfully. Redirecting to order
-              confirmation...
+              Your payment has been processed successfully.
             </AlertDescription>
           </Alert>
         )}

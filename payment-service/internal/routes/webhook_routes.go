@@ -9,9 +9,9 @@ import (
 
 // SetupWebhookRoutes sets up webhook routes for payment gateways.
 func SetupWebhookRoutes(e *echo.Echo, h *handler.WebhookHandler) {
-	webhook := e.Group("/webhooks")
+	webhook := e.Group("/webhook")
 
-	// Stripe webhook endpoint - POST /webhooks/stripe
+	// Stripe webhook endpoint - POST /webhook
 	// This endpoint receives webhook events from Stripe after client-side payment confirmation
-	webhook.POST("/stripe", h.HandleStripeWebhook)
+	webhook.POST("", h.HandleStripeWebhook)
 }

@@ -17,7 +17,7 @@ export function usePaymentByOrderId(
   orderId: string,
   options?: {
     enabled?: boolean
-    refetchInterval?: number | false
+    refetchInterval?: () => false | number
   },
 ) {
   return useQuery({

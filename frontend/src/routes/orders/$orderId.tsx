@@ -8,10 +8,7 @@ import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PATH } from '@/constants/routes'
 import { useOrderById } from '@/hooks/order'
-import {
-  usePaymentByOrderId,
-  usePaymentStatusSubscription,
-} from '@/hooks/payment'
+import { usePaymentByOrderId } from '@/hooks/payment'
 import { fCurrency } from '@/lib/utils/number'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
@@ -28,9 +25,6 @@ import {
   Truck,
   User,
 } from 'lucide-react'
-import { useEffect } from 'react'
-import { toast } from 'sonner'
-import { OrderStatus } from '../../types/__generated__/graphql'
 
 export const Route = createFileRoute(PATH.orders.$orderId)({
   component: RouteComponent,
@@ -40,49 +34,18 @@ function RouteComponent() {
   const { orderId } = Route.useParams()
   const navigate = useNavigate()
 
-  // Fetch order data
   const {
     data: order,
     isLoading: isOrderLoading,
     error: orderError,
   } = useOrderById(orderId)
 
-  // Fetch payment data for payment status and retry functionality
-  const {
-    data: payment,
-    isLoading: isPaymentLoading,
-    refetch: refetchPayment,
-  } = usePaymentByOrderId(orderId, {
-    enabled: !!order, // Only fetch payment when order is loaded
-    refetchInterval: false, // Don't poll - use SSE instead
-  })
-
-  // Subscribe to real-time payment status updates via SSE
-  usePaymentStatusSubscription(orderId, {
-    enabled: !!payment,
-    onPaymentSuccess: () => {
-      toast.success('Payment completed successfully!')
-      refetchPayment()
+  const { data: payment, isLoading: isPaymentLoading } = usePaymentByOrderId(
+    orderId,
+    {
+      enabled: !!order,
     },
-    onPaymentFailed: (error?: string) => {
-      toast.error(error || 'Payment failed. Please try again.')
-      refetchPayment()
-    },
-    onPaymentTimeout: () => {
-      toast.error('Payment window expired. Please create a new order.')
-      refetchPayment()
-    },
-  })
-
-  // Show success message when order is paid/completed
-  useEffect(() => {
-    if (
-      order?.status === OrderStatus.Paid ||
-      order?.status === OrderStatus.Completed
-    ) {
-      toast.success('Order confirmed! Your payment has been processed.')
-    }
-  }, [order?.status])
+  )
 
   // Loading state
   if (isOrderLoading || isPaymentLoading) {
