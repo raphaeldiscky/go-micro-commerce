@@ -9,7 +9,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for message broadcasting, and `Asynq` for distributed task queues
 - Clean Architecture with `Domain-Driven Design (DDD)` and `Hexagonal Architecture` principles across all services
 - Each microservice have own its dedicated `Postgres` database instance.
-- 3-node `Kafka Cluster` running on KRaft mode (ZooKeeper-free)
+- 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
 - Dual saga prchestration options with `custom saga` implementation (Postgres-based) and managed workflow service using `Temporal`
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
