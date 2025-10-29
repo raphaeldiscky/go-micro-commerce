@@ -6,24 +6,24 @@ This application is primarily intended for exploring technical concepts. My goal
 
 ## Features :sparkles:
 
-- Event-driven architecture using `Kafka` for event streaming, `Redis Pub/Sub` for message broadcasting, and `Asynq` for distributed task queues
-- Each service implemented with Domain-Driven Design and Hexagonal architecture
-- Custom saga workflow with saga states stored in `Postgres` and managed service using `Temporal`
-- Use RS256 as the asymmetric JWT algorithm for microservices authentication
-- `GraphQL Federation` for API specification and type-safety between client and server
-- Synchronous `gRPC` for internal service-to-service communication
-- Database migrations using `golang-migrate`
-- Input validation with `go-playground/validator`
-- CI/CD pipeline using `GitHub Actions`
+- `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for message broadcasting, and `Asynq` for distributed task queues
+- Clean Architecture with `Domain-Driven Design (DDD)` and `Hexagonal Architecture` principles across all services
+- Dual Saga Orchestration with both `custom saga` implementation (Postgres-based) and managed workflow service using `Temporal`
+- Secure Authentication via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
+- Unified APIs with `GraphQL Federation` for type-safe client-server communication
+- `gRPC`-based internal communication for synchronous inter-service communication
+- Database Management with schema migrations handled by `golang-migrate`
+- Robust Validation using `go-playground/validator` for input sanitization
+- Automated CI/CD pipeline using `GitHub Actions` with matrix strategy.
 
-## Technologies - Libraries 🛠️
+## Technology Stack 🛠️
 
 - **[labstack/echo](https://github.com/labstack/echo)** - high performance, minimalist go web framework
 - **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC
 - **[99designs/glqgen](https://github.com/99designs/gqlgen)** - go generate based graphql server library
 - **[jackc/pgx/v5](https://github.com/jackc/pgx)** - postgres driver and toolkit for Go
 - **[ibm/sarama](https://github.com/IBM/sarama)** - go library for Apache Kafka.
-- **[redis/go-redis](https://github.com/redis/go-redis)** - redis go client
+- **[redis/go-redis](https://github.com/redis/go-redis)** - redis go client for cache and PubSub
 - **[bsm/redislock](https://github.com/bsm/redislock)** - distributed locking implementation using Redis
 - **[hibiken/asynq](https://github.com/hibiken/asynq)** - simple, reliable, and efficient distributed task queue in Go
 - **[stretchr/testify](https://github.com/stretchr/testify)** - testing toolkit
@@ -36,11 +36,15 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[golang/crypto](https://github.com/golang/crypto)** - cryptographic functions
 - **[golang-jwt/jwt/v5](https://github.com/golang-jwt/jwt)** - go implementation of JWT
 - **[gorilla/websocket](https://github.com/gorilla/websocket)** - websocket implementation for go
-- **[temporal](https://github.com/temporalio/temporal)** - workflow service
+- **[temporal](https://github.com/temporalio/temporal)** - workflow engine service
 
 ## Architecture Overview 🏗️
 
-### 1. Auth Service
+The system follows a microservices architecture where each service represents an independent business domain. Services communicate through a combination of synchronous gRPC calls and asynchronous event-driven patterns. Data consistency across distributed transactions is ensured through Saga patterns, with support for both custom implementations and `Temporal`-managed workflows.
+
+### 1. Authentication Service
+
+Handles user identity, authentication, and session management with secure token-based authentication.
 
 ```mermaid
 sequenceDiagram
@@ -63,22 +67,26 @@ sequenceDiagram
   EmailProvider-->>NotificationService: 202 Accepted
   AuthService-->>Gateway: Return 201 Created
   Gateway-->>Client: 201 Created (User pending verification)
-
 ```
 
 **Responsibilities**:
 
-- User lifecycle management and service-to-service authentication
-- Secure session and token handling
-- Entities: `users`, `sessions`, `addresses`
+- User lifecycle management (registration, verification, profile updates)
+- Service-to-service authentication and authorization
+- Secure session and token management
 
-**Key features**:
+**Entities**: `users`, `sessions`, `addresses`
 
-- JWT-based authentication with RS256 (asymmetric) algorithm, short-lived access + long-lived refresh tokens
-- User verification via email with time-limited token (24h)
-- Resend capability
+**Key Features**:
+
+- JWT-based authentication with RS256 asymmetric algorithm
+- Short-lived access tokens (15-30 minutes) and long-lived refresh tokens (7-30 days)
+- Email verification with time-limited tokens (24-hour expiry)
+- Resend verification capability with rate limiting
 
 ### 2. Product Service
+
+Manages product catalog, inventory, and pricing.
 
 ```mermaid
 sequenceDiagram
@@ -110,49 +118,45 @@ sequenceDiagram
 
 **Responsibilities**:
 
-- Full product lifecycle management
+- Full product lifecycle management (CRUD operations)
 - Inventory reservation and deduction with concurrency control
-- Entities: `products`
+- Price management and versioning
 
-**Key features**:
+**Entities**: `products`, `outbox_events`
 
-- Optimistic locking using a `version` column to prevent lost updates
-- Stock reservation during order placement (via `gRPC`)
-- Stock deduction only after payment confirmation (idempotent)
-- Event publishing via `outbox pattern`
-- Cache-aside pattern with `Redis` for high-read performance
+**Key Features**:
+
+- Optimistic locking using version column to prevent lost updates
+- Stock reservation during order placement (via gRPC)
+- Idempotent stock deduction after payment confirmation
+- Cache-aside pattern with Redis for high-read performance
 
 ### 3. Order Service
 
-**Order Overview**:
+Orchestrates complex order workflows using hybrid synchronous and asynchronous communication patterns.
+
+**Order Lifecycle Overview**:
 
 ```mermaid
 graph TD
   A[Place Order] --> B[Schedule Reminders]
   A --> C[Start 24h Countdown]
   A --> D[Create Payment Intent]
-  A --> E[Fetch Checkout Session
-  +
-  Shipping Cost]
+  A --> E[Fetch Checkout Session + Shipping Cost]
   D --> F[Return Gateway Metadata]
   B --> G[4h Reminder]
   B --> H[12h Reminder]
   B --> I[22h Reminder]
   C --> J[Expiration Check]
 
-  G --> K[Send Email
-   via Notification Service]
+  G --> K[Send Email via Notification Service]
   H --> K
   I --> K
   J --> L{Payment Status?}
 
   L -->|Completed| M[Mark Order as Paid]
-  M --> N[Trigger Async
-  Post-Payment Saga]
-  N --> O[Skip Payment Reminder +
-  Fulfillment +
-  Stock Update
-  ]
+  M --> N[Trigger Async Post-Payment Saga]
+  N --> O[Skip Payment Reminder + Fulfillment + Stock Update]
   L -->|Timeout| P[Mark Order as Expired]
   P --> Q[Restock Inventory]
 ```
@@ -229,40 +233,49 @@ sequenceDiagram
 
 **Responsibilities**:
 
-- Orchestrate the order creation
-- Entities: `orders`, `order_items`, `inbox_events`, `outbox_events`, `saga_states`
+- Order lifecycle orchestration and state management
+- Coordination between cart, payment, and fulfillment services
+- Saga pattern implementation for distributed transactions
 
-**Key features**:
+**Entities**: `orders`, `order_items`, `inbox_events`, `outbox_events`, `saga_states`
 
-- Distributed locking for idempotency with Redis
--
+**Key Features**:
+
+- Distributed locking with Redis for operation idempotency
+- Dual saga implementation (custom `Postgres`-based and `Tempora`l-managed)
+- Automated payment reminders and order expiration
+- Support for order modifications and cancellations
 
 ### 4. Fulfillment Service
+
+Manages order fulfillment, shipping, and delivery tracking.
 
 ```mermaid
 sequenceDiagram
   autonumber
   participant FulfillmentService as Fulfillment Service
-  participant FullSvc as Shipping Provider
+  participant ShipSvc as Shipping Provider
   participant PostgreSQL
   participant Kafka
 
   Kafka-->>FulfillmentService: CONSUME OrderPaid
   FulfillmentService->>PostgreSQL: INSERT fulfillment (status=PENDING)
-  FulfillmentService->>FullSvc: Create shipping order
-  FullSvc-->>FulfillmentService: TrackingID + ETA
+  FulfillmentService->>ShipSvc: Create shipping order
+  ShipSvc-->>FulfillmentService: TrackingID + ETA
   FulfillmentService->>PostgreSQL: UPDATE fulfillment (status=IN_PROGRESS)
   FulfillmentService->>Kafka: PUBLISH FulfillmentCreated
 ```
 
 **Responsibilities**:
 
-- Delivery service
-- Shipping cost processing
+- Delivery and shipping management
+- Shipping cost calculation and processing
 
-**Key features**:
+**Entities**: `fulfillments`
 
 ### 5. Payment Service
+
+Handles payment processing with multiple gateway integrations.
 
 ```mermaid
 sequenceDiagram
@@ -286,18 +299,27 @@ sequenceDiagram
   Stripe-->>PaymentService: Webhook (payment_failed)
   PaymentService->>PostgreSQL: Update payment status = FAILED
   PaymentService->>Kafka: PUBLISH PaymentFailed
-
 ```
 
 **Responsibilities**:
 
-- Payment processing
+- Payment processing and transaction management
+- Multiple payment gateway integrations
+- Webhook handling for payment status updates
+- Refund and dispute management
 
-**Key features**:
+**Entities**: `payments`, `outbox_events`, `inbox_events`
 
-- Stripe, Xendit, etc (Factory)
+**Key Features**:
+
+- Payment gateway factory pattern supporting Stripe and other gateways.
+- Idempotent payment processing with idempotency keys
+- Secure webhook verification and handling
+- Comprehensive payment analytics and reporting
 
 ### 6. Notification Service
+
+Processes and delivers notifications across multiple channels.
 
 ```mermaid
 sequenceDiagram
@@ -316,20 +338,25 @@ sequenceDiagram
   Redis-->>Client: SSE Push (real-time)
   NotificationService->>EmailProvider: Send email (async)
   NotificationService->>SMSProvider: Send SMS (optional)
-
 ```
 
 **Responsibilities**:
 
-- Async notification processing
+- Asynchronous notification processing and delivery
+- Multi-channel notification support (email, SMS, push)
+- Notification template management
 
-**Key features**:
+**Entities**: `notifications`, `inbox_events`
 
-- Push notification with SSE
+**Key Features**:
+
+- Real-time push notifications with Server-Sent Events (SSE)
 - Async email processing
-- SMS notification
+- SMS notification support with failover providers
 
 ### 7. Chat Service
+
+Provides real-time customer support and communication capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -337,26 +364,35 @@ sequenceDiagram
   participant UserA
   participant ChatService as Chat Service
   participant PostgreSQL
-  participant Redis
+  participant Redis as Redis Pub/Sub
   participant UserB
 
   UserA->>ChatService: Send message via WebSocket
   ChatService->>PostgreSQL: Persist message
   ChatService->>Redis: Publish message to channel (userB)
-  Redis-->>ChatService: Deliver message to UserB connection
+  Redis-->>ChatService: Message received on subscribed channel
   ChatService-->>UserB: WebSocket push (real-time)
-
 ```
 
 **Responsibilities**:
 
-- Live chat implementation
+- Live chat implementation for customer support
+- Real-time message delivery and persistence
+- Chat room management and moderation
+- File sharing and rich media support
 
-**Key features**:
+**Entities**: `conversations`, `messages`, `participants`, `connections`
 
-- with WebSocket
+**Key Features**:
+
+- WebSocket-based real-time communication
+- Conversation history and search
+- Typing indicators and online status
+- Support for group chats and channels
 
 ### 8. Cart Service
+
+Manages shopping cart functionality and checkout session preparation.
 
 ```mermaid
 sequenceDiagram
@@ -381,12 +417,22 @@ sequenceDiagram
 
 **Responsibilities**:
 
-- Cart persistence
-- Checkout Session
+- Shopping cart lifecycle management
+- Checkout session generation and validation
+- Cart abandonment tracking and recovery
+- Promotional code, payment gateway, and courier selection
 
-**Key features**:
+**Entities**: `carts`, `cart_items`, `checkout_sessions`, `outbox_events`
+
+**Key Features**:
+
+- Cart synchronization and persistence
+- Promotional code validation and application
+- Cart expiration and cleanup
 
 ### 9. Search Service
+
+Provides full-text search and advanced filtering capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -403,18 +449,25 @@ sequenceDiagram
   SearchService->>Elasticsearch: Query index
   Elasticsearch-->>SearchService: Matched results
   SearchService-->>Client: Return search results
-
 ```
 
 **Responsibilities**:
 
-- Full text search
+- Document indexing and search functionality
 
-**Key features**:
+**Entities**: `inbox_events`
 
-- Elasticsearch
+**Key Features**:
+
+- Real-time indexing via Kafka events
+- Advanced full-text search with fuzzy matching
+- Faceted search with filters and aggregations
+- Search relevance scoring and boosting
+- Search analytics and popular queries
 
 ### 10. API Gateway
+
+Serves as the unified entry point for all client requests with routing capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -440,14 +493,26 @@ sequenceDiagram
   end
 ```
 
-**Responsibilities**: Unified entry point, auth, rate limiting, service discovery, protocol routing (REST/gRPC/WebSocket/SSE)
+**Responsibilities**:
 
-**Key features**:
+- Unified API entry point and request routing
+- Authentication and authorization middleware
+- Rate limiting and request throttling
+- Protocol translation (REST/gRPC/WebSocket/SSE)
+- Service discovery and load balancing
+
+**Key Features**:
 
 - JWT validation middleware
-- Rate limiting
+- Configurable rate limiting per endpoint and user
+- Request/response transformation and validation
+- Circuit breaker pattern for fault tolerance
+- Comprehensive request logging and metrics
+- CORS and security headers management
 
 ### 11. GraphQL Gateway
+
+Provides a federated GraphQL interface for unified data querying.
 
 ```mermaid
 sequenceDiagram
@@ -463,27 +528,23 @@ sequenceDiagram
   GraphQLGateway->>OrderService: Resolve order field
   GraphQLGateway->>AuthService: Resolve user field
   GraphQLGateway-->>Client: Combined federated response
-
 ```
 
 **Responsibilities**:
 
-- Unified graphql
+- Unified GraphQL schema federation
+- Client-specific schema customization
 
-**Key features**:
+**Key Features**:
 
-- graphql federation
+- Apollo Federation for schema composition
+- Custom JWT Authentication
+- Real-time subscriptions support
+- Schema validation and versioning
 
-### 12. Observability
+### 12. Observability Stack
 
-**Responsibilities**:
-
-**Key features**:
-
-- `Prometheus` - Real-time metrics for each service
-- `Tempo` - End-to-end distributed tracing across services
-- `Loki` - Centralized logging with structured labels
-- `Grafana` - Performance dashboards for each service
+Comprehensive monitoring, tracing, and logging for system visibility.
 
 ```mermaid
 graph TD
@@ -499,13 +560,29 @@ graph TD
   H --> I
 ```
 
-### 13. Frontend
+**Responsibilities**:
+
+- System-wide monitoring and alerting
+- Distributed tracing for request flow analysis
+- Centralized logging and log aggregation
+- Performance metrics collection and visualization
+
+**Key Features**:
+
+- **Prometheus** - Real-time metrics collection with service-level indicators
+- **Tempo** - End-to-end distributed tracing across service boundaries
+- **Loki** - Centralized logging with structured labels and efficient storage
+- **Grafana** - Unified dashboards for metrics, traces, and logs correlation
+
+### 13. Frontend Application
+
+Modern React-based user interface with real-time capabilities.
 
 ```mermaid
 sequenceDiagram
   autonumber
   participant User
-  participant FrontendApp as React/Next.js App
+  participant FrontendApp as React Vite + TanStack
   participant APIGateway as API Gateway
   participant GraphQLGateway as GraphQL Gateway
 
@@ -515,3 +592,16 @@ sequenceDiagram
   GraphQLGateway-->>FrontendApp: Unified response
   FrontendApp-->>User: Render UI with real-time updates
 ```
+
+**Responsibilities**:
+
+- User interface rendering and interaction handling
+- State management and data synchronization
+- Real-time updates via WebSocket and SSE
+
+**Key Features**:
+
+- Use Tanstack Query, Form, and Router
+- TypeScript for type safety and developer experience
+- Real-time updates for chat, notifications, and order status
+- Performance optimization with code splitting and lazy loading
