@@ -11,13 +11,15 @@ This application is primarily intended for exploring technical concepts. My goal
 - Each microservice have own its dedicated `Postgres` database instance.
 - 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
-- Dual saga prchestration options with `custom saga` implementation (Postgres-based) and managed workflow service using `Temporal`
+- Order creation with dual saga orchestration options between `custom saga` implementation (Postgres-based) or managed workflow service using `Temporal`
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
 - Unified APIs with `GraphQL Federation` for type-safe client-server communication
 - Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
 - Database Management with schema migrations handled by `golang-migrate`
 - Robust Validation using `go-playground/validator` for input sanitization
 - Automated CI/CD pipeline using `GitHub Actions` with matrix strategy.
+- `Server-Sent Events (SSE)` for real-time push notification delivery in the notification-service.
+- `WebSocket` support in the chat-service for bi-directional communication.
 
 ## Technology Stack 🛠️
 
