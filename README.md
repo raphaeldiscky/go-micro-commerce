@@ -19,13 +19,15 @@ This application is primarily intended for exploring technical concepts. My goal
 ## Technology Stack 🛠️
 
 - **[labstack/echo](https://github.com/labstack/echo)** - high performance, minimalist go web framework
-- **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC
-- **[99designs/glqgen](https://github.com/99designs/gqlgen)** - go generate based graphql server library
 - **[jackc/pgx/v5](https://github.com/jackc/pgx)** - postgres driver and toolkit for Go
 - **[ibm/sarama](https://github.com/IBM/sarama)** - go library for Apache Kafka.
 - **[redis/go-redis](https://github.com/redis/go-redis)** - redis go client for cache and PubSub
 - **[bsm/redislock](https://github.com/bsm/redislock)** - distributed locking implementation using Redis
-- **[hibiken/asynq](https://github.com/hibiken/asynq)** - simple, reliable, and efficient distributed task queue in Go
+- **[hibiken/asynq](https://github.com/hibiken/asynq)** - simple, reliable, and efficient distributed task queue in Go using Redis
+- **[google.golang.org/protobuf](https://github.com/protocolbuffers/protobuf-go)** - profobuf for go
+- **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC framework
+- **[bufbuild/buf](https://github.com/bufbuild/buf)** - linter, formatter, generator for protobuf
+- **[99designs/glqgen](https://github.com/99designs/gqlgen)** - go generate based graphql server library
 - **[stretchr/testify](https://github.com/stretchr/testify)** - testing toolkit
 - **[testcontainers/testcontainers-go](https://github.com/testcontainers/testcontainers-go)** - testcontainers for go
 - **[spf13/viper](https://github.com/spf13/viper)** - go configuration with fangs
