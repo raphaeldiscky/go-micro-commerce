@@ -1,8 +1,8 @@
 # ---- Build Stage ----
 # Use the official Golang image to build the application.
-FROM golang:1.24.7-alpine AS builder
+FROM golang:1.25.3-alpine AS builder
 
-# Set the working directory to match the repo structure
+ # Set the working directory to match the repo structure
 WORKDIR /workspace
 
 # Copy only the necessary files for this service
@@ -12,6 +12,7 @@ COPY fulfillment-service/go.mod fulfillment-service/go.sum ./fulfillment-service
 
 # Change to the service directory for building
 WORKDIR /workspace/fulfillment-service
+ 
 
 RUN go mod download
 
