@@ -147,7 +147,7 @@ jobs:
         if: matrix.type == 'go'
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24.7"
+          go-version: "1.25.3"
 
       - name: Cache Go modules
         if: matrix.type == 'go'
