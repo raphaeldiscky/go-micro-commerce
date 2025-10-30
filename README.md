@@ -26,9 +26,10 @@ This application is primarily intended for exploring technical concepts. My goal
 
 - **[labstack/echo](https://github.com/labstack/echo)** - high performance, minimalist go web framework
 - **[jackc/pgx/v5](https://github.com/jackc/pgx)** - postgres driver and toolkit for Go
-- **[ibm/sarama](https://github.com/IBM/sarama)** - go library for Apache Kafka.
-- **[redis/go-redis](https://github.com/redis/go-redis)** - redis go client for cache and PubSub
+- **[ibm/sarama](https://github.com/IBM/sarama)** - go library for Apache Kafka
+- **[redis/go-redis](https://github.com/redis/go-redis)** - redis go client for cache and Pub/Sub
 - **[bsm/redislock](https://github.com/bsm/redislock)** - distributed locking implementation using Redis
+- **[elastic/go-elasticsearch](https://github.com/elastic/go-elasticsearch)** - official go client for elasticsearch
 - **[hibiken/asynq](https://github.com/hibiken/asynq)** - simple, reliable, and efficient distributed task queue in Go using Redis
 - **[google.golang.org/protobuf](https://github.com/protocolbuffers/protobuf-go)** - profobuf for go
 - **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC framework
@@ -46,6 +47,10 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[gorilla/websocket](https://github.com/gorilla/websocket)** - websocket implementation for go
 - **[temporal](https://github.com/temporalio/temporal)** - workflow engine service
 - **[sony/gobreaker](https://github.com/sony/gobreaker)** - circuit breaker implemented in go
+- **[prometheus/client_golang](https://github.com/prometheus/client_golang)** - prometheus instrumentation lib for go apps
+- **[opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go)** - opentelemetry go API and SDK
+- **[shopspring/decimal](https://github.com/shopspring/decimal)** - precision fixed-point decimal numbers in go
+- **[google/uuid](https://github.com/google/uuid)** - go package for UUIDs
 
 ## Architecture Overview 🏗️
 
