@@ -21,18 +21,11 @@ const (
 	defaultExportTimeout = 30 * time.Second
 )
 
-//nolint:gochecknoglobals // Required to store tracer provider for graceful shutdown
-var tracerProvider *sdktrace.TracerProvider
-
-// InitTracing initializes OpenTelemetry tracing with the provided configuration.
-func InitTracing(cfg *TracingConfig) error {
-	if !cfg.Enabled {
-		return nil
-	}
-
+// initTracing initializes OpenTelemetry tracing with the provided configuration.
+func (t *Telemetry) initTracing(cfg Config) error {
 	// Create OTLP HTTP exporter for Tempo
 	exporter, err := otlptracehttp.New(context.Background(),
-		otlptracehttp.WithEndpoint(cfg.URL),
+		otlptracehttp.WithEndpoint(cfg.TracingURL),
 		otlptracehttp.WithInsecure(), // Use insecure for local development
 	)
 	if err != nil {
@@ -42,9 +35,9 @@ func InitTracing(cfg *TracingConfig) error {
 	// Create resource
 	res, err := resource.New(context.Background(),
 		resource.WithAttributes(
-			semconv.ServiceName(cfg.ServiceName),
+			semconv.ServiceName(cfg.TracingServiceName),
 			semconv.ServiceVersion("1.0.0"),
-			semconv.DeploymentEnvironment(cfg.Environment),
+			semconv.DeploymentEnvironment(cfg.TracingEnvironment),
 		),
 	)
 	if err != nil {
@@ -52,12 +45,12 @@ func InitTracing(cfg *TracingConfig) error {
 	}
 
 	// Create trace provider with configurable batch timeout
-	batchTimeout := time.Duration(cfg.BatchTimeout) * time.Second
+	batchTimeout := time.Duration(cfg.TracingBatchTimeout) * time.Second
 	if batchTimeout == 0 {
 		batchTimeout = defaultBatchTimeout
 	}
 
-	exportTimeout := time.Duration(cfg.ExportTimeout) * time.Second
+	exportTimeout := time.Duration(cfg.TracingExportTimeout) * time.Second
 	if exportTimeout == 0 {
 		exportTimeout = defaultExportTimeout
 	}
@@ -68,12 +61,12 @@ func InitTracing(cfg *TracingConfig) error {
 			sdktrace.WithExportTimeout(exportTimeout),
 		),
 		sdktrace.WithResource(res),
-		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(cfg.SamplingRate)),
+		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(cfg.TracingSamplingRate)),
 	)
 
 	// Set global trace provider
 	otel.SetTracerProvider(tp)
-	tracerProvider = tp
+	t.tracerProvider = tp
 
 	// Set global propagator for W3C trace context
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
@@ -84,18 +77,22 @@ func InitTracing(cfg *TracingConfig) error {
 	return nil
 }
 
-// ShutdownTracing gracefully shuts down the tracer provider.
-func ShutdownTracing(ctx context.Context) error {
-	if tracerProvider == nil {
+// Shutdown gracefully shuts down the tracer provider.
+func (t *Telemetry) Shutdown(ctx context.Context) error {
+	if t.tracerProvider == nil {
 		return nil
 	}
 
-	return tracerProvider.Shutdown(ctx)
+	return t.tracerProvider.Shutdown(ctx)
 }
 
-// StartSpan starts a new span with the given name and service name.
-func StartSpan(ctx context.Context, serviceName, spanName string) (context.Context, func()) {
-	tracer := otel.Tracer(serviceName)
+// StartSpan starts a new span with the given name.
+func (t *Telemetry) StartSpan(ctx context.Context, spanName string) (context.Context, func()) {
+	if !t.tracingEnabled {
+		return ctx, func() {}
+	}
+
+	tracer := otel.Tracer(t.serviceName)
 	spanCtx, span := tracer.Start(ctx, spanName)
 
 	return spanCtx, func() {
@@ -104,7 +101,7 @@ func StartSpan(ctx context.Context, serviceName, spanName string) (context.Conte
 }
 
 // AddSpanAttributes adds attributes to the current span in the context.
-func AddSpanAttributes(ctx context.Context, attributes map[string]any) {
+func (t *Telemetry) AddSpanAttributes(ctx context.Context, attributes map[string]any) {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return
@@ -127,7 +124,7 @@ func AddSpanAttributes(ctx context.Context, attributes map[string]any) {
 }
 
 // SetSpanError records an error on the current span and sets its status to Error.
-func SetSpanError(ctx context.Context, err error) {
+func (t *Telemetry) SetSpanError(ctx context.Context, err error) {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return
@@ -138,7 +135,7 @@ func SetSpanError(ctx context.Context, err error) {
 }
 
 // GetTraceID extracts the trace ID from the current span context.
-func GetTraceID(ctx context.Context) string {
+func (t *Telemetry) GetTraceID(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return ""
@@ -148,7 +145,7 @@ func GetTraceID(ctx context.Context) string {
 }
 
 // GetSpanID extracts the span ID from the current span context.
-func GetSpanID(ctx context.Context) string {
+func (t *Telemetry) GetSpanID(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
 		return ""
@@ -158,12 +155,20 @@ func GetSpanID(ctx context.Context) string {
 }
 
 // InjectHeaders injects tracing context into HTTP headers for propagation.
-func InjectHeaders(ctx context.Context, headers map[string]string) {
+func (t *Telemetry) InjectHeaders(ctx context.Context, headers map[string]string) {
+	if !t.tracingEnabled {
+		return
+	}
+
 	otel.GetTextMapPropagator().Inject(ctx, &headerCarrier{headers: headers})
 }
 
 // ExtractContext extracts tracing context from HTTP headers.
-func ExtractContext(ctx context.Context, headers map[string]string) context.Context {
+func (t *Telemetry) ExtractContext(ctx context.Context, headers map[string]string) context.Context {
+	if !t.tracingEnabled {
+		return ctx
+	}
+
 	return otel.GetTextMapPropagator().Extract(ctx, &headerCarrier{headers: headers})
 }
 

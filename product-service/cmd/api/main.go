@@ -26,7 +26,7 @@ func main() {
 	appLogger := logger.NewLogrusLogger(cfg.App.LoggerLevel)
 
 	// Initialize telemetry
-	telemetryCleanup := setupTelemetry(cfg, appLogger)
+	tel, telemetryCleanup := setupTelemetry(cfg, appLogger)
 	defer telemetryCleanup()
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
@@ -36,7 +36,7 @@ func main() {
 	consulCleanup := setupConsulRegistration(cfg, appLogger)
 	defer consulCleanup()
 
-	if err = worker.Start(ctx, cfg, appLogger); err != nil {
+	if err = worker.Start(ctx, cfg, appLogger, tel); err != nil {
 		appLogger.Fatalf("Worker failed to start: %v", err)
 	}
 
@@ -44,36 +44,34 @@ func main() {
 }
 
 // setupTelemetry initializes OpenTelemetry tracing and Prometheus metrics.
-func setupTelemetry(cfg *config.Config, appLogger logger.Logger) func() {
-	// Initialize tracing
-	if err := telemetry.InitTracing(&telemetry.TracingConfig{
-		Enabled:       cfg.Tracing.Enabled,
-		URL:           cfg.Tracing.URL,
-		ServiceName:   cfg.Tracing.ServiceName,
-		SamplingRate:  cfg.Tracing.SamplingRate,
-		Environment:   cfg.Tracing.Environment,
-		BatchTimeout:  cfg.Tracing.BatchTimeout,
-		ExportTimeout: cfg.Tracing.ExportTimeout,
-	}); err != nil {
-		appLogger.Errorf("Failed to initialize tracing: %v", err)
-	} else {
-		appLogger.Info("OpenTelemetry tracing initialized successfully")
+func setupTelemetry(cfg *config.Config, appLogger logger.Logger) (*telemetry.Telemetry, func()) {
+	// Create telemetry instance
+	tel, err := telemetry.NewTelemetry(telemetry.Config{
+		TracingEnabled:       cfg.Tracing.Enabled,
+		TracingURL:           cfg.Tracing.URL,
+		TracingServiceName:   cfg.Tracing.ServiceName,
+		TracingSamplingRate:  cfg.Tracing.SamplingRate,
+		TracingEnvironment:   cfg.Tracing.Environment,
+		TracingBatchTimeout:  cfg.Tracing.BatchTimeout,
+		TracingExportTimeout: cfg.Tracing.ExportTimeout,
+		MetricsEnabled:       cfg.Metrics.Enabled,
+		MetricsPath:          cfg.Metrics.Path,
+	})
+	if err != nil {
+		appLogger.Errorf("Failed to initialize telemetry: %v", err)
+		return nil, func() {}
 	}
 
-	// Initialize metrics
-	if cfg.Metrics.Enabled {
-		telemetry.InitMetrics(cfg.App.Name)
-		appLogger.Info("Prometheus metrics initialized successfully")
-	}
+	appLogger.Info("Telemetry initialized successfully")
 
-	return func() {
+	return tel, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), constant.MetricTimeout)
 		defer cancel()
 
-		if err := telemetry.ShutdownTracing(ctx); err != nil {
-			appLogger.Errorf("Failed to shutdown tracing: %v", err)
+		if err = tel.Shutdown(ctx); err != nil {
+			appLogger.Errorf("Failed to shutdown telemetry: %v", err)
 		} else {
-			appLogger.Info("Tracing shutdown successfully")
+			appLogger.Info("Telemetry shutdown successfully")
 		}
 	}
 }

@@ -30,16 +30,17 @@ type HTTPServer struct {
 func NewHTTPServer(
 	cfg *config.Config,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 	providers *provider.Providers,
 	gw *gateway.Gateway,
 ) *HTTPServer {
 	e := echo.New()
 
 	// Middewares
-	registerMiddlewares(e, cfg)
+	registerMiddlewares(e, tel, cfg)
 
 	// Setup HTTP
-	provider.SetupHTTP(e, gw, providers)
+	provider.SetupHTTP(e, tel, gw, cfg, providers)
 
 	return &HTTPServer{
 		echo:   e,
@@ -82,14 +83,11 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 }
 
 // registerMiddlewares registers custom middleware for the HTTP server.
-func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
+func registerMiddlewares(e *echo.Echo, tel *telemetry.Telemetry, cfg *config.Config) {
 	// Telemetry middleware (tracing and metrics)
-	if cfg.Tracing.Enabled {
-		e.Use(telemetry.EchoMiddleware(cfg.Tracing.ServiceName))
-	}
-
-	if cfg.Metrics.Enabled {
-		e.Use(telemetry.MetricsMiddleware())
+	if tel != nil {
+		e.Use(tel.EchoMiddleware())
+		e.Use(tel.MetricsMiddleware())
 	}
 
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{

@@ -10,12 +10,19 @@ import (
 )
 
 // SetupAppRoutes sets up all app routes.
-func SetupAppRoutes(e *echo.Echo, app *handler.AppHandler, cfg *config.Config) {
+func SetupAppRoutes(
+	e *echo.Echo,
+	app *handler.AppHandler,
+	tel *telemetry.Telemetry,
+	cfg *config.Config,
+) {
 	// Health and readiness checks
 	e.GET("/health", app.Health)
 
 	// Metrics endpoint
-	e.GET(cfg.Metrics.Path, telemetry.MetricsHandler())
+	if tel != nil {
+		e.GET(cfg.Metrics.Path, tel.MetricsHandler())
+	}
 
 	e.RouteNotFound("/*", app.RouteNotFound)
 }

@@ -28,6 +28,7 @@ type Gateway struct {
 	serviceDiscovery service.Discovery
 	circuitBreaker   *service.CircuitBreakerService
 	metrics          *metrics.Metrics
+	telemetry        *telemetry.Telemetry
 	config           *config.Config
 }
 
@@ -37,6 +38,7 @@ type Config struct {
 	ServiceDiscovery service.Discovery
 	CircuitBreaker   *service.CircuitBreakerService
 	Metrics          *metrics.Metrics
+	Telemetry        *telemetry.Telemetry
 	Config           *config.Config
 }
 
@@ -47,6 +49,7 @@ func NewAPIGateway(cfg Config) *Gateway {
 		serviceDiscovery: cfg.ServiceDiscovery,
 		circuitBreaker:   cfg.CircuitBreaker,
 		metrics:          cfg.Metrics,
+		telemetry:        cfg.Telemetry,
 		config:           cfg.Config,
 	}
 }
@@ -182,7 +185,9 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 
 	// Add tracing headers
 	headers := make(map[string]string)
-	telemetry.InjectHeaders(c.Request().Context(), headers)
+	if gw.telemetry != nil {
+		gw.telemetry.InjectHeaders(c.Request().Context(), headers)
+	}
 
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -399,7 +404,9 @@ func (gw *Gateway) proxyConnectRPCRequest(c echo.Context, endpoint string) (*Pro
 
 	// Add tracing headers
 	headers := make(map[string]string)
-	telemetry.InjectHeaders(c.Request().Context(), headers)
+	if gw.telemetry != nil {
+		gw.telemetry.InjectHeaders(c.Request().Context(), headers)
+	}
 
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -631,7 +638,9 @@ func (gw *Gateway) prepareBackendHeaders(c echo.Context) http.Header {
 
 	// Add tracing headers
 	tracingHeaders := make(map[string]string)
-	telemetry.InjectHeaders(c.Request().Context(), tracingHeaders)
+	if gw.telemetry != nil {
+		gw.telemetry.InjectHeaders(c.Request().Context(), tracingHeaders)
+	}
 
 	for key, value := range tracingHeaders {
 		backendHeaders.Set(key, value)
@@ -873,7 +882,9 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 
 		// Add tracing headers
 		headers := make(map[string]string)
-		telemetry.InjectHeaders(c.Request().Context(), headers)
+		if gw.telemetry != nil {
+			gw.telemetry.InjectHeaders(c.Request().Context(), headers)
+		}
 
 		for key, value := range headers {
 			req.Header.Set(key, value)

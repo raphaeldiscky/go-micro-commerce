@@ -1,7 +1,6 @@
 package telemetry
 
 import (
-	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -9,85 +8,43 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	//nolint:gochecknoglobals // Prometheus metrics must be package-level to register with global registry
-	httpRequestsTotal *prometheus.CounterVec
-
-	//nolint:gochecknoglobals // Prometheus metrics must be package-level to register with global registry
-	httpRequestDuration *prometheus.HistogramVec
-)
-
-// InitMetrics initializes Prometheus metrics for HTTP requests.
-func InitMetrics(serviceName string) {
-	if httpRequestsTotal != nil {
-		return
-	}
-
-	httpRequestsTotal = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "http_requests_total",
-			Help: "Total number of HTTP requests",
-			ConstLabels: prometheus.Labels{
-				"service": serviceName,
+// initMetrics initializes Prometheus metrics for HTTP requests.
+// Uses sync.Once to ensure metrics are only registered once with the global registry.
+func (t *Telemetry) initMetrics() {
+	t.once.Do(func() {
+		t.httpRequestsTotal = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "http_requests_total",
+				Help: "Total number of HTTP requests",
+				ConstLabels: prometheus.Labels{
+					"service": t.serviceName,
+				},
 			},
-		},
-		[]string{"method", "path", "status_code"},
-	)
+			[]string{"method", "path", "status_code"},
+		)
 
-	httpRequestDuration = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: "http_request_duration_seconds",
-			Help: "HTTP request duration in seconds",
-			ConstLabels: prometheus.Labels{
-				"service": serviceName,
+		t.httpRequestDuration = prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name: "http_request_duration_seconds",
+				Help: "HTTP request duration in seconds",
+				ConstLabels: prometheus.Labels{
+					"service": t.serviceName,
+				},
+				Buckets: prometheus.DefBuckets,
 			},
-			Buckets: prometheus.DefBuckets,
-		},
-		[]string{"method", "path", "status_code"},
-	)
+			[]string{"method", "path", "status_code"},
+		)
 
-	prometheus.MustRegister(
-		httpRequestsTotal,
-		httpRequestDuration,
-	)
-}
-
-// MetricsMiddleware creates an Echo middleware that records HTTP metrics.
-func MetricsMiddleware() echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			start := time.Now()
-
-			err := next(c)
-
-			duration := time.Since(start)
-			status := c.Response().Status
-			method := c.Request().Method
-			path := c.Path()
-
-			if httpRequestsTotal != nil {
-				httpRequestsTotal.WithLabelValues(
-					method,
-					path,
-					strconv.Itoa(status),
-				).Inc()
-			}
-
-			if httpRequestDuration != nil {
-				httpRequestDuration.WithLabelValues(
-					method,
-					path,
-					strconv.Itoa(status),
-				).Observe(duration.Seconds())
-			}
-
-			return err
-		}
-	}
+		// Register metrics with global Prometheus registry
+		prometheus.MustRegister(
+			t.httpRequestsTotal,
+			t.httpRequestDuration,
+		)
+	})
 }
 
 // MetricsHandler returns an Echo handler for Prometheus metrics endpoint.
-func MetricsHandler() echo.HandlerFunc {
+func (t *Telemetry) MetricsHandler() echo.HandlerFunc {
 	handler := promhttp.Handler()
 
 	return func(c echo.Context) error {
@@ -97,20 +54,24 @@ func MetricsHandler() echo.HandlerFunc {
 }
 
 // RecordMetric is a helper function to record custom metrics.
-func RecordMetric(method, path string, statusCode int, duration time.Duration) {
-	if httpRequestsTotal != nil {
-		httpRequestsTotal.WithLabelValues(
+func (t *Telemetry) RecordMetric(method, path string, statusCode int, duration time.Duration) {
+	if !t.metricsEnabled {
+		return
+	}
+
+	if t.httpRequestsTotal != nil {
+		t.httpRequestsTotal.WithLabelValues(
 			method,
 			path,
-			strconv.Itoa(statusCode),
+			string(rune(statusCode)),
 		).Inc()
 	}
 
-	if httpRequestDuration != nil {
-		httpRequestDuration.WithLabelValues(
+	if t.httpRequestDuration != nil {
+		t.httpRequestDuration.WithLabelValues(
 			method,
 			path,
-			strconv.Itoa(statusCode),
+			string(rune(statusCode)),
 		).Observe(duration.Seconds())
 	}
 }
