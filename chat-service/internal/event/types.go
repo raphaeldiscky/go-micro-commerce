@@ -2,8 +2,7 @@
 package event
 
 import (
-	"encoding/json"
-
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 
 	pkgwebsocket "github.com/raphaeldiscky/go-micro-commerce/pkg/websocket"
@@ -55,7 +54,7 @@ type ReadReceiptEvent struct {
 // UnmarshalChatMessageEvent unmarshals a chat message event.
 func UnmarshalChatMessageEvent(data []byte) (*ChatMessageEvent, error) {
 	var event ChatMessageEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := sonic.Unmarshal(data, &event); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +64,7 @@ func UnmarshalChatMessageEvent(data []byte) (*ChatMessageEvent, error) {
 // UnmarshalTypingIndicatorEvent unmarshals a typing indicator event.
 func UnmarshalTypingIndicatorEvent(data []byte) (*TypingIndicatorEvent, error) {
 	var event TypingIndicatorEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := sonic.Unmarshal(data, &event); err != nil {
 		return nil, err
 	}
 
@@ -75,7 +74,7 @@ func UnmarshalTypingIndicatorEvent(data []byte) (*TypingIndicatorEvent, error) {
 // UnmarshalPresenceUpdateEvent unmarshals a presence update event.
 func UnmarshalPresenceUpdateEvent(data []byte) (*PresenceUpdateEvent, error) {
 	var event PresenceUpdateEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := sonic.Unmarshal(data, &event); err != nil {
 		return nil, err
 	}
 
@@ -85,7 +84,7 @@ func UnmarshalPresenceUpdateEvent(data []byte) (*PresenceUpdateEvent, error) {
 // UnmarshalDeliveryReceiptEvent unmarshals a delivery receipt event.
 func UnmarshalDeliveryReceiptEvent(data []byte) (*DeliveryReceiptEvent, error) {
 	var event DeliveryReceiptEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := sonic.Unmarshal(data, &event); err != nil {
 		return nil, err
 	}
 
@@ -95,7 +94,7 @@ func UnmarshalDeliveryReceiptEvent(data []byte) (*DeliveryReceiptEvent, error) {
 // UnmarshalReadReceiptEvent unmarshals a read receipt event.
 func UnmarshalReadReceiptEvent(data []byte) (*ReadReceiptEvent, error) {
 	var event ReadReceiptEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := sonic.Unmarshal(data, &event); err != nil {
 		return nil, err
 	}
 

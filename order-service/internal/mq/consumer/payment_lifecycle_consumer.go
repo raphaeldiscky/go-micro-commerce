@@ -2,11 +2,11 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
@@ -57,7 +57,7 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
-	if err := json.Unmarshal(body, &meta); err != nil {
+	if err := sonic.Unmarshal(body, &meta); err != nil {
 		return fmt.Errorf("failed to unmarshal event metadata: %w", err)
 	}
 
@@ -69,7 +69,7 @@ func (c *PaymentLifecycleConsumer) Handler(ctx context.Context, body []byte) err
 		meta.Metadata.EventType,
 		kafka.PaymentLifecycleTopic, // topic
 		meta.Metadata.Source,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available
 	)
@@ -150,7 +150,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCreated(
 	body []byte,
 ) error {
 	var evt PaymentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment created event: %w", err)
 	}
 
@@ -207,7 +207,7 @@ func (c *PaymentLifecycleConsumer) processPaymentProcessing(
 	body []byte,
 ) error {
 	var evt PaymentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment processing event: %w", err)
 	}
 
@@ -224,7 +224,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 	body []byte,
 ) error {
 	var evt PaymentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment completed event: %w", err)
 	}
 
@@ -281,7 +281,7 @@ func (c *PaymentLifecycleConsumer) processPaymentCompleted(
 		},
 	)
 
-	payloadBytes, err := json.Marshal(notificationEvent)
+	payloadBytes, err := sonic.Marshal(notificationEvent)
 	if err != nil {
 		c.logger.Error("Failed to marshal push notification event", "error", err)
 	} else {
@@ -316,7 +316,7 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 	body []byte,
 ) error {
 	var evt PaymentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment failed event: %w", err)
 	}
 
@@ -373,7 +373,7 @@ func (c *PaymentLifecycleConsumer) processPaymentFailed(
 		},
 	)
 
-	payloadBytes, err := json.Marshal(notificationEvent)
+	payloadBytes, err := sonic.Marshal(notificationEvent)
 	if err != nil {
 		c.logger.Error("Failed to marshal push notification event", "error", err)
 	} else {
@@ -405,7 +405,7 @@ func (c *PaymentLifecycleConsumer) processPaymentRefunded(
 	body []byte,
 ) error {
 	var evt PaymentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment refunded event: %w", err)
 	}
 
@@ -446,7 +446,7 @@ func (c *PaymentLifecycleConsumer) processPaymentTimeout(
 	body []byte,
 ) error {
 	var evt PaymentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal payment timeout event: %w", err)
 	}
 
@@ -507,7 +507,7 @@ func (c *PaymentLifecycleConsumer) processPaymentTimeout(
 		},
 	)
 
-	payloadBytes, errMarshal := json.Marshal(notificationEvent)
+	payloadBytes, errMarshal := sonic.Marshal(notificationEvent)
 	if errMarshal != nil {
 		c.logger.Error("Failed to marshal push notification event", "error", errMarshal)
 	}

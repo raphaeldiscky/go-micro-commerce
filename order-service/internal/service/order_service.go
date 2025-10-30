@@ -3,11 +3,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/bsm/redislock"
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -589,7 +589,7 @@ func (s *orderService) RequestPaymentOrder(
 			req.PaymentGateway,
 		)
 
-		payload, marshalErr := json.Marshal(evt)
+		payload, marshalErr := sonic.Marshal(evt)
 		if marshalErr != nil {
 			return httperror.NewInternalServerError("failed to marshal payment request event")
 		}

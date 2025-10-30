@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/bytedance/sonic"
@@ -57,7 +56,7 @@ func (c *NotificationRequestConsumer) Handler(ctx context.Context, body []byte) 
 		meta.Metadata.EventType,
 		kafka.NotificationRequestTopic,
 		meta.Metadata.Source,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // correlation ID - not available in current metadata
 		nil, // causation ID - not available in current metadata
 	)

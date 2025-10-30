@@ -3,10 +3,10 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -168,7 +168,7 @@ func (s *fulfillmentService) CreateFulfillment(
 			savedFulfillment,
 		)
 
-		payload, err := json.Marshal(evt)
+		payload, err := sonic.Marshal(evt)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal fulfillment event")
 		}
@@ -239,7 +239,7 @@ func (s *fulfillmentService) UpdateFulfillmentStatusByOrderID(
 			updatedFulfillment,
 		)
 
-		payload, err := json.Marshal(evt)
+		payload, err := sonic.Marshal(evt)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal fulfillment event")
 		}

@@ -3,11 +3,11 @@ package temporal
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
@@ -282,7 +282,7 @@ func (ta *orderActivities) CreatePayment(
 			order.PaymentGateway,
 		)
 
-		payload, err := json.Marshal(paymentEvent)
+		payload, err := sonic.Marshal(paymentEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal payment request event: %w", err)
 		}
@@ -359,7 +359,7 @@ func (ta *orderActivities) SendPaymentRequiredNotification(
 			"Payment Required - Complete Your Order",
 		)
 
-		payload, err := json.Marshal(notificationEvent)
+		payload, err := sonic.Marshal(notificationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification event: %w", err)
 		}
@@ -431,7 +431,7 @@ func (ta *orderActivities) SendPaymentReminderNotification(
 			req.Subject,
 		)
 
-		payload, err := json.Marshal(notificationEvent)
+		payload, err := sonic.Marshal(notificationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification event: %w", err)
 		}
@@ -529,7 +529,7 @@ func (ta *orderActivities) ProcessFulfillment(
 		// Create fulfillment request event
 		fulfillmentEvent := producer.NewFulfillmentRequestEvent(order)
 
-		payload, err := json.Marshal(fulfillmentEvent)
+		payload, err := sonic.Marshal(fulfillmentEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal fulfillment request event: %w", err)
 		}
@@ -707,7 +707,7 @@ func (ta *orderActivities) SendOrderConfirmedNotification(
 			"Order Confirmed - Payment Received",
 		)
 
-		payload, err := json.Marshal(notificationEvent)
+		payload, err := sonic.Marshal(notificationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification event: %w", err)
 		}
@@ -823,7 +823,7 @@ func (ta *orderActivities) RefundPayment(
 			},
 		}
 
-		payload, err := json.Marshal(refundEvent)
+		payload, err := sonic.Marshal(refundEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal refund request event: %w", err)
 		}
@@ -929,7 +929,7 @@ func (ta *orderActivities) CancelShipping(
 			"requested_by": pkgconstant.OrderServiceName,
 		}
 
-		payload, err := json.Marshal(cancellationEvent)
+		payload, err := sonic.Marshal(cancellationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal shipping cancellation event: %w", err)
 		}

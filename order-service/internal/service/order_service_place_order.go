@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/bsm/redislock"
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
@@ -437,7 +437,7 @@ func (s *orderService) PlaceOrder(
 			savedOrder.Items,
 		)
 
-		payload, err := json.Marshal(evt)
+		payload, err := sonic.Marshal(evt)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal order event")
 		}

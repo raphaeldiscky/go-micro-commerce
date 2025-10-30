@@ -1,9 +1,9 @@
 package task
 
 import (
-	"encoding/json"
 	"errors"
 
+	"github.com/bytedance/sonic"
 	"github.com/hibiken/asynq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -24,7 +24,7 @@ func NewPaymentReminderTask(payload *dto.PaymentReminderRequest) (*asynq.Task, e
 		return nil, errors.New("payload is required")
 	}
 
-	data, err := json.Marshal(payload)
+	data, err := sonic.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func ParsePaymentReminderTask(task *asynq.Task) (*dto.PaymentReminderRequest, er
 	}
 
 	var payload dto.PaymentReminderRequest
-	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+	if err := sonic.Unmarshal(task.Payload(), &payload); err != nil {
 		return nil, err
 	}
 

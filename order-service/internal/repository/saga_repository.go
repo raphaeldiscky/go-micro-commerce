@@ -2,11 +2,11 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/jackc/pgx/v5"
@@ -73,17 +73,17 @@ func (r *sagaStateRepository) Create(ctx context.Context, state *entity.SagaStat
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
 		)`
 
-	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
+	executedStepsJSON, err := sonic.Marshal(state.ExecutedSteps)
 	if err != nil {
 		return fmt.Errorf("failed to marshal executed steps: %w", err)
 	}
 
-	compensatedStepsJSON, err := json.Marshal(state.CompensatedSteps)
+	compensatedStepsJSON, err := sonic.Marshal(state.CompensatedSteps)
 	if err != nil {
 		return fmt.Errorf("failed to marshal compensated steps: %w", err)
 	}
 
-	dataJSON, err := json.Marshal(state.Data)
+	dataJSON, err := sonic.Marshal(state.Data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
@@ -131,17 +131,17 @@ func (r *sagaStateRepository) Update(ctx context.Context, state *entity.SagaStat
 			completed_at = $12
 		WHERE id = $1`
 
-	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
+	executedStepsJSON, err := sonic.Marshal(state.ExecutedSteps)
 	if err != nil {
 		return fmt.Errorf("failed to marshal executed steps: %w", err)
 	}
 
-	compensatedStepsJSON, err := json.Marshal(state.CompensatedSteps)
+	compensatedStepsJSON, err := sonic.Marshal(state.CompensatedSteps)
 	if err != nil {
 		return fmt.Errorf("failed to marshal compensated steps: %w", err)
 	}
 
-	dataJSON, err := json.Marshal(state.Data)
+	dataJSON, err := sonic.Marshal(state.Data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
@@ -339,17 +339,17 @@ func (r *sagaStateRepository) UpdateWithVersion(
 	ctx context.Context,
 	state *entity.SagaState,
 ) error {
-	executedStepsJSON, err := json.Marshal(state.ExecutedSteps)
+	executedStepsJSON, err := sonic.Marshal(state.ExecutedSteps)
 	if err != nil {
 		return fmt.Errorf("failed to marshal executed steps: %w", err)
 	}
 
-	compensatedStepsJSON, err := json.Marshal(state.CompensatedSteps)
+	compensatedStepsJSON, err := sonic.Marshal(state.CompensatedSteps)
 	if err != nil {
 		return fmt.Errorf("failed to marshal compensated steps: %w", err)
 	}
 
-	dataJSON, err := json.Marshal(state.Data)
+	dataJSON, err := sonic.Marshal(state.Data)
 	if err != nil {
 		return fmt.Errorf("failed to marshal data: %w", err)
 	}
@@ -552,15 +552,15 @@ func scanSagaState(row pgx.Row) (*entity.SagaState, error) {
 	state.Status = constant.SagaStatus(statusStr)
 
 	// Unmarshal JSON fields
-	if err = json.Unmarshal(executedStepsJSON, &state.ExecutedSteps); err != nil {
+	if err = sonic.Unmarshal(executedStepsJSON, &state.ExecutedSteps); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal executed steps: %w", err)
 	}
 
-	if err = json.Unmarshal(compensatedStepsJSON, &state.CompensatedSteps); err != nil {
+	if err = sonic.Unmarshal(compensatedStepsJSON, &state.CompensatedSteps); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal compensated steps: %w", err)
 	}
 
-	if err = json.Unmarshal(dataJSON, &state.Data); err != nil {
+	if err = sonic.Unmarshal(dataJSON, &state.Data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal data: %w", err)
 	}
 

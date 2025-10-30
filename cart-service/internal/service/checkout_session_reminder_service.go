@@ -3,10 +3,10 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -122,7 +122,7 @@ func (s *checkoutSessionReminderService) sendReminderNotification(
 			customerEmail,
 		)
 
-		payload, err := json.Marshal(notificationEvent)
+		payload, err := sonic.Marshal(notificationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification event: %w", err)
 		}

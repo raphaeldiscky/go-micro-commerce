@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -44,22 +44,22 @@ func (r *checkoutSessionRepository) Create(
 	session *entity.CheckoutSession,
 ) (*entity.CheckoutSession, error) {
 	// Marshal JSONB fields
-	courierJSON, err := json.Marshal(session.Courier)
+	courierJSON, err := sonic.Marshal(session.Courier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal courier: %w", err)
 	}
 
-	destinationJSON, err := json.Marshal(session.Destination)
+	destinationJSON, err := sonic.Marshal(session.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	originJSON, err := json.Marshal(session.Origin)
+	originJSON, err := sonic.Marshal(session.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	packageJSON, err := json.Marshal(session.Package)
+	packageJSON, err := sonic.Marshal(session.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
@@ -118,19 +118,19 @@ func (r *checkoutSessionRepository) Create(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &createdSession.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &createdSession.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &createdSession.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &createdSession.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &createdSession.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &createdSession.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &createdSession.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &createdSession.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
@@ -210,19 +210,19 @@ func (r *checkoutSessionRepository) GetByID(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &session.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &session.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &session.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &session.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &session.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &session.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &session.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &session.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
@@ -270,22 +270,22 @@ func (r *checkoutSessionRepository) Update(
 	session *entity.CheckoutSession,
 ) (*entity.CheckoutSession, error) {
 	// Marshal JSONB fields
-	courierJSON, err := json.Marshal(session.Courier)
+	courierJSON, err := sonic.Marshal(session.Courier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal courier: %w", err)
 	}
 
-	destinationJSON, err := json.Marshal(session.Destination)
+	destinationJSON, err := sonic.Marshal(session.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	originJSON, err := json.Marshal(session.Origin)
+	originJSON, err := sonic.Marshal(session.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	packageJSON, err := json.Marshal(session.Package)
+	packageJSON, err := sonic.Marshal(session.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
@@ -340,19 +340,19 @@ func (r *checkoutSessionRepository) Update(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &updatedSession.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &updatedSession.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &updatedSession.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &updatedSession.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &updatedSession.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &updatedSession.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &updatedSession.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &updatedSession.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 

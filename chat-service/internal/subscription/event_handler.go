@@ -3,8 +3,8 @@ package subscription
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
@@ -73,7 +73,7 @@ func (h *EventHandler) handleChatMessage(evt rediseventbus.Event) error {
 	// Parse WebSocket message content into NewMessage GraphQL type
 	var newMsg graph.NewMessage
 
-	if err := json.Unmarshal(chatEvent.Message.Content, &newMsg); err != nil {
+	if err := sonic.Unmarshal(chatEvent.Message.Content, &newMsg); err != nil {
 		h.logger.Error("Failed to unmarshal new message content", "error", err)
 		return err
 	}
@@ -109,7 +109,7 @@ func (h *EventHandler) handleTypingIndicator(evt rediseventbus.Event) error {
 	// Parse WebSocket message content into TypingIndicator GraphQL type
 	var indicator graph.TypingIndicator
 
-	if err := json.Unmarshal(typingEvent.Message.Content, &indicator); err != nil {
+	if err := sonic.Unmarshal(typingEvent.Message.Content, &indicator); err != nil {
 		h.logger.Error("Failed to unmarshal typing indicator content", "error", err)
 		return err
 	}
@@ -148,7 +148,7 @@ func (h *EventHandler) handlePresenceUpdate(evt rediseventbus.Event) error {
 	// Parse WebSocket message content into PresenceUpdate GraphQL type
 	var update graph.PresenceUpdate
 
-	if err := json.Unmarshal(presenceEvent.Message.Content, &update); err != nil {
+	if err := sonic.Unmarshal(presenceEvent.Message.Content, &update); err != nil {
 		h.logger.Error("Failed to unmarshal presence update content", "error", err)
 		return err
 	}
@@ -184,7 +184,7 @@ func (h *EventHandler) handleDeliveryReceipt(evt rediseventbus.Event) error {
 	// Parse WebSocket message content into DeliveryReceipt GraphQL type
 	var receipt graph.DeliveryReceipt
 
-	if err := json.Unmarshal(receiptEvent.Message.Content, &receipt); err != nil {
+	if err := sonic.Unmarshal(receiptEvent.Message.Content, &receipt); err != nil {
 		h.logger.Error("Failed to unmarshal delivery receipt content", "error", err)
 		return err
 	}
@@ -223,7 +223,7 @@ func (h *EventHandler) handleReadReceipt(evt rediseventbus.Event) error {
 	// Parse WebSocket message content into ReadReceipt GraphQL type
 	var receipt graph.ReadReceipt
 
-	if err := json.Unmarshal(receiptEvent.Message.Content, &receipt); err != nil {
+	if err := sonic.Unmarshal(receiptEvent.Message.Content, &receipt); err != nil {
 		h.logger.Error("Failed to unmarshal read receipt content", "error", err)
 		return err
 	}

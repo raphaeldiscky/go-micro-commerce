@@ -1,9 +1,9 @@
 package kafkaevent
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 )
 
@@ -18,8 +18,8 @@ type Metadata struct {
 
 // GenericEvent wraps any event with metadata.
 type GenericEvent struct {
-	Metadata Metadata        `json:"metadata"`
-	Payload  json.RawMessage `json:"payload"`
+	Metadata Metadata               `json:"metadata"`
+	Payload  sonic.NoCopyRawMessage `json:"payload"`
 }
 
 // BaseEvent represents a base event interface.

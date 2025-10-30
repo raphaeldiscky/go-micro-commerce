@@ -3,12 +3,12 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/bsm/redislock"
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -153,7 +153,7 @@ func (s *paymentService) CreatePayment(
 			savedPayment.ExpiresAt, // 24-hour payment window expiry
 		)
 
-		payload, err := json.Marshal(evt)
+		payload, err := sonic.Marshal(evt)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}
@@ -415,7 +415,7 @@ func (s *paymentService) ProcessPayment(
 			nil, // expiresAt not needed for processing event
 		)
 
-		payload, errMarshal := json.Marshal(evt)
+		payload, errMarshal := sonic.Marshal(evt)
 		if errMarshal != nil {
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}
@@ -567,7 +567,7 @@ func (s *paymentService) TimeoutPayment(ctx context.Context, orderID uuid.UUID) 
 			nil, // expiresAt not needed for timeout event
 		)
 
-		payload, err := json.Marshal(evt)
+		payload, err := sonic.Marshal(evt)
 		if err != nil {
 			return httperror.NewInternalServerError("failed to marshal payment timeout event")
 		}

@@ -1,9 +1,9 @@
 package dto
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
@@ -16,7 +16,7 @@ type NotificationResponse struct {
 	Type      constant.PushNotificationType `json:"type"`
 	Title     string                        `json:"title"`
 	Message   string                        `json:"message"`
-	Metadata  json.RawMessage               `json:"metadata,omitempty"`
+	Metadata  sonic.NoCopyRawMessage        `json:"metadata,omitempty"`
 	IsRead    bool                          `json:"is_read"`
 	ReadAt    *time.Time                    `json:"read_at,omitempty"`
 	CreatedAt time.Time                     `json:"created_at"`

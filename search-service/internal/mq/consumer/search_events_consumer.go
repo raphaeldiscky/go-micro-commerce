@@ -3,8 +3,8 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 
+	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -56,7 +56,7 @@ func (c *SearchEventsConsumer) Handler(ctx context.Context, body []byte) error {
 // storeEventInInbox stores an event in the inbox for reliable processing.
 func (c *SearchEventsConsumer) storeEventInInbox(ctx context.Context, body []byte) error {
 	var genericEvent kafkaevent.GenericEvent
-	if err := json.Unmarshal(body, &genericEvent); err != nil {
+	if err := sonic.Unmarshal(body, &genericEvent); err != nil {
 		c.logger.Errorf("Failed to unmarshal generic event: %v", err)
 
 		return err
@@ -90,7 +90,7 @@ func (c *SearchEventsConsumer) storeEventInInbox(ctx context.Context, body []byt
 		metadata.EventType,
 		topic,
 		sourceService,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // CorrelationID not available in current event structure
 		nil, // CausationID not available in current event structure
 	)

@@ -29,6 +29,7 @@ require (
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+
 replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
 
 require (

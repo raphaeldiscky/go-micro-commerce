@@ -4,12 +4,12 @@ package integration_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/testcontainers"
@@ -161,7 +161,7 @@ func (s *TestSuite) makeRequest(
 	var err error
 
 	if body != nil {
-		reqBody, err = json.Marshal(body)
+		reqBody, err = sonic.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
@@ -197,5 +197,5 @@ func (s *TestSuite) parseResponse(resp *http.Response, target any) error {
 		}
 	}()
 
-	return json.NewDecoder(resp.Body).Decode(target)
+	return sonic.ConfigFastest.NewDecoder(resp.Body).Decode(target)
 }

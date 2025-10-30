@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/elastic/go-elasticsearch/v9/typedapi/core/search"
 	"github.com/elastic/go-elasticsearch/v9/typedapi/types"
 	"github.com/elastic/go-elasticsearch/v9/typedapi/types/enums/refresh"
@@ -118,7 +118,7 @@ func (r *searchRepository) GetProduct(
 	}
 
 	var product entity.ProductDocument
-	if err = json.Unmarshal(resp.Source_, &product); err != nil {
+	if err = sonic.Unmarshal(resp.Source_, &product); err != nil {
 		return nil, fmt.Errorf("failed to decode product: %w", err)
 	}
 
@@ -459,7 +459,7 @@ func (r *searchRepository) AutoComplete(
 
 		var source map[string]any
 
-		if err = json.Unmarshal(hit.Source_, &source); err != nil {
+		if err = sonic.Unmarshal(hit.Source_, &source); err != nil {
 			continue
 		}
 
@@ -512,7 +512,7 @@ func (r *searchRepository) GetSuggestions(
 
 		var source map[string]any
 
-		if err = json.Unmarshal(hit.Source_, &source); err != nil {
+		if err = sonic.Unmarshal(hit.Source_, &source); err != nil {
 			continue
 		}
 
@@ -554,7 +554,7 @@ func (r *searchRepository) parseTypedSearchResponse(
 
 		var source map[string]any
 
-		if err := json.Unmarshal(hit.Source_, &source); err != nil {
+		if err := sonic.Unmarshal(hit.Source_, &source); err != nil {
 			r.logger.Warnf("Failed to decode hit source: %v", err)
 
 			continue

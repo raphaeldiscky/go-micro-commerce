@@ -3,9 +3,9 @@ package subscription
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/rediseventbus"
 
@@ -70,7 +70,7 @@ func (h *EventHandler) handleNotificationCreated(event rediseventbus.Event) erro
 	// Extract notification DTO from the SSE message
 	var notifDTO dto.NotificationResponse
 
-	if err := json.Unmarshal(createdEvent.Message.Data, &notifDTO); err != nil {
+	if err := sonic.Unmarshal(createdEvent.Message.Data, &notifDTO); err != nil {
 		h.logger.Error("Failed to unmarshal notification data", "error", err)
 		return err
 	}

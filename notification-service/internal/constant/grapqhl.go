@@ -45,7 +45,7 @@ func (e PushNotificationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.ToGraphQL()))
 }
 
-// UnmarshalJSON implements the json.Unmarshaler interface.
+// UnmarshalJSON implements the Unmarshaler interface.
 func (e *PushNotificationType) UnmarshalJSON(b []byte) error {
 	s, err := strconv.Unquote(string(b))
 	if err != nil {
@@ -55,7 +55,7 @@ func (e *PushNotificationType) UnmarshalJSON(b []byte) error {
 	return e.UnmarshalGQL(s)
 }
 
-// MarshalJSON implements the json.Marshaler interface.
+// MarshalJSON implements the Marshaler interface.
 func (e PushNotificationType) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 

@@ -1,8 +1,9 @@
 package redis
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/bytedance/sonic"
 )
 
 // Message represents a pub/sub message with metadata and payload.
@@ -10,12 +11,12 @@ type Message struct {
 	// Metadata contains message metadata.
 	Metadata MessageMetadata `json:"metadata"`
 	// Payload contains the actual message data.
-	Payload json.RawMessage `json:"payload"`
+	Payload sonic.NoCopyRawMessage `json:"payload"`
 }
 
 // NewMessage creates a new message with the given metadata and payload.
 func NewMessage(metadata MessageMetadata, payload any) (*Message, error) {
-	payloadBytes, err := json.Marshal(payload)
+	payloadBytes, err := sonic.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
 	}
@@ -28,7 +29,7 @@ func NewMessage(metadata MessageMetadata, payload any) (*Message, error) {
 
 // UnmarshalPayload unmarshals the message payload into the provided target.
 func (m *Message) UnmarshalPayload(target any) error {
-	if err := json.Unmarshal(m.Payload, target); err != nil {
+	if err := sonic.Unmarshal(m.Payload, target); err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
@@ -37,7 +38,7 @@ func (m *Message) UnmarshalPayload(target any) error {
 
 // ToJSON serializes the message to JSON bytes.
 func (m *Message) ToJSON() ([]byte, error) {
-	data, err := json.Marshal(m)
+	data, err := sonic.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal message: %w", err)
 	}
@@ -48,7 +49,7 @@ func (m *Message) ToJSON() ([]byte, error) {
 // FromJSON deserializes a message from JSON bytes.
 func FromJSON(data []byte) (*Message, error) {
 	var message Message
-	if err := json.Unmarshal(data, &message); err != nil {
+	if err := sonic.Unmarshal(data, &message); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal message: %w", err)
 	}
 

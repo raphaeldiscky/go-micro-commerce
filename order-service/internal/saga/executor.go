@@ -2,12 +2,12 @@ package saga
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"maps"
 	"slices"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/shopspring/decimal"
@@ -50,7 +50,7 @@ type Metadata struct {
 
 // ToJSON converts metadata to JSON bytes for storage in saga state.
 func (m *Metadata) ToJSON() []byte {
-	data, err := json.Marshal(m)
+	data, err := sonic.Marshal(m)
 	if err != nil {
 		return []byte("{}")
 	}
@@ -610,14 +610,14 @@ func (e *Executor) isStepCompensated(state *entity.SagaState, stepName constant.
 
 // ToMap converts Metadata struct to map for persistence using JSON serialization.
 func (m *Metadata) ToMap() map[string]any {
-	data, err := json.Marshal(m)
+	data, err := sonic.Marshal(m)
 	if err != nil {
 		// Fallback to empty map on error
 		return make(map[string]any)
 	}
 
 	var result map[string]any
-	if err = json.Unmarshal(data, &result); err != nil {
+	if err = sonic.Unmarshal(data, &result); err != nil {
 		// Fallback to empty map on error
 		return make(map[string]any)
 	}
@@ -627,13 +627,13 @@ func (m *Metadata) ToMap() map[string]any {
 
 // FromMap converts map from persistence to Metadata struct using JSON serialization.
 func (m *Metadata) FromMap(data map[string]any) {
-	jsonData, err := json.Marshal(data)
+	jsonData, err := sonic.Marshal(data)
 	if err != nil {
 		return // Silently ignore conversion errors
 	}
 
 	// Ignore errors to maintain backwards compatibility
-	err = json.Unmarshal(jsonData, m)
+	err = sonic.Unmarshal(jsonData, m)
 	if err != nil {
 		return
 	}

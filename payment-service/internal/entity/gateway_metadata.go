@@ -2,8 +2,9 @@
 package entity
 
 import (
-	"encoding/json"
 	"fmt"
+
+	"github.com/bytedance/sonic"
 )
 
 // StripeMetadata contains Stripe-specific payment metadata stored in JSONB.
@@ -37,13 +38,13 @@ func NewStripeMetadataFromMap(data map[string]any) (*StripeMetadata, error) {
 		return &StripeMetadata{}, nil
 	}
 
-	jsonData, err := json.Marshal(data)
+	jsonData, err := sonic.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal map: %w", err)
 	}
 
 	var metadata StripeMetadata
-	if err = json.Unmarshal(jsonData, &metadata); err != nil {
+	if err = sonic.Unmarshal(jsonData, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal to StripeMetadata: %w", err)
 	}
 
@@ -52,13 +53,13 @@ func NewStripeMetadataFromMap(data map[string]any) (*StripeMetadata, error) {
 
 // ToMap converts StripeMetadata to map[string]any for database storage.
 func (m *StripeMetadata) ToMap() (map[string]any, error) {
-	data, err := json.Marshal(m)
+	data, err := sonic.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal StripeMetadata: %w", err)
 	}
 
 	var result map[string]any
-	if err = json.Unmarshal(data, &result); err != nil {
+	if err = sonic.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal StripeMetadata to map: %w", err)
 	}
 
@@ -71,13 +72,13 @@ func NewXenditMetadataFromMap(data map[string]any) (*XenditMetadata, error) {
 		return &XenditMetadata{}, nil
 	}
 
-	jsonData, err := json.Marshal(data)
+	jsonData, err := sonic.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal map: %w", err)
 	}
 
 	var metadata XenditMetadata
-	if err = json.Unmarshal(jsonData, &metadata); err != nil {
+	if err = sonic.Unmarshal(jsonData, &metadata); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal to XenditMetadata: %w", err)
 	}
 
@@ -86,13 +87,13 @@ func NewXenditMetadataFromMap(data map[string]any) (*XenditMetadata, error) {
 
 // ToMap converts XenditMetadata to map[string]any for database storage.
 func (m *XenditMetadata) ToMap() (map[string]any, error) {
-	data, err := json.Marshal(m)
+	data, err := sonic.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal XenditMetadata: %w", err)
 	}
 
 	var result map[string]any
-	if err = json.Unmarshal(data, &result); err != nil {
+	if err = sonic.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal XenditMetadata to map: %w", err)
 	}
 

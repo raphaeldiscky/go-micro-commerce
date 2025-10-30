@@ -1,9 +1,10 @@
 package rediseventbus
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/bytedance/sonic"
 )
 
 // BaseEvent provides common fields for all events.
@@ -16,7 +17,7 @@ type BaseEvent struct {
 
 // NewBaseEvent creates a new base event.
 func NewBaseEvent(sourceInstanceID, eventType string, payload interface{}) (*BaseEvent, error) {
-	payloadBytes, err := json.Marshal(payload)
+	payloadBytes, err := sonic.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal event payload: %w", err)
 	}
@@ -41,7 +42,7 @@ func (e *BaseEvent) GetType() string {
 
 // Marshal serializes the event to JSON bytes.
 func (e *BaseEvent) Marshal() ([]byte, error) {
-	data, err := json.Marshal(e)
+	data, err := sonic.Marshal(e)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal event: %w", err)
 	}
@@ -52,7 +53,7 @@ func (e *BaseEvent) Marshal() ([]byte, error) {
 // Unmarshal deserializes an event from JSON bytes.
 func Unmarshal(data []byte) (*BaseEvent, error) {
 	var event BaseEvent
-	if err := json.Unmarshal(data, &event); err != nil {
+	if err := sonic.Unmarshal(data, &event); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event: %w", err)
 	}
 
@@ -61,7 +62,7 @@ func Unmarshal(data []byte) (*BaseEvent, error) {
 
 // UnmarshalPayload deserializes the event payload into the target.
 func (e *BaseEvent) UnmarshalPayload(target interface{}) error {
-	if err := json.Unmarshal(e.Payload, target); err != nil {
+	if err := sonic.Unmarshal(e.Payload, target); err != nil {
 		return fmt.Errorf("failed to unmarshal event payload: %w", err)
 	}
 

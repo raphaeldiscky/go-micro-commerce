@@ -1,10 +1,10 @@
 package redis_test
 
 import (
-	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -77,7 +77,7 @@ func TestMessage_ToJSON(t *testing.T) {
 	// Verify it's valid JSON
 	var jsonMap map[string]any
 
-	err = json.Unmarshal(jsonData, &jsonMap)
+	err = sonic.Unmarshal(jsonData, &jsonMap)
 	require.NoError(t, err)
 	assert.Contains(t, jsonMap, "metadata")
 	assert.Contains(t, jsonMap, "payload")

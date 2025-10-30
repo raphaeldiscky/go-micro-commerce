@@ -3,11 +3,11 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
@@ -98,7 +98,7 @@ func (s *notificationEventService) ProcessNotificationRequest(
 	s.logger.Infof("Processing notification request event: %s", inboxEvent.MessageID)
 
 	var notificationEvent NotificationRequestEvent
-	if err := json.Unmarshal(inboxEvent.Payload, &notificationEvent); err != nil {
+	if err := sonic.Unmarshal(inboxEvent.Payload, &notificationEvent); err != nil {
 		return fmt.Errorf("failed to unmarshal notification request event: %w", err)
 	}
 
@@ -163,7 +163,7 @@ func (s *notificationEventService) ProcessEmailVerificationRequest(
 ) error {
 	unmarshalFn := func(payload []byte) (string, string, error) {
 		var emailVerificationEvent EmailVerificationRequestedEvent
-		if err := json.Unmarshal(payload, &emailVerificationEvent); err != nil {
+		if err := sonic.Unmarshal(payload, &emailVerificationEvent); err != nil {
 			return "", "", fmt.Errorf("failed to unmarshal email verification event: %w", err)
 		}
 
@@ -190,7 +190,7 @@ func (s *notificationEventService) ProcessEmailUserVerified(
 ) error {
 	unmarshalFn := func(payload []byte) (string, string, error) {
 		var userVerifiedEvent UserVerifiedEvent
-		if err := json.Unmarshal(payload, &userVerifiedEvent); err != nil {
+		if err := sonic.Unmarshal(payload, &userVerifiedEvent); err != nil {
 			return "", "", fmt.Errorf("failed to unmarshal user verified event: %w", err)
 		}
 
@@ -295,13 +295,13 @@ func (s *notificationEventService) generateOrderConfirmedEmail(
 		return "", errors.New("order data not found in payload")
 	}
 
-	orderJSON, err := json.Marshal(orderData)
+	orderJSON, err := sonic.Marshal(orderData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
 	var order kafkaevent.OrderConfirmedData
-	if err = json.Unmarshal(orderJSON, &order); err != nil {
+	if err = sonic.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
 
@@ -345,13 +345,13 @@ func (s *notificationEventService) generateOrderDeliveredEmail(
 		return "", errors.New("order data not found in payload")
 	}
 
-	orderJSON, err := json.Marshal(orderData)
+	orderJSON, err := sonic.Marshal(orderData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
 	var order kafkaevent.OrderConfirmedData
-	if err = json.Unmarshal(orderJSON, &order); err != nil {
+	if err = sonic.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order confirmation data: %w", err)
 	}
 
@@ -446,13 +446,13 @@ func (s *notificationEventService) generateOrderPaymentRequiredEmail(
 		return "", errors.New("order data not found in payload")
 	}
 
-	orderJSON, err := json.Marshal(orderData)
+	orderJSON, err := sonic.Marshal(orderData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
 	var order kafkaevent.OrderConfirmedData
-	if err = json.Unmarshal(orderJSON, &order); err != nil {
+	if err = sonic.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
 	}
 
@@ -516,13 +516,13 @@ func (s *notificationEventService) generateOrderPaymentReminderEmail(
 		return "", errors.New("order data not found in payload")
 	}
 
-	orderJSON, err := json.Marshal(orderData)
+	orderJSON, err := sonic.Marshal(orderData)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal order data: %w", err)
 	}
 
 	var order kafkaevent.OrderConfirmedData
-	if err = json.Unmarshal(orderJSON, &order); err != nil {
+	if err = sonic.Unmarshal(orderJSON, &order); err != nil {
 		return "", fmt.Errorf("failed to unmarshal order data: %w", err)
 	}
 

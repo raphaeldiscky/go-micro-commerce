@@ -2,12 +2,12 @@ package kafka
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/IBM/sarama"
+	"github.com/bytedance/sonic"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -121,7 +121,7 @@ func NewAsyncProducer(
 // ProduceSync an event to Kafka.
 func (p *SyncProducer) ProduceSync(topic string, evt kafkaevent.BaseEvent) error {
 	// Marshal event to JSON
-	eventData, err := json.Marshal(evt)
+	eventData, err := sonic.Marshal(evt)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
@@ -175,7 +175,7 @@ func (p *AsyncProducer) ProduceAsync(
 	evt kafkaevent.BaseEvent,
 ) error {
 	// Marshal event to JSON
-	eventData, err := json.Marshal(evt)
+	eventData, err := sonic.Marshal(evt)
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
