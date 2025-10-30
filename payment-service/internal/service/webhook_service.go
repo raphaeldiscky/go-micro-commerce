@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -83,7 +83,7 @@ func (s *webhookService) handlePaymentIntentSucceeded(
 	event stripe.Event,
 ) error {
 	var paymentIntent stripe.PaymentIntent
-	if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
+	if err := sonic.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
 		s.logger.Errorf("Failed to unmarshal PaymentIntent: %v", err)
 		return httperror.NewInternalServerError("failed to parse webhook data")
 	}
@@ -109,7 +109,7 @@ func (s *webhookService) handlePaymentIntentFailed(
 	event stripe.Event,
 ) error {
 	var paymentIntent stripe.PaymentIntent
-	if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
+	if err := sonic.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
 		s.logger.Errorf("Failed to unmarshal PaymentIntent: %v", err)
 		return httperror.NewInternalServerError("failed to parse webhook data")
 	}
@@ -139,7 +139,7 @@ func (s *webhookService) handlePaymentIntentCanceled(
 	event stripe.Event,
 ) error {
 	var paymentIntent stripe.PaymentIntent
-	if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
+	if err := sonic.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
 		s.logger.Errorf("Failed to unmarshal PaymentIntent: %v", err)
 		return httperror.NewInternalServerError("failed to parse webhook data")
 	}
@@ -160,7 +160,7 @@ func (s *webhookService) handlePaymentIntentRequiresAction(
 	event stripe.Event,
 ) error {
 	var paymentIntent stripe.PaymentIntent
-	if err := json.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
+	if err := sonic.Unmarshal(event.Data.Raw, &paymentIntent); err != nil {
 		s.logger.Errorf("Failed to unmarshal PaymentIntent: %v", err)
 		return httperror.NewInternalServerError("failed to parse webhook data")
 	}
@@ -180,7 +180,7 @@ func (s *webhookService) handleChargeRefunded(
 	event stripe.Event,
 ) error {
 	var charge stripe.Charge
-	if err := json.Unmarshal(event.Data.Raw, &charge); err != nil {
+	if err := sonic.Unmarshal(event.Data.Raw, &charge); err != nil {
 		s.logger.Errorf("Failed to unmarshal Charge: %v", err)
 		return httperror.NewInternalServerError("failed to parse webhook data")
 	}
@@ -290,7 +290,7 @@ func (s *webhookService) updatePaymentStatus(
 			nil, // expiresAt not needed for webhook events
 		)
 
-		payload, errMarshal := json.Marshal(evt)
+		payload, errMarshal := sonic.Marshal(evt)
 		if errMarshal != nil {
 			return httperror.NewInternalServerError("failed to marshal payment event")
 		}

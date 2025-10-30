@@ -3,9 +3,10 @@ package pageutils
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/bytedance/sonic"
 )
 
 // CursorData represents the data structure for cursor-based pagination.
@@ -21,7 +22,7 @@ func EncodeCursor(data *CursorData) (string, error) {
 		return "", nil
 	}
 
-	jsonData, err := json.Marshal(data)
+	jsonData, err := sonic.Marshal(data)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal cursor data: %w", err)
 	}
@@ -43,7 +44,7 @@ func DecodeCursor(cursor string) (*CursorData, error) {
 	}
 
 	var data CursorData
-	if err = json.Unmarshal(decoded, &data); err != nil {
+	if err = sonic.Unmarshal(decoded, &data); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal cursor data: %w", err)
 	}
 

@@ -1,24 +1,24 @@
 package sse
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 )
 
 // Message represents an SSE message to be sent to clients.
 type Message struct {
-	ID        uuid.UUID       `json:"id"`
-	Event     string          `json:"event"`
-	Data      json.RawMessage `json:"data"`
-	Retry     *int            `json:"retry,omitempty"`
-	CreatedAt time.Time       `json:"created_at"`
+	ID        uuid.UUID              `json:"id"`
+	Event     string                 `json:"event"`
+	Data      sonic.NoCopyRawMessage `json:"data"`
+	Retry     *int                   `json:"retry,omitempty"`
+	CreatedAt time.Time              `json:"created_at"`
 }
 
 // NewMessage creates a new SSE message.
 func NewMessage(event string, data any) (*Message, error) {
-	dataJSON, err := json.Marshal(data)
+	dataJSON, err := sonic.Marshal(data)
 	if err != nil {
 		return nil, err
 	}

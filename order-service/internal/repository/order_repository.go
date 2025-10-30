@@ -3,10 +3,10 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -89,22 +89,22 @@ func (r *orderRepository) Create(
 	order *entity.Order,
 ) (*entity.Order, error) {
 	// Marshal JSONB fields
-	courierJSON, err := json.Marshal(order.Courier)
+	courierJSON, err := sonic.Marshal(order.Courier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal courier: %w", err)
 	}
 
-	destinationJSON, err := json.Marshal(order.Destination)
+	destinationJSON, err := sonic.Marshal(order.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	originJSON, err := json.Marshal(order.Origin)
+	originJSON, err := sonic.Marshal(order.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	packageJSON, err := json.Marshal(order.Package)
+	packageJSON, err := sonic.Marshal(order.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
@@ -167,19 +167,19 @@ func (r *orderRepository) Create(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &createdOrder.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &createdOrder.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &createdOrder.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &createdOrder.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &createdOrder.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &createdOrder.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &createdOrder.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &createdOrder.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
@@ -267,19 +267,19 @@ func (r *orderRepository) FindByID(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &order.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &order.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &order.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &order.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &order.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &order.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
@@ -375,19 +375,19 @@ func (r *orderRepository) FindByIdempotencyKey(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &order.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &order.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &order.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &order.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &order.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &order.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
@@ -488,19 +488,19 @@ func (r *orderRepository) FindByCustomerID(
 		}
 
 		// Unmarshal JSONB fields
-		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+		if err = sonic.Unmarshal(courierData, &order.Courier); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 		}
 
-		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+		if err = sonic.Unmarshal(destinationData, &order.Destination); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 		}
 
-		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+		if err = sonic.Unmarshal(originData, &order.Origin); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 		}
 
-		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+		if err = sonic.Unmarshal(packageData, &order.Package); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
@@ -571,19 +571,19 @@ func (r *orderRepository) FindAll(
 		}
 
 		// Unmarshal JSONB fields
-		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+		if err = sonic.Unmarshal(courierData, &order.Courier); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 		}
 
-		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+		if err = sonic.Unmarshal(destinationData, &order.Destination); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 		}
 
-		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+		if err = sonic.Unmarshal(originData, &order.Origin); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 		}
 
-		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+		if err = sonic.Unmarshal(packageData, &order.Package); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
@@ -609,22 +609,22 @@ func (r *orderRepository) Update(
 	order *entity.Order,
 ) (*entity.Order, error) {
 	// Marshal JSONB fields
-	courierJSON, err := json.Marshal(order.Courier)
+	courierJSON, err := sonic.Marshal(order.Courier)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal courier: %w", err)
 	}
 
-	destinationJSON, err := json.Marshal(order.Destination)
+	destinationJSON, err := sonic.Marshal(order.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	originJSON, err := json.Marshal(order.Origin)
+	originJSON, err := sonic.Marshal(order.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	packageJSON, err := json.Marshal(order.Package)
+	packageJSON, err := sonic.Marshal(order.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
@@ -708,19 +708,19 @@ func (r *orderRepository) Update(
 	}
 
 	// Unmarshal JSONB fields
-	if err = json.Unmarshal(courierData, &updatedOrder.Courier); err != nil {
+	if err = sonic.Unmarshal(courierData, &updatedOrder.Courier); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 	}
 
-	if err = json.Unmarshal(destinationData, &updatedOrder.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationData, &updatedOrder.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
-	if err = json.Unmarshal(originData, &updatedOrder.Origin); err != nil {
+	if err = sonic.Unmarshal(originData, &updatedOrder.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
-	if err = json.Unmarshal(packageData, &updatedOrder.Package); err != nil {
+	if err = sonic.Unmarshal(packageData, &updatedOrder.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
@@ -930,19 +930,19 @@ func (r *orderRepository) FindByCustomerIDWithCursor(
 		}
 
 		// Unmarshal JSONB fields
-		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+		if err = sonic.Unmarshal(courierData, &order.Courier); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 		}
 
-		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+		if err = sonic.Unmarshal(destinationData, &order.Destination); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 		}
 
-		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+		if err = sonic.Unmarshal(originData, &order.Origin); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 		}
 
-		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+		if err = sonic.Unmarshal(packageData, &order.Package); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 
@@ -1032,19 +1032,19 @@ func (r *orderRepository) FindAllWithCursor(
 		}
 
 		// Unmarshal JSONB fields
-		if err = json.Unmarshal(courierData, &order.Courier); err != nil {
+		if err = sonic.Unmarshal(courierData, &order.Courier); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal courier: %w", err)
 		}
 
-		if err = json.Unmarshal(destinationData, &order.Destination); err != nil {
+		if err = sonic.Unmarshal(destinationData, &order.Destination); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 		}
 
-		if err = json.Unmarshal(originData, &order.Origin); err != nil {
+		if err = sonic.Unmarshal(originData, &order.Origin); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 		}
 
-		if err = json.Unmarshal(packageData, &order.Package); err != nil {
+		if err = sonic.Unmarshal(packageData, &order.Package); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 		}
 

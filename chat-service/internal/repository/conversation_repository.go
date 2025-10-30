@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -71,7 +71,7 @@ func (r *conversationRepository) Create(
 	ctx context.Context,
 	conversation *entity.Conversation,
 ) (*entity.Conversation, error) {
-	metadataJSON, err := json.Marshal(conversation.Metadata)
+	metadataJSON, err := sonic.Marshal(conversation.Metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
@@ -190,7 +190,7 @@ func (r *conversationRepository) Update(
 	ctx context.Context,
 	conversation *entity.Conversation,
 ) (*entity.Conversation, error) {
-	metadataJSON, err := json.Marshal(conversation.Metadata)
+	metadataJSON, err := sonic.Marshal(conversation.Metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
@@ -370,7 +370,7 @@ func (r *conversationRepository) scanConversation(row pgx.Row) (*entity.Conversa
 
 	// Unmarshal metadata
 	if metadataJSON != nil {
-		if err = json.Unmarshal(metadataJSON, &conversation.Metadata); err != nil {
+		if err = sonic.Unmarshal(metadataJSON, &conversation.Metadata); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 		}
 	} else {
@@ -413,7 +413,7 @@ func (r *conversationRepository) scanConversations(rows pgx.Rows) ([]*entity.Con
 
 		// Unmarshal metadata
 		if metadataJSON != nil {
-			if err = json.Unmarshal(metadataJSON, &conversation.Metadata); err != nil {
+			if err = sonic.Unmarshal(metadataJSON, &conversation.Metadata); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 			}
 		} else {

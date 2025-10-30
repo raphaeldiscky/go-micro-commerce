@@ -1,9 +1,9 @@
 package mapper
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/graph"
@@ -142,7 +142,7 @@ func MapToCreateOrderRequest(
 // MapToGraphQLPaymentMetadata maps dto.PaymentMetadata to graph.PaymentMetadata.
 func MapToGraphQLPaymentMetadata(metadata dto.PaymentMetadata) (*graph.PaymentMetadata, error) {
 	// Marshal gateway metadata map to JSON string
-	gatewayMetadataBytes, err := json.Marshal(metadata.GatewayMetadata)
+	gatewayMetadataBytes, err := sonic.Marshal(metadata.GatewayMetadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal gateway metadata: %w", err)
 	}

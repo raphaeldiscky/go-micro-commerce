@@ -3,11 +3,11 @@ package saga
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
@@ -200,7 +200,7 @@ func (o *orchestrator) ExecutePostPaymentSaga(
 	}
 
 	var data map[string]any
-	if err := json.Unmarshal(metadata.ToJSON(), &data); err != nil {
+	if err := sonic.Unmarshal(metadata.ToJSON(), &data); err != nil {
 		o.logger.Errorf("Failed to convert metadata to map: %v", err)
 		return fmt.Errorf("failed to convert metadata to map: %w", err)
 	}

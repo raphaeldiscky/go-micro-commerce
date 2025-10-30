@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -66,7 +65,7 @@ func (c *PaymentRequestConsumer) Handler(ctx context.Context, body []byte) error
 		meta.Metadata.EventType,
 		kafka.PaymentRequestTopic, // topic
 		meta.Metadata.Source,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // correlation_id
 		nil, // causation_id
 	)

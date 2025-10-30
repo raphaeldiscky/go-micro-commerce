@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/rsa"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/bytedance/sonic"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 )
@@ -115,7 +116,7 @@ func (f *Fetcher) fetch() error {
 	}
 
 	var jwks JWKSet
-	if err = json.NewDecoder(resp.Body).Decode(&jwks); err != nil {
+	if err = sonic.ConfigFastest.NewDecoder(resp.Body).Decode(&jwks); err != nil {
 		return fmt.Errorf("failed to decode JWKS: %w", err)
 	}
 

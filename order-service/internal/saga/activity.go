@@ -2,10 +2,10 @@ package saga
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
@@ -285,7 +285,7 @@ func (a *orderActivities) CreatePayment(
 			order.PaymentGateway,
 		)
 
-		payload, err := json.Marshal(paymentEvent)
+		payload, err := sonic.Marshal(paymentEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal payment request event: %w", err)
 		}
@@ -360,7 +360,7 @@ func (a *orderActivities) SendPaymentRequiredNotification(
 			"Payment Required - Complete Your Order",
 		)
 
-		payload, err := json.Marshal(notificationEvent)
+		payload, err := sonic.Marshal(notificationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification event: %w", err)
 		}
@@ -620,7 +620,7 @@ func (a *orderActivities) ProcessFulfillment(
 		// Create fulfillment request event
 		fulfillmentEvent := producer.NewFulfillmentRequestEvent(payload.Order)
 
-		evtPayload, err := json.Marshal(fulfillmentEvent)
+		evtPayload, err := sonic.Marshal(fulfillmentEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal fulfillment request event: %w", err)
 		}
@@ -719,7 +719,7 @@ func (a *orderActivities) SendOrderConfirmedNotification(
 			"Order Confirmed - Payment Received",
 		)
 
-		payload, err := json.Marshal(notificationEvent)
+		payload, err := sonic.Marshal(notificationEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal notification event: %w", err)
 		}

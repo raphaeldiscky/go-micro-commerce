@@ -4,12 +4,12 @@ package integration_test
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/testcontainers"
@@ -130,7 +130,7 @@ func (s *TestSuite) mockSagaEndpoint(w http.ResponseWriter, r *http.Request) {
 
 	// Parse request body
 	var req dto.ClientCreateOrderRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	if err := sonic.ConfigFastest.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 
 		return
@@ -162,7 +162,7 @@ func (s *TestSuite) mockSagaEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 
-	err := json.NewEncoder(w).Encode(response)
+	err := sonic.ConfigFastest.NewEncoder(w).Encode(response)
 	if err != nil {
 		s.T().Errorf("Failed to encode response: %v", err)
 	}
@@ -191,7 +191,7 @@ func (s *TestSuite) makeRequest(
 	var err error
 
 	if body != nil {
-		reqBody, err = json.Marshal(body)
+		reqBody, err = sonic.Marshal(body)
 		if err != nil {
 			return nil, err
 		}
@@ -227,7 +227,7 @@ func (s *TestSuite) parseResponse(resp *http.Response, target any) error {
 		}
 	}()
 
-	return json.NewDecoder(resp.Body).Decode(target)
+	return sonic.ConfigFastest.NewDecoder(resp.Body).Decode(target)
 }
 
 // makeRequestWithoutAuth makes HTTP requests without authentication headers for testing auth requirements.
@@ -241,7 +241,7 @@ func (s *TestSuite) makeRequestWithoutAuth(
 	var err error
 
 	if body != nil {
-		reqBody, err = json.Marshal(body)
+		reqBody, err = sonic.Marshal(body)
 		if err != nil {
 			return nil, err
 		}

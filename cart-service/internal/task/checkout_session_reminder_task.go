@@ -2,9 +2,9 @@
 package task
 
 import (
-	"encoding/json"
 	"errors"
 
+	"github.com/bytedance/sonic"
 	"github.com/hibiken/asynq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
@@ -27,7 +27,7 @@ func NewCheckoutSessionReminderTask(
 		return nil, errors.New("payload is required")
 	}
 
-	data, err := json.Marshal(payload)
+	data, err := sonic.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func ParseCheckoutSessionReminderTask(
 	}
 
 	var payload dto.CheckoutSessionReminderRequest
-	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+	if err := sonic.Unmarshal(task.Payload(), &payload); err != nil {
 		return nil, err
 	}
 

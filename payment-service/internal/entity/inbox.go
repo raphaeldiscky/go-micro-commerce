@@ -2,9 +2,9 @@
 package entity
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
@@ -23,7 +23,7 @@ type InboxEvent struct {
 	Topic         string
 	EventType     string
 	AggregateType string
-	Payload       json.RawMessage
+	Payload       sonic.NoCopyRawMessage
 	Attempts      int64
 	ID            uuid.UUID
 	AggregateID   uuid.UUID
@@ -38,7 +38,7 @@ func NewInboxEvent(
 	eventType string,
 	topic string,
 	sourceService string,
-	payload json.RawMessage,
+	payload sonic.NoCopyRawMessage,
 	correlationID *uuid.UUID,
 	causationID *uuid.UUID,
 ) *InboxEvent {

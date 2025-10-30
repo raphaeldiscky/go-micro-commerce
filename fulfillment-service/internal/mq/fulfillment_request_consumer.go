@@ -3,7 +3,6 @@ package mq
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -76,7 +75,7 @@ func (c *FulfillmentRequestConsumer) Handler(ctx context.Context, body []byte) e
 		meta.Metadata.EventType,
 		kafka.FulfillmentRequestTopic, // topic
 		meta.Metadata.Source,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available
 	)
@@ -294,7 +293,7 @@ func (c *FulfillmentRequestConsumer) publishFulfillmentCreatedEvent(
 	// Create fulfillment created event
 	fulfillmentCreatedEvent := NewFulfillmentLifecycleEvent(fulfillment)
 
-	payload, err := json.Marshal(fulfillmentCreatedEvent)
+	payload, err := sonic.Marshal(fulfillmentCreatedEvent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal fulfillment created event: %w", err)
 	}

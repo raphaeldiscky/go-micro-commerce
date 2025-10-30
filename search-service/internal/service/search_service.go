@@ -3,10 +3,10 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/pageutils"
@@ -262,7 +262,7 @@ func (s *searchService) ProcessProductCreated(
 		Metadata kafkaevent.Metadata              `json:"metadata"`
 		Payload  kafkaevent.ProductCreatedPayload `json:"payload"`
 	}
-	if err := json.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
+	if err := sonic.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
 		return fmt.Errorf("failed to unmarshal product created event envelope: %w", err)
 	}
 
@@ -301,7 +301,7 @@ func (s *searchService) ProcessProductUpdated(
 		Metadata kafkaevent.Metadata              `json:"metadata"`
 		Payload  kafkaevent.ProductUpdatedPayload `json:"payload"`
 	}
-	if err := json.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
+	if err := sonic.Unmarshal(inboxEvent.Payload, &eventEnvelope); err != nil {
 		return fmt.Errorf("failed to unmarshal product updated event envelope: %w", err)
 	}
 
@@ -336,7 +336,7 @@ func (s *searchService) ProcessProductDeleted(
 	s.logger.Infof("Processing product deleted event from inbox: %s", inboxEvent.ID)
 
 	var payload kafkaevent.ProductDeletedPayload
-	if err := json.Unmarshal(inboxEvent.Payload, &payload); err != nil {
+	if err := sonic.Unmarshal(inboxEvent.Payload, &payload); err != nil {
 		return fmt.Errorf("failed to unmarshal product deleted payload: %w", err)
 	}
 

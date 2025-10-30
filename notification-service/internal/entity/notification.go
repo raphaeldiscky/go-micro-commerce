@@ -1,10 +1,10 @@
 package entity
 
 import (
-	"encoding/json"
 	"errors"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/constant"
@@ -17,7 +17,7 @@ type Notification struct {
 	Type      constant.PushNotificationType `db:"type"`
 	Title     string                        `db:"title"`
 	Message   string                        `db:"message"`
-	Metadata  json.RawMessage               `db:"metadata"`
+	Metadata  sonic.NoCopyRawMessage        `db:"metadata"`
 	IsRead    bool                          `db:"is_read"`
 	ReadAt    *time.Time                    `db:"read_at"`
 	CreatedAt time.Time                     `db:"created_at"`
@@ -32,9 +32,9 @@ func NewPushNotification(
 	message string,
 	metadata map[string]any,
 ) (*Notification, error) {
-	var metadataJSON json.RawMessage
+	var metadataJSON sonic.NoCopyRawMessage
 	if metadata != nil {
-		data, err := json.Marshal(metadata)
+		data, err := sonic.Marshal(metadata)
 		if err != nil {
 			return nil, err
 		}
@@ -98,7 +98,7 @@ func (n *Notification) GetMetadata() (map[string]interface{}, error) {
 	}
 
 	var metadata map[string]interface{}
-	if err := json.Unmarshal(n.Metadata, &metadata); err != nil {
+	if err := sonic.Unmarshal(n.Metadata, &metadata); err != nil {
 		return nil, err
 	}
 

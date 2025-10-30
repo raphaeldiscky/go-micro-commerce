@@ -2,9 +2,9 @@
 package websocket
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 )
 
@@ -20,12 +20,12 @@ const (
 
 // Message represents a universal WebSocket message envelope.
 type Message struct {
-	ID        uuid.UUID       `json:"id"`
-	Type      MessageType     `json:"type"`
-	Channel   *string         `json:"channel,omitempty"`   // Room/channel for broadcasting
-	SenderID  *uuid.UUID      `json:"sender_id,omitempty"` // Optional sender identification
-	Content   json.RawMessage `json:"content"`             // Flexible content payload
-	Timestamp time.Time       `json:"timestamp"`
+	ID        uuid.UUID              `json:"id"`
+	Type      MessageType            `json:"type"`
+	Channel   *string                `json:"channel,omitempty"`   // Room/channel for broadcasting
+	SenderID  *uuid.UUID             `json:"sender_id,omitempty"` // Optional sender identification
+	Content   sonic.NoCopyRawMessage `json:"content"`             // Flexible content payload
+	Timestamp time.Time              `json:"timestamp"`
 }
 
 // HeartbeatContent represents heartbeat message content.
@@ -51,7 +51,7 @@ type SystemContent struct {
 
 // NewMessage creates a new WebSocket message with a generated ID and timestamp.
 func NewMessage(msgType MessageType, content any) (*Message, error) {
-	contentBytes, err := json.Marshal(content)
+	contentBytes, err := sonic.Marshal(content)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func NewSystemMessage(message, event string, data map[string]any) (*Message, err
 
 // ParseContent parses the message content into the appropriate struct.
 func (m *Message) ParseContent(dest any) error {
-	return json.Unmarshal(m.Content, dest)
+	return sonic.Unmarshal(m.Content, dest)
 }
 
 // WithChannel sets the channel for the message.

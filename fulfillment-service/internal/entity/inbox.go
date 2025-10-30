@@ -2,9 +2,9 @@
 package entity
 
 import (
-	"encoding/json"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
@@ -13,13 +13,13 @@ import (
 // InboxEvent represents an event consumed from message brokers using the inbox pattern.
 type InboxEvent struct {
 	ID            uuid.UUID
-	MessageID     uuid.UUID       // Unique identifier from Kafka message metadata
-	AggregateType string          // Type of aggregate from source service (e.g., 'order', 'product')
-	AggregateID   uuid.UUID       // ID of the aggregate from source service
-	EventType     string          // Type of event from source service
-	Topic         string          // Kafka topic from which event was consumed
-	SourceService string          // Name of the microservice that published the event
-	Payload       json.RawMessage // Complete event payload from source service
+	MessageID     uuid.UUID              // Unique identifier from Kafka message metadata
+	AggregateType string                 // Type of aggregate from source service (e.g., 'order', 'product')
+	AggregateID   uuid.UUID              // ID of the aggregate from source service
+	EventType     string                 // Type of event from source service
+	Topic         string                 // Kafka topic from which event was consumed
+	SourceService string                 // Name of the microservice that published the event
+	Payload       sonic.NoCopyRawMessage // Complete event payload from source service
 	Status        constant.InboxStatus
 	CreatedAt     time.Time
 	ProcessedAt   *time.Time
@@ -38,7 +38,7 @@ func NewInboxEvent(
 	eventType string,
 	topic string,
 	sourceService string,
-	payload json.RawMessage,
+	payload sonic.NoCopyRawMessage,
 	correlationID *uuid.UUID,
 	causationID *uuid.UUID,
 ) *InboxEvent {

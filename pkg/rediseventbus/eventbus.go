@@ -2,9 +2,10 @@ package rediseventbus
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
+
+	"github.com/bytedance/sonic"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	redispkg "github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
@@ -107,7 +108,7 @@ func (b *redisEventBus) Publish(ctx context.Context, channel string, event Event
 	// Create Redis message
 	metadata := redispkg.NewMessageMetadata("chat-service")
 
-	redisMsg, err := redispkg.NewMessage(metadata, json.RawMessage(data))
+	redisMsg, err := redispkg.NewMessage(metadata, sonic.NoCopyRawMessage(data))
 	if err != nil {
 		return fmt.Errorf("failed to create Redis message: %w", err)
 	}
@@ -189,7 +190,7 @@ func (b *redisEventBus) SPublish(ctx context.Context, channel string, event Even
 	// Create Redis message
 	metadata := redispkg.NewMessageMetadata("eventbus")
 
-	redisMsg, err := redispkg.NewMessage(metadata, json.RawMessage(data))
+	redisMsg, err := redispkg.NewMessage(metadata, sonic.NoCopyRawMessage(data))
 	if err != nil {
 		return fmt.Errorf("failed to create Redis message: %w", err)
 	}
@@ -289,7 +290,7 @@ func (b *redisEventBus) handleRedisMessage(
 	redisMsg *redispkg.Message,
 ) error {
 	// Unmarshal event
-	var rawEvent json.RawMessage
+	var rawEvent sonic.NoCopyRawMessage
 	if err := redisMsg.UnmarshalPayload(&rawEvent); err != nil {
 		return fmt.Errorf("failed to unmarshal Redis message: %w", err)
 	}

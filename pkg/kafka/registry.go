@@ -1,9 +1,10 @@
 package kafka
 
 import (
-	"encoding/json"
 	"fmt"
 	"reflect"
+
+	"github.com/bytedance/sonic"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 )
@@ -53,7 +54,7 @@ func (r *EventRegistry) UnmarshalEvent(
 		return nil, err
 	}
 
-	if err = json.Unmarshal(payload, evt); err != nil {
+	if err = sonic.Unmarshal(payload, evt); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal event payload: %w", err)
 	}
 

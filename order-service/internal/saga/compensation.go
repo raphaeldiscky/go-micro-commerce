@@ -2,10 +2,10 @@ package saga
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 
@@ -70,7 +70,7 @@ func (a *orderActivities) RefundPayment(
 			order.Currency,
 		)
 
-		payload, err := json.Marshal(refundEvent)
+		payload, err := sonic.Marshal(refundEvent)
 		if err != nil {
 			return fmt.Errorf("failed to marshal refund request event: %w", err)
 		}

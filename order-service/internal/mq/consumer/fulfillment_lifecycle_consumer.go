@@ -3,11 +3,11 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
@@ -56,7 +56,7 @@ func (c *FulfillmentLifecycleConsumer) Handler(ctx context.Context, body []byte)
 		Metadata kafkaevent.Metadata `json:"metadata"`
 	}
 
-	if err := json.Unmarshal(body, &meta); err != nil {
+	if err := sonic.Unmarshal(body, &meta); err != nil {
 		return fmt.Errorf("failed to unmarshal event metadata: %w", err)
 	}
 
@@ -68,7 +68,7 @@ func (c *FulfillmentLifecycleConsumer) Handler(ctx context.Context, body []byte)
 		meta.Metadata.EventType,
 		kafka.FulfillmentLifecycleTopic, // topic
 		meta.Metadata.Source,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available
 	)
@@ -155,7 +155,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentCreated(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment created event: %w", err)
 	}
 
@@ -182,7 +182,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentProcessing(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment processing event: %w", err)
 	}
 
@@ -199,7 +199,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentShipped(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment shipped event: %w", err)
 	}
 
@@ -241,7 +241,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentInTransit(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment in transit event: %w", err)
 	}
 
@@ -258,7 +258,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment delivered event: %w", err)
 	}
 
@@ -320,12 +320,12 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 	// Convert reserved products any to []entity.Product
 	var reservedProducts []entity.Product
 
-	productsBytes, err := json.Marshal(reservedProductsData)
+	productsBytes, err := sonic.Marshal(reservedProductsData)
 	if err != nil {
 		return fmt.Errorf("failed to marshal reserved products: %w", err)
 	}
 
-	if err = json.Unmarshal(productsBytes, &reservedProducts); err != nil {
+	if err = sonic.Unmarshal(productsBytes, &reservedProducts); err != nil {
 		return fmt.Errorf("failed to unmarshal reserved products: %w", err)
 	}
 
@@ -340,7 +340,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentDelivered(
 		"Your Order Has Been Delivered!",
 	)
 
-	payload, err := json.Marshal(notificationEvent)
+	payload, err := sonic.Marshal(notificationEvent)
 	if err != nil {
 		return fmt.Errorf("failed to marshal notification event: %w", err)
 	}
@@ -379,7 +379,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentCanceled(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment canceled event: %w", err)
 	}
 
@@ -421,7 +421,7 @@ func (c *FulfillmentLifecycleConsumer) processFulfillmentReturned(
 	body []byte,
 ) error {
 	var evt FulfillmentLifecycleEvent
-	if err := json.Unmarshal(body, &evt); err != nil {
+	if err := sonic.Unmarshal(body, &evt); err != nil {
 		return fmt.Errorf("failed to unmarshal fulfillment returned event: %w", err)
 	}
 

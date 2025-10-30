@@ -21,6 +21,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - Implemented `message inbox pattern` for idempotent event consumption and `transactional outbox pattern` for publishing domain events
 - `Server-Sent Events (SSE)` for real-time push notification delivery in the notification-service.
 - `WebSocket` support in the chat-service for bi-directional communication.
+- Use [bytedance/sonic](https://github.com/bytedance/sonic) instead of standard go library for serde, it offers up to 5x faster unmarshalling and significant marshaling improvements, as demonstrated in this [benchmark](https://github.com/centralci/go-benchmarks/tree/b647c45272c7dc371fd4337cb3b6546356d967d1/json)
 
 ## Technology Stack 🛠️
 
@@ -35,6 +36,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC framework
 - **[bufbuild/buf](https://github.com/bufbuild/buf)** - linter, formatter, generator for protobuf
 - **[99designs/glqgen](https://github.com/99designs/gqlgen)** - go generate based graphql server library
+- **[bytedance/sonic](https://github.com/bytedance/sonic)** - a blazingly fast JSON serializing & deserializing library
 - **[stretchr/testify](https://github.com/stretchr/testify)** - testing toolkit
 - **[testcontainers/testcontainers-go](https://github.com/testcontainers/testcontainers-go)** - testcontainers for go
 - **[spf13/viper](https://github.com/spf13/viper)** - go configuration with fangs

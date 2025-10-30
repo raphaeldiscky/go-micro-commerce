@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"time"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 
@@ -71,7 +71,7 @@ func (r *cacheRepositoryRedis) GetProduct(
 	}
 
 	var product entity.Product
-	if err = json.Unmarshal([]byte(result), &product); err != nil {
+	if err = sonic.Unmarshal([]byte(result), &product); err != nil {
 		return nil, err
 	}
 
@@ -86,7 +86,7 @@ func (r *cacheRepositoryRedis) SetProduct(
 ) error {
 	key := redisutils.NewCacheProductKey(product.ID)
 
-	data, err := json.Marshal(product)
+	data, err := sonic.Marshal(product)
 	if err != nil {
 		return err
 	}
@@ -111,7 +111,7 @@ func (r *cacheRepositoryRedis) GetProducts(
 	}
 
 	var products []*entity.Product
-	if err = json.Unmarshal([]byte(result), &products); err != nil {
+	if err = sonic.Unmarshal([]byte(result), &products); err != nil {
 		return nil, err
 	}
 
@@ -127,7 +127,7 @@ func (r *cacheRepositoryRedis) SetProducts(
 ) error {
 	key := redisutils.NewCacheListProductsKey(page, limit)
 
-	data, err := json.Marshal(products)
+	data, err := sonic.Marshal(products)
 	if err != nil {
 		return err
 	}

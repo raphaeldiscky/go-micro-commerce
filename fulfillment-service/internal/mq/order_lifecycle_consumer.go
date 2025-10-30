@@ -3,7 +3,6 @@ package mq
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/bytedance/sonic"
@@ -64,7 +63,7 @@ func (c *OrderLifecycleConsumer) Handler(ctx context.Context, body []byte) error
 		meta.Metadata.EventType,
 		kafka.OrderLifecycleTopic,
 		meta.Metadata.Source,
-		json.RawMessage(body),
+		sonic.NoCopyRawMessage(body),
 		nil, // correlation_id - could be extracted from metadata if available
 		nil, // causation_id - could be extracted from metadata if available
 	)

@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -64,7 +64,7 @@ func (r *messageRepository) Create(
 	ctx context.Context,
 	message *entity.Message,
 ) (*entity.Message, error) {
-	metadataJSON, err := json.Marshal(message.Metadata)
+	metadataJSON, err := sonic.Marshal(message.Metadata)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal metadata: %w", err)
 	}
@@ -281,7 +281,7 @@ func (r *messageRepository) scanMessage(row pgx.Row) (*entity.Message, error) {
 
 	// Unmarshal metadata
 	if metadataJSON != nil {
-		if err = json.Unmarshal(metadataJSON, &message.Metadata); err != nil {
+		if err = sonic.Unmarshal(metadataJSON, &message.Metadata); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 		}
 	} else {
@@ -317,7 +317,7 @@ func (r *messageRepository) scanMessages(rows pgx.Rows) ([]*entity.Message, erro
 
 		// Unmarshal metadata
 		if metadataJSON != nil {
-			if err = json.Unmarshal(metadataJSON, &message.Metadata); err != nil {
+			if err = sonic.Unmarshal(metadataJSON, &message.Metadata); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal metadata: %w", err)
 			}
 		} else {

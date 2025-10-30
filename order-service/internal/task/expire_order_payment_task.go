@@ -2,9 +2,9 @@
 package task
 
 import (
-	"encoding/json"
 	"errors"
 
+	"github.com/bytedance/sonic"
 	"github.com/hibiken/asynq"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
@@ -21,7 +21,7 @@ const (
 
 // NewExpireOrderPaymentTask creates a new order cancellation task with correlation metadata.
 func NewExpireOrderPaymentTask(payload dto.ExpireOrderPaymentRequest) (*asynq.Task, error) {
-	data, err := json.Marshal(payload)
+	data, err := sonic.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func ParseExpireOrderPaymentTask(task *asynq.Task) (*dto.ExpireOrderPaymentReque
 	}
 
 	var payload dto.ExpireOrderPaymentRequest
-	if err := json.Unmarshal(task.Payload(), &payload); err != nil {
+	if err := sonic.Unmarshal(task.Payload(), &payload); err != nil {
 		return nil, err
 	}
 

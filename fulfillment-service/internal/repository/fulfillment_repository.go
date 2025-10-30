@@ -3,10 +3,10 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
+	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
@@ -52,17 +52,17 @@ func (r *fulfillmentRepository) Create(
 	ctx context.Context,
 	fulfillment *entity.Fulfillment,
 ) (*entity.Fulfillment, error) {
-	originJSON, err := json.Marshal(fulfillment.Origin)
+	originJSON, err := sonic.Marshal(fulfillment.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	destinationJSON, err := json.Marshal(fulfillment.Destination)
+	destinationJSON, err := sonic.Marshal(fulfillment.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	packageJSON, err := json.Marshal(fulfillment.Package)
+	packageJSON, err := sonic.Marshal(fulfillment.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
@@ -160,17 +160,17 @@ func (r *fulfillmentRepository) Update(
 	ctx context.Context,
 	fulfillment *entity.Fulfillment,
 ) (*entity.Fulfillment, error) {
-	originJSON, err := json.Marshal(fulfillment.Origin)
+	originJSON, err := sonic.Marshal(fulfillment.Origin)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal origin: %w", err)
 	}
 
-	destinationJSON, err := json.Marshal(fulfillment.Destination)
+	destinationJSON, err := sonic.Marshal(fulfillment.Destination)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal destination: %w", err)
 	}
 
-	packageJSON, err := json.Marshal(fulfillment.Package)
+	packageJSON, err := sonic.Marshal(fulfillment.Package)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal package: %w", err)
 	}
@@ -280,17 +280,17 @@ func (r *fulfillmentRepository) scanFulfillment(row pgx.Row) (*entity.Fulfillmen
 	}
 
 	// Unmarshal origin
-	if err = json.Unmarshal(originJSON, &fulfillment.Origin); err != nil {
+	if err = sonic.Unmarshal(originJSON, &fulfillment.Origin); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal origin: %w", err)
 	}
 
 	// Unmarshal destination
-	if err = json.Unmarshal(destinationJSON, &fulfillment.Destination); err != nil {
+	if err = sonic.Unmarshal(destinationJSON, &fulfillment.Destination); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal destination: %w", err)
 	}
 
 	// Unmarshal package
-	if err = json.Unmarshal(packageJSON, &fulfillment.Package); err != nil {
+	if err = sonic.Unmarshal(packageJSON, &fulfillment.Package); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal package: %w", err)
 	}
 
