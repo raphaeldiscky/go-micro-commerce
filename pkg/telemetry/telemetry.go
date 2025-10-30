@@ -18,9 +18,14 @@ type Telemetry struct {
 	tracingEnabled bool
 	metricsEnabled bool
 
-	// Prometheus metrics - must be package-level due to global registry constraint
+	// Standard HTTP metrics for all services
 	httpRequestsTotal   *prometheus.CounterVec
 	httpRequestDuration *prometheus.HistogramVec
+
+	// Gateway-specific backend metrics (only for api-gateway)
+	backendRequestsTotal   *prometheus.CounterVec
+	backendRequestDuration *prometheus.HistogramVec
+	circuitBreakerState    *prometheus.GaugeVec
 
 	// Singleton enforcement
 	once sync.Once

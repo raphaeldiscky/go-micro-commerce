@@ -5,32 +5,32 @@ import (
 	"sync"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 	"github.com/sony/gobreaker"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
 )
 
 // CircuitBreakerService manages circuit breakers for different services.
 type CircuitBreakerService struct {
-	breakers map[string]*gobreaker.CircuitBreaker
-	mutex    sync.RWMutex
-	logger   logger.Logger
-	config   *config.Config
-	metrics  *metrics.Metrics
+	breakers  map[string]*gobreaker.CircuitBreaker
+	mutex     sync.RWMutex
+	logger    logger.Logger
+	config    *config.Config
+	telemetry *telemetry.Telemetry
 }
 
 // NewCircuitBreakerService creates a new circuit breaker service.
 func NewCircuitBreakerService(
 	appLogger logger.Logger,
 	cfg *config.Config,
-	m *metrics.Metrics,
+	tel *telemetry.Telemetry,
 ) *CircuitBreakerService {
 	return &CircuitBreakerService{
-		breakers: make(map[string]*gobreaker.CircuitBreaker),
-		logger:   appLogger,
-		config:   cfg,
-		metrics:  m,
+		breakers:  make(map[string]*gobreaker.CircuitBreaker),
+		logger:    appLogger,
+		config:    cfg,
+		telemetry: tel,
 	}
 }
 
@@ -81,8 +81,8 @@ func (cb *CircuitBreakerService) GetBreaker(serviceName string) *gobreaker.Circu
 			case gobreaker.StateOpen:
 				stateValue = 2
 			}
-			if cb.metrics != nil {
-				cb.metrics.SetCircuitBreakerState(name, stateValue)
+			if cb.telemetry != nil {
+				cb.telemetry.SetCircuitBreakerState(name, stateValue)
 			}
 		},
 	}

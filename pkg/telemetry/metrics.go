@@ -1,6 +1,7 @@
 package telemetry
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/labstack/echo/v4"
@@ -35,11 +36,46 @@ func (t *Telemetry) initMetrics() {
 			[]string{"method", "path", "status_code"},
 		)
 
-		// Register metrics with global Prometheus registry
+		// Register standard metrics with global Prometheus registry
 		prometheus.MustRegister(
 			t.httpRequestsTotal,
 			t.httpRequestDuration,
 		)
+
+		// Initialize gateway-specific metrics if this is the api-gateway
+		if t.serviceName == "api-gateway" {
+			t.backendRequestsTotal = prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "api_gateway_backend_requests_total",
+					Help: "Total number of requests to backend services",
+				},
+				[]string{"service", "method", "status_code"},
+			)
+
+			t.backendRequestDuration = prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "api_gateway_backend_request_duration_seconds",
+					Help:    "Backend service request duration in seconds",
+					Buckets: prometheus.DefBuckets,
+				},
+				[]string{"service", "method"},
+			)
+
+			t.circuitBreakerState = prometheus.NewGaugeVec(
+				prometheus.GaugeOpts{
+					Name: "api_gateway_circuit_breaker_state",
+					Help: "Circuit breaker state (0=closed, 1=half-open, 2=open)",
+				},
+				[]string{"service"},
+			)
+
+			// Register gateway metrics
+			prometheus.MustRegister(
+				t.backendRequestsTotal,
+				t.backendRequestDuration,
+				t.circuitBreakerState,
+			)
+		}
 	})
 }
 
@@ -63,7 +99,7 @@ func (t *Telemetry) RecordMetric(method, path string, statusCode int, duration t
 		t.httpRequestsTotal.WithLabelValues(
 			method,
 			path,
-			string(rune(statusCode)),
+			strconv.Itoa(statusCode),
 		).Inc()
 	}
 
@@ -71,7 +107,31 @@ func (t *Telemetry) RecordMetric(method, path string, statusCode int, duration t
 		t.httpRequestDuration.WithLabelValues(
 			method,
 			path,
-			string(rune(statusCode)),
+			strconv.Itoa(statusCode),
 		).Observe(duration.Seconds())
 	}
+}
+
+// RecordBackendRequest records backend service request metrics (API Gateway only).
+func (t *Telemetry) RecordBackendRequest(
+	service, method string,
+	statusCode int,
+	duration time.Duration,
+) {
+	if !t.metricsEnabled || t.backendRequestsTotal == nil {
+		return
+	}
+
+	t.backendRequestsTotal.WithLabelValues(service, method, strconv.Itoa(statusCode)).Inc()
+	t.backendRequestDuration.WithLabelValues(service, method).Observe(duration.Seconds())
+}
+
+// SetCircuitBreakerState sets the circuit breaker state for a service (API Gateway only).
+// state: 0=closed, 1=half-open, 2=open
+func (t *Telemetry) SetCircuitBreakerState(service string, state float64) {
+	if !t.metricsEnabled || t.circuitBreakerState == nil {
+		return
+	}
+
+	t.circuitBreakerState.WithLabelValues(service).Set(state)
 }

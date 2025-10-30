@@ -16,7 +16,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
@@ -40,15 +39,13 @@ func main() {
 	defer cancel()
 
 	discoveryService := service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
-	metricsInstance := metrics.NewMetrics()
-	circuitBreaker := service.NewCircuitBreakerService(appLogger, cfg, metricsInstance)
+	circuitBreaker := service.NewCircuitBreakerService(appLogger, cfg, tel)
 
 	// Initialize API Gateway
 	gw := gateway.NewAPIGateway(gateway.Config{
 		Logger:           appLogger,
 		ServiceDiscovery: discoveryService,
 		CircuitBreaker:   circuitBreaker,
-		Metrics:          metricsInstance,
 		Telemetry:        tel,
 		Config:           cfg,
 	})

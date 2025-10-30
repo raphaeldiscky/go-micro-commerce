@@ -100,7 +100,7 @@ func (s *TestSuite) SetupSuite() {
 		},
 	}
 
-	// Setup HTTP server
+	// Setup HTTP server (nil telemetry for integration tests)
 	s.httpServer = server.NewHTTPServer(s.ctx, testConfig, appLogger, nil, testProviders)
 
 	// Start HTTP server in goroutine
