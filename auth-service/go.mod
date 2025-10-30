@@ -13,6 +13,8 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.31
 )
 
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+
 require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect

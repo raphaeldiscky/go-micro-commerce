@@ -19,6 +19,10 @@ require (
 	github.com/stretchr/testify v1.11.1
 )
 
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
+
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
 	github.com/99designs/gqlgen v0.17.81 // indirect

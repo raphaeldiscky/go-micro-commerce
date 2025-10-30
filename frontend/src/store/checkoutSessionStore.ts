@@ -85,7 +85,6 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         isLoading: false,
         selectedDestination: null,
         selectedCourier: null,
-        selectedPackage: null,
         selectedPaymentGateway: null,
         selectedAddressData: null,
         selectedShippingOption: null,
@@ -102,6 +101,12 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
               { id: sessionId },
             )
             const session = data.getCheckoutSession
+
+            // Clear state if session ID changed to prevent stale state
+            if (get().checkoutSession?.id !== sessionId) {
+              get().clearCheckout()
+            }
+
             set({
               checkoutSession: session,
               selectedDestination: session?.destination,
@@ -142,12 +147,12 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
 
             const session = data.createCheckoutSession
 
+            // Clear all previous state before setting new session
+            get().clearCheckout()
+
             set({
               checkoutSession: session,
               isLoading: false,
-              selectedDestination: null,
-              selectedCourier: null,
-              selectedPaymentGateway: null,
             })
 
             toast.success('Proceeding to checkout')
@@ -349,6 +354,9 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
 
             toast.success('Order placed successfully!')
 
+            // Clear checkout state after successful order placement
+            get().clearCheckout()
+
             return {
               success: true,
               orderId: order.id,
@@ -386,6 +394,7 @@ export const useCheckoutSessionStore = create<CheckoutSessionStore>()(
         },
 
         clearCheckout: () => {
+          // Clear all state including persisted fields
           set({
             checkoutSession: null,
             isLoading: false,

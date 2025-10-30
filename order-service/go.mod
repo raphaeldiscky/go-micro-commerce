@@ -24,6 +24,9 @@ require (
 	golang.org/x/time v0.14.0
 )
 
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
 	dario.cat/mergo v1.0.2 // indirect

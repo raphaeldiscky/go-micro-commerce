@@ -28,6 +28,9 @@ require (
 	google.golang.org/protobuf v1.36.10
 )
 
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
+
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect

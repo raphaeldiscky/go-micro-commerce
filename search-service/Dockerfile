@@ -11,6 +11,7 @@ COPY search-service/go.mod search-service/go.sum ./search-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/search-service
+ 
 
 RUN go mod download
 

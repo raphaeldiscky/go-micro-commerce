@@ -19,6 +19,8 @@ require (
 	golang.org/x/time v0.14.0
 )
 
+replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
+
 require (
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect

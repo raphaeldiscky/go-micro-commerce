@@ -2,7 +2,7 @@
 # Use the official Golang image to build the application.
 FROM golang:1.25.3-alpine AS builder
 
-# Set the working directory to match the repo structure
+ # Set the working directory to match the repo structure
 WORKDIR /workspace
 
 # Copy only the necessary files for this service
@@ -12,6 +12,7 @@ COPY product-service/go.mod product-service/go.sum ./product-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/product-service
+ 
 
 RUN go mod download
 

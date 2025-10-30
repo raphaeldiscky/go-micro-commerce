@@ -2,7 +2,7 @@
 # Use the official Golang image to build the application.
 FROM golang:1.25.3-alpine AS builder
 
-# Set the working directory to match the repo structure
+ # Set the working directory to match the repo structure
 WORKDIR /workspace
 
 # Copy only the necessary files for this service
@@ -11,6 +11,7 @@ COPY auth-service/go.mod auth-service/go.sum ./auth-service/
 
 # Change to the service directory for building
 WORKDIR /workspace/auth-service
+ 
 
 RUN go mod download
 
