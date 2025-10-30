@@ -1,6 +1,8 @@
 package config
 
 import (
+	"time"
+
 	"github.com/spf13/viper"
 
 	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
@@ -8,13 +10,13 @@ import (
 
 // TracingConfig holds configuration for OpenTelemetry tracing.
 type TracingConfig struct {
-	Enabled       bool    `mapstructure:"TRACING_ENABLED"`
-	URL           string  `mapstructure:"TRACING_URL"`
-	ServiceName   string  `mapstructure:"TRACING_SERVICE_NAME"`
-	SamplingRate  float64 `mapstructure:"TRACING_SAMPLING_RATE"`
-	Environment   string  `mapstructure:"TRACING_ENVIRONMENT"`
-	BatchTimeout  int     `mapstructure:"TRACING_BATCH_TIMEOUT"`
-	ExportTimeout int     `mapstructure:"TRACING_EXPORT_TIMEOUT"`
+	Enabled       bool          `mapstructure:"TRACING_ENABLED"`
+	URL           string        `mapstructure:"TRACING_URL"`
+	ServiceName   string        `mapstructure:"TRACING_SERVICE_NAME"`
+	SamplingRate  float64       `mapstructure:"TRACING_SAMPLING_RATE"`
+	Environment   string        `mapstructure:"TRACING_ENVIRONMENT"`
+	BatchTimeout  time.Duration `mapstructure:"TRACING_BATCH_TIMEOUT"`
+	ExportTimeout time.Duration `mapstructure:"TRACING_EXPORT_TIMEOUT"`
 }
 
 // initTracingConfig initializes the tracing configuration from environment variables.

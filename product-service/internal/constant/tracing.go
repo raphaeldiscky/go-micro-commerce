@@ -1,5 +1,7 @@
 package constant
 
+import "time"
+
 const (
 	// TracingEnabled indicates if tracing is enabled.
 	TracingEnabled = true
@@ -12,7 +14,7 @@ const (
 	// TracingEnvironment is the environment for tracing.
 	TracingEnvironment = "development"
 	// TracingBatchTimeout is the batch timeout in seconds for tracing.
-	TracingBatchTimeout = 5
+	TracingBatchTimeout = 5 * time.Second
 	// TracingExportTimeout is the export timeout in seconds for tracing.
-	TracingExportTimeout = 30
+	TracingExportTimeout = 30 * time.Second
 )

@@ -45,12 +45,12 @@ func (t *Telemetry) initTracing(cfg Config) error {
 	}
 
 	// Create trace provider with configurable batch timeout
-	batchTimeout := time.Duration(cfg.TracingBatchTimeout) * time.Second
+	batchTimeout := cfg.TracingBatchTimeout
 	if batchTimeout == 0 {
 		batchTimeout = defaultBatchTimeout
 	}
 
-	exportTimeout := time.Duration(cfg.TracingExportTimeout) * time.Second
+	exportTimeout := cfg.TracingExportTimeout
 	if exportTimeout == 0 {
 		exportTimeout = defaultExportTimeout
 	}
