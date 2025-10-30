@@ -1,11 +1,9 @@
-// Package tracing provides OpenTelemetry tracing functionality for the API gateway.
-package tracing
+package telemetry
 
 import (
 	"context"
+	"time"
 
-	"github.com/labstack/echo/v4"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -16,12 +14,18 @@ import (
 
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
-
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 )
 
-// InitTracing initializes OpenTelemetry tracing.
-func InitTracing(cfg *config.TracingConfig) error {
+const (
+	defaultBatchTimeout  = 5 * time.Second
+	defaultExportTimeout = 30 * time.Second
+)
+
+//nolint:gochecknoglobals // Required to store tracer provider for graceful shutdown
+var tracerProvider *sdktrace.TracerProvider
+
+// InitTracing initializes OpenTelemetry tracing with the provided configuration.
+func InitTracing(cfg *TracingConfig) error {
 	if !cfg.Enabled {
 		return nil
 	}
@@ -47,17 +51,31 @@ func InitTracing(cfg *config.TracingConfig) error {
 		return err
 	}
 
-	// Create trace provider
+	// Create trace provider with configurable batch timeout
+	batchTimeout := time.Duration(cfg.BatchTimeout) * time.Second
+	if batchTimeout == 0 {
+		batchTimeout = defaultBatchTimeout
+	}
+
+	exportTimeout := time.Duration(cfg.ExportTimeout) * time.Second
+	if exportTimeout == 0 {
+		exportTimeout = defaultExportTimeout
+	}
+
 	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithBatcher(exporter),
+		sdktrace.WithBatcher(exporter,
+			sdktrace.WithBatchTimeout(batchTimeout),
+			sdktrace.WithExportTimeout(exportTimeout),
+		),
 		sdktrace.WithResource(res),
 		sdktrace.WithSampler(sdktrace.TraceIDRatioBased(cfg.SamplingRate)),
 	)
 
 	// Set global trace provider
 	otel.SetTracerProvider(tp)
+	tracerProvider = tp
 
-	// Set global propagator
+	// Set global propagator for W3C trace context
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(
 		propagation.TraceContext{},
 		propagation.Baggage{},
@@ -66,22 +84,26 @@ func InitTracing(cfg *config.TracingConfig) error {
 	return nil
 }
 
-// Middleware creates OpenTelemetry tracing middleware.
-func Middleware() echo.MiddlewareFunc {
-	return otelecho.Middleware("api-gateway")
+// ShutdownTracing gracefully shuts down the tracer provider.
+func ShutdownTracing(ctx context.Context) error {
+	if tracerProvider == nil {
+		return nil
+	}
+
+	return tracerProvider.Shutdown(ctx)
 }
 
-// StartSpan starts a new span with the given name.
-func StartSpan(ctx context.Context, name string) (context.Context, func()) {
-	tracer := otel.Tracer("api-gateway")
-	spanCtx, span := tracer.Start(ctx, name)
+// StartSpan starts a new span with the given name and service name.
+func StartSpan(ctx context.Context, serviceName, spanName string) (context.Context, func()) {
+	tracer := otel.Tracer(serviceName)
+	spanCtx, span := tracer.Start(ctx, spanName)
 
 	return spanCtx, func() {
 		span.End()
 	}
 }
 
-// AddSpanAttributes adds attributes to the current span.
+// AddSpanAttributes adds attributes to the current span in the context.
 func AddSpanAttributes(ctx context.Context, attributes map[string]any) {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
@@ -104,7 +126,7 @@ func AddSpanAttributes(ctx context.Context, attributes map[string]any) {
 	}
 }
 
-// SetSpanError sets an error on the current span.
+// SetSpanError records an error on the current span and sets its status to Error.
 func SetSpanError(ctx context.Context, err error) {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
@@ -115,7 +137,7 @@ func SetSpanError(ctx context.Context, err error) {
 	span.SetStatus(codes.Error, err.Error())
 }
 
-// GetTraceID returns the trace ID from the context.
+// GetTraceID extracts the trace ID from the current span context.
 func GetTraceID(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
@@ -125,7 +147,7 @@ func GetTraceID(ctx context.Context) string {
 	return span.SpanContext().TraceID().String()
 }
 
-// GetSpanID returns the span ID from the context.
+// GetSpanID extracts the span ID from the current span context.
 func GetSpanID(ctx context.Context) string {
 	span := trace.SpanFromContext(ctx)
 	if span == nil {
@@ -135,12 +157,17 @@ func GetSpanID(ctx context.Context) string {
 	return span.SpanContext().SpanID().String()
 }
 
-// InjectHeaders injects tracing headers into HTTP headers.
+// InjectHeaders injects tracing context into HTTP headers for propagation.
 func InjectHeaders(ctx context.Context, headers map[string]string) {
 	otel.GetTextMapPropagator().Inject(ctx, &headerCarrier{headers: headers})
 }
 
-// headerCarrier implements TextMapCarrier for injecting headers.
+// ExtractContext extracts tracing context from HTTP headers.
+func ExtractContext(ctx context.Context, headers map[string]string) context.Context {
+	return otel.GetTextMapPropagator().Extract(ctx, &headerCarrier{headers: headers})
+}
+
+// headerCarrier implements TextMapCarrier for injecting/extracting trace context.
 type headerCarrier struct {
 	headers map[string]string
 }

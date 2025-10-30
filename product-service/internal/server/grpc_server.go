@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 	"connectrpc.com/grpchealth"
 	"connectrpc.com/grpcreflect"
+	"connectrpc.com/otelconnect"
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/proto/product/v1/productv1connect"
@@ -335,10 +336,23 @@ func (s *GRPCServer) Start(_ context.Context) error {
 	// Create authentication interceptor
 	authInterceptor := connectauth.NewAuthInterceptor()
 
-	// Create Connect-RPC handler with auth interceptor
+	// Create interceptors slice
+	interceptors := []connect.Interceptor{authInterceptor.ServiceToServiceAuth()}
+
+	// Add OpenTelemetry interceptor if tracing is enabled
+	if s.cfg.Tracing.Enabled {
+		otelInterceptor, err := otelconnect.NewInterceptor()
+		if err == nil {
+			interceptors = append(interceptors, otelInterceptor)
+		} else {
+			s.logger.Warnf("Failed to create OpenTelemetry interceptor: %v", err)
+		}
+	}
+
+	// Create Connect-RPC handler with interceptors
 	path, handler := productv1connect.NewProductServiceHandler(
 		s,
-		connect.WithInterceptors(authInterceptor.ServiceToServiceAuth()),
+		connect.WithInterceptors(interceptors...),
 	)
 
 	// Create HTTP mux and register the handler

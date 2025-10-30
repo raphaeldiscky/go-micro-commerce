@@ -3,13 +3,15 @@ package routes
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/handler"
 )
 
 // SetupAppRoutes sets up all app routes.
 func SetupAppRoutes(e *echo.Echo, app *handler.AppHandler) {
-	// Health and readiness checks
+	// Metrics endpoint (Prometheus format)
+	e.GET("/metrics", telemetry.MetricsHandler())
 	e.GET("/health", app.Health)
 	e.RouteNotFound("/*", app.RouteNotFound)
 }

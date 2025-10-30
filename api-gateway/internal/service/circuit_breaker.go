@@ -8,6 +8,7 @@ import (
 	"github.com/sony/gobreaker"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
 )
 
 // CircuitBreakerService manages circuit breakers for different services.
@@ -16,14 +17,20 @@ type CircuitBreakerService struct {
 	mutex    sync.RWMutex
 	logger   logger.Logger
 	config   *config.Config
+	metrics  *metrics.Metrics
 }
 
 // NewCircuitBreakerService creates a new circuit breaker service.
-func NewCircuitBreakerService(appLogger logger.Logger, cfg *config.Config) *CircuitBreakerService {
+func NewCircuitBreakerService(
+	appLogger logger.Logger,
+	cfg *config.Config,
+	m *metrics.Metrics,
+) *CircuitBreakerService {
 	return &CircuitBreakerService{
 		breakers: make(map[string]*gobreaker.CircuitBreaker),
 		logger:   appLogger,
 		config:   cfg,
+		metrics:  m,
 	}
 }
 
@@ -62,6 +69,21 @@ func (cb *CircuitBreakerService) GetBreaker(serviceName string) *gobreaker.Circu
 				from.String(),
 				to.String(),
 			)
+
+			// Record circuit breaker state change in metrics
+			// State: 0=closed, 1=half-open, 2=open
+			var stateValue float64
+			switch to {
+			case gobreaker.StateClosed:
+				stateValue = 0
+			case gobreaker.StateHalfOpen:
+				stateValue = 1
+			case gobreaker.StateOpen:
+				stateValue = 2
+			}
+			if cb.metrics != nil {
+				cb.metrics.SetCircuitBreakerState(name, stateValue)
+			}
 		},
 	}
 

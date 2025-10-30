@@ -41,6 +41,36 @@ scrape_configs:
     metrics_path: "/metrics"
     scrape_interval: 5s
 
+  - job_name: "payment-service"
+    static_configs:
+      - targets: ["payment-service:8085"]
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+
+  - job_name: "fulfillment-service"
+    static_configs:
+      - targets: ["fulfillment-service:8086"]
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+
+  - job_name: "search-service"
+    static_configs:
+      - targets: ["search-service:8087"]
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+
+  - job_name: "cart-service"
+    static_configs:
+      - targets: ["cart-service:8088"]
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+
+  - job_name: "chat-service"
+    static_configs:
+      - targets: ["chat-service:8089"]
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+
   - job_name: "otel-collector"
     static_configs:
       - targets: ["otel-collector:8888"]

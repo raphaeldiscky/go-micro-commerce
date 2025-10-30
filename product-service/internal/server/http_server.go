@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	custommiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
@@ -85,6 +86,15 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 
 // registerMiddlewares registers custom middleware for the HTTP server.
 func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
+	// Telemetry middleware (tracing and metrics)
+	if cfg.Tracing.Enabled {
+		e.Use(telemetry.EchoMiddleware(cfg.Tracing.ServiceName))
+	}
+
+	if cfg.Metrics.Enabled {
+		e.Use(telemetry.MetricsMiddleware())
+	}
+
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
 			return uuid.New().String()

@@ -6,13 +6,10 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
 )
 
 // SetupGatewayRoutes sets up the API gateway routes.
 func SetupGatewayRoutes(e *echo.Echo, gw *gateway.Gateway, h *middleware.AuthMiddleware) {
-	// Metrics endpoint (Prometheus format)
-	e.GET("/metrics", metrics.Handler())
 	// Debug endpoint to check service discovery
 	e.GET("/debug/services", gw.DebugServices())
 	// Public routes

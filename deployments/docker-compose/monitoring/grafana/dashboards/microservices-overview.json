@@ -1,76 +1,74 @@
 {
-  "dashboard": {
-    "id": null,
-    "title": "Go Microservices Overview",
-    "tags": ["microservices", "go"],
-    "style": "dark",
-    "timezone": "browser",
-    "panels": [
-      {
-        "id": 1,
-        "title": "HTTP Request Rate",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "sum(rate(http_requests_total[5m])) by (service_name)",
-            "legendFormat": "{{service_name}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "unit": "reqps"
-          }
-        },
-        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
+  "id": null,
+  "title": "Go Microservices Overview",
+  "tags": ["microservices", "go"],
+  "style": "dark",
+  "timezone": "browser",
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP Request Rate",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "reqps"
+        }
       },
-      {
-        "id": 2,
-        "title": "HTTP Response Time",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service_name))",
-            "legendFormat": "{{service_name}} - 95th percentile"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "unit": "s"
-          }
-        },
-        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
-      },
-      {
-        "id": 3,
-        "title": "Error Rate",
-        "type": "timeseries",
-        "targets": [
-          {
-            "expr": "sum(rate(http_requests_total{status=~\"4..|5..\"}[5m])) by (service_name) / sum(rate(http_requests_total[5m])) by (service_name)",
-            "legendFormat": "{{service_name}}"
-          }
-        ],
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "unit": "percentunit"
-          }
-        },
-        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
-      }
-    ],
-    "time": {
-      "from": "now-1h",
-      "to": "now"
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 }
     },
-    "refresh": "5s"
-  }
+    {
+      "id": 2,
+      "title": "HTTP Response Time",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service_name))",
+          "legendFormat": "{{service_name}} - 95th percentile"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "s"
+        }
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 }
+    },
+    {
+      "id": 3,
+      "title": "Error Rate",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total{status=~\"4..|5..\"}[5m])) by (service_name) / sum(rate(http_requests_total[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "unit": "percentunit"
+        }
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 }
+    }
+  ],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "5s"
 }

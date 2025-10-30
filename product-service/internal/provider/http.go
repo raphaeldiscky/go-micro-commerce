@@ -21,6 +21,6 @@ func SetupHTTP(
 	providers *Providers,
 ) {
 	appHandler := handler.NewAppHandler()
-	routes.SetupAppRoutes(e, appHandler)
+	routes.SetupAppRoutes(e, appHandler, cfg)
 	SetupProduct(ctx, cfg, e, appLogger, providers)
 }

@@ -15,10 +15,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
@@ -182,7 +182,7 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 
 	// Add tracing headers
 	headers := make(map[string]string)
-	tracing.InjectHeaders(c.Request().Context(), headers)
+	telemetry.InjectHeaders(c.Request().Context(), headers)
 
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -399,7 +399,7 @@ func (gw *Gateway) proxyConnectRPCRequest(c echo.Context, endpoint string) (*Pro
 
 	// Add tracing headers
 	headers := make(map[string]string)
-	tracing.InjectHeaders(c.Request().Context(), headers)
+	telemetry.InjectHeaders(c.Request().Context(), headers)
 
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -631,7 +631,7 @@ func (gw *Gateway) prepareBackendHeaders(c echo.Context) http.Header {
 
 	// Add tracing headers
 	tracingHeaders := make(map[string]string)
-	tracing.InjectHeaders(c.Request().Context(), tracingHeaders)
+	telemetry.InjectHeaders(c.Request().Context(), tracingHeaders)
 
 	for key, value := range tracingHeaders {
 		backendHeaders.Set(key, value)
@@ -873,7 +873,7 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 
 		// Add tracing headers
 		headers := make(map[string]string)
-		tracing.InjectHeaders(c.Request().Context(), headers)
+		telemetry.InjectHeaders(c.Request().Context(), headers)
 
 		for key, value := range headers {
 			req.Header.Set(key, value)

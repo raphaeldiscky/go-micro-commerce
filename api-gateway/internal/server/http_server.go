@@ -10,12 +10,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	custommiddleware "github.com/raphaeldiscky/go-micro-commerce/pkg/middleware"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/provider"
 )
 
@@ -39,7 +39,7 @@ func NewHTTPServer(
 	registerMiddlewares(e, cfg)
 
 	// Setup HTTP
-	provider.SetupHTTP(e, appLogger, gw, providers)
+	provider.SetupHTTP(e, gw, providers)
 
 	return &HTTPServer{
 		echo:   e,
@@ -83,12 +83,20 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 
 // registerMiddlewares registers custom middleware for the HTTP server.
 func registerMiddlewares(e *echo.Echo, cfg *config.Config) {
+	// Telemetry middleware (tracing and metrics)
+	if cfg.Tracing.Enabled {
+		e.Use(telemetry.EchoMiddleware(cfg.Tracing.ServiceName))
+	}
+
+	if cfg.Metrics.Enabled {
+		e.Use(telemetry.MetricsMiddleware())
+	}
+
 	e.Use(middleware.RequestIDWithConfig(middleware.RequestIDConfig{
 		Generator: func() string {
 			return uuid.New().String()
 		},
 	}))
-	e.Use(tracing.Middleware())
 	e.Use(middleware.LoggerWithConfig(
 		middleware.LoggerConfig{
 			Format: "[${time_rfc3339}] ${method} ${uri} ${status} ${latency_human}\n",
