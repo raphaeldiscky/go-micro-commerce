@@ -17,7 +17,8 @@ This application is primarily intended for exploring technical concepts. My goal
 - Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
 - Database Management with schema migrations handled by `golang-migrate`
 - Robust Validation using `go-playground/validator` for input sanitization
-- Automated CI/CD pipeline using `GitHub Actions` with matrix strategy.
+- Automated CI/CD pipeline using `GitHub Actions` with matrix strategy
+- Implemented `message inbox pattern` for idempotent event consumption and `transactional outbox pattern` for publishing domain events
 - `Server-Sent Events (SSE)` for real-time push notification delivery in the notification-service.
 - `WebSocket` support in the chat-service for bi-directional communication.
 
@@ -37,13 +38,14 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[testcontainers/testcontainers-go](https://github.com/testcontainers/testcontainers-go)** - testcontainers for go
 - **[spf13/viper](https://github.com/spf13/viper)** - go configuration with fangs
 - **[spf13/cobra](https://github.com/spf13/cobra)** - a commander for modern go CLI interactions
-- **[hashicorp/consul](https://github.com/hashicorp/consul)** - service discovery
+- **[hashicorp/consul](https://github.com/hashicorp/consul)** - service registration and discovery
 - **[docker](https://www.docker.com/)** - container platform
 - **[go-playground/validator/v10](https://github.com/go-playground/validator)** - go struct and field validation
 - **[golang/crypto](https://github.com/golang/crypto)** - cryptographic functions
 - **[golang-jwt/jwt/v5](https://github.com/golang-jwt/jwt)** - go implementation of JWT
 - **[gorilla/websocket](https://github.com/gorilla/websocket)** - websocket implementation for go
 - **[temporal](https://github.com/temporalio/temporal)** - workflow engine service
+- **[sony/gobreaker](https://github.com/sony/gobreaker)** - circuit breaker implemented in go
 
 ## Architecture Overview 🏗️
 
@@ -166,6 +168,8 @@ graph TD
   N --> O[Skip Payment Reminder + Fulfillment + Stock Update]
   L -->|Timeout| P[Mark Order as Expired]
   P --> Q[Restock Inventory]
+  L -->|Canceled| S[Mark Order as Canceled]
+  S --> Q
 ```
 
 **Order Placement Flow**:
