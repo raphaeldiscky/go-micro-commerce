@@ -16,6 +16,8 @@ type Config struct {
 	OutboxPublisher *OutboxPublisherConfig
 	Client          *ClientConfig
 	Asynq           *AsynqConfig
+	Tracing         *TracingConfig
+	Metrics         *MetricsConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -40,6 +42,8 @@ func LoadConfig() (*Config, error) {
 		OutboxPublisher: initOutboxPublisherConfig(),
 		Client:          initClientConfig(),
 		Asynq:           initAsynqConfig(),
+		Tracing:         initTracingConfig(),
+		Metrics:         initMetricsConfig(),
 	}
 
 	return cfg, nil

@@ -8,6 +8,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/asynq"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
@@ -23,6 +24,7 @@ func SetupCheckoutSession(
 	cfg *config.Config,
 	e *echo.Echo,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 	providers *Providers,
 ) {
 	err := providers.KafkaAdmin.CreateTopic(
@@ -62,7 +64,10 @@ func SetupCheckoutSession(
 		taskCancellationService,
 	)
 	providers.CheckoutSessionService = checkoutSessionService
-	checkoutSessionHandler := handler.NewCheckoutSessionHandler(checkoutSessionService)
+	checkoutSessionHandler := handler.NewCheckoutSessionHandler(
+		checkoutSessionService,
+		tel,
+	)
 
 	routes.SetupCheckoutSessionRoutes(e, checkoutSessionHandler)
 }

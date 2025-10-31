@@ -43,9 +43,6 @@ func Start(
 		appLogger.Fatal("failed to setup providers:", err)
 	}
 
-	// Initialize ProductService early to avoid race conditions
-	provider.InitializeProductService(ctx, cfg, appLogger, providers)
-
 	manager := &Manager{
 		cfg:       cfg,
 		logger:    appLogger,

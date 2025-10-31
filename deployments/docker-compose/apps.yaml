@@ -41,9 +41,9 @@ services:
       - RATE_LIMIT_WINDOW=1m
       - RATE_LIMIT_BURST_LIMIT=10
       - TRACING_ENABLED=true
-      - TRACING_URL=http://localhost:4318
+      - TRACING_URL=http://otel-collector:4318
       - TRACING_SERVICE_NAME=api-gateway
-      - TRACING_SAMPLING_RATE=0.1
+      - TRACING_SAMPLING_RATE=1.0
       - TRACING_ENVIRONMENT=development
       - TRACING_BATCH_TIMEOUT=5
       - TRACING_EXPORT_TIMEOUT=30
@@ -149,6 +149,15 @@ services:
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - CONSUL_ADDRESS=consul:8500
+      - TRACING_ENABLED=true
+      - TRACING_URL=http://otel-collector:4318
+      - TRACING_SERVICE_NAME=product-service
+      - TRACING_SAMPLING_RATE=1.0
+      - TRACING_ENVIRONMENT=development
+      - TRACING_BATCH_TIMEOUT=5
+      - TRACING_EXPORT_TIMEOUT=30
+      - METRICS_ENABLED=true
+      - METRICS_PATH=/metrics
     depends_on:
       postgres-product:
         condition: service_healthy
@@ -215,6 +224,15 @@ services:
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - CONSUL_ADDRESS=consul:8500
+      - TRACING_ENABLED=true
+      - TRACING_URL=http://otel-collector:4318
+      - TRACING_SERVICE_NAME=order-service
+      - TRACING_SAMPLING_RATE=1.0
+      - TRACING_ENVIRONMENT=development
+      - TRACING_BATCH_TIMEOUT=5
+      - TRACING_EXPORT_TIMEOUT=30
+      - METRICS_ENABLED=true
+      - METRICS_PATH=/metrics
     depends_on:
       postgres-order:
         condition: service_healthy
@@ -266,6 +284,15 @@ services:
       - REDIS_URL=redis://redis:6379
       - KAFKA_BROKERS=kafka:29092
       - CONSUL_ADDRESS=consul:8500
+      - TRACING_ENABLED=true
+      - TRACING_URL=http://otel-collector:4318
+      - TRACING_SERVICE_NAME=payment-service
+      - TRACING_SAMPLING_RATE=1.0
+      - TRACING_ENVIRONMENT=development
+      - TRACING_BATCH_TIMEOUT=5
+      - TRACING_EXPORT_TIMEOUT=30
+      - METRICS_ENABLED=true
+      - METRICS_PATH=/metrics
     depends_on:
       postgres-payment:
         condition: service_healthy
@@ -310,6 +337,15 @@ services:
     environment:
       - HTTP_SERVER_PORT=8085
       - CONSUL_ADDRESS=consul:8500
+      - TRACING_ENABLED=true
+      - TRACING_URL=http://otel-collector:4318
+      - TRACING_SERVICE_NAME=fulfillment-service
+      - TRACING_SAMPLING_RATE=1.0
+      - TRACING_ENVIRONMENT=development
+      - TRACING_BATCH_TIMEOUT=5
+      - TRACING_EXPORT_TIMEOUT=30
+      - METRICS_ENABLED=true
+      - METRICS_PATH=/metrics
     depends_on:
       consul:
         condition: service_healthy
@@ -337,6 +373,15 @@ services:
       - SMTP_PORT=587
       - SMTP_EMAIL=your-email@gmail.com
       - CONSUL_ADDRESS=consul:8500
+      - TRACING_ENABLED=true
+      - TRACING_URL=http://otel-collector:4318
+      - TRACING_SERVICE_NAME=notification-service
+      - TRACING_SAMPLING_RATE=1.0
+      - TRACING_ENVIRONMENT=development
+      - TRACING_BATCH_TIMEOUT=5
+      - TRACING_EXPORT_TIMEOUT=30
+      - METRICS_ENABLED=true
+      - METRICS_PATH=/metrics
     depends_on:
       consul:
         condition: service_healthy

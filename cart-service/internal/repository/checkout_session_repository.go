@@ -8,6 +8,7 @@ import (
 	"github.com/bytedance/sonic"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
@@ -28,13 +29,15 @@ type CheckoutSessionRepository interface {
 
 // checkoutSessionRepository implements the CheckoutSessionRepository interface for PostgreSQL.
 type checkoutSessionRepository struct {
-	db DBTX
+	db  DBTX
+	tel *telemetry.Telemetry
 }
 
 // NewCheckoutSessionRepository creates a new instance of checkoutSessionRepository.
-func NewCheckoutSessionRepository(db DBTX) CheckoutSessionRepository {
+func NewCheckoutSessionRepository(db DBTX, tel *telemetry.Telemetry) CheckoutSessionRepository {
 	return &checkoutSessionRepository{
-		db: db,
+		db:  db,
+		tel: tel,
 	}
 }
 
@@ -43,9 +46,24 @@ func (r *checkoutSessionRepository) Create(
 	ctx context.Context,
 	session *entity.CheckoutSession,
 ) (*entity.CheckoutSession, error) {
+	ctx, end := r.tel.StartSpan(ctx, "CheckoutSessionRepository.Create")
+	defer end()
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"db.operation":    "insert",
+		"db.table":        "checkout_sessions",
+		"session.id":      session.ID.String(),
+		"customer.id":     session.CustomerID.String(),
+		"cart.id":         session.CartID.String(),
+		"idempotency.key": session.IdempotencyKey,
+		"items.count":     len(session.Items),
+		"payment.gateway": session.PaymentGateway,
+	})
+
 	// Marshal JSONB fields
 	courierJSON, err := sonic.Marshal(session.Courier)
 	if err != nil {
+		r.tel.SetSpanError(ctx, err)
 		return nil, fmt.Errorf("failed to marshal courier: %w", err)
 	}
 
@@ -114,6 +132,7 @@ func (r *checkoutSessionRepository) Create(
 		&createdSession.UpdatedAt,
 	)
 	if err != nil {
+		r.tel.SetSpanError(ctx, err)
 		return nil, fmt.Errorf("failed to create checkout session: %w", err)
 	}
 
@@ -170,6 +189,15 @@ func (r *checkoutSessionRepository) GetByID(
 	ctx context.Context,
 	id uuid.UUID,
 ) (*entity.CheckoutSession, error) {
+	ctx, end := r.tel.StartSpan(ctx, "CheckoutSessionRepository.GetByID")
+	defer end()
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"db.operation": "select",
+		"db.table":     "checkout_sessions",
+		"session.id":   id.String(),
+	})
+
 	// Get checkout session
 	sessionQuery := `
 		SELECT id, idempotency_key, customer_id, cart_id, courier, destination, origin, package,
@@ -203,11 +231,23 @@ func (r *checkoutSessionRepository) GetByID(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			r.tel.AddSpanAttributes(ctx, map[string]any{
+				"session.found": false,
+			})
+
 			return nil, errors.New("checkout session not found")
 		}
 
+		r.tel.SetSpanError(ctx, err)
+
 		return nil, fmt.Errorf("failed to scan checkout session: %w", err)
 	}
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"session.found": true,
+		"customer.id":   session.CustomerID.String(),
+		"cart.id":       session.CartID.String(),
+	})
 
 	// Unmarshal JSONB fields
 	if err = sonic.Unmarshal(courierData, &session.Courier); err != nil {
@@ -236,6 +276,7 @@ func (r *checkoutSessionRepository) GetByID(
 
 	rows, err := r.db.Query(ctx, itemsQuery, id)
 	if err != nil {
+		r.tel.SetSpanError(ctx, err)
 		return nil, fmt.Errorf("failed to query checkout session items: %w", err)
 	}
 	defer rows.Close()
@@ -253,6 +294,7 @@ func (r *checkoutSessionRepository) GetByID(
 			&item.UnitPrice,
 		)
 		if err != nil {
+			r.tel.SetSpanError(ctx, err)
 			return nil, fmt.Errorf("failed to scan checkout session item: %w", err)
 		}
 
@@ -260,6 +302,10 @@ func (r *checkoutSessionRepository) GetByID(
 	}
 
 	session.Items = items
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"items.count": len(items),
+	})
 
 	return &session, nil
 }
@@ -269,9 +315,21 @@ func (r *checkoutSessionRepository) Update(
 	ctx context.Context,
 	session *entity.CheckoutSession,
 ) (*entity.CheckoutSession, error) {
+	ctx, end := r.tel.StartSpan(ctx, "CheckoutSessionRepository.Update")
+	defer end()
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"db.operation":    "update",
+		"db.table":        "checkout_sessions",
+		"session.id":      session.ID.String(),
+		"payment.gateway": session.PaymentGateway,
+		"session.status":  string(session.Status),
+	})
+
 	// Marshal JSONB fields
 	courierJSON, err := sonic.Marshal(session.Courier)
 	if err != nil {
+		r.tel.SetSpanError(ctx, err)
 		return nil, fmt.Errorf("failed to marshal courier: %w", err)
 	}
 
@@ -333,8 +391,14 @@ func (r *checkoutSessionRepository) Update(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			r.tel.AddSpanAttributes(ctx, map[string]any{
+				"session.found": false,
+			})
+
 			return nil, errors.New(constant.CheckoutSessionNotFoundErrorMessage)
 		}
+
+		r.tel.SetSpanError(ctx, err)
 
 		return nil, fmt.Errorf("failed to update checkout session: %w", err)
 	}

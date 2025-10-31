@@ -45,9 +45,9 @@ exporters:
     tls:
       insecure: true
 
-  # Loki exporter for logs
-  loki:
-    endpoint: http://loki:3100/loki/api/v1/push
+  # Loki exporter for logs via OTLP
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
     tls:
       insecure: true
 
@@ -87,4 +87,4 @@ service:
     logs:
       receivers: [otlp]
       processors: [memory_limiter, batch, resource]
-      exporters: [loki, debug]
+      exporters: [otlphttp/loki, debug]
