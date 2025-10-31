@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
@@ -20,11 +21,12 @@ type HTTPWorker struct {
 func NewHTTPWorker(
 	cfg *config.Config,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 	providers *provider.Providers,
 	gw *gateway.Gateway,
 ) *HTTPWorker {
 	return &HTTPWorker{
-		server: server.NewHTTPServer(cfg, appLogger, providers, gw),
+		server: server.NewHTTPServer(cfg, appLogger, tel, providers, gw),
 	}
 }
 

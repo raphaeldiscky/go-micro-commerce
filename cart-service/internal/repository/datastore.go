@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 )
 
 // DBTX is an interface that wraps the database transaction methods.
@@ -32,15 +33,22 @@ type dataStore struct {
 	db     DBTX
 	rdl    *redislock.Client
 	logger logger.Logger
+	tel    *telemetry.Telemetry
 }
 
 // NewDataStore creates a new DataStore.
-func NewDataStore(pool *pgxpool.Pool, rdl *redislock.Client, appLogger logger.Logger) DataStore {
+func NewDataStore(
+	pool *pgxpool.Pool,
+	rdl *redislock.Client,
+	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
+) DataStore {
 	return &dataStore{
 		pool:   pool,
 		db:     pool,
 		rdl:    rdl,
 		logger: appLogger,
+		tel:    tel,
 	}
 }
 
@@ -56,6 +64,7 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 		db:     tx,
 		rdl:    s.rdl,
 		logger: s.logger,
+		tel:    s.tel,
 	})
 	if err != nil {
 		if errRollback := tx.Rollback(ctx); errRollback != nil {
@@ -70,12 +79,12 @@ func (s *dataStore) Atomic(ctx context.Context, fn func(DataStore) error) error 
 
 // CartRepository returns a new CartRepository.
 func (s *dataStore) CartRepository() CartRepository {
-	return NewCartRepository(s.db, s.logger)
+	return NewCartRepository(s.db, s.logger, s.tel)
 }
 
 // CheckoutSessionRepository returns a new CheckoutSessionRepository.
 func (s *dataStore) CheckoutSessionRepository() CheckoutSessionRepository {
-	return NewCheckoutSessionRepository(s.db)
+	return NewCheckoutSessionRepository(s.db, s.tel)
 }
 
 // OutboxRepository returns a new OutboxRepository.

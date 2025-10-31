@@ -142,42 +142,6 @@ This setup replaces Jaeger with Tempo for distributed tracing:
 - **After**: Export to OpenTelemetry Collector, which forwards to Tempo
 - **Benefits**: Better integration with Prometheus and Grafana, more efficient storage
 
-## Testing the Monitoring Stack
-
-### Quick Test
-
-Run the comprehensive monitoring test suite:
-
-```bash
-./scripts/test-all-monitoring.sh
-```
-
-### Individual Tests
-
-**1. Monitoring Stack Health Check:**
-
-```bash
-./scripts/test-monitoring.sh
-```
-
-Tests all services (Prometheus, Grafana, Loki, Tempo, OpenTelemetry Collector).
-
-**2. OpenTelemetry Pipeline Test:**
-
-```bash
-./scripts/test-otel.sh
-```
-
-Sends sample traces, metrics, and logs through the OTLP pipeline.
-
-**3. API Gateway Monitoring Test:**
-
-```bash
-./scripts/test-api-gateway.sh
-```
-
-Tests API Gateway monitoring endpoints and trace generation.
-
 ### API Gateway Monitoring Endpoints
 
 The API Gateway now includes comprehensive monitoring endpoints:
@@ -189,22 +153,6 @@ The API Gateway now includes comprehensive monitoring endpoints:
 - **`/test/trace`** - Create test trace for validation
 - **`/test/error`** - Create test error for monitoring
 
-### Example Usage
-
-```bash
-# Check API Gateway health
-curl http://localhost:8080/health | jq
-
-# Get service information
-curl http://localhost:8080/info | jq
-
-# Create a test trace
-curl http://localhost:8080/test/trace | jq
-
-# View in Grafana
-open http://localhost:3000
-```
-
 ## Troubleshooting
 
 1. **Services not showing metrics**: Check Prometheus targets at <http://localhost:9090/targets>
@@ -212,7 +160,7 @@ open http://localhost:3000
 3. **Grafana data source issues**: Check provisioning logs in Grafana container
 4. **Performance issues**: Adjust sampling rates in service configurations
 
-## Register services manually
+## Register services manually with Consul
 
 ```
 curl -X PUT http://localhost:8500/v1/agent/service/register \

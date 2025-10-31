@@ -15,10 +15,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/metrics"
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/middleware/tracing"
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
@@ -27,7 +26,7 @@ type Gateway struct {
 	logger           logger.Logger
 	serviceDiscovery service.Discovery
 	circuitBreaker   *service.CircuitBreakerService
-	metrics          *metrics.Metrics
+	telemetry        *telemetry.Telemetry
 	config           *config.Config
 }
 
@@ -36,7 +35,7 @@ type Config struct {
 	Logger           logger.Logger
 	ServiceDiscovery service.Discovery
 	CircuitBreaker   *service.CircuitBreakerService
-	Metrics          *metrics.Metrics
+	Telemetry        *telemetry.Telemetry
 	Config           *config.Config
 }
 
@@ -46,7 +45,7 @@ func NewAPIGateway(cfg Config) *Gateway {
 		logger:           cfg.Logger,
 		serviceDiscovery: cfg.ServiceDiscovery,
 		circuitBreaker:   cfg.CircuitBreaker,
-		metrics:          cfg.Metrics,
+		telemetry:        cfg.Telemetry,
 		config:           cfg.Config,
 	}
 }
@@ -80,7 +79,7 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 			)
 
 			// Record metrics
-			gw.metrics.RecordGatewayRequest(
+			gw.telemetry.RecordBackendRequest(
 				serviceName,
 				c.Request().Method,
 				http.StatusServiceUnavailable,
@@ -101,7 +100,7 @@ func (gw *Gateway) ProxyToService(serviceName, path string) echo.HandlerFunc {
 		}
 
 		// Record metrics
-		gw.metrics.RecordGatewayRequest(
+		gw.telemetry.RecordBackendRequest(
 			serviceName,
 			c.Request().Method,
 			response.StatusCode,
@@ -182,7 +181,9 @@ func (gw *Gateway) proxyRequest(c echo.Context, endpoint, path string) (*ProxyRe
 
 	// Add tracing headers
 	headers := make(map[string]string)
-	tracing.InjectHeaders(c.Request().Context(), headers)
+	if gw.telemetry != nil {
+		gw.telemetry.InjectHeaders(c.Request().Context(), headers)
+	}
 
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -330,7 +331,7 @@ func (gw *Gateway) ProxyToConnectRPC(serviceName string) echo.HandlerFunc {
 				serviceName, err)
 
 			// Record metrics
-			gw.metrics.RecordGatewayRequest(
+			gw.telemetry.RecordBackendRequest(
 				serviceName,
 				c.Request().Method,
 				http.StatusServiceUnavailable,
@@ -349,7 +350,7 @@ func (gw *Gateway) ProxyToConnectRPC(serviceName string) echo.HandlerFunc {
 		}
 
 		// Record metrics
-		gw.metrics.RecordGatewayRequest(
+		gw.telemetry.RecordBackendRequest(
 			serviceName,
 			c.Request().Method,
 			response.StatusCode,
@@ -399,7 +400,9 @@ func (gw *Gateway) proxyConnectRPCRequest(c echo.Context, endpoint string) (*Pro
 
 	// Add tracing headers
 	headers := make(map[string]string)
-	tracing.InjectHeaders(c.Request().Context(), headers)
+	if gw.telemetry != nil {
+		gw.telemetry.InjectHeaders(c.Request().Context(), headers)
+	}
 
 	for key, value := range headers {
 		req.Header.Set(key, value)
@@ -545,7 +548,7 @@ func (gw *Gateway) ProxyWebSocket(serviceName, path string) echo.HandlerFunc {
 
 		// Record successful connection metrics
 		duration := time.Since(start)
-		gw.metrics.RecordGatewayRequest(
+		gw.telemetry.RecordBackendRequest(
 			serviceName,
 			"WEBSOCKET",
 			http.StatusSwitchingProtocols,
@@ -631,7 +634,9 @@ func (gw *Gateway) prepareBackendHeaders(c echo.Context) http.Header {
 
 	// Add tracing headers
 	tracingHeaders := make(map[string]string)
-	tracing.InjectHeaders(c.Request().Context(), tracingHeaders)
+	if gw.telemetry != nil {
+		gw.telemetry.InjectHeaders(c.Request().Context(), tracingHeaders)
+	}
 
 	for key, value := range tracingHeaders {
 		backendHeaders.Set(key, value)
@@ -784,7 +789,7 @@ func (gw *Gateway) handleBackendDialFailure(
 	}
 
 	// Record metrics
-	gw.metrics.RecordGatewayRequest(serviceName, "WEBSOCKET", statusCode, duration)
+	gw.telemetry.RecordBackendRequest(serviceName, "WEBSOCKET", statusCode, duration)
 
 	// Send close message to client
 	closeErr := clientConn.WriteMessage(
@@ -873,7 +878,9 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 
 		// Add tracing headers
 		headers := make(map[string]string)
-		tracing.InjectHeaders(c.Request().Context(), headers)
+		if gw.telemetry != nil {
+			gw.telemetry.InjectHeaders(c.Request().Context(), headers)
+		}
 
 		for key, value := range headers {
 			req.Header.Set(key, value)
@@ -896,7 +903,7 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 			gw.logger.Errorf("failed to connect to backend for SSE: %v", err)
 
 			duration := time.Since(start)
-			gw.metrics.RecordGatewayRequest(
+			gw.telemetry.RecordBackendRequest(
 				serviceName,
 				c.Request().Method,
 				http.StatusBadGateway,
@@ -914,7 +921,7 @@ func (gw *Gateway) ProxySSE(serviceName, path string) echo.HandlerFunc {
 
 		// Record initial connection metrics
 		duration := time.Since(start)
-		gw.metrics.RecordGatewayRequest(
+		gw.telemetry.RecordBackendRequest(
 			serviceName,
 			c.Request().Method,
 			resp.StatusCode,

@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/spf13/viper"
 
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/product-service/internal/constant"
 )
 
 // MetricsConfig holds configuration for Prometheus metrics.

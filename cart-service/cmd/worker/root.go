@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 	"github.com/spf13/cobra"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
@@ -17,6 +18,7 @@ import (
 type Manager struct {
 	cfg       *config.Config
 	logger    logger.Logger
+	telemetry *telemetry.Telemetry
 	providers *provider.Providers
 	workers   []Worker
 	wg        sync.WaitGroup
@@ -30,8 +32,13 @@ type Worker interface {
 }
 
 // Start initializes and starts the worker services.
-func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) error {
-	providers, err := provider.SetupGlobal(ctx, cfg, appLogger)
+func Start(
+	ctx context.Context,
+	cfg *config.Config,
+	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
+) error {
+	providers, err := provider.SetupGlobal(ctx, cfg, appLogger, tel)
 	if err != nil {
 		appLogger.Fatal("failed to setup providers:", err)
 	}
@@ -39,6 +46,7 @@ func Start(ctx context.Context, cfg *config.Config, appLogger logger.Logger) err
 	manager := &Manager{
 		cfg:       cfg,
 		logger:    appLogger,
+		telemetry: tel,
 		providers: providers,
 	}
 	rootCmd := &cobra.Command{
@@ -76,7 +84,7 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 
 	// Initialize all workers
 	workers := []Worker{
-		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.providers),
+		NewHTTPWorker(ctx, wm.cfg, wm.logger, wm.telemetry, wm.providers),
 		NewGRPCWorker(wm.cfg, wm.logger, wm.providers),
 		NewOutboxPublisherWorker(ctx, wm.cfg, wm.logger, wm.providers),
 		NewKafkaConsumerWorker(wm.cfg, wm.logger, wm.providers),

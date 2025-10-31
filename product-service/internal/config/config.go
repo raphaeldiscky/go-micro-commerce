@@ -13,6 +13,8 @@ type Config struct {
 	Kafka      *KafkaConfig
 	Redis      *RedisConfig
 	Consul     *ConsulConfig
+	Tracing    *TracingConfig
+	Metrics    *MetricsConfig
 }
 
 // LoadConfig loads the configuration from environment variables and config files.
@@ -34,6 +36,8 @@ func LoadConfig() (*Config, error) {
 		Kafka:      initKafkaConfig(),
 		Redis:      initRedisConfig(),
 		Consul:     initConsulConfig(),
+		Tracing:    initTracingConfig(),
+		Metrics:    initMetricsConfig(),
 	}
 
 	return cfg, nil

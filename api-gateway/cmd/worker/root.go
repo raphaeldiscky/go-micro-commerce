@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 	"github.com/spf13/cobra"
 
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
@@ -18,6 +19,7 @@ import (
 type Manager struct {
 	cfg       *config.Config
 	logger    logger.Logger
+	telemetry *telemetry.Telemetry
 	providers *provider.Providers
 	gateway   *gateway.Gateway
 	workers   []Worker
@@ -37,6 +39,7 @@ func Start(
 	cfg *config.Config,
 	gw *gateway.Gateway,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 ) error {
 	providers, err := provider.SetupGlobal(cfg, appLogger)
 	if err != nil {
@@ -46,6 +49,7 @@ func Start(
 	manager := &Manager{
 		cfg:       cfg,
 		logger:    appLogger,
+		telemetry: tel,
 		providers: providers,
 		gateway:   gw,
 	}
@@ -70,7 +74,7 @@ func (wm *Manager) runAllWorkers(ctx context.Context) error {
 	wm.logger.Info("Starting all workers...")
 
 	workers := []Worker{
-		NewHTTPWorker(wm.cfg, wm.logger, wm.providers, wm.gateway),
+		NewHTTPWorker(wm.cfg, wm.logger, wm.telemetry, wm.providers, wm.gateway),
 	}
 
 	return wm.runWorkers(ctx, workers)

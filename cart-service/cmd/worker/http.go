@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/provider"
@@ -20,10 +21,11 @@ func NewHTTPWorker(
 	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 	providers *provider.Providers,
 ) *HTTPWorker {
 	return &HTTPWorker{
-		server: server.NewHTTPServer(ctx, cfg, appLogger, providers),
+		server: server.NewHTTPServer(ctx, cfg, appLogger, tel, providers),
 	}
 }
 

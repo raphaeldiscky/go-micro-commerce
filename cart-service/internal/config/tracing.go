@@ -5,10 +5,10 @@ import (
 
 	"github.com/spf13/viper"
 
-	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/constant"
+	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 )
 
-// TracingConfig holds tracing configuration.
+// TracingConfig holds configuration for OpenTelemetry tracing.
 type TracingConfig struct {
 	Enabled       bool          `mapstructure:"TRACING_ENABLED"`
 	URL           string        `mapstructure:"TRACING_URL"`
@@ -21,11 +21,11 @@ type TracingConfig struct {
 
 // initTracingConfig initializes the tracing configuration from environment variables.
 func initTracingConfig() *TracingConfig {
-	viper.SetDefault("TRACING_ENABLED", true)
-	viper.SetDefault("TRACING_URL", "http://localhost:4318")
-	viper.SetDefault("TRACING_SERVICE_NAME", "api-gateway")
+	viper.SetDefault("TRACING_ENABLED", constant.TracingEnabled)
+	viper.SetDefault("TRACING_URL", constant.TracingURL)
+	viper.SetDefault("TRACING_SERVICE_NAME", constant.TracingServiceName)
 	viper.SetDefault("TRACING_SAMPLING_RATE", constant.TracingSamplingRate)
-	viper.SetDefault("TRACING_ENVIRONMENT", "development")
+	viper.SetDefault("TRACING_ENVIRONMENT", constant.TracingEnvironment)
 	viper.SetDefault("TRACING_BATCH_TIMEOUT", constant.TracingBatchTimeout)
 	viper.SetDefault("TRACING_EXPORT_TIMEOUT", constant.TracingExportTimeout)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
@@ -35,6 +36,7 @@ func SetupGlobal(
 	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 ) (*Providers, error) {
 	pgPool, err := pg.NewPostgresConnection(ctx, &pg.PostgresConfig{
 		Host:            cfg.Postgres.Host,
@@ -80,7 +82,7 @@ func SetupGlobal(
 	redisLockClient := redislock.New(redisClusterClient)
 
 	// Setup datastore
-	dataStore := repository.NewDataStore(pgPool, redisLockClient, appLogger)
+	dataStore := repository.NewDataStore(pgPool, redisLockClient, appLogger, tel)
 
 	// Setup product client
 	productClient, err := client.NewProductClient(cfg)

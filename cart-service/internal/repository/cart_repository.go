@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
@@ -93,13 +94,15 @@ const (
 type cartRepository struct {
 	db     DBTX
 	logger logger.Logger
+	tel    *telemetry.Telemetry
 }
 
 // NewCartRepository creates a new instance of cartRepository.
-func NewCartRepository(db DBTX, appLogger logger.Logger) CartRepository {
+func NewCartRepository(db DBTX, appLogger logger.Logger, tel *telemetry.Telemetry) CartRepository {
 	return &cartRepository{
 		db:     db,
 		logger: appLogger,
+		tel:    tel,
 	}
 }
 
@@ -108,6 +111,18 @@ func (r *cartRepository) Create(
 	ctx context.Context,
 	cart *entity.Cart,
 ) (*entity.Cart, error) {
+	ctx, end := r.tel.StartSpan(ctx, "CartRepository.Create")
+	defer end()
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"db.operation": "insert",
+		"db.table":     "carts",
+		"cart.id":      cart.ID.String(),
+		"customer.id":  cart.CustomerID.String(),
+		"cart.status":  string(cart.Status),
+		"items.count":  len(cart.Items),
+	})
+
 	// Insert cart
 	insertCartQuery := `
         INSERT INTO carts (id, customer_id, status, created_at, updated_at)
@@ -133,11 +148,15 @@ func (r *cartRepository) Create(
 		&createdCart.UpdatedAt,
 	)
 	if err != nil {
+		r.tel.SetSpanError(ctx, err)
 		return nil, fmt.Errorf("failed to create cart: %w", err)
 	}
 
 	// Insert cart items if present
 	if len(cart.Items) > 0 {
+		itemCtx, itemEnd := r.tel.StartSpan(ctx, "CartRepository.Create.InsertItems")
+		defer itemEnd()
+
 		const insertItemQuery = `
             INSERT INTO cart_items (id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at)
             VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -147,7 +166,7 @@ func (r *cartRepository) Create(
 			item := &cart.Items[i]
 
 			_, err = r.db.Exec(
-				ctx,
+				itemCtx,
 				insertItemQuery,
 				item.ID,
 				createdCart.ID,
@@ -158,6 +177,7 @@ func (r *cartRepository) Create(
 				item.UpdatedAt,
 			)
 			if err != nil {
+				r.tel.SetSpanError(itemCtx, err)
 				return nil, fmt.Errorf("failed to insert cart item: %w", err)
 			}
 		}
@@ -244,6 +264,15 @@ func (r *cartRepository) FindActiveCartByUserID(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (*entity.Cart, error) {
+	ctx, end := r.tel.StartSpan(ctx, "CartRepository.FindActiveCartByUserID")
+	defer end()
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"db.operation": "select",
+		"db.table":     "carts",
+		"customer.id":  userID.String(),
+	})
+
 	// Get active cart only
 	row := r.db.QueryRow(ctx, findActiveCartByCustomerIDQuery, userID)
 
@@ -258,11 +287,22 @@ func (r *cartRepository) FindActiveCartByUserID(
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			r.tel.AddSpanAttributes(ctx, map[string]any{
+				"cart.found": false,
+			})
+
 			return nil, errors.New(constant.CartNotFoundErrorMessage)
 		}
 
+		r.tel.SetSpanError(ctx, err)
+
 		return nil, fmt.Errorf("failed to scan cart: %w", err)
 	}
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"cart.id":    cart.ID.String(),
+		"cart.found": true,
+	})
 
 	// Get all cart items
 	const itemsQuery = `
@@ -548,6 +588,17 @@ func (r *cartRepository) AddItem(
 	cartID uuid.UUID,
 	item *entity.CartItem,
 ) error {
+	ctx, end := r.tel.StartSpan(ctx, "CartRepository.AddItem")
+	defer end()
+
+	r.tel.AddSpanAttributes(ctx, map[string]any{
+		"db.operation": "insert_or_update",
+		"db.table":     "cart_items",
+		"cart.id":      cartID.String(),
+		"product.id":   item.ProductID.String(),
+		"quantity":     item.Quantity,
+	})
+
 	// Verify cart exists and is active
 	verifyCartQuery := `
 		SELECT status
@@ -560,13 +611,24 @@ func (r *cartRepository) AddItem(
 	err := r.db.QueryRow(ctx, verifyCartQuery, cartID).Scan(&cartStatus)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			r.tel.AddSpanAttributes(ctx, map[string]any{
+				"cart.found": false,
+			})
+
 			return errors.New("cart not found")
 		}
+
+		r.tel.SetSpanError(ctx, err)
 
 		return fmt.Errorf("failed to verify cart: %w", err)
 	}
 
 	if cartStatus != string(constant.CartStatusActive) {
+		r.tel.AddSpanAttributes(ctx, map[string]any{
+			"cart.status": cartStatus,
+			"cart.active": false,
+		})
+
 		return errors.New("cannot add item to cart that is not active")
 	}
 
@@ -589,6 +651,12 @@ func (r *cartRepository) AddItem(
 
 	if err == nil {
 		// Item exists, update quantity
+		r.tel.AddSpanAttributes(ctx, map[string]any{
+			"item.exists":            true,
+			"item.existing_quantity": existingQuantity,
+			"item.new_quantity":      existingQuantity + item.Quantity,
+		})
+
 		updateQuery := `
 			UPDATE cart_items
 			SET quantity = $1
@@ -597,10 +665,16 @@ func (r *cartRepository) AddItem(
 
 		_, err = r.db.Exec(ctx, updateQuery, existingQuantity+item.Quantity, existingID)
 		if err != nil {
+			r.tel.SetSpanError(ctx, err)
 			return fmt.Errorf("failed to update item quantity: %w", err)
 		}
 	} else {
 		// Item doesn't exist, insert new
+		r.tel.AddSpanAttributes(ctx, map[string]any{
+			"item.exists": false,
+			"item.id":     item.ID.String(),
+		})
+
 		insertQuery := `
 			INSERT INTO cart_items (id, cart_id, product_id, quantity, selected_for_checkout, created_at, updated_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -618,6 +692,7 @@ func (r *cartRepository) AddItem(
 			item.UpdatedAt,
 		)
 		if err != nil {
+			r.tel.SetSpanError(ctx, err)
 			return fmt.Errorf("failed to insert cart item: %w", err)
 		}
 	}

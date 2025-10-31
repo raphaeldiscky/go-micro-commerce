@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/entity"
@@ -49,16 +50,19 @@ type CartService interface {
 type cartService struct {
 	dataStore repository.DataStore
 	logger    logger.Logger
+	tel       *telemetry.Telemetry
 }
 
 // NewCartService creates a new instance of cartService.
 func NewCartService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 ) CartService {
 	return &cartService{
 		dataStore: dataStore,
 		logger:    appLogger,
+		tel:       tel,
 	}
 }
 
@@ -152,6 +156,12 @@ func (s *cartService) AddItemToActiveCart(
 	req *dto.AddCartItemRequest,
 ) (*dto.CartResponse, error) {
 	var resultCart *entity.Cart
+
+	ctx, end := s.tel.StartSpan(ctx, "CartService.AddItemToActiveCart")
+	defer end()
+
+	log := s.tel.WithTraceContext(ctx, s.logger)
+	log.Infof("Adding item to cart: %v", req)
 
 	err := s.dataStore.Atomic(ctx, func(ds repository.DataStore) error {
 		cartRepo := ds.CartRepository()
