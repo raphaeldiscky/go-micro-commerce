@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-service
+  labels:
+    app: search-service
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: search-service
+  ports:
+  - name: http
+    port: 8087
+    targetPort: http
+    protocol: TCP
+  sessionAffinity: None

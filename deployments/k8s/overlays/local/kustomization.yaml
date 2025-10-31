@@ -1,0 +1,98 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: go-micro-commerce-local
+
+namespace: default
+
+namePrefix: local-
+
+
+resources:
+- ../../base/api-gateway
+- ../../base/graphql-gateway
+- ../../base/auth-service
+- ../../base/product-service
+- ../../base/order-service
+- ../../base/payment-service
+- ../../base/cart-service
+- ../../base/fulfillment-service
+- ../../base/notification-service
+- ../../base/search-service
+- ../../base/chat-service
+
+# Local environment patches - minimal resources, single replicas
+  # Reduce replicas to 1 for local development
+
+  # Reduce resource requests/limits for local Kind/Minikube
+
+  # Disable HPA in local environment
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 50m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 64Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 200m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 256Mi
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 1
+    - op: replace
+      path: /spec/maxReplicas
+      value: 1
+  target:
+    kind: HorizontalPodAutoscaler
+
+configMapGenerator:
+- literals:
+  - APP_ENVIRONMENT=local
+  - APP_LOGGER_LEVEL=5
+  - TRACING_SAMPLING_RATE=1.0
+  name: common-config
+
+  # Use local image tags for Kind/Minikube
+images:
+- name: api-gateway
+  newTag: local
+- name: graphql-gateway
+  newTag: local
+- name: auth-service
+  newTag: local
+- name: product-service
+  newTag: local
+- name: order-service
+  newTag: local
+- name: payment-service
+  newTag: local
+- name: cart-service
+  newTag: local
+- name: fulfillment-service
+  newTag: local
+- name: notification-service
+  newTag: local
+- name: search-service
+  newTag: local
+- name: chat-service
+  newTag: local
+labels:
+- includeSelectors: true
+  pairs:
+    environment: local
+    managed-by: kustomize

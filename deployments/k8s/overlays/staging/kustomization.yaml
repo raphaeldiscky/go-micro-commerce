@@ -1,0 +1,109 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: go-micro-commerce-staging
+
+namespace: staging
+
+namePrefix: staging-
+
+labels:
+- includeSelectors: true
+  pairs:
+    environment: staging
+    managed-by: kustomize
+
+resources:
+  - ../../base/api-gateway
+  - ../../base/graphql-gateway
+  - ../../base/auth-service
+  - ../../base/product-service
+  - ../../base/order-service
+  - ../../base/payment-service
+  - ../../base/cart-service
+  - ../../base/fulfillment-service
+  - ../../base/notification-service
+  - ../../base/search-service
+  - ../../base/chat-service
+
+# Staging environment patches - production-like setup
+patches:
+  # Set replicas to 2 for staging (HA testing)
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  # Production-like resources
+  - target:
+      kind: Deployment
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 200m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 256Mi
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: 1000m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: 1Gi
+
+  # HPA settings for staging
+  - target:
+      kind: HorizontalPodAutoscaler
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 2
+      - op: replace
+        path: /spec/maxReplicas
+        value: 5
+
+configMapGenerator:
+  - name: common-config
+    literals:
+      - APP_ENVIRONMENT=staging
+      - APP_LOGGER_LEVEL=4 # Info level
+      - TRACING_SAMPLING_RATE=0.2 # 20% sampling
+
+images:
+  # Use staging tags from container registry
+  - name: api-gateway
+    newName: your-registry.io/api-gateway
+    newTag: staging-latest
+  - name: graphql-gateway
+    newName: your-registry.io/graphql-gateway
+    newTag: staging-latest
+  - name: auth-service
+    newName: your-registry.io/auth-service
+    newTag: staging-latest
+  - name: product-service
+    newName: your-registry.io/product-service
+    newTag: staging-latest
+  - name: order-service
+    newName: your-registry.io/order-service
+    newTag: staging-latest
+  - name: payment-service
+    newName: your-registry.io/payment-service
+    newTag: staging-latest
+  - name: cart-service
+    newName: your-registry.io/cart-service
+    newTag: staging-latest
+  - name: fulfillment-service
+    newName: your-registry.io/fulfillment-service
+    newTag: staging-latest
+  - name: notification-service
+    newName: your-registry.io/notification-service
+    newTag: staging-latest
+  - name: search-service
+    newName: your-registry.io/search-service
+    newTag: staging-latest
+  - name: chat-service
+    newName: your-registry.io/chat-service
+    newTag: staging-latest

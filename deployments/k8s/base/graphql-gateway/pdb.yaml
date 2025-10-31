@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: graphql-gateway
+  labels:
+    app: graphql-gateway
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: graphql-gateway

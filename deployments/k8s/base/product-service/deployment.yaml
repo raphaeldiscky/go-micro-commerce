@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-service
+  labels:
+    app: product-service
+    tier: backend
+    version: v1
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: product-service
+  template:
+    metadata:
+      labels:
+        app: product-service
+        tier: backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8082"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: product-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: product-service
+        image: product-service:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8082
+          protocol: TCP
+        env:
+        - name: APP_NAME
+          value: "product-service"
+        - name: APP_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: product-service-config
+              key: APP_ENVIRONMENT
+        - name: HTTP_SERVER_HOST
+          value: "0.0.0.0"
+        - name: HTTP_SERVER_PORT
+          value: "8082"
+        - name: CONSUL_ENABLED
+          value: "false"
+        - name: TRACING_ENABLED
+          value: "true"
+        - name: TRACING_SERVICE_NAME
+          value: "product-service"
+        - name: METRICS_ENABLED
+          value: "true"
+        envFrom:
+        - configMapRef:
+            name: product-service-config
+        - secretRef:
+            name: product-service-secrets
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
