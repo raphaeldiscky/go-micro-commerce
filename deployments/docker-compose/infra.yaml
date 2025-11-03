@@ -10,7 +10,7 @@ include:
   - dev-tools.yaml
   - api-gateway.yaml
   - graphql-gateway.yaml
-  # - dev.yaml
+  # - apps.yaml
 
 networks:
   go-micro-commerce:

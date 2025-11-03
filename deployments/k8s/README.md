@@ -2,33 +2,102 @@
 
 Production-grade Kubernetes deployment for go-micro-commerce microservices platform.
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Recommended: Tilt)
 
-### Local Development (Kind)
+**Tilt** provides the best local development experience with automatic rebuilds, hot-reload, and unified UI for all services and infrastructure.
+
+### Prerequisites
+
+- [Tilt](https://docs.tilt.dev/install.html) - Local Kubernetes development tool
+- [Kind](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) - Local Kubernetes cluster
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) - Kubernetes CLI
+- [Helm](https://helm.sh/docs/intro/install/) - Kubernetes package manager
+- Docker Desktop or Docker Engine
+
+### One-Command Setup
+
+```bash
+# 1. Create Kind cluster with local registry
+task k8s:create_cluster
+
+# 2. Generate secrets (JWT keys)
+task k8s:create_secrets
+
+# 3. Start everything with Tilt
+task tilt:up
+```
+
+**That's it!** Tilt will:
+
+- Deploy all infrastructure (9 PostgreSQL DBs, Redis Cluster, Kafka, Monitoring stack)
+- Build and deploy all 11 microservices
+- Set up hot-reload for code changes
+- Open a web UI at http://localhost:10350
+
+### Access Services
+
+- **Tilt UI**: http://localhost:10350 (monitor all services)
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **Kafka UI**: http://localhost:8090
+- **Redis Insight**: http://localhost:5540
+- **MailHog**: http://localhost:8025
+
+### Daily Development Workflow
+
+```bash
+# Start Tilt (if not already running)
+task tilt:up
+
+# Make code changes → Tilt auto-rebuilds and redeploys (2-5s)
+
+# View logs for specific service
+task tilt:logs SERVICE=product-service
+
+# Check K8s resources
+task k8s:status
+
+# Stop Tilt
+task tilt:down
+```
+
+## 🔧 Alternative: Manual Kubernetes Deployment
+
+If you prefer not to use Tilt:
 
 ```bash
 # 1. Create Kind cluster
-kind create cluster --name go-micro-commerce
+task k8s:create_cluster
 
-# 2. Build images with local tag
+# 2. Deploy infrastructure (PostgreSQL, Redis, Kafka, etc.)
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+
+# Deploy infrastructure
+kubectl apply -f infrastructure/postgresql/
+helm install redis-cluster bitnami/redis-cluster -f infrastructure/redis/values.yaml
+helm install kafka bitnami/kafka -f infrastructure/kafka/values.yaml
+# ... (see Tiltfile for complete infrastructure setup)
+
+# 3. Build images with local tag
 TAG=local bash ./scripts/build.sh
 
-# 3. Load images into Kind cluster
+# 4. Load images into Kind cluster
 for svc in api-gateway auth-service product-service order-service payment-service cart-service fulfillment-service notification-service search-service chat-service graphql-gateway; do
   kind load docker-image localhost:5000/${svc}:local --name go-micro-commerce
 done
 
-# 4. Deploy services
+# 5. Deploy services
 kubectl apply -k overlays/local
 
-# 5. Verify pods (will show errors until infrastructure is configured)
+# 6. Verify pods
 kubectl get pods -l environment=local
 
-# 6. Check logs
+# 7. Check logs
 kubectl logs -l environment=local --tail=20
 ```
-
-**Note**: Services require infrastructure (PostgreSQL, Redis, Kafka) to run fully. See [Local Development with Host Infrastructure](#-local-development-with-host-infrastructure) section below.
 
 ### Production
 
@@ -48,6 +117,7 @@ docker-compose -f infra.yaml up -d
 ```
 
 This starts:
+
 - PostgreSQL (9 databases on ports 15431-15439)
 - Redis Cluster (6 nodes on ports 6379-6384)
 - Kafka (3 brokers on ports 9092-9094)
@@ -62,7 +132,7 @@ Update each service's ConfigMap in `overlays/local/` to point to `host.docker.in
 
 ```yaml
 POSTGRES_HOST: "host.docker.internal"
-POSTGRES_PORT: "15431"  # Service-specific port
+POSTGRES_PORT: "15431" # Service-specific port
 REDIS_ADDRS: "host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384"
 KAFKA_BROKERS: "host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094"
 ```

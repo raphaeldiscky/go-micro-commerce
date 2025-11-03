@@ -1,0 +1,122 @@
+# Loki Stack Helm Chart Values
+# Chart: grafana/loki-stack
+# Includes: Loki + Promtail (log aggregation)
+
+# Loki configuration
+loki:
+  enabled: true
+
+  # Security context to fix permission issues
+  securityContext:
+    fsGroup: 10001
+    runAsUser: 10001
+    runAsNonRoot: true
+
+  persistence:
+    enabled: true
+    storageClassName: standard
+    size: 5Gi
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "100m"
+    limits:
+      memory: "512Mi"
+      cpu: "300m"
+
+  config:
+    auth_enabled: false
+
+    ingester:
+      chunk_idle_period: 3m
+      chunk_block_size: 262144
+      chunk_retain_period: 1m
+      max_transfer_retries: 0
+      lifecycler:
+        ring:
+          kvstore:
+            store: inmemory
+          replication_factor: 1
+
+    limits_config:
+      enforce_metric_name: false
+      reject_old_samples: true
+      reject_old_samples_max_age: 168h
+      max_entries_limit_per_query: 5000
+      ingestion_rate_mb: 16
+      ingestion_burst_size_mb: 24
+
+    schema_config:
+      configs:
+        - from: 2024-01-01
+          store: boltdb-shipper
+          object_store: filesystem
+          schema: v11
+          index:
+            prefix: index_
+            period: 24h
+
+    server:
+      http_listen_port: 3100
+
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /data/loki/boltdb-shipper-active
+        cache_location: /data/loki/boltdb-shipper-cache
+        cache_ttl: 24h
+        shared_store: filesystem
+      filesystem:
+        directory: /data/loki/chunks
+
+    chunk_store_config:
+      max_look_back_period: 0s
+
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h
+
+  service:
+    type: ClusterIP
+    port: 3100
+
+# Promtail configuration (log shipper)
+promtail:
+  enabled: true
+
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+
+  config:
+    lokiAddress: http://{{ .Release.Name }}:3100/loki/api/v1/push
+
+    snippets:
+      pipelineStages:
+        - docker: {}
+        - multiline:
+            firstline: '^\d{4}-\d{2}-\d{2}'
+            max_wait_time: 3s
+
+  serviceMonitor:
+    enabled: true
+
+# Grafana integration (disabled - using kube-prometheus-stack's Grafana)
+grafana:
+  enabled: false
+
+# Fluent Bit (alternative log shipper - disabled, using Promtail)
+fluent-bit:
+  enabled: false
+
+# Filebeat (alternative log shipper - disabled, using Promtail)
+filebeat:
+  enabled: false
+
+# Logstash (disabled for local dev)
+logstash:
+  enabled: false

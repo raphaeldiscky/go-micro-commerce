@@ -76,11 +76,11 @@ kind create cluster --name go-micro-commerce
 
 ```bash
 # Build all services
-task build
+TAG=local bash ./scripts/build.sh
 
 # Load images into Kind
-for service in api-gateway auth-service product-service order-service payment-service cart-service fulfillment-service notification-service search-service chat-service graphql-gateway; do
-  kind load docker-image ${service}:latest --name go-micro-commerce
+for svc in api-gateway auth-service product-service order-service payment-service cart-service fulfillment-service notification-service search-service chat-service graphql-gateway; do
+  kind load docker-image localhost:5000/${svc}:local --name go-micro-commerce
 done
 ```
 
@@ -93,7 +93,7 @@ kubectl apply -k deployments/k8s/overlays/local
 ### 4. Verify Deployment
 
 ```bash
-kubectl get pods
+kubectl get pods -l  environment=local
 kubectl get svc
 ```
 
@@ -129,6 +129,7 @@ kubectl create namespace production
 ### Step 3: Configure Secrets
 
 **Option A: Plain Secrets** (dev/staging only):
+
 ```bash
 kubectl create secret generic api-gateway-secrets \
   --from-literal=JWT_SECRET=your-secret \
@@ -136,6 +137,7 @@ kubectl create secret generic api-gateway-secrets \
 ```
 
 **Option B: Sealed Secrets** (recommended for production):
+
 ```bash
 # Install sealed-secrets controller
 helm install sealed-secrets sealed-secrets/sealed-secrets -n kube-system
@@ -146,6 +148,7 @@ kubectl apply -f sealed-secret.yaml
 ```
 
 **Option C: External Secrets Operator** (best for production):
+
 ```bash
 # Install external-secrets
 helm install external-secrets external-secrets/external-secrets -n external-secrets --create-namespace
@@ -257,6 +260,7 @@ EOF
 See [deployments/k8s/infrastructure/traefik/README.md](../deployments/k8s/infrastructure/traefik/README.md) for detailed setup.
 
 **Key Features**:
+
 - TLS termination with Let's Encrypt
 - Rate limiting
 - Security headers
@@ -265,6 +269,7 @@ See [deployments/k8s/infrastructure/traefik/README.md](../deployments/k8s/infras
 ### Linkerd Service Mesh
 
 **Why Linkerd over Consul**:
+
 - ✅ Lightweight and fast
 - ✅ Automatic mTLS
 - ✅ Built-in observability
@@ -272,6 +277,7 @@ See [deployments/k8s/infrastructure/traefik/README.md](../deployments/k8s/infras
 - ✅ No external dependencies
 
 **Verify Mesh**:
+
 ```bash
 linkerd -n production stat deployment
 linkerd viz dashboard
@@ -403,10 +409,10 @@ metadata:
 spec:
   service: api-gateway
   backends:
-  - service: api-gateway-v1
-    weight: 90
-  - service: api-gateway-v2
-    weight: 10
+    - service: api-gateway-v1
+      weight: 90
+    - service: api-gateway-v2
+      weight: 10
 ```
 
 ---
@@ -446,16 +452,19 @@ curl http://localhost:8080/metrics
 ### Common Issues
 
 **Pod CrashLoopBackOff**:
+
 ```bash
 kubectl logs <pod-name> --previous
 kubectl describe pod <pod-name>
 ```
 
 **ImagePullBackOff**:
+
 - Check image name and tag
 - Verify registry credentials
 
 **Service Unreachable**:
+
 - Check service and endpoint: `kubectl get svc,ep -n production`
 - Verify Linkerd injection: `linkerd -n production stat pod`
 
@@ -464,7 +473,7 @@ kubectl describe pod <pod-name>
 ## Environment Configuration
 
 | Environment | Replicas | CPU Request | Memory Request | HPA Min/Max |
-|-------------|----------|-------------|----------------|-------------|
+| ----------- | -------- | ----------- | -------------- | ----------- |
 | Local       | 1        | 50m         | 64Mi           | 1/1         |
 | Dev         | 1        | 100m        | 128Mi          | 1/3         |
 | Staging     | 2        | 200m        | 256Mi          | 2/5         |

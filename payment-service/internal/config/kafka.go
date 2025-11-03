@@ -46,6 +46,7 @@ func initKafkaConfig() *KafkaConfig {
 // parseCommaSeparated parses a comma-separated string into a slice of strings.
 func parseCommaSeparated(s string) []string {
 	parts := strings.Split(s, ",")
+
 	result := make([]string, 0, len(parts))
 	for _, part := range parts {
 		trimmed := strings.TrimSpace(part)
@@ -53,5 +54,6 @@ func parseCommaSeparated(s string) []string {
 			result = append(result, trimmed)
 		}
 	}
+
 	return result
 }

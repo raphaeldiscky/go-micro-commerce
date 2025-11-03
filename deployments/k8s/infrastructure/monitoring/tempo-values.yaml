@@ -1,0 +1,66 @@
+# Tempo Helm Chart Values
+# Chart: grafana/tempo (Single Binary Mode)
+# Version: 1.23.2 (Tempo 2.8.1 - matches Docker Compose)
+# Docs: https://github.com/grafana/helm-charts/tree/main/charts/tempo
+
+# Tempo-specific configuration
+tempo:
+  repository: grafana/tempo
+  tag: 2.8.1
+  pullPolicy: IfNotPresent
+
+  # Single binary mode (default)
+  multitenancyEnabled: false
+
+  # Trace retention
+  retention: 168h
+
+  # Storage configuration
+  storage:
+    trace:
+      backend: local
+      local:
+        path: /var/tempo/traces
+      wal:
+        path: /var/tempo/wal
+
+  # Receiver configurations
+  receivers:
+    jaeger:
+      protocols:
+        thrift_http:
+        grpc:
+        thrift_binary:
+        thrift_compact:
+    zipkin:
+    otlp:
+      protocols:
+        http:
+          endpoint: 0.0.0.0:4318
+        grpc:
+          endpoint: 0.0.0.0:4317
+    opencensus:
+
+# Kubernetes resource limits (top-level, not under tempo)
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "100m"
+  limits:
+    memory: "512Mi"
+    cpu: "300m"
+
+# Persistence for traces (top-level, not under tempo)
+persistence:
+  enabled: true
+  storageClassName: standard
+  size: 5Gi
+
+# Service configuration (top-level, not under tempo)
+service:
+  type: ClusterIP
+
+# ServiceMonitor for Prometheus metrics (top-level, not under tempo)
+serviceMonitor:
+  enabled: true
+  interval: 30s

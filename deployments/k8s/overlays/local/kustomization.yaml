@@ -59,15 +59,7 @@ patches:
       value: 1
   target:
     kind: HorizontalPodAutoscaler
-- patch: |-
-    - op: add
-      path: /spec/template/spec/hostAliases
-      value:
-        - ip: "172.23.0.1"
-          hostnames:
-            - "host.docker.internal"
-  target:
-    kind: Deployment
+# hostAliases patch removed - using K8s DNS instead of host.docker.internal
 - patch: |-
     - op: add
       path: /spec/template/spec/volumes
@@ -129,11 +121,11 @@ configMapGenerator:
   literals:
     - HTTP_SERVER_HOST=0.0.0.0
     - HTTP_SERVER_PORT=8080
-    - JWKS_URL=http://host.docker.internal:8081/.well-known/jwks.json
+    - JWKS_URL=http://local-auth-service.default.svc.cluster.local:8081/.well-known/jwks.json
     - SERVICE_DISCOVERY_TYPE=kubernetes
     - SERVICE_DISCOVERY_K8S_NAMESPACE=default
     - CONSUL_ENABLED=false
-    - TRACING_URL=host.docker.internal:4318
+    - TRACING_URL=otel-collector.default.svc.cluster.local:4318
     - TRACING_ENABLED=true
     - METRICS_ENABLED=true
 
@@ -142,12 +134,12 @@ configMapGenerator:
   literals:
     - HTTP_SERVER_HOST=0.0.0.0
     - HTTP_SERVER_PORT=8081
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15431
+    - POSTGRES_HOST=postgresql-auth.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=auth_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
     - JWT_PRIVATE_KEY_PATH=/app/keys/private.pem
     - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
@@ -159,30 +151,30 @@ configMapGenerator:
     - HTTP_SERVER_PORT=8082
     - GRPC_SERVER_HOST=0.0.0.0
     - GRPC_SERVER_PORT=50052
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15432
+    - POSTGRES_HOST=postgresql-product.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=product_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
-    - TRACING_URL=host.docker.internal:4318
+    - TRACING_URL=otel-collector.default.svc.cluster.local:4318
 
 - name: order-service-config
   behavior: merge
   literals:
     - HTTP_SERVER_HOST=0.0.0.0
     - HTTP_SERVER_PORT=8083
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15433
+    - POSTGRES_HOST=postgresql-order.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=order_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
-    - TRACING_URL=host.docker.internal:4318
+    - TRACING_URL=otel-collector.default.svc.cluster.local:4318
 
 - name: payment-service-config
   behavior: merge
@@ -191,13 +183,13 @@ configMapGenerator:
     - HTTP_SERVER_PORT=8084
     - GRPC_SERVER_HOST=0.0.0.0
     - GRPC_SERVER_PORT=50054
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15434
+    - POSTGRES_HOST=postgresql-payment.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=payment_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
 
 - name: cart-service-config
@@ -207,13 +199,13 @@ configMapGenerator:
     - HTTP_SERVER_PORT=8085
     - GRPC_SERVER_HOST=0.0.0.0
     - GRPC_SERVER_PORT=50055
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15439
+    - POSTGRES_HOST=postgresql-cart.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=cart_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
 
 - name: fulfillment-service-config
@@ -223,13 +215,13 @@ configMapGenerator:
     - HTTP_SERVER_PORT=8086
     - GRPC_SERVER_HOST=0.0.0.0
     - GRPC_SERVER_PORT=50056
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15435
+    - POSTGRES_HOST=postgresql-fulfillment.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=fulfillment_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
 
 - name: notification-service-config
@@ -237,13 +229,13 @@ configMapGenerator:
   literals:
     - HTTP_SERVER_HOST=0.0.0.0
     - HTTP_SERVER_PORT=8087
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15436
+    - POSTGRES_HOST=postgresql-notification.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=notification_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
 
 - name: search-service-config
@@ -251,13 +243,12 @@ configMapGenerator:
   literals:
     - HTTP_SERVER_HOST=0.0.0.0
     - HTTP_SERVER_PORT=8088
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15437
+    - POSTGRES_HOST=postgresql-search.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=search_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - KAFKA_BROKERS=host.docker.internal:9092,host.docker.internal:9093,host.docker.internal:9094
-    - ELASTICSEARCH_ADDRESSES=http://host.docker.internal:9200
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
     - CONSUL_ENABLED=false
 
 - name: chat-service-config
@@ -265,12 +256,12 @@ configMapGenerator:
   literals:
     - HTTP_SERVER_HOST=0.0.0.0
     - HTTP_SERVER_PORT=8089
-    - POSTGRES_HOST=host.docker.internal
-    - POSTGRES_PORT=15438
+    - POSTGRES_HOST=postgresql-chat.default.svc.cluster.local
+    - POSTGRES_PORT=5432
     - POSTGRES_DB=chat_db
     - POSTGRES_USER=postgres
     - POSTGRES_SSL_MODE=disable
-    - REDIS_ADDRS=host.docker.internal:6379,host.docker.internal:6380,host.docker.internal:6381,host.docker.internal:6382,host.docker.internal:6383,host.docker.internal:6384
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
     - CONSUL_ENABLED=false
     - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
 

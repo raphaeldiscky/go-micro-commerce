@@ -1,6 +1,6 @@
 services:
   kafka-1:
-    image: bitnami/kafka:4.0.0
+    image: bitnami/kafka:4.0.0-debian-12-r10
     hostname: kafka-1
     container_name: kafka-1
     ports:
@@ -46,7 +46,7 @@ services:
       retries: 5
 
   kafka-2:
-    image: bitnami/kafka:4.0.0
+    image: bitnami/kafka:4.0.0-debian-12-r10
     hostname: kafka-2
     container_name: kafka-2
     ports:
@@ -70,7 +70,7 @@ services:
       retries: 5
 
   kafka-3:
-    image: bitnami/kafka:4.0.0
+    image: bitnami/kafka:4.0.0-debian-12-r10
     hostname: kafka-3
     container_name: kafka-3
     ports:
