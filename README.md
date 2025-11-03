@@ -13,8 +13,8 @@ This application is primarily intended for exploring technical concepts. My goal
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
 - Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`)
 - Two local development options:
-  - Simple `Docker Compose` setup
-  - Run on `Kubernetes Cluster` with `Tilt + Kind` for hot reload.
+  - Simple `Docker Compose` setup for ease of development
+  - Run on `Kubernetes Cluster` with `Tilt + Kind` for hot reload and a more production-like environment.
 - `Traefik` as ingress controller / entry point from the outside wold into cluster
 - `API Gateway` as application-level gateway, manages internal API requests.
 - CI pipeline using `GitHub Actions` to automate build, test, and push images to a registry
@@ -25,9 +25,9 @@ This application is primarily intended for exploring technical concepts. My goal
 - Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
 - Database Management with schema migrations handled by `golang-migrate`
 - Validation using `go-playground/validator` for input sanitization
-- Order creation with two saga orchestration options:
-  - `custom saga` implementation (Postgres-based)
-  - Managed workflow service engine using `Temporal`
+- Order creation is implemented using two saga orchestration options:
+  - A custom `Postgres-based saga` implementation
+  - A managed workflow service engine using `Temporal`
 - Implemented `message inbox pattern` for idempotent event consumption and `transactional outbox pattern` for publishing domain events
 - `Server-Sent Events (SSE)` for real-time push notification delivery in the notification-service.
 - `WebSocket` support in the chat-service for bi-directional communication.
