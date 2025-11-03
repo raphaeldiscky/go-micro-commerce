@@ -24,9 +24,8 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
 	viper.SetConfigType("env")
 
-	if err := viper.ReadInConfig(); err != nil {
-		panic(err)
-	}
+	//nolint:errcheck // .env file not required when using environment variables
+	_ = viper.ReadInConfig()
 
 	config := &Config{
 		App:        initAppConfig(),

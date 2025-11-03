@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fulfillment-service
+  labels:
+    app: fulfillment-service
+    tier: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: fulfillment-service
+  ports:
+  - name: http
+    port: 8085
+    targetPort: http
+    protocol: TCP
+  sessionAffinity: None

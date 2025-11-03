@@ -22,7 +22,7 @@ func NewConfig() (*Config, error) {
 	viper.SetConfigType("env")
 
 	if err := viper.ReadInConfig(); err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &Config{

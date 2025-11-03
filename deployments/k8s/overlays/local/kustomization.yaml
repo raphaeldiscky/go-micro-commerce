@@ -1,0 +1,331 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: go-micro-commerce-local
+
+namespace: default
+
+namePrefix: local-
+
+
+resources:
+- ../../base/api-gateway
+- ../../base/graphql-gateway
+- ../../base/auth-service
+- ../../base/product-service
+- ../../base/order-service
+- ../../base/payment-service
+- ../../base/cart-service
+- ../../base/fulfillment-service
+- ../../base/notification-service
+- ../../base/search-service
+- ../../base/chat-service
+
+# Local environment patches - minimal resources, single replicas
+  # Reduce replicas to 1 for local development
+
+  # Reduce resource requests/limits for local Kind/Minikube
+
+  # Disable HPA in local environment
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/cpu
+      value: 50m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/requests/memory
+      value: 64Mi
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/cpu
+      value: 200m
+    - op: replace
+      path: /spec/template/spec/containers/0/resources/limits/memory
+      value: 256Mi
+  target:
+    kind: Deployment
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 1
+    - op: replace
+      path: /spec/maxReplicas
+      value: 1
+  target:
+    kind: HorizontalPodAutoscaler
+# hostAliases patch removed - using K8s DNS instead of host.docker.internal
+- patch: |-
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: jwt-keys
+          secret:
+            secretName: auth-service-jwt-keys
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+        - name: jwt-keys
+          mountPath: /app/keys
+          readOnly: true
+  target:
+    kind: Deployment
+    name: auth-service
+- patch: |-
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: jwt-keys
+          secret:
+            secretName: api-gateway-jwt-keys
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+        - name: jwt-keys
+          mountPath: /app/keys
+          readOnly: true
+  target:
+    kind: Deployment
+    name: api-gateway
+- patch: |-
+    - op: add
+      path: /spec/template/spec/volumes
+      value:
+        - name: jwt-keys
+          secret:
+            secretName: chat-service-jwt-keys
+    - op: add
+      path: /spec/template/spec/containers/0/volumeMounts
+      value:
+        - name: jwt-keys
+          mountPath: /app/keys
+          readOnly: true
+  target:
+    kind: Deployment
+    name: chat-service
+
+configMapGenerator:
+- name: common-config
+  literals:
+    - APP_ENVIRONMENT=local
+    - APP_LOGGER_LEVEL=5
+    - TRACING_SAMPLING_RATE=1.0
+
+- name: api-gateway-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8080
+    - JWKS_URL=http://local-auth-service.default.svc.cluster.local:8081/.well-known/jwks.json
+    - SERVICE_DISCOVERY_TYPE=kubernetes
+    - SERVICE_DISCOVERY_K8S_NAMESPACE=default
+    - CONSUL_ENABLED=false
+    - TRACING_URL=otel-collector.default.svc.cluster.local:4318
+    - TRACING_ENABLED=true
+    - METRICS_ENABLED=true
+
+- name: auth-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8081
+    - POSTGRES_HOST=postgresql-auth.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=auth_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+    - JWT_PRIVATE_KEY_PATH=/app/keys/private.pem
+    - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
+
+- name: product-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8082
+    - GRPC_SERVER_HOST=0.0.0.0
+    - GRPC_SERVER_PORT=50052
+    - POSTGRES_HOST=postgresql-product.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=product_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+    - TRACING_URL=otel-collector.default.svc.cluster.local:4318
+
+- name: order-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8083
+    - POSTGRES_HOST=postgresql-order.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=order_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+    - TRACING_URL=otel-collector.default.svc.cluster.local:4318
+
+- name: payment-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8084
+    - GRPC_SERVER_HOST=0.0.0.0
+    - GRPC_SERVER_PORT=50054
+    - POSTGRES_HOST=postgresql-payment.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=payment_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+
+- name: cart-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8085
+    - GRPC_SERVER_HOST=0.0.0.0
+    - GRPC_SERVER_PORT=50055
+    - POSTGRES_HOST=postgresql-cart.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=cart_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+
+- name: fulfillment-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8086
+    - GRPC_SERVER_HOST=0.0.0.0
+    - GRPC_SERVER_PORT=50056
+    - POSTGRES_HOST=postgresql-fulfillment.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=fulfillment_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+
+- name: notification-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8087
+    - POSTGRES_HOST=postgresql-notification.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=notification_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+
+- name: search-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8088
+    - POSTGRES_HOST=postgresql-search.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=search_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - KAFKA_BROKERS=kafka-0.kafka-headless.default.svc.cluster.local:9092,kafka-1.kafka-headless.default.svc.cluster.local:9092,kafka-2.kafka-headless.default.svc.cluster.local:9092
+    - CONSUL_ENABLED=false
+
+- name: chat-service-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=8089
+    - POSTGRES_HOST=postgresql-chat.default.svc.cluster.local
+    - POSTGRES_PORT=5432
+    - POSTGRES_DB=chat_db
+    - POSTGRES_USER=postgres
+    - POSTGRES_SSL_MODE=disable
+    - REDIS_ADDRS=redis-cluster.default.svc.cluster.local:6379
+    - CONSUL_ENABLED=false
+    - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
+
+- name: graphql-gateway-config
+  behavior: merge
+  literals:
+    - HTTP_SERVER_HOST=0.0.0.0
+    - HTTP_SERVER_PORT=4000
+
+secretGenerator:
+- name: postgres-credentials
+  literals:
+    - password=postgres
+
+- name: api-gateway-jwt-keys
+  files:
+    - public.pem=secrets/api-gateway-public.pem
+
+- name: auth-service-jwt-keys
+  files:
+    - private.pem=secrets/auth-service-private.pem
+    - public.pem=secrets/auth-service-public.pem
+
+- name: chat-service-jwt-keys
+  files:
+    - public.pem=secrets/chat-service-public.pem
+
+  # Use local image tags for Kind/Minikube
+images:
+- name: api-gateway
+  newName: localhost:5000/api-gateway
+  newTag: local
+- name: graphql-gateway
+  newName: localhost:5000/graphql-gateway
+  newTag: local
+- name: auth-service
+  newName: localhost:5000/auth-service
+  newTag: local
+- name: product-service
+  newName: localhost:5000/product-service
+  newTag: local
+- name: order-service
+  newName: localhost:5000/order-service
+  newTag: local
+- name: payment-service
+  newName: localhost:5000/payment-service
+  newTag: local
+- name: cart-service
+  newName: localhost:5000/cart-service
+  newTag: local
+- name: fulfillment-service
+  newName: localhost:5000/fulfillment-service
+  newTag: local
+- name: notification-service
+  newName: localhost:5000/notification-service
+  newTag: local
+- name: search-service
+  newName: localhost:5000/search-service
+  newTag: local
+- name: chat-service
+  newName: localhost:5000/chat-service
+  newTag: local
+labels:
+- includeSelectors: true
+  pairs:
+    environment: local
+    managed-by: kustomize

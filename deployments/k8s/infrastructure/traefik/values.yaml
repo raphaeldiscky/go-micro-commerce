@@ -1,0 +1,148 @@
+# Traefik Helm Chart Values for go-micro-commerce
+# Install with: helm install traefik traefik/traefik -f values.yaml -n traefik --create-namespace
+
+# Deployment configuration
+deployment:
+  enabled: true
+  kind: Deployment
+  replicas: 3
+
+# Pod disruption budget for HA
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+# Resource limits
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "1000m"
+    memory: "1Gi"
+
+# Enable Prometheus metrics
+metrics:
+  prometheus:
+    enabled: true
+    entryPoint: metrics
+    service:
+      enabled: true
+
+# Tracing with OpenTelemetry
+tracing:
+  otlp:
+    enabled: true
+    grpc:
+      enabled: true
+      endpoint: "otel-collector:4317"
+    http:
+      enabled: false
+
+# Logs
+logs:
+  general:
+    level: INFO
+  access:
+    enabled: true
+
+# Global arguments
+globalArguments:
+  - "--global.checknewversion=false"
+  - "--global.sendanonymoususage=false"
+
+# Additional arguments
+additionalArguments:
+  - "--api.dashboard=true"
+  - "--ping=true"
+  - "--accesslog=true"
+  - "--accesslog.format=json"
+
+# Ports configuration
+ports:
+  web:
+    port: 80
+    exposedPort: 80
+    protocol: TCP
+  websecure:
+    port: 443
+    exposedPort: 443
+    protocol: TCP
+    tls:
+      enabled: true
+  metrics:
+    port: 9100
+    exposedPort: 9100
+    protocol: TCP
+
+# Service configuration
+service:
+  enabled: true
+  type: LoadBalancer
+  annotations: {}
+
+# Ingress class
+ingressClass:
+  enabled: true
+  isDefaultClass: true
+
+# Providers
+providers:
+  kubernetesIngress:
+    enabled: true
+    publishedService:
+      enabled: true
+  kubernetesCRD:
+    enabled: true
+    allowCrossNamespace: true
+
+# TLS options
+tlsOptions:
+  default:
+    minVersion: VersionTLS12
+    cipherSuites:
+      - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+      - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+
+# Security headers middleware
+middleware:
+  securityHeaders:
+    enabled: true
+    headers:
+      browserXssFilter: true
+      contentTypeNosniff: true
+      forceSTSHeader: true
+      frameDeny: true
+      stsIncludeSubdomains: true
+      stsPreload: true
+      stsSeconds: 31536000
+
+# Affinity for HA deployment
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - traefik
+          topologyKey: kubernetes.io/hostname
+
+# Health checks
+readinessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5
+
+livenessProbe:
+  failureThreshold: 3
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  successThreshold: 1
+  timeoutSeconds: 5

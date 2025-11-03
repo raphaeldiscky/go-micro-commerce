@@ -4,13 +4,13 @@ include:
   - redis.yaml
   - kafka.yaml
   - temporal.yaml
-  - elasticsearch.yaml
+  # - elasticsearch.yaml
   - monitoring.yaml
   - vault.yaml
   - dev-tools.yaml
   - api-gateway.yaml
   - graphql-gateway.yaml
-  # - dev.yaml
+  # - apps.yaml
 
 networks:
   go-micro-commerce:

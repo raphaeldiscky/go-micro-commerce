@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-insight
+  labels:
+    app: redis-insight
+    component: redis-ui
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 5540
+      targetPort: 5540
+  selector:
+    app: redis-insight
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-insight
+  labels:
+    app: redis-insight
+    component: redis-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-insight
+  template:
+    metadata:
+      labels:
+        app: redis-insight
+        component: redis-ui
+    spec:
+      containers:
+        - name: redis-insight
+          image: redis/redisinsight:2.70
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5540
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "50m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          volumeMounts:
+            - name: data
+              mountPath: /db
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5540
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5540
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: data
+          emptyDir: {}  # Use emptyDir for local dev, data not critical

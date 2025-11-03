@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: order-service
+  labels:
+    app: order-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: order-service

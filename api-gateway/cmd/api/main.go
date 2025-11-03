@@ -19,6 +19,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
+const (
+	consulDiscoveryName = "consul"
+	kubeDiscoveryName   = "kubernetes"
+)
+
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -38,7 +43,23 @@ func main() {
 		os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	defer cancel()
 
-	discoveryService := service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
+	// Initialize service discovery based on configuration type
+	var discoveryService service.Discovery
+
+	switch cfg.ServiceDiscovery.Type {
+	case kubeDiscoveryName:
+		discoveryService = service.NewKubernetesDiscoveryService(cfg.ServiceDiscovery, appLogger)
+		appLogger.Info("Using Kubernetes DNS-based service discovery")
+	case consulDiscoveryName:
+		discoveryService = service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
+		appLogger.Info("Using Consul service discovery")
+	default:
+		appLogger.Fatalf(
+			"Unsupported service discovery type: %s. Supported types: kubernetes, consul",
+			cfg.ServiceDiscovery.Type,
+		)
+	}
+
 	circuitBreaker := service.NewCircuitBreakerService(appLogger, cfg, tel)
 
 	// Initialize API Gateway

@@ -42,5 +42,5 @@ EXPOSE 8085 50055
 USER appuser
 
 # The ENTRYPOINT is the command that will be run when the container starts.
-ENTRYPOINT [ "/main"]
+ENTRYPOINT ["./main"]
 CMD ["serve-all"]

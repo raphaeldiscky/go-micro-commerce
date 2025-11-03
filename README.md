@@ -11,13 +11,23 @@ This application is primarily intended for exploring technical concepts. My goal
 - Each microservice have own its dedicated `Postgres` database instance.
 - 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
-- Order creation with dual saga orchestration options between `custom saga` implementation (Postgres-based) or managed workflow service using `Temporal`
+- Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`)
+- Two local development options:
+  - Simple `Docker Compose` setup for ease of development
+  - Run on `Kubernetes Cluster` with `Tilt + Kind` for hot reload and a more production-like environment.
+- `Traefik` as ingress controller / entry point from the outside wold into cluster
+- `API Gateway` as application-level gateway, manages internal API requests.
+- CI pipeline using `GitHub Actions` to automate build, test, and push images to a registry
+- `Kubernetes` for robust, scalable container orchestration in production environments
+- `GitOps-based deployments` for K8s apps using `Argo CD`
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
 - Unified APIs with `GraphQL Federation` for type-safe client-server communication
 - Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
 - Database Management with schema migrations handled by `golang-migrate`
-- Robust Validation using `go-playground/validator` for input sanitization
-- Automated CI/CD pipeline using `GitHub Actions` with matrix strategy
+- Validation using `go-playground/validator` for input sanitization
+- Order creation is implemented using two saga orchestration options:
+  - A custom `Postgres-based saga` implementation
+  - A managed workflow service engine using `Temporal`
 - Implemented `message inbox pattern` for idempotent event consumption and `transactional outbox pattern` for publishing domain events
 - `Server-Sent Events (SSE)` for real-time push notification delivery in the notification-service.
 - `WebSocket` support in the chat-service for bi-directional communication.

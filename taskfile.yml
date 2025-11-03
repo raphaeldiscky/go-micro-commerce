@@ -7,7 +7,6 @@ vars:
   DC_DIR: "deployments/docker-compose"
   INFRA_DC_FILE: "{{.DC_DIR}}/infra.yaml"
   APPS_DC_FILE: "{{.DC_DIR}}/apps.yaml"
-  DEV_DC_FILE: "{{.DC_DIR}}/dev.yaml"
   GRAPHQL_GATEWAY_DC_FILE: "{{.DC_DIR}}/graphql-gateway.yaml"
   MONITORING_DC_FILE: "{{.DC_DIR}}/monitoring.yaml"
   SLEEP_CMD: '{{if eq .GOOS "windows"}}timeout{{else}}sleep{{end}}'
@@ -24,8 +23,7 @@ vars:
         -f {{.DC_DIR}}/graphql-gateway.yaml \
         -f {{.DC_DIR}}/temporal.yaml \
         -f {{.DC_DIR}}/elasticsearch.yaml \
-        -f {{.DC_DIR}}/apps.yaml \
-        -f {{.DC_DIR}}/dev.yaml"
+        -f {{.DC_DIR}}/apps.yaml"
 
 tasks:
   install_tools:
@@ -51,13 +49,14 @@ tasks:
     desc: Build docker images
     vars:
       SERVICE: '{{.SERVICE | default ""}}'
+      TAG: '{{.TAG | default ""}}'
     cmds:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Building docker images for all services..."
           bash ./scripts/lint.sh
           bash ./scripts/format.sh
-          bash ./scripts/build.sh
+          bash ./scripts/build.sh TAG={{.TAG}}
         else
           echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
@@ -389,3 +388,59 @@ tasks:
     desc: Generate UUID
     cmds:
       - bash ./scripts/uuid.sh
+
+  # ============================================================================
+  # Kubernetes & Tilt Commands
+  # ============================================================================
+
+  k8s_create_cluster:
+    desc: Create Kind cluster for local development
+    cmds:
+      - bash ./scripts/kind-setup.sh
+
+  k8s_delete_cluster:
+    desc: Delete Kind cluster and remove docker kind-registry
+    cmds:
+      - kind delete cluster --name go-micro-commerce
+      - docker rm kind-registry
+
+  k8s_create_secrets:
+    desc: Create Kubernetes secrets (JWT keys)
+    cmds:
+      - bash ./scripts/create-secrets.sh
+
+  k8s_status:
+    desc: Show status of all K8s resources
+    cmds:
+      - kubectl get all -n default
+      - echo ""
+      - echo "=== PVCs ==="
+      - kubectl get pvc -n default
+      - echo ""
+      - echo "=== ConfigMaps ==="
+      - kubectl get configmap -n default
+      - echo ""
+      - echo "=== Secrets ==="
+      - kubectl get secret -n default
+
+  tilt_up:
+    desc: Start Tilt (with pre-flight checks)
+    cmds:
+      - bash ./scripts/tilt-up.sh
+
+  tilt_down:
+    desc: Stop Tilt
+    cmds:
+      - bash ./scripts/tilt-down.sh
+
+  tilt_logs:
+    desc: View Tilt logs for a specific service
+    vars:
+      SERVICE: '{{.SERVICE | default ""}}'
+    cmds:
+      - |
+        if [ -z "{{.SERVICE}}" ]; then
+          echo "Please specify SERVICE. Example: task tilt_logs SERVICE=product-service"
+          exit 1
+        fi
+        kubectl logs -f -l app={{.SERVICE}} -n default

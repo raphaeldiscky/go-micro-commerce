@@ -1,395 +1,231 @@
 services:
-  # API Gateway Service (now works alongside Traefik)
-  # Your other services like auth-service and product-service should not have these Traefik labels.
-  # Traefik is an API Gateway for external traffic, and those services are internal.
-  # The api-gateway is responsible for routing to them internally.
-  api-gateway:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway:latest
-    build:
-      context: ../..
-      dockerfile: api-gateway/Dockerfile
-    volumes:
-      - ../../api-gateway/.env:/app/.env
-      - ../../api-gateway/keys/public.pem:/app/keys/public.pem:ro
-    container_name: api-gateway
-    ports:
-      - "8080:8080"
-    networks:
-      - go-micro-commerce
-    environment:
-      - APP_ENVIRONMENT="development"
-      - SERVICE_NAME="api-gateway"
-      - HTTP_SERVER_PORT=8080
-      - SERVER_READ_TIMEOUT=15s
-      - SERVER_WRITE_TIMEOUT=15s
-      - JWT_EXPIRATION_TIME=24h
-      - JWT_REFRESH_TIME=72h
-      - JWT_ISSUER=auth-service
-      - JWT_TOKEN_LOOKUP=header:Authorization
-      - JWT_AUTH_SCHEME=Bearer
-      - JWT_SIGNING_METHOD=RS256
-      - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
-      - JWT_CONTEXT_KEY=user
-      - SERVICE_DISCOVERY_TYPE=consul
-      - SERVICE_DISCOVERY_ADDRESS=consul:8500
-      - SERVICE_DISCOVERY_TIMEOUT=5s
-      - SERVICE_DISCOVERY_CONSUL_ADDRESS=consul:8500
-      - SERVICE_DISCOVERY_CONSUL_DATACENTER=dc1
-      - SERVICE_DISCOVERY_CONSUL_TOKEN=your-consul-token-here
-      - RATE_LIMIT_ENABLED=true
-      - RATE_LIMIT_REQUESTS=100
-      - RATE_LIMIT_WINDOW=1m
-      - RATE_LIMIT_BURST_LIMIT=10
-      - TRACING_ENABLED=true
-      - TRACING_URL=http://otel-collector:4318
-      - TRACING_SERVICE_NAME=api-gateway
-      - TRACING_SAMPLING_RATE=1.0
-      - TRACING_ENVIRONMENT=development
-      - TRACING_BATCH_TIMEOUT=5
-      - TRACING_EXPORT_TIMEOUT=30
-      - TRACING_METADATA=api-gateway
-      - METRICS_ENABLED=true
-      - METRICS_PATH=/metrics
-      - METRICS_PORT=9090
-    depends_on:
-      consul:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    labels:
-      # Traefik labels for service discovery
-      - "traefik.enable=true"
-      - "traefik.http.routers.api-gateway.rule=Host(`api.localhost`)"
-      - "traefik.http.routers.api-gateway.entrypoints=web"
-      - "traefik.http.services.api-gateway.loadbalancer.server.port=8080"
-      - "traefik.http.services.api-gateway.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.api-gateway.loadbalancer.healthcheck.interval=30s"
-      - "traefik.http.middlewares.api-gateway-ratelimit.ratelimit.burst=100"
-      - "traefik.http.middlewares.api-gateway-ratelimit.ratelimit.average=10"
-      - "traefik.http.routers.api-gateway.middlewares=api-gateway-ratelimit"
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 700m
-
   auth-service:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service:latest
-    container_name: auth-service
     build:
       context: ../..
       dockerfile: auth-service/Dockerfile
+    container_name: auth-service
     volumes:
-      - ../../auth-service/.env:/app/.env
+      - ../../auth-service/.env:/app/.env:ro
     restart: unless-stopped
-    ports:
-      - "8081:8081"
-    networks:
-      - go-micro-commerce
-    environment:
-      - HTTP_SERVER_PORT=8081
-      - POSTGRES_HOST=postgres-auth
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=auth_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - CONSUL_ADDRESS=consul:8500
     depends_on:
       postgres-auth:
         condition: service_healthy
       redis-1:
         condition: service_healthy
-      redis-2:
-        condition: service_healthy
-      redis-3:
-        condition: service_healthy
-      redis-4:
-        condition: service_healthy
-      redis-5:
-        condition: service_healthy
-      redis-6:
-        condition: service_healthy
-      kafka-1:
-        condition: service_healthy
-      kafka-2:
-        condition: service_healthy
-      kafka-3:
-        condition: service_healthy
       consul:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          memory: 700m
+    ports:
+      - "8081:8081"
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8081/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   product-service:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/product-service:latest
-    container_name: product-service
     build:
       context: ../..
       dockerfile: product-service/Dockerfile
+    container_name: product-service
     volumes:
-      - ../../product-service/.env:/app/.env
+      - ../../product-service/.env:/app/.env:ro
+    restart: unless-stopped
     ports:
       - "8082:8082"
-    networks:
-      - go-micro-commerce
-    environment:
-      - HTTP_SERVER_PORT=8082
-      - POSTGRES_HOST=postgres-product
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=product_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - CONSUL_ADDRESS=consul:8500
-      - TRACING_ENABLED=true
-      - TRACING_URL=http://otel-collector:4318
-      - TRACING_SERVICE_NAME=product-service
-      - TRACING_SAMPLING_RATE=1.0
-      - TRACING_ENVIRONMENT=development
-      - TRACING_BATCH_TIMEOUT=5
-      - TRACING_EXPORT_TIMEOUT=30
-      - METRICS_ENABLED=true
-      - METRICS_PATH=/metrics
     depends_on:
       postgres-product:
         condition: service_healthy
       redis-1:
         condition: service_healthy
-      redis-2:
-        condition: service_healthy
-      redis-3:
-        condition: service_healthy
-      redis-4:
-        condition: service_healthy
-      redis-5:
-        condition: service_healthy
-      redis-6:
-        condition: service_healthy
-      kafka-1:
-        condition: service_healthy
-      kafka-2:
-        condition: service_healthy
-      kafka-3:
-        condition: service_healthy
       consul:
         condition: service_healthy
+    networks:
+      - go-micro-commerce
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8082/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8082/health",
+        ]
       interval: 30s
-      timeout: 5s
+      timeout: 10s
       retries: 3
-      start_period: 60s
-    labels:
-      # Traefik labels for direct access (optional, for testing)
-      # TODO: Remove in production
-      - "traefik.enable=true"
-      - "traefik.http.routers.product-service.rule=Host(`products.localhost`)"
-      - "traefik.http.routers.product-service.entrypoints=web"
-      - "traefik.http.services.product-service.loadbalancer.server.port=8082"
-      - "traefik.http.services.product-service.loadbalancer.healthcheck.path=/health"
-      - "traefik.http.services.product-service.loadbalancer.healthcheck.interval=30s"
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 700m
+      start_period: 40s
 
   order-service:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/order-service:latest
-    container_name: order-service
     build:
       context: ../..
       dockerfile: order-service/Dockerfile
+    container_name: order-service
+    restart: unless-stopped
     volumes:
-      - ../../order-service/.env:/app/.env
+      - ../../order-service/.env:/app/.env:ro
     ports:
       - "8083:8083"
-    networks:
-      - go-micro-commerce
-    environment:
-      - HTTP_SERVER_PORT=8083
-      - POSTGRES_HOST=postgres-order
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=order_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - CONSUL_ADDRESS=consul:8500
-      - TRACING_ENABLED=true
-      - TRACING_URL=http://otel-collector:4318
-      - TRACING_SERVICE_NAME=order-service
-      - TRACING_SAMPLING_RATE=1.0
-      - TRACING_ENVIRONMENT=development
-      - TRACING_BATCH_TIMEOUT=5
-      - TRACING_EXPORT_TIMEOUT=30
-      - METRICS_ENABLED=true
-      - METRICS_PATH=/metrics
     depends_on:
       postgres-order:
         condition: service_healthy
       redis-1:
         condition: service_healthy
-      redis-2:
-        condition: service_healthy
-      redis-3:
-        condition: service_healthy
-      redis-4:
-        condition: service_healthy
-      redis-5:
-        condition: service_healthy
-      redis-6:
-        condition: service_healthy
-      kafka-1:
-        condition: service_healthy
-      kafka-2:
-        condition: service_healthy
-      kafka-3:
-        condition: service_healthy
       consul:
         condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 700m
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8083/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   payment-service:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/payment-service:latest
-    container_name: payment-service
     build:
       context: ../..
       dockerfile: payment-service/Dockerfile
+    container_name: payment-service
     volumes:
-      - ../../payment-service/.env:/app/.env
+      - ../../payment-service/.env:/app/.env:ro
+    restart: unless-stopped
     ports:
       - "8084:8084"
-    networks:
-      - go-micro-commerce
-    environment:
-      - HTTP_SERVER_PORT=8084
-      - POSTGRES_HOST=postgres-payment
-      - POSTGRES_PORT=5432
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=payment_db
-      - REDIS_URL=redis://redis:6379
-      - KAFKA_BROKERS=kafka:29092
-      - CONSUL_ADDRESS=consul:8500
-      - TRACING_ENABLED=true
-      - TRACING_URL=http://otel-collector:4318
-      - TRACING_SERVICE_NAME=payment-service
-      - TRACING_SAMPLING_RATE=1.0
-      - TRACING_ENVIRONMENT=development
-      - TRACING_BATCH_TIMEOUT=5
-      - TRACING_EXPORT_TIMEOUT=30
-      - METRICS_ENABLED=true
-      - METRICS_PATH=/metrics
     depends_on:
       postgres-payment:
         condition: service_healthy
-      redis-1:
-        condition: service_healthy
-      redis-2:
-        condition: service_healthy
-      redis-3:
-        condition: service_healthy
-      redis-4:
-        condition: service_healthy
-      redis-5:
-        condition: service_healthy
-      redis-6:
-        condition: service_healthy
-      kafka-1:
-        condition: service_healthy
-      kafka-2:
-        condition: service_healthy
-      kafka-3:
-        condition: service_healthy
       consul:
         condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 700m
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8084/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   fulfillment-service:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service:latest
-    container_name: fulfillmentservice
     build:
       context: ../..
       dockerfile: fulfillment-service/Dockerfile
+    container_name: fulfillment-service
     volumes:
-      - ../../fulfillment-service/.env:/app/.env
+      - ../../fulfillment-service/.env:/app/.env:ro
+    restart: unless-stopped
     ports:
       - "8085:8085"
-    networks:
-      - go-micro-commerce
-    environment:
-      - HTTP_SERVER_PORT=8085
-      - CONSUL_ADDRESS=consul:8500
-      - TRACING_ENABLED=true
-      - TRACING_URL=http://otel-collector:4318
-      - TRACING_SERVICE_NAME=fulfillment-service
-      - TRACING_SAMPLING_RATE=1.0
-      - TRACING_ENVIRONMENT=development
-      - TRACING_BATCH_TIMEOUT=5
-      - TRACING_EXPORT_TIMEOUT=30
-      - METRICS_ENABLED=true
-      - METRICS_PATH=/metrics
     depends_on:
+      mailhog:
+        condition: service_healthy
       consul:
         condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 700m
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8085/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   notification-service:
-    image: ghcr.io/raphaeldiscky/go-micro-commerce/notification-service
-    container_name: notification-service
     build:
       context: ../..
       dockerfile: notification-service/Dockerfile
+    container_name: notification-service
     volumes:
-      - ../../notification-service/.env:/app/.env
+      - ../../notification-service/.env:/app/.env:ro
+    restart: unless-stopped
     ports:
       - "8086:8086"
+    depends_on:
+      mailhog:
+        condition: service_healthy
+      consul:
+        condition: service_healthy
     networks:
       - go-micro-commerce
-    environment:
-      - HTTP_SERVER_PORT=8086
-      - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=587
-      - SMTP_EMAIL=your-email@gmail.com
-      - CONSUL_ADDRESS=consul:8500
-      - TRACING_ENABLED=true
-      - TRACING_URL=http://otel-collector:4318
-      - TRACING_SERVICE_NAME=notification-service
-      - TRACING_SAMPLING_RATE=1.0
-      - TRACING_ENVIRONMENT=development
-      - TRACING_BATCH_TIMEOUT=5
-      - TRACING_EXPORT_TIMEOUT=30
-      - METRICS_ENABLED=true
-      - METRICS_PATH=/metrics
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8086/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    volumes:
+      - ../../api-gateway/.env:/app/.env:ro
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
     depends_on:
       consul:
         condition: service_healthy
-    restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 700m
+    networks:
+      - go-micro-commerce
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   go-micro-commerce:

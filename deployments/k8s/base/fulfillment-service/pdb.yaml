@@ -1,0 +1,11 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: fulfillment-service
+  labels:
+    app: fulfillment-service
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: fulfillment-service
