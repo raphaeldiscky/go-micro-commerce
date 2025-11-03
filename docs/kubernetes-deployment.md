@@ -113,7 +113,7 @@ curl http://localhost:8080/health
 Update image references in overlay files:
 
 ```yaml
-# deployments/k8s/overlays/prod/us-east/kustomization.yaml
+# deployments/k8s/overlays/prod/asia-southeast2/kustomization.yaml
 images:
   - name: api-gateway
     newName: your-registry.io/api-gateway
@@ -205,8 +205,8 @@ kubectl annotate namespace production linkerd.io/inject=enabled
 ### Step 5: Deploy Services
 
 ```bash
-# Deploy to production (us-east)
-kubectl apply -k deployments/k8s/overlays/prod/us-east
+# Deploy to production (asia-southeast2)
+kubectl apply -k deployments/k8s/overlays/prod/asia-southeast2
 
 # Verify deployment
 kubectl get pods -n production
@@ -327,9 +327,9 @@ linkerd viz dashboard
 
 ```
 Production Clusters (HA across regions):
-- us-east (primary)
-- us-west (secondary)
-- eu-west (europe)
+- asia-southeast2 (primary-jakarta)
+- asia-southeast1 (secondary-singapore)
+- australia-southeast1 (australia)
 ```
 
 ### Linkerd Multi-Cluster
@@ -343,11 +343,11 @@ linkerd install | kubectl apply -f -
 linkerd multicluster install | kubectl apply -f -
 
 # Link clusters
-linkerd --context=us-east multicluster link --cluster-name us-west | \
-  kubectl --context=us-west apply -f -
+linkerd --context=asia-southeast2 multicluster link --cluster-name asia-southeast1 | \
+  kubectl --context=asia-southeast1 apply -f -
 
 # Export services
-kubectl --context=us-east label svc/api-gateway \
+kubectl --context=asia-southeast2 label svc/api-gateway \
   mirror.linkerd.io/exported=true \
   -n production
 ```
