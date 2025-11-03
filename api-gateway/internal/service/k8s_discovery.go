@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 
 // KubernetesDiscoveryService implements ServiceDiscovery using Kubernetes DNS.
 type KubernetesDiscoveryService struct {
-	config    config.ServiceDiscoveryConfig
 	logger    logger.Logger
 	namespace string
 	endpoints map[string]string // service name -> endpoint mapping
@@ -24,7 +24,6 @@ func NewKubernetesDiscoveryService(
 	appLogger logger.Logger,
 ) *KubernetesDiscoveryService {
 	sd := &KubernetesDiscoveryService{
-		config:    *cfg,
 		logger:    appLogger,
 		namespace: cfg.K8sNamespace,
 		endpoints: make(map[string]string),
@@ -36,21 +35,34 @@ func NewKubernetesDiscoveryService(
 	return sd
 }
 
+const (
+	authServicePort         = 8081
+	productServicePort      = 8082
+	orderServicePort        = 8083
+	paymentServicePort      = 8084
+	fulfillmentServicePort  = 8085
+	notificationServicePort = 8086
+	searchServicePort       = 8087
+	chatServicePort         = 8088
+	cartServicePort         = 8089
+	graphQLGatewayPort      = 4000
+)
+
 // initializeServiceEndpoints initializes the service endpoints based on Kubernetes DNS convention.
 func (sd *KubernetesDiscoveryService) initializeServiceEndpoints() {
 	// Kubernetes DNS convention: <service-name>.<namespace>.svc.cluster.local:<port>
 	// For services in the same namespace, we can use short form: <service-name>:<port>
 	services := map[string]int{
-		"auth-service":         8081,
-		"product-service":      8082,
-		"order-service":        8083,
-		"payment-service":      8084,
-		"fulfillment-service":  8085,
-		"notification-service": 8086,
-		"search-service":       8087,
-		"chat-service":         8088,
-		"cart-service":         8089,
-		"graphql-gateway":      4000,
+		"auth-service":         authServicePort,
+		"product-service":      productServicePort,
+		"order-service":        orderServicePort,
+		"payment-service":      paymentServicePort,
+		"fulfillment-service":  fulfillmentServicePort,
+		"notification-service": notificationServicePort,
+		"search-service":       searchServicePort,
+		"chat-service":         chatServicePort,
+		"cart-service":         cartServicePort,
+		"graphql-gateway":      graphQLGatewayPort,
 	}
 
 	for serviceName, port := range services {
@@ -65,7 +77,7 @@ func (sd *KubernetesDiscoveryService) initializeServiceEndpoints() {
 			)
 		} else {
 			// Use short form (assumes same namespace)
-			endpoint = fmt.Sprintf("http://%s:%d", serviceName, port)
+			endpoint = net.JoinHostPort(serviceName, strconv.Itoa(port))
 		}
 
 		sd.endpoints[serviceName] = endpoint
@@ -86,7 +98,7 @@ func (sd *KubernetesDiscoveryService) GetServiceEndpoint(serviceName string) (st
 }
 
 // RegisterService is a no-op for Kubernetes as services are registered via K8s Service resources.
-func (sd *KubernetesDiscoveryService) RegisterService(serviceName, address string, port int) error {
+func (sd *KubernetesDiscoveryService) RegisterService(serviceName, _ string, _ int) error {
 	sd.logger.Infof(
 		"Kubernetes service registration is managed by K8s Service resources, skipping registration for %s",
 		serviceName,
@@ -123,7 +135,9 @@ func (sd *KubernetesDiscoveryService) HealthCheck(serviceName string) bool {
 	}
 
 	// Attempt TCP connection
-	conn, err := net.Dial("tcp", net.JoinHostPort(host, portStr))
+	dialer := &net.Dialer{}
+
+	conn, err := dialer.DialContext(context.Background(), "tcp", net.JoinHostPort(host, portStr))
 	if err != nil {
 		sd.logger.Error("Health check failed", "service", serviceName, "error", err)
 		return false

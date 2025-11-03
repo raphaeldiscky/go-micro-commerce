@@ -19,6 +19,11 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/service"
 )
 
+const (
+	consulDiscoveryName = "consul"
+	kubeDiscoveryName   = "kubernetes"
+)
+
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
@@ -42,10 +47,10 @@ func main() {
 	var discoveryService service.Discovery
 
 	switch cfg.ServiceDiscovery.Type {
-	case "kubernetes", "k8s":
+	case kubeDiscoveryName:
 		discoveryService = service.NewKubernetesDiscoveryService(cfg.ServiceDiscovery, appLogger)
 		appLogger.Info("Using Kubernetes DNS-based service discovery")
-	case "consul":
+	case consulDiscoveryName:
 		discoveryService = service.NewConsulDiscoveryService(cfg.ServiceDiscovery, appLogger)
 		appLogger.Info("Using Consul service discovery")
 	default:
