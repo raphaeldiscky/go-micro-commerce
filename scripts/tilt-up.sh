@@ -52,7 +52,7 @@ if ! command -v helm &> /dev/null; then
 fi
 
 # Start Tilt
-echo "🎬 Starting Tilt..."
+echo "Starting Tilt..."
 echo "   Press Ctrl+C to stop"
 echo "   Tilt UI will open at: http://localhost:10350"
 echo ""

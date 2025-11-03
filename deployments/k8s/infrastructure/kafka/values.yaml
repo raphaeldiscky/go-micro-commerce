@@ -53,7 +53,7 @@ controller:
 image:
   registry: docker.io
   repository: bitnami/kafka
-  tag: 4.0.0-debian-12-r10
+  tag: 4.0.0
 
 # Listeners configuration
 listeners:
