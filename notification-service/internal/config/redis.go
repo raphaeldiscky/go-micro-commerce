@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -49,5 +50,24 @@ func initRedisConfig() *RedisConfig {
 		panic(err)
 	}
 
+	// Parse comma-separated REDIS_ADDRS string from environment variable
+	addrsStr := viper.GetString("REDIS_ADDRS")
+	if addrsStr != "" {
+		redisConfig.Addrs = parseCommaSeparated(addrsStr)
+	}
+
 	return redisConfig
+}
+
+// parseCommaSeparated parses a comma-separated string into a slice of strings.
+func parseCommaSeparated(s string) []string {
+	parts := strings.Split(s, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+	return result
 }

@@ -53,8 +53,6 @@ globalArguments:
 
 # Additional arguments
 additionalArguments:
-  - "--providers.kubernetesingress.ingressclass=traefik"
-  - "--providers.kubernetescrd"
   - "--api.dashboard=true"
   - "--ping=true"
   - "--accesslog=true"
@@ -90,11 +88,11 @@ ingressClass:
 
 # Providers
 providers:
-  kubernetesingress:
+  kubernetesIngress:
     enabled: true
     publishedService:
       enabled: true
-  kubernetescrd:
+  kubernetesCRD:
     enabled: true
     allowCrossNamespace: true
 

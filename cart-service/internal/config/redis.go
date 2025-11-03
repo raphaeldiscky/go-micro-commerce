@@ -49,5 +49,11 @@ func initRedisConfig() *RedisConfig {
 		panic(err)
 	}
 
+	// Parse comma-separated REDIS_ADDRS string from environment variable
+	addrsStr := viper.GetString("REDIS_ADDRS")
+	if addrsStr != "" {
+		redisConfig.Addrs = parseCommaSeparated(addrsStr)
+	}
+
 	return redisConfig
 }

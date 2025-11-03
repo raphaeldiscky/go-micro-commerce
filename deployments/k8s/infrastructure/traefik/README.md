@@ -30,23 +30,27 @@ The **API Gateway** then handles application-level concerns like:
 ### Install cert-manager (for TLS)
 
 ```bash
+# https://cert-manager.io/docs/installation/
 # Install cert-manager CRDs
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.crds.yaml
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/vx.x.x/cert-manager.yaml
 
 # Add Jetstack Helm repository
 helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 # Install cert-manager
-helm install cert-manager jetstack/cert-manager \
+helm install \
+  cert-manager oci://quay.io/jetstack/charts/cert-manager \
+  --version vx.x.x \
   --namespace cert-manager \
   --create-namespace \
-  --version v1.13.0
+  --set crds.enabled=true
 ```
 
 ### Install Traefik
 
 ```bash
+# https://doc.traefik.io/traefik/getting-started/quick-start-with-kubernetes/
 # Add Traefik Helm repository
 helm repo add traefik https://traefik.github.io/charts
 helm repo update

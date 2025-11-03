@@ -51,13 +51,14 @@ tasks:
     desc: Build docker images
     vars:
       SERVICE: '{{.SERVICE | default ""}}'
+      TAG: '{{.TAG | default ""}}'
     cmds:
       - |
         if [ -z "{{.SERVICE}}" ]; then
           echo "Building docker images for all services..."
           bash ./scripts/lint.sh
           bash ./scripts/format.sh
-          bash ./scripts/build.sh
+          bash ./scripts/build.sh TAG={{.TAG}}
         else
           echo "Building images for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
