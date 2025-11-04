@@ -402,12 +402,14 @@ tasks:
     desc: Delete Kind cluster and remove docker kind-registry
     cmds:
       - kind delete cluster --name go-micro-commerce
+      - docker stop kind-registry
       - docker rm kind-registry
 
   k8s_create_secrets:
-    desc: Create Kubernetes secrets (JWT keys)
+    desc: Create Kubernetes secrets (jwt & dockerhub)
     cmds:
-      - bash ./scripts/create-secrets.sh
+      - bash ./scripts/create-k8s-jwt-secrets.sh
+      - bash ./scripts/create-k8s-dockerhub-secret.sh
 
   k8s_status:
     desc: Show status of all K8s resources
@@ -432,6 +434,7 @@ tasks:
     desc: Stop Tilt
     cmds:
       - bash ./scripts/tilt-down.sh
+      - bash ./scripts/cleanup-strimzi.sh
 
   tilt_logs:
     desc: View Tilt logs for a specific service

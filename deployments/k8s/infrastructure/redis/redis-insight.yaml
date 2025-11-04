@@ -69,4 +69,4 @@ spec:
             failureThreshold: 3
       volumes:
         - name: data
-          emptyDir: {}  # Use emptyDir for local dev, data not critical
+          emptyDir: {} # Use emptyDir for local dev, data not critical

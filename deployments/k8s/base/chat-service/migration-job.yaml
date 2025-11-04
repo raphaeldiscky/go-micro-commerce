@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: chat-service-migration
+  labels:
+    app: chat-service
+    component: migration
+    tier: infrastructure
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: chat-service
+        component: migration
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: migrate
+        image: chat-service-migrations:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - migrate
+        args:
+        - -path=/migrations
+        - -database
+        - postgres://postgres:postgres@postgresql-chat:5432/chat_db?sslmode=disable
+        - up
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

@@ -1,0 +1,35 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: payment-service-migration
+  labels:
+    app: payment-service
+    component: migration
+    tier: infrastructure
+spec:
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: payment-service
+        component: migration
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: migrate
+        image: payment-service-migrations:latest
+        imagePullPolicy: IfNotPresent
+        command:
+        - migrate
+        args:
+        - -path=/migrations
+        - -database
+        - postgres://postgres:postgres@postgresql-payment:5432/payment_db?sslmode=disable
+        - up
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi

@@ -1,0 +1,38 @@
+# Strimzi Kafka Operator Helm Values
+# Chart: strimzi/strimzi-kafka-operator
+# Docs: https://strimzi.io/docs/operators/latest/overview.html
+
+# Operator Configuration
+watchNamespaces: ["default"]  # Watch the default namespace for Kafka CRDs
+
+# Resource limits for the operator
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "200m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# Feature gates
+featureGates: ""
+
+# Operator logging
+logLevel: INFO
+
+# Generate network policies
+generateNetworkPolicy: false  # Disabled for local development
+
+# Enable CRD management
+createGlobalResources: true
+
+# Operator image (uses official Strimzi images from quay.io)
+image:
+  registry: quay.io
+  repository: strimzi
+  name: operator
+  # Tag is set by Helm chart version
+
+# Kafka bridge (optional, disable for minimal setup)
+kafkaBridge:
+  enabled: false
