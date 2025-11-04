@@ -1,0 +1,127 @@
+# OT-Container-Kit RedisCluster Configuration
+# Docs: https://ot-container-kit.github.io/redis-operator/guide/redis-cluster.html
+#
+# This creates a 6-node Redis cluster (3 masters + 3 replicas)
+# matching the Docker Compose configuration
+
+---
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: RedisCluster
+metadata:
+  name: redis-cluster
+  labels:
+    app: redis
+    component: cache
+spec:
+  # Cluster size (number of master nodes)
+  clusterSize: 3
+
+  # Redis cluster version
+  clusterVersion: v7
+
+  # Kubernetes cluster version (minimum k8s version)
+  kubernetesConfig:
+    image: redis:7.2.5 # Uses official Redis image (free forever)
+    imagePullPolicy: IfNotPresent
+
+    # Resource configuration per Redis pod
+    resources:
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+      limits:
+        memory: "256Mi"
+        cpu: "250m"
+
+    # Service configuration
+    service:
+      type: ClusterIP
+
+  # Storage configuration
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 2Gi
+
+  # Number of replicas per master (1 replica per master = 3 masters + 3 replicas = 6 nodes total)
+  clusterReplicas: 1
+
+  # Redis password authentication
+  redisSecret:
+    name: redis-secret
+    key: password
+
+  # Redis exporter for Prometheus metrics
+  redisExporter:
+    enabled: true
+    image: quay.io/opstree/redis-exporter:v1.44.0
+    imagePullPolicy: IfNotPresent
+    resources:
+      requests:
+        memory: "64Mi"
+        cpu: "50m"
+      limits:
+        memory: "128Mi"
+        cpu: "100m"
+    env:
+      - name: REDIS_EXPORTER_INCL_SYSTEM_METRICS
+        value: "true"
+      - name: REDIS_EXPORTER_LOG_FORMAT
+        value: "json"
+
+  # Security context
+  securityContext:
+    runAsUser: 1001
+    runAsNonRoot: true
+    fsGroup: 1001
+
+  # Pod affinity rules (spread across nodes for HA)
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          podAffinityTerm:
+            labelSelector:
+              matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                    - redis-cluster
+            topologyKey: kubernetes.io/hostname
+
+  # Priority class (optional)
+  priorityClassName: ""
+
+  # Service annotations for Prometheus scraping
+  serviceAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"
+    prometheus.io/path: "/metrics"
+
+  # Pod labels
+  podLabels:
+    app: redis
+    component: cache
+
+  # Pod annotations
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9121"
+
+---
+# Secret for Redis authentication
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secret
+  labels:
+    app: redis
+    component: cache
+type: Opaque
+stringData:
+  password: "supersecret" # Matches Docker Compose password

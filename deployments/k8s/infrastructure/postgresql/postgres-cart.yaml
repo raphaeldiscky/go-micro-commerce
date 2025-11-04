@@ -80,8 +80,7 @@ spec:
               cpu: "500m"
           volumeMounts:
             - name: data
-              mountPath: /var/lib/postgresql/data
-              subPath: pgdata
+              mountPath: /var/lib/postgresql
   volumeClaimTemplates:
     - metadata:
         name: data

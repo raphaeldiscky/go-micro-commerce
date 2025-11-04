@@ -1,0 +1,174 @@
+# Strimzi Kafka Cluster Configuration
+# Docs: https://strimzi.io/docs/operators/latest/overview.html
+#
+# This creates a 3-node Kafka cluster in KRaft mode (no Zookeeper)
+# matching the Docker Compose configuration
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaNodePool
+metadata:
+  name: kafka-pool
+  labels:
+    strimzi.io/cluster: kafka-cluster
+    component: messaging
+spec:
+  replicas: 3
+  # Combined broker+controller role (matches Docker Compose: KAFKA_CFG_PROCESS_ROLES: controller,broker)
+  roles:
+    - broker
+    - controller
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 5Gi
+        class: standard
+        deleteClaim: false
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: kafka-cluster
+  labels:
+    app: kafka
+    component: messaging
+  annotations:
+    strimzi.io/kraft: enabled
+    strimzi.io/node-pools: enabled
+spec:
+  # Kafka configuration
+  kafka:
+    version: "4.0.0" # Kafka 4.0.0 (matches Docker Compose, supported in Strimzi 0.48.0)
+    metadataVersion: "4.0-IV0"
+
+    # KRaft cluster ID (must match Docker Compose)
+    # Note: This is set automatically by Strimzi, but we ensure consistency
+
+    # Listeners matching Docker Compose configuration
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: controller
+        port: 9093
+        type: internal
+        tls: false
+      - name: external
+        port: 9094
+        type: nodeport
+        tls: false
+
+    # Kafka broker configuration (matching Docker Compose)
+    config:
+      # Replication settings (same as Docker Compose)
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+
+      # Topic settings
+      auto.create.topics.enable: "true"
+      num.partitions: 3
+
+      # Consumer group settings
+      group.initial.rebalance.delay.ms: 0
+
+      # Log retention
+      log.retention.hours: 168
+      log.segment.bytes: 1073741824
+      log.retention.check.interval.ms: 300000
+
+      # Performance tuning for local dev
+      num.network.threads: 3
+      num.io.threads: 8
+      socket.send.buffer.bytes: 102400
+      socket.receive.buffer.bytes: 102400
+      socket.request.max.bytes: 104857600
+
+    # No separate storage (defined in KafkaNodePool)
+
+    # Metrics configuration for Prometheus
+    metricsConfig:
+      type: jmxPrometheusExporter
+      valueFrom:
+        configMapKeyRef:
+          name: kafka-metrics
+          key: kafka-metrics-config.yml
+
+  # Entity Operator for managing topics and users (optional)
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "256Mi"
+          cpu: "200m"
+    userOperator:
+      resources:
+        requests:
+          memory: "128Mi"
+          cpu: "100m"
+        limits:
+          memory: "256Mi"
+          cpu: "200m"
+
+---
+# ConfigMap for Kafka metrics (Prometheus JMX Exporter)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-metrics
+  labels:
+    app: kafka
+    component: messaging
+data:
+  kafka-metrics-config.yml: |
+    # Kafka JMX metrics configuration
+    lowercaseOutputName: true
+    rules:
+      # Kafka broker metrics
+      - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), topic=(.+), partition=(.*)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          topic: "$4"
+          partition: "$5"
+      - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+        labels:
+          clientId: "$3"
+          broker: "$4:$5"
+      - pattern: kafka.server<type=(.+), name=(.+)><>Value
+        name: kafka_server_$1_$2
+        type: GAUGE
+      # Kafka log metrics
+      - pattern: kafka.log<type=(.+), name=(.+), topic=(.+), partition=(.+)><>Value
+        name: kafka_log_$1_$2
+        type: GAUGE
+        labels:
+          topic: "$3"
+          partition: "$4"
+      # Kafka controller metrics
+      - pattern: kafka.controller<type=(.+), name=(.+)><>Value
+        name: kafka_controller_$1_$2
+        type: GAUGE
+      # Kafka network metrics
+      - pattern: kafka.network<type=(.+), name=(.+)><>Value
+        name: kafka_network_$1_$2
+        type: GAUGE

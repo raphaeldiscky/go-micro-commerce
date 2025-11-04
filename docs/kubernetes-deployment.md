@@ -255,6 +255,150 @@ EOF
 
 ## Infrastructure Components
 
+### Operator-Based Infrastructure (Migration from Bitnami)
+
+**Important**: This project has migrated from Bitnami Helm charts to operator-based infrastructure to avoid vendor lock-in and ensure long-term free availability.
+
+#### Strimzi Kafka Operator (CNCF Incubating Project)
+
+**Why Strimzi**:
+
+- ✅ CNCF Incubating project (community-backed, won't disappear)
+- ✅ Uses official Apache Kafka (free forever)
+- ✅ KRaft mode support (Kafka 4.0.0)
+- ✅ Production-ready with 5.5k+ GitHub stars
+- ✅ Enterprise features (automatic TLS, rolling upgrades, monitoring)
+
+**Installation** (via Tilt):
+
+```bash
+# Strimzi operator is automatically deployed via Tiltfile using helm template
+# Operator namespace: strimzi-system (dedicated namespace)
+# Watched namespace: default (where Kafka clusters are deployed)
+# Configuration: deployments/k8s/infrastructure/kafka/strimzi-operator-values.yaml
+```
+
+**Important Notes**:
+
+- The operator runs in a dedicated `strimzi-system` namespace (Kubernetes best practice)
+- It watches the `default` namespace for Kafka CRDs
+- This namespace separation prevents RBAC conflicts
+- We use `helm template` via `local_resource` to render the chart from the remote repository
+- This avoids both the `helm_resource` namespace bug and `helm()` local-only limitation
+
+**Kafka Cluster Configuration**:
+
+```yaml
+# deployments/k8s/infrastructure/kafka/kafka-cluster.yaml
+# - 3 combined broker+controller nodes in KRaft mode
+# - Kafka 4.0.0
+# - Metrics exported to Prometheus
+# - Matches Docker Compose configuration
+```
+
+**Verify Kafka Deployment**:
+
+```bash
+# Check operator status
+kubectl get pods -n strimzi-system
+
+# Check Kafka cluster
+kubectl get kafka
+kubectl get kafkanodepool
+kubectl get pods -l strimzi.io/cluster=kafka-cluster
+```
+
+**Troubleshooting**:
+
+**RBAC Conflicts**: If you encounter rolebindings errors like `rolebindings.rbac.authorization.k8s.io "strimzi-cluster-operator" already exists`:
+
+```bash
+# One-time cleanup of orphaned Strimzi resources
+./scripts/cleanup-strimzi.sh
+
+# Then restart Tilt
+tilt up
+```
+
+**Helm Namespace Bug**: Earlier versions used `helm_resource` which had a bug where `helm get manifest` didn't respect the `--namespace` flag, causing `Error: release: not found` even though installation succeeded. Fixed by using Tilt's built-in `helm()` function instead.
+
+#### OT-Container-Kit Redis Operator
+
+**Why OT-Container-Kit**:
+
+- ✅ Uses official Redis images from Docker Hub (free forever)
+- ✅ Full Redis Cluster mode support
+- ✅ Active development (1.2k+ GitHub stars, updated Oct 2025)
+- ✅ Built-in monitoring via redis-exporter
+- ✅ Grafana dashboards included
+
+**Installation** (via Tilt):
+
+```bash
+# Redis operator is automatically deployed via Tiltfile
+# Configuration: deployments/k8s/infrastructure/redis/redis-operator-values.yaml
+```
+
+**Redis Cluster Configuration**:
+
+```yaml
+# deployments/k8s/infrastructure/redis/redis-cluster.yaml
+# - 6 nodes: 3 masters + 3 replicas
+# - Redis 7.2.5 (official image)
+# - Password: supersecret (change in production!)
+# - Metrics exported to Prometheus
+```
+
+**Verify Redis Deployment**:
+
+```bash
+kubectl get rediscluster
+kubectl get pods -l app=redis
+```
+
+**Manual Installation** (if not using Tilt):
+
+```bash
+# Install Strimzi Operator in dedicated namespace
+helm repo add strimzi https://strimzi.io/charts/
+helm install strimzi-operator strimzi/strimzi-kafka-operator \
+  --values deployments/k8s/infrastructure/kafka/strimzi-operator-values.yaml \
+  --namespace strimzi-system \
+  --create-namespace \
+  --version 0.48.0
+
+# Deploy Kafka Cluster (in default namespace)
+kubectl apply -f deployments/k8s/infrastructure/kafka/kafka-cluster.yaml
+
+# Install Redis Operator
+helm repo add ot-helm https://ot-container-kit.github.io/helm-charts/
+helm install redis-operator ot-helm/redis-operator \
+  --values deployments/k8s/infrastructure/redis/redis-operator-values.yaml \
+  --namespace redis-operator \
+  --create-namespace
+
+# Deploy Redis Cluster
+kubectl apply -f deployments/k8s/infrastructure/redis/redis-cluster.yaml
+```
+
+**Accessing Services from Applications**:
+
+```go
+// Kafka connection
+kafkaBootstrapServers := "kafka-cluster-kafka-bootstrap:9092"
+
+// Redis Cluster connection
+redisAddresses := []string{
+    "redis-cluster:6379",
+}
+```
+
+**Migration Notes**:
+
+- Old Bitnami images moved to `bitnamilegacy` (no security updates)
+- New operator-based setup provides better operational features
+- Configuration closely matches Docker Compose for dev/prod parity
+
 ### Traefik Ingress Controller
 
 See [deployments/k8s/infrastructure/traefik/README.md](../deployments/k8s/infrastructure/traefik/README.md) for detailed setup.
@@ -462,6 +606,36 @@ kubectl describe pod <pod-name>
 
 - Check image name and tag
 - Verify registry credentials
+
+**Docker Hub Rate Limit (429 Too Many Requests)**:
+
+If you encounter `toomanyrequests: You have reached your unauthenticated pull rate limit`:
+
+```bash
+# Run the script (creates secret and patches ServiceAccount)
+./scripts/create-dockerhub-secret.sh
+
+# Or manually:
+# 1. Create the secret
+kubectl create secret docker-registry dockerhub-secret \
+  --docker-server=https://index.docker.io/v1/ \
+  --docker-username=YOUR_USERNAME \
+  --docker-password=YOUR_PASSWORD \
+  --docker-email=YOUR_EMAIL
+
+# 2. Add secret to default ServiceAccount
+kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "dockerhub-secret"}]}'
+
+# 3. Delete existing pods to recreate with authentication
+kubectl delete pods -l component=database
+
+# Or restart Tilt
+tilt down && tilt up
+```
+
+**Note**: This uses the Kubernetes best practice of adding imagePullSecrets to the ServiceAccount, which automatically applies to all pods. Free Docker Hub accounts get 200 pulls per 6 hours (vs 100 unauthenticated).
+
+**Reference**: [Kubernetes: Pull an Image from a Private Registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
 
 **Service Unreachable**:
 
