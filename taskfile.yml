@@ -434,7 +434,7 @@ tasks:
     desc: Stop Tilt
     cmds:
       - bash ./scripts/tilt-down.sh
-      - bash ./cleanup-strimzi.sh
+      - bash ./scripts/cleanup-strimzi.sh
 
   tilt_logs:
     desc: View Tilt logs for a specific service

@@ -324,6 +324,33 @@ images:
 - name: chat-service
   newName: localhost:5000/chat-service
   newTag: local
+- name: auth-service-migrations
+  newName: localhost:5000/auth-service-migrations
+  newTag: local
+- name: product-service-migrations
+  newName: localhost:5000/product-service-migrations
+  newTag: local
+- name: order-service-migrations
+  newName: localhost:5000/order-service-migrations
+  newTag: local
+- name: payment-service-migrations
+  newName: localhost:5000/payment-service-migrations
+  newTag: local
+- name: cart-service-migrations
+  newName: localhost:5000/cart-service-migrations
+  newTag: local
+- name: fulfillment-service-migrations
+  newName: localhost:5000/fulfillment-service-migrations
+  newTag: local
+- name: notification-service-migrations
+  newName: localhost:5000/notification-service-migrations
+  newTag: local
+- name: search-service-migrations
+  newName: localhost:5000/search-service-migrations
+  newTag: local
+- name: chat-service-migrations
+  newName: localhost:5000/chat-service-migrations
+  newTag: local
 labels:
 - includeSelectors: true
   pairs:

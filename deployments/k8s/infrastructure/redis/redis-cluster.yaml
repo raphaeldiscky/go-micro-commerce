@@ -12,16 +12,20 @@ metadata:
   labels:
     app: redis
     component: cache
+  annotations:
+    # Enable pod anti-affinity between leader and follower pods
+    # This ensures leader and follower pods are scheduled on different nodes
+    # for better high availability
+    # PS: you should enable operator webhook for this to work
+    redisclusters.redis.redis.opstreelabs.in/role-anti-affinity: "true"
 spec:
   # Cluster size (number of master nodes)
   clusterSize: 3
-
-  # Redis cluster version
-  clusterVersion: v7
-
+  clusterVersion: v8
+  persistenceEnabled: true
   # Kubernetes cluster version (minimum k8s version)
   kubernetesConfig:
-    image: redis:7.2.5 # Uses official Redis image (free forever)
+    image: quay.io/opstree/redis:v8.2.2
     imagePullPolicy: IfNotPresent
 
     # Resource configuration per Redis pod
@@ -59,7 +63,7 @@ spec:
   # Redis exporter for Prometheus metrics
   redisExporter:
     enabled: true
-    image: quay.io/opstree/redis-exporter:v1.44.0
+    image: quay.io/opstree/redis-exporter:v1.79.0
     imagePullPolicy: IfNotPresent
     resources:
       requests:

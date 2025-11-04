@@ -14,6 +14,7 @@ labels:
     app.kubernetes.io/part-of: go-micro-commerce
 
 resources:
+  - migration-job.yaml
   - deployment.yaml
   - service.yaml
   - configmap.yaml
@@ -25,4 +26,7 @@ resources:
 images:
   - name: order-service
     newName: order-service
+    newTag: latest
+  - name: order-service-migrations
+    newName: order-service-migrations
     newTag: latest

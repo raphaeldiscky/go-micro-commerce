@@ -1,0 +1,24 @@
+# This image contains only the golang-migrate CLI and migration SQL files
+# Used by Kubernetes Job to run database migrations before app deployment
+
+FROM alpine:latest
+
+# Install curl and ca-certificates for downloading migrate
+RUN apk add --no-cache curl ca-certificates
+
+# Download and install golang-migrate CLI
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.0/migrate.linux-amd64.tar.gz | tar xvz && \
+    mv migrate /usr/local/bin/migrate && \
+    chmod +x /usr/local/bin/migrate
+
+# Create migrations directory
+WORKDIR /migrations
+
+# Copy migration files from service
+COPY db/migrations/ /migrations/
+
+# Verify migrate tool is installed
+RUN migrate -version
+
+# Default entrypoint - can be overridden by Job spec
+ENTRYPOINT ["migrate"]

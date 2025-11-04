@@ -95,6 +95,7 @@ k8s_resource(
 helm_resource(
     'strimzi-operator',
     'strimzi/strimzi-kafka-operator',
+    namespace='default',
     flags=[
         '--values=deployments/k8s/infrastructure/kafka/strimzi-operator-values.yaml',
         '--version=0.48.0',
@@ -243,6 +244,41 @@ service_to_db = {
 # Deploy all services using Kustomize (once, not per service)
 k8s_yaml(kustomize('deployments/k8s/overlays/local'))
 
+#==================================================================================
+# MIGRATION IMAGES
+#==================================================================================
+
+# List of services with database migrations
+migration_services = [
+    'auth-service',
+    'product-service',
+    'order-service',
+    'payment-service',
+    'cart-service',
+    'fulfillment-service',
+    'notification-service',
+    'search-service',
+    'chat-service',
+]
+
+# Build migration images (lightweight images with only golang-migrate + SQL files)
+for service in migration_services:
+    docker_build(
+        'localhost:5000/%s-migrations' % service,
+        context='./%s' % service,
+        dockerfile='./%s/Dockerfile.migrations' % service,
+        only=['db/migrations'],
+    )
+
+# Register migration job resources (deployed by Kustomize, managed by Tilt)
+for service in migration_services:
+    k8s_resource(
+        'local-%s-migration' % service,
+        new_name='%s-migration' % service,
+        labels=['migrations'],
+        resource_deps=[service_to_db.get(service)],  # Wait for database to be ready
+    )
+
 # Services that require proto directory access (gRPC-enabled services)
 services_needing_proto = ['product-service', 'order-service', 'payment-service', 'cart-service', 'fulfillment-service']
 
@@ -296,6 +332,11 @@ for service in services:
     if service in service_to_db:
         deps.append(service_to_db[service])
 
+    # Add migration job dependency if service has migrations
+    # Services must wait for migrations to complete before starting
+    if service in migration_services:
+        deps.append('%s-migration' % service)
+
     # Configure K8s resource (with local- prefix from kustomization.yaml)
     k8s_resource(
         'local-%s' % service,
@@ -318,11 +359,13 @@ for service in services:
 #==================================================================================
 
 # This organizes resources in the Tilt UI by labels:
+# - operators: Strimzi, OT-Container-Kit (Redis)
 # - infra-db: PostgreSQL databases
 # - infra-cache: Redis cluster, Redis Insight
-# - infra-messaging: Kafka cluster,  Kafka UI
+# - infra-messaging: Kafka cluster, Kafka UI
 # - monitoring: Prometheus, Grafana, Loki, Tempo, OTEL
 # - dev-tools: MailHog
+# - migrations: Database migration jobs (9 jobs)
 # - apps: Microservices
 
 print("Tiltfile loaded successfully!")
@@ -338,6 +381,7 @@ print("  - infra-cache: Redis Cluster (6 nodes) + Redis Insight")
 print("  - infra-messaging: Kafka Cluster (3 nodes) + Kafka UI")
 print("  - monitoring: Prometheus, Grafana, Loki, Tempo, OTEL")
 print("  - dev-tools: MailHog")
+print("  - migrations: 9 database migration jobs")
 print("  - apps: 11 microservices")
 print("")
 print("=== Access UIs (automatically port-forwarded) ===")
