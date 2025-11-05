@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -51,6 +52,12 @@ func initAsynqConfig() *AsynqConfig {
 		panic(err)
 	}
 
+	// Parse comma-separated ASYNQ_REDIS_ADDRS string from environment variable
+	addrsStr := viper.GetString("ASYNQ_REDIS_ADDRS")
+	if addrsStr != "" {
+		asynqConfig.RedisAddrs = parseCommaSeparatedAsynq(addrsStr)
+	}
+
 	asynqConfig.Queues = map[string]int{
 		"critical": viper.GetInt("ASYNQ_QUEUE_CRITICAL_PRIORITY"),
 		"default":  viper.GetInt("ASYNQ_QUEUE_DEFAULT_PRIORITY"),
@@ -58,4 +65,19 @@ func initAsynqConfig() *AsynqConfig {
 	}
 
 	return asynqConfig
+}
+
+// parseCommaSeparatedAsynq parses a comma-separated string into a slice of strings.
+func parseCommaSeparatedAsynq(s string) []string {
+	parts := strings.Split(s, ",")
+
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed != "" {
+			result = append(result, trimmed)
+		}
+	}
+
+	return result
 }

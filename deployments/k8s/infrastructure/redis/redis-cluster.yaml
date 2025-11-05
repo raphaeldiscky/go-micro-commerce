@@ -45,9 +45,9 @@ spec:
   storage:
     volumeClaimTemplate:
       spec:
+        storageClassName: standard
         accessModes:
           - ReadWriteOnce
-        storageClassName: standard
         resources:
           requests:
             storage: 2Gi

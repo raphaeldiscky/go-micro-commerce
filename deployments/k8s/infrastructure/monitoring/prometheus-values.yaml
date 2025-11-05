@@ -21,7 +21,6 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: standard
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -42,12 +41,18 @@ prometheus:
 grafana:
   enabled: true
 
-  adminPassword: "admin"  # Change for production
+  adminPassword: "admin" # Change for production
 
   persistence:
     enabled: true
-    storageClassName: standard
     size: 2Gi
+
+  # Disable sidecar datasource auto-discovery to prevent conflicts with static datasources
+  sidecar:
+    datasources:
+      enabled: false  # Disable auto-discovery, use static datasources instead
+    dashboards:
+      enabled: true   # Keep dashboard auto-discovery
 
   resources:
     requests:
@@ -102,7 +107,6 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: standard
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -137,21 +141,21 @@ defaultRules:
   create: true
   rules:
     alertmanager: true
-    etcd: false  # Disabled for local dev
+    etcd: false # Disabled for local dev
     configReloaders: true
     general: true
     k8s: true
-    kubeApiserverAvailability: false  # Disabled for local dev
-    kubeApiserverSlos: false  # Disabled for local dev
+    kubeApiserverAvailability: false # Disabled for local dev
+    kubeApiserverSlos: false # Disabled for local dev
     kubelet: true
-    kubeProxy: false  # Disabled for local dev
+    kubeProxy: false # Disabled for local dev
     kubePrometheusGeneral: true
     kubePrometheusNodeRecording: true
     kubernetesApps: true
     kubernetesResources: true
     kubernetesStorage: true
-    kubernetesSystem: false  # Disabled for local dev
-    kubeScheduler: false  # Disabled for local dev
+    kubernetesSystem: false # Disabled for local dev
+    kubeScheduler: false # Disabled for local dev
     kubeStateMetrics: true
     network: true
     node: true

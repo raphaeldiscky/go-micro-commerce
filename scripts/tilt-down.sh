@@ -30,7 +30,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     kubectl delete all --all -n default --timeout=60s || true
 
     # Delete PVCs (persistent volumes)
-    echo "eleting persistent volumes..."
+    echo "Deleting persistent volumes..."
     kubectl delete pvc --all -n default --timeout=60s || true
 
     # Delete ConfigMaps and Secrets (excluding kube-system)
@@ -45,4 +45,6 @@ fi
 echo ""
 echo "To delete the Kind cluster completely, run:"
 echo "   kind delete cluster --name go-micro-commerce"
+echo "To delete the MicroK8s cluster completely, run:"
+echo "   sudo microk8s reset"
 echo ""
