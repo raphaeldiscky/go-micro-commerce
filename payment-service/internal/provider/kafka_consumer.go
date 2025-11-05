@@ -43,7 +43,7 @@ func SetupKafkaConsumers(
 		consumer.NewPaymentRequestConsumer(
 			appLogger,
 			providers.DataStore,
-			providers.PaymentGatewayClients,
+			providers.PaymentGatewayFactory,
 		).Handler,
 		appLogger,
 	)

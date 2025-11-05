@@ -17,6 +17,7 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/gateway"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/httperror"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
@@ -50,30 +51,30 @@ type PaymentService interface {
 
 // paymentService implements the PaymentService.
 type paymentService struct {
-	dataStore             repository.DataStore
-	logger                logger.Logger
-	paymentGatewayClients map[string]client.PaymentGatewayClient
+	dataStore      repository.DataStore
+	logger         logger.Logger
+	gatewayFactory *gateway.Factory
 }
 
 // NewPaymentService creates a new instance of paymentService.
 func NewPaymentService(
 	dataStore repository.DataStore,
 	appLogger logger.Logger,
-	paymentGatewayClients map[string]client.PaymentGatewayClient,
+	gatewayFactory *gateway.Factory,
 ) PaymentService {
 	return &paymentService{
-		dataStore:             dataStore,
-		logger:                appLogger,
-		paymentGatewayClients: paymentGatewayClients,
+		dataStore:      dataStore,
+		logger:         appLogger,
+		gatewayFactory: gatewayFactory,
 	}
 }
 
 // getGatewayClient retrieves the payment gateway client for the specified provider.
 func (s *paymentService) getGatewayClient(
 	provider constant.PaymentGateway,
-) (client.PaymentGatewayClient, error) {
-	gatewayClient, ok := s.paymentGatewayClients[string(provider)]
-	if !ok {
+) (client.GatewayClientStrategy, error) {
+	gatewayClient, err := s.gatewayFactory.GetGateway(string(provider))
+	if err != nil {
 		return nil, httperror.NewBadRequestError(
 			fmt.Sprintf("unsupported payment gateway: %s", provider),
 		)

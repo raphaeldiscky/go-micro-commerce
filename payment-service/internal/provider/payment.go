@@ -21,7 +21,7 @@ func SetupPayment(
 	paymentService := service.NewPaymentService(
 		providers.DataStore,
 		appLogger,
-		providers.PaymentGatewayClients,
+		providers.PaymentGatewayFactory,
 	)
 	providers.PaymentService = paymentService
 
