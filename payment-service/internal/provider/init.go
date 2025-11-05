@@ -9,7 +9,6 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/pg"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/redis"
 
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/gateway"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/job"
@@ -21,7 +20,7 @@ import (
 type Providers struct {
 	DataStore             repository.DataStore
 	KafkaAdmin            *kafka.Admin
-	PaymentGatewayClients map[string]client.PaymentGatewayClient
+	PaymentGatewayFactory *gateway.Factory
 	PaymentService        service.PaymentService
 	JobScheduler          *job.Scheduler
 }
@@ -75,14 +74,13 @@ func SetupGlobal(
 		return nil, err
 	}
 
-	// Setup payment gateway clients using factory
+	// Setup payment gateway factory
 	gatewayFactory := gateway.NewFactory(cfg.PaymentGateway, appLogger)
-	paymentGatewayClients := gatewayFactory.CreateGateways()
 
 	providers := &Providers{
 		DataStore:             dataStore,
 		KafkaAdmin:            kafkaAdmin,
-		PaymentGatewayClients: paymentGatewayClients,
+		PaymentGatewayFactory: gatewayFactory,
 	}
 
 	// Setup job scheduler with payment timeout job
@@ -104,7 +102,7 @@ func SetupJobScheduler(
 	paymentService := service.NewPaymentService(
 		providers.DataStore,
 		appLogger,
-		providers.PaymentGatewayClients,
+		providers.PaymentGatewayFactory,
 	)
 	providers.PaymentService = paymentService
 

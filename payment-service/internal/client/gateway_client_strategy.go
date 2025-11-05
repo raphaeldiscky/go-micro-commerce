@@ -10,8 +10,8 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 )
 
-// PaymentGatewayClient defines the interface for payment gateway service integration.
-type PaymentGatewayClient interface {
+// GatewayClientStrategy defines the common interface for payment gateway service integration (Strategy Pattern).
+type GatewayClientStrategy interface {
 	// ProcessPayment processes a payment through the gateway
 	ProcessPayment(
 		ctx context.Context,

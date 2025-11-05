@@ -26,8 +26,8 @@ type mockClient struct {
 	delay      time.Duration
 }
 
-// NewMockClient creates a new instance of mockClient with test utilities.
-func NewMockClient() client.PaymentGatewayClient {
+// NewMockClient creates a new instance of mockClient with test utilities  (Adapter Pattern).
+func NewMockClient() client.GatewayClientStrategy {
 	return &mockClient{
 		shouldFail: false,
 		delay:      fakeGatewayDelay,

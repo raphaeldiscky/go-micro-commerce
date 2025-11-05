@@ -11,10 +11,10 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafkaevent"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 
-	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/client"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/constant"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/dto"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/entity"
+	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/gateway"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mapper"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/mq/producer"
 	"github.com/raphaeldiscky/go-micro-commerce/payment-service/internal/repository"
@@ -28,21 +28,21 @@ type PaymentRequestEvent struct {
 
 // PaymentRequestConsumer handles payment request events from order service.
 type PaymentRequestConsumer struct {
-	logger                logger.Logger
-	datastore             repository.DataStore
-	paymentGatewayClients map[string]client.PaymentGatewayClient
+	logger         logger.Logger
+	datastore      repository.DataStore
+	gatewayFactory *gateway.Factory
 }
 
 // NewPaymentRequestConsumer creates a new consumer for payment request events.
 func NewPaymentRequestConsumer(
 	appLogger logger.Logger,
 	ds repository.DataStore,
-	paymentGatewayClients map[string]client.PaymentGatewayClient,
+	gatewayFactory *gateway.Factory,
 ) *PaymentRequestConsumer {
 	return &PaymentRequestConsumer{
-		logger:                appLogger,
-		datastore:             ds,
-		paymentGatewayClients: paymentGatewayClients,
+		logger:         appLogger,
+		datastore:      ds,
+		gatewayFactory: gatewayFactory,
 	}
 }
 
@@ -184,55 +184,11 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 	}
 
 	// Create Stripe PaymentIntent immediately to get client_secret for 24h payment window
-	var clientSecret *string
+	clientSecret := c.createPaymentIntent(ctx, paymentRepo, savedPayment, evt.Payload.CustomerID)
 
-	//nolint:nestif // ignore for now
-	if gatewayClient, ok := c.paymentGatewayClients[string(savedPayment.PaymentGateway)]; ok {
-		c.logger.Infof(
-			"Creating PaymentIntent for payment %s with gateway %s",
-			savedPayment.ID,
-			savedPayment.PaymentGateway,
-		)
-
-		gatewayReq := &dto.PaymentGatewayRequest{
-			PaymentID:  savedPayment.ID,
-			CustomerID: evt.Payload.CustomerID,
-			Amount:     savedPayment.Amount,
-			Currency:   savedPayment.Currency,
-			ExpiresAt:  savedPayment.ExpiresAt, // 24-hour payment window expiry
-		}
-
-		// Call payment gateway (Stripe) to create PaymentIntent
-		gwResp, gwErr := gatewayClient.ProcessPayment(ctx, gatewayReq)
-		if gwErr != nil {
-			c.logger.Errorf(
-				"Failed to create PaymentIntent for payment %s: %v",
-				savedPayment.ID,
-				gwErr,
-			)
-			// Continue anyway - frontend can retry or handle gracefully
-		} else {
-			clientSecret = gwResp.ClientSecret
-
-			c.logger.Infof("Successfully created PaymentIntent for payment %s with client_secret", savedPayment.ID)
-
-			// Update payment with gateway reference
-			if err = savedPayment.SetGatewayReference(
-				savedPayment.PaymentGateway,
-				gwResp.PaymentIntentID,
-				gwResp.GatewayResponse,
-			); err != nil {
-				c.logger.Errorf("Failed to set gateway reference: %v", err)
-			} else {
-				// Save updated payment
-				savedPayment, err = paymentRepo.Update(ctx, savedPayment)
-				if err != nil {
-					c.logger.Errorf("Failed to update payment with gateway reference: %v", err)
-				}
-			}
-		}
-	} else {
-		c.logger.Warnf("Payment gateway client not found for %s", savedPayment.PaymentGateway)
+	savedPayment, err = paymentRepo.FindByID(ctx, savedPayment.ID)
+	if err != nil {
+		c.logger.Errorf("Failed to refresh payment after PaymentIntent creation: %v", err)
 	}
 
 	// Create payment created event for the outbox
@@ -271,4 +227,68 @@ func (c *PaymentRequestConsumer) processPaymentRequest(
 		savedPayment.ID, evt.Payload.OrderID)
 
 	return nil
+}
+
+// createPaymentIntent creates a payment intent with the gateway and returns the client secret.
+func (c *PaymentRequestConsumer) createPaymentIntent(
+	ctx context.Context,
+	paymentRepo repository.PaymentRepository,
+	payment *entity.Payment,
+	customerID uuid.UUID,
+) *string {
+	gatewayClient, err := c.gatewayFactory.GetGateway(string(payment.PaymentGateway))
+	if err != nil {
+		c.logger.Warnf(
+			"Failed to get payment gateway client for %s: %v",
+			payment.PaymentGateway,
+			err,
+		)
+
+		return nil
+	}
+
+	c.logger.Infof(
+		"Creating PaymentIntent for payment %s with gateway %s",
+		payment.ID,
+		payment.PaymentGateway,
+	)
+
+	gatewayReq := &dto.PaymentGatewayRequest{
+		PaymentID:  payment.ID,
+		CustomerID: customerID,
+		Amount:     payment.Amount,
+		Currency:   payment.Currency,
+		ExpiresAt:  payment.ExpiresAt,
+	}
+
+	gwResp, gwErr := gatewayClient.ProcessPayment(ctx, gatewayReq)
+	if gwErr != nil {
+		c.logger.Errorf(
+			"Failed to create PaymentIntent for payment %s: %v",
+			payment.ID,
+			gwErr,
+		)
+
+		return nil
+	}
+
+	c.logger.Infof(
+		"Successfully created PaymentIntent for payment %s with client_secret",
+		payment.ID,
+	)
+
+	if err = payment.SetGatewayReference(
+		payment.PaymentGateway,
+		gwResp.PaymentIntentID,
+		gwResp.GatewayResponse,
+	); err != nil {
+		c.logger.Errorf("Failed to set gateway reference: %v", err)
+		return gwResp.ClientSecret
+	}
+
+	if _, err = paymentRepo.Update(ctx, payment); err != nil {
+		c.logger.Errorf("Failed to update payment with gateway reference: %v", err)
+	}
+
+	return gwResp.ClientSecret
 }

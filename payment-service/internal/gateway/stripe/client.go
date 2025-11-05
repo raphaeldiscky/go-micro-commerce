@@ -23,11 +23,11 @@ type stripeClient struct {
 	logger logger.Logger
 }
 
-// NewStripeClient creates a new Stripe payment gateway client.
+// NewStripeClient creates a new Stripe payment gateway client (Adapter Pattern).
 func NewStripeClient(
 	cfg *config.PaymentGatewayConfig,
 	appLogger logger.Logger,
-) client.PaymentGatewayClient {
+) client.GatewayClientStrategy {
 	// Set global Stripe API key for SDK functions
 	//nolint:reassign // Stripe SDK requires setting the global Key
 	stripe.Key = cfg.StripeSecretKey
