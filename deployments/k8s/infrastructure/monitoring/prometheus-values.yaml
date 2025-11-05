@@ -21,7 +21,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: standard
+          storageClassName: "" # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -42,11 +42,11 @@ prometheus:
 grafana:
   enabled: true
 
-  adminPassword: "admin"  # Change for production
+  adminPassword: "admin" # Change for production
 
   persistence:
     enabled: true
-    storageClassName: standard
+    storageClassName: "" # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
     size: 2Gi
 
   resources:
@@ -102,7 +102,7 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: standard
+          storageClassName: "" # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -137,21 +137,21 @@ defaultRules:
   create: true
   rules:
     alertmanager: true
-    etcd: false  # Disabled for local dev
+    etcd: false # Disabled for local dev
     configReloaders: true
     general: true
     k8s: true
-    kubeApiserverAvailability: false  # Disabled for local dev
-    kubeApiserverSlos: false  # Disabled for local dev
+    kubeApiserverAvailability: false # Disabled for local dev
+    kubeApiserverSlos: false # Disabled for local dev
     kubelet: true
-    kubeProxy: false  # Disabled for local dev
+    kubeProxy: false # Disabled for local dev
     kubePrometheusGeneral: true
     kubePrometheusNodeRecording: true
     kubernetesApps: true
     kubernetesResources: true
     kubernetesStorage: true
-    kubernetesSystem: false  # Disabled for local dev
-    kubeScheduler: false  # Disabled for local dev
+    kubernetesSystem: false # Disabled for local dev
+    kubeScheduler: false # Disabled for local dev
     kubeStateMetrics: true
     network: true
     node: true

@@ -47,7 +47,7 @@ spec:
       spec:
         accessModes:
           - ReadWriteOnce
-        storageClassName: standard
+        storageClassName: ""  # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
         resources:
           requests:
             storage: 2Gi

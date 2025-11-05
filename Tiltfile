@@ -6,7 +6,19 @@
 update_settings(max_parallel_updates=3, k8s_upsert_timeout_secs=300)
 
 # Allow Kubernetes contexts (adjust for your local cluster)
-allow_k8s_contexts(['kind-go-micro-commerce', 'minikube', 'docker-desktop', 'rancher-desktop'])
+allow_k8s_contexts(['kind-go-micro-commerce', 'microk8s'])
+
+# Auto-detect registry based on Kubernetes context
+k8s_context = str(local('kubectl config current-context')).strip()
+if k8s_context == 'microk8s':
+    registry = 'localhost:32000'
+    print("✓ Detected MicroK8s - using registry: localhost:32000")
+elif 'kind' in k8s_context:
+    registry = 'localhost:5000'
+    print("✓ Detected Kind - using registry: localhost:5000")
+else:
+    registry = os.getenv('REGISTRY', 'localhost:5000')
+    print("✓ Using registry: %s" % registry)
 
 # Load Tilt extensions
 load('ext://helm_resource', 'helm_resource', 'helm_repo')
@@ -242,6 +254,8 @@ service_to_db = {
 }
 
 # Deploy all services using Kustomize (once, not per service)
+# Use Tilt's default_registry to automatically prepend registry to all images
+default_registry(registry)
 k8s_yaml(kustomize('deployments/k8s/overlays/local'))
 
 #==================================================================================
@@ -264,7 +278,7 @@ migration_services = [
 # Build migration images (lightweight images with only golang-migrate + SQL files)
 for service in migration_services:
     docker_build(
-        'localhost:5000/%s-migrations' % service,
+        '%s-migrations' % service,
         context='./%s' % service,
         dockerfile='./%s/Dockerfile.migrations' % service,
         only=['db/migrations'],
@@ -287,7 +301,7 @@ for service in services:
     # Handle graphql-gateway separately (non-Go service, different requirements)
     if service == 'graphql-gateway':
         docker_build(
-            'localhost:5000/%s' % service,
+            service,
             context='./%s' % service,
             dockerfile='./%s/Dockerfile' % service,
             only=[service],
@@ -304,7 +318,7 @@ for service in services:
 
         # Docker build with hot reload
         docker_build(
-            'localhost:5000/%s' % service,
+            service,
             context='.',  # Repository root - can access pkg/, proto/, and service dirs
             dockerfile='./%s/Dockerfile' % service,
             only=watch_paths,  # Only rebuild when these paths change

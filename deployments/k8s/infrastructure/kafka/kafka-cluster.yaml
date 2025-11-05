@@ -24,7 +24,7 @@ spec:
       - id: 0
         type: persistent-claim
         size: 5Gi
-        class: standard
+        class: ""  # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
         deleteClaim: false
   resources:
     requests:
