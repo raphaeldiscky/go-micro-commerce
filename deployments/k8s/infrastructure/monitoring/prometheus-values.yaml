@@ -21,7 +21,6 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: "" # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -46,8 +45,14 @@ grafana:
 
   persistence:
     enabled: true
-    storageClassName: "" # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
     size: 2Gi
+
+  # Disable sidecar datasource auto-discovery to prevent conflicts with static datasources
+  sidecar:
+    datasources:
+      enabled: false  # Disable auto-discovery, use static datasources instead
+    dashboards:
+      enabled: true   # Keep dashboard auto-discovery
 
   resources:
     requests:
@@ -102,7 +107,6 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: "" # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:

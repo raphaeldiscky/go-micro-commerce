@@ -14,7 +14,6 @@ loki:
 
   persistence:
     enabled: true
-    storageClassName: ""  # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
     size: 5Gi
 
   resources:
@@ -108,6 +107,9 @@ promtail:
 # Grafana integration (disabled - using kube-prometheus-stack's Grafana)
 grafana:
   enabled: false
+  sidecar:
+    datasources:
+      enabled: false  # Prevent loki-stack from creating datasource ConfigMap (conflicts with kube-prometheus-stack)
 
 # Fluent Bit (alternative log shipper - disabled, using Promtail)
 fluent-bit:

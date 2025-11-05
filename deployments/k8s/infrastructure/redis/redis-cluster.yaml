@@ -45,9 +45,9 @@ spec:
   storage:
     volumeClaimTemplate:
       spec:
+        storageClassName: standard
         accessModes:
           - ReadWriteOnce
-        storageClassName: ""  # Use default storage class (microk8s-hostpath in MicroK8s, standard in Kind)
         resources:
           requests:
             storage: 2Gi
