@@ -28,10 +28,10 @@ load('ext://restart_process', 'docker_build_with_restart')
 # HELM REPOSITORIES
 #==================================================================================
 
-helm_repo('strimzi', 'https://strimzi.io/charts/')
-helm_repo('ot-helm', 'https://ot-container-kit.github.io/helm-charts/')
-helm_repo('prometheus-community', 'https://prometheus-community.github.io/helm-charts')
-helm_repo('grafana', 'https://grafana.github.io/helm-charts')
+helm_repo('strimzi', 'https://strimzi.io/charts/', labels=['helm-repos'])
+helm_repo('ot-helm', 'https://ot-container-kit.github.io/helm-charts/', labels=['helm-repos'])
+helm_repo('prometheus-community', 'https://prometheus-community.github.io/helm-charts', labels=['helm-repos'])
+helm_repo('grafana', 'https://grafana.github.io/helm-charts', labels=['helm-repos'])
 
 #==================================================================================
 # INFRASTRUCTURE - DATABASES (PostgreSQL)
@@ -103,30 +103,51 @@ k8s_resource(
 # INFRASTRUCTURE - KAFKA CLUSTER (Strimzi Operator)
 #==================================================================================
 
+# Pre-flight check: Update Helm repo and verify setup
+local_resource(
+    'kafka-preflight-check',
+    'helm repo update strimzi && echo "strimzi helm repo updated successfully"',
+    resource_deps=['kube-prometheus-stack'],
+    labels=['operators'],
+)
+
 # Install Strimzi Kafka Operator
 helm_resource(
     'strimzi-operator',
     'strimzi/strimzi-kafka-operator',
+    namespace="default",
     flags=[
         '--values=deployments/k8s/infrastructure/kafka/strimzi-operator-values.yaml',
         '--version=0.48.0',
     ],
     labels=['operators'],
-    resource_deps=['kube-prometheus-stack'], 
+    resource_deps=['kafka-preflight-check'],
+)
+
+# Wait for Strimzi operator pod to be ready
+local_resource(
+    'wait-strimzi-operator-ready',
+    'kubectl wait --for=condition=ready pod -l name=strimzi-cluster-operator -n default --timeout=120s',
+    resource_deps=['strimzi-operator'],
+    labels=['operators'],
 )
 
 # Wait for Kafka CRDs to be installed by the operator
 local_resource(
     'wait-kafka-crds',
-    'kubectl wait --for condition=established --timeout=60s crd/kafkas.kafka.strimzi.io crd/kafkanodepools.kafka.strimzi.io',
-    resource_deps=['strimzi-operator'],
+    'kubectl wait --for condition=established --timeout=120s crd/kafkas.kafka.strimzi.io crd/kafkanodepools.kafka.strimzi.io',
+    resource_deps=['wait-strimzi-operator-ready'],
     labels=['operators'],
 )
 
 # Deploy Kafka cluster CRD (3-node KRaft cluster)
 k8s_yaml('deployments/k8s/infrastructure/kafka/kafka-cluster.yaml')
 k8s_resource(
-    objects=['kafka-cluster:kafka'],
+    objects=[
+        'kafka-pool:kafkanodepool',
+        'kafka-cluster:kafka',
+        'kafka-metrics:configmap',
+    ],
     new_name='kafka-cluster',
     labels=['infra-messaging'],
     resource_deps=['wait-kafka-crds'],
@@ -399,6 +420,7 @@ for service in services:
 #==================================================================================
 
 # This organizes resources in the Tilt UI by labels:
+# - helm-repos: Helm repository updates (Strimzi, OT-Helm, Prometheus, Grafana)
 # - operators: Strimzi, OT-Container-Kit (Redis)
 # - infra-db: PostgreSQL databases
 # - infra-cache: Redis cluster, Redis Insight
@@ -415,8 +437,9 @@ print("  - Strimzi Kafka Operator (CNCF) - Kafka 4.0.0 KRaft mode")
 print("  - OT-Container-Kit Redis Operator - Redis 8.x Cluster mode")
 print("")
 print("=== Resource Groups ===")
+print("  - helm-repos: Helm repository updates")
 print("  - operators: Strimzi, OT-Container-Kit (Redis)")
-print("  - infra-db: 9 PostgreSQL databases")
+print("  - infra-db: PostgreSQL databases")
 print("  - infra-cache: Redis Cluster (6 nodes) + Redis Insight")
 print("  - infra-messaging: Kafka Cluster (3 nodes) + Kafka UI")
 print("  - monitoring: Prometheus, Grafana, Loki, Tempo, OTEL")
