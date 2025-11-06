@@ -1,0 +1,205 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: apollo-schema-composition
+  labels:
+    app: graphql-gateway
+    component: schema-composition
+spec:
+  # Keep completed jobs for 1 day for debugging
+  ttlSecondsAfterFinished: 86400
+  backoffLimit: 3
+  template:
+    metadata:
+      labels:
+        app: graphql-gateway
+        component: schema-composition
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: apollo-schema-composer
+
+      containers:
+      - name: rover
+        image: ghcr.io/apollographql/rover:v0.26.2
+        imagePullPolicy: IfNotPresent
+
+        command: ["/bin/sh"]
+        args:
+          - -c
+          - |
+            set -e
+            echo "Starting Apollo supergraph composition..."
+
+            # Create schemas directory
+            mkdir -p /workspace/schemas
+
+            # Fetch schema from each subgraph service
+            echo "Fetching schemas from subgraph services..."
+
+            rover subgraph introspect http://auth-service:8081/graph > /workspace/schemas/auth-service.graphqls || {
+              echo "Failed to fetch auth-service schema"
+              exit 1
+            }
+
+            rover subgraph introspect http://chat-service:8088/graph > /workspace/schemas/chat-service.graphqls || {
+              echo "Failed to fetch chat-service schema"
+              exit 1
+            }
+
+            rover subgraph introspect http://notification-service:8086/graph > /workspace/schemas/notification-service.graphqls || {
+              echo "Failed to fetch notification-service schema"
+              exit 1
+            }
+
+            rover subgraph introspect http://order-service:8083/graph > /workspace/schemas/order-service.graphqls || {
+              echo "Failed to fetch order-service schema"
+              exit 1
+            }
+
+            rover subgraph introspect http://cart-service:8089/graph > /workspace/schemas/cart-service.graphqls || {
+              echo "Failed to fetch cart-service schema"
+              exit 1
+            }
+
+            rover subgraph introspect http://payment-service:8084/graph > /workspace/schemas/payment-service.graphqls || {
+              echo "Failed to fetch payment-service schema"
+              exit 1
+            }
+
+            echo "All subgraph schemas fetched successfully"
+
+            # Compose supergraph
+            echo "Composing supergraph schema..."
+            cd /workspace
+            rover supergraph compose --config supergraph.yaml > /workspace/supergraph-schema.graphql || {
+              echo "Failed to compose supergraph"
+              exit 1
+            }
+
+            echo "Supergraph composed successfully"
+
+            # Update ConfigMap using kubectl
+            echo "Updating ConfigMap..."
+            kubectl create configmap apollo-supergraph-schema \
+              --from-file=supergraph-schema.graphql=/workspace/supergraph-schema.graphql \
+              --dry-run=client \
+              -o yaml | \
+            kubectl apply -f - || {
+              echo "Failed to update ConfigMap"
+              exit 1
+            }
+
+            # Add labels to ConfigMap
+            kubectl label configmap apollo-supergraph-schema \
+              app=graphql-gateway \
+              component=apollo-router \
+              managed-by=schema-composition-job \
+              --overwrite
+
+            echo "ConfigMap updated successfully"
+            echo "Schema composition complete!"
+
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+
+        volumeMounts:
+        - name: supergraph-config
+          mountPath: /workspace/supergraph.yaml
+          subPath: supergraph.yaml
+
+        env:
+        - name: APOLLO_TELEMETRY_DISABLED
+          value: "true"
+
+      volumes:
+      - name: supergraph-config
+        configMap:
+          name: apollo-supergraph-config
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apollo-supergraph-config
+  labels:
+    app: graphql-gateway
+    component: schema-composition
+data:
+  supergraph.yaml: |
+    # Supergraph configuration for Kubernetes deployment
+    # This file uses K8s Service DNS for subgraph routing URLs
+    # Services are accessed via: http://<service-name>:<port>/graph
+
+    federation_version: 2
+    subgraphs:
+      auth-service:
+        routing_url: http://auth-service:8081/graph
+        schema:
+          file: ./schemas/auth-service.graphqls
+      chat-service:
+        routing_url: http://chat-service:8088/graph
+        schema:
+          file: ./schemas/chat-service.graphqls
+      notification-service:
+        routing_url: http://notification-service:8086/graph
+        schema:
+          file: ./schemas/notification-service.graphqls
+      order-service:
+        routing_url: http://order-service:8083/graph
+        schema:
+          file: ./schemas/order-service.graphqls
+      cart-service:
+        routing_url: http://cart-service:8089/graph
+        schema:
+          file: ./schemas/cart-service.graphqls
+      payment-service:
+        routing_url: http://payment-service:8084/graph
+        schema:
+          file: ./schemas/payment-service.graphqls
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: apollo-schema-composer
+  labels:
+    app: graphql-gateway
+    component: schema-composition
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: apollo-schema-composer
+  labels:
+    app: graphql-gateway
+    component: schema-composition
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "create", "update", "patch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  resourceNames: ["apollo-supergraph-schema"]
+  verbs: ["get", "update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: apollo-schema-composer
+  labels:
+    app: graphql-gateway
+    component: schema-composition
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: apollo-schema-composer
+subjects:
+- kind: ServiceAccount
+  name: apollo-schema-composer

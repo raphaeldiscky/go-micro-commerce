@@ -1,0 +1,30 @@
+# Supergraph configuration for Kubernetes deployment
+# This file uses K8s Service DNS for subgraph routing URLs
+# Services are accessed via: http://<service-name>:<port>/graph
+
+federation_version: 2
+subgraphs:
+  auth-service:
+    routing_url: http://auth-service:8081/graph
+    schema:
+      file: ./schemas/auth-service.graphqls
+  chat-service:
+    routing_url: http://chat-service:8088/graph
+    schema:
+      file: ./schemas/chat-service.graphqls
+  notification-service:
+    routing_url: http://notification-service:8086/graph
+    schema:
+      file: ./schemas/notification-service.graphqls
+  order-service:
+    routing_url: http://order-service:8083/graph
+    schema:
+      file: ./schemas/order-service.graphqls
+  cart-service:
+    routing_url: http://cart-service:8089/graph
+    schema:
+      file: ./schemas/cart-service.graphqls
+  payment-service:
+    routing_url: http://payment-service:8084/graph
+    schema:
+      file: ./schemas/payment-service.graphqls

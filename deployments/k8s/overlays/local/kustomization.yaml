@@ -10,7 +10,6 @@ namePrefix: local-
 
 resources:
   - ../../base/api-gateway
-  - ../../base/graphql-gateway
   - ../../base/auth-service
   - ../../base/product-service
   - ../../base/order-service
@@ -263,12 +262,6 @@ configMapGenerator:
       - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
       - CONSUL_ENABLED=false
       - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
-
-  - name: graphql-gateway-config
-    behavior: merge
-    literals:
-      - HTTP_SERVER_HOST=0.0.0.0
-      - HTTP_SERVER_PORT=4000
 
 secretGenerator:
   - name: postgres-credentials

@@ -3,7 +3,9 @@
 # Docs: https://strimzi.io/docs/operators/latest/overview.html
 
 # Operator Configuration
-watchNamespaces: ["default"]  # Watch the default namespace for Kafka CRDs
+# When empty, operator watches its own namespace (default)
+# Avoids duplicate RoleBinding conflicts when operator is installed to default namespace
+watchNamespaces: []
 
 # Resource limits for the operator
 resources:
