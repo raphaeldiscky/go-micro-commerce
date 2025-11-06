@@ -1,0 +1,175 @@
+# Apollo Router Helm Chart Values
+# Chart: oci://ghcr.io/apollographql/helm-charts/router
+# Docs: https://www.apollographql.com/docs/router/containerization/kubernetes
+
+# Replica configuration
+replicaCount: 2
+
+# Router configuration
+# Using custom ConfigMap for all runtime config (loaded from /config/router.yaml)
+# No inline config to avoid conflicts with custom --config argument
+router:
+  args:
+    - --hot-reload
+    - --config
+    - /config/router.yaml
+
+# Image configuration
+image:
+  repository: ghcr.io/apollographql/router
+  tag: v2.7.0
+  pullPolicy: IfNotPresent
+
+# Container ports - explicitly defined since using external ConfigMap
+containerPorts:
+  http: 4000
+  health: 4088
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 80
+  targetport: http
+
+# Resource limits
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+
+# Health check probes
+probes:
+  readiness:
+    initialDelaySeconds: 10
+  liveness:
+    initialDelaySeconds: 30
+
+# Rolling update strategy
+rollingUpdate:
+  maxSurge: 1
+  maxUnavailable: 0
+
+# Environment variables
+extraEnvVars:
+  - name: APOLLO_ROUTER_CONFIG_PATH
+    value: /config/router.yaml
+  - name: APOLLO_ROUTER_SUPERGRAPH_PATH
+    value: /config/supergraph-schema.graphql
+  - name: APOLLO_ROUTER_LOG
+    value: info
+  - name: APOLLO_ELV2_LICENSE
+    value: accept
+
+# Extra volume mounts for ConfigMaps
+# Mounted to /config/ to avoid conflicts with Helm-generated ConfigMap in /app/
+extraVolumeMounts:
+  # Router configuration (CORS, headers, rate limiting)
+  - name: router-config
+    mountPath: /config/router.yaml
+    subPath: router.yaml
+    readOnly: true
+  # Supergraph schema
+  - name: supergraph-schema
+    mountPath: /config/supergraph-schema.graphql
+    subPath: supergraph-schema.graphql
+    readOnly: true
+  # Rhai script for Set-Cookie propagation
+  - name: rhai-script
+    mountPath: /config/main.rhai
+    subPath: main.rhai
+    readOnly: true
+
+# Extra volumes from ConfigMaps
+extraVolumes:
+  - name: router-config
+    configMap:
+      name: apollo-router-config
+  - name: supergraph-schema
+    configMap:
+      name: apollo-supergraph-schema
+  - name: rhai-script
+    configMap:
+      name: apollo-router-rhai
+
+# Pod Disruption Budget
+podDisruptionBudget:
+  minAvailable: 1
+
+# Deployment annotations
+deploymentAnnotations: {}
+
+# Extra labels for resources
+extraLabels:
+  app: graphql-gateway
+  component: apollo-router
+  layer: api-gateway
+
+# Node affinity (spread across nodes)
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                  - router
+          topologyKey: kubernetes.io/hostname
+
+# Tolerations
+tolerations: []
+
+# Node selector
+nodeSelector: {}
+
+# Termination grace period
+terminationGracePeriodSeconds: 30
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Ingress configuration (disabled - using Traefik)
+ingress:
+  enabled: false
+
+# Virtual service configuration (disabled - not using Istio)
+virtualservice:
+  enabled: false
+
+# Service entry configuration (disabled - not using Istio)
+serviceentry:
+  enabled: false
+
+# Managed federation (disabled - using self-hosted with ConfigMaps)
+managedFederation:
+  apiKey: ""
+  graphRef: ""
+
+# Supergraph file (using ConfigMap instead)
+supergraphFile: ""
