@@ -6,13 +6,216 @@
 replicaCount: 2
 
 # Router configuration
-# Using custom ConfigMap for all runtime config (loaded from /config/router.yaml)
-# No inline config to avoid conflicts with custom --config argument
+# Using inline configuration (Helm chart will generate /app/configuration.yaml)
+# Supergraph schema and Rhai script loaded from ConfigMaps
 router:
   args:
     - --hot-reload
-    - --config
-    - /config/router.yaml
+    - --supergraph
+    - /config/supergraph-schema.graphql
+
+  configuration:
+    supergraph:
+      listen: 0.0.0.0:4000
+      path: /
+      introspection: true
+      defer_support: true
+
+    cors:
+      allow_credentials: true
+      methods:
+        - GET
+        - POST
+        - OPTIONS
+      policies:
+        - origins:
+            - http://localhost:3000
+            - http://localhost:3001
+            - http://localhost:8080
+            - http://graphql.localhost
+          match_origins:
+            - "^http://localhost:[0-9]+$"
+          allow_credentials: true
+          allow_headers:
+            - Content-Type
+            - Authorization
+            - X-User-ID
+            - X-Email
+            - X-Roles
+            - X-Is-Active
+            - apollographql-client-name
+            - apollographql-client-version
+          expose_headers:
+            - X-Request-ID
+
+    rhai:
+      main: /config/main.rhai
+
+    headers:
+      all:
+        request:
+          - propagate:
+              matching: ".*"
+          - insert:
+              name: "X-Forwarded-For"
+              from_context: "apollo_client_ip"
+      subgraphs:
+        auth-service:
+          request:
+            - propagate:
+                named: "authorization"
+            - propagate:
+                named: "cookie"
+            - propagate:
+                named: "X-User-ID"
+            - propagate:
+                named: "X-Email"
+            - propagate:
+                named: "X-Roles"
+            - propagate:
+                named: "X-Is-Active"
+            - insert:
+                name: "X-Gateway"
+                value: "graphql-gateway"
+            - insert:
+                name: "X-Client-IP"
+                from_context: "apollo_client_ip"
+            - propagate:
+                named: "user-agent"
+                rename: "X-User-Agent"
+        chat-service:
+          request:
+            - propagate:
+                named: "authorization"
+            - propagate:
+                named: "cookie"
+            - propagate:
+                named: "X-User-ID"
+            - propagate:
+                named: "X-Email"
+            - propagate:
+                named: "X-Roles"
+            - propagate:
+                named: "X-Is-Active"
+            - insert:
+                name: "X-Gateway"
+                value: "graphql-gateway"
+            - insert:
+                name: "X-Client-IP"
+                from_context: "apollo_client_ip"
+            - propagate:
+                named: "user-agent"
+                rename: "X-User-Agent"
+        notification-service:
+          request:
+            - propagate:
+                named: "authorization"
+            - propagate:
+                named: "cookie"
+            - propagate:
+                named: "X-User-ID"
+            - propagate:
+                named: "X-Email"
+            - propagate:
+                named: "X-Roles"
+            - propagate:
+                named: "X-Is-Active"
+            - insert:
+                name: "X-Gateway"
+                value: "graphql-gateway"
+            - insert:
+                name: "X-Client-IP"
+                from_context: "apollo_client_ip"
+            - propagate:
+                named: "user-agent"
+                rename: "X-User-Agent"
+        order-service:
+          request:
+            - propagate:
+                named: "authorization"
+            - propagate:
+                named: "cookie"
+            - propagate:
+                named: "X-User-ID"
+            - propagate:
+                named: "X-Email"
+            - propagate:
+                named: "X-Roles"
+            - propagate:
+                named: "X-Is-Active"
+            - insert:
+                name: "X-Gateway"
+                value: "graphql-gateway"
+            - insert:
+                name: "X-Client-IP"
+                from_context: "apollo_client_ip"
+            - propagate:
+                named: "user-agent"
+                rename: "X-User-Agent"
+        cart-service:
+          request:
+            - propagate:
+                named: "authorization"
+            - propagate:
+                named: "cookie"
+            - propagate:
+                named: "X-User-ID"
+            - propagate:
+                named: "X-Email"
+            - propagate:
+                named: "X-Roles"
+            - propagate:
+                named: "X-Is-Active"
+            - insert:
+                name: "X-Gateway"
+                value: "graphql-gateway"
+            - insert:
+                name: "X-Client-IP"
+                from_context: "apollo_client_ip"
+            - propagate:
+                named: "user-agent"
+                rename: "X-User-Agent"
+        payment-service:
+          request:
+            - propagate:
+                named: "authorization"
+            - propagate:
+                named: "cookie"
+            - propagate:
+                named: "X-User-ID"
+            - propagate:
+                named: "X-Email"
+            - propagate:
+                named: "X-Roles"
+            - propagate:
+                named: "X-Is-Active"
+            - insert:
+                name: "X-Gateway"
+                value: "graphql-gateway"
+            - insert:
+                name: "X-Client-IP"
+                from_context: "apollo_client_ip"
+            - propagate:
+                named: "user-agent"
+                rename: "X-User-Agent"
+
+    health_check:
+      enabled: true
+      listen: 0.0.0.0:4088
+      path: /health
+
+    traffic_shaping:
+      router:
+        timeout: 30s
+        global_rate_limit:
+          capacity: 1000
+          interval: 1s
+      all:
+        deduplicate_query: true
+        timeout: 20s
+
+    include_subgraph_errors:
+      all: true
 
 # Image configuration
 image:
@@ -72,23 +275,14 @@ rollingUpdate:
 
 # Environment variables
 extraEnvVars:
-  - name: APOLLO_ROUTER_CONFIG_PATH
-    value: /config/router.yaml
-  - name: APOLLO_ROUTER_SUPERGRAPH_PATH
-    value: /config/supergraph-schema.graphql
   - name: APOLLO_ROUTER_LOG
     value: info
   - name: APOLLO_ELV2_LICENSE
     value: accept
 
 # Extra volume mounts for ConfigMaps
-# Mounted to /config/ to avoid conflicts with Helm-generated ConfigMap in /app/
+# Mounted to /config/ directory
 extraVolumeMounts:
-  # Router configuration (CORS, headers, rate limiting)
-  - name: router-config
-    mountPath: /config/router.yaml
-    subPath: router.yaml
-    readOnly: true
   # Supergraph schema
   - name: supergraph-schema
     mountPath: /config/supergraph-schema.graphql
@@ -102,9 +296,6 @@ extraVolumeMounts:
 
 # Extra volumes from ConfigMaps
 extraVolumes:
-  - name: router-config
-    configMap:
-      name: apollo-router-config
   - name: supergraph-schema
     configMap:
       name: apollo-supergraph-schema
