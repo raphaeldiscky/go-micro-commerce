@@ -346,6 +346,7 @@ tasks:
     cmds:
       - task: graphql
       - bash ./scripts/compose-supergraph.sh
+      - bash ./deployments/k8s/infrastructure/apollo-router/create-supergraph-configmap.sh
       - cd frontend && pnpm codegen
       - task: deps
       - task: lint
@@ -420,6 +421,11 @@ tasks:
     cmds:
       - bash ./scripts/create-k8s-jwt-secrets.sh
       - bash ./scripts/create-k8s-dockerhub-secret.sh
+
+  k8s_create_tls_certs:
+    desc: Create self-signed TLS certificates for local development
+    cmds:
+      - bash ./scripts/create-k8s-tls-certs.sh
 
   k8s_status:
     desc: Show status of all K8s resources

@@ -120,6 +120,7 @@ configMapGenerator:
       - JWKS_URL=http://local-auth-service.default.svc.cluster.local:8081/.well-known/jwks.json
       - SERVICE_DISCOVERY_TYPE=kubernetes
       - SERVICE_DISCOVERY_K8S_NAMESPACE=default
+      - SERVICE_DISCOVERY_K8S_PREFIX=local-
       - CONSUL_ENABLED=false
       - TRACING_URL=otel-collector.default.svc.cluster.local:4318
       - TRACING_ENABLED=true
@@ -235,6 +236,8 @@ configMapGenerator:
       - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
       - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
       - CONSUL_ENABLED=false
+      - SMTP_HOST=mailhog.default.svc.cluster.local
+      - SMTP_PORT=1025
 
   - name: search-service-config
     behavior: merge

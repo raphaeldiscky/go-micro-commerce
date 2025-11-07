@@ -31,10 +31,18 @@ router:
         - origins:
             - http://localhost:3000
             - http://localhost:3001
+            - http://localhost:3031
             - http://localhost:8080
             - http://graphql.localhost
+            - https://go.micro.commerce:3031
+            - https://go.micro.commerce
+            - http://go.micro.commerce:3031
+            - http://go.micro.commerce
           match_origins:
             - "^http://localhost:[0-9]+$"
+            - "^https://localhost:[0-9]+$"
+            - "^https://go\\.micro\\.commerce(:[0-9]+)?$"
+            - "^http://go\\.micro\\.commerce(:[0-9]+)?$"
           allow_credentials: true
           allow_headers:
             - Content-Type

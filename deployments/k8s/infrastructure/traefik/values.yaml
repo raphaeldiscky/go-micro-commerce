@@ -59,26 +59,34 @@ additionalArguments:
   - "--accesslog.format=json"
 
 # Ports configuration
+# Using hostPort to bind directly to node ports 80/443
+# This is required for Kind extraPortMappings to work correctly
 ports:
   web:
-    port: 80
+    port: 8000
     exposedPort: 80
     protocol: TCP
+    # Bind directly to host port 80 (required for Kind extraPortMappings)
+    hostPort: 80
   websecure:
-    port: 443
+    port: 8443
     exposedPort: 443
     protocol: TCP
     tls:
       enabled: true
+    # Bind directly to host port 443 (required for Kind extraPortMappings)
+    hostPort: 443
   metrics:
     port: 9100
     exposedPort: 9100
     protocol: TCP
 
 # Service configuration
+# NodePort for Kind (with extraPortMappings), LoadBalancer for MicroK8s (with MetalLB)
+# Tiltfile overrides to LoadBalancer for MicroK8s
 service:
   enabled: true
-  type: LoadBalancer
+  type: NodePort
   annotations: {}
 
 # Ingress class

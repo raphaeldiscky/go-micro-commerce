@@ -32,6 +32,7 @@ helm_repo('strimzi', 'https://strimzi.io/charts/', labels=['helm-repos'])
 helm_repo('ot-helm', 'https://ot-container-kit.github.io/helm-charts/', labels=['helm-repos'])
 helm_repo('prometheus-community', 'https://prometheus-community.github.io/helm-charts', labels=['helm-repos'])
 helm_repo('grafana', 'https://grafana.github.io/helm-charts', labels=['helm-repos'])
+helm_repo('traefik', 'https://traefik.github.io/charts', labels=['helm-repos'])
 
 #==================================================================================
 # INFRASTRUCTURE - DATABASES (PostgreSQL)
@@ -230,16 +231,52 @@ k8s_resource(
 # INFRASTRUCTURE - TRAEFIK (API Gateway/Ingress)
 #==================================================================================
 
-# Note: Traefik is deployed via existing K8s manifests
-# If you have Traefik Helm chart, uncomment and configure:
-# helm_resource(
-#     'traefik',
-#     'traefik/traefik',
-#     flags=[
-#         '--values=deployments/k8s/infrastructure/traefik/values.yaml',
-#     ],
-#     labels=['infra-gateway'],
-# )
+# Deploy Traefik Ingress Controller
+# Kind: Uses NodePort with hostPort (only 1 replica due to hostPort limitation)
+# MicroK8s: Uses LoadBalancer with MetalLB addon (can have multiple replicas)
+traefik_flags = [
+    '--values=deployments/k8s/infrastructure/traefik/values.yaml',
+    '--version=37.2.0',
+]
+
+# Kind-specific configuration: hostPort can only be used by 1 pod per node
+if 'kind' in k8s_context:
+    traefik_flags.extend([
+        '--set', 'deployment.replicas=1',
+        '--set', 'podDisruptionBudget.enabled=false',
+    ])
+
+# MicroK8s-specific configuration: use LoadBalancer with MetalLB
+if k8s_context == 'microk8s':
+    traefik_flags.extend([
+        '--set', 'service.type=LoadBalancer',
+    ])
+
+helm_resource(
+    'traefik-ingress',
+    'traefik/traefik',
+    flags=traefik_flags,
+    labels=['infra-gateway'],
+    resource_deps=[],
+    # No port-forwards needed:
+    # - Kind: extraPortMappings handle 80/443
+    # - MicroK8s: MetalLB assigns LoadBalancer IP
+    # port_forwards=['9000:9000'],  # Uncomment for Traefik Dashboard if enabled
+)
+
+# Deploy local development ingress configuration
+k8s_yaml('deployments/k8s/infrastructure/traefik/ingress-local.yaml')
+k8s_resource(
+    objects=[
+        'unified-gateway-ingress:ingress',
+        'cors:middleware',
+        'rate-limit:middleware',
+        'security-headers:middleware',
+    ],
+    new_name='traefik-ingress-local',
+    labels=['infra-gateway'],
+    resource_deps=['traefik-ingress', 'graphql-gateway', 'api-gateway'],
+)
 
 #==================================================================================
 # GRAPHQL GATEWAY - APOLLO ROUTER (Federation v2)
@@ -260,6 +297,7 @@ helm_resource(
     flags=[
         '--version=2.7.0',
         '--values=deployments/k8s/infrastructure/apollo-router/values.yaml',
+        '--set', 'fullnameOverride=local-apollo-router',
     ],
     labels=['apps'],
     resource_deps=[
@@ -442,10 +480,11 @@ print("  - operators: Strimzi, OT-Container-Kit (Redis)")
 print("  - infra-db: PostgreSQL databases")
 print("  - infra-cache: Redis Cluster (6 nodes) + Redis Insight")
 print("  - infra-messaging: Kafka Cluster (3 nodes) + Kafka UI")
+print("  - infra-gateway: Traefik Ingress Controller + Local Ingress")
 print("  - monitoring: Prometheus, Grafana, Loki, Tempo, OTEL")
 print("  - dev-tools: MailHog")
 print("  - migrations: 9 database migration jobs")
-print("  - apps: 11 microservices")
+print("  - apps: 11 microservices + GraphQL Gateway")
 print("")
 print("=== Access UIs (automatically port-forwarded) ===")
 print("  - Grafana: http://localhost:3000 (admin/admin)")
@@ -453,6 +492,13 @@ print("  - Prometheus: http://localhost:9090")
 print("  - Kafka UI: http://localhost:8090")
 print("  - Redis Insight: http://localhost:5540")
 print("  - MailHog: http://localhost:8025")
+print("  - GraphQL Gateway: http://localhost:4000")
+print("")
+print("=== API Gateways (via Traefik Ingress) ===")
+print("  - API Gateway (REST): https://go.micro.commerce")
+print("  - GraphQL Gateway: https://go.micro.commerce/graph")
+print("  - GraphQL Subscriptions (WS): wss://go.micro.commerce/graph/subscriptions/ws")
+print("  - GraphQL Subscriptions (SSE): https://go.micro.commerce/graph/subscriptions/sse")
 print("")
 print("Run 'tilt up' to start!")
 

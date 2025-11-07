@@ -40,6 +40,9 @@ spec:
         - name: http
           containerPort: 8088
           protocol: TCP
+        - name: websocket
+          containerPort: 9098
+          protocol: TCP
         env:
         - name: APP_NAME
           value: "chat-service"

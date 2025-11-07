@@ -1,0 +1,112 @@
+---
+# Unified Ingress for Local Development
+# All traffic goes through API Gateway, which internally routes /graph to Apollo Router
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: unified-gateway-ingress
+  namespace: default
+  labels:
+    app: unified-gateway
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+    traefik.ingress.kubernetes.io/router.middlewares: default-cors@kubernetescrd
+    # Enable for production with cert-manager
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: traefik-ingress
+  tls:
+    - hosts:
+        - go.micro.commerce
+      secretName: go-micro-commerce-tls
+  rules:
+    - host: go.micro.commerce
+      http:
+        paths:
+          # API Gateway - handles all paths including /graph and /graph/subscriptions/sse
+          # API Gateway has specialized ProxySSE handler for SSE subscriptions
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: local-api-gateway
+                port:
+                  number: 8080
+
+---
+# CORS Middleware for Local Development
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: cors
+  namespace: default
+spec:
+  headers:
+    accessControlAllowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - PATCH
+      - OPTIONS
+    accessControlAllowOriginList:
+      - "https://go.micro.commerce:3031"
+      - "http://localhost:3031"
+      - "http://localhost:3000"
+    accessControlAllowHeaders:
+      - Content-Type
+      - Authorization
+      - Accept
+      - Origin
+      - User-Agent
+      - Cache-Control
+      - X-Requested-With
+      - apollographql-client-name
+      - apollographql-client-version
+      - X-User-ID
+      - X-Email
+      - X-Roles
+      - X-Is-Active
+      - connect-protocol-version
+      - connect-timeout-ms
+      - connect-accept-encoding
+    accessControlExposeHeaders:
+      - Content-Type
+      - Authorization
+      - X-Request-ID
+      - Set-Cookie
+    accessControlAllowCredentials: true
+    accessControlMaxAge: 100
+    addVaryHeader: true
+
+---
+# Rate Limiting Middleware (relaxed for local development)
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: rate-limit
+  namespace: default
+spec:
+  rateLimit:
+    average: 10000
+    burst: 1000
+    period: 1m
+
+---
+# Security Headers Middleware
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: default
+spec:
+  headers:
+    browserXssFilter: true
+    contentTypeNosniff: true
+    forceSTSHeader: false # Disabled for local dev
+    frameDeny: false # Relaxed for local dev
+    customResponseHeaders:
+      X-Frame-Options: "SAMEORIGIN"
+      X-Content-Type-Options: "nosniff"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "strict-origin-when-cross-origin"

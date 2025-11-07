@@ -14,4 +14,8 @@ spec:
     port: 8086
     targetPort: http
     protocol: TCP
+  - name: sse
+    port: 9086
+    targetPort: sse
+    protocol: TCP
   sessionAffinity: None
