@@ -40,6 +40,9 @@ spec:
         - name: http
           containerPort: 8082
           protocol: TCP
+        - name: grpc
+          containerPort: 50052
+          protocol: TCP
         env:
         - name: APP_NAME
           value: "product-service"

@@ -23,7 +23,8 @@ spec:
     - host: go.micro.commerce
       http:
         paths:
-          # API Gateway - handles all paths including /graph (proxies to apollo-router internally)
+          # API Gateway - handles all paths including /graph and /graph/subscriptions/sse
+          # API Gateway has specialized ProxySSE handler for SSE subscriptions
           - path: /
             pathType: Prefix
             backend:
@@ -66,6 +67,9 @@ spec:
       - X-Email
       - X-Roles
       - X-Is-Active
+      - connect-protocol-version
+      - connect-timeout-ms
+      - connect-accept-encoding
     accessControlExposeHeaders:
       - Content-Type
       - Authorization
@@ -99,8 +103,8 @@ spec:
   headers:
     browserXssFilter: true
     contentTypeNosniff: true
-    forceSTSHeader: false  # Disabled for local dev
-    frameDeny: false       # Relaxed for local dev
+    forceSTSHeader: false # Disabled for local dev
+    frameDeny: false # Relaxed for local dev
     customResponseHeaders:
       X-Frame-Options: "SAMEORIGIN"
       X-Content-Type-Options: "nosniff"

@@ -120,6 +120,7 @@ configMapGenerator:
       - JWKS_URL=http://local-auth-service.default.svc.cluster.local:8081/.well-known/jwks.json
       - SERVICE_DISCOVERY_TYPE=kubernetes
       - SERVICE_DISCOVERY_K8S_NAMESPACE=default
+      - SERVICE_DISCOVERY_K8S_PREFIX=local-
       - CONSUL_ENABLED=false
       - TRACING_URL=otel-collector.default.svc.cluster.local:4318
       - TRACING_ENABLED=true

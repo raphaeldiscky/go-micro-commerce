@@ -34,6 +34,9 @@ WORKDIR /app
 # This is the key to a small final image.
 COPY --from=builder /workspace/notification-service/main .
 
+# Copy email templates needed at runtime
+COPY --from=builder /workspace/notification-service/internal/template /app/internal/template
+
 EXPOSE 8086
 
 # Switch to the non-root user

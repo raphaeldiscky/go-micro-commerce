@@ -15,6 +15,7 @@ import (
 type KubernetesDiscoveryService struct {
 	logger    logger.Logger
 	namespace string
+	prefix    string            // K8s service name prefix (e.g., "local-", "dev-")
 	endpoints map[string]string // service name -> endpoint mapping
 }
 
@@ -26,6 +27,7 @@ func NewKubernetesDiscoveryService(
 	sd := &KubernetesDiscoveryService{
 		logger:    appLogger,
 		namespace: cfg.K8sNamespace,
+		prefix:    cfg.K8sServicePrefix,
 		endpoints: make(map[string]string),
 	}
 
@@ -36,6 +38,7 @@ func NewKubernetesDiscoveryService(
 }
 
 const (
+	// HTTP server ports.
 	authServicePort         = 8081
 	productServicePort      = 8082
 	orderServicePort        = 8083
@@ -46,6 +49,11 @@ const (
 	chatServicePort         = 8088
 	cartServicePort         = 8089
 	graphQLGatewayPort      = 80 // Apollo Router K8s service port (maps to container port 4000)
+
+	// Specialized server ports (gRPC/connect-RPC, SSE, WebSocket).
+	productServiceGRPCPort     = 50052
+	notificationServiceSSEPort = 9086
+	chatServiceWSPort          = 9098
 )
 
 // initializeServiceEndpoints initializes the service endpoints based on Kubernetes DNS convention.
@@ -53,6 +61,7 @@ func (sd *KubernetesDiscoveryService) initializeServiceEndpoints() {
 	// Kubernetes DNS convention: <service-name>.<namespace>.svc.cluster.local:<port>
 	// For services in the same namespace, we can use short form: <service-name>:<port>
 	services := map[string]int{
+		// HTTP server ports
 		"auth-service":         authServicePort,
 		"product-service":      productServicePort,
 		"order-service":        orderServicePort,
@@ -63,21 +72,46 @@ func (sd *KubernetesDiscoveryService) initializeServiceEndpoints() {
 		"chat-service":         chatServicePort,
 		"cart-service":         cartServicePort,
 		"apollo-router":        graphQLGatewayPort, // K8s service name for GraphQL Gateway
+
+		// Specialized servers (same K8s service, different ports)
+		"product-service-grpc":     productServiceGRPCPort,     // Connect-RPC server
+		"notification-service-sse": notificationServiceSSEPort, // SSE subscription server
+		"chat-service-ws":          chatServiceWSPort,          // WebSocket server
+	}
+
+	// Map logical service names to actual K8s service names
+	// This handles cases where multiple ports are exposed on the same service
+	// The prefix (e.g., "local-") is applied dynamically based on configuration
+	serviceNameMapping := map[string]string{
+		"product-service-grpc":     sd.prefix + "product-service",
+		"notification-service-sse": sd.prefix + "notification-service",
+		"chat-service-ws":          sd.prefix + "chat-service",
 	}
 
 	for serviceName, port := range services {
+		// Resolve actual K8s service name
+		// First, check if there's a custom mapping (for specialized services)
+		// Otherwise, apply the prefix to the base service name
+		var actualServiceName string
+		if mappedName, exists := serviceNameMapping[serviceName]; exists {
+			actualServiceName = mappedName
+		} else {
+			// Apply prefix to regular service names
+			actualServiceName = sd.prefix + serviceName
+		}
+
 		var endpoint string
 		if sd.namespace != "" {
 			// Use FQDN if namespace is specified
 			endpoint = fmt.Sprintf(
 				"http://%s.%s.svc.cluster.local:%d",
-				serviceName,
+				actualServiceName,
 				sd.namespace,
 				port,
 			)
 		} else {
 			// Use short form (assumes same namespace)
-			endpoint = net.JoinHostPort(serviceName, strconv.Itoa(port))
+			endpoint = net.JoinHostPort(actualServiceName, strconv.Itoa(port))
 		}
 
 		sd.endpoints[serviceName] = endpoint

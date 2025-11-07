@@ -40,6 +40,9 @@ spec:
         - name: http
           containerPort: 8086
           protocol: TCP
+        - name: sse
+          containerPort: 9086
+          protocol: TCP
         env:
         - name: APP_NAME
           value: "notification-service"

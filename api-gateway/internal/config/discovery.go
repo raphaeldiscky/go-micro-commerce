@@ -18,6 +18,7 @@ type ServiceDiscoveryConfig struct {
 	ConsulDatacenter      string        `mapstructure:"SERVICE_DISCOVERY_CONSUL_DATACENTER"`
 	ConsulRefreshInterval time.Duration `mapstructure:"SERVICE_DISCOVERY_CONSUL_REFRESH_INTERVAL"`
 	K8sNamespace          string        `mapstructure:"SERVICE_DISCOVERY_K8S_NAMESPACE"`
+	K8sServicePrefix      string        `mapstructure:"SERVICE_DISCOVERY_K8S_PREFIX"`
 }
 
 // initServiceDiscoveryConfig initializes the service discovery configuration from environment variables.
@@ -38,6 +39,7 @@ func initServiceDiscoveryConfig() *ServiceDiscoveryConfig {
 
 	// Kubernetes configuration
 	viper.SetDefault("SERVICE_DISCOVERY_K8S_NAMESPACE", "")
+	viper.SetDefault("SERVICE_DISCOVERY_K8S_PREFIX", "") // e.g., "local-", "dev-", "prod-"
 
 	serviceDiscoveryConfig := &ServiceDiscoveryConfig{}
 	if err := viper.Unmarshal(serviceDiscoveryConfig); err != nil {

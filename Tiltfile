@@ -297,6 +297,7 @@ helm_resource(
     flags=[
         '--version=2.7.0',
         '--values=deployments/k8s/infrastructure/apollo-router/values.yaml',
+        '--set', 'fullnameOverride=local-apollo-router',
     ],
     labels=['apps'],
     resource_deps=[
