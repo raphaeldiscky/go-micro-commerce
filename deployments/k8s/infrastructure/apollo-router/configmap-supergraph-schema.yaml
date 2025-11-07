@@ -965,5 +965,6 @@ metadata:
   name: apollo-supergraph-schema
   labels:
     app: graphql-gateway
+    
     component: apollo-router
     managed-by: script

@@ -56,6 +56,9 @@ sudo microk8s enable storage
 echo -e "${CYAN}  → Enabling hostpath-storage addon...${NC}"
 sudo microk8s enable hostpath-storage
 
+echo -e "${CYAN}  → Enabling MetalLB addon (LoadBalancer support)...${NC}"
+sudo microk8s enable metallb:127.0.0.1-127.0.0.10
+
 echo ""
 echo -e "${BLUE}Configuring kubectl context...${NC}"
 

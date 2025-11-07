@@ -45,7 +45,7 @@ const (
 	searchServicePort       = 8087
 	chatServicePort         = 8088
 	cartServicePort         = 8089
-	graphQLGatewayPort      = 4000
+	graphQLGatewayPort      = 80 // Apollo Router K8s service port (maps to container port 4000)
 )
 
 // initializeServiceEndpoints initializes the service endpoints based on Kubernetes DNS convention.
@@ -62,7 +62,7 @@ func (sd *KubernetesDiscoveryService) initializeServiceEndpoints() {
 		"search-service":       searchServicePort,
 		"chat-service":         chatServicePort,
 		"cart-service":         cartServicePort,
-		"graphql-gateway":      graphQLGatewayPort,
+		"apollo-router":        graphQLGatewayPort, // K8s service name for GraphQL Gateway
 	}
 
 	for serviceName, port := range services {
