@@ -236,6 +236,8 @@ configMapGenerator:
       - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
       - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
       - CONSUL_ENABLED=false
+      - SMTP_HOST=mailhog.default.svc.cluster.local
+      - SMTP_PORT=1025
 
   - name: search-service-config
     behavior: merge
