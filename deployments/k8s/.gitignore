@@ -1,1 +1,3 @@
 secrets/*
+infrastructure/apollo-router/schemas
+infrastructure/apollo-router/supergraph-schema.graphql

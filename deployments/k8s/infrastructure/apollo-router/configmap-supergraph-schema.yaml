@@ -298,12 +298,12 @@ data:
     scalar join__FieldSet
 
     enum join__Graph {
-      AUTH_SERVICE @join__graph(name: "auth-service", url: "http://host.docker.internal:8081/graph")
-      CART_SERVICE @join__graph(name: "cart-service", url: "http://host.docker.internal:8089/graph")
-      CHAT_SERVICE @join__graph(name: "chat-service", url: "http://host.docker.internal:8088/graph")
-      NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://host.docker.internal:8086/graph")
-      ORDER_SERVICE @join__graph(name: "order-service", url: "http://host.docker.internal:8083/graph")
-      PAYMENT_SERVICE @join__graph(name: "payment-service", url: "http://host.docker.internal:8084/graph")
+      AUTH_SERVICE @join__graph(name: "auth-service", url: "http://local-auth-service.default.svc.cluster.local:8081/graph")
+      CART_SERVICE @join__graph(name: "cart-service", url: "http://local-cart-service.default.svc.cluster.local:8089/graph")
+      CHAT_SERVICE @join__graph(name: "chat-service", url: "http://local-chat-service.default.svc.cluster.local:8088/graph")
+      NOTIFICATION_SERVICE @join__graph(name: "notification-service", url: "http://local-notification-service.default.svc.cluster.local:8086/graph")
+      ORDER_SERVICE @join__graph(name: "order-service", url: "http://local-order-service.default.svc.cluster.local:8083/graph")
+      PAYMENT_SERVICE @join__graph(name: "payment-service", url: "http://local-payment-service.default.svc.cluster.local:8084/graph")
     }
 
     input JoinConversationInput
@@ -965,6 +965,5 @@ metadata:
   name: apollo-supergraph-schema
   labels:
     app: graphql-gateway
-    
     component: apollo-router
     managed-by: script
