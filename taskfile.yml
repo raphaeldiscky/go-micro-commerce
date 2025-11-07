@@ -346,6 +346,7 @@ tasks:
     cmds:
       - task: graphql
       - bash ./scripts/compose-supergraph.sh
+      - bash ./deployments/k8s/infrastructure/apollo-router/create-supergraph-configmap.sh
       - cd frontend && pnpm codegen
       - task: deps
       - task: lint
