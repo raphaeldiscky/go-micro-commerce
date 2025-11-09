@@ -60,11 +60,14 @@ spec:
           value: "cart-service"
         - name: METRICS_ENABLED
           value: "true"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: cart-pg-app
+              key: password
         envFrom:
         - configMapRef:
             name: cart-service-config
-        - secretRef:
-            name: cart-service-secrets
         resources:
           requests:
             cpu: 100m

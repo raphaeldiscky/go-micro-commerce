@@ -20,12 +20,29 @@ spec:
         image: payment-service-migrations:latest
         imagePullPolicy: IfNotPresent
         command:
-        - migrate
-        args:
-        - -path=/migrations
-        - -database
-        - postgres://postgres:postgres@postgresql-payment:5432/payment_db?sslmode=disable
-        - up
+        - /bin/sh
+        - -c
+        - |
+          migrate -path=/migrations \
+            -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
+            up
+        env:
+        - name: DB_HOST
+          value: "payment-pg-rw.default.svc.cluster.local"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "payment_db"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: payment-pg-app
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: payment-pg-app
+              key: password
         resources:
           requests:
             cpu: 50m

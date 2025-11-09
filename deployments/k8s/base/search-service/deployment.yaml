@@ -60,11 +60,14 @@ spec:
           value: "search-service"
         - name: METRICS_ENABLED
           value: "true"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: search-pg-app
+              key: password
         envFrom:
         - configMapRef:
             name: search-service-config
-        - secretRef:
-            name: search-service-secrets
         resources:
           requests:
             cpu: 100m
