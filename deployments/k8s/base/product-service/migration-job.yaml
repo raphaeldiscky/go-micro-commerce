@@ -20,12 +20,29 @@ spec:
         image: product-service-migrations:latest
         imagePullPolicy: IfNotPresent
         command:
-        - migrate
-        args:
-        - -path=/migrations
-        - -database
-        - postgres://postgres:postgres@postgresql-product:5432/product_db?sslmode=disable
-        - up
+        - /bin/sh
+        - -c
+        - |
+          migrate -path=/migrations \
+            -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
+            up
+        env:
+        - name: DB_HOST
+          value: "product-pg-rw.default.svc.cluster.local"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_NAME
+          value: "product_db"
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: product-pg-app
+              key: username
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: product-pg-app
+              key: password
         resources:
           requests:
             cpu: 50m

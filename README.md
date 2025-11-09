@@ -14,7 +14,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`)
 - Two local development options:
   - Simple `Docker Compose` setup for ease of development
-  - Run on `Kubernetes Cluster` with `Tilt + Kind` for hot reload and a more production-like environment.
+  - Run on `Kubernetes Cluster` with `Tilt + (Kind or MicroK8s)` for hot reload and a more production-like environment.
 - `Traefik` as ingress controller / entry point from the outside wold into cluster
 - `API Gateway` as application-level gateway, manages internal API requests.
 - CI pipeline using `GitHub Actions` to automate build, test, and push images to a registry

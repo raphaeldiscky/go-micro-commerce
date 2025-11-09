@@ -60,11 +60,14 @@ spec:
           value: "fulfillment-service"
         - name: METRICS_ENABLED
           value: "true"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fulfillment-pg-app
+              key: password
         envFrom:
         - configMapRef:
             name: fulfillment-service-config
-        - secretRef:
-            name: fulfillment-service-secrets
         resources:
           requests:
             cpu: 100m

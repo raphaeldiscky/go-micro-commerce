@@ -63,11 +63,14 @@ spec:
           value: "notification-service"
         - name: METRICS_ENABLED
           value: "true"
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: notification-pg-app
+              key: password
         envFrom:
         - configMapRef:
             name: notification-service-config
-        - secretRef:
-            name: notification-service-secrets
         resources:
           requests:
             cpu: 100m

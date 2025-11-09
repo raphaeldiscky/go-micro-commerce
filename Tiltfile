@@ -28,6 +28,7 @@ load('ext://restart_process', 'docker_build_with_restart')
 # HELM REPOSITORIES
 #==================================================================================
 
+helm_repo('cnpg', 'https://cloudnative-pg.github.io/charts', labels=['helm-repos'])
 helm_repo('strimzi', 'https://strimzi.io/charts/', labels=['helm-repos'])
 helm_repo('ot-helm', 'https://ot-container-kit.github.io/helm-charts/', labels=['helm-repos'])
 helm_repo('prometheus-community', 'https://prometheus-community.github.io/helm-charts', labels=['helm-repos'])
@@ -35,28 +36,61 @@ helm_repo('grafana', 'https://grafana.github.io/helm-charts', labels=['helm-repo
 helm_repo('traefik', 'https://traefik.github.io/charts', labels=['helm-repos'])
 
 #==================================================================================
-# INFRASTRUCTURE - DATABASES (PostgreSQL)
+# INFRASTRUCTURE - DATABASES (PostgreSQL with CloudNativePG)
 #==================================================================================
 
-# Deploy 9 PostgreSQL instances (one per microservice)
-postgres_services = [
-    'postgresql-auth',
-    'postgresql-product',
-    'postgresql-order',
-    'postgresql-payment',
-    'postgresql-fulfillment',
-    'postgresql-notification',
-    'postgresql-search',
-    'postgresql-chat',
-    'postgresql-cart',
-]
+# Install CloudNativePG operator (cluster-wide)
+helm_resource(
+    'cloudnative-pg-operator',
+    'cnpg/cloudnative-pg',
+    namespace='cnpg-system',
+    flags=[
+        '--create-namespace',
+        '--version=0.26.1',  # Chart version (installs operator v1.27.1)
+        '--set', 'monitoring.podMonitorEnabled=true',
+    ],
+    labels=['operators'],
+    resource_deps=['kube-prometheus-stack'],
+)
 
-for pg_service in postgres_services:
-    k8s_yaml('deployments/k8s/infrastructure/postgresql/postgres-' + pg_service.replace('postgresql-', '') + '.yaml')
-    k8s_resource(
-        pg_service,
+# Wait for CloudNativePG operator to be ready
+local_resource(
+    'wait-cnpg-operator',
+    'kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg -n cnpg-system --timeout=120s',
+    resource_deps=['cloudnative-pg-operator'],
+    labels=['operators'],
+)
+
+# Wait for CloudNativePG CRDs to be installed
+local_resource(
+    'wait-cnpg-crds',
+    'kubectl wait --for condition=established --timeout=60s crd/clusters.postgresql.cnpg.io',
+    resource_deps=['wait-cnpg-operator'],
+    labels=['operators'],
+)
+
+# Deploy 9 PostgreSQL clusters using CloudNativePG Helm chart
+postgres_clusters = {
+    'auth-pg': {'db': 'auth_db', 'user': 'auth_user'},
+    'product-pg': {'db': 'product_db', 'user': 'product_user'},
+    'order-pg': {'db': 'order_db', 'user': 'order_user'},
+    'payment-pg': {'db': 'payment_db', 'user': 'payment_user'},
+    'cart-pg': {'db': 'cart_db', 'user': 'cart_user'},
+    'fulfillment-pg': {'db': 'fulfillment_db', 'user': 'fulfillment_user'},
+    'notification-pg': {'db': 'notification_db', 'user': 'notification_user'},
+    'search-pg': {'db': 'search_db', 'user': 'search_user'},
+    'chat-pg': {'db': 'chat_db', 'user': 'chat_user'},
+}
+
+for cluster_name in postgres_clusters.keys():
+    helm_resource(
+        cluster_name,
+        'cnpg/cluster',
+        flags=[
+            '--values=deployments/k8s/infrastructure/postgres/local/%s-values.yaml' % cluster_name,
+        ],
         labels=['infra-db'],
-        resource_deps=[],
+        resource_deps=['wait-cnpg-crds'],
     )
 
 #==================================================================================
@@ -215,6 +249,10 @@ k8s_resource(
     resource_deps=['tempo', 'loki'],
 )
 
+# CloudNativePG Monitoring (ConfigMap and PrometheusRule)
+k8s_yaml('deployments/k8s/infrastructure/monitoring/cnpg-dashboard.yaml')
+k8s_yaml('deployments/k8s/infrastructure/monitoring/cnpg-alerts.yaml')
+
 #==================================================================================
 # INFRASTRUCTURE - DEV TOOLS
 #==================================================================================
@@ -338,17 +376,17 @@ services = [
     'chat-service',
 ]
 
-# Map services to their database dependencies
+# Map services to their database dependencies (CloudNativePG clusters)
 service_to_db = {
-    'auth-service': 'postgresql-auth',
-    'product-service': 'postgresql-product',
-    'order-service': 'postgresql-order',
-    'payment-service': 'postgresql-payment',
-    'cart-service': 'postgresql-cart',
-    'fulfillment-service': 'postgresql-fulfillment',
-    'notification-service': 'postgresql-notification',
-    'search-service': 'postgresql-search',
-    'chat-service': 'postgresql-chat',
+    'auth-service': 'auth-pg',
+    'product-service': 'product-pg',
+    'order-service': 'order-pg',
+    'payment-service': 'payment-pg',
+    'cart-service': 'cart-pg',
+    'fulfillment-service': 'fulfillment-pg',
+    'notification-service': 'notification-pg',
+    'search-service': 'search-pg',
+    'chat-service': 'chat-pg',
 }
 
 # Deploy all services using Kustomize (once, not per service)
@@ -471,13 +509,14 @@ for service in services:
 print("Tiltfile loaded successfully!")
 print("")
 print("=== Operator-Based Infrastructure ===")
+print("  - CloudNativePG Operator - PostgreSQL 18 with HA support")
 print("  - Strimzi Kafka Operator (CNCF) - Kafka 4.0.0 KRaft mode")
 print("  - OT-Container-Kit Redis Operator - Redis 8.x Cluster mode")
 print("")
 print("=== Resource Groups ===")
 print("  - helm-repos: Helm repository updates")
-print("  - operators: Strimzi, OT-Container-Kit (Redis)")
-print("  - infra-db: PostgreSQL databases")
+print("  - operators: CloudNativePG, Strimzi, OT-Container-Kit (Redis)")
+print("  - infra-db: PostgreSQL clusters (CloudNativePG, 9 clusters)")
 print("  - infra-cache: Redis Cluster (6 nodes) + Redis Insight")
 print("  - infra-messaging: Kafka Cluster (3 nodes) + Kafka UI")
 print("  - infra-gateway: Traefik Ingress Controller + Local Ingress")
