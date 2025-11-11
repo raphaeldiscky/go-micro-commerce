@@ -29,6 +29,17 @@ resource "local_sensitive_file" "kubeconfig" {
   file_permission = "0600"
 }
 
+# Save talosconfig to local file for talosctl access
+resource "local_sensitive_file" "talosconfig" {
+  content         = data.talos_client_configuration.this.talos_config
+  filename        = "${path.root}/talosconfig-${var.environment}"
+  file_permission = "0600"
+
+  depends_on = [
+    talos_machine_bootstrap.this
+  ]
+}
+
 # Wait for Kubernetes API to be available
 resource "null_resource" "wait_for_api" {
   depends_on = [

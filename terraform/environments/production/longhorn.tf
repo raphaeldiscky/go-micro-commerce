@@ -36,7 +36,7 @@ resource "helm_release" "longhorn" {
         defaultDataPath = var.longhorn_disk_path
 
         # Replica settings for HA
-        defaultReplicaCount = 2  # 2 replicas across 2 workers
+        defaultReplicaCount = "2"  # 2 replicas across 2 workers
 
         # Talos-specific settings
         taintToleration                     = "node-role.kubernetes.io/control-plane:NoSchedule"
@@ -44,8 +44,8 @@ resource "helm_release" "longhorn" {
         createDefaultDiskLabeledNodes       = true
 
         # Storage overprovisioning
-        storageOverProvisioningPercentage = 200
-        storageMinimalAvailablePercentage = 10
+        storageOverProvisioningPercentage = "200"
+        storageMinimalAvailablePercentage = "10"
 
         # Backup settings (optional - configure if needed)
         # backupTarget = "s3://your-bucket@us-east-1/"
@@ -56,7 +56,7 @@ resource "helm_release" "longhorn" {
         allowNodeDrainWithLastHealthyReplica = false
 
         # Performance settings
-        concurrentAutomaticEngineUpgradePerNodeLimit = 1
+        concurrentAutomaticEngineUpgradePerNodeLimit = "1"
       }
 
       # Longhorn Manager (UI and API)
@@ -114,7 +114,7 @@ resource "helm_release" "longhorn" {
       # Persistence
       persistence = {
         defaultClass       = true
-        defaultClassReplicaCount = 2
+        defaultClassReplicaCount = "2"
         reclaimPolicy      = "Retain"  # Change to Delete if you want PVs deleted with PVCs
         migratable         = false
         recurringJobSelector = {

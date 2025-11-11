@@ -34,6 +34,11 @@ output "kubeconfig_file" {
   value       = local_sensitive_file.kubeconfig.filename
 }
 
+output "talosconfig_file" {
+  description = "Path to the talosconfig file"
+  value       = local_sensitive_file.talosconfig.filename
+}
+
 output "kubernetes_ca_certificate" {
   description = "Kubernetes CA certificate"
   value       = talos_cluster_kubeconfig.this.kubernetes_client_configuration.ca_certificate

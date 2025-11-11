@@ -187,14 +187,10 @@ longhorn_disk_path = "/var/lib/longhorn"
 enable_external_secrets = true
 ```
 
-## Deployment
-
-### Option 1: Automated Deployment (Recommended)
-
-Run from **bastion VM** (inside GCP VPC):
+### 3.2 Run Terraform on Bastion VM inside VPC
 
 ```bash
-# Copy terraform directory from correct location
+# Copy terraform directory from correct location from local host
 gcloud compute scp --recurse \
     $HOME/repos/go-micro-commerce/terraform \
     bastion:~/ \
@@ -227,19 +223,25 @@ timeout 5 bash -c "cat < /dev/null > /dev/tcp/10.x.x.x/50000" && echo "Port 5000
 timeout 5 bash -c "cat < /dev/null > /dev/tcp/10.x.x.x/50000" && echo "Port 50000 open on worker-2" || echo "Failed"
 # Expected: All show "Port 50000 open"
 
+cd terraform/environments/production
+chmod +x deploy-phase1.sh
+chmod +x deploy-phase2.sh
+chmod +x deploy.sh
+
 # Run automated deployment
 ./deploy.sh
 ```
 
 The script will:
 
-1. Check prerequisites (terraform, talosctl)
+1. Check prerequisites (terraform, talosctl, kubectl, helm)
 2. Initialize Terraform
 3. **Phase 1**: Deploy Talos cluster and generate kubeconfig
 4. Wait for Kubernetes API to be ready
-5. **Phase 2**: Deploy Kubernetes resources (CNI, Longhorn, etc.)
-6. Verify deployment
-7. Show next steps
+5. Install Cilium CNI (networking)
+6. **Phase 2**: Deploy Kubernetes resources (CNI, Longhorn, etc.)
+7. Verify deployment
+8. Show next steps
 
 ### Option 2: Manual Deployment
 
@@ -287,7 +289,6 @@ terraform apply
 
 **What happens:**
 
-- Installs Cilium CNI (networking)
 - Deploys Longhorn (storage)
 - Deploys CloudNativePG operator
 - Deploys External Secrets Operator (if enabled)
@@ -404,6 +405,45 @@ Both are included in `certSANs` for flexibility.
    # Re-run kexec installation on each node
    # This clears old certificates
    ```
+
+### Kubernetes Provider Initialization Error
+
+**Error**: `'config_path' refers to an invalid path: "./kubeconfig-production": stat ./kubeconfig-production: no such file or directory`
+
+**Cause**: The Kubernetes provider in main.tf tries to validate the kubeconfig path during provider initialization, before Phase 1 has created the file.
+
+**Solutions**:
+
+1. **Automated (via deploy.sh)**: The deploy script automatically creates a placeholder kubeconfig before terraform init.
+
+2. **Manual workaround**: Create a dummy kubeconfig before running terraform:
+
+   ```bash
+   cat > ./kubeconfig-production << 'EOF'
+   apiVersion: v1
+   kind: Config
+   clusters:
+   - cluster:
+       server: https://127.0.0.1:6443
+     name: placeholder
+   contexts:
+   - context:
+       cluster: placeholder
+       user: placeholder
+     name: placeholder
+   current-context: placeholder
+   preferences: {}
+   users:
+   - name: placeholder
+     user:
+       token: placeholder
+   EOF
+   chmod 600 ./kubeconfig-production
+   ```
+
+   Then run terraform as normal. The real kubeconfig will overwrite this placeholder during Phase 1.
+
+3. **Code fix**: The main.tf uses try() to handle missing kubeconfig gracefully during Phase 1 deployment.
 
 ### VMs Stuck at Boot
 

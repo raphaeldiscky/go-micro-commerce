@@ -15,6 +15,11 @@ output "kubeconfig_file" {
   value       = module.talos_cluster.kubeconfig_file
 }
 
+output "talosconfig_file" {
+  description = "Path to talosconfig file"
+  value       = module.talos_cluster.talosconfig_file
+}
+
 output "nodes" {
   description = "Cluster nodes"
   value = {

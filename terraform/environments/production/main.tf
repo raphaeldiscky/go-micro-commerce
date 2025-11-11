@@ -27,13 +27,16 @@ provider "talos" {}
 # This requires a two-phase apply:
 #   1. terraform apply -target=module.talos_cluster  (creates cluster and kubeconfig)
 #   2. terraform apply                                (deploys Kubernetes resources)
+#
+# The try() function allows provider initialization even when kubeconfig doesn't exist yet
+# A dummy kubeconfig should be created before running terraform to ensure provider validation passes
 provider "kubernetes" {
-  config_path = module.talos_cluster.kubeconfig_file
+  config_path = try(module.talos_cluster.kubeconfig_file, "${path.root}/kubeconfig-production")
 }
 
 provider "helm" {
   kubernetes = {
-    config_path = module.talos_cluster.kubeconfig_file
+    config_path = try(module.talos_cluster.kubeconfig_file, "${path.root}/kubeconfig-production")
   }
 }
 
