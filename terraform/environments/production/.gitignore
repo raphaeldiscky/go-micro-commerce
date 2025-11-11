@@ -1,0 +1,48 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+*.tfvars
+!terraform.tfvars.example
+.terraform/
+.terraform.lock.hcl
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+
+# Sensitive Kubernetes/Talos configurations
+kubeconfig-*
+talosconfig-*
+*.kubeconfig
+*.talosconfig
+
+# GCP service account keys
+*.json
+!*.json.example
+
+# Backup files
+*.backup
+*.bak
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*.vim
+.project
+.settings/
+.classpath
+
+# Logs
+*.log

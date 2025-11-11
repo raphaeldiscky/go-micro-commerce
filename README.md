@@ -20,6 +20,9 @@ This application is primarily intended for exploring technical concepts. My goal
 - CI pipeline using `GitHub Actions` to automate build, test, and push images to a registry
 - `Kubernetes` for robust, scalable container orchestration in production environments
 - `GitOps-based deployments` for K8s apps using `Argo CD`
+- IaC with `Terraform`
+- Deployment using 3 VMs (1 Control Plane, 2 Worker Nodes) + 1 Bastion VM for run Terraform inside VPC
+- External Secret Operator with Google Secret Manager
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
 - Unified APIs with `GraphQL Federation` for type-safe client-server communication
 - Internal communication via synchronous `gRPC calls` for microservices to interact with each other.

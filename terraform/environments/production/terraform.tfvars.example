@@ -1,0 +1,123 @@
+# Production Environment Configuration for GCP
+# Copy this file to terraform.tfvars and update with your actual values
+
+environment  = "production"
+cluster_name = "go-micro-commerce"
+
+# Kubernetes and Talos versions
+kubernetes_version = "1.34.1"
+talos_version      = "v1.11.5"
+
+# GCP Configuration
+gcp_project_id = "your-gcp-project-id"        # Replace with your GCP project ID
+gcp_region     = "asia-southeast2"            # Jakarta region
+gcp_zone       = "asia-southeast2-a"          # Jakarta zone A
+
+# Path to GCP service account key (NEVER commit this file to git!)
+gcp_sa_key_path = "~/external-secrets-sa-key.json"
+
+# VM IP addresses from GCP Compute Engine
+# All VMs are e2-standard-2 (2 vCPUs, 8GB RAM)
+#
+# IMPORTANT: Use INTERNAL IPs for node connections!
+# Terraform runs from bastion VM inside VPC and connects via internal IPs.
+#
+# Get both internal and external IPs with:
+#   gcloud compute instances list --filter="name~'(control-plane|worker)'" \
+#     --format="table(name,zone,networkInterfaces[0].networkIP,networkInterfaces[0].accessConfigs[0].natIP)"
+#
+# Or from GCP Console: Compute Engine > VM instances
+#
+control_plane_nodes = [
+  {
+    name = "control-plane-1"
+    ip   = "10.x.x.x"  # Replace with INTERNAL IP (e.g., 10.184.0.2)
+  }
+]
+
+worker_nodes = [
+  {
+    name = "worker-1"
+    ip   = "10.x.x.x"  # Replace with INTERNAL IP (e.g., 10.184.0.5)
+  },
+  {
+    name = "worker-2"
+    ip   = "10.x.x.x"  # Replace with INTERNAL IP (e.g., 10.184.0.6)
+  }
+]
+
+# External (NAT) IPs for certificate SANs
+# These are used in Talos API certificates for external access
+# NOTE: Preemptible VMs get new external IPs on restart!
+control_plane_external_ips = ["34.x.x.x"]  # Replace with external IP (e.g., 34.101.240.213)
+worker_external_ips        = ["34.x.x.x", "34.x.x.x"]  # Replace with worker external IPs
+
+# Cluster endpoint (use control plane internal IP)
+# Format: https://<control-plane-ip>:6443
+cluster_endpoint = "https://10.x.x.x:6443"  # Replace with control plane IP
+
+# Network CIDRs (keep defaults unless you have conflicts)
+pod_cidr     = "10.244.0.0/16"
+service_cidr = "10.96.0.0/12"
+
+# Disk configuration
+# GCP VMs typically use /dev/sda (NOT /dev/vda like Tencent/Zeabur)
+# Verify with: lsblk (after SSH into VM)
+install_disk = "/dev/sda"
+
+# Talos Image Factory URL with system extensions
+# Generate at: https://factory.talos.dev/
+#
+# Required extensions for Longhorn:
+#   1. Go to factory.talos.dev
+#   2. Select Talos version: v1.11.5
+#   3. Select platform: metal
+#   4. Select architecture: amd64
+#   5. Add System Extensions:
+#      - siderolabs/iscsi-tools (for Longhorn iSCSI support)
+#      - siderolabs/util-linux-tools (for volume management)
+#   6. Copy the schematic ID (64-character hex string)
+#   7. Format: factory.talos.dev/installer/<schematic-id>:v1.11.5
+#
+# Example:
+# install_image = "factory.talos.dev/installer/613e1592b2da41ae5e265e8789429f22e121aab91cb4deb6bc3c0b6262961245:v1.11.5"
+install_image = ""  # Add your Image Factory URL here
+
+# External Secrets Operator
+# Enables integration with GCP Secret Manager
+enable_external_secrets = true
+
+# Longhorn storage configuration
+enable_longhorn    = true
+longhorn_disk_path = "/var/lib/longhorn"
+
+# Resource reservations for e2-standard-2 (2 vCPUs, 8GB RAM)
+# Control plane: 2 vCPU, 8GB RAM total
+control_plane_resources = {
+  cpu_reserved    = "500m"  # Reserve 0.5 CPU for system
+  memory_reserved = "1Gi"   # Reserve 1GB for system
+}
+
+# Workers: 2 vCPU, 8GB RAM each
+worker_resources = {
+  cpu_reserved    = "250m"   # Reserve 0.25 CPU for system
+  memory_reserved = "512Mi"  # Reserve 512MB for system
+}
+
+# Node tags/labels
+tags = {
+  environment    = "production"
+  managed-by     = "terraform"
+  project        = "go-micro-commerce"
+  cloud-provider = "gcp"
+  region         = "asia-southeast2"
+  zone           = "asia-southeast2-a"
+  machine-type   = "e2-standard-2"
+  domain         = "discky.com"
+}
+
+# Domain and DNS configuration
+# domain_name = "discky.com"  # Your domain for ingress/load balancer
+
+# GCS Bucket for storage
+# gcs_bucket_name = "discky-storage"  # Your GCS bucket name
