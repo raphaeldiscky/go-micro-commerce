@@ -220,18 +220,19 @@ fi
 
 # Install Cilium with Talos-specific configuration
 print_info "Deploying Cilium CNI with Talos-specific settings..."
-helm install cilium cilium/cilium --namespace kube-system \
-  --set autoDirectNodeRoutes=true \
-  --set enableBandwidthManager=true \
-  --set bpf.masquerade=true \
-  --set kubeProxyReplacement=true \
-  --set securityContext.privileged=true \
-  --set cni.chainingMode=portmap \
-  --set hostServices.enabled=false \
-  --set hostServices.protocols=tcp \
-  --set enableIPv4=true \
-  --set enableIPv6=false \
-  --set operator.replicas=1
+helm install \
+    cilium \
+    cilium/cilium \
+    --version 1.18.0 \
+    --namespace kube-system \
+    --set ipam.mode=kubernetes \
+    --set kubeProxyReplacement=true \
+    --set securityContext.capabilities.ciliumAgent="{CHOWN,KILL,NET_ADMIN,NET_RAW,IPC_LOCK,SYS_ADMIN,SYS_RESOURCE,DAC_OVERRIDE,FOWNER,SETGID,SETUID}" \
+    --set securityContext.capabilities.cleanCiliumState="{NET_ADMIN,SYS_ADMIN,SYS_RESOURCE}" \
+    --set cgroup.autoMount.enabled=false \
+    --set cgroup.hostRoot=/sys/fs/cgroup \
+    --set k8sServiceHost=localhost \
+    --set k8sServicePort=7445
 
 # Wait for Cilium pods to be ready
 print_info "Waiting for Cilium pods to be ready..."

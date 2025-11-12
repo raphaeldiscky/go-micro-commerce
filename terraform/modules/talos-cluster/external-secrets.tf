@@ -122,7 +122,11 @@ resource "kubernetes_manifest" "cluster_secret_store_gcp" {
     }
   }
 
+  # Skip validation during plan phase (CRDs are installed by Helm during apply)
+  computed_fields = ["metadata", "spec"]
+
   depends_on = [
+    null_resource.wait_for_external_secret_crd,
     kubernetes_secret.gcp_sa_key
   ]
 }
