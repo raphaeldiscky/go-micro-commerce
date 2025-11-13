@@ -55,6 +55,15 @@ stateless_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 # Kubernetes Operators and Platform Components
 # ============================================================================
 
+# External Secrets Operator (syncs secrets from Google Secret Manager)
+eso_namespace                   = "external-secrets"
+eso_chart_version               = "1.0.0"
+eso_replicas                    = 2
+eso_gcp_service_account_name    = "external-secrets-operator"
+eso_k8s_service_account_name    = "external-secrets-sa"
+eso_create_cluster_secret_store = true
+eso_cluster_secret_store_name   = "gcp-secret-manager"
+
 # CloudNative PostgreSQL Operator
 cnpg_namespace     = "cnpg-system"
 cnpg_chart_version = "0.22.1"
@@ -94,3 +103,16 @@ traefik_chart_version    = "33.2.1"
 traefik_replicas         = 3                  # 3 replicas for high availability
 traefik_service_type     = "LoadBalancer"     # LoadBalancer for GKE
 traefik_enable_dashboard = true
+
+# ============================================================================
+# Cloudflare Configuration
+# ============================================================================
+# Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
+#       This only configures DNS records for backend API
+
+cloudflare_api_token = "your-cloudflare-api-token"  # REQUIRED: Get from dash.cloudflare.com/profile/api-tokens
+
+# Domain Configuration
+domain_name         = "discky.com"
+api_subdomain       = "api"                         # Results in: api.discky.com
+enable_api_wildcard = false                         # Set true to create *.api.discky.com

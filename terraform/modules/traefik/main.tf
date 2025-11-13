@@ -113,3 +113,13 @@ resource "helm_release" "traefik" {
 
   depends_on = [kubernetes_namespace.traefik]
 }
+
+# Data source to get Traefik service details (including LoadBalancer IP)
+data "kubernetes_service" "traefik" {
+  metadata {
+    name      = helm_release.traefik.name
+    namespace = var.namespace
+  }
+
+  depends_on = [helm_release.traefik]
+}

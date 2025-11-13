@@ -79,6 +79,27 @@ output "cost_summary" {
 # Kubernetes Operators
 # ============================================================================
 
+# External Secrets Operator Outputs
+output "eso_namespace" {
+  description = "External Secrets Operator namespace"
+  value       = module.external_secrets_operator.namespace
+}
+
+output "eso_status" {
+  description = "External Secrets Operator status"
+  value       = module.external_secrets_operator.status
+}
+
+output "eso_gcp_service_account_email" {
+  description = "GCP service account email for Secret Manager access"
+  value       = module.external_secrets_operator.gcp_service_account_email
+}
+
+output "eso_cluster_secret_store_name" {
+  description = "ClusterSecretStore name for ExternalSecrets"
+  value       = module.external_secrets_operator.cluster_secret_store_name
+}
+
 # CloudNative PostgreSQL Operator Outputs
 output "cnpg_namespace" {
   description = "CloudNative PG operator namespace"
@@ -171,6 +192,30 @@ output "traefik_service_type" {
 }
 
 # ============================================================================
+# Domain and DNS Outputs
+# ============================================================================
+
+output "api_url" {
+  description = "Backend API base URL"
+  value       = "https://${var.api_subdomain}.${var.domain_name}"
+}
+
+output "traefik_load_balancer_ip" {
+  description = "Traefik LoadBalancer IP address (for DNS configuration)"
+  value       = module.traefik.load_balancer_ip
+}
+
+output "cloudflare_dns_records" {
+  description = "Cloudflare DNS records created by Terraform"
+  value       = module.cloudflare_dns.dns_records
+}
+
+output "frontend_deployment_note" {
+  description = "Note about frontend deployment"
+  value       = "Frontend (https://go.micro.commerce.${var.domain_name}) is deployed via Cloudflare Pages (not managed by Terraform). See terraform/CLOUDFLARE_PAGES_SETUP.md for setup instructions."
+}
+
+# ============================================================================
 # Deployment Summary
 # ============================================================================
 
@@ -184,14 +229,20 @@ output "deployment_summary" {
       cost_estimate    = module.gke_cluster.cost_summary
     }
     operators = {
-      cloudnative_pg = module.cloudnative_pg_operator.status
-      strimzi_kafka  = module.strimzi_kafka_operator.status
-      redis          = module.redis_operator.status
+      external_secrets = module.external_secrets_operator.status
+      cloudnative_pg   = module.cloudnative_pg_operator.status
+      strimzi_kafka    = module.strimzi_kafka_operator.status
+      redis            = module.redis_operator.status
     }
     platform = {
       monitoring = module.monitoring.namespace
       argocd     = module.argocd.status
       traefik    = module.traefik.status
+    }
+    dns = {
+      api_url     = "https://${var.api_subdomain}.${var.domain_name}"
+      traefik_ip  = module.traefik.load_balancer_ip
+      note        = "Frontend deployed via Cloudflare Pages (see CLOUDFLARE_PAGES_SETUP.md)"
     }
   }
 }

@@ -29,5 +29,9 @@ terraform {
       source  = "hashicorp/time"
       version = "~> 0.12"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 5.12.0"
+    }
   }
 }

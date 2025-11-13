@@ -17,3 +17,8 @@ provider "kubectl" {
   config_path      = "~/.kube/config"
   load_config_file = true
 }
+
+# Cloudflare Provider - uses API token for DNS management
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
+}

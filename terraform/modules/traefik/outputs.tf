@@ -29,3 +29,13 @@ output "service_type" {
   description = "Service type for Traefik"
   value       = var.service_type
 }
+
+output "load_balancer_ip" {
+  description = "External IP address of the Traefik LoadBalancer service"
+  value       = var.service_type == "LoadBalancer" ? try(data.kubernetes_service.traefik.status[0].load_balancer[0].ingress[0].ip, "") : ""
+}
+
+output "load_balancer_hostname" {
+  description = "External hostname of the Traefik LoadBalancer service (for cloud providers that use hostnames)"
+  value       = var.service_type == "LoadBalancer" ? try(data.kubernetes_service.traefik.status[0].load_balancer[0].ingress[0].hostname, "") : ""
+}

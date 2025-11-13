@@ -52,6 +52,28 @@ module "gke_cluster" {
   depends_on = [module.gcp_network]
 }
 
+# External Secrets Operator (manages secrets from Google Secret Manager)
+module "external_secrets_operator" {
+  source = "../../modules/external-secrets-operator"
+
+  project_id       = var.project_id
+  cluster_name     = module.gke_cluster.cluster_name
+  cluster_location = var.zone
+  namespace        = var.eso_namespace
+  create_namespace = true
+  chart_version    = var.eso_chart_version
+  replicas         = var.eso_replicas
+
+  gcp_service_account_name   = var.eso_gcp_service_account_name
+  k8s_service_account_name   = var.eso_k8s_service_account_name
+  create_cluster_secret_store = var.eso_create_cluster_secret_store
+  cluster_secret_store_name   = var.eso_cluster_secret_store_name
+
+  enable_monitoring = true
+
+  depends_on = [module.gke_cluster]
+}
+
 # CloudNative PostgreSQL Operator
 module "cloudnative_pg_operator" {
   source = "../../modules/cloudnative-pg-operator"
@@ -139,4 +161,22 @@ module "traefik" {
   enable_metrics   = true
 
   depends_on = [module.monitoring]
+}
+
+# ============================================================================
+# Domain and DNS Configuration
+# ============================================================================
+# Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
+#       Terraform only manages backend API DNS records
+
+# Configure Cloudflare DNS records for backend API
+module "cloudflare_dns" {
+  source = "../../modules/cloudflare-dns"
+
+  domain_name         = var.domain_name
+  api_subdomain       = var.api_subdomain
+  enable_api_wildcard = var.enable_api_wildcard
+  traefik_ip          = module.traefik.load_balancer_ip
+
+  depends_on = [module.traefik]
 }

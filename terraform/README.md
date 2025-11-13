@@ -21,6 +21,26 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 | **Stateless Pool**             | 2-10 × e2-medium (Spot VMs, 30GB balanced, autoscaling) | ~$21-105                |
 | **Total Infrastructure**       | -                                                       | **~$126-210/month**     |
 | **Savings vs All Regular VMs** | -                                                       | **~60%**                |
+| **Frontend Hosting**           | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
+
+## Frontend Deployment
+
+**The frontend is NOT managed by Terraform**. Instead, it's deployed via **Cloudflare Pages** for:
+
+- ✅ Zero cost (free tier)
+- ✅ Automatic deployments from GitHub
+- ✅ Global CDN with 300+ edge locations
+- ✅ Built-in SPA routing (no configuration needed)
+- ✅ Preview deployments for every PR
+
+**See**: [`CLOUDFLARE_PAGES_SETUP.md`](./CLOUDFLARE_PAGES_SETUP.md) for complete frontend setup instructions.
+
+**Architecture**:
+
+```
+Frontend: GitHub → Cloudflare Pages → https://go.micro.commerce.discky.com
+Backend:  GKE → Traefik LoadBalancer → https://api.discky.com
+```
 
 ## Prerequisites
 
@@ -154,6 +174,16 @@ Provisions GKE cluster with:
 - Namespace: `redis-system`
 - Supports cluster mode (3 master + 3 replica)
 
+**External Secrets Operator** (`external-secrets-operator`)
+
+- Helm chart version: 1.0.0
+- Namespace: `external-secrets`
+- Syncs secrets from Google Secret Manager to Kubernetes Secrets
+- Uses Workload Identity for secure authentication
+- Automatic hourly sync of secrets
+- ClusterSecretStore: `gcp-secret-manager`
+- **See**: [`EXTERNAL_SECRETS_SETUP.md`](./EXTERNAL_SECRETS_SETUP.md) for complete setup guide
+
 ### 4. Platform Modules
 
 **Monitoring Stack** (`monitoring`)
@@ -245,10 +275,12 @@ This will:
 
 1. Create VPC network and subnets
 2. Provision GKE cluster with dual node pools
-3. Install all operators (PostgreSQL, Kafka, Redis)
-4. Deploy monitoring stack (Prometheus, Grafana, Loki, Tempo)
-5. Install ArgoCD and Traefik
-6. Configure kubectl with cluster credentials
+3. Install External Secrets Operator with Google Secret Manager integration
+4. Install all operators (PostgreSQL, Kafka, Redis)
+5. Deploy monitoring stack (Prometheus, Grafana, Loki, Tempo)
+6. Install ArgoCD and Traefik
+7. Configure kubectl with cluster credentials
+8. Set up Cloudflare DNS for backend API
 
 **Deployment time**: ~15-20 minutes
 
@@ -305,6 +337,60 @@ kubectl port-forward -n traefik svc/traefik 9000:9000
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
 # Visit: http://localhost:9090
 ```
+
+### Step 7: Populate Secrets with External Secrets Operator
+
+Before deploying applications, populate all required secrets in Google Secret Manager:
+
+1. **Run the secret population script**:
+
+   ```bash
+   ./terraform/scripts/populate-secrets.sh
+   ```
+
+   This interactive script will guide you through creating:
+   - JWT private/public keys for authentication
+   - Stripe API keys for payment processing
+   - SMTP credentials for notifications
+   - Database passwords
+   - Monitoring credentials
+
+2. **Deploy ExternalSecret resources**:
+
+   ```bash
+   kubectl apply -k deployments/k8s/base/external-secrets/
+   ```
+
+3. **Verify secrets are synced**:
+
+   ```bash
+   kubectl get externalsecrets -A
+   kubectl get secrets | grep external-secrets
+   ```
+
+**Complete setup guide**: See [`EXTERNAL_SECRETS_SETUP.md`](./EXTERNAL_SECRETS_SETUP.md) for detailed instructions on secret management, rotation, and troubleshooting.
+
+### Step 8: Deploy Frontend (Cloudflare Pages)
+
+After backend infrastructure is ready, deploy the frontend:
+
+1. **Get Traefik LoadBalancer IP**:
+
+   ```bash
+   terraform output traefik_load_balancer_ip
+   ```
+
+2. **Follow Cloudflare Pages setup**:
+   - See: [`CLOUDFLARE_PAGES_SETUP.md`](./CLOUDFLARE_PAGES_SETUP.md)
+   - Configure environment variables with API URL
+   - Connect GitHub repository
+   - Automatic deployments will handle the rest
+
+3. **Verify deployment**:
+   - Frontend: https://go.micro.commerce.discky.com
+   - Backend API: https://api.discky.com/health
+
+**Note**: Frontend deployment is separate from Terraform and happens automatically via Cloudflare Pages when you push to GitHub.
 
 ## Workload Scheduling
 

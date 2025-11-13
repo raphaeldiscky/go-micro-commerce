@@ -160,6 +160,49 @@ variable "stateless_pool_disk_type" {
   default     = "pd-balanced"
 }
 
+# External Secrets Operator
+variable "eso_namespace" {
+  description = "Namespace for External Secrets Operator"
+  type        = string
+  default     = "external-secrets"
+}
+
+variable "eso_chart_version" {
+  description = "Helm chart version for External Secrets Operator"
+  type        = string
+  default     = "1.0.0"
+}
+
+variable "eso_replicas" {
+  description = "Number of External Secrets Operator replicas"
+  type        = number
+  default     = 2
+}
+
+variable "eso_gcp_service_account_name" {
+  description = "GCP service account name for External Secrets Operator"
+  type        = string
+  default     = "external-secrets-operator"
+}
+
+variable "eso_k8s_service_account_name" {
+  description = "Kubernetes service account name for External Secrets Operator"
+  type        = string
+  default     = "external-secrets-sa"
+}
+
+variable "eso_create_cluster_secret_store" {
+  description = "Create ClusterSecretStore for Google Secret Manager"
+  type        = bool
+  default     = true
+}
+
+variable "eso_cluster_secret_store_name" {
+  description = "Name of the ClusterSecretStore"
+  type        = string
+  default     = "gcp-secret-manager"
+}
+
 # CloudNative PostgreSQL Operator
 variable "cnpg_namespace" {
   description = "Namespace for CloudNative PG operator"
@@ -333,4 +376,34 @@ variable "traefik_enable_dashboard" {
   description = "Enable Traefik dashboard"
   type        = bool
   default     = true
+}
+
+# ============================================================================
+# Cloudflare Configuration
+# ============================================================================
+# Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
+#       Only backend API DNS records are managed by Terraform
+
+variable "cloudflare_api_token" {
+  description = "Cloudflare API token for DNS management"
+  type        = string
+  sensitive   = true
+}
+
+variable "domain_name" {
+  description = "Domain name managed in Cloudflare"
+  type        = string
+  default     = "discky.com"
+}
+
+variable "api_subdomain" {
+  description = "Subdomain for backend API"
+  type        = string
+  default     = "api"
+}
+
+variable "enable_api_wildcard" {
+  description = "Enable wildcard DNS record for API subdomains"
+  type        = bool
+  default     = false
 }
