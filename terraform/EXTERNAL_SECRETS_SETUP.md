@@ -31,53 +31,60 @@ This setup uses **External Secrets Operator (ESO) v1.0.0** to synchronize secret
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Google Secret Manager                       │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────┐│
-│  │ JWT Private Key  │  │ Stripe Secret    │  │ SMTP Password  ││
-│  └──────────────────┘  └──────────────────┘  └────────────────┘│
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                │ Workload Identity
-                                │ (GCP Service Account)
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                  External Secrets Operator                       │
-│  ┌──────────────────────────────────────────────────────────────┤
-│  │ ClusterSecretStore: gcp-secret-manager                       │
-│  │   ├─ Provider: Google Secret Manager                         │
-│  │   ├─ Auth: Workload Identity                                 │
-│  │   └─ Service Account: external-secrets-sa                    │
-│  └──────────────────────────────────────────────────────────────┤
-│  │ ExternalSecret Resources (per service)                       │
-│  │   ├─ auth-service-jwt-keys                                   │
-│  │   ├─ payment-service-secrets                                 │
-│  │   ├─ notification-service-secrets                            │
-│  │   └─ ... (9 total ExternalSecrets)                          │
-│  └──────────────────────────────────────────────────────────────│
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                │ Syncs every 1 hour
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Kubernetes Secrets                            │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────┐│
-│  │ auth-service-    │  │ payment-service- │  │ notification-  ││
-│  │ jwt-keys         │  │ secrets          │  │ service-secrets││
-│  └──────────────────┘  └──────────────────┘  └────────────────┘│
-└───────────────────────────────┬─────────────────────────────────┘
-                                │
-                                │ Volume Mounts / EnvVars
-                                ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Application Pods                              │
-│  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────┐│
-│  │ Auth Service     │  │ Payment Service  │  │ Notification   ││
-│  │                  │  │                  │  │ Service        ││
-│  └──────────────────┘  └──────────────────┘  └────────────────┘│
-└─────────────────────────────────────────────────────────────────┘
-```
+Here's the diagram converted into clear, structured text:
+
+**Google Secret Manager**  
+Stores sensitive secrets centrally in Google Cloud Platform:
+
+- JWT Private Key
+- Stripe Secret
+- SMTP Password
+
+These secrets are accessed securely via **Workload Identity**, using a dedicated GCP Service Account (`external-secrets-sa`) that grants the External Secrets Operator the necessary permissions.
+
+**External Secrets Operator (ESO)**  
+An open-source Kubernetes operator that synchronizes secrets from external systems (like GCP Secret Manager) into Kubernetes Secrets.
+
+Configuration:
+
+- **ClusterSecretStore**:
+  - Provider: Google Secret Manager
+  - Authentication: Workload Identity
+  - Service Account: `external-secrets-sa`
+
+Manages **9 ExternalSecret resources**, each mapping a specific GCP secret to a corresponding Kubernetes Secret:
+
+- `auth-service-jwt-keys`
+- `payment-service-secrets`
+- `notification-service-secrets`
+- ... (6 additional secrets for other services)
+
+Syncs secrets from GCP to Kubernetes **every hour** (configurable).
+
+**Kubernetes Secrets**  
+Automatically created and updated by the External Secrets Operator. Each corresponds to a GCP secret:
+
+- `auth-service-jwt-keys`
+- `payment-service-secrets`
+- `notification-service-secrets`
+- ... (total of 9 secrets)
+
+These secrets are mounted as volumes or exposed as environment variables to application pods.
+
+**Application Pods**  
+Kubernetes workloads that consume the secrets:
+
+- **Auth Service** — Uses `auth-service-jwt-keys` to sign/verify JWT tokens
+- **Payment Service** — Uses `payment-service-secrets` (e.g., Stripe API key)
+- **Notification Service** — Uses `notification-service-secrets` (e.g., SMTP password)
+- ... (other services using the remaining secrets)
+
+Secrets are injected securely at runtime via volume mounts or environment variables — never hardcoded.
+
+**Flow Summary**:  
+GCP Secret Manager → (via Workload Identity) → External Secrets Operator → Kubernetes Secrets → Application Pods
+
+This architecture ensures secrets are never stored in code or version control, are centrally managed, and dynamically synced with minimal operational overhead.
 
 ## Prerequisites
 

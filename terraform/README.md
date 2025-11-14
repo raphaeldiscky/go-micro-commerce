@@ -157,19 +157,19 @@ Provisions GKE cluster with:
 
 **CloudNative PostgreSQL Operator** (`cloudnative-pg-operator`)
 
-- Helm chart version: 0.22.1
+- Helm chart version: 0.26.1
 - Namespace: `cnpg-system`
 - Manages 9 PostgreSQL instances for microservices
 
 **Strimzi Kafka Operator** (`strimzi-kafka-operator`)
 
-- Helm chart version: 0.44.0
+- Helm chart version: 0.48.0
 - Namespace: `kafka-system`
 - KRaft mode enabled (no Zookeeper)
 
 **Redis Operator** (`redis-operator`)
 
-- Helm chart version: 0.18.0
+- Helm chart version: 0.22.2
 - Namespace: `redis-system`
 - Supports cluster mode (3 master + 3 replica)
 
@@ -187,20 +187,20 @@ Provisions GKE cluster with:
 
 **Monitoring Stack** (`monitoring`)
 
-- **kube-prometheus-stack**: Prometheus + Grafana (chart v67.6.1)
+- **kube-prometheus-stack**: Prometheus + Grafana (chart v79.5.0)
 - **Loki**: Log aggregation (chart v6.21.0)
 - **Tempo**: Distributed tracing (chart v1.17.3)
 - Persistent storage for all components
 
 **ArgoCD** (`argocd`)
 
-- Helm chart version: 7.7.12
+- Helm chart version: 9.1.2
 - Namespace: `argocd`
 - Optional bootstrap ApplicationSet for git repo sync
 
 **Traefik** (`traefik`)
 
-- Helm chart version: 33.2.1
+- Helm chart version: 37.3.0
 - Namespace: `traefik`
 - LoadBalancer service type
 - Dashboard enabled with Prometheus metrics

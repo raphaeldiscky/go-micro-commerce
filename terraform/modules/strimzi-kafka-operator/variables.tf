@@ -15,7 +15,7 @@ variable "create_namespace" {
 variable "chart_version" {
   description = "Helm chart version for Strimzi Kafka operator"
   type        = string
-  default     = "0.44.0"
+  default     = "0.48.0"
 }
 
 variable "watch_namespaces" {

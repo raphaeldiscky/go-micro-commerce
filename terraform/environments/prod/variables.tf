@@ -213,7 +213,7 @@ variable "cnpg_namespace" {
 variable "cnpg_chart_version" {
   description = "Helm chart version for CloudNative PG"
   type        = string
-  default     = "0.22.1"
+  default     = "0.26.1"
 }
 
 # Strimzi Kafka Operator
@@ -226,7 +226,7 @@ variable "kafka_namespace" {
 variable "kafka_chart_version" {
   description = "Helm chart version for Strimzi Kafka"
   type        = string
-  default     = "0.44.0"
+  default     = "0.48.0"
 }
 
 variable "kafka_watch_namespaces" {
@@ -245,7 +245,7 @@ variable "redis_namespace" {
 variable "redis_chart_version" {
   description = "Helm chart version for Redis operator"
   type        = string
-  default     = "0.18.0"
+  default     = "0.22.2"
 }
 
 variable "redis_watch_namespaces" {
@@ -264,7 +264,7 @@ variable "monitoring_namespace" {
 variable "kube_prometheus_stack_version" {
   description = "Helm chart version for kube-prometheus-stack"
   type        = string
-  default     = "67.6.1"
+  default     = "79.5.0"
 }
 
 variable "grafana_admin_password" {
@@ -319,7 +319,7 @@ variable "argocd_namespace" {
 variable "argocd_chart_version" {
   description = "Helm chart version for ArgoCD"
   type        = string
-  default     = "7.7.12"
+  default     = "9.1.2"
 }
 
 variable "argocd_admin_password" {
@@ -357,7 +357,7 @@ variable "traefik_namespace" {
 variable "traefik_chart_version" {
   description = "Helm chart version for Traefik"
   type        = string
-  default     = "33.2.1"
+  default     = "37.3.0"
 }
 
 variable "traefik_replicas" {

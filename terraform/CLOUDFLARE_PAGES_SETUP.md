@@ -50,16 +50,14 @@ Note this IP address - you'll use it to configure Cloudflare DNS and environment
    - **Production branch**: `main`
    - **Build command**:
      ```bash
-     cd frontend && pnpm install && pnpm build
+     pnpm run codegen && pnpm run build
      ```
-   - **Build output directory**: `frontend/dist`
-   - **Root directory**: `/` (leave as repo root)
+   - **Build output directory**: `frontend/`
+   - **Root directory**: `dist` (leave as repo root)
 
    **Environment variables** (click "Add variable"):
 
    ```bash
-   NODE_VERSION=20
-   PNPM_VERSION=8
    VITE_APP_TITLE=Go Micro Commerce
    VITE_API_GATEWAY_URL=https://api.discky.com
    VITE_GRAPHQL_GATEWAY_URL=https://api.discky.com/graph
@@ -176,9 +174,6 @@ Once configured, deployments happen automatically:
 4. Debug any build failures
 
 ### Common Issues
-
-**Issue**: Build fails with "command not found: pnpm"
-**Solution**: Ensure `PNPM_VERSION=8` is set in environment variables
 
 **Issue**: Frontend shows API errors
 **Solution**: Verify `VITE_API_GATEWAY_URL` points to correct backend URL

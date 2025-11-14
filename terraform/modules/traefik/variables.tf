@@ -15,7 +15,7 @@ variable "create_namespace" {
 variable "chart_version" {
   description = "Helm chart version for Traefik"
   type        = string
-  default     = "33.2.1"
+  default     = "37.3.0"
 }
 
 variable "replicas" {

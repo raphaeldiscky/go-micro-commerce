@@ -66,21 +66,21 @@ eso_cluster_secret_store_name   = "gcp-secret-manager"
 
 # CloudNative PostgreSQL Operator
 cnpg_namespace     = "cnpg-system"
-cnpg_chart_version = "0.22.1"
+cnpg_chart_version = "0.26.1"
 
 # Strimzi Kafka Operator
 kafka_namespace        = "kafka-system"
-kafka_chart_version    = "0.44.0"
+kafka_chart_version    = "0.48.0"
 kafka_watch_namespaces = [] # Empty = watch all namespaces
 
 # Redis Operator
 redis_namespace        = "redis-system"
-redis_chart_version    = "0.18.0"
+redis_chart_version    = "0.22.2"
 redis_watch_namespaces = [] # Empty = watch all namespaces
 
 # Monitoring Stack
 monitoring_namespace          = "monitoring"
-kube_prometheus_stack_version = "67.6.1"
+kube_prometheus_stack_version = "79.5.0"
 grafana_admin_password        = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
 prometheus_retention          = "30d"                        # 30 days for production
 prometheus_storage_size       = "100Gi"                      # 100GB for production
@@ -91,7 +91,7 @@ tempo_storage_size            = "30Gi"
 
 # ArgoCD
 argocd_namespace         = "argocd"
-argocd_chart_version     = "7.7.12"
+argocd_chart_version     = "9.1.2"
 argocd_admin_password    = ""  # Leave empty for auto-generated
 argocd_git_repo_url      = "https://github.com/your-org/go-micro-commerce.git"  # Update this!
 argocd_git_repo_path     = "deployments/k8s"
@@ -99,7 +99,7 @@ argocd_enable_bootstrap  = false  # Set to true after configuring git repo
 
 # Traefik Ingress Controller
 traefik_namespace        = "traefik"
-traefik_chart_version    = "33.2.1"
+traefik_chart_version    = "37.3.0"
 traefik_replicas         = 3                  # 3 replicas for high availability
 traefik_service_type     = "LoadBalancer"     # LoadBalancer for GKE
 traefik_enable_dashboard = true
@@ -110,7 +110,14 @@ traefik_enable_dashboard = true
 # Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
 #       This only configures DNS records for backend API
 
-cloudflare_api_token = "your-cloudflare-api-token"  # REQUIRED: Get from dash.cloudflare.com/profile/api-tokens
+cloudflare_api_token = "your-cloudflare-api-token"
+# API Token Permissions:
+# Permissions:
+#  Zone:
+#    - DNS: Edit
+#    - Zone: Read
+# Zone Resources:
+#  - Include: discky.com
 
 # Domain Configuration
 domain_name         = "discky.com"

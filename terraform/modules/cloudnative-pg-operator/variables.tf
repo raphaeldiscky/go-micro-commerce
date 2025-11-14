@@ -15,7 +15,7 @@ variable "create_namespace" {
 variable "chart_version" {
   description = "Helm chart version for CloudNative PG operator"
   type        = string
-  default     = "0.22.1"
+  default     = "0.26.1"
 }
 
 variable "replicas" {

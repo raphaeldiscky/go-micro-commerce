@@ -15,7 +15,7 @@ variable "create_namespace" {
 variable "chart_version" {
   description = "Helm chart version for ArgoCD"
   type        = string
-  default     = "7.7.12"
+  default     = "9.1.2"
 }
 
 variable "admin_password" {

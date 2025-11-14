@@ -15,7 +15,7 @@ variable "create_namespace" {
 variable "chart_version" {
   description = "Helm chart version for Redis operator"
   type        = string
-  default     = "0.18.0"
+  default     = "0.22.2"
 }
 
 variable "watch_namespaces" {
