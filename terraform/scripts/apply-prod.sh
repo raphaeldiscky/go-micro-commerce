@@ -81,10 +81,10 @@ if [[ -n "$CLUSTER_NAME" ]] && [[ -n "$ZONE" ]] && [[ -n "$PROJECT_ID" ]]; then
 fi
 
 # Apply terraform changes
-if [[ -f "tfplan" ]]; then
-    log_info "Applying saved plan: tfplan"
-    terraform apply tfplan
-    rm -f tfplan
+if [[ -f "terraform.tfplan" ]]; then
+    log_info "Applying saved plan: terraform.tfplan"
+    terraform apply terraform.tfplan
+    rm -f terraform.tfplan
 else
     log_warn "No saved plan found. Running apply with auto-approve"
     log_warn "Press Ctrl+C within 5 seconds to cancel..."

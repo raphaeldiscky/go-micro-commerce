@@ -114,7 +114,7 @@ cp ../../shared/backend.tf .
 cp ../../shared/versions.tf .
 
 # Initialize with backend config
-terraform init -backend-config=backend.hcl -reconfigure
+terraform init -backend-config=backend.hcl -reconfigure -upgrade
 
 log_info "Terraform backend initialized successfully!"
 log_info "State will be stored in: gs://${BUCKET_NAME}/env/${ENV}"

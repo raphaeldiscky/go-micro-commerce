@@ -106,7 +106,7 @@ Before setting up External Secrets Operator, ensure you have:
    gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast1-a
    ```
 
-4. **Terraform >= 1.13.0 installed**
+4. **Terraform >= 1.13.5 installed**
 
 5. **Secret Manager API enabled** (automatically enabled by the setup script)
 

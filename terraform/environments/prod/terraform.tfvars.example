@@ -30,14 +30,14 @@ enable_workload_identity = true                    # Enable Workload Identity fo
 
 # ============================================================================
 # Stateful Node Pool (Databases: PostgreSQL, Kafka, Redis)
-# Regular VMs with SSD for reliable performance
+# Regular VMs for reliable performance
 # Estimated cost: ~$105/month (3 × e2-standard-2)
 # ============================================================================
-stateful_pool_enabled      = true          # Enable stateful node pool
-stateful_pool_node_count   = 3             # Fixed node count (no autoscaling)
-stateful_pool_machine_type = "e2-standard-2"  # 2 vCPU, 8GB RAM
-stateful_pool_disk_size_gb = 100           # 100GB SSD per node
-stateful_pool_disk_type    = "pd-ssd"      # SSD for database performance
+stateful_pool_enabled      = true               # Enable stateful node pool
+stateful_pool_node_count   = 3                  # Fixed node count (no autoscaling)
+stateful_pool_machine_type = "e2-standard-2"    # 2 vCPU, 8GB RAM
+stateful_pool_disk_size_gb = 80                 # 80GB Balanced  per node
+stateful_pool_disk_type    = "pd-balanced"      # Balanced disk for cost efficiency, or use SSD (pd-ssd) for database performance
 
 # ============================================================================
 # Stateless Node Pool (Microservices)
@@ -84,9 +84,9 @@ kube_prometheus_stack_version = "79.5.0"
 grafana_admin_password        = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
 prometheus_retention          = "30d"                        # 30 days for production
 prometheus_storage_size       = "100Gi"                      # 100GB for production
-loki_version                  = "6.21.0"
+loki_version                  = "6.46.0"
 loki_storage_size             = "50Gi"
-tempo_version                 = "1.17.3"
+tempo_version                 = "1.24.0"
 tempo_storage_size            = "30Gi"
 
 # ArgoCD

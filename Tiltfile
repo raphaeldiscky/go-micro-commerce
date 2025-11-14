@@ -207,7 +207,7 @@ helm_resource(
     'prometheus-community/kube-prometheus-stack',
     flags=[
         '--values=deployments/k8s/infrastructure/monitoring/prometheus-values.yaml',
-        '--version=79.1.1',
+        '--version=79.5.0',
     ],
     labels=['monitoring'],
     resource_deps=[],
@@ -220,10 +220,10 @@ helm_resource(
 # Loki + Promtail (log aggregation)
 helm_resource(
     'loki',
-    'grafana/loki-stack',
+    'grafana/loki',
     flags=[
         '--values=deployments/k8s/infrastructure/monitoring/loki-values.yaml',
-        '--version=2.10.3',
+        '--version=6.46.0',
     ],
     labels=['monitoring'],
     resource_deps=['kube-prometheus-stack'], 
@@ -235,7 +235,7 @@ helm_resource(
     'grafana/tempo',
     flags=[
         '--values=deployments/k8s/infrastructure/monitoring/tempo-values.yaml',
-        '--version=1.23.2',
+        '--version=1.24.0',
     ],
     labels=['monitoring'],
     resource_deps=['kube-prometheus-stack'], 

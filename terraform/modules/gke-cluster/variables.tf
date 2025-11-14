@@ -88,7 +88,7 @@ variable "stateful_pool_disk_size_gb" {
 variable "stateful_pool_disk_type" {
   description = "Disk type for stateful pool nodes"
   type        = string
-  default     = "pd-ssd"
+  default     = "pd-balanced"
 }
 
 # Stateless Pool Variables (for microservices - Spot VMs)

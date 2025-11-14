@@ -17,7 +17,7 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 
 | Component                | Configuration                                           | Monthly Cost (Estimate) |
 | ------------------------ | ------------------------------------------------------- | ----------------------- |
-| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 100GB SSD)              | ~$105                   |
+| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 100GB balanced)         | ~$105                   |
 | **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 30GB balanced, autoscaling) | ~$21-105                |
 | **Frontend Hosting**     | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
 | **Total Infrastructure** | -                                                       | **~$126-210/month**     |
@@ -45,7 +45,7 @@ Backend:  GKE → Traefik LoadBalancer → https://api.discky.com
 
 ### Required Tools
 
-1. **Terraform** >= 1.13.0
+1. **Terraform** >= 1.13.5
 
    ```bash
    # Install via official website
@@ -133,7 +133,7 @@ Provisions GKE cluster with:
 **Stateful Pool** (Databases: PostgreSQL, Kafka, Redis)
 
 - 3 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
-- 100GB SSD persistent disk per node
+- 80GB balanced persistent disk per node
 - Regular VMs for reliability
 - Fixed node count (no autoscaling)
 - Taint: `workload-type=stateful:NoSchedule`
@@ -188,8 +188,8 @@ Provisions GKE cluster with:
 **Monitoring Stack** (`monitoring`)
 
 - **kube-prometheus-stack**: Prometheus + Grafana (chart v79.5.0)
-- **Loki**: Log aggregation (chart v6.21.0)
-- **Tempo**: Distributed tracing (chart v1.17.3)
+- **Loki**: Log aggregation (chart v6.46.0)
+- **Tempo**: Distributed tracing (chart v1.24.0)
 - Persistent storage for all components
 
 **ArgoCD** (`argocd`)
@@ -600,10 +600,10 @@ All metrics are available in Grafana dashboards:
 
 ## Provider Versions
 
-- **Terraform**: >= 1.13.0
+- **Terraform**: >= 1.13.5
 - **Google Provider**: ~> 7.11
-- **Kubernetes Provider**: ~> 2.35
-- **Helm Provider**: ~> 2.17
+- **Kubernetes Provider**: ~> 2.38
+- **Helm Provider**: ~> 3.1.0
 - **Kubectl Provider**: ~> 1.19
 
 Version constraints are managed in `shared/versions.tf`.

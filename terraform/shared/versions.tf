@@ -2,7 +2,7 @@
 # Copy this file to each environment directory or reference it via symlink
 
 terraform {
-  required_version = ">= 1.13.0"
+  required_version = ">= 1.13.5"
 
   required_providers {
     google = {
@@ -11,11 +11,11 @@ terraform {
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "~> 2.35"
+      version = "~> 2.38"
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.17"
+      version = "~> 3.1.0"
     }
     kubectl = {
       source  = "gavinbunney/kubectl"
@@ -23,7 +23,7 @@ terraform {
     }
     random = {
       source  = "hashicorp/random"
-      version = "~> 3.6"
+      version = "~> 3.7"
     }
     time = {
       source  = "hashicorp/time"

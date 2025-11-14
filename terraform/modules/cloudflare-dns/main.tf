@@ -4,7 +4,9 @@
 
 # Lookup the Cloudflare zone by domain name
 data "cloudflare_zone" "main" {
-  name = var.domain_name
+  filter = {
+    name = var.domain_name
+  }
 }
 
 # Backend API A record (DNS only, no proxy)

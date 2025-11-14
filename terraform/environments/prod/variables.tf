@@ -120,7 +120,7 @@ variable "stateful_pool_disk_size_gb" {
 variable "stateful_pool_disk_type" {
   description = "Disk type for stateful pool"
   type        = string
-  default     = "pd-ssd"
+  default     = "pd-balanced"
 }
 
 # Stateless Pool (Microservices - Spot VMs)
@@ -288,7 +288,7 @@ variable "prometheus_storage_size" {
 variable "loki_version" {
   description = "Helm chart version for Loki"
   type        = string
-  default     = "6.21.0"
+  default     = "6.46.0"
 }
 
 variable "loki_storage_size" {
@@ -300,7 +300,7 @@ variable "loki_storage_size" {
 variable "tempo_version" {
   description = "Helm chart version for Tempo"
   type        = string
-  default     = "1.17.3"
+  default     = "1.24.0"
 }
 
 variable "tempo_storage_size" {

@@ -81,7 +81,7 @@ fi
 
 # Run terraform plan
 log_info "Running: terraform plan"
-terraform plan -out=tfplan
+terraform plan -out=terraform.tfplan
 
-log_info "Plan saved to: tfplan"
+log_info "Plan saved to: terraform.tfplan"
 log_info "To apply this plan, run: ./terraform/scripts/apply-prod.sh"

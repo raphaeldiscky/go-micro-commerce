@@ -17,7 +17,7 @@ output "api_record_id" {
 
 output "api_record_hostname" {
   description = "The full hostname of the API"
-  value       = cloudflare_dns_record.api.hostname
+  value       = cloudflare_dns_record.api.name
 }
 
 output "api_record_proxied" {
@@ -32,20 +32,20 @@ output "api_wildcard_record_id" {
 
 output "api_wildcard_record_hostname" {
   description = "The full hostname of the API wildcard (if enabled)"
-  value       = var.enable_api_wildcard ? cloudflare_dns_record.api_wildcard[0].hostname : null
+  value       = var.enable_api_wildcard ? cloudflare_dns_record.api_wildcard[0].name : null
 }
 
 output "dns_records" {
   description = "Summary of all created DNS records"
   value = {
     api = {
-      hostname = cloudflare_dns_record.api.hostname
+      hostname = cloudflare_dns_record.api.name
       type     = cloudflare_dns_record.api.type
       content  = cloudflare_dns_record.api.content
       proxied  = cloudflare_dns_record.api.proxied
     }
     api_wildcard = var.enable_api_wildcard ? {
-      hostname = cloudflare_dns_record.api_wildcard[0].hostname
+      hostname = cloudflare_dns_record.api_wildcard[0].name
       type     = cloudflare_dns_record.api_wildcard[0].type
       content  = cloudflare_dns_record.api_wildcard[0].content
       proxied  = cloudflare_dns_record.api_wildcard[0].proxied
