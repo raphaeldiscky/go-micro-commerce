@@ -1,42 +1,46 @@
-# Loki Stack Helm Chart Values
-# Chart: grafana/loki-stack
-# Includes: Loki + Promtail (log aggregation)
+# Loki Helm Chart Values
+# Chart: grafana/loki v6.46.0
+# Deployment mode: Monolithic (single binary) for local development
 
-# Loki configuration
+# Deployment mode - use single binary for local development
+deploymentMode: SingleBinary
+
 loki:
-  enabled: true
+  # Storage bucket names (required even for filesystem storage)
+  storage:
+    bucketNames:
+      chunks: loki-chunks
+      ruler: loki-ruler
+      admin: loki-admin
 
-  # Security context to fix permission issues
-  securityContext:
-    fsGroup: 10001
-    runAsUser: 10001
-    runAsNonRoot: true
-
-  persistence:
-    enabled: true
-    size: 5Gi
-
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-    limits:
-      memory: "512Mi"
-      cpu: "300m"
-
-  config:
+  # Loki configuration using structuredConfig (map-based)
+  structuredConfig:
     auth_enabled: false
 
-    ingester:
-      chunk_idle_period: 3m
-      chunk_block_size: 262144
-      chunk_retain_period: 1m
-      max_transfer_retries: 0
-      lifecycler:
-        ring:
-          kvstore:
-            store: inmemory
-          replication_factor: 1
+    server:
+      http_listen_port: 3100
+      grpc_listen_port: 9095
+
+    common:
+      path_prefix: /var/loki
+      storage:
+        filesystem:
+          chunks_directory: /var/loki/chunks
+          rules_directory: /var/loki/rules
+      replication_factor: 1
+      ring:
+        kvstore:
+          store: inmemory
+
+    schema_config:
+      configs:
+        - from: 2024-01-01
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: index_
+            period: 24h
 
     limits_config:
       enforce_metric_name: false
@@ -45,80 +49,83 @@ loki:
       max_entries_limit_per_query: 5000
       ingestion_rate_mb: 16
       ingestion_burst_size_mb: 24
-
-    schema_config:
-      configs:
-        - from: 2024-01-01
-          store: boltdb-shipper
-          object_store: filesystem
-          schema: v11
-          index:
-            prefix: index_
-            period: 24h
-
-    server:
-      http_listen_port: 3100
-
-    storage_config:
-      boltdb_shipper:
-        active_index_directory: /data/loki/boltdb-shipper-active
-        cache_location: /data/loki/boltdb-shipper-cache
-        cache_ttl: 24h
-        shared_store: filesystem
-      filesystem:
-        directory: /data/loki/chunks
-
-    chunk_store_config:
-      max_look_back_period: 0s
-
-    table_manager:
-      retention_deletes_enabled: true
       retention_period: 168h
 
-  service:
-    type: ClusterIP
-    port: 3100
+    compactor:
+      working_directory: /var/loki/compactor
+      retention_enabled: true
+      retention_delete_delay: 2h
+      retention_delete_worker_count: 150
 
-# Promtail configuration (log shipper)
-promtail:
-  enabled: true
+    query_range:
+      align_queries_with_step: true
+      cache_results: true
+
+# SingleBinary configuration
+singleBinary:
+  replicas: 1
+
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClass: null
 
   resources:
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      cpu: 100m
+      memory: 256Mi
     limits:
-      memory: "256Mi"
-      cpu: "200m"
+      cpu: 300m
+      memory: 512Mi
 
-  config:
-    lokiAddress: http://{{ .Release.Name }}:3100/loki/api/v1/push
-
-    snippets:
-      pipelineStages:
-        - docker: {}
-        - multiline:
-            firstline: '^\d{4}-\d{2}-\d{2}'
-            max_wait_time: 3s
+# Monitoring configuration
+monitoring:
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
 
   serviceMonitor:
     enabled: true
+    labels: {}
 
-# Grafana integration (disabled - using kube-prometheus-stack's Grafana)
-grafana:
+# Gateway configuration (nginx)
+gateway:
+  enabled: true
+  replicas: 1
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Backend (read/write) components disabled for SingleBinary mode
+backend:
+  replicas: 0
+
+read:
+  replicas: 0
+
+write:
+  replicas: 0
+
+# Test configuration
+test:
   enabled: false
-  sidecar:
-    datasources:
-      enabled: false  # Prevent loki-stack from creating datasource ConfigMap (conflicts with kube-prometheus-stack)
 
-# Fluent Bit (alternative log shipper - disabled, using Promtail)
-fluent-bit:
+# Disable chunksCache, resultsCache, and lokiCanary for local development
+chunksCache:
   enabled: false
 
-# Filebeat (alternative log shipper - disabled, using Promtail)
-filebeat:
+resultsCache:
   enabled: false
 
-# Logstash (disabled for local dev)
-logstash:
+lokiCanary:
   enabled: false
