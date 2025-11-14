@@ -130,12 +130,6 @@ print_info "  External Secrets Operator"
 print_info "========================================="
 echo
 
-# Critical Secrets
-print_info "========================================="
-print_info "  CRITICAL SECRETS"
-print_info "========================================="
-echo
-
 # Auth Service - JWT Keys
 print_info "Auth Service JWT Keys"
 print_info "Generate RSA keys using: ssh-keygen -t rsa -b 4096 -m PEM -f jwt-key"
@@ -154,12 +148,6 @@ create_secret "payment-service-stripe-secret-key" "Stripe secret key" \
 create_secret "payment-service-stripe-webhook-secret" "Stripe webhook secret" \
     "Stripe Webhook Secret (starts with whsec_)"
 
-echo
-
-# High Priority Secrets
-print_info "========================================="
-print_info "  HIGH PRIORITY SECRETS"
-print_info "========================================="
 echo
 
 # Notification Service - SMTP
@@ -197,12 +185,6 @@ print_info "Generate a strong password using: openssl rand -base64 32"
 create_secret "redis-cluster-password" "Redis cluster password" \
     "Redis Cluster Password"
 
-echo
-
-# Medium Priority Secrets
-print_info "========================================="
-print_info "  MEDIUM PRIORITY SECRETS"
-print_info "========================================="
 echo
 
 # Grafana

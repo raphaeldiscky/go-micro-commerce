@@ -15,13 +15,12 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 
 ### Cost Breakdown
 
-| Component                      | Configuration                                           | Monthly Cost (Estimate) |
-| ------------------------------ | ------------------------------------------------------- | ----------------------- |
-| **Stateful Pool**              | 3 × e2-standard-2 (regular VMs, 100GB SSD)              | ~$105                   |
-| **Stateless Pool**             | 2-10 × e2-medium (Spot VMs, 30GB balanced, autoscaling) | ~$21-105                |
-| **Total Infrastructure**       | -                                                       | **~$126-210/month**     |
-| **Savings vs All Regular VMs** | -                                                       | **~60%**                |
-| **Frontend Hosting**           | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
+| Component                | Configuration                                           | Monthly Cost (Estimate) |
+| ------------------------ | ------------------------------------------------------- | ----------------------- |
+| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 100GB SSD)              | ~$105                   |
+| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 30GB balanced, autoscaling) | ~$21-105                |
+| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
+| **Total Infrastructure** | -                                                       | **~$126-210/month**     |
 
 ## Frontend Deployment
 
