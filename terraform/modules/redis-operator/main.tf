@@ -45,6 +45,20 @@ resource "helm_release" "redis_operator" {
         }
       }
 
+      # Node affinity for control plane pool
+      nodeSelector = {
+        workload-type = "control-plane"
+      }
+
+      tolerations = [
+        {
+          key      = "workload-type"
+          operator = "Equal"
+          value    = "control-plane"
+          effect   = "NoSchedule"
+        }
+      ]
+
       # Security context
       securityContext = {
         runAsNonRoot = true

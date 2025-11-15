@@ -28,6 +28,13 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: api-gateway
+      nodeSelector:
+        workload-type: gateway
+      tolerations:
+        - key: workload-type
+          operator: Equal
+          value: gateway
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

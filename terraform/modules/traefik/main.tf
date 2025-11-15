@@ -108,6 +108,20 @@ resource "helm_release" "traefik" {
         runAsNonRoot = true
         runAsUser = 65532
       }
+
+      # Node affinity for gateway pool
+      nodeSelector = {
+        workload-type = "gateway"
+      }
+
+      tolerations = [
+        {
+          key      = "workload-type"
+          operator = "Equal"
+          value    = "gateway"
+          effect   = "NoSchedule"
+        }
+      ]
     })
   ]
 

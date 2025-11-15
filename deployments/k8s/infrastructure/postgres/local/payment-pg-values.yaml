@@ -10,6 +10,15 @@ version:
 cluster:
   instances: 1  # Single instance for local dev
 
+  affinity:
+    nodeSelector:
+      workload-type: stateful
+    tolerations:
+      - key: workload-type
+        operator: Equal
+        value: stateful
+        effect: NoSchedule
+
   initdb:
     database: payment_db
     owner: payment_user

@@ -34,3 +34,13 @@ output "prometheus_url" {
   description = "URL to access Prometheus (port-forward required)"
   value       = "http://localhost:9090 (kubectl port-forward -n ${var.namespace} svc/kube-prometheus-stack-prometheus 9090:9090)"
 }
+
+output "alloy_release_name" {
+  description = "Helm release name for Grafana Alloy"
+  value       = helm_release.alloy.name
+}
+
+output "alloy_namespace" {
+  description = "Namespace where Alloy is installed"
+  value       = helm_release.alloy.namespace
+}

@@ -52,6 +52,20 @@ resource "helm_release" "strimzi" {
       # Replica count
       replicas = 1
 
+      # Node affinity for control plane pool
+      nodeSelector = {
+        workload-type = "control-plane"
+      }
+
+      tolerations = [
+        {
+          key      = "workload-type"
+          operator = "Equal"
+          value    = "control-plane"
+          effect   = "NoSchedule"
+        }
+      ]
+
       # Security context
       podSecurityContext = {
         runAsNonRoot = true

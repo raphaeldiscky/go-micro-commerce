@@ -63,3 +63,22 @@ variable "tempo_storage_size" {
   type        = string
   default     = "20Gi"
 }
+
+# Grafana Alloy
+variable "alloy_chart_version" {
+  description = "Helm chart version for Grafana Alloy"
+  type        = string
+  default     = "1.4.0"
+}
+
+variable "alloy_cpu_limit" {
+  description = "CPU limit for Alloy"
+  type        = string
+  default     = "500m"
+}
+
+variable "alloy_memory_limit" {
+  description = "Memory limit for Alloy"
+  type        = string
+  default     = "512Mi"
+}

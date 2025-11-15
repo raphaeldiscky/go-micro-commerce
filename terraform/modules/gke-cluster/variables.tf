@@ -128,8 +128,119 @@ variable "stateless_pool_disk_type" {
   default     = "pd-balanced"
 }
 
+# Monitoring Pool Variables (for observability stack - Prometheus, Grafana, Loki, Tempo, Alloy)
+variable "monitoring_pool_enabled" {
+  description = "Enable monitoring node pool for observability stack"
+  type        = bool
+  default     = true
+}
+
+variable "monitoring_pool_min_nodes" {
+  description = "Minimum nodes in monitoring pool"
+  type        = number
+  default     = 1
+}
+
+variable "monitoring_pool_max_nodes" {
+  description = "Maximum nodes in monitoring pool"
+  type        = number
+  default     = 3
+}
+
+variable "monitoring_pool_machine_type" {
+  description = "Machine type for monitoring pool"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "monitoring_pool_disk_size_gb" {
+  description = "Disk size in GB for monitoring pool nodes"
+  type        = number
+  default     = 30
+}
+
+variable "monitoring_pool_disk_type" {
+  description = "Disk type for monitoring pool nodes"
+  type        = string
+  default     = "pd-balanced"
+}
+
 variable "enable_workload_identity" {
   description = "Enable Workload Identity for secure pod authentication"
   type        = bool
   default     = true
+}
+
+# Control Plane Pool Variables (for operators, ArgoCD, ESO)
+variable "control_plane_pool_enabled" {
+  description = "Enable control plane node pool for operators and control plane components"
+  type        = bool
+  default     = true
+}
+
+variable "control_plane_pool_min_nodes" {
+  description = "Minimum nodes in control plane pool"
+  type        = number
+  default     = 1
+}
+
+variable "control_plane_pool_max_nodes" {
+  description = "Maximum nodes in control plane pool"
+  type        = number
+  default     = 2
+}
+
+variable "control_plane_pool_machine_type" {
+  description = "Machine type for control plane pool"
+  type        = string
+  default     = "e2-small"
+}
+
+variable "control_plane_pool_disk_size_gb" {
+  description = "Disk size in GB for control plane pool nodes"
+  type        = number
+  default     = 30
+}
+
+variable "control_plane_pool_disk_type" {
+  description = "Disk type for control plane pool nodes"
+  type        = string
+  default     = "pd-balanced"
+}
+
+# Gateway Pool Variables (for Traefik, Apollo Router, API Gateway)
+variable "gateway_pool_enabled" {
+  description = "Enable gateway node pool for ingress and API gateways"
+  type        = bool
+  default     = true
+}
+
+variable "gateway_pool_min_nodes" {
+  description = "Minimum nodes in gateway pool"
+  type        = number
+  default     = 1
+}
+
+variable "gateway_pool_max_nodes" {
+  description = "Maximum nodes in gateway pool"
+  type        = number
+  default     = 3
+}
+
+variable "gateway_pool_machine_type" {
+  description = "Machine type for gateway pool"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "gateway_pool_disk_size_gb" {
+  description = "Disk size in GB for gateway pool nodes"
+  type        = number
+  default     = 30
+}
+
+variable "gateway_pool_disk_type" {
+  description = "Disk type for gateway pool nodes"
+  type        = string
+  default     = "pd-balanced"
 }

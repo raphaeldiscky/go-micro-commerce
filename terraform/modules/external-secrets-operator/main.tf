@@ -49,6 +49,20 @@ resource "helm_release" "external_secrets" {
         }
       }
 
+      # Node affinity for control plane pool
+      nodeSelector = {
+        workload-type = "control-plane"
+      }
+
+      tolerations = [
+        {
+          key      = "workload-type"
+          operator = "Equal"
+          value    = "control-plane"
+          effect   = "NoSchedule"
+        }
+      ]
+
       metrics = {
         enabled = var.enable_monitoring
         service = {

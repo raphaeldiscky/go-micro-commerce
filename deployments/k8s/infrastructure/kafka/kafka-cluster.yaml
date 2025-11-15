@@ -32,6 +32,23 @@ spec:
     limits:
       memory: "1Gi"
       cpu: "500m"
+  # Node affinity for stateful-pool
+  template:
+    pod:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: workload-type
+                    operator: In
+                    values:
+                      - stateful
+      tolerations:
+        - key: workload-type
+          operator: Equal
+          value: stateful
+          effect: NoSchedule
 
 ---
 apiVersion: kafka.strimzi.io/v1beta2
@@ -108,6 +125,22 @@ spec:
 
   # Entity Operator for managing topics and users (optional)
   entityOperator:
+    template:
+      pod:
+        affinity:
+          nodeAffinity:
+            requiredDuringSchedulingIgnoredDuringExecution:
+              nodeSelectorTerms:
+                - matchExpressions:
+                    - key: workload-type
+                      operator: In
+                      values:
+                        - stateful
+        tolerations:
+          - key: workload-type
+            operator: Equal
+            value: stateful
+            effect: NoSchedule
     topicOperator:
       resources:
         requests:

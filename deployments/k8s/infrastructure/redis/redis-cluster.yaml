@@ -86,6 +86,14 @@ spec:
 
   # Pod affinity rules (spread across nodes for HA)
   affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: workload-type
+                operator: In
+                values:
+                  - stateful
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
         - weight: 100
@@ -97,6 +105,13 @@ spec:
                   values:
                     - redis-cluster
             topologyKey: kubernetes.io/hostname
+
+  # Tolerations for stateful-pool
+  tolerations:
+    - key: workload-type
+      operator: Equal
+      value: stateful
+      effect: NoSchedule
 
   # Priority class (optional)
   priorityClassName: ""

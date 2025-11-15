@@ -126,6 +126,54 @@ else
 fi
 
 echo ""
+
+# Scale monitoring-pool to 0
+log_info "Scaling monitoring-pool to 0 nodes..."
+if gcloud container clusters resize "$CLUSTER_NAME" \
+    --node-pool monitoring-pool \
+    --num-nodes 0 \
+    --zone="$ZONE" \
+    --project="$PROJECT_ID" \
+    --quiet; then
+    log_success "monitoring-pool scaled to 0"
+else
+    log_error "Failed to scale monitoring-pool"
+    exit 1
+fi
+
+echo ""
+
+# Scale control-plane-pool to 0
+log_info "Scaling control-plane-pool to 0 nodes..."
+if gcloud container clusters resize "$CLUSTER_NAME" \
+    --node-pool control-plane-pool \
+    --num-nodes 0 \
+    --zone="$ZONE" \
+    --project="$PROJECT_ID" \
+    --quiet; then
+    log_success "control-plane-pool scaled to 0"
+else
+    log_error "Failed to scale control-plane-pool"
+    exit 1
+fi
+
+echo ""
+
+# Scale gateway-pool to 0
+log_info "Scaling gateway-pool to 0 nodes..."
+if gcloud container clusters resize "$CLUSTER_NAME" \
+    --node-pool gateway-pool \
+    --num-nodes 0 \
+    --zone="$ZONE" \
+    --project="$PROJECT_ID" \
+    --quiet; then
+    log_success "gateway-pool scaled to 0"
+else
+    log_error "Failed to scale gateway-pool"
+    exit 1
+fi
+
+echo ""
 log_success "Cluster paused successfully!"
 echo ""
 

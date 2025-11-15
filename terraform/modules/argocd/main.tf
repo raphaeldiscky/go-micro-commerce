@@ -46,6 +46,19 @@ resource "helm_release" "argocd" {
           }
         }
 
+        # Node affinity for control plane pool
+        nodeSelector = {
+          workload-type = "control-plane"
+        }
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "control-plane"
+            effect   = "NoSchedule"
+          }
+        ]
+
         # Service configuration
         service = {
           type = "ClusterIP"
@@ -73,6 +86,18 @@ resource "helm_release" "argocd" {
             memory = "512Mi"
           }
         }
+        # Node affinity for control plane pool
+        nodeSelector = {
+          workload-type = "control-plane"
+        }
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "control-plane"
+            effect   = "NoSchedule"
+          }
+        ]
         metrics = {
           enabled = true
           serviceMonitor = {
@@ -94,6 +119,18 @@ resource "helm_release" "argocd" {
             memory = "128Mi"
           }
         }
+        # Node affinity for control plane pool
+        nodeSelector = {
+          workload-type = "control-plane"
+        }
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "control-plane"
+            effect   = "NoSchedule"
+          }
+        ]
         metrics = {
           enabled = true
           serviceMonitor = {
@@ -115,6 +152,18 @@ resource "helm_release" "argocd" {
             memory = "128Mi"
           }
         }
+        # Node affinity for control plane pool
+        nodeSelector = {
+          workload-type = "control-plane"
+        }
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "control-plane"
+            effect   = "NoSchedule"
+          }
+        ]
       }
 
       # Notifications controller
@@ -130,6 +179,18 @@ resource "helm_release" "argocd" {
             memory = "64Mi"
           }
         }
+        # Node affinity for control plane pool
+        nodeSelector = {
+          workload-type = "control-plane"
+        }
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "control-plane"
+            effect   = "NoSchedule"
+          }
+        ]
       }
 
       # Redis
@@ -145,6 +206,18 @@ resource "helm_release" "argocd" {
             memory = "128Mi"
           }
         }
+        # Node affinity for control plane pool
+        nodeSelector = {
+          workload-type = "control-plane"
+        }
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "control-plane"
+            effect   = "NoSchedule"
+          }
+        ]
       }
 
       # Configs

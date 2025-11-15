@@ -224,3 +224,219 @@ resource "google_container_node_pool" "stateless" {
     max_unavailable = 0
   }
 }
+
+# Monitoring Node Pool (for observability stack - Prometheus, Grafana, Loki, Tempo, Alloy)
+resource "google_container_node_pool" "monitoring" {
+  count    = var.monitoring_pool_enabled ? 1 : 0
+  name     = "monitoring-pool"
+  project  = var.project_id
+  location = var.zone
+  cluster  = google_container_cluster.primary.name
+
+  # Autoscaling configuration
+  autoscaling {
+    min_node_count = var.monitoring_pool_min_nodes
+    max_node_count = var.monitoring_pool_max_nodes
+  }
+
+  node_config {
+    machine_type = var.monitoring_pool_machine_type
+    disk_size_gb = var.monitoring_pool_disk_size_gb
+    disk_type    = var.monitoring_pool_disk_type
+    image_type   = "COS_CONTAINERD"
+    spot         = false # Regular VMs for monitoring reliability
+
+    # Labels for workload scheduling
+    labels = {
+      workload-type = "monitoring"
+      pool-type     = "regular"
+    }
+
+    # Taint to ensure only monitoring workloads run here
+    taint {
+      key    = "workload-type"
+      value  = "monitoring"
+      effect = "NO_SCHEDULE"
+    }
+
+    # OAuth scopes
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    # Metadata
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    # Workload Identity
+    dynamic "workload_metadata_config" {
+      for_each = var.enable_workload_identity ? [1] : []
+      content {
+        mode = "GKE_METADATA"
+      }
+    }
+
+    # Shielded instance config
+    shielded_instance_config {
+      enable_secure_boot          = false
+      enable_integrity_monitoring = true
+    }
+  }
+
+  # Management
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
+
+  # Upgrade settings
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+  }
+}
+
+# Control Plane Node Pool (for operators, ArgoCD, ESO)
+resource "google_container_node_pool" "control_plane" {
+  count    = var.control_plane_pool_enabled ? 1 : 0
+  name     = "control-plane-pool"
+  project  = var.project_id
+  location = var.zone
+  cluster  = google_container_cluster.primary.name
+
+  # Autoscaling configuration
+  autoscaling {
+    min_node_count = var.control_plane_pool_min_nodes
+    max_node_count = var.control_plane_pool_max_nodes
+  }
+
+  node_config {
+    machine_type = var.control_plane_pool_machine_type
+    disk_size_gb = var.control_plane_pool_disk_size_gb
+    disk_type    = var.control_plane_pool_disk_type
+    image_type   = "COS_CONTAINERD"
+    spot         = false # Regular VMs for control plane reliability
+
+    # Labels for workload scheduling
+    labels = {
+      workload-type = "control-plane"
+      pool-type     = "regular"
+    }
+
+    # Taint to ensure only control plane workloads run here
+    taint {
+      key    = "workload-type"
+      value  = "control-plane"
+      effect = "NO_SCHEDULE"
+    }
+
+    # OAuth scopes
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    # Metadata
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    # Workload Identity
+    dynamic "workload_metadata_config" {
+      for_each = var.enable_workload_identity ? [1] : []
+      content {
+        mode = "GKE_METADATA"
+      }
+    }
+
+    # Shielded instance config
+    shielded_instance_config {
+      enable_secure_boot          = false
+      enable_integrity_monitoring = true
+    }
+  }
+
+  # Management
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
+
+  # Upgrade settings
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+  }
+}
+
+# Gateway Node Pool (for Traefik, Apollo Router, API Gateway)
+resource "google_container_node_pool" "gateway" {
+  count    = var.gateway_pool_enabled ? 1 : 0
+  name     = "gateway-pool"
+  project  = var.project_id
+  location = var.zone
+  cluster  = google_container_cluster.primary.name
+
+  # Autoscaling configuration
+  autoscaling {
+    min_node_count = var.gateway_pool_min_nodes
+    max_node_count = var.gateway_pool_max_nodes
+  }
+
+  node_config {
+    machine_type = var.gateway_pool_machine_type
+    disk_size_gb = var.gateway_pool_disk_size_gb
+    disk_type    = var.gateway_pool_disk_type
+    image_type   = "COS_CONTAINERD"
+    spot         = false # Regular VMs for gateway reliability
+
+    # Labels for workload scheduling
+    labels = {
+      workload-type = "gateway"
+      pool-type     = "regular"
+    }
+
+    # Taint to ensure only gateway workloads run here
+    taint {
+      key    = "workload-type"
+      value  = "gateway"
+      effect = "NO_SCHEDULE"
+    }
+
+    # OAuth scopes
+    oauth_scopes = [
+      "https://www.googleapis.com/auth/cloud-platform"
+    ]
+
+    # Metadata
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    # Workload Identity
+    dynamic "workload_metadata_config" {
+      for_each = var.enable_workload_identity ? [1] : []
+      content {
+        mode = "GKE_METADATA"
+      }
+    }
+
+    # Shielded instance config
+    shielded_instance_config {
+      enable_secure_boot          = false
+      enable_integrity_monitoring = true
+    }
+  }
+
+  # Management
+  management {
+    auto_repair  = true
+    auto_upgrade = true
+  }
+
+  # Upgrade settings
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+  }
+}
