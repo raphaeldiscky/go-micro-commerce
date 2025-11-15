@@ -207,7 +207,7 @@ helm_resource(
     'prometheus-community/kube-prometheus-stack',
     flags=[
         '--values=deployments/k8s/infrastructure/monitoring/prometheus-values.yaml',
-        '--version=79.1.1',
+        '--version=79.5.0',
     ],
     labels=['monitoring'],
     resource_deps=[],
@@ -217,16 +217,28 @@ helm_resource(
     ],
 )
 
-# Loki + Promtail (log aggregation)
+# Loki (log aggregation) - SingleBinary mode for local dev
 helm_resource(
     'loki',
-    'grafana/loki-stack',
+    'grafana/loki',
     flags=[
         '--values=deployments/k8s/infrastructure/monitoring/loki-values.yaml',
-        '--version=2.10.3',
+        '--version=6.46.0',
     ],
     labels=['monitoring'],
-    resource_deps=['kube-prometheus-stack'], 
+    resource_deps=['kube-prometheus-stack'],
+)
+
+# Grafana Alloy (log collection) - replaces Promtail
+helm_resource(
+    'alloy',
+    'grafana/alloy',
+    flags=[
+        '--values=deployments/k8s/infrastructure/monitoring/alloy-values.yaml',
+        '--version=1.4.0'
+    ],
+    labels=['monitoring'],
+    resource_deps=['loki'],
 )
 
 # Tempo (distributed tracing) - matches Docker Compose tempo:2.8.1
@@ -235,7 +247,7 @@ helm_resource(
     'grafana/tempo',
     flags=[
         '--values=deployments/k8s/infrastructure/monitoring/tempo-values.yaml',
-        '--version=1.23.2',
+        '--version=1.24.0',
     ],
     labels=['monitoring'],
     resource_deps=['kube-prometheus-stack'], 
@@ -520,7 +532,7 @@ print("  - infra-db: PostgreSQL clusters (CloudNativePG, 9 clusters)")
 print("  - infra-cache: Redis Cluster (6 nodes) + Redis Insight")
 print("  - infra-messaging: Kafka Cluster (3 nodes) + Kafka UI")
 print("  - infra-gateway: Traefik Ingress Controller + Local Ingress")
-print("  - monitoring: Prometheus, Grafana, Loki, Tempo, OTEL")
+print("  - monitoring: Prometheus, Grafana, Loki, Alloy, Tempo, OTEL")
 print("  - dev-tools: MailHog")
 print("  - migrations: 9 database migration jobs")
 print("  - apps: 11 microservices + GraphQL Gateway")

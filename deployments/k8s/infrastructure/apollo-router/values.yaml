@@ -324,8 +324,16 @@ extraLabels:
   component: apollo-router
   layer: api-gateway
 
-# Node affinity (spread across nodes)
+# Node affinity (spread across nodes + gateway pool)
 affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: workload-type
+              operator: In
+              values:
+                - gateway
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
       - weight: 100
@@ -339,10 +347,15 @@ affinity:
           topologyKey: kubernetes.io/hostname
 
 # Tolerations
-tolerations: []
+tolerations:
+  - key: workload-type
+    operator: Equal
+    value: gateway
+    effect: NoSchedule
 
 # Node selector
-nodeSelector: {}
+nodeSelector:
+  workload-type: gateway
 
 # Termination grace period
 terminationGracePeriodSeconds: 30

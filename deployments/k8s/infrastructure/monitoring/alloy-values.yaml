@@ -1,0 +1,126 @@
+# Grafana Alloy Helm Chart Values
+# Chart: grafana/alloy
+# Purpose: Log collection and forwarding to Loki (replaces Promtail)
+
+# Deploy as DaemonSet to collect logs from all nodes
+alloy:
+  mode: "daemonset"
+
+  # Alloy configuration using River language
+  configMap:
+    create: true
+    content: |
+      // Discover Kubernetes pods
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      // Relabel discovered pods to extract metadata
+      discovery.relabel "kubernetes_pods" {
+        targets = discovery.kubernetes.pods.targets
+
+        // Set job label to namespace/pod_name
+        rule {
+          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name"]
+          separator     = "/"
+          target_label  = "job"
+        }
+
+        // Set pod label
+        rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label  = "pod"
+        }
+
+        // Set container label
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          target_label  = "container"
+        }
+
+        // Set namespace label
+        rule {
+          source_labels = ["__meta_kubernetes_namespace"]
+          target_label  = "namespace"
+        }
+
+        // Set app label from pod labels
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_app"]
+          target_label  = "app"
+        }
+
+        // Set component label from pod labels
+        rule {
+          source_labels = ["__meta_kubernetes_pod_label_component"]
+          target_label  = "component"
+        }
+
+        // Drop empty targets
+        rule {
+          source_labels = ["__meta_kubernetes_pod_container_name"]
+          action        = "drop"
+          regex         = ""
+        }
+
+        // Set path to container logs
+        rule {
+          source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+          separator     = "/"
+          target_label  = "__path__"
+          replacement   = "/var/log/pods/*$1/*.log"
+        }
+      }
+
+      // Scrape logs from discovered pods
+      loki.source.kubernetes "pods" {
+        targets    = discovery.relabel.kubernetes_pods.output
+        forward_to = [loki.write.local.receiver]
+      }
+
+      // Write logs to Loki
+      loki.write "local" {
+        endpoint {
+          url = "http://loki-gateway/loki/api/v1/push"
+        }
+      }
+
+  # Resource limits for local development
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Mount host paths to access container logs
+  mounts:
+    varlog: true
+    dockercontainers: false
+
+  # Enable ServiceMonitor for Prometheus metrics
+  serviceMonitor:
+    enabled: true
+
+  # Security context
+  securityContext:
+    privileged: false
+    runAsUser: 0
+    runAsGroup: 0
+
+# Controller configuration
+controller:
+  type: "daemonset"
+
+  # Host network access for log collection
+  hostNetwork: false
+  hostPID: false
+
+# Service account with proper RBAC
+rbac:
+  create: true
+
+serviceAccount:
+  create: true
+  name: alloy

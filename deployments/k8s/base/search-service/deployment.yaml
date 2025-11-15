@@ -28,6 +28,13 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       serviceAccountName: search-service
+      nodeSelector:
+        workload-type: stateless
+      tolerations:
+        - key: cloud.google.com/gke-spot
+          value: "true"
+          operator: Equal
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
