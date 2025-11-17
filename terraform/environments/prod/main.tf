@@ -47,6 +47,30 @@ module "gke_cluster" {
   stateless_pool_disk_size_gb = var.stateless_pool_disk_size_gb
   stateless_pool_disk_type    = var.stateless_pool_disk_type
 
+  # Monitoring pool (observability stack)
+  monitoring_pool_enabled      = var.monitoring_pool_enabled
+  monitoring_pool_min_nodes    = var.monitoring_pool_min_nodes
+  monitoring_pool_max_nodes    = var.monitoring_pool_max_nodes
+  monitoring_pool_machine_type = var.monitoring_pool_machine_type
+  monitoring_pool_disk_size_gb = var.monitoring_pool_disk_size_gb
+  monitoring_pool_disk_type    = var.monitoring_pool_disk_type
+
+  # Control plane pool (operators, ArgoCD, ESO)
+  control_plane_pool_enabled      = var.control_plane_pool_enabled
+  control_plane_pool_min_nodes    = var.control_plane_pool_min_nodes
+  control_plane_pool_max_nodes    = var.control_plane_pool_max_nodes
+  control_plane_pool_machine_type = var.control_plane_pool_machine_type
+  control_plane_pool_disk_size_gb = var.control_plane_pool_disk_size_gb
+  control_plane_pool_disk_type    = var.control_plane_pool_disk_type
+
+  # Gateway pool (Traefik, Apollo Router, API Gateway)
+  gateway_pool_enabled      = var.gateway_pool_enabled
+  gateway_pool_min_nodes    = var.gateway_pool_min_nodes
+  gateway_pool_max_nodes    = var.gateway_pool_max_nodes
+  gateway_pool_machine_type = var.gateway_pool_machine_type
+  gateway_pool_disk_size_gb = var.gateway_pool_disk_size_gb
+  gateway_pool_disk_type    = var.gateway_pool_disk_type
+
   enable_workload_identity = var.enable_workload_identity
 
   depends_on = [module.gcp_network]

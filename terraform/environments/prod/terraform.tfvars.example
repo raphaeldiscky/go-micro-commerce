@@ -31,25 +31,56 @@ enable_workload_identity = true                    # Enable Workload Identity fo
 # ============================================================================
 # Stateful Node Pool (Databases: PostgreSQL, Kafka, Redis)
 # Regular VMs for reliable performance
-# Estimated cost: ~$105/month (3 × e2-standard-2)
 # ============================================================================
 stateful_pool_enabled      = true               # Enable stateful node pool
 stateful_pool_node_count   = 3                  # Fixed node count (no autoscaling)
 stateful_pool_machine_type = "e2-standard-2"    # 2 vCPU, 8GB RAM
-stateful_pool_disk_size_gb = 80                 # 80GB Balanced  per node
+stateful_pool_disk_size_gb = 50                 # 50GB balanced disk per node (3 nodes × 50GB = 150GB)
 stateful_pool_disk_type    = "pd-balanced"      # Balanced disk for cost efficiency, or use SSD (pd-ssd) for database performance
 
 # ============================================================================
 # Stateless Node Pool (Microservices)
 # Spot VMs with autoscaling for 60-91% cost savings
-# Estimated cost: ~$21-105/month (2-10 × e2-medium Spot)
 # ============================================================================
 stateless_pool_enabled      = true          # Enable stateless node pool
 stateless_pool_min_nodes    = 2             # Minimum nodes (autoscaling)
 stateless_pool_max_nodes    = 10            # Maximum nodes (autoscaling)
 stateless_pool_machine_type = "e2-medium"   # 1 vCPU, 4GB RAM (Spot VM)
-stateless_pool_disk_size_gb = 30            # 30GB balanced disk per node
+stateless_pool_disk_size_gb = 20            # 20GB balanced disk per node (min 2 nodes × 20GB = 40GB)
 stateless_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
+
+# ============================================================================
+# Monitoring Node Pool (Observability: Prometheus, Grafana, Loki, Tempo)
+# Regular VMs with autoscaling for reliability
+# ============================================================================
+monitoring_pool_enabled      = true          # Enable monitoring node pool
+monitoring_pool_min_nodes    = 1             # Minimum nodes (autoscaling)
+monitoring_pool_max_nodes    = 3             # Maximum nodes (autoscaling)
+monitoring_pool_machine_type = "e2-medium"   # 1 vCPU, 4GB RAM
+monitoring_pool_disk_size_gb = 30            # 30GB balanced disk per node
+monitoring_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
+
+# ============================================================================
+# Control Plane Node Pool (Operators: ArgoCD, ESO, CNPG, Strimzi, Redis)
+# Regular VMs with autoscaling for control plane reliability
+# ============================================================================
+control_plane_pool_enabled      = true          # Enable control plane node pool
+control_plane_pool_min_nodes    = 1             # Minimum nodes (autoscaling)
+control_plane_pool_max_nodes    = 2             # Maximum nodes (autoscaling)
+control_plane_pool_machine_type = "e2-small"    # 0.5 vCPU, 2GB RAM (cost-effective)
+control_plane_pool_disk_size_gb = 15            # 15GB balanced disk per node (min 1 node × 15GB = 15GB)
+control_plane_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
+
+# ============================================================================
+# Gateway Node Pool (Ingress: Traefik, Apollo Router, API Gateway)
+# Regular VMs with autoscaling for gateway reliability
+# ============================================================================
+gateway_pool_enabled      = true          # Enable gateway node pool
+gateway_pool_min_nodes    = 1             # Minimum nodes (autoscaling)
+gateway_pool_max_nodes    = 3             # Maximum nodes (autoscaling)
+gateway_pool_machine_type = "e2-medium"   # 1 vCPU, 4GB RAM
+gateway_pool_disk_size_gb = 15            # 15GB balanced disk per node (min 1 node × 15GB = 15GB)
+gateway_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 
 # ============================================================================
 # Kubernetes Operators and Platform Components
@@ -79,23 +110,25 @@ redis_chart_version    = "0.22.2"
 redis_watch_namespaces = [] # Empty = watch all namespaces
 
 # Monitoring Stack
+# NOTE: Total PVC storage (7Gi) must fit within monitoring node disk (30GB)
+# after accounting for OS (~8-10GB) and container images (~5-8GB)
 monitoring_namespace          = "monitoring"
 kube_prometheus_stack_version = "79.5.0"
 grafana_admin_password        = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
-prometheus_retention          = "30d"                        # 30 days for production
-prometheus_storage_size       = "100Gi"                      # 100GB for production
+prometheus_retention          = "30d"                        # 30 days retention (reduce to 15d if needed)
+prometheus_storage_size       = "4Gi"                        # 4Gi optimized for learning/testing (use 100Gi for production)
 loki_version                  = "6.46.0"
-loki_storage_size             = "50Gi"
+loki_storage_size             = "2Gi"                        # 2Gi for log storage (use 50Gi for production)
 tempo_version                 = "1.24.0"
-tempo_storage_size            = "30Gi"
+tempo_storage_size            = "1Gi"                        # 1Gi for tracing data (use 30Gi for production)
 
 # ArgoCD
 argocd_namespace         = "argocd"
 argocd_chart_version     = "9.1.2"
-argocd_admin_password    = ""  # Leave empty for auto-generated
+argocd_admin_password    = ""                                                   # Leave empty for auto-generated
 argocd_git_repo_url      = "https://github.com/your-org/go-micro-commerce.git"  # Update this!
 argocd_git_repo_path     = "deployments/k8s"
-argocd_enable_bootstrap  = false  # Set to true after configuring git repo
+argocd_enable_bootstrap  = false                                                # Set to true after configuring git repo
 
 # Traefik Ingress Controller
 traefik_namespace        = "traefik"

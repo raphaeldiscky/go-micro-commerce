@@ -160,6 +160,117 @@ variable "stateless_pool_disk_type" {
   default     = "pd-balanced"
 }
 
+# Monitoring Pool (Observability Stack)
+variable "monitoring_pool_enabled" {
+  description = "Enable monitoring node pool"
+  type        = bool
+  default     = true
+}
+
+variable "monitoring_pool_min_nodes" {
+  description = "Minimum nodes in monitoring pool"
+  type        = number
+  default     = 1
+}
+
+variable "monitoring_pool_max_nodes" {
+  description = "Maximum nodes in monitoring pool"
+  type        = number
+  default     = 3
+}
+
+variable "monitoring_pool_machine_type" {
+  description = "Machine type for monitoring pool"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "monitoring_pool_disk_size_gb" {
+  description = "Disk size for monitoring pool"
+  type        = number
+  default     = 30
+}
+
+variable "monitoring_pool_disk_type" {
+  description = "Disk type for monitoring pool"
+  type        = string
+  default     = "pd-balanced"
+}
+
+# Control Plane Pool (Operators, ArgoCD, ESO)
+variable "control_plane_pool_enabled" {
+  description = "Enable control plane node pool"
+  type        = bool
+  default     = true
+}
+
+variable "control_plane_pool_min_nodes" {
+  description = "Minimum nodes in control plane pool"
+  type        = number
+  default     = 1
+}
+
+variable "control_plane_pool_max_nodes" {
+  description = "Maximum nodes in control plane pool"
+  type        = number
+  default     = 2
+}
+
+variable "control_plane_pool_machine_type" {
+  description = "Machine type for control plane pool"
+  type        = string
+  default     = "e2-small"
+}
+
+variable "control_plane_pool_disk_size_gb" {
+  description = "Disk size for control plane pool"
+  type        = number
+  default     = 30
+}
+
+variable "control_plane_pool_disk_type" {
+  description = "Disk type for control plane pool"
+  type        = string
+  default     = "pd-balanced"
+}
+
+# Gateway Pool (Traefik, Apollo Router, API Gateway)
+variable "gateway_pool_enabled" {
+  description = "Enable gateway node pool"
+  type        = bool
+  default     = true
+}
+
+variable "gateway_pool_min_nodes" {
+  description = "Minimum nodes in gateway pool"
+  type        = number
+  default     = 1
+}
+
+variable "gateway_pool_max_nodes" {
+  description = "Maximum nodes in gateway pool"
+  type        = number
+  default     = 3
+}
+
+variable "gateway_pool_machine_type" {
+  description = "Machine type for gateway pool"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "gateway_pool_disk_size_gb" {
+  description = "Disk size for gateway pool"
+  type        = number
+  default     = 30
+}
+
+variable "gateway_pool_disk_type" {
+  description = "Disk type for gateway pool"
+  type        = string
+  default     = "pd-balanced"
+}
+
 # External Secrets Operator
 variable "eso_namespace" {
   description = "Namespace for External Secrets Operator"

@@ -6,21 +6,30 @@ Enterprise-grade infrastructure as code for the Go Micro-Commerce platform on Go
 
 This Terraform configuration provisions a cost-optimized, production-ready GKE cluster with:
 
-- **Dual Node Pools Strategy**: Separate pools for stateful (databases) and stateless (microservices) workloads
-- **Cost Optimization**: Spot VMs for microservices (~60% savings), regular VMs for databases
+- **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), control-plane (operators), and gateway (ingress) workloads
+- **Cost Optimization**: Spot VMs for microservices (~60% savings), cost-effective e2-small for control plane
 - **Complete Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
-- **Full Observability**: Prometheus, Grafana, Loki, Tempo monitoring stack
-- **GitOps Ready**: ArgoCD for application deployments
-- **Production Ingress**: Traefik ingress controller with LoadBalancer
+- **Full Observability**: Prometheus, Grafana, Loki, Tempo monitoring stack with dedicated pool
+- **GitOps Ready**: ArgoCD for application deployments on dedicated control plane pool
+- **Production Ingress**: Traefik ingress controller with dedicated gateway pool
 
 ### Cost Breakdown
 
+**Note**: Optimized for learning/testing with 250GB total disk limit in asia-southeast1-a zone.
+
 | Component                | Configuration                                           | Monthly Cost (Estimate) |
 | ------------------------ | ------------------------------------------------------- | ----------------------- |
-| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 100GB balanced)         | ~$105                   |
-| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 30GB balanced, autoscaling) | ~$21-105                |
+| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 50GB balanced)          | ~$95                    |
+| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 20GB balanced, autoscaling) | ~$18-95                 |
+| **Monitoring Pool**      | 1-3 × e2-medium (regular VMs, 30GB balanced, autoscaling) | ~$7-21                  |
+| **Control Plane Pool**   | 1-2 × e2-small (regular VMs, 15GB balanced, autoscaling)  | ~$3-6                   |
+| **Gateway Pool**         | 1-3 × e2-medium (regular VMs, 15GB balanced, autoscaling) | ~$6-18                  |
 | **Frontend Hosting**     | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
-| **Total Infrastructure** | -                                                       | **~$126-210/month**     |
+| **Total Infrastructure** | -                                                       | **~$129-235/month**     |
+
+**Total Disk Allocation**: 250GB (150GB stateful + 40GB stateless + 30GB monitoring + 15GB control plane + 15GB gateway)
+
+**Savings**: ~60% compared to using all regular (non-Spot) VMs
 
 ## Frontend Deployment
 
@@ -89,7 +98,7 @@ Backend:  GKE → Traefik LoadBalancer → https://api.discky.com
 terraform/
 ├── modules/                          # Reusable Terraform modules
 │   ├── gcp-network/                  # VPC network with secondary IP ranges
-│   ├── gke-cluster/                  # GKE cluster with dual node pools
+│   ├── gke-cluster/                  # GKE cluster with 5-tier node pool architecture
 │   ├── cloudnative-pg-operator/      # PostgreSQL operator
 │   ├── strimzi-kafka-operator/       # Kafka operator (KRaft mode)
 │   ├── redis-operator/               # Redis operator
@@ -128,12 +137,12 @@ Creates VPC network with:
 
 ### 2. GKE Cluster Module (`gke-cluster`)
 
-Provisions GKE cluster with:
+Provisions GKE cluster with 5-tier node pool architecture:
 
 **Stateful Pool** (Databases: PostgreSQL, Kafka, Redis)
 
 - 3 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
-- 80GB balanced persistent disk per node
+- 50GB balanced persistent disk per node (150GB total)
 - Regular VMs for reliability
 - Fixed node count (no autoscaling)
 - Taint: `workload-type=stateful:NoSchedule`
@@ -141,10 +150,34 @@ Provisions GKE cluster with:
 **Stateless Pool** (Microservices)
 
 - 2-10 × e2-medium nodes (1 vCPU, 4GB RAM)
-- 30GB balanced persistent disk per node
+- 20GB balanced persistent disk per node (40-200GB total)
 - **Spot VMs** for 60-91% cost savings
 - Autoscaling based on workload
 - Taint: `cloud.google.com/gke-spot=true:NoSchedule`
+
+**Monitoring Pool** (Observability: Prometheus, Grafana, Loki, Tempo, Alloy)
+
+- 1-3 × e2-medium nodes (1 vCPU, 4GB RAM)
+- 30GB balanced persistent disk per node (30-90GB total)
+- Regular VMs for monitoring reliability
+- Autoscaling based on metrics load
+- Taint: `workload-type=monitoring:NoSchedule`
+
+**Control Plane Pool** (Operators, ArgoCD, ESO)
+
+- 1-2 × e2-small nodes (0.5 vCPU, 2GB RAM)
+- 15GB balanced persistent disk per node (15-30GB total)
+- Regular VMs for control plane reliability
+- Autoscaling for operator workloads
+- Taint: `workload-type=control-plane:NoSchedule`
+
+**Gateway Pool** (Traefik, Apollo Router, API Gateway)
+
+- 1-3 × e2-medium nodes (1 vCPU, 4GB RAM)
+- 15GB balanced persistent disk per node (15-45GB total)
+- Regular VMs for gateway reliability
+- Autoscaling based on traffic
+- Taint: `workload-type=gateway:NoSchedule`
 
 **Security Features**
 
@@ -273,7 +306,7 @@ Deploy the infrastructure:
 This will:
 
 1. Create VPC network and subnets
-2. Provision GKE cluster with dual node pools
+2. Provision GKE cluster with 5-tier node pool architecture
 3. Install External Secrets Operator with Google Secret Manager integration
 4. Install all operators (PostgreSQL, Kafka, Redis)
 5. Deploy monitoring stack (Prometheus, Grafana, Loki, Tempo)
@@ -393,7 +426,7 @@ After backend infrastructure is ready, deploy the frontend:
 
 ## Workload Scheduling
 
-### Stateful Workloads (Databases)
+### Stateful Workloads (Databases: PostgreSQL, Kafka, Redis)
 
 To schedule on the stateful pool, add tolerations and node selectors:
 
@@ -421,6 +454,51 @@ spec:
       effect: "NoSchedule"
   nodeSelector:
     workload-type: "stateless"
+```
+
+### Monitoring Workloads (Prometheus, Grafana, Loki, Tempo, Alloy)
+
+To schedule on the monitoring pool:
+
+```yaml
+spec:
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "monitoring"
+      effect: "NoSchedule"
+  nodeSelector:
+    workload-type: "monitoring"
+```
+
+### Control Plane Workloads (Operators, ArgoCD, ESO)
+
+To schedule on the control plane pool:
+
+```yaml
+spec:
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "control-plane"
+      effect: "NoSchedule"
+  nodeSelector:
+    workload-type: "control-plane"
+```
+
+### Gateway Workloads (Traefik, Apollo Router, API Gateway)
+
+To schedule on the gateway pool:
+
+```yaml
+spec:
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "gateway"
+      effect: "NoSchedule"
+  nodeSelector:
+    workload-type: "gateway"
 ```
 
 ## ArgoCD Application Deployment

@@ -70,6 +70,21 @@ output "stateless_pool_name" {
   value       = module.gke_cluster.stateless_pool_name
 }
 
+output "monitoring_pool_name" {
+  description = "Monitoring node pool name (observability stack)"
+  value       = module.gke_cluster.monitoring_pool_name
+}
+
+output "control_plane_pool_name" {
+  description = "Control plane node pool name (operators, ArgoCD, ESO)"
+  value       = module.gke_cluster.control_plane_pool_name
+}
+
+output "gateway_pool_name" {
+  description = "Gateway node pool name (Traefik, Apollo Router, API Gateway)"
+  value       = module.gke_cluster.gateway_pool_name
+}
+
 output "cost_summary" {
   description = "Estimated monthly cost breakdown"
   value       = module.gke_cluster.cost_summary
