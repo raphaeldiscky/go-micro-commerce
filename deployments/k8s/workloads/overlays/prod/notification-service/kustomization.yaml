@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: default
+
+resources:
+  - ../../../base/notification-service
+
+labels:
+  - pairs:
+      environment: production
+      app.kubernetes.io/managed-by: argocd
+
+patches:
+  - path: patch-replicas.yaml
+  - path: patch-resources.yaml
+
+configMapGenerator:
+  - name: notification-service-config
+    behavior: merge
+    literals:
+      - ENV=production
+      - LOG_LEVEL=info
+
+images:
+  - name: notification-service
+    newTag: latest

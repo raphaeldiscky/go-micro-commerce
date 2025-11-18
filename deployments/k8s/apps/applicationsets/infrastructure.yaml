@@ -1,0 +1,47 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: infrastructure
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/raphaeldiscky/go-micro-commerce.git
+        revision: main
+        directories:
+          - path: deployments/k8s/infrastructure/*/*
+  template:
+    metadata:
+      name: "infra-{{.path.basename}}"
+      labels:
+        app.kubernetes.io/name: "{{.path.basename}}"
+        app.kubernetes.io/component: infrastructure
+        app.kubernetes.io/managed-by: argocd
+      annotations:
+        argocd.argoproj.io/manifest-generate-paths: "{{.path.path}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/raphaeldiscky/go-micro-commerce.git
+        targetRevision: main
+        path: "{{.path.path}}"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+          allowEmpty: false
+        syncOptions:
+          - CreateNamespace=true
+          - PrunePropagationPolicy=foreground
+          - PruneLast=true
+        retry:
+          limit: 5
+          backoff:
+            duration: 5s
+            factor: 2
+            maxDuration: 3m
