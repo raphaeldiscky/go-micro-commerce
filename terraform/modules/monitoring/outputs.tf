@@ -21,8 +21,18 @@ output "tempo_release_name" {
 }
 
 output "grafana_url" {
-  description = "URL to access Grafana (port-forward required)"
-  value       = "http://localhost:3000 (kubectl port-forward -n ${var.namespace} svc/kube-prometheus-stack-grafana 3000:80)"
+  description = "URL to access Grafana"
+  value       = var.grafana_enable_ingress ? "https://${var.grafana_domain_name}" : "http://localhost:3000 (kubectl port-forward -n ${var.namespace} svc/kube-prometheus-stack-grafana 3000:80)"
+}
+
+output "grafana_domain" {
+  description = "Domain name for Grafana"
+  value       = var.grafana_domain_name
+}
+
+output "grafana_ingress_enabled" {
+  description = "Whether ingress is enabled for Grafana"
+  value       = var.grafana_enable_ingress
 }
 
 output "grafana_admin_user" {

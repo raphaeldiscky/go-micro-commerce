@@ -26,6 +26,24 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+variable "grafana_enable_ingress" {
+  description = "Enable Ingress for external access to Grafana via Traefik"
+  type        = bool
+  default     = false
+}
+
+variable "grafana_domain_name" {
+  description = "Domain name for Grafana web UI (e.g., grafana.api.discky.com)"
+  type        = string
+  default     = "grafana.local"
+}
+
+variable "grafana_tls_issuer" {
+  description = "cert-manager ClusterIssuer name for Grafana TLS certificates"
+  type        = string
+  default     = "letsencrypt-prod"
+}
+
 variable "prometheus_retention" {
   description = "Prometheus data retention period"
   type        = string

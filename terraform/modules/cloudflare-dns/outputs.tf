@@ -35,6 +35,36 @@ output "api_wildcard_record_hostname" {
   value       = var.enable_api_wildcard ? cloudflare_dns_record.api_wildcard[0].name : null
 }
 
+output "argocd_record_id" {
+  description = "The ID of the ArgoCD DNS record (if enabled)"
+  value       = var.enable_argocd_dns ? cloudflare_dns_record.argocd[0].id : null
+}
+
+output "argocd_record_hostname" {
+  description = "The full hostname of ArgoCD (if enabled)"
+  value       = var.enable_argocd_dns ? cloudflare_dns_record.argocd[0].name : null
+}
+
+output "argocd_url" {
+  description = "The full HTTPS URL for ArgoCD (if enabled)"
+  value       = var.enable_argocd_dns ? "https://${cloudflare_dns_record.argocd[0].name}" : null
+}
+
+output "grafana_record_id" {
+  description = "The ID of the Grafana DNS record (if enabled)"
+  value       = var.enable_grafana_dns ? cloudflare_dns_record.grafana[0].id : null
+}
+
+output "grafana_record_hostname" {
+  description = "The full hostname of Grafana (if enabled)"
+  value       = var.enable_grafana_dns ? cloudflare_dns_record.grafana[0].name : null
+}
+
+output "grafana_url" {
+  description = "The full HTTPS URL for Grafana (if enabled)"
+  value       = var.enable_grafana_dns ? "https://${cloudflare_dns_record.grafana[0].name}" : null
+}
+
 output "dns_records" {
   description = "Summary of all created DNS records"
   value = {
@@ -49,6 +79,20 @@ output "dns_records" {
       type     = cloudflare_dns_record.api_wildcard[0].type
       content  = cloudflare_dns_record.api_wildcard[0].content
       proxied  = cloudflare_dns_record.api_wildcard[0].proxied
+    } : null
+    argocd = var.enable_argocd_dns ? {
+      hostname = cloudflare_dns_record.argocd[0].name
+      type     = cloudflare_dns_record.argocd[0].type
+      content  = cloudflare_dns_record.argocd[0].content
+      proxied  = cloudflare_dns_record.argocd[0].proxied
+      url      = "https://${cloudflare_dns_record.argocd[0].name}"
+    } : null
+    grafana = var.enable_grafana_dns ? {
+      hostname = cloudflare_dns_record.grafana[0].name
+      type     = cloudflare_dns_record.grafana[0].type
+      content  = cloudflare_dns_record.grafana[0].content
+      proxied  = cloudflare_dns_record.grafana[0].proxied
+      url      = "https://${cloudflare_dns_record.grafana[0].name}"
     } : null
   }
 }

@@ -115,11 +115,12 @@ redis_chart_version    = "0.22.2"
 redis_watch_namespaces = [] # Empty = watch all namespaces
 
 # Monitoring Stack
-# NOTE: Total PVC storage (7Gi) must fit within monitoring node disk (30GB)
-# after accounting for OS (~8-10GB) and container images (~5-8GB)
 monitoring_namespace                = "monitoring"
 kube_prometheus_stack_chart_version = "79.5.0"
 grafana_admin_password              = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
+grafana_enable_ingress              = true                          # Enable HTTPS access via Traefik
+grafana_domain_name                 = "grafana.api.discky.com"     # Update this for your domain
+grafana_tls_issuer                  = "letsencrypt-prod"
 prometheus_retention                = "30d"                        # 30 days retention (reduce to 15d if needed)
 prometheus_storage_size             = "4Gi"                        # 4Gi optimized for learning/testing (use 100Gi for production)
 loki_chart_version                  = "6.46.0"
@@ -134,6 +135,18 @@ argocd_admin_password    = ""                                                   
 argocd_git_repo_url      = "https://github.com/your-org/go-micro-commerce.git"  # Update this!
 argocd_git_repo_path     = "deployments/k8s"
 argocd_enable_bootstrap  = false                                                # Set to true after configuring git repo
+argocd_enable_ingress    = true                                                 # Enable HTTPS access via Traefik
+argocd_domain_name       = "argocd.api.discky.com"                             # Update this for your domain
+argocd_tls_issuer        = "letsencrypt-prod"
+
+# cert-manager (for automated TLS certificates)
+cert_manager_namespace                       = "cert-manager"
+cert_manager_chart_version                   = "v1.19.1"
+cert_manager_replicas                        = 1
+cert_manager_create_cluster_issuers          = true
+cert_manager_letsencrypt_email               = "your-email@example.com"         # Update this! Used for Let's Encrypt notifications
+cert_manager_letsencrypt_staging_issuer_name = "letsencrypt-staging"
+cert_manager_letsencrypt_prod_issuer_name    = "letsencrypt-prod"
 
 # Traefik Ingress Controller
 traefik_namespace        = "traefik"
@@ -163,3 +176,7 @@ cloudflare_zone_id   = "your-cloudflare-zone-id"
 domain_name         = "discky.com"
 api_subdomain       = "api"                         # Results in: api.discky.com
 enable_api_wildcard = false                         # Set true to create *.api.discky.com
+enable_argocd_dns   = true                          # Create DNS record for ArgoCD
+argocd_subdomain    = "argocd.api"                  # Results in: argocd.api.discky.com
+enable_grafana_dns  = true                          # Create DNS record for Grafana
+grafana_subdomain   = "grafana.api"                 # Results in: grafana.api.discky.com

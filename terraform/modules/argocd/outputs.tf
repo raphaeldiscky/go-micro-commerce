@@ -21,8 +21,18 @@ output "status" {
 }
 
 output "argocd_url" {
-  description = "URL to access ArgoCD (port-forward required)"
-  value       = "http://localhost:8080 (kubectl port-forward -n ${var.namespace} svc/argocd-server 8080:80)"
+  description = "URL to access ArgoCD"
+  value       = var.enable_ingress ? "https://${var.domain_name}" : "http://localhost:8080 (kubectl port-forward -n ${var.namespace} svc/argocd-server 8080:80)"
+}
+
+output "argocd_domain" {
+  description = "Domain name for ArgoCD"
+  value       = var.domain_name
+}
+
+output "ingress_enabled" {
+  description = "Whether ingress is enabled"
+  value       = var.enable_ingress
 }
 
 output "argocd_admin_user" {

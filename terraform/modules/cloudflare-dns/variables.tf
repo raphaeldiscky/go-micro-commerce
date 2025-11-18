@@ -21,6 +21,30 @@ variable "enable_api_wildcard" {
   default     = false
 }
 
+variable "enable_argocd_dns" {
+  description = "Enable DNS record for ArgoCD web UI"
+  type        = bool
+  default     = true
+}
+
+variable "argocd_subdomain" {
+  description = "Full subdomain for ArgoCD (e.g., argocd.api or just argocd)"
+  type        = string
+  default     = "argocd.api"
+}
+
+variable "enable_grafana_dns" {
+  description = "Enable DNS record for Grafana monitoring UI"
+  type        = bool
+  default     = true
+}
+
+variable "grafana_subdomain" {
+  description = "Full subdomain for Grafana (e.g., grafana.api or just grafana)"
+  type        = string
+  default     = "grafana.api"
+}
+
 variable "traefik_ip" {
   description = "External IP address of Traefik LoadBalancer in GKE"
   type        = string

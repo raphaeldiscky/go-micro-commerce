@@ -144,18 +144,38 @@ module "redis_operator" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  namespace                     = var.monitoring_namespace
-  create_namespace              = true
+  namespace                           = var.monitoring_namespace
+  create_namespace                    = true
   kube_prometheus_stack_chart_version = var.kube_prometheus_stack_chart_version
-  grafana_admin_password        = var.grafana_admin_password
-  prometheus_retention          = var.prometheus_retention
-  prometheus_storage_size       = var.prometheus_storage_size
+  grafana_admin_password              = var.grafana_admin_password
+  grafana_enable_ingress              = var.grafana_enable_ingress
+  grafana_domain_name                 = var.grafana_domain_name
+  grafana_tls_issuer                  = var.grafana_tls_issuer
+  prometheus_retention                = var.prometheus_retention
+  prometheus_storage_size             = var.prometheus_storage_size
   loki_chart_version                  = var.loki_chart_version
-  loki_storage_size             = var.loki_storage_size
+  loki_storage_size                   = var.loki_storage_size
   tempo_chart_version                 = var.tempo_chart_version
-  tempo_storage_size            = var.tempo_storage_size
+  tempo_storage_size                  = var.tempo_storage_size
 
   depends_on = [module.gke_cluster]
+}
+
+# cert-manager for automated TLS certificate management
+module "cert_manager" {
+  source = "../../modules/cert-manager"
+
+  namespace                       = var.cert_manager_namespace
+  create_namespace                = true
+  chart_version                   = var.cert_manager_chart_version
+  replicas                        = var.cert_manager_replicas
+  enable_monitoring               = true
+  create_cluster_issuers          = var.cert_manager_create_cluster_issuers
+  letsencrypt_email               = var.cert_manager_letsencrypt_email
+  letsencrypt_staging_issuer_name = var.cert_manager_letsencrypt_staging_issuer_name
+  letsencrypt_prod_issuer_name    = var.cert_manager_letsencrypt_prod_issuer_name
+
+  depends_on = [module.gke_cluster, module.traefik]
 }
 
 # ArgoCD for GitOps (manages all applications)
@@ -169,8 +189,11 @@ module "argocd" {
   git_repo_url     = var.argocd_git_repo_url
   git_repo_path    = var.argocd_git_repo_path
   enable_bootstrap = var.argocd_enable_bootstrap
+  enable_ingress   = var.argocd_enable_ingress
+  domain_name      = var.argocd_domain_name
+  tls_issuer       = var.argocd_tls_issuer
 
-  depends_on = [module.monitoring]
+  depends_on = [module.monitoring, module.cert_manager]
 }
 
 # Traefik Ingress Controller
@@ -194,7 +217,7 @@ module "traefik" {
 # Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
 #       Terraform only manages backend API DNS records
 
-# Configure Cloudflare DNS records for backend API
+# Configure Cloudflare DNS records for backend API and ArgoCD
 module "cloudflare_dns" {
   source = "../../modules/cloudflare-dns"
 
@@ -202,6 +225,10 @@ module "cloudflare_dns" {
   domain_name         = var.domain_name
   api_subdomain       = var.api_subdomain
   enable_api_wildcard = var.enable_api_wildcard
+  enable_argocd_dns   = var.enable_argocd_dns
+  argocd_subdomain    = var.argocd_subdomain
+  enable_grafana_dns  = var.enable_grafana_dns
+  grafana_subdomain   = var.grafana_subdomain
   traefik_ip          = module.traefik.load_balancer_ip
 
   depends_on = [module.traefik]

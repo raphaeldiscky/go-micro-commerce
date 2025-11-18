@@ -384,6 +384,24 @@ variable "grafana_admin_password" {
   sensitive   = true
 }
 
+variable "grafana_enable_ingress" {
+  description = "Enable Ingress for Grafana web UI"
+  type        = bool
+  default     = true
+}
+
+variable "grafana_domain_name" {
+  description = "Domain name for Grafana web UI"
+  type        = string
+  default     = "grafana.api.discky.com"
+}
+
+variable "grafana_tls_issuer" {
+  description = "cert-manager ClusterIssuer name for Grafana TLS"
+  type        = string
+  default     = "letsencrypt-prod"
+}
+
 variable "prometheus_retention" {
   description = "Prometheus data retention period"
   type        = string
@@ -458,6 +476,66 @@ variable "argocd_enable_bootstrap" {
   default     = false
 }
 
+variable "argocd_enable_ingress" {
+  description = "Enable Ingress for ArgoCD web UI"
+  type        = bool
+  default     = true
+}
+
+variable "argocd_domain_name" {
+  description = "Domain name for ArgoCD web UI"
+  type        = string
+  default     = "argocd.api.discky.com"
+}
+
+variable "argocd_tls_issuer" {
+  description = "cert-manager ClusterIssuer name for ArgoCD TLS"
+  type        = string
+  default     = "letsencrypt-prod"
+}
+
+# cert-manager
+variable "cert_manager_namespace" {
+  description = "Namespace for cert-manager"
+  type        = string
+  default     = "cert-manager"
+}
+
+variable "cert_manager_chart_version" {
+  description = "Helm chart version for cert-manager"
+  type        = string
+  default     = "v1.19.1"
+}
+
+variable "cert_manager_replicas" {
+  description = "Number of cert-manager replicas"
+  type        = number
+  default     = 1
+}
+
+variable "cert_manager_create_cluster_issuers" {
+  description = "Create Let's Encrypt ClusterIssuers"
+  type        = bool
+  default     = true
+}
+
+variable "cert_manager_letsencrypt_email" {
+  description = "Email address for Let's Encrypt notifications"
+  type        = string
+}
+
+variable "cert_manager_letsencrypt_staging_issuer_name" {
+  description = "Name for Let's Encrypt staging issuer"
+  type        = string
+  default     = "letsencrypt-staging"
+}
+
+variable "cert_manager_letsencrypt_prod_issuer_name" {
+  description = "Name for Let's Encrypt production issuer"
+  type        = string
+  default     = "letsencrypt-prod"
+}
+
 # Traefik
 variable "traefik_namespace" {
   description = "Namespace for Traefik"
@@ -523,6 +601,30 @@ variable "enable_api_wildcard" {
   description = "Enable wildcard DNS record for API subdomains"
   type        = bool
   default     = false
+}
+
+variable "enable_argocd_dns" {
+  description = "Enable DNS record for ArgoCD web UI"
+  type        = bool
+  default     = true
+}
+
+variable "argocd_subdomain" {
+  description = "Full subdomain for ArgoCD (e.g., argocd.api or just argocd)"
+  type        = string
+  default     = "argocd.api"
+}
+
+variable "enable_grafana_dns" {
+  description = "Enable DNS record for Grafana monitoring UI"
+  type        = bool
+  default     = true
+}
+
+variable "grafana_subdomain" {
+  description = "Full subdomain for Grafana (e.g., grafana.api or just grafana)"
+  type        = string
+  default     = "grafana.api"
 }
 
 # ============================================================================

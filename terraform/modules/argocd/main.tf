@@ -29,7 +29,7 @@ resource "helm_release" "argocd" {
     yamlencode({
       # Global configuration
       global = {
-        domain = "argocd.local" # Update this for production
+        domain = var.domain_name
       }
 
       # Server configuration
@@ -62,6 +62,27 @@ resource "helm_release" "argocd" {
         # Service configuration
         service = {
           type = "ClusterIP"
+        }
+
+        # Ingress configuration for external access
+        ingress = {
+          enabled     = var.enable_ingress
+          ingressClassName = "traefik"
+          hosts = [
+            var.domain_name
+          ]
+          tls = [
+            {
+              secretName = "argocd-server-tls"
+              hosts = [
+                var.domain_name
+              ]
+            }
+          ]
+          annotations = {
+            "cert-manager.io/cluster-issuer" = var.tls_issuer
+            "traefik.ingress.kubernetes.io/router.entrypoints" = "websecure"
+          }
         }
 
         # Metrics

@@ -9,7 +9,7 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 - **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), control-plane (operators), and gateway (ingress) workloads
 - **Cost Optimization**: Spot VMs for microservices (~60% savings), cost-effective e2-small for control plane
 - **Complete Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
-- **Full Observability**: Prometheus, Grafana, Loki, Tempo monitoring stack with dedicated pool
+- **Full Observability**: Prometheus, Grafana, Loki, Tempo, Alloy monitoring stack with dedicated pool
 - **GitOps Ready**: ArgoCD for application deployments on dedicated control plane pool
 - **Production Ingress**: Traefik ingress controller with dedicated gateway pool
 
@@ -102,9 +102,12 @@ terraform/
 │   ├── cloudnative-pg-operator/      # PostgreSQL operator
 │   ├── strimzi-kafka-operator/       # Kafka operator (KRaft mode)
 │   ├── redis-operator/               # Redis operator
+│   ├── cert-manager/                 # Automated TLS certificate management
 │   ├── monitoring/                   # Prometheus, Grafana, Loki, Tempo
 │   ├── argocd/                       # GitOps controller
-│   └── traefik/                      # Ingress controller
+│   ├── traefik/                      # Ingress controller
+│   ├── cloudflare-dns/               # DNS records management
+│   └── external-secrets-operator/    # Secret management from GCP
 ├── environments/
 │   └── prod/                         # Production environment
 │       ├── main.tf                   # Module composition
@@ -221,17 +224,28 @@ Provisions GKE cluster with 5-tier node pool architecture:
 
 ### 4. Platform Modules
 
+**cert-manager** (`cert-manager`)
+
+- Helm chart version: v1.19.1
+- Namespace: `cert-manager`
+- Automated TLS certificate management with Let's Encrypt
+- ClusterIssuers: `letsencrypt-prod` and `letsencrypt-staging`
+- Automatic certificate renewal (60 days before expiration)
+- HTTP-01 challenge solver for domain validation
+
 **Monitoring Stack** (`monitoring`)
 
 - **kube-prometheus-stack**: Prometheus + Grafana (chart v79.5.0)
 - **Loki**: Log aggregation (chart v6.46.0)
 - **Tempo**: Distributed tracing (chart v1.24.0)
+- **Grafana HTTPS Ingress**: Public access via `grafana.api.discky.com` with TLS
 - Persistent storage for all components
 
 **ArgoCD** (`argocd`)
 
 - Helm chart version: 9.1.2
 - Namespace: `argocd`
+- **HTTPS Ingress**: Public access via `argocd.api.discky.com` with TLS
 - Optional bootstrap ApplicationSet for git repo sync
 
 **Traefik** (`traefik`)
@@ -240,6 +254,7 @@ Provisions GKE cluster with 5-tier node pool architecture:
 - Namespace: `traefik`
 - LoadBalancer service type
 - Dashboard enabled with Prometheus metrics
+- TLS termination for all ingress routes
 
 ## Deployment Workflow
 
@@ -350,34 +365,73 @@ After successful deployment:
 
 ### Step 6: Access Platform Services
 
-**Grafana Dashboard**
+**Grafana Dashboard (HTTPS - Production)**
+
+Direct HTTPS access with valid Let's Encrypt certificate:
+
+```bash
+# Visit: https://grafana.api.discky.com
+# Username: admin
+# Password: <password from terraform.tfvars>
+```
+
+Alternatively, use port-forward for local access:
 
 ```bash
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
 # Visit: http://localhost:3000
-# Default credentials: admin / <password from terraform.tfvars>
 ```
 
-**ArgoCD UI**
+**ArgoCD UI (HTTPS - Production)**
+
+Direct HTTPS access with valid Let's Encrypt certificate:
 
 ```bash
-kubectl port-forward -n argocd svc/argocd-server 8080:443
-# Visit: https://localhost:8080
-# Get password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+# Visit: https://argocd.api.discky.com
+# Username: admin
+# Get password:
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-**Traefik Dashboard**
+Alternatively, use port-forward for local access:
+
+```bash
+kubectl port-forward -n argocd svc/argocd-server 8080:80
+# Visit: http://localhost:8080
+```
+
+**Traefik Dashboard (Port-forward only)**
 
 ```bash
 kubectl port-forward -n traefik svc/traefik 9000:9000
 # Visit: http://localhost:9000/dashboard/
 ```
 
-**Prometheus UI**
+**Prometheus UI (Port-forward only)**
 
 ```bash
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
 # Visit: http://localhost:9090
+```
+
+**Certificate Information**
+
+All HTTPS endpoints use automated TLS certificates from Let's Encrypt:
+
+- **Issuer**: Let's Encrypt (Production)
+- **Validity**: 90 days (auto-renewed at 60 days)
+- **Certificate Manager**: cert-manager v1.19.1
+- **Domain Validation**: HTTP-01 challenge
+
+To check certificate status:
+
+```bash
+# View all certificates
+kubectl get certificates -A
+
+# Check specific certificate details
+kubectl describe certificate argocd-server-tls -n argocd
+kubectl describe certificate grafana-tls -n monitoring
 ```
 
 ### Step 7: Populate Secrets with External Secrets Operator

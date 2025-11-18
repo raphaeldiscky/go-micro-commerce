@@ -78,6 +78,23 @@ resource "helm_release" "kube_prometheus_stack" {
           enabled = true
           size    = "5Gi"
         }
+        # Ingress configuration for external access
+        ingress = {
+          enabled          = var.grafana_enable_ingress
+          ingressClassName = "traefik"
+          hosts            = [var.grafana_domain_name]
+          path             = "/"
+          tls = [
+            {
+              secretName = "grafana-tls"
+              hosts      = [var.grafana_domain_name]
+            }
+          ]
+          annotations = {
+            "cert-manager.io/cluster-issuer" = var.grafana_tls_issuer
+            "traefik.ingress.kubernetes.io/router.entrypoints" = "websecure"
+          }
+        }
         # Additional datasources (Prometheus and Alertmanager are auto-configured by the chart)
         additionalDataSources = [
           {
