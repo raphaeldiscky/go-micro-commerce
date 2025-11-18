@@ -312,6 +312,8 @@ resource "null_resource" "wait_for_argocd_crd" {
 }
 
 # Bootstrap ApplicationSet (optional - requires git repo URL)
+# This ApplicationSet deploys all ApplicationSet manifests from git
+# which in turn deploy infrastructure and workloads
 resource "kubectl_manifest" "bootstrap_appset" {
   count = var.enable_bootstrap && var.git_repo_url != "" ? 1 : 0
 
@@ -319,18 +321,24 @@ resource "kubectl_manifest" "bootstrap_appset" {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "ApplicationSet"
     metadata = {
-      name      = "microservices-bootstrap"
+      name      = "bootstrap-applicationsets"
       namespace = var.namespace
+      labels = {
+        "app.kubernetes.io/managed-by" = "terraform"
+        "app.kubernetes.io/component"  = "bootstrap"
+      }
     }
     spec = {
+      goTemplate = true
+      goTemplateOptions = ["missingkey=error"]
       generators = [
         {
           git = {
             repoURL  = var.git_repo_url
             revision = "HEAD"
-            directories = [
+            files = [
               {
-                path = "${var.git_repo_path}/overlays/prod/*"
+                path = "${var.git_repo_path}/apps/applicationsets/*.yaml"
               }
             ]
           }
@@ -338,27 +346,44 @@ resource "kubectl_manifest" "bootstrap_appset" {
       ]
       template = {
         metadata = {
-          name = "{{path.basename}}"
+          name = "appset-{{.path.filenameNormalized}}"
+          labels = {
+            "app.kubernetes.io/managed-by" = "argocd"
+            "app.kubernetes.io/component"  = "applicationset"
+          }
         }
         spec = {
           project = "default"
           source = {
             repoURL        = var.git_repo_url
             targetRevision = "HEAD"
-            path           = "{{path}}"
+            path           = "{{.path.path}}"
+            directory = {
+              recurse = false
+            }
           }
           destination = {
             server    = "https://kubernetes.default.svc"
-            namespace = "{{path.basename}}"
+            namespace = var.namespace
           }
           syncPolicy = {
             automated = {
               prune    = true
               selfHeal = true
+              allowEmpty = false
             }
             syncOptions = [
-              "CreateNamespace=true"
+              "CreateNamespace=true",
+              "PrunePropagationPolicy=foreground"
             ]
+            retry = {
+              limit = 5
+              backoff = {
+                duration    = "5s"
+                factor      = 2
+                maxDuration = "3m"
+              }
+            }
           }
         }
       }

@@ -1,0 +1,8 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-service
+spec:
+  replicas: 3  # Production: 3 replicas for HA
+  selector: {}
+  template: {}

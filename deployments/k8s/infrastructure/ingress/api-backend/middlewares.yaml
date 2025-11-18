@@ -1,0 +1,64 @@
+---
+# CORS Middleware for Backend API
+# Allows frontend at go.micro.commerce.discky.com to access the API
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: api-cors
+  namespace: default
+  labels:
+    app.kubernetes.io/name: api-backend-ingress
+    app.kubernetes.io/component: middleware
+spec:
+  headers:
+    accessControlAllowOriginList:
+      - "https://go.micro.commerce.discky.com"
+    accessControlAllowMethods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "PATCH"
+      - "DELETE"
+      - "OPTIONS"
+    accessControlAllowHeaders:
+      - "Content-Type"
+      - "Authorization"
+      - "X-Requested-With"
+      - "Accept"
+      - "Origin"
+      - "Access-Control-Request-Method"
+      - "Access-Control-Request-Headers"
+      - "Connection"
+      - "Upgrade"
+      - "Sec-WebSocket-Protocol"
+      - "Sec-WebSocket-Extensions"
+      - "Sec-WebSocket-Key"
+      - "Sec-WebSocket-Version"
+    accessControlExposeHeaders:
+      - "Content-Length"
+      - "Content-Type"
+    accessControlAllowCredentials: true
+    accessControlMaxAge: 3600
+    addVaryHeader: true
+---
+# Security Headers Middleware
+# Adds security headers to all API responses
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: security-headers
+  namespace: default
+  labels:
+    app.kubernetes.io/name: api-backend-ingress
+    app.kubernetes.io/component: middleware
+spec:
+  headers:
+    customResponseHeaders:
+      X-Frame-Options: "DENY"
+      X-Content-Type-Options: "nosniff"
+      X-XSS-Protection: "1; mode=block"
+      Referrer-Policy: "strict-origin-when-cross-origin"
+      Permissions-Policy: "geolocation=(), microphone=(), camera=()"
+    stsSeconds: 31536000
+    stsIncludeSubdomains: true
+    stsPreload: true
