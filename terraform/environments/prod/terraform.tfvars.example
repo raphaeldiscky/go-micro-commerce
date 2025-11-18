@@ -5,8 +5,8 @@
 # GCP Project Configuration
 # ============================================================================
 project_id  = "your-gcp-project-id"  # REQUIRED: Update with your GCP project ID
-region      = "asia-southeast1"      # GCP region
-zone        = "asia-southeast1-a"    # GCP zone for cluster
+region      = "asia-southeast2"      # GCP region (Jakarta)
+zone        = "asia-southeast2-a"    # GCP zone for cluster
 environment = "prod"
 
 # ============================================================================
@@ -28,15 +28,20 @@ release_channel        = "REGULAR"                 # Release channel (RAPID, REG
 max_pods_per_node      = 110                       # Maximum pods per node
 enable_workload_identity = true                    # Enable Workload Identity for service accounts
 
+# Private cluster configuration (recommended for security and IP quota savings)
+enable_private_nodes     = true                    # Nodes use only private IPs (saves external IP quota)
+enable_private_endpoint  = false                   # Keep master public for kubectl access
+master_ipv4_cidr_block   = "10.13.0.0/28"         # Control plane CIDR (must be /28)
+
 # ============================================================================
 # Stateful Node Pool (Databases: PostgreSQL, Kafka, Redis)
 # Regular VMs for reliable performance
 # ============================================================================
-stateful_pool_enabled      = true               # Enable stateful node pool
-stateful_pool_node_count   = 3                  # Fixed node count (no autoscaling)
-stateful_pool_machine_type = "e2-standard-2"    # 2 vCPU, 8GB RAM
-stateful_pool_disk_size_gb = 50                 # 50GB balanced disk per node (3 nodes × 50GB = 150GB)
-stateful_pool_disk_type    = "pd-balanced"      # Balanced disk for cost efficiency, or use SSD (pd-ssd) for database performance
+stateful_pool_enabled      = true                 # Enable stateful node pool
+stateful_pool_node_count   = 3                    # Fixed node count (no autoscaling)
+stateful_pool_machine_type = "e2-medium"          # 1 vCPU, 4GB RAM
+stateful_pool_disk_size_gb = 40                   # 40GB balanced disk per node (3 nodes × 40GB = 120GB)
+stateful_pool_disk_type    = "pd-balanced"        # Balanced disk for cost efficiency, or use SSD (pd-ssd) for database performance
 
 # ============================================================================
 # Stateless Node Pool (Microservices)
@@ -53,23 +58,23 @@ stateless_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 # Monitoring Node Pool (Observability: Prometheus, Grafana, Loki, Tempo)
 # Regular VMs with autoscaling for reliability
 # ============================================================================
-monitoring_pool_enabled      = true          # Enable monitoring node pool
-monitoring_pool_min_nodes    = 1             # Minimum nodes (autoscaling)
-monitoring_pool_max_nodes    = 3             # Maximum nodes (autoscaling)
-monitoring_pool_machine_type = "e2-medium"   # 1 vCPU, 4GB RAM
-monitoring_pool_disk_size_gb = 30            # 30GB balanced disk per node
-monitoring_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
+monitoring_pool_enabled      = true             # Enable monitoring node pool
+monitoring_pool_min_nodes    = 1                # Minimum nodes (autoscaling)
+monitoring_pool_max_nodes    = 3                # Maximum nodes (autoscaling)
+monitoring_pool_machine_type = "e2-standard-2"  # 2 vCPU, 8GB RAM
+monitoring_pool_disk_size_gb = 20               # 20GB balanced disk per node  
+monitoring_pool_disk_type    = "pd-balanced"    # Balanced disk for cost efficiency
 
 # ============================================================================
 # Control Plane Node Pool (Operators: ArgoCD, ESO, CNPG, Strimzi, Redis)
 # Regular VMs with autoscaling for control plane reliability
 # ============================================================================
-control_plane_pool_enabled      = true          # Enable control plane node pool
-control_plane_pool_min_nodes    = 1             # Minimum nodes (autoscaling)
-control_plane_pool_max_nodes    = 2             # Maximum nodes (autoscaling)
-control_plane_pool_machine_type = "e2-small"    # 0.5 vCPU, 2GB RAM (cost-effective)
-control_plane_pool_disk_size_gb = 15            # 15GB balanced disk per node (min 1 node × 15GB = 15GB)
-control_plane_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
+control_plane_pool_enabled      = true              # Enable control plane node pool
+control_plane_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
+control_plane_pool_max_nodes    = 1                 # Maximum nodes (no autoscaling, stay within 8 VM quota)
+control_plane_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM (enough for all ArgoCD pods on 1 node)
+control_plane_pool_disk_size_gb = 15                # 15GB balanced disk per node (min 1 node × 15GB = 15GB)
+control_plane_pool_disk_type    = "pd-balanced"     # Balanced disk for cost efficiency
 
 # ============================================================================
 # Gateway Node Pool (Ingress: Traefik, Apollo Router, API Gateway)
@@ -89,7 +94,7 @@ gateway_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 # External Secrets Operator (syncs secrets from Google Secret Manager)
 eso_namespace                   = "external-secrets"
 eso_chart_version               = "1.0.0"
-eso_replicas                    = 2
+eso_replicas                    = 1  # 1 replica is sufficient for testing/learning environments
 eso_gcp_service_account_name    = "external-secrets-operator"
 eso_k8s_service_account_name    = "external-secrets-sa"
 eso_create_cluster_secret_store = true
@@ -112,15 +117,15 @@ redis_watch_namespaces = [] # Empty = watch all namespaces
 # Monitoring Stack
 # NOTE: Total PVC storage (7Gi) must fit within monitoring node disk (30GB)
 # after accounting for OS (~8-10GB) and container images (~5-8GB)
-monitoring_namespace          = "monitoring"
-kube_prometheus_stack_version = "79.5.0"
-grafana_admin_password        = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
-prometheus_retention          = "30d"                        # 30 days retention (reduce to 15d if needed)
-prometheus_storage_size       = "4Gi"                        # 4Gi optimized for learning/testing (use 100Gi for production)
-loki_version                  = "6.46.0"
-loki_storage_size             = "2Gi"                        # 2Gi for log storage (use 50Gi for production)
-tempo_version                 = "1.24.0"
-tempo_storage_size            = "1Gi"                        # 1Gi for tracing data (use 30Gi for production)
+monitoring_namespace                = "monitoring"
+kube_prometheus_stack_chart_version = "79.5.0"
+grafana_admin_password              = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
+prometheus_retention                = "30d"                        # 30 days retention (reduce to 15d if needed)
+prometheus_storage_size             = "4Gi"                        # 4Gi optimized for learning/testing (use 100Gi for production)
+loki_chart_version                  = "6.46.0"
+loki_storage_size                   = "2Gi"                        # 2Gi for log storage (use 50Gi for production)
+tempo_chart_version                 = "1.24.0"
+tempo_storage_size                  = "1Gi"                        # 1Gi for tracing data (use 30Gi for production)
 
 # ArgoCD
 argocd_namespace         = "argocd"
@@ -133,7 +138,7 @@ argocd_enable_bootstrap  = false                                                
 # Traefik Ingress Controller
 traefik_namespace        = "traefik"
 traefik_chart_version    = "37.3.0"
-traefik_replicas         = 3                  # 3 replicas for high availability
+traefik_replicas         = 1                  # 1 replica for testing/learning environments
 traefik_service_type     = "LoadBalancer"     # LoadBalancer for GKE
 traefik_enable_dashboard = true
 
@@ -144,6 +149,7 @@ traefik_enable_dashboard = true
 #       This only configures DNS records for backend API
 
 cloudflare_api_token = "your-cloudflare-api-token"
+cloudflare_zone_id   = "your-cloudflare-zone-id"
 # API Token Permissions:
 # Permissions:
 #  Zone:
@@ -151,6 +157,7 @@ cloudflare_api_token = "your-cloudflare-api-token"
 #    - Zone: Read
 # Zone Resources:
 #  - Include: discky.com
+# Zone ID: Get from Cloudflare Dashboard → Select domain → Copy Zone ID from right sidebar
 
 # Domain Configuration
 domain_name         = "discky.com"

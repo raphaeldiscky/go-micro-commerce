@@ -150,35 +150,6 @@ create_secret "payment-service-stripe-webhook-secret" "Stripe webhook secret" \
 
 echo
 
-# Notification Service - SMTP
-print_info "Notification Service - SMTP Configuration"
-create_secret "notification-service-smtp-host" "SMTP server host" \
-    "SMTP Host (e.g., smtp.gmail.com)"
-create_secret "notification-service-smtp-username" "SMTP username" \
-    "SMTP Username/Email"
-create_secret "notification-service-smtp-password" "SMTP password" \
-    "SMTP Password or App-Specific Password"
-create_secret "notification-service-sendgrid-api-key" "SendGrid API key" \
-    "SendGrid API Key (optional, press Enter to skip)"
-
-echo
-
-# Search Service - Elasticsearch
-print_info "Search Service - Elasticsearch Credentials"
-create_secret "search-service-elasticsearch-username" "Elasticsearch username" \
-    "Elasticsearch Username (default: elastic)"
-create_secret "search-service-elasticsearch-password" "Elasticsearch password" \
-    "Elasticsearch Password"
-
-echo
-
-# Order Service - Temporal
-print_info "Order Service - Temporal Configuration"
-create_secret "order-service-temporal-api-key" "Temporal Cloud API key" \
-    "Temporal API Key (optional if using self-hosted, press Enter to skip)"
-
-echo
-
 # Redis Cluster
 print_info "Redis Cluster Configuration"
 print_info "Generate a strong password using: openssl rand -base64 32"

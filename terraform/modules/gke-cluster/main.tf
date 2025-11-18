@@ -83,6 +83,13 @@ resource "google_container_cluster" "primary" {
     evaluation_mode = "DISABLED"
   }
 
+  # Private cluster configuration
+  private_cluster_config {
+    enable_private_nodes    = var.enable_private_nodes    # Nodes get only private IPs (no external IPs)
+    enable_private_endpoint = var.enable_private_endpoint # Keep master public for kubectl access
+    master_ipv4_cidr_block  = var.master_ipv4_cidr_block  # /28 CIDR for control plane
+  }
+
   # Shielded nodes
   enable_shielded_nodes = true
 }
@@ -149,7 +156,7 @@ resource "google_container_node_pool" "stateful" {
   # Upgrade settings
   upgrade_settings {
     max_surge       = 1
-    max_unavailable = 0
+    max_unavailable = 0  
   }
 }
 
@@ -167,6 +174,8 @@ resource "google_container_node_pool" "stateless" {
     max_node_count = var.stateless_pool_max_nodes
   }
 
+  initial_node_count = var.stateless_pool_min_nodes
+
   node_config {
     machine_type = var.stateless_pool_machine_type
     disk_size_gb = var.stateless_pool_disk_size_gb
@@ -178,13 +187,6 @@ resource "google_container_node_pool" "stateless" {
     labels = {
       workload-type = "stateless"
       pool-type     = "spot"
-    }
-
-    # Taint for spot instances
-    taint {
-      key    = "cloud.google.com/gke-spot"
-      value  = "true"
-      effect = "NO_SCHEDULE"
     }
 
     # OAuth scopes
@@ -238,6 +240,8 @@ resource "google_container_node_pool" "monitoring" {
     min_node_count = var.monitoring_pool_min_nodes
     max_node_count = var.monitoring_pool_max_nodes
   }
+
+  initial_node_count = var.monitoring_pool_min_nodes
 
   node_config {
     machine_type = var.monitoring_pool_machine_type
@@ -311,6 +315,8 @@ resource "google_container_node_pool" "control_plane" {
     max_node_count = var.control_plane_pool_max_nodes
   }
 
+  initial_node_count = var.control_plane_pool_min_nodes
+
   node_config {
     machine_type = var.control_plane_pool_machine_type
     disk_size_gb = var.control_plane_pool_disk_size_gb
@@ -382,6 +388,8 @@ resource "google_container_node_pool" "gateway" {
     min_node_count = var.gateway_pool_min_nodes
     max_node_count = var.gateway_pool_max_nodes
   }
+
+  initial_node_count = var.gateway_pool_min_nodes
 
   node_config {
     machine_type = var.gateway_pool_machine_type

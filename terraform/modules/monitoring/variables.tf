@@ -13,7 +13,7 @@ variable "create_namespace" {
 }
 
 # Prometheus & Grafana (kube-prometheus-stack)
-variable "kube_prometheus_stack_version" {
+variable "kube_prometheus_stack_chart_version" {
   description = "Helm chart version for kube-prometheus-stack"
   type        = string
   default     = "79.5.0"
@@ -39,7 +39,7 @@ variable "prometheus_storage_size" {
 }
 
 # Loki
-variable "loki_version" {
+variable "loki_chart_version" {
   description = "Helm chart version for Loki"
   type        = string
   default     = "6.46.0"
@@ -52,7 +52,7 @@ variable "loki_storage_size" {
 }
 
 # Tempo
-variable "tempo_version" {
+variable "tempo_chart_version" {
   description = "Helm chart version for Tempo"
   type        = string
   default     = "1.24.0"

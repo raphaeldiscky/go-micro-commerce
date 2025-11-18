@@ -41,12 +41,10 @@ resource "helm_release" "traefik" {
       ports = {
         web = {
           port     = 80
-          expose   = true
           exposedPort = 80
         }
         websecure = {
           port     = 443
-          expose   = true
           exposedPort = 443
           tls = {
             enabled = true

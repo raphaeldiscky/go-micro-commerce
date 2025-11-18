@@ -9,13 +9,13 @@ variable "project_id" {
 variable "region" {
   description = "GCP region"
   type        = string
-  default     = "asia-southeast1"
+  default     = "asia-southeast2"
 }
 
 variable "zone" {
   description = "GCP zone"
   type        = string
-  default     = "asia-southeast1-a"
+  default     = "asia-southeast2-a"
 }
 
 variable "environment" {
@@ -372,7 +372,7 @@ variable "monitoring_namespace" {
   default     = "monitoring"
 }
 
-variable "kube_prometheus_stack_version" {
+variable "kube_prometheus_stack_chart_version" {
   description = "Helm chart version for kube-prometheus-stack"
   type        = string
   default     = "79.5.0"
@@ -396,7 +396,7 @@ variable "prometheus_storage_size" {
   default     = "100Gi"
 }
 
-variable "loki_version" {
+variable "loki_chart_version" {
   description = "Helm chart version for Loki"
   type        = string
   default     = "6.46.0"
@@ -408,7 +408,7 @@ variable "loki_storage_size" {
   default     = "50Gi"
 }
 
-variable "tempo_version" {
+variable "tempo_chart_version" {
   description = "Helm chart version for Tempo"
   type        = string
   default     = "1.24.0"
@@ -501,6 +501,12 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID for the domain"
+  type        = string
+  sensitive   = true
+}
+
 variable "domain_name" {
   description = "Domain name managed in Cloudflare"
   type        = string
@@ -517,4 +523,26 @@ variable "enable_api_wildcard" {
   description = "Enable wildcard DNS record for API subdomains"
   type        = bool
   default     = false
+}
+
+# ============================================================================
+# Private Cluster Configuration
+# ============================================================================
+
+variable "enable_private_nodes" {
+  description = "Enable private nodes (nodes without public IPs, use Cloud NAT for internet)"
+  type        = bool
+  default     = true
+}
+
+variable "enable_private_endpoint" {
+  description = "Enable private endpoint (restrict master access to private network only)"
+  type        = bool
+  default     = false
+}
+
+variable "master_ipv4_cidr_block" {
+  description = "CIDR block for the Kubernetes master (must be /28, cannot overlap with VPC ranges)"
+  type        = string
+  default     = "10.13.0.0/28"
 }

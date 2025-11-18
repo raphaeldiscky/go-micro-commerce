@@ -1,5 +1,10 @@
 # Cloudflare DNS Module Variables
 
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID for the domain"
+  type        = string
+}
+
 variable "domain_name" {
   description = "The domain name managed in Cloudflare (e.g., discky.com)"
   type        = string

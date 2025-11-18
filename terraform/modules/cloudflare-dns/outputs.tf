@@ -2,12 +2,12 @@
 
 output "zone_id" {
   description = "The Cloudflare zone ID"
-  value       = data.cloudflare_zone.main.id
+  value       = var.cloudflare_zone_id
 }
 
 output "zone_name" {
   description = "The Cloudflare zone name"
-  value       = data.cloudflare_zone.main.name
+  value       = var.domain_name
 }
 
 output "api_record_id" {

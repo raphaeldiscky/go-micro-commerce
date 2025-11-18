@@ -15,17 +15,17 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 
 ### Cost Breakdown
 
-**Note**: Optimized for learning/testing with 250GB total disk limit in asia-southeast1-a zone.
+**Note**: Optimized for learning/testing with 250GB total disk limit in asia-southeast2-a zone.
 
-| Component                | Configuration                                           | Monthly Cost (Estimate) |
-| ------------------------ | ------------------------------------------------------- | ----------------------- |
-| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 50GB balanced)          | ~$95                    |
-| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 20GB balanced, autoscaling) | ~$18-95                 |
-| **Monitoring Pool**      | 1-3 × e2-medium (regular VMs, 30GB balanced, autoscaling) | ~$7-21                  |
-| **Control Plane Pool**   | 1-2 × e2-small (regular VMs, 15GB balanced, autoscaling)  | ~$3-6                   |
-| **Gateway Pool**         | 1-3 × e2-medium (regular VMs, 15GB balanced, autoscaling) | ~$6-18                  |
-| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
-| **Total Infrastructure** | -                                                       | **~$129-235/month**     |
+| Component                | Configuration                                             |
+| ------------------------ | --------------------------------------------------------- |
+| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 50GB balanced)            |
+| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 20GB balanced, autoscaling)   |
+| **Monitoring Pool**      | 1-3 × e2-medium (regular VMs, 30GB balanced, autoscaling) |
+| **Control Plane Pool**   | 1-2 × e2-small (regular VMs, 15GB balanced, autoscaling)  |
+| **Gateway Pool**         | 1-3 × e2-medium (regular VMs, 15GB balanced, autoscaling) |
+| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                           |
+| **Total Infrastructure** | -                                                         |
 
 **Total Disk Allocation**: 250GB (150GB stateful + 40GB stateless + 30GB monitoring + 15GB control plane + 15GB gateway)
 
@@ -181,6 +181,9 @@ Provisions GKE cluster with 5-tier node pool architecture:
 
 **Security Features**
 
+- **Private nodes enabled** (nodes have no external IPs)
+- **Cloud NAT** for outbound internet access
+- **Public control plane endpoint** (for kubectl access)
 - Workload Identity enabled
 - Shielded nodes enabled
 - Private Google access
@@ -260,9 +263,9 @@ Provisions GKE cluster with 5-tier node pool architecture:
    # REQUIRED: Update with your GCP project ID
    project_id = "your-gcp-project-id"
 
-   # Optional: Customize region/zone (default: asia-southeast1)
-   region = "asia-southeast1"
-   zone   = "asia-southeast1-a"
+   # Optional: Customize region/zone (default: asia-southeast2)
+   region = "asia-southeast2"
+   zone   = "asia-southeast2-a"
 
    # Optional: Customize cluster configuration
    cluster_name = "go-micro-commerce-prod"
@@ -316,6 +319,13 @@ This will:
 
 **Deployment time**: ~15-20 minutes
 
+**If failed**:
+
+```bash
+gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a --project=go-micro-commerce
+./terraform/scripts/apply-prod.sh
+```
+
 ### Step 5: Verify Deployment
 
 After successful deployment:
@@ -335,7 +345,7 @@ After successful deployment:
 
 3. Check node pools:
    ```bash
-   gcloud container node-pools list --cluster=go-micro-commerce-prod --zone=asia-southeast1-a
+   gcloud container node-pools list --cluster=go-micro-commerce-prod --zone=asia-southeast2-a
    ```
 
 ### Step 6: Access Platform Services
@@ -599,7 +609,7 @@ kubectl get nodes
 If not configured, get credentials:
 
 ```bash
-gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast1-a
+gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a
 ```
 
 ### Issue: Spot VMs are preempted frequently

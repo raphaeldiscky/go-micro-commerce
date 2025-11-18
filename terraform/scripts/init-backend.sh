@@ -71,7 +71,7 @@ else
     log_info "Creating GCS bucket: gs://${BUCKET_NAME}"
 
     # Create bucket with versioning and encryption
-    gsutil mb -p "${PROJECT_ID}" -l asia-southeast1 "gs://${BUCKET_NAME}"
+    gsutil mb -p "${PROJECT_ID}" -l asia-southeast2 "gs://${BUCKET_NAME}"
 
     # Enable versioning for state file recovery
     gsutil versioning set on "gs://${BUCKET_NAME}"
@@ -114,7 +114,7 @@ cp ../../shared/backend.tf .
 cp ../../shared/versions.tf .
 
 # Initialize with backend config
-terraform init -backend-config=backend.hcl -reconfigure -upgrade
+terraform init -backend-config=backend.hcl -reconfigure
 
 log_info "Terraform backend initialized successfully!"
 log_info "State will be stored in: gs://${BUCKET_NAME}/env/${ENV}"

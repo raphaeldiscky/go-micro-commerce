@@ -105,15 +105,15 @@ fi
 
 echo ""
 
-# Scale stateless-pool to 2 nodes (minimum for autoscaling)
-log_info "Scaling stateless-pool to 2 nodes..."
+# Scale stateless-pool to 1 node (minimum for autoscaling)
+log_info "Scaling stateless-pool to 1 node..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
     --node-pool stateless-pool \
-    --num-nodes 2 \
+    --num-nodes 1 \
     --zone="$ZONE" \
     --project="$PROJECT_ID" \
     --quiet; then
-    log_success "stateless-pool scaled to 2 nodes"
+    log_success "stateless-pool scaled to 1 node"
 else
     log_error "Failed to scale stateless-pool"
     exit 1
@@ -153,19 +153,8 @@ fi
 
 echo ""
 
-# Scale gateway-pool to 1 node (minimum for autoscaling)
-log_info "Scaling gateway-pool to 1 node..."
-if gcloud container clusters resize "$CLUSTER_NAME" \
-    --node-pool gateway-pool \
-    --num-nodes 1 \
-    --zone="$ZONE" \
-    --project="$PROJECT_ID" \
-    --quiet; then
-    log_success "gateway-pool scaled to 1 node"
-else
-    log_error "Failed to scale gateway-pool"
-    exit 1
-fi
+# Gateway-pool is kept at 0 (autoscales from 0 when traffic arrives)
+log_info "Skipping gateway-pool (autoscales from 0 min_nodes)"
 
 echo ""
 log_info "Waiting for nodes to become ready..."
@@ -178,17 +167,18 @@ gcloud container clusters get-credentials "$CLUSTER_NAME" --zone="$ZONE" --proje
 log_info "Checking node status..."
 RETRY_COUNT=0
 MAX_RETRIES=30
+EXPECTED_NODES=6  # 3 stateful + 1 stateless + 1 monitoring + 1 control-plane + 0 gateway
 
 while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
     READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready " || echo "0")
     TOTAL_NODES=$(kubectl get nodes --no-headers 2>/dev/null | wc -l || echo "0")
 
-    if [[ $READY_NODES -eq 8 ]]; then
-        log_success "All nodes are ready! ($READY_NODES/8)"
+    if [[ $READY_NODES -eq $EXPECTED_NODES ]]; then
+        log_success "All nodes are ready! ($READY_NODES/$EXPECTED_NODES)"
         break
     fi
 
-    echo -ne "\r  Ready: $READY_NODES/8 nodes (waiting...)"
+    echo -ne "\r  Ready: $READY_NODES/$EXPECTED_NODES nodes (waiting...)"
     sleep 10
     ((RETRY_COUNT++))
 done
@@ -196,10 +186,10 @@ done
 echo ""
 echo ""
 
-if [[ $READY_NODES -eq 8 ]]; then
+if [[ $READY_NODES -eq $EXPECTED_NODES ]]; then
     log_success "Cluster resumed successfully!"
 else
-    log_warn "Some nodes may still be initializing ($READY_NODES/8 ready)"
+    log_warn "Some nodes may still be initializing ($READY_NODES/$EXPECTED_NODES ready)"
     log_info "Run 'kubectl get nodes' to check node status"
 fi
 

@@ -71,6 +71,11 @@ module "gke_cluster" {
   gateway_pool_disk_size_gb = var.gateway_pool_disk_size_gb
   gateway_pool_disk_type    = var.gateway_pool_disk_type
 
+  # Private cluster configuration
+  enable_private_nodes     = var.enable_private_nodes
+  enable_private_endpoint  = var.enable_private_endpoint
+  master_ipv4_cidr_block   = var.master_ipv4_cidr_block
+
   enable_workload_identity = var.enable_workload_identity
 
   depends_on = [module.gcp_network]
@@ -95,7 +100,7 @@ module "external_secrets_operator" {
 
   enable_monitoring = true
 
-  depends_on = [module.gke_cluster]
+  depends_on = [module.gke_cluster, module.monitoring]
 }
 
 # CloudNative PostgreSQL Operator
@@ -107,7 +112,7 @@ module "cloudnative_pg_operator" {
   chart_version     = var.cnpg_chart_version
   enable_monitoring = true
 
-  depends_on = [module.gke_cluster]
+  depends_on = [module.gke_cluster, module.monitoring]
 }
 
 # Strimzi Kafka Operator
@@ -141,20 +146,16 @@ module "monitoring" {
 
   namespace                     = var.monitoring_namespace
   create_namespace              = true
-  kube_prometheus_stack_version = var.kube_prometheus_stack_version
+  kube_prometheus_stack_chart_version = var.kube_prometheus_stack_chart_version
   grafana_admin_password        = var.grafana_admin_password
   prometheus_retention          = var.prometheus_retention
   prometheus_storage_size       = var.prometheus_storage_size
-  loki_version                  = var.loki_version
+  loki_chart_version                  = var.loki_chart_version
   loki_storage_size             = var.loki_storage_size
-  tempo_version                 = var.tempo_version
+  tempo_chart_version                 = var.tempo_chart_version
   tempo_storage_size            = var.tempo_storage_size
 
-  depends_on = [
-    module.cloudnative_pg_operator,
-    module.strimzi_kafka_operator,
-    module.redis_operator
-  ]
+  depends_on = [module.gke_cluster]
 }
 
 # ArgoCD for GitOps (manages all applications)
@@ -197,6 +198,7 @@ module "traefik" {
 module "cloudflare_dns" {
   source = "../../modules/cloudflare-dns"
 
+  cloudflare_zone_id  = var.cloudflare_zone_id
   domain_name         = var.domain_name
   api_subdomain       = var.api_subdomain
   enable_api_wildcard = var.enable_api_wildcard

@@ -103,7 +103,7 @@ Before setting up External Secrets Operator, ensure you have:
 3. **kubectl configured for your GKE cluster**
 
    ```bash
-   gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast1-a
+   gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a
    ```
 
 4. **Terraform >= 1.13.5 installed**
@@ -191,8 +191,6 @@ The script will guide you through creating:
 
 - SMTP credentials (username, password, host)
 - SendGrid API key
-- Elasticsearch credentials
-- Temporal API key
 - Redis cluster password
 
 **Medium Priority:**
@@ -284,9 +282,6 @@ echo "terraform.tfvars" >> .gitignore
 | `notification-service-smtp-username`    | SMTP username/email    | notification-service | Quarterly          |
 | `notification-service-smtp-password`    | SMTP password          | notification-service | Quarterly          |
 | `notification-service-sendgrid-api-key` | SendGrid API key       | notification-service | Quarterly          |
-| `search-service-elasticsearch-username` | Elasticsearch username | search-service       | Quarterly          |
-| `search-service-elasticsearch-password` | Elasticsearch password | search-service       | Quarterly          |
-| `order-service-temporal-api-key`        | Temporal Cloud API key | order-service        | Quarterly          |
 | `redis-cluster-password`                | Redis cluster password | All services         | Quarterly          |
 
 ### Medium Priority
