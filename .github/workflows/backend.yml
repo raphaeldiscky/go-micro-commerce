@@ -103,7 +103,6 @@ jobs:
           echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
 
   validate-kustomize:
-    name: Validate kustomize manifests
     runs-on: tenki-standard-autoscale
     timeout-minutes: 5
     steps:
