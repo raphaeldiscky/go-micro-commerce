@@ -10,18 +10,3 @@ labels:
   - pairs:
       environment: production
       app.kubernetes.io/managed-by: argocd
-
-patches:
-  - path: patch-replicas.yaml
-  - path: patch-resources.yaml
-
-configMapGenerator:
-  - name: external-secrets-config
-    behavior: merge
-    literals:
-      - ENV=production
-      - LOG_LEVEL=info
-
-images:
-  - name: external-secrets
-    newTag: latest
