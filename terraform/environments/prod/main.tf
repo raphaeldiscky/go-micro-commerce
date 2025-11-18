@@ -47,6 +47,35 @@ module "gke_cluster" {
   stateless_pool_disk_size_gb = var.stateless_pool_disk_size_gb
   stateless_pool_disk_type    = var.stateless_pool_disk_type
 
+  # Monitoring pool (observability stack)
+  monitoring_pool_enabled      = var.monitoring_pool_enabled
+  monitoring_pool_min_nodes    = var.monitoring_pool_min_nodes
+  monitoring_pool_max_nodes    = var.monitoring_pool_max_nodes
+  monitoring_pool_machine_type = var.monitoring_pool_machine_type
+  monitoring_pool_disk_size_gb = var.monitoring_pool_disk_size_gb
+  monitoring_pool_disk_type    = var.monitoring_pool_disk_type
+
+  # Control plane pool (operators, ArgoCD, ESO)
+  control_plane_pool_enabled      = var.control_plane_pool_enabled
+  control_plane_pool_min_nodes    = var.control_plane_pool_min_nodes
+  control_plane_pool_max_nodes    = var.control_plane_pool_max_nodes
+  control_plane_pool_machine_type = var.control_plane_pool_machine_type
+  control_plane_pool_disk_size_gb = var.control_plane_pool_disk_size_gb
+  control_plane_pool_disk_type    = var.control_plane_pool_disk_type
+
+  # Gateway pool (Traefik, Apollo Router, API Gateway)
+  gateway_pool_enabled      = var.gateway_pool_enabled
+  gateway_pool_min_nodes    = var.gateway_pool_min_nodes
+  gateway_pool_max_nodes    = var.gateway_pool_max_nodes
+  gateway_pool_machine_type = var.gateway_pool_machine_type
+  gateway_pool_disk_size_gb = var.gateway_pool_disk_size_gb
+  gateway_pool_disk_type    = var.gateway_pool_disk_type
+
+  # Private cluster configuration
+  enable_private_nodes     = var.enable_private_nodes
+  enable_private_endpoint  = var.enable_private_endpoint
+  master_ipv4_cidr_block   = var.master_ipv4_cidr_block
+
   enable_workload_identity = var.enable_workload_identity
 
   depends_on = [module.gcp_network]
@@ -71,7 +100,7 @@ module "external_secrets_operator" {
 
   enable_monitoring = true
 
-  depends_on = [module.gke_cluster]
+  depends_on = [module.gke_cluster, module.monitoring]
 }
 
 # CloudNative PostgreSQL Operator
@@ -83,7 +112,7 @@ module "cloudnative_pg_operator" {
   chart_version     = var.cnpg_chart_version
   enable_monitoring = true
 
-  depends_on = [module.gke_cluster]
+  depends_on = [module.gke_cluster, module.monitoring]
 }
 
 # Strimzi Kafka Operator
@@ -115,22 +144,38 @@ module "redis_operator" {
 module "monitoring" {
   source = "../../modules/monitoring"
 
-  namespace                     = var.monitoring_namespace
-  create_namespace              = true
-  kube_prometheus_stack_version = var.kube_prometheus_stack_version
-  grafana_admin_password        = var.grafana_admin_password
-  prometheus_retention          = var.prometheus_retention
-  prometheus_storage_size       = var.prometheus_storage_size
-  loki_version                  = var.loki_version
-  loki_storage_size             = var.loki_storage_size
-  tempo_version                 = var.tempo_version
-  tempo_storage_size            = var.tempo_storage_size
+  namespace                           = var.monitoring_namespace
+  create_namespace                    = true
+  kube_prometheus_stack_chart_version = var.kube_prometheus_stack_chart_version
+  grafana_admin_password              = var.grafana_admin_password
+  grafana_enable_ingress              = var.grafana_enable_ingress
+  grafana_domain_name                 = var.grafana_domain_name
+  grafana_tls_issuer                  = var.grafana_tls_issuer
+  prometheus_retention                = var.prometheus_retention
+  prometheus_storage_size             = var.prometheus_storage_size
+  loki_chart_version                  = var.loki_chart_version
+  loki_storage_size                   = var.loki_storage_size
+  tempo_chart_version                 = var.tempo_chart_version
+  tempo_storage_size                  = var.tempo_storage_size
 
-  depends_on = [
-    module.cloudnative_pg_operator,
-    module.strimzi_kafka_operator,
-    module.redis_operator
-  ]
+  depends_on = [module.gke_cluster]
+}
+
+# cert-manager for automated TLS certificate management
+module "cert_manager" {
+  source = "../../modules/cert-manager"
+
+  namespace                       = var.cert_manager_namespace
+  create_namespace                = true
+  chart_version                   = var.cert_manager_chart_version
+  replicas                        = var.cert_manager_replicas
+  enable_monitoring               = true
+  create_cluster_issuers          = var.cert_manager_create_cluster_issuers
+  letsencrypt_email               = var.cert_manager_letsencrypt_email
+  letsencrypt_staging_issuer_name = var.cert_manager_letsencrypt_staging_issuer_name
+  letsencrypt_prod_issuer_name    = var.cert_manager_letsencrypt_prod_issuer_name
+
+  depends_on = [module.gke_cluster, module.traefik]
 }
 
 # ArgoCD for GitOps (manages all applications)
@@ -144,8 +189,11 @@ module "argocd" {
   git_repo_url     = var.argocd_git_repo_url
   git_repo_path    = var.argocd_git_repo_path
   enable_bootstrap = var.argocd_enable_bootstrap
+  enable_ingress   = var.argocd_enable_ingress
+  domain_name      = var.argocd_domain_name
+  tls_issuer       = var.argocd_tls_issuer
 
-  depends_on = [module.monitoring]
+  depends_on = [module.monitoring, module.cert_manager]
 }
 
 # Traefik Ingress Controller
@@ -169,13 +217,18 @@ module "traefik" {
 # Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
 #       Terraform only manages backend API DNS records
 
-# Configure Cloudflare DNS records for backend API
+# Configure Cloudflare DNS records for backend API and ArgoCD
 module "cloudflare_dns" {
   source = "../../modules/cloudflare-dns"
 
+  cloudflare_zone_id  = var.cloudflare_zone_id
   domain_name         = var.domain_name
   api_subdomain       = var.api_subdomain
   enable_api_wildcard = var.enable_api_wildcard
+  enable_argocd_dns   = var.enable_argocd_dns
+  argocd_subdomain    = var.argocd_subdomain
+  enable_grafana_dns  = var.enable_grafana_dns
+  grafana_subdomain   = var.grafana_subdomain
   traefik_ip          = module.traefik.load_balancer_ip
 
   depends_on = [module.traefik]

@@ -13,7 +13,7 @@ variable "create_namespace" {
 }
 
 # Prometheus & Grafana (kube-prometheus-stack)
-variable "kube_prometheus_stack_version" {
+variable "kube_prometheus_stack_chart_version" {
   description = "Helm chart version for kube-prometheus-stack"
   type        = string
   default     = "79.5.0"
@@ -24,6 +24,24 @@ variable "grafana_admin_password" {
   type        = string
   default     = "admin"
   sensitive   = true
+}
+
+variable "grafana_enable_ingress" {
+  description = "Enable Ingress for external access to Grafana via Traefik"
+  type        = bool
+  default     = false
+}
+
+variable "grafana_domain_name" {
+  description = "Domain name for Grafana web UI (e.g., grafana.api.discky.com)"
+  type        = string
+  default     = "grafana.local"
+}
+
+variable "grafana_tls_issuer" {
+  description = "cert-manager ClusterIssuer name for Grafana TLS certificates"
+  type        = string
+  default     = "letsencrypt-prod"
 }
 
 variable "prometheus_retention" {
@@ -39,7 +57,7 @@ variable "prometheus_storage_size" {
 }
 
 # Loki
-variable "loki_version" {
+variable "loki_chart_version" {
   description = "Helm chart version for Loki"
   type        = string
   default     = "6.46.0"
@@ -52,7 +70,7 @@ variable "loki_storage_size" {
 }
 
 # Tempo
-variable "tempo_version" {
+variable "tempo_chart_version" {
   description = "Helm chart version for Tempo"
   type        = string
   default     = "1.24.0"

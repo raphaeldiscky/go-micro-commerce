@@ -244,3 +244,21 @@ variable "gateway_pool_disk_type" {
   type        = string
   default     = "pd-balanced"
 }
+
+variable "enable_private_nodes" {
+  description = "Enable private nodes (nodes without public IPs, use Cloud NAT for internet)"
+  type        = bool
+  default     = true
+}
+
+variable "enable_private_endpoint" {
+  description = "Enable private endpoint (restrict master access to private network only)"
+  type        = bool
+  default     = false
+}
+
+variable "master_ipv4_cidr_block" {
+  description = "CIDR block for the Kubernetes master (must be /28, cannot overlap with VPC ranges)"
+  type        = string
+  default     = "10.13.0.0/28"
+}

@@ -9,13 +9,13 @@ variable "project_id" {
 variable "region" {
   description = "GCP region"
   type        = string
-  default     = "asia-southeast1"
+  default     = "asia-southeast2"
 }
 
 variable "zone" {
   description = "GCP zone"
   type        = string
-  default     = "asia-southeast1-a"
+  default     = "asia-southeast2-a"
 }
 
 variable "environment" {
@@ -160,6 +160,117 @@ variable "stateless_pool_disk_type" {
   default     = "pd-balanced"
 }
 
+# Monitoring Pool (Observability Stack)
+variable "monitoring_pool_enabled" {
+  description = "Enable monitoring node pool"
+  type        = bool
+  default     = true
+}
+
+variable "monitoring_pool_min_nodes" {
+  description = "Minimum nodes in monitoring pool"
+  type        = number
+  default     = 1
+}
+
+variable "monitoring_pool_max_nodes" {
+  description = "Maximum nodes in monitoring pool"
+  type        = number
+  default     = 3
+}
+
+variable "monitoring_pool_machine_type" {
+  description = "Machine type for monitoring pool"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "monitoring_pool_disk_size_gb" {
+  description = "Disk size for monitoring pool"
+  type        = number
+  default     = 30
+}
+
+variable "monitoring_pool_disk_type" {
+  description = "Disk type for monitoring pool"
+  type        = string
+  default     = "pd-balanced"
+}
+
+# Control Plane Pool (Operators, ArgoCD, ESO)
+variable "control_plane_pool_enabled" {
+  description = "Enable control plane node pool"
+  type        = bool
+  default     = true
+}
+
+variable "control_plane_pool_min_nodes" {
+  description = "Minimum nodes in control plane pool"
+  type        = number
+  default     = 1
+}
+
+variable "control_plane_pool_max_nodes" {
+  description = "Maximum nodes in control plane pool"
+  type        = number
+  default     = 2
+}
+
+variable "control_plane_pool_machine_type" {
+  description = "Machine type for control plane pool"
+  type        = string
+  default     = "e2-small"
+}
+
+variable "control_plane_pool_disk_size_gb" {
+  description = "Disk size for control plane pool"
+  type        = number
+  default     = 30
+}
+
+variable "control_plane_pool_disk_type" {
+  description = "Disk type for control plane pool"
+  type        = string
+  default     = "pd-balanced"
+}
+
+# Gateway Pool (Traefik, Apollo Router, API Gateway)
+variable "gateway_pool_enabled" {
+  description = "Enable gateway node pool"
+  type        = bool
+  default     = true
+}
+
+variable "gateway_pool_min_nodes" {
+  description = "Minimum nodes in gateway pool"
+  type        = number
+  default     = 1
+}
+
+variable "gateway_pool_max_nodes" {
+  description = "Maximum nodes in gateway pool"
+  type        = number
+  default     = 3
+}
+
+variable "gateway_pool_machine_type" {
+  description = "Machine type for gateway pool"
+  type        = string
+  default     = "e2-medium"
+}
+
+variable "gateway_pool_disk_size_gb" {
+  description = "Disk size for gateway pool"
+  type        = number
+  default     = 30
+}
+
+variable "gateway_pool_disk_type" {
+  description = "Disk type for gateway pool"
+  type        = string
+  default     = "pd-balanced"
+}
+
 # External Secrets Operator
 variable "eso_namespace" {
   description = "Namespace for External Secrets Operator"
@@ -261,7 +372,7 @@ variable "monitoring_namespace" {
   default     = "monitoring"
 }
 
-variable "kube_prometheus_stack_version" {
+variable "kube_prometheus_stack_chart_version" {
   description = "Helm chart version for kube-prometheus-stack"
   type        = string
   default     = "79.5.0"
@@ -271,6 +382,24 @@ variable "grafana_admin_password" {
   description = "Admin password for Grafana"
   type        = string
   sensitive   = true
+}
+
+variable "grafana_enable_ingress" {
+  description = "Enable Ingress for Grafana web UI"
+  type        = bool
+  default     = true
+}
+
+variable "grafana_domain_name" {
+  description = "Domain name for Grafana web UI"
+  type        = string
+  default     = "grafana.api.discky.com"
+}
+
+variable "grafana_tls_issuer" {
+  description = "cert-manager ClusterIssuer name for Grafana TLS"
+  type        = string
+  default     = "letsencrypt-prod"
 }
 
 variable "prometheus_retention" {
@@ -285,7 +414,7 @@ variable "prometheus_storage_size" {
   default     = "100Gi"
 }
 
-variable "loki_version" {
+variable "loki_chart_version" {
   description = "Helm chart version for Loki"
   type        = string
   default     = "6.46.0"
@@ -297,7 +426,7 @@ variable "loki_storage_size" {
   default     = "50Gi"
 }
 
-variable "tempo_version" {
+variable "tempo_chart_version" {
   description = "Helm chart version for Tempo"
   type        = string
   default     = "1.24.0"
@@ -347,6 +476,66 @@ variable "argocd_enable_bootstrap" {
   default     = false
 }
 
+variable "argocd_enable_ingress" {
+  description = "Enable Ingress for ArgoCD web UI"
+  type        = bool
+  default     = true
+}
+
+variable "argocd_domain_name" {
+  description = "Domain name for ArgoCD web UI"
+  type        = string
+  default     = "argocd.api.discky.com"
+}
+
+variable "argocd_tls_issuer" {
+  description = "cert-manager ClusterIssuer name for ArgoCD TLS"
+  type        = string
+  default     = "letsencrypt-prod"
+}
+
+# cert-manager
+variable "cert_manager_namespace" {
+  description = "Namespace for cert-manager"
+  type        = string
+  default     = "cert-manager"
+}
+
+variable "cert_manager_chart_version" {
+  description = "Helm chart version for cert-manager"
+  type        = string
+  default     = "v1.19.1"
+}
+
+variable "cert_manager_replicas" {
+  description = "Number of cert-manager replicas"
+  type        = number
+  default     = 1
+}
+
+variable "cert_manager_create_cluster_issuers" {
+  description = "Create Let's Encrypt ClusterIssuers"
+  type        = bool
+  default     = true
+}
+
+variable "cert_manager_letsencrypt_email" {
+  description = "Email address for Let's Encrypt notifications"
+  type        = string
+}
+
+variable "cert_manager_letsencrypt_staging_issuer_name" {
+  description = "Name for Let's Encrypt staging issuer"
+  type        = string
+  default     = "letsencrypt-staging"
+}
+
+variable "cert_manager_letsencrypt_prod_issuer_name" {
+  description = "Name for Let's Encrypt production issuer"
+  type        = string
+  default     = "letsencrypt-prod"
+}
+
 # Traefik
 variable "traefik_namespace" {
   description = "Namespace for Traefik"
@@ -390,6 +579,12 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
+variable "cloudflare_zone_id" {
+  description = "Cloudflare Zone ID for the domain"
+  type        = string
+  sensitive   = true
+}
+
 variable "domain_name" {
   description = "Domain name managed in Cloudflare"
   type        = string
@@ -406,4 +601,50 @@ variable "enable_api_wildcard" {
   description = "Enable wildcard DNS record for API subdomains"
   type        = bool
   default     = false
+}
+
+variable "enable_argocd_dns" {
+  description = "Enable DNS record for ArgoCD web UI"
+  type        = bool
+  default     = true
+}
+
+variable "argocd_subdomain" {
+  description = "Full subdomain for ArgoCD (e.g., argocd.api or just argocd)"
+  type        = string
+  default     = "argocd.api"
+}
+
+variable "enable_grafana_dns" {
+  description = "Enable DNS record for Grafana monitoring UI"
+  type        = bool
+  default     = true
+}
+
+variable "grafana_subdomain" {
+  description = "Full subdomain for Grafana (e.g., grafana.api or just grafana)"
+  type        = string
+  default     = "grafana.api"
+}
+
+# ============================================================================
+# Private Cluster Configuration
+# ============================================================================
+
+variable "enable_private_nodes" {
+  description = "Enable private nodes (nodes without public IPs, use Cloud NAT for internet)"
+  type        = bool
+  default     = true
+}
+
+variable "enable_private_endpoint" {
+  description = "Enable private endpoint (restrict master access to private network only)"
+  type        = bool
+  default     = false
+}
+
+variable "master_ipv4_cidr_block" {
+  description = "CIDR block for the Kubernetes master (must be /28, cannot overlap with VPC ranges)"
+  type        = string
+  default     = "10.13.0.0/28"
 }

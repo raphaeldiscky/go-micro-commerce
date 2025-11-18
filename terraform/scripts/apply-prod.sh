@@ -112,17 +112,41 @@ if gcloud container clusters describe "$CLUSTER_NAME" --zone="$ZONE" --project="
     kubectl get namespaces
     echo ""
 
-    log_info "To view Grafana dashboard:"
-    log_info "  kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80"
-    log_info "  Then visit: http://localhost:3000"
+    log_success "=== Access Your Services ==="
     echo ""
-    log_info "To view ArgoCD UI:"
-    log_info "  kubectl port-forward -n argocd svc/argocd-server 8080:443"
-    log_info "  Then visit: https://localhost:8080"
+
+    # Get outputs from terraform
+    ARGOCD_URL=$(terraform output -raw argocd_public_url 2>/dev/null || echo "")
+    GRAFANA_URL=$(terraform output -raw grafana_public_url 2>/dev/null || echo "")
+
+    if [[ -n "$ARGOCD_URL" ]]; then
+        log_success "ArgoCD (HTTPS - Production):"
+        log_info "  URL: $ARGOCD_URL"
+        log_info "  Username: admin"
+        log_info "  Get Password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+        echo ""
+    fi
+
+    if [[ -n "$GRAFANA_URL" ]]; then
+        log_success "Grafana (HTTPS - Production):"
+        log_info "  URL: $GRAFANA_URL"
+        log_info "  Username: admin"
+        log_info "  Password: <from your terraform.tfvars grafana_admin_password>"
+        echo ""
+    fi
+
+    log_info "Alternative Access (Port-forward):"
+    log_info "  Grafana:  kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80"
+    log_info "            http://localhost:3000"
+    log_info "  ArgoCD:   kubectl port-forward -n argocd svc/argocd-server 8080:80"
+    log_info "            http://localhost:8080"
+    log_info "  Traefik:  kubectl port-forward -n traefik svc/traefik 9000:9000"
+    log_info "            http://localhost:9000/dashboard/"
     echo ""
-    log_info "To view Traefik dashboard:"
-    log_info "  kubectl port-forward -n traefik svc/traefik 9000:9000"
-    log_info "  Then visit: http://localhost:9000/dashboard/"
+
+    log_info "TLS Certificate Status:"
+    log_info "  kubectl get certificates -A"
+    echo ""
 else
     log_error "Failed to get cluster credentials"
     exit 1

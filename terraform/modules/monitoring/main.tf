@@ -21,7 +21,7 @@ resource "helm_release" "kube_prometheus_stack" {
   namespace  = var.namespace
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  version    = var.kube_prometheus_stack_version
+  version    = var.kube_prometheus_stack_chart_version
 
   create_namespace = false
 
@@ -46,12 +46,12 @@ resource "helm_release" "kube_prometheus_stack" {
           }
           resources = {
             limits = {
-              cpu    = "2000m"
-              memory = "4Gi"
+              cpu    = "1000m"
+              memory = "2Gi"
             }
             requests = {
-              cpu    = "500m"
-              memory = "2Gi"
+              cpu    = "200m"
+              memory = "1Gi"
             }
           }
           # Node affinity - run on monitoring pool
@@ -76,34 +76,40 @@ resource "helm_release" "kube_prometheus_stack" {
         adminPassword = var.grafana_admin_password
         persistence = {
           enabled = true
-          size    = "10Gi"
+          size    = "5Gi"
         }
-        datasources = {
-          "datasources.yaml" = {
-            apiVersion = 1
-            datasources = [
-              {
-                name      = "Prometheus"
-                type      = "prometheus"
-                url       = "http://kube-prometheus-stack-prometheus.${var.namespace}:9090"
-                access    = "proxy"
-                isDefault = true
-              },
-              {
-                name   = "Loki"
-                type   = "loki"
-                url    = "http://loki-gateway.${var.namespace}"
-                access = "proxy"
-              },
-              {
-                name   = "Tempo"
-                type   = "tempo"
-                url    = "http://tempo.${var.namespace}:3100"
-                access = "proxy"
-              }
-            ]
+        # Ingress configuration for external access
+        ingress = {
+          enabled          = var.grafana_enable_ingress
+          ingressClassName = "traefik"
+          hosts            = [var.grafana_domain_name]
+          path             = "/"
+          tls = [
+            {
+              secretName = "grafana-tls"
+              hosts      = [var.grafana_domain_name]
+            }
+          ]
+          annotations = {
+            "cert-manager.io/cluster-issuer" = var.grafana_tls_issuer
+            "traefik.ingress.kubernetes.io/router.entrypoints" = "websecure"
           }
         }
+        # Additional datasources (Prometheus and Alertmanager are auto-configured by the chart)
+        additionalDataSources = [
+          {
+            name   = "Loki"
+            type   = "loki"
+            url    = "http://loki-gateway.${var.namespace}"
+            access = "proxy"
+          },
+          {
+            name   = "Tempo"
+            type   = "tempo"
+            url    = "http://tempo.${var.namespace}:3100"
+            access = "proxy"
+          }
+        ]
         resources = {
           limits = {
             cpu    = "500m"
@@ -138,7 +144,7 @@ resource "helm_release" "kube_prometheus_stack" {
                 accessModes = ["ReadWriteOnce"]
                 resources = {
                   requests = {
-                    storage = "10Gi"
+                    storage = "2Gi"
                   }
                 }
               }
@@ -171,7 +177,7 @@ resource "helm_release" "loki" {
   namespace  = var.namespace
   repository = "https://grafana.github.io/helm-charts"
   chart      = "loki"
-  version    = var.loki_version
+  version    = var.loki_chart_version
 
   create_namespace = false
 
@@ -181,16 +187,15 @@ resource "helm_release" "loki" {
       deploymentMode = "SingleBinary"
 
       loki = {
-        # Storage bucket names (required even for filesystem storage)
         storage = {
+          type = "filesystem"
           bucketNames = {
-            chunks = "loki-chunks"
-            ruler  = "loki-ruler"
-            admin  = "loki-admin"
+            chunks = "chunks"
+            ruler  = "ruler"
+            admin  = "admin"
           }
         }
 
-        # Loki configuration using structuredConfig
         structuredConfig = {
           auth_enabled = false
 
@@ -228,10 +233,10 @@ resource "helm_release" "loki" {
                 }
               }
             ]
+
           }
 
           limits_config = {
-            enforce_metric_name         = false
             reject_old_samples          = true
             reject_old_samples_max_age  = "168h"
             max_entries_limit_per_query = 5000
@@ -245,6 +250,7 @@ resource "helm_release" "loki" {
             retention_enabled          = true
             retention_delete_delay     = "2h"
             retention_delete_worker_count = 150
+            delete_request_store       = "filesystem"
           }
 
           query_range = {
@@ -313,6 +319,12 @@ resource "helm_release" "loki" {
           port = 80
         }
 
+        # Fix nginx DNS resolver to use kube-dns ClusterIP directly
+        # Prevents chicken-and-egg problem of nginx needing DNS to resolve DNS service hostname
+        nginxConfig = {
+          resolver = "10.8.0.10"
+        }
+
         resources = {
           limits = {
             cpu    = "100m"
@@ -357,7 +369,7 @@ resource "helm_release" "loki" {
         enabled = false
       }
       lokiCanary = {
-        enabled = false
+        enabled = true
       }
     })
   ]
@@ -523,7 +535,7 @@ resource "helm_release" "tempo" {
   namespace  = var.namespace
   repository = "https://grafana.github.io/helm-charts"
   chart      = "tempo"
-  version    = var.tempo_version
+  version    = var.tempo_chart_version
 
   create_namespace = false
 
@@ -547,12 +559,12 @@ resource "helm_release" "tempo" {
 
       resources = {
         limits = {
-          cpu    = "1000m"
-          memory = "2Gi"
+          cpu    = "500m"
+          memory = "1Gi"
         }
         requests = {
-          cpu    = "200m"
-          memory = "512Mi"
+          cpu    = "100m"
+          memory = "256Mi"
         }
       }
 

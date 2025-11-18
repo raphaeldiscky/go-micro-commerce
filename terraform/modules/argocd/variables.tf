@@ -42,3 +42,21 @@ variable "enable_bootstrap" {
   type        = bool
   default     = true
 }
+
+variable "enable_ingress" {
+  description = "Enable Ingress for external access via Traefik"
+  type        = bool
+  default     = false
+}
+
+variable "domain_name" {
+  description = "Domain name for ArgoCD web UI (e.g., argocd.api.discky.com)"
+  type        = string
+  default     = "argocd.local"
+}
+
+variable "tls_issuer" {
+  description = "cert-manager ClusterIssuer name for TLS certificates"
+  type        = string
+  default     = "letsencrypt-prod"
+}

@@ -6,21 +6,30 @@ Enterprise-grade infrastructure as code for the Go Micro-Commerce platform on Go
 
 This Terraform configuration provisions a cost-optimized, production-ready GKE cluster with:
 
-- **Dual Node Pools Strategy**: Separate pools for stateful (databases) and stateless (microservices) workloads
-- **Cost Optimization**: Spot VMs for microservices (~60% savings), regular VMs for databases
+- **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), control-plane (operators), and gateway (ingress) workloads
+- **Cost Optimization**: Spot VMs for microservices (~60% savings), cost-effective e2-small for control plane
 - **Complete Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
-- **Full Observability**: Prometheus, Grafana, Loki, Tempo monitoring stack
-- **GitOps Ready**: ArgoCD for application deployments
-- **Production Ingress**: Traefik ingress controller with LoadBalancer
+- **Full Observability**: Prometheus, Grafana, Loki, Tempo, Alloy monitoring stack with dedicated pool
+- **GitOps Ready**: ArgoCD for application deployments on dedicated control plane pool
+- **Production Ingress**: Traefik ingress controller with dedicated gateway pool
 
 ### Cost Breakdown
 
-| Component                | Configuration                                           | Monthly Cost (Estimate) |
-| ------------------------ | ------------------------------------------------------- | ----------------------- |
-| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 100GB balanced)         | ~$105                   |
-| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 30GB balanced, autoscaling) | ~$21-105                |
-| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                         | **$0 (Free)**           |
-| **Total Infrastructure** | -                                                       | **~$126-210/month**     |
+**Note**: Optimized for learning/testing with 250GB total disk limit in asia-southeast2-a zone.
+
+| Component                | Configuration                                             |
+| ------------------------ | --------------------------------------------------------- |
+| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 50GB balanced)            |
+| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 20GB balanced, autoscaling)   |
+| **Monitoring Pool**      | 1-3 × e2-medium (regular VMs, 30GB balanced, autoscaling) |
+| **Control Plane Pool**   | 1-2 × e2-small (regular VMs, 15GB balanced, autoscaling)  |
+| **Gateway Pool**         | 1-3 × e2-medium (regular VMs, 15GB balanced, autoscaling) |
+| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                           |
+| **Total Infrastructure** | -                                                         |
+
+**Total Disk Allocation**: 250GB (150GB stateful + 40GB stateless + 30GB monitoring + 15GB control plane + 15GB gateway)
+
+**Savings**: ~60% compared to using all regular (non-Spot) VMs
 
 ## Frontend Deployment
 
@@ -89,13 +98,16 @@ Backend:  GKE → Traefik LoadBalancer → https://api.discky.com
 terraform/
 ├── modules/                          # Reusable Terraform modules
 │   ├── gcp-network/                  # VPC network with secondary IP ranges
-│   ├── gke-cluster/                  # GKE cluster with dual node pools
+│   ├── gke-cluster/                  # GKE cluster with 5-tier node pool architecture
 │   ├── cloudnative-pg-operator/      # PostgreSQL operator
 │   ├── strimzi-kafka-operator/       # Kafka operator (KRaft mode)
 │   ├── redis-operator/               # Redis operator
+│   ├── cert-manager/                 # Automated TLS certificate management
 │   ├── monitoring/                   # Prometheus, Grafana, Loki, Tempo
 │   ├── argocd/                       # GitOps controller
-│   └── traefik/                      # Ingress controller
+│   ├── traefik/                      # Ingress controller
+│   ├── cloudflare-dns/               # DNS records management
+│   └── external-secrets-operator/    # Secret management from GCP
 ├── environments/
 │   └── prod/                         # Production environment
 │       ├── main.tf                   # Module composition
@@ -128,12 +140,12 @@ Creates VPC network with:
 
 ### 2. GKE Cluster Module (`gke-cluster`)
 
-Provisions GKE cluster with:
+Provisions GKE cluster with 5-tier node pool architecture:
 
 **Stateful Pool** (Databases: PostgreSQL, Kafka, Redis)
 
 - 3 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
-- 80GB balanced persistent disk per node
+- 50GB balanced persistent disk per node (150GB total)
 - Regular VMs for reliability
 - Fixed node count (no autoscaling)
 - Taint: `workload-type=stateful:NoSchedule`
@@ -141,13 +153,40 @@ Provisions GKE cluster with:
 **Stateless Pool** (Microservices)
 
 - 2-10 × e2-medium nodes (1 vCPU, 4GB RAM)
-- 30GB balanced persistent disk per node
+- 20GB balanced persistent disk per node (40-200GB total)
 - **Spot VMs** for 60-91% cost savings
 - Autoscaling based on workload
 - Taint: `cloud.google.com/gke-spot=true:NoSchedule`
 
+**Monitoring Pool** (Observability: Prometheus, Grafana, Loki, Tempo, Alloy)
+
+- 1-3 × e2-medium nodes (1 vCPU, 4GB RAM)
+- 30GB balanced persistent disk per node (30-90GB total)
+- Regular VMs for monitoring reliability
+- Autoscaling based on metrics load
+- Taint: `workload-type=monitoring:NoSchedule`
+
+**Control Plane Pool** (Operators, ArgoCD, ESO)
+
+- 1-2 × e2-small nodes (0.5 vCPU, 2GB RAM)
+- 15GB balanced persistent disk per node (15-30GB total)
+- Regular VMs for control plane reliability
+- Autoscaling for operator workloads
+- Taint: `workload-type=control-plane:NoSchedule`
+
+**Gateway Pool** (Traefik, Apollo Router, API Gateway)
+
+- 1-3 × e2-medium nodes (1 vCPU, 4GB RAM)
+- 15GB balanced persistent disk per node (15-45GB total)
+- Regular VMs for gateway reliability
+- Autoscaling based on traffic
+- Taint: `workload-type=gateway:NoSchedule`
+
 **Security Features**
 
+- **Private nodes enabled** (nodes have no external IPs)
+- **Cloud NAT** for outbound internet access
+- **Public control plane endpoint** (for kubectl access)
 - Workload Identity enabled
 - Shielded nodes enabled
 - Private Google access
@@ -185,17 +224,28 @@ Provisions GKE cluster with:
 
 ### 4. Platform Modules
 
+**cert-manager** (`cert-manager`)
+
+- Helm chart version: v1.19.1
+- Namespace: `cert-manager`
+- Automated TLS certificate management with Let's Encrypt
+- ClusterIssuers: `letsencrypt-prod` and `letsencrypt-staging`
+- Automatic certificate renewal (60 days before expiration)
+- HTTP-01 challenge solver for domain validation
+
 **Monitoring Stack** (`monitoring`)
 
 - **kube-prometheus-stack**: Prometheus + Grafana (chart v79.5.0)
 - **Loki**: Log aggregation (chart v6.46.0)
 - **Tempo**: Distributed tracing (chart v1.24.0)
+- **Grafana HTTPS Ingress**: Public access via `grafana.api.discky.com` with TLS
 - Persistent storage for all components
 
 **ArgoCD** (`argocd`)
 
 - Helm chart version: 9.1.2
 - Namespace: `argocd`
+- **HTTPS Ingress**: Public access via `argocd.api.discky.com` with TLS
 - Optional bootstrap ApplicationSet for git repo sync
 
 **Traefik** (`traefik`)
@@ -204,6 +254,7 @@ Provisions GKE cluster with:
 - Namespace: `traefik`
 - LoadBalancer service type
 - Dashboard enabled with Prometheus metrics
+- TLS termination for all ingress routes
 
 ## Deployment Workflow
 
@@ -227,9 +278,9 @@ Provisions GKE cluster with:
    # REQUIRED: Update with your GCP project ID
    project_id = "your-gcp-project-id"
 
-   # Optional: Customize region/zone (default: asia-southeast1)
-   region = "asia-southeast1"
-   zone   = "asia-southeast1-a"
+   # Optional: Customize region/zone (default: asia-southeast2)
+   region = "asia-southeast2"
+   zone   = "asia-southeast2-a"
 
    # Optional: Customize cluster configuration
    cluster_name = "go-micro-commerce-prod"
@@ -273,7 +324,7 @@ Deploy the infrastructure:
 This will:
 
 1. Create VPC network and subnets
-2. Provision GKE cluster with dual node pools
+2. Provision GKE cluster with 5-tier node pool architecture
 3. Install External Secrets Operator with Google Secret Manager integration
 4. Install all operators (PostgreSQL, Kafka, Redis)
 5. Deploy monitoring stack (Prometheus, Grafana, Loki, Tempo)
@@ -282,6 +333,13 @@ This will:
 8. Set up Cloudflare DNS for backend API
 
 **Deployment time**: ~15-20 minutes
+
+**If failed**:
+
+```bash
+gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a --project=go-micro-commerce
+./terraform/scripts/apply-prod.sh
+```
 
 ### Step 5: Verify Deployment
 
@@ -302,39 +360,78 @@ After successful deployment:
 
 3. Check node pools:
    ```bash
-   gcloud container node-pools list --cluster=go-micro-commerce-prod --zone=asia-southeast1-a
+   gcloud container node-pools list --cluster=go-micro-commerce-prod --zone=asia-southeast2-a
    ```
 
 ### Step 6: Access Platform Services
 
-**Grafana Dashboard**
+**Grafana Dashboard (HTTPS - Production)**
+
+Direct HTTPS access with valid Let's Encrypt certificate:
+
+```bash
+# Visit: https://grafana.api.discky.com
+# Username: admin
+# Password: <password from terraform.tfvars>
+```
+
+Alternatively, use port-forward for local access:
 
 ```bash
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
 # Visit: http://localhost:3000
-# Default credentials: admin / <password from terraform.tfvars>
 ```
 
-**ArgoCD UI**
+**ArgoCD UI (HTTPS - Production)**
+
+Direct HTTPS access with valid Let's Encrypt certificate:
 
 ```bash
-kubectl port-forward -n argocd svc/argocd-server 8080:443
-# Visit: https://localhost:8080
-# Get password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+# Visit: https://argocd.api.discky.com
+# Username: admin
+# Get password:
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
 ```
 
-**Traefik Dashboard**
+Alternatively, use port-forward for local access:
+
+```bash
+kubectl port-forward -n argocd svc/argocd-server 8080:80
+# Visit: http://localhost:8080
+```
+
+**Traefik Dashboard (Port-forward only)**
 
 ```bash
 kubectl port-forward -n traefik svc/traefik 9000:9000
 # Visit: http://localhost:9000/dashboard/
 ```
 
-**Prometheus UI**
+**Prometheus UI (Port-forward only)**
 
 ```bash
 kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090
 # Visit: http://localhost:9090
+```
+
+**Certificate Information**
+
+All HTTPS endpoints use automated TLS certificates from Let's Encrypt:
+
+- **Issuer**: Let's Encrypt (Production)
+- **Validity**: 90 days (auto-renewed at 60 days)
+- **Certificate Manager**: cert-manager v1.19.1
+- **Domain Validation**: HTTP-01 challenge
+
+To check certificate status:
+
+```bash
+# View all certificates
+kubectl get certificates -A
+
+# Check specific certificate details
+kubectl describe certificate argocd-server-tls -n argocd
+kubectl describe certificate grafana-tls -n monitoring
 ```
 
 ### Step 7: Populate Secrets with External Secrets Operator
@@ -393,7 +490,7 @@ After backend infrastructure is ready, deploy the frontend:
 
 ## Workload Scheduling
 
-### Stateful Workloads (Databases)
+### Stateful Workloads (Databases: PostgreSQL, Kafka, Redis)
 
 To schedule on the stateful pool, add tolerations and node selectors:
 
@@ -421,6 +518,51 @@ spec:
       effect: "NoSchedule"
   nodeSelector:
     workload-type: "stateless"
+```
+
+### Monitoring Workloads (Prometheus, Grafana, Loki, Tempo, Alloy)
+
+To schedule on the monitoring pool:
+
+```yaml
+spec:
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "monitoring"
+      effect: "NoSchedule"
+  nodeSelector:
+    workload-type: "monitoring"
+```
+
+### Control Plane Workloads (Operators, ArgoCD, ESO)
+
+To schedule on the control plane pool:
+
+```yaml
+spec:
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "control-plane"
+      effect: "NoSchedule"
+  nodeSelector:
+    workload-type: "control-plane"
+```
+
+### Gateway Workloads (Traefik, Apollo Router, API Gateway)
+
+To schedule on the gateway pool:
+
+```yaml
+spec:
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "gateway"
+      effect: "NoSchedule"
+  nodeSelector:
+    workload-type: "gateway"
 ```
 
 ## ArgoCD Application Deployment
@@ -521,7 +663,7 @@ kubectl get nodes
 If not configured, get credentials:
 
 ```bash
-gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast1-a
+gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a
 ```
 
 ### Issue: Spot VMs are preempted frequently

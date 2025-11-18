@@ -34,9 +34,6 @@ resource "helm_release" "strimzi" {
       # Operator configuration
       logLevel = var.log_level
 
-      # Feature gates for KRaft mode
-      featureGates = "+UseKRaft,+KafkaNodePools"
-
       # Resource limits
       resources = {
         limits = {

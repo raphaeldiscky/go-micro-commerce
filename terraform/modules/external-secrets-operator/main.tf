@@ -119,12 +119,34 @@ resource "kubernetes_service_account" "eso_sa" {
   ]
 }
 
+# Wait for External Secrets CRDs to be registered
+resource "null_resource" "wait_for_eso_crd" {
+  count = var.create_cluster_secret_store ? 1 : 0
+
+  provisioner "local-exec" {
+    command = <<EOF
+      for i in {1..60}; do
+        if kubectl get crd clustersecretstores.external-secrets.io 2>/dev/null; then
+          echo "External Secrets CRDs are ready"
+          exit 0
+        fi
+        echo "Waiting for External Secrets CRDs... ($i/60)"
+        sleep 5
+      done
+      echo "Timeout waiting for External Secrets CRDs"
+      exit 1
+    EOF
+  }
+
+  depends_on = [helm_release.external_secrets]
+}
+
 # ClusterSecretStore for Google Secret Manager
 resource "kubectl_manifest" "cluster_secret_store" {
   count = var.create_cluster_secret_store ? 1 : 0
 
   yaml_body = yamlencode({
-    apiVersion = "external-secrets.io/v1beta1"
+    apiVersion = "external-secrets.io/v1"
     kind       = "ClusterSecretStore"
     metadata = {
       name = var.cluster_secret_store_name
@@ -152,7 +174,7 @@ resource "kubectl_manifest" "cluster_secret_store" {
   })
 
   depends_on = [
-    helm_release.external_secrets,
+    null_resource.wait_for_eso_crd,
     kubernetes_service_account.eso_sa,
     google_project_iam_member.eso_secret_accessor
   ]

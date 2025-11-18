@@ -70,6 +70,21 @@ output "stateless_pool_name" {
   value       = module.gke_cluster.stateless_pool_name
 }
 
+output "monitoring_pool_name" {
+  description = "Monitoring node pool name (observability stack)"
+  value       = module.gke_cluster.monitoring_pool_name
+}
+
+output "control_plane_pool_name" {
+  description = "Control plane node pool name (operators, ArgoCD, ESO)"
+  value       = module.gke_cluster.control_plane_pool_name
+}
+
+output "gateway_pool_name" {
+  description = "Gateway node pool name (Traefik, Apollo Router, API Gateway)"
+  value       = module.gke_cluster.gateway_pool_name
+}
+
 output "cost_summary" {
   description = "Estimated monthly cost breakdown"
   value       = module.gke_cluster.cost_summary
@@ -175,6 +190,27 @@ output "argocd_password_command" {
   value       = module.argocd.argocd_password_command
 }
 
+# cert-manager Outputs
+output "cert_manager_namespace" {
+  description = "cert-manager namespace"
+  value       = module.cert_manager.namespace
+}
+
+output "cert_manager_letsencrypt_prod_issuer" {
+  description = "Let's Encrypt production ClusterIssuer name"
+  value       = module.cert_manager.letsencrypt_prod_issuer
+}
+
+output "cert_manager_letsencrypt_staging_issuer" {
+  description = "Let's Encrypt staging ClusterIssuer name"
+  value       = module.cert_manager.letsencrypt_staging_issuer
+}
+
+output "cert_manager_status" {
+  description = "cert-manager deployment status"
+  value       = module.cert_manager.status
+}
+
 # Traefik Outputs
 output "traefik_namespace" {
   description = "Traefik namespace"
@@ -208,6 +244,16 @@ output "traefik_load_balancer_ip" {
 output "cloudflare_dns_records" {
   description = "Cloudflare DNS records created by Terraform"
   value       = module.cloudflare_dns.dns_records
+}
+
+output "argocd_public_url" {
+  description = "Public HTTPS URL for ArgoCD (via Cloudflare DNS + Traefik)"
+  value       = module.cloudflare_dns.argocd_url
+}
+
+output "grafana_public_url" {
+  description = "Public HTTPS URL for Grafana (via Cloudflare DNS + Traefik)"
+  value       = module.cloudflare_dns.grafana_url
 }
 
 output "frontend_deployment_note" {
