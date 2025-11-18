@@ -14,6 +14,7 @@ resources:
   - grafana-external-secret.yaml
   - argocd-external-secret.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: go-micro-commerce
-  app.kubernetes.io/managed-by: external-secrets
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: go-micro-commerce
+      app.kubernetes.io/managed-by: external-secrets

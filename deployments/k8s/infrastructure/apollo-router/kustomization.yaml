@@ -21,7 +21,8 @@ resources:
   # Note: Router configuration is inline in values.yaml (Helm chart)
   # Note: configmap-supergraph-schema is generated above via configMapGenerator
 
-commonLabels:
-  app.kubernetes.io/name: apollo-router
-  app.kubernetes.io/component: graphql-gateway
-  app.kubernetes.io/managed-by: argocd
+labels:
+  - pairs:
+      app.kubernetes.io/name: apollo-router
+      app.kubernetes.io/component: graphql-gateway
+      app.kubernetes.io/managed-by: argocd

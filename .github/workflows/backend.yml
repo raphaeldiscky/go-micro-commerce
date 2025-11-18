@@ -17,7 +17,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Use Path Filter to detect changes
+      - name: Use path filter to detect changes
         id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -103,19 +103,19 @@ jobs:
           echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
 
   validate-kustomize:
-    name: Validate Kustomize Manifests
+    name: Validate kustomize manifests
     runs-on: tenki-standard-autoscale
     timeout-minutes: 5
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Kustomize
+      - name: Setup kustomize
         uses: imranismail/setup-kustomize@v2
         with:
           kustomize-version: "5.7.1"
 
-      - name: Validate Production Workloads
+      - name: Validate production workloads
         run: |
           echo "Validating production workload overlays..."
           for overlay in deployments/k8s/workloads/overlays/prod/*; do
@@ -127,7 +127,7 @@ jobs:
             fi
           done
 
-      - name: Validate Infrastructure Components
+      - name: Validate infrastructure components
         run: |
           echo "Validating infrastructure components..."
           if [ -d "deployments/k8s/infrastructure/apollo-router" ]; then
@@ -136,7 +136,7 @@ jobs:
             echo "✓ apollo-router is valid"
           fi
 
-      - name: Generate Validation Summary
+      - name: Generate validation summary
         if: always()
         run: |
           echo "## Kustomize Validation Summary" >> $GITHUB_STEP_SUMMARY
@@ -162,7 +162,7 @@ jobs:
         uses: actions/checkout@v4
 
       # Node.js setup
-      - name: Setup Node.js
+      - name: Setup node.js
         if: matrix.type == 'node'
         uses: actions/setup-node@v4
         with:
@@ -183,7 +183,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-
 
-      - name: Install Node.js dependencies
+      - name: Install node.js dependencies
         if: matrix.type == 'node'
         run: cd ${{ matrix.name }} && pnpm install
 
@@ -220,17 +220,17 @@ jobs:
         run: bash scripts/deadcode.sh ${{ matrix.name }}
 
       # Run lint/format/test scripts (scripts should auto-handle Node vs Go)
-      - name: Run Linter for ${{ matrix.name }}
+      - name: Run linter for ${{ matrix.name }}
         run: bash scripts/lint.sh ${{ matrix.name }}
 
-      - name: Run Format check for ${{ matrix.name }}
+      - name: Run format check for ${{ matrix.name }}
         run: bash scripts/format.sh ${{ matrix.name }}
 
-      - name: Run Security Vulnerability Scan for ${{ matrix.name }}
+      - name: Run security vulnerability Scan for ${{ matrix.name }}
         if: matrix.type == 'go'
         run: bash scripts/security.sh ${{ matrix.name }}
 
-      - name: Run Tests for ${{ matrix.name }}
+      - name: Run tests for ${{ matrix.name }}
         if: matrix.type == 'go'
         run: bash scripts/test.sh ${{ matrix.name }}
 
@@ -284,7 +284,7 @@ jobs:
             type=sha,prefix=
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
-      - name: Build and Push Docker Image
+      - name: Build and push Docker image
         uses: docker/build-push-action@v6
         id: build
         with:
@@ -310,7 +310,7 @@ jobs:
       #   with:
       #     sarif_file: "trivy-results.sarif"
 
-      - name: Generate Job Summary
+      - name: Generate job summary
         if: always()
         run: |
           echo "## Build Summary for ${{ matrix.name }}" >> $GITHUB_STEP_SUMMARY

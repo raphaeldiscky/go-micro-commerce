@@ -222,10 +222,10 @@ namespace: default
 resources:
   - ../../../base/new-service
 
-commonLabels:
+labels:
   environment: production
 
-patchesStrategicMerge:
+patches:
   - patch-replicas.yaml
 EOF
 

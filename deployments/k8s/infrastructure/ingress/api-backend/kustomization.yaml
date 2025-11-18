@@ -7,7 +7,8 @@ resources:
   - ingress.yaml
   - middlewares.yaml
 
-commonLabels:
-  app.kubernetes.io/name: api-backend-ingress
-  app.kubernetes.io/component: ingress
-  app.kubernetes.io/managed-by: argocd
+labels:
+  - pairs:
+      app.kubernetes.io/name: api-backend-ingress
+      app.kubernetes.io/component: ingress
+      app.kubernetes.io/managed-by: argocd
