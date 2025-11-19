@@ -41,7 +41,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: search-service
-        image: search-service:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/search-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

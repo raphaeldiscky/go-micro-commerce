@@ -405,7 +405,7 @@ service_to_db = {
 # Deploy all services using Kustomize (once, not per service)
 # Use Tilt's default_registry to automatically prepend registry to all images
 default_registry(registry)
-k8s_yaml(kustomize('deployments/k8s/overlays/local'))
+k8s_yaml(kustomize('deployments/k8s/workloads/overlays/local'))
 
 #==================================================================================
 # MIGRATION IMAGES

@@ -280,8 +280,30 @@ secretGenerator:
     files:
       - public.pem=secrets/chat-service-public.pem
 
-# Image registry is handled by Tilt's default_registry() function
-# No need for image remapping here - Tilt automatically prepends the correct registry
+# Image registry override for Tilt local development
+# Base uses GHCR images, but Tilt builds with simple names
+# This transforms ghcr.io/.../service → service (for Tilt's default_registry to work)
+images:
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway
+    newName: api-gateway
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service
+    newName: auth-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/cart-service
+    newName: cart-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/chat-service
+    newName: chat-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service
+    newName: fulfillment-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/notification-service
+    newName: notification-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/order-service
+    newName: order-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/payment-service
+    newName: payment-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/product-service
+    newName: product-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/search-service
+    newName: search-service
 
 labels:
   - includeSelectors: true
