@@ -306,8 +306,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           load: true # Load image locally for security scanning
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}:buildcache,mode=max
 
       # Build and push migration images for Go services
       - name: Check if migration Dockerfile exists
@@ -339,8 +339,8 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta_migrations.outputs.tags }}
           labels: ${{ steps.meta_migrations.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}-migrations:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}-migrations:buildcache,mode=max
 
       # - name: Run Trivy vulnerability scanner
       #   uses: aquasecurity/trivy-action@master

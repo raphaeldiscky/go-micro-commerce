@@ -48,5 +48,27 @@ for service in "${SERVICES[@]}"; do
   merge_schemas "$service"
 done
 
+# Copy schemas to graphql-gateway directory (for local development)
 echo ""
-echo -e "${GREEN}Schema merging complete for ${#SERVICES[@]} services.${NC}"
+echo -e "${BLUE}Copying schemas to graphql-gateway...${NC}"
+mkdir -p graphql-gateway/schemas
+for service in "${SERVICES[@]}"; do
+  if [ -f "$service/graph/schema.graphqls" ]; then
+    cp "$service/graph/schema.graphqls" "graphql-gateway/schemas/$service.graphqls"
+    echo -e "${GREEN}✓${NC} $service → graphql-gateway/schemas/$service.graphqls"
+  fi
+done
+
+# Copy schemas to apollo-router k8s directory (for Kubernetes deployment)
+echo ""
+echo -e "${BLUE}Copying schemas to apollo-router k8s...${NC}"
+mkdir -p deployments/k8s/infrastructure/apollo-router/schemas
+for service in "${SERVICES[@]}"; do
+  if [ -f "$service/graph/schema.graphqls" ]; then
+    cp "$service/graph/schema.graphqls" "deployments/k8s/infrastructure/apollo-router/schemas/$service.graphqls"
+    echo -e "${GREEN}✓${NC} $service → deployments/k8s/infrastructure/apollo-router/schemas/$service.graphqls"
+  fi
+done
+
+echo ""
+echo -e "${GREEN}Schema merging and distribution complete for ${#SERVICES[@]} services.${NC}"
