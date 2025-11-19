@@ -8,7 +8,7 @@ spec:
   goTemplateOptions: ["missingkey=error"]
   generators:
     - git:
-        repoURL: https://github.com/raphaeldiscky/go-micro-commerce.git
+        repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
         revision: main
         directories:
           - path: deployments/k8s/infrastructure/*/*
@@ -24,7 +24,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/raphaeldiscky/go-micro-commerce.git
+        repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
         targetRevision: main
         path: "{{.path.path}}"
       destination:
