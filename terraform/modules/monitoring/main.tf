@@ -165,6 +165,40 @@ resource "helm_release" "kube_prometheus_stack" {
           ]
         }
       }
+
+      # Kube State Metrics configuration
+      kubeStateMetrics = {
+        # Node affinity - run on monitoring pool
+        nodeSelector = {
+          workload-type = "monitoring"
+        }
+        # Tolerations for monitoring pool taint
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "monitoring"
+            effect   = "NoSchedule"
+          }
+        ]
+      }
+
+      # Prometheus Operator configuration
+      prometheusOperator = {
+        # Node affinity - run on monitoring pool
+        nodeSelector = {
+          workload-type = "monitoring"
+        }
+        # Tolerations for monitoring pool taint
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "monitoring"
+            effect   = "NoSchedule"
+          }
+        ]
+      }
     })
   ]
 
@@ -370,6 +404,15 @@ resource "helm_release" "loki" {
       }
       lokiCanary = {
         enabled = true
+        # Tolerations to run on all nodes including monitoring-pool
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "monitoring"
+            effect   = "NoSchedule"
+          }
+        ]
       }
     })
   ]
@@ -503,6 +546,16 @@ resource "helm_release" "alloy" {
           runAsUser  = 0
           runAsGroup = 0
         }
+
+        # Tolerations to run on all nodes including monitoring-pool
+        tolerations = [
+          {
+            key      = "workload-type"
+            operator = "Equal"
+            value    = "monitoring"
+            effect   = "NoSchedule"
+          }
+        ]
       }
 
       # Controller configuration

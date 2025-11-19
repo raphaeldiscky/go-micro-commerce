@@ -124,6 +124,15 @@ nodeExporter:
 kubeStateMetrics:
   enabled: true
 
+  nodeSelector:
+    workload-type: monitoring
+
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "monitoring"
+      effect: "NoSchedule"
+
 # Prometheus Operator
 prometheusOperator:
   enabled: true
@@ -135,6 +144,15 @@ prometheusOperator:
     limits:
       memory: "256Mi"
       cpu: "200m"
+
+  nodeSelector:
+    workload-type: monitoring
+
+  tolerations:
+    - key: "workload-type"
+      operator: "Equal"
+      value: "monitoring"
+      effect: "NoSchedule"
 
 # Default rules for Kubernetes monitoring
 defaultRules:

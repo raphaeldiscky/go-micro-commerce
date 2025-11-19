@@ -14,6 +14,7 @@ This guide explains how to configure ArgoCD to access your private Git repositor
 ## Overview
 
 ArgoCD needs credentials to access your private GitHub repository to:
+
 - Read ApplicationSet manifests from `deployments/k8s/apps/applicationsets/`
 - Read infrastructure manifests from `deployments/k8s/infrastructure/`
 - Read workload overlays from `deployments/k8s/workloads/overlays/prod/`
@@ -24,12 +25,14 @@ You can use either HTTPS or SSH authentication. **Both methods are secure when c
 ## Method 1: HTTPS with Personal Access Token
 
 ### When to Use
+
 - ✅ Quick setup for development/testing
 - ✅ Simpler configuration
 - ✅ Works across multiple repositories
-- ⚠️  Token has broad GitHub account permissions
+- ⚠️ Token has broad GitHub account permissions
 
 ### Prerequisites
+
 - GitHub account with access to the repository
 - Terraform installed and configured
 
@@ -111,13 +114,15 @@ spec:
 ## Method 2: SSH with Deploy Key
 
 ### When to Use
+
 - ✅ **Recommended for production**
 - ✅ More secure (repository-specific access)
 - ✅ Easy credential rotation
 - ✅ No expiration (unless you set one)
-- ⚠️  Requires SSH URL format in all manifests
+- ⚠️ Requires SSH URL format in all manifests
 
 ### Prerequisites
+
 - SSH client installed (`ssh-keygen` command available)
 - GitHub repository admin access (to add deploy key)
 - Terraform installed and configured
@@ -263,16 +268,16 @@ kubectl exec -n argocd deploy/argocd-server -- argocd repo list
 
 ## Comparison
 
-| Feature | HTTPS (Token) | SSH (Deploy Key) |
-|---------|---------------|------------------|
-| **Setup Complexity** | Simple | Moderate |
-| **Security** | Good (token-based) | Better (key-based) |
-| **Scope** | Account-wide | Repository-specific |
-| **Expiration** | Yes (configurable) | No (unless you set) |
-| **Rotation** | Generate new token | Generate new key pair |
-| **Best For** | Development/Testing | Production |
-| **URL Format** | `https://github.com/...` | `git@github.com:...` |
-| **Write Access** | Based on token scope | Based on deploy key config |
+| Feature              | HTTPS (Token)            | SSH (Deploy Key)           |
+| -------------------- | ------------------------ | -------------------------- |
+| **Setup Complexity** | Simple                   | Moderate                   |
+| **Security**         | Good (token-based)       | Better (key-based)         |
+| **Scope**            | Account-wide             | Repository-specific        |
+| **Expiration**       | Yes (configurable)       | No (unless you set)        |
+| **Rotation**         | Generate new token       | Generate new key pair      |
+| **Best For**         | Development/Testing      | Production                 |
+| **URL Format**       | `https://github.com/...` | `git@github.com:...`       |
+| **Write Access**     | Based on token scope     | Based on deploy key config |
 
 ---
 
@@ -370,6 +375,7 @@ terraform apply  # Will recreate it
    - Use environment variables or secret management systems
 
 2. **Use environment variables**
+
    ```bash
    export TF_VAR_argocd_git_token="..."        # HTTPS
    export TF_VAR_argocd_git_ssh_private_key="..."  # SSH
