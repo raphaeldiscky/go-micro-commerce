@@ -7,14 +7,14 @@ metadata:
 namespace: application
 
 labels:
-- includeSelectors: true
-  pairs:
-    app.kubernetes.io/name: fulfillment-service
-    app.kubernetes.io/component: backend
-    app.kubernetes.io/part-of: go-micro-commerce
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: fulfillment-service
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/part-of: go-micro-commerce
 
 resources:
-  # - migration-job.yaml  # Temporarily disabled to unblock deployment updates
+  # - migration-job.yaml
   - deployment.yaml
   - service.yaml
   - configmap.yaml

@@ -47,12 +47,12 @@ stateful_pool_disk_type    = "pd-balanced"        # Balanced disk for cost effic
 # Stateless Node Pool (Microservices)
 # Spot VMs with autoscaling for 60-91% cost savings
 # ============================================================================
-stateless_pool_enabled      = true          # Enable stateless node pool
-stateless_pool_min_nodes    = 2             # Minimum nodes (autoscaling)
-stateless_pool_max_nodes    = 10            # Maximum nodes (autoscaling)
-stateless_pool_machine_type = "e2-medium"   # 1 vCPU, 4GB RAM (Spot VM)
-stateless_pool_disk_size_gb = 20            # 20GB balanced disk per node (min 2 nodes × 20GB = 40GB)
-stateless_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
+stateless_pool_enabled      = true              # Enable stateless node pool
+stateless_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
+stateless_pool_max_nodes    = 3                 # Maximum nodes (autoscaling)
+stateless_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM (Spot VM)
+stateless_pool_disk_size_gb = 20                # 20GB balanced disk per node (min 2 nodes × 20GB = 40GB)
+stateless_pool_disk_type    = "pd-balanced"     # Balanced disk for cost efficiency
 
 # ============================================================================
 # Monitoring Node Pool (Observability: Prometheus, Grafana, Loki, Tempo)

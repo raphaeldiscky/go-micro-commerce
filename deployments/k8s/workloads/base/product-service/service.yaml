@@ -10,12 +10,12 @@ spec:
   selector:
     app: product-service
   ports:
-  - name: http
-    port: 8082
-    targetPort: http
-    protocol: TCP
-  - name: grpc
-    port: 50052
-    targetPort: grpc
-    protocol: TCP
+    - name: http
+      port: 8082
+      targetPort: http
+      protocol: TCP
+    - name: grpc
+      port: 50052
+      targetPort: grpc
+      protocol: TCP
   sessionAffinity: None

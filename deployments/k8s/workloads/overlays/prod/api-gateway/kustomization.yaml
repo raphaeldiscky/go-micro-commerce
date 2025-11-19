@@ -14,6 +14,7 @@ labels:
 patches:
   - path: patch-replicas.yaml
   - path: patch-resources.yaml
+  - path: patch-hpa.yaml
 
 configMapGenerator:
   - name: api-gateway-config

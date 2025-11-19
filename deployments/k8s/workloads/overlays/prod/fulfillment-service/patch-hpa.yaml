@@ -1,0 +1,6 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: fulfillment-service
+spec:
+  minReplicas: 1  # Reduced from 2 to fit quota constraints

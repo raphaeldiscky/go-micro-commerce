@@ -10,8 +10,8 @@ spec:
   selector:
     app: payment-service
   ports:
-  - name: http
-    port: 8084
-    targetPort: http
-    protocol: TCP
+    - name: http
+      port: 8084
+      targetPort: http
+      protocol: TCP
   sessionAffinity: None
