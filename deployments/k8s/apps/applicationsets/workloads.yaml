@@ -7,31 +7,52 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - git:
-        repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
-        revision: main
-        directories:
-          - path: deployments/k8s/workloads/overlays/prod/*
+    - list:
+        elements:
+          # Gateway namespace workloads
+          - service: api-gateway
+            namespace: gateway
+          # Application namespace workloads
+          - service: auth-service
+            namespace: application
+          - service: product-service
+            namespace: application
+          - service: order-service
+            namespace: application
+          - service: payment-service
+            namespace: application
+          - service: cart-service
+            namespace: application
+          - service: fulfillment-service
+            namespace: application
+          - service: notification-service
+            namespace: application
+          - service: search-service
+            namespace: application
+          - service: chat-service
+            namespace: application
+          - service: external-secrets
+            namespace: application
   template:
     metadata:
-      name: "{{.path.basename}}"
+      name: "{{.service}}"
       labels:
-        app.kubernetes.io/name: "{{.path.basename}}"
+        app.kubernetes.io/name: "{{.service}}"
         app.kubernetes.io/component: microservice
         app.kubernetes.io/managed-by: argocd
         environment: production
       annotations:
-        argocd.argoproj.io/manifest-generate-paths: "{{.path.path}}"
+        argocd.argoproj.io/manifest-generate-paths: "deployments/k8s/workloads/overlays/prod/{{.service}}"
         notifications.argoproj.io/subscribe.on-sync-succeeded.slack: gitops-notifications
     spec:
       project: default
       source:
         repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
         targetRevision: main
-        path: "{{.path.path}}"
+        path: "deployments/k8s/workloads/overlays/prod/{{.service}}"
       destination:
         server: https://kubernetes.default.svc
-        namespace: default
+        namespace: "{{.namespace}}"
       syncPolicy:
         automated:
           prune: true

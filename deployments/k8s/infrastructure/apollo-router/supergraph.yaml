@@ -1,30 +1,30 @@
 # Supergraph configuration for Kubernetes deployment
 # This file uses K8s Service DNS with local- prefix (from Kustomize namePrefix)
-# Services are accessed via: http://local-<service-name>.default.svc.cluster.local:<port>/graph
+# Services are accessed via: http://local-<service-name>.application.svc.cluster.local:<port>/graph
 
 federation_version: 2
 subgraphs:
   auth-service:
-    routing_url: http://local-auth-service.default.svc.cluster.local:8081/graph
+    routing_url: http://local-auth-service.application.svc.cluster.local:8081/graph
     schema:
       file: ./schemas/auth-service.graphqls
   chat-service:
-    routing_url: http://local-chat-service.default.svc.cluster.local:8088/graph
+    routing_url: http://local-chat-service.application.svc.cluster.local:8088/graph
     schema:
       file: ./schemas/chat-service.graphqls
   notification-service:
-    routing_url: http://local-notification-service.default.svc.cluster.local:8086/graph
+    routing_url: http://local-notification-service.application.svc.cluster.local:8086/graph
     schema:
       file: ./schemas/notification-service.graphqls
   order-service:
-    routing_url: http://local-order-service.default.svc.cluster.local:8083/graph
+    routing_url: http://local-order-service.application.svc.cluster.local:8083/graph
     schema:
       file: ./schemas/order-service.graphqls
   cart-service:
-    routing_url: http://local-cart-service.default.svc.cluster.local:8089/graph
+    routing_url: http://local-cart-service.application.svc.cluster.local:8089/graph
     schema:
       file: ./schemas/cart-service.graphqls
   payment-service:
-    routing_url: http://local-payment-service.default.svc.cluster.local:8084/graph
+    routing_url: http://local-payment-service.application.svc.cluster.local:8084/graph
     schema:
       file: ./schemas/payment-service.graphqls
