@@ -41,7 +41,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: auth-service
-        image: auth-service:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

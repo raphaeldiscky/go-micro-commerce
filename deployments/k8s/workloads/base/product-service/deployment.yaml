@@ -41,7 +41,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: product-service
-        image: product-service:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/product-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: http

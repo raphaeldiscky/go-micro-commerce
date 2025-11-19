@@ -41,7 +41,7 @@ spec:
         fsGroup: 1000
       containers:
       - name: notification-service
-        image: notification-service:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/notification-service:latest
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
