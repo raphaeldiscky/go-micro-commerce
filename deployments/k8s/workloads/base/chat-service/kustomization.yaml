@@ -4,7 +4,7 @@ kind: Kustomization
 metadata:
   name: chat-service
 
-namespace: default
+namespace: application
 
 labels:
 - includeSelectors: true

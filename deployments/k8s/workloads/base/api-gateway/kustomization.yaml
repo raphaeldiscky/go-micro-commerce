@@ -4,7 +4,7 @@ kind: Kustomization
 metadata:
   name: api-gateway
 
-namespace: default
+namespace: gateway
 
 labels:
 - includeSelectors: true

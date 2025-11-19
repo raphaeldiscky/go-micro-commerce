@@ -17,7 +17,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: migrate
-        image: cart-service-migrations:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/cart-service-migrations:latest
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh
