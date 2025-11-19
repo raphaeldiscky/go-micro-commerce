@@ -14,7 +14,7 @@ labels:
     app.kubernetes.io/part-of: go-micro-commerce
 
 resources:
-  - migration-job.yaml
+  # - migration-job.yaml  # Temporarily disabled to unblock deployment updates
   - deployment.yaml
   - service.yaml
   - configmap.yaml
