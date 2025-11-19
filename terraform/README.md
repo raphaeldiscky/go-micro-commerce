@@ -569,21 +569,70 @@ spec:
 
 Once infrastructure is deployed, use ArgoCD to manage application deployments:
 
-1. Update ArgoCD configuration in `terraform.tfvars`:
+### 1. Configure Repository Authentication
 
-   ```hcl
-   argocd_git_repo_url      = "https://github.com/your-org/go-micro-commerce.git"
-   argocd_git_repo_path     = "deployments/k8s"
-   argocd_enable_bootstrap  = true
-   ```
+For **private repositories**, ArgoCD needs credentials to access your Git repository. Choose one of two methods:
 
-2. Re-apply Terraform:
+#### Option A: HTTPS with Personal Access Token (Simpler)
 
-   ```bash
-   ./terraform/scripts/apply-prod.sh
-   ```
+```bash
+# Generate token at: https://github.com/settings/tokens (needs 'repo' scope)
+export TF_VAR_argocd_git_username="git"
+export TF_VAR_argocd_git_token="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
 
-3. ArgoCD will automatically sync applications from `deployments/k8s/` directory
+#### Option B: SSH with Deploy Key (Recommended for Production)
+
+```bash
+# Generate SSH key pair
+ssh-keygen -t ed25519 -C "argocd@discky.com" -f ~/.ssh/argocd-repo -N ""
+
+# Add public key to GitHub: https://github.com/your-org/repo/settings/keys
+cat ~/.ssh/argocd-repo.pub
+
+# Set private key for Terraform
+export TF_VAR_argocd_git_ssh_private_key=$(cat ~/.ssh/argocd-repo)
+```
+
+**📖 See [ARGOCD_AUTHENTICATION.md](./ARGOCD_AUTHENTICATION.md) for detailed setup instructions.**
+
+### 2. Update ArgoCD Configuration
+
+Edit `terraform/environments/prod/terraform.tfvars`:
+
+```hcl
+# For HTTPS:
+argocd_git_repo_url      = "https://github.com/your-org/go-micro-commerce.git"
+
+# For SSH (recommended):
+argocd_git_repo_url      = "git@github.com:your-org/go-micro-commerce.git"
+
+argocd_git_repo_path     = "deployments/k8s"
+argocd_enable_bootstrap  = true
+```
+
+**Note**: If using SSH, also update ApplicationSet files in `deployments/k8s/apps/applicationsets/` to use SSH URLs.
+
+### 3. Apply Terraform
+
+```bash
+./terraform/scripts/apply-prod.sh
+```
+
+### 4. Verify Deployment
+
+```bash
+# Check ArgoCD can access repository
+kubectl get secret git-repo-credentials -n argocd
+
+# View applications
+kubectl get applications -n argocd
+
+# Access ArgoCD UI
+# https://argocd.api.discky.com
+```
+
+ArgoCD will automatically sync applications from the `deployments/k8s/` directory
 
 ## Managing Infrastructure
 

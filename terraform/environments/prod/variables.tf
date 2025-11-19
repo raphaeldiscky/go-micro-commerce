@@ -494,6 +494,26 @@ variable "argocd_tls_issuer" {
   default     = "letsencrypt-prod"
 }
 
+variable "argocd_git_username" {
+  description = "Git username for repository authentication (for HTTPS method)"
+  type        = string
+  default     = "git"
+}
+
+variable "argocd_git_token" {
+  description = "Git token for repository authentication (for HTTPS method)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "argocd_git_ssh_private_key" {
+  description = "SSH private key for repository authentication (for SSH method)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 # cert-manager
 variable "cert_manager_namespace" {
   description = "Namespace for cert-manager"
