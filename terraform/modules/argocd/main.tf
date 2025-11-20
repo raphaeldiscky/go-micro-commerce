@@ -100,11 +100,11 @@ resource "helm_release" "argocd" {
         resources = {
           limits = {
             cpu    = "1000m"
-            memory = "1Gi"
+            memory = "2Gi"
           }
           requests = {
             cpu    = "250m"
-            memory = "512Mi"
+            memory = "1Gi"
           }
         }
         # Node affinity for control plane pool
