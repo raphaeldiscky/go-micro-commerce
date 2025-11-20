@@ -168,7 +168,7 @@ argocd_tls_issuer        = "letsencrypt-prod"
 # Note: Update ApplicationSets to use HTTPS URLs in deployments/k8s/apps/applicationsets/*.yaml
 
 argocd_git_username = "git"  # Default username for HTTPS token auth
-# argocd_git_token  = ""     # Set via TF_VAR_argocd_git_token (DO NOT hardcode!)
+# argocd_git_token  = ""     # or set via TF_VAR_argocd_git_token
 
 # -----------------------------------------------------------------------------
 # METHOD 2: SSH with Deploy Key (More Secure, Recommended for Production)
@@ -200,7 +200,7 @@ argocd_git_username = "git"  # Default username for HTTPS token auth
 #    ssh -T git@github.com -i ~/.ssh/argocd-repo
 #    # Expected: "Hi raphaeldiscky! You've successfully authenticated..."
 
-# argocd_git_ssh_private_key = ""  # Set via TF_VAR_argocd_git_ssh_private_key (DO NOT hardcode!)
+# argocd_git_ssh_private_key = ""  # or set via TF_VAR_argocd_git_ssh_private_key
 # See: terraform/ARGOCD_AUTHENTICATION.md for detailed setup guide
 
 # cert-manager (for automated TLS certificates)

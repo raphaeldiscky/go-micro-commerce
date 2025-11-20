@@ -13,6 +13,7 @@ resources:
   - chat-service-external-secret.yaml
   - grafana-external-secret.yaml
   - argocd-external-secret.yaml
+  - ghcr-imagepull-secret.yaml
 
 labels:
   - pairs:
