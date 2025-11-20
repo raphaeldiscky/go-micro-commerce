@@ -8,18 +8,38 @@ This directory contains Kubernetes manifests for deploying the go-micro-commerce
 deployments/k8s/
 ├── apps/                          # ArgoCD Application definitions
 │   └── applicationsets/           # ApplicationSet generators
-│       ├── infrastructure.yaml    # Auto-discovers infrastructure/*
+│       ├── infrastructure.yaml    # Auto-discovers infrastructure/overlays/prod/*
 │       └── workloads.yaml         # Auto-discovers workloads/overlays/prod/*
-├── infrastructure/                # Platform services (flat structure)
-│   ├── ingress/
-│   │   └── api-backend/          # API ingress with TLS & middlewares
-│   ├── monitoring/               # Prometheus, Grafana, Loki
-│   ├── kafka/                    # Kafka infrastructure
-│   ├── redis/                    # Redis caching
-│   ├── postgres/                 # PostgreSQL databases
-│   └── traefik/                  # Ingress controller
+├── infrastructure/                # Platform services (base + overlays)
+│   ├── base/                     # Base infrastructure configs
+│   │   ├── operators/            # Kubernetes operators (Helm values)
+│   │   │   ├── cloudnative-pg/   # PostgreSQL operator
+│   │   │   ├── strimzi-kafka/    # Kafka operator
+│   │   │   └── redis-operator/   # Redis operator
+│   │   ├── postgres/             # PostgreSQL Cluster CRDs (9 databases)
+│   │   ├── kafka/                # Kafka CRDs
+│   │   ├── redis/                # Redis CRDs
+│   │   ├── ingress-controller/   # Traefik ingress controller
+│   │   ├── ingress-routes/       # (local-specific, in overlays)
+│   │   ├── monitoring/           # Prometheus, Grafana, Tempo, Loki
+│   │   ├── apollo-router/        # GraphQL federation gateway
+│   │   ├── mailer/               # Mail service (MailHog local, SMTP prod)
+│   │   └── namespaces/           # Namespace definitions
+│   └── overlays/
+│       ├── local/                # Local dev (Tilt/Minikube)
+│       │   ├── postgres/         # 1 replica, low resources
+│       │   ├── kafka/            # Single broker
+│       │   ├── redis/            # Minimal config
+│       │   ├── ingress-routes/   # Local ingress (*.localhost)
+│       │   ├── monitoring/       # Dev monitoring stack
+│       │   ├── apollo-router/    # Local GraphQL router
+│       │   └── mailer/           # MailHog for local testing
+│       └── prod/                 # Production (ArgoCD/GKE)
+│           ├── postgres/         # 3 replicas, HA config
+│           ├── kafka/            # Multi-broker cluster
+│           └── ... (all components)
 └── workloads/                    # Microservices (base + overlays)
-    ├── base/                     # Base configurations (DRY)
+    ├── base/                     # Base configurations (environment-agnostic)
     │   ├── api-gateway/
     │   ├── auth-service/
     │   ├── cart-service/
@@ -32,14 +52,16 @@ deployments/k8s/
     │   ├── search-service/
     │   └── external-secrets/
     └── overlays/                 # Environment-specific overrides
-        ├── dev/                  # Development environment
-        └── prod/                 # Production environment
+        ├── local/                # Local development (Tilt)
+        │   └── kustomization.yaml # Single file, monolithic
+        └── prod/                 # Production (ArgoCD/GKE)
             ├── api-gateway/
             │   ├── kustomization.yaml
-            │   ├── patch-replicas.yaml    # 3 replicas
-            │   └── patch-resources.yaml   # Higher limits
-            ├── product-service/
-            └── ... (all 10 services)
+            │   ├── patch-replicas.yaml        # 3 replicas
+            │   ├── patch-resources.yaml       # Higher limits
+            │   ├── patch-hpa.yaml             # Autoscaling
+            │   └── patch-image-pull-secrets.yaml
+            └── ... (all 10 services, modular)
 ```
 
 ## GitOps Workflow
@@ -48,29 +70,29 @@ deployments/k8s/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    1. Developer Push                         │
-│   git push → deployments/k8s/workloads/overlays/prod/       │
+│                    1. Developer Push                             │
+│   git push → deployments/k8s/workloads/overlays/prod/            │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
-│           2. ArgoCD Detects Changes (Auto-Sync)              │
-│   Bootstrap ApplicationSet → Deploys infrastructure.yaml +   │
-│                               workloads.yaml                 │
+│           2. ArgoCD Detects Changes (Auto-Sync)                  │
+│   Bootstrap ApplicationSet → Deploys infrastructure.yaml +       │
+│                               workloads.yaml                     │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
-│           3. ApplicationSets Generate Applications           │
-│   - infrastructure.yaml: Discovers infrastructure/*/*        │
-│   - workloads.yaml: Discovers workloads/overlays/prod/*     │
+│           3. ApplicationSets Generate Applications               │
+│   - infrastructure.yaml: Discovers infrastructure/overlays/prod/*│
+│   - workloads.yaml: Discovers workloads/overlays/prod/*          │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              4. ArgoCD Syncs to Cluster                      │
-│   Each discovered directory becomes an Application          │
-│   Kustomize builds manifests → kubectl apply                │
+│              4. ArgoCD Syncs to Cluster                          │
+│   Each discovered directory becomes an Application               │
+│   Kustomize builds manifests → kubectl apply                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -95,18 +117,26 @@ Contains **ApplicationSet** manifests that define auto-discovery patterns:
 
 ### `/infrastructure/` - Platform Services
 
-Contains infrastructure and platform components using **flat structure**:
+Contains infrastructure and platform components using **base + overlays pattern**:
 
-- **Purpose**: Services that don't vary significantly between environments
-- **Examples**: Ingress controllers, monitoring, databases, message queues
-- **Pattern**: Direct manifests or Kustomize (no overlays needed)
-- **Deployed by**: `infrastructure.yaml` ApplicationSet
+- **Purpose**: Databases, message queues, ingress, monitoring, operators
+- **Examples**: PostgreSQL, Kafka, Redis, Traefik, Prometheus, Grafana
+- **Pattern**: Base configurations + environment-specific overlays
+- **Deployed by**:
+  - Local: Tilt with `kustomize('infrastructure/overlays/local')`
+  - Production: ArgoCD `infrastructure.yaml` ApplicationSet
 
-**Why flat structure?**
+**Why base + overlays?** Infrastructure varies between local (1 replica, low resources) and production (3+ replicas, HA). Operators via Helm, CRDs via Kustomize.
 
-- Infrastructure configs are mostly environment-agnostic
-- Changes are infrequent and controlled
-- Simpler to manage without overlay complexity
+#### `/infrastructure/base/operators/` - Kubernetes Operators
+
+Operators are **controller software** that manage custom resources. See `infrastructure/base/operators/README.md` for details.
+
+- **cloudnative-pg**: Manages PostgreSQL Cluster CRDs
+- **strimzi-kafka**: Manages Kafka/KafkaNodePool CRDs
+- **redis-operator**: Manages RedisCluster CRDs
+
+**Deployment**: Operators installed via Helm (Tilt/Terraform), values in `operator-values.yaml`
 
 ### `/workloads/` - Microservices
 
@@ -114,23 +144,74 @@ Contains application workloads using **base + overlays pattern**:
 
 #### `/workloads/base/` - Base Configurations
 
-- **Purpose**: Shared configuration for all environments (DRY principle)
-- **Contains**: deployment.yaml, service.yaml, configmap.yaml, hpa.yaml, etc.
-- **Principle**: Define once, override selectively
+- **Purpose**: Shared, environment-agnostic configuration (DRY principle)
+- **Contains**: deployment.yaml, service.yaml, configmap.yaml, hpa.yaml, secret.yaml, etc.
+- **Important**: Base contains NO environment-specific values:
+  - ❌ No hardcoded namespaces (set in overlays)
+  - ❌ No `APP_ENVIRONMENT` values (set in overlays)
+  - ❌ No production/development-specific configs
+  - ✅ Generic defaults and sensible fallbacks only
+- **Principle**: Define once, override selectively in overlays
 
 #### `/workloads/overlays/` - Environment Overrides
 
-- **Purpose**: Environment-specific patches and configurations
-- **Pattern**: Kustomize overlays that reference base/
+- **Purpose**: Environment-specific patches, namespaces, and configurations
+- **Pattern**: Kustomize overlays that reference `../../../base/`
 - **Environments**:
-  - `dev/`: Development (local Kubernetes, lower resources)
-  - `prod/`: Production (GKE, higher replicas, more resources)
+  - `local/`: Local development (Tilt/Minikube, lower resources)
+    - Single monolithic `kustomization.yaml` file
+    - Namespace: `application` and `gateway`
+  - `prod/`: Production (ArgoCD/GKE, higher replicas, more resources)
+    - Modular structure (one directory per service)
+    - Namespace: `application` and `gateway`
+    - Patches: replicas, resources, HPA, image pull secrets
 
-**Why overlays?**
+**Why overlays?** Microservices vary between environments (replicas, resources, namespaces). Maintains DRY while allowing environment-specific configs.
 
-- Microservices vary significantly between environments (replicas, resources, secrets)
-- Changes are frequent (daily deployments)
-- Maintains DRY principle while allowing environment-specific configs
+## Local Development with Tilt
+
+Tilt orchestrates local Kubernetes development using Kustomize overlays:
+
+- Installs operators via Helm (CloudNativePG, Strimzi Kafka, Redis)
+- Deploys infrastructure: `kustomize('infrastructure/overlays/local')`
+- Deploys workloads: `kustomize('workloads/overlays/local')`
+
+### Local Characteristics
+
+- **Single replicas**: All databases and services run with 1 replica
+- **Low resources**: Minimal CPU/memory requests for laptop development
+- **MailHog**: Local SMTP server at `http://localhost:8025`
+- **Local ingress**: Services accessible at `*.localhost`
+- **Namespaces**: `application` and `gateway` (matching production)
+- **Hot reload**: Air for Go services, live updates via Tilt
+
+### Running Locally
+
+```bash
+# Start infrastructure and services
+tilt up
+
+# View Tilt UI
+open http://localhost:10350
+
+# Check resources
+kubectl get pods -n application
+kubectl get pods -n gateway
+
+# Access services
+# API Gateway: http://localhost:8080
+# MailHog UI: http://localhost:8025
+# Grafana: http://localhost:3000
+```
+
+### Local vs Production
+
+| Aspect         | Local               | Production         |
+| -------------- | ------------------- | ------------------ |
+| **Deployment** | Tilt + Kustomize    | ArgoCD + Kustomize |
+| **Replicas**   | 1 (single instance) | 3+ (HA)            |
+| **Resources**  | 256Mi RAM, 100m CPU | 1Gi RAM, 500m CPU  |
+| **Databases**  | 1 pod               | 3 pods (HA)        |
 
 ## Deployment Guide
 
@@ -186,18 +267,31 @@ kubectl get applications -n argocd -w
 #### For Infrastructure Components
 
 ```bash
-# 1. Create new directory under infrastructure/
-mkdir -p deployments/k8s/infrastructure/cert-manager/
+# 1. Create base configuration
+mkdir -p deployments/k8s/infrastructure/base/cert-manager/
 
-# 2. Add Kubernetes manifests
-cat > deployments/k8s/infrastructure/cert-manager/deployment.yaml << EOF
+# 2. Add Kubernetes manifests (environment-agnostic)
+cat > deployments/k8s/infrastructure/base/cert-manager/deployment.yaml << EOF
 apiVersion: apps/v1
 kind: Deployment
 ...
 EOF
 
-# 3. Commit and push
-git add deployments/k8s/infrastructure/cert-manager/
+# 3. Create local overlay
+mkdir -p deployments/k8s/infrastructure/overlays/local/cert-manager/
+cat > deployments/k8s/infrastructure/overlays/local/cert-manager/kustomization.yaml << EOF
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/cert-manager
+EOF
+
+# 4. Create production overlay
+mkdir -p deployments/k8s/infrastructure/overlays/prod/cert-manager/
+# Add patches for prod-specific configs
+
+# 5. Commit and push
+git add deployments/k8s/infrastructure/
 git commit -m "feat(infra): add cert-manager"
 git push
 
@@ -207,32 +301,61 @@ git push
 #### For Microservices
 
 ```bash
-# 1. Create base configuration
+# 1. Create base configuration (environment-agnostic, no namespace)
 mkdir -p deployments/k8s/workloads/base/new-service/
-# Add deployment.yaml, service.yaml, etc.
+cat > deployments/k8s/workloads/base/new-service/deployment.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-service
+spec:
+  template:
+    spec:
+      containers:
+      - name: new-service
+        image: new-service:latest
+EOF
+# Add service.yaml, configmap.yaml, secret.yaml, hpa.yaml, etc.
 
-# 2. Create production overlay
+# 2. Update local overlay (add to existing monolithic kustomization)
+# Edit deployments/k8s/workloads/overlays/local/kustomization.yaml
+# Add "- ../../base/new-service" to resources
+
+# 3. Create production overlay (modular structure)
 mkdir -p deployments/k8s/workloads/overlays/prod/new-service/
 cat > deployments/k8s/workloads/overlays/prod/new-service/kustomization.yaml << EOF
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: default
+namespace: application  # Set namespace in overlay, NOT base
 
 resources:
   - ../../../base/new-service
 
 labels:
-  environment: production
+  - pairs:
+      environment: production
+      app.kubernetes.io/managed-by: argocd
 
 patches:
-  - patch-replicas.yaml
+  - path: patch-replicas.yaml
+  - path: patch-resources.yaml
+  - path: patch-hpa.yaml
+  - path: patch-image-pull-secrets.yaml
 EOF
 
-# 3. Add patches
-# patch-replicas.yaml, patch-resources.yaml
+# 4. Add patches
+cat > deployments/k8s/workloads/overlays/prod/new-service/patch-replicas.yaml << EOF
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: new-service
+spec:
+  replicas: 3
+EOF
+# Add patch-resources.yaml, patch-hpa.yaml, etc.
 
-# 4. Commit and push
+# 5. Commit and push
 git add deployments/k8s/workloads/
 git commit -m "feat(services): add new-service"
 git push
@@ -262,64 +385,31 @@ argocd app get product-service
 
 ## Environment Management
 
-### Development (dev/)
+**Local** (`overlays/local/`): Tilt deployment, 1 replica, 256Mi RAM, MailHog, `*.localhost`
 
-```yaml
-# Lower resources, fewer replicas
-spec:
-  replicas: 1
-  resources:
-    requests:
-      cpu: "100m"
-      memory: "128Mi"
-```
-
-### Production (prod/)
-
-```yaml
-# Higher resources, HA setup
-spec:
-  replicas: 3 # High availability
-  resources:
-    requests:
-      cpu: "500m"
-      memory: "512Mi"
-    limits:
-      cpu: "1000m"
-      memory: "1Gi"
-```
+**Production** (`overlays/prod/`): ArgoCD deployment, 3+ replicas, 1Gi RAM, real SMTP, TLS, HPA enabled
 
 ## Best Practices
 
-### 1. Base Configurations
+### Base Configurations
 
-- ✅ Keep base/ generic and reusable
-- ✅ No environment-specific values in base/
-- ✅ Use ConfigMap/Secret generators in overlays
-- ❌ Don't hardcode image tags in base/
+- NO hardcoded namespaces or environment-specific values (`APP_ENVIRONMENT`, etc.)
+- Use placeholder secrets with `# NOTE: Override in overlays` comments
+- Generic defaults only, image tags set in overlays
 
-### 2. Overlays
+### Overlays
 
-- ✅ Use strategic merge patches for small changes
-- ✅ Use JSON patches for precise modifications
-- ✅ Override image tags per environment
-- ✅ Add environment labels
-- ❌ Don't duplicate entire manifests
+- Set namespaces in overlays, never in base
+- Use patch files (`patch-*.yaml`) for environment-specific changes
+- Consistent naming: `patch-image-pull-secrets.yaml` (kebab-case)
+- Add environment labels
 
-### 3. Infrastructure
+### Infrastructure & Operators
 
-- ✅ Keep infrastructure configs simple (flat structure OK)
-- ✅ Use Helm for complex charts (via ArgoCD)
-- ✅ Separate infrastructure from workloads
-- ❌ Don't mix application and platform concerns
-
-### 4. GitOps Workflow
-
-- ✅ Always commit before deploying
-- ✅ Use pull requests for production changes
-- ✅ Enable auto-sync for non-critical apps
-- ✅ Use manual sync for critical apps (databases)
-- ❌ Never run `kubectl apply` manually
+- Operators (Helm) in `base/operators/*/operator-values.yaml`
+- CRDs (Kustomize) in `base/{postgres,kafka,redis}/`
+- Environment patches in `overlays/{local,prod}/`
+- See `infrastructure/base/operators/README.md` for operator vs CRD details
 
 ## Troubleshooting
 
@@ -330,9 +420,13 @@ spec:
 kubectl describe applicationset infrastructure -n argocd
 kubectl describe applicationset workloads -n argocd
 
-# Check if directories exist
-ls deployments/k8s/infrastructure/
+# Check if overlay directories exist (ArgoCD looks here)
+ls deployments/k8s/infrastructure/overlays/prod/
 ls deployments/k8s/workloads/overlays/prod/
+
+# Verify base directories exist
+ls deployments/k8s/infrastructure/base/
+ls deployments/k8s/workloads/base/
 
 # Force refresh
 argocd appset get infrastructure
@@ -364,15 +458,6 @@ kustomize build .
 # - Invalid YAML syntax
 ```
 
-## Migration from Old Structure
-
-If migrating from `base/` + `overlays/local/`:
-
-1. ✅ Already done: Moved to `workloads/base/` + `workloads/overlays/dev/`
-2. ✅ Production overlays created: `workloads/overlays/prod/`
-3. ✅ ApplicationSets created: `apps/applicationsets/`
-4. ⏩ Next: Update git repo URL and enable bootstrap in Terraform
-
 ## References
 
 - [ArgoCD ApplicationSets](https://argo-cd.readthedocs.io/en/stable/user-guide/application-set/)
@@ -388,6 +473,6 @@ If migrating from `base/` + `overlays/local/`:
 
 ---
 
-**Pattern**: Industry-standard hybrid GitOps (infrastructure flat + workloads base+overlays)
-**Inspiration**: Google GKE, AWS EKS GitOps Bridge, Red Hat OpenShift GitOps
-**Compliance**: CNCF GitOps v1.0, Kubernetes SIG recommendations
+**Pattern**: GitOps with base + overlays for infrastructure and workloads
+**Local**: Tilt + Kustomize (`overlays/local/`) | **Production**: ArgoCD + Kustomize (`overlays/prod/`)
+**Compliance**: CNCF GitOps v1.0, ~9.5/10 best practices
