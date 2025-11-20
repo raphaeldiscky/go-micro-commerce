@@ -21,6 +21,7 @@ resources:
   - serviceaccount.yaml
   - hpa.yaml
   - pdb.yaml
+  - ghcr-imagepull-secret.yaml
 
 images:
   - name: api-gateway
