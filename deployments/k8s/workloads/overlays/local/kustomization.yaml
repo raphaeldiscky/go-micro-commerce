@@ -4,7 +4,7 @@ kind: Kustomization
 metadata:
   name: go-micro-commerce-local
 
-namespace: default
+namespace: application
 
 namePrefix: local-
 
@@ -117,9 +117,9 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8080
-      - JWKS_URL=http://local-auth-service.default.svc.cluster.local:8081/.well-known/jwks.json
+      - JWKS_URL=http://local-auth-service.application.svc.cluster.local:8081/.well-known/jwks.json
       - SERVICE_DISCOVERY_TYPE=kubernetes
-      - SERVICE_DISCOVERY_K8S_NAMESPACE=default
+      - SERVICE_DISCOVERY_K8S_NAMESPACE=application
       - SERVICE_DISCOVERY_K8S_PREFIX=local-
       - CONSUL_ENABLED=false
       - TRACING_URL=otel-collector.default.svc.cluster.local:4318
@@ -131,12 +131,12 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8081
-      - POSTGRES_HOST=auth-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=auth-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=auth_db
       - POSTGRES_USER=auth_user
       - POSTGRES_SSL_MODE=disable
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
       - JWT_PRIVATE_KEY_PATH=/app/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
@@ -148,13 +148,13 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8082
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50052
-      - POSTGRES_HOST=product-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=product-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=product_db
       - POSTGRES_USER=product_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
       - TRACING_URL=otel-collector.default.svc.cluster.local:4318
 
@@ -163,14 +163,14 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8083
-      - POSTGRES_HOST=order-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=order-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=order_db
       - POSTGRES_USER=order_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - ASYNQ_REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - ASYNQ_REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
       - TRACING_URL=otel-collector.default.svc.cluster.local:4318
 
@@ -181,13 +181,13 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8084
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50054
-      - POSTGRES_HOST=payment-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=payment-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=payment_db
       - POSTGRES_USER=payment_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
 
   - name: cart-service-config
@@ -197,14 +197,14 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8085
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50055
-      - POSTGRES_HOST=cart-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=cart-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=cart_db
       - POSTGRES_USER=cart_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - ASYNQ_REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - ASYNQ_REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
 
   - name: fulfillment-service-config
@@ -214,13 +214,13 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8086
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50056
-      - POSTGRES_HOST=fulfillment-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=fulfillment-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=fulfillment_db
       - POSTGRES_USER=fulfillment_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
 
   - name: notification-service-config
@@ -228,13 +228,13 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8087
-      - POSTGRES_HOST=notification-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=notification-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=notification_db
       - POSTGRES_USER=notification_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
       - SMTP_HOST=mailhog.default.svc.cluster.local
       - SMTP_PORT=1025
@@ -244,12 +244,12 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8088
-      - POSTGRES_HOST=search-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=search-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=search_db
       - POSTGRES_USER=search_user
       - POSTGRES_SSL_MODE=disable
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092
+      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
       - CONSUL_ENABLED=false
 
   - name: chat-service-config
@@ -257,12 +257,12 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8089
-      - POSTGRES_HOST=chat-pg-rw.default.svc.cluster.local
+      - POSTGRES_HOST=chat-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=chat_db
       - POSTGRES_USER=chat_user
       - POSTGRES_SSL_MODE=disable
-      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.default.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.default.svc.cluster.local:6379
+      - REDIS_ADDRS=redis-cluster-leader-0.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-1.redis-cluster-leader-headless.application.svc.cluster.local:6379,redis-cluster-leader-2.redis-cluster-leader-headless.application.svc.cluster.local:6379
       - CONSUL_ENABLED=false
       - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
 

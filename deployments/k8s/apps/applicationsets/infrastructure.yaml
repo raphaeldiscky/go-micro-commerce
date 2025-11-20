@@ -11,7 +11,7 @@ spec:
         repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
         revision: main
         directories:
-          - path: deployments/k8s/infrastructure/*/*
+          - path: deployments/k8s/infrastructure/overlays/prod/*
   template:
     metadata:
       name: "infra-{{.path.basename}}"
@@ -29,7 +29,6 @@ spec:
         path: "{{.path.path}}"
       destination:
         server: https://kubernetes.default.svc
-        namespace: default
       syncPolicy:
         automated:
           prune: true

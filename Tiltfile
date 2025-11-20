@@ -47,7 +47,7 @@ helm_resource(
     flags=[
         '--create-namespace',
         '--version=0.26.1',  # Chart version (installs operator v1.27.1)
-        '--set', 'monitoring.podMonitorEnabled=true',
+        '--values=deployments/k8s/infrastructure/base/operators/cloudnative-pg/operator-values.yaml',
     ],
     labels=['operators'],
     resource_deps=['kube-prometheus-stack'],
@@ -69,26 +69,27 @@ local_resource(
     labels=['operators'],
 )
 
-# Deploy 9 PostgreSQL clusters using CloudNativePG Helm chart
-postgres_clusters = {
-    'auth-pg': {'db': 'auth_db', 'user': 'auth_user'},
-    'product-pg': {'db': 'product_db', 'user': 'product_user'},
-    'order-pg': {'db': 'order_db', 'user': 'order_user'},
-    'payment-pg': {'db': 'payment_db', 'user': 'payment_user'},
-    'cart-pg': {'db': 'cart_db', 'user': 'cart_user'},
-    'fulfillment-pg': {'db': 'fulfillment_db', 'user': 'fulfillment_user'},
-    'notification-pg': {'db': 'notification_db', 'user': 'notification_user'},
-    'search-pg': {'db': 'search_db', 'user': 'search_user'},
-    'chat-pg': {'db': 'chat_db', 'user': 'chat_user'},
-}
+# Deploy 9 PostgreSQL clusters using Kustomize (base + local overlay)
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/postgres'))
 
-for cluster_name in postgres_clusters.keys():
-    helm_resource(
-        cluster_name,
-        'cnpg/cluster',
-        flags=[
-            '--values=deployments/k8s/infrastructure/postgres/local/%s-values.yaml' % cluster_name,
-        ],
+# PostgreSQL cluster names for dependencies
+postgres_clusters = [
+    'auth-pg',
+    'product-pg',
+    'order-pg',
+    'payment-pg',
+    'cart-pg',
+    'fulfillment-pg',
+    'notification-pg',
+    'search-pg',
+    'chat-pg',
+]
+
+# Register PostgreSQL resources
+for cluster_name in postgres_clusters:
+    k8s_resource(
+        objects=['%s:cluster' % cluster_name],
+        new_name=cluster_name,
         labels=['infra-db'],
         resource_deps=['wait-cnpg-crds'],
     )
@@ -102,7 +103,7 @@ helm_resource(
     'redis-operator',
     'ot-helm/redis-operator',
     flags=[
-        '--values=deployments/k8s/infrastructure/redis/redis-operator-values.yaml',
+        '--values=deployments/k8s/infrastructure/base/operators/redis-operator/operator-values.yaml',
     ],
     labels=['operators'],
     resource_deps=['kube-prometheus-stack'],  # Wait for Prometheus CRDs
@@ -116,17 +117,14 @@ local_resource(
     labels=['operators'],
 )
 
-# Deploy RedisCluster CRD (6 nodes: 3 masters + 3 replicas)
-k8s_yaml('deployments/k8s/infrastructure/redis/redis-cluster.yaml')
+# Deploy RedisCluster using Kustomize (base + local overlay)
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/redis'))
 k8s_resource(
     objects=['redis-cluster:rediscluster'],
     new_name='redis-cluster',
     labels=['infra-cache'],
     resource_deps=['wait-redis-crds'],
 )
-
-# Redis Insight UI
-k8s_yaml('deployments/k8s/infrastructure/redis/redis-insight.yaml')
 k8s_resource(
     'redis-insight',
     port_forwards=['5540:5540'],
@@ -152,7 +150,7 @@ helm_resource(
     'strimzi/strimzi-kafka-operator',
     namespace="default",
     flags=[
-        '--values=deployments/k8s/infrastructure/kafka/strimzi-operator-values.yaml',
+        '--values=deployments/k8s/infrastructure/base/operators/strimzi-kafka/operator-values.yaml',
         '--version=0.48.0',
     ],
     labels=['operators'],
@@ -175,8 +173,8 @@ local_resource(
     labels=['operators'],
 )
 
-# Deploy Kafka cluster CRD (3-node KRaft cluster)
-k8s_yaml('deployments/k8s/infrastructure/kafka/kafka-cluster.yaml')
+# Deploy Kafka cluster using Kustomize (base + local overlay)
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/kafka'))
 k8s_resource(
     objects=[
         'kafka-pool:kafkanodepool',
@@ -187,9 +185,6 @@ k8s_resource(
     labels=['infra-messaging'],
     resource_deps=['wait-kafka-crds'],
 )
-
-# Kafka UI
-k8s_yaml('deployments/k8s/infrastructure/kafka/kafka-ui.yaml')
 k8s_resource(
     'kafka-ui',
     port_forwards=['8090:8080'],
@@ -253,28 +248,24 @@ helm_resource(
     resource_deps=['kube-prometheus-stack'], 
 )
 
-# OpenTelemetry Collector
-k8s_yaml('deployments/k8s/infrastructure/monitoring/otel-collector.yaml')
+# Deploy monitoring resources using Kustomize (base + local overlay)
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/monitoring'))
 k8s_resource(
     'otel-collector',
     labels=['monitoring'],
     resource_deps=['tempo', 'loki'],
 )
 
-# CloudNativePG Monitoring (ConfigMap and PrometheusRule)
-k8s_yaml('deployments/k8s/infrastructure/monitoring/cnpg-dashboard.yaml')
-k8s_yaml('deployments/k8s/infrastructure/monitoring/cnpg-alerts.yaml')
-
 #==================================================================================
-# INFRASTRUCTURE - DEV TOOLS
+# INFRASTRUCTURE - MAILER (Local)
 #==================================================================================
 
-# MailHog (SMTP testing)
-k8s_yaml('deployments/k8s/infrastructure/dev-tools/mailhog.yaml')
+# Deploy mailer using Kustomize (MailHog for local dev)
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/mailer'))
 k8s_resource(
     'mailhog',
     port_forwards=['8025:8025', '1025:1025'],
-    labels=['dev-tools'],
+    labels=['mailer'],
 )
 
 #==================================================================================
@@ -285,7 +276,8 @@ k8s_resource(
 # Kind: Uses NodePort with hostPort (only 1 replica due to hostPort limitation)
 # MicroK8s: Uses LoadBalancer with MetalLB addon (can have multiple replicas)
 traefik_flags = [
-    '--values=deployments/k8s/infrastructure/traefik/values.yaml',
+    '--create-namespace',
+    '--values=deployments/k8s/infrastructure/base/ingress-controller/values.yaml',
     '--version=37.2.0',
 ]
 
@@ -305,6 +297,7 @@ if k8s_context == 'microk8s':
 helm_resource(
     'traefik-ingress',
     'traefik/traefik',
+    namespace='gateway',
     flags=traefik_flags,
     labels=['infra-gateway'],
     resource_deps=[],
@@ -314,8 +307,8 @@ helm_resource(
     # port_forwards=['9000:9000'],  # Uncomment for Traefik Dashboard if enabled
 )
 
-# Deploy local development ingress configuration
-k8s_yaml('deployments/k8s/infrastructure/traefik/ingress-local.yaml')
+# Deploy ingress routes using Kustomize (local overlay)
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/ingress-routes'))
 k8s_resource(
     objects=[
         'unified-gateway-ingress:ingress',
@@ -332,22 +325,24 @@ k8s_resource(
 # GRAPHQL GATEWAY - APOLLO ROUTER (Federation v2)
 #==================================================================================
 
-# Deploy Apollo Router ConfigMaps using Kustomize
+# Deploy Apollo Router ConfigMaps using Kustomize (base + local overlay)
 # Uses same GitOps approach as production (ArgoCD):
 #   - Supergraph schema composed in CI/CD (.github/workflows/backend.yml)
 #   - supergraph-schema.graphql committed to git
 #   - Kustomize generates ConfigMap from file (dev-prod parity)
 # Note: Router configuration is inline in values.yaml (router.configuration)
 # Note: ServiceMonitor is generated by Helm chart, not deployed separately
-k8s_yaml(kustomize('deployments/k8s/infrastructure/apollo-router'))
+k8s_yaml(kustomize('deployments/k8s/infrastructure/overlays/local/apollo-router'))
 
 # Apollo Router using official Helm chart (OCI image)
 helm_resource(
     'apollo-router',
     'oci://ghcr.io/apollographql/helm-charts/router',
+    namespace='gateway',
     flags=[
+        '--create-namespace',
         '--version=2.7.0',
-        '--values=deployments/k8s/infrastructure/apollo-router/values.yaml',
+        '--values=deployments/k8s/infrastructure/base/apollo-router/values.yaml',
         '--set', 'fullnameOverride=local-apollo-router',
     ],
     labels=['apps'],

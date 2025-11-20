@@ -1,0 +1,7 @@
+# CloudNativePG Operator Helm Values
+# Chart: cnpg/cloudnative-pg
+# Docs: https://cloudnative-pg.io/documentation/
+
+# Enable Prometheus monitoring for PostgreSQL clusters
+monitoring:
+  podMonitorEnabled: true

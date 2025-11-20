@@ -4,8 +4,6 @@ kind: Kustomization
 metadata:
   name: api-gateway
 
-namespace: gateway
-
 labels:
 - includeSelectors: true
   pairs:
@@ -21,7 +19,6 @@ resources:
   - serviceaccount.yaml
   - hpa.yaml
   - pdb.yaml
-  - ghcr-imagepull-secret.yaml
 
 images:
   - name: api-gateway
