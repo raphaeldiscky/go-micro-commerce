@@ -15,6 +15,7 @@ patches:
   - path: patch-replicas.yaml
   - path: patch-resources.yaml
   - path: patch-hpa.yaml
+  - path: patch-imagepullsecrets.yaml
 
 configMapGenerator:
   - name: notification-service-config
