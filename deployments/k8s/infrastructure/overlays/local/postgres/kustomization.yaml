@@ -1,0 +1,49 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: application
+
+resources:
+  - ../../../base/postgres/auth-pg.yaml
+  - ../../../base/postgres/product-pg.yaml
+  - ../../../base/postgres/order-pg.yaml
+  - ../../../base/postgres/payment-pg.yaml
+  - ../../../base/postgres/cart-pg.yaml
+  - ../../../base/postgres/fulfillment-pg.yaml
+  - ../../../base/postgres/notification-pg.yaml
+  - ../../../base/postgres/search-pg.yaml
+  - ../../../base/postgres/chat-pg.yaml
+
+patches:
+  - target:
+      kind: Cluster
+      group: postgresql.cnpg.io
+      version: v1
+    patch: |-
+      - op: add
+        path: /spec/instances
+        value: 1
+      - op: add
+        path: /spec/storage
+        value:
+          size: 5Gi
+          storageClass: standard
+      - op: add
+        path: /spec/resources
+        value:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      - op: add
+        path: /spec/affinity
+        value:
+          nodeSelector:
+            workload-type: stateful
+          tolerations:
+            - key: workload-type
+              operator: Equal
+              value: stateful
+              effect: NoSchedule

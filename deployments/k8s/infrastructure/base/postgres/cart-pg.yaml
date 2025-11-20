@@ -1,39 +1,18 @@
-# CloudNativePG Cluster Helm Values - Auth Service (Local Development)
-fullnameOverride: "auth-pg"
+# CloudNativePG Cluster - Cart Service (Base)
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cart-pg
+  labels:
+    app: cart-pg
+    component: database
+spec:
+  imageName: ghcr.io/cloudnative-pg/postgresql:18
 
-type: postgresql
-mode: standalone
-
-version:
-  postgresql: "18"
-
-cluster:
-  instances: 1  # Single instance for local dev
-
-  affinity:
-    nodeSelector:
-      workload-type: stateful
-    tolerations:
-      - key: workload-type
-        operator: Equal
-        value: stateful
-        effect: NoSchedule
-
-  initdb:
-    database: auth_db
-    owner: auth_user
-
-  storage:
-    size: "5Gi"
-    storageClass: "standard"
-
-  resources:
-    requests:
-      memory: "256Mi"
-      cpu: "100m"
-    limits:
-      memory: "1Gi"
-      cpu: "500m"
+  bootstrap:
+    initdb:
+      database: cart_db
+      owner: cart_user
 
   postgresql:
     parameters:
@@ -47,7 +26,7 @@ cluster:
 
   monitoring:
     enabled: true
-    disableDefaultQueries: false  # Keep built-in PostgreSQL metrics
+    disableDefaultQueries: false
 
     customQueries:
       - name: "table_sizes"
@@ -102,9 +81,12 @@ cluster:
       metricRelabelings:
         - sourceLabels: [cluster_name]
           targetLabel: service
-          replacement: "auth"
+          replacement: "cart"
         - sourceLabels: [namespace]
           targetLabel: k8s_namespace
 
-backups:
-  enabled: false  # Disabled for local development
+  backup:
+    barmanObjectStore:
+      destinationPath: ""
+      serverName: ""
+    retentionPolicy: "7d"

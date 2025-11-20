@@ -5,14 +5,13 @@ metadata:
   labels:
     app: chat-service
 data:
-  APP_ENVIRONMENT: "production"
   APP_LOGGER_LEVEL: "4"
   APP_TIMEOUT_SHUTDOWN: "10s"
 
   # Observability
   TRACING_URL: "otel-collector:4318"
   TRACING_SAMPLING_RATE: "0.1"
-  TRACING_ENVIRONMENT: "production"
   METRICS_PATH: "/metrics"
 
   # Add service-specific config here in overlays
+  # Override APP_ENVIRONMENT and TRACING_ENVIRONMENT in overlays
