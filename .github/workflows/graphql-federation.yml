@@ -7,7 +7,7 @@ on:
     paths:
       - '**/graph/schema/**/*.graphql'
       - 'graphql-gateway/supergraph.yaml'
-      - 'deployments/k8s/infrastructure/apollo-router/supergraph.yaml'
+      - 'deployments/k8s/infrastructure/base/apollo-router/supergraph.yaml'
       - 'scripts/merge-graphql-schemas.sh'
   push:
     branches:
@@ -15,7 +15,7 @@ on:
     paths:
       - '**/graph/schema/**/*.graphql'
       - 'graphql-gateway/supergraph.yaml'
-      - 'deployments/k8s/infrastructure/apollo-router/supergraph.yaml'
+      - 'deployments/k8s/infrastructure/base/apollo-router/supergraph.yaml'
       - 'scripts/merge-graphql-schemas.sh'
 
 jobs:
@@ -47,13 +47,13 @@ jobs:
         env:
           APOLLO_ELV2_LICENSE: accept
         run: |
-          cd deployments/k8s/infrastructure/apollo-router
+          cd deployments/k8s/infrastructure/base/apollo-router
           rover supergraph compose --config supergraph.yaml > supergraph-schema.graphql
 
       - name: Detect schema changes
         id: check_changes
         run: |
-          if git diff --quiet graphql-gateway/supergraph-schema.graphql deployments/k8s/infrastructure/apollo-router/supergraph-schema.graphql; then
+          if git diff --quiet graphql-gateway/supergraph-schema.graphql deployments/k8s/infrastructure/base/apollo-router/supergraph-schema.graphql; then
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -65,7 +65,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add graphql-gateway/supergraph-schema.graphql
-          git add deployments/k8s/infrastructure/apollo-router/supergraph-schema.graphql
+          git add deployments/k8s/infrastructure/base/apollo-router/supergraph-schema.graphql
           git commit -m "chore(graphql): update supergraph schemas (dev + k8s) [skip ci]"
           git push
 

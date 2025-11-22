@@ -7,16 +7,16 @@ on:
     paths:
       - 'deployments/k8s/**'
       - 'deployments/helm/**'
-      - 'scripts/validate_manifests.sh'
-      - 'scripts/validate_charts.sh'
+      - 'scripts/validate-manifests.sh'
+      - 'scripts/validate-charts.sh'
   push:
     branches:
       - main
     paths:
       - 'deployments/k8s/**'
       - 'deployments/helm/**'
-      - 'scripts/validate_manifests.sh'
-      - 'scripts/validate_charts.sh'
+      - 'scripts/validate-manifests.sh'
+      - 'scripts/validate-charts.sh'
 
 jobs:
   validate-manifests:
@@ -48,10 +48,10 @@ jobs:
           version: 'latest'
 
       - name: Validate Kubernetes manifests
-        run: bash scripts/validate_manifests.sh
+        run: bash scripts/validate-manifests.sh
 
       - name: Validate Helm values
-        run: bash scripts/validate_charts.sh
+        run: bash scripts/validate-charts.sh
 
       - name: Generate validation summary
         if: always()
