@@ -205,12 +205,11 @@ print_summary() {
 
     if [ ${#failed_kubelinter[@]} -gt 0 ]; then
         echo ""
-        print_warning "Kube-linter best practice warnings (${#failed_kubelinter[@]}):"
+        print_error "Kube-linter failures (${#failed_kubelinter[@]}):"
         for chart in "${failed_kubelinter[@]}"; do
             echo "  - $chart"
         done
-        echo ""
-        print_warning "Note: Linter warnings are informational and don't fail the build"
+        has_failures=true
     fi
 
     echo ""

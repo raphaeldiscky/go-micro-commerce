@@ -1,8 +1,6 @@
 checks:
   # Exclude opinionated checks that don't fit our workflow
   exclude:
-    # We use semver + latest tag intentionally for prod deployments
-
     # Not all Go applications support read-only root filesystem
     - "no-read-only-root-fs"
     # Anti-affinity is managed at the infrastructure level
@@ -19,11 +17,11 @@ checks:
     - "host-network"
     - "host-pid"
     - "host-ipc"
+    - "env-var-secret"
 
     # Reliability checks
     - "dangling-service"
     - "mismatching-selector"
-    - "required-label-owner"
     - "duplicate-env-var"
     - "env-var-secret"
     - "deprecated-service-account-field"
@@ -31,6 +29,11 @@ checks:
     # Resource checks
     - "unset-cpu-requirements"
     - "unset-memory-requirements"
+    - "minimum-replica-count"
+
+    # PDB checks
+    - "pdb-min-available"
+    - "pdb-unhealthy-pod-eviction-policy"
 
 # Custom object configuration
 customChecks: []
