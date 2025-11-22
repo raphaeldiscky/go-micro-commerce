@@ -22,8 +22,8 @@ type Manager struct {
 	logger               logger.Logger
 	subscriptions        map[string]*conversationSubscription
 	userSubs             map[uuid.UUID]*userSubscription
-	conversationChannels map[uuid.UUID]string // conversationID → Redis channel name
-	userChannels         map[uuid.UUID]string // userID → Redis channel name
+	conversationChannels map[uuid.UUID]string // conversationID -> Redis channel name
+	userChannels         map[uuid.UUID]string // userID -> Redis channel name
 	mu                   sync.RWMutex
 	Hub                  *websocket.ChatHub
 	EventBus             rediseventbus.EventBus

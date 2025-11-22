@@ -39,7 +39,7 @@ You can use either HTTPS or SSH authentication. **Both methods are secure when c
 ### Step 1: Create GitHub Personal Access Token
 
 1. Go to GitHub Settings: https://github.com/settings/tokens
-2. Click **"Generate new token"** → **"Generate new token (classic)"**
+2. Click **"Generate new token"** -> **"Generate new token (classic)"**
 3. Configure the token:
    - **Note**: `ArgoCD GKE Production`
    - **Expiration**: Choose based on your security policy (e.g., 90 days)
@@ -143,7 +143,7 @@ ssh-keygen -t ed25519 -C "argocd@discky.com" -f ~/.ssh/argocd-repo -N ""
 **Option A: Deploy Key (Recommended - Repository-Specific)**
 
 1. Go to your repository: https://github.com/raphaeldiscky/go-micro-commerce
-2. Navigate to: **Settings** → **Deploy keys**
+2. Navigate to: **Settings** -> **Deploy keys**
 3. Click **"Add deploy key"**
 4. Configure:
    - **Title**: `ArgoCD Production GKE`

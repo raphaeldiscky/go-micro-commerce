@@ -19,7 +19,7 @@ func MapProtoToProduct(p *pb.Product) (entity.Product, error) {
 		return entity.Product{}, fmt.Errorf("invalid product ID from product-service: %w", err)
 	}
 
-	// Convert protobuf Timestamp → time.Time safely
+	// Convert protobuf Timestamp -> time.Time safely
 	var createdAt, updatedAt time.Time
 	if p.GetCreatedAt() != nil {
 		createdAt = p.GetCreatedAt().AsTime()

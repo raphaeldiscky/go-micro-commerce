@@ -4,5 +4,4 @@ kind: Kustomization
 namespace: application
 
 resources:
-  - ../../../base/redis/redis-cluster.yaml
-  - ../../../base/redis/redis-insight.yaml
+  - ../../../base/redis

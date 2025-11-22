@@ -84,7 +84,7 @@ func (n *Notification) validate() error {
 		constant.PushNotificationTypePaymentFailed,
 		constant.PushNotificationTypePaymentTimeout,
 		constant.PushNotificationTypeSystemAlert:
-		// valid types → no error
+		// valid types -> no error
 		return nil
 	default:
 		return errors.New("invalid notification type")

@@ -100,7 +100,7 @@ Subgraph composition configuration:
 
 The gateway exports:
 
-- **Traces**: to OpenTelemetry Collector → Tempo
+- **Traces**: to OpenTelemetry Collector -> Tempo
 - **Metrics**: Prometheus format on port 9091
 - **Logs**: JSON structured logs
 

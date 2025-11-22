@@ -44,19 +44,19 @@ sudo microk8s status --wait-ready
 echo -e "${BLUE}Enabling required MicroK8s addons...${NC}"
 echo ""
 
-echo -e "${CYAN}  → Enabling DNS addon...${NC}"
+echo -e "${CYAN}  -> Enabling DNS addon...${NC}"
 sudo microk8s enable dns
 
-echo -e "${CYAN}  → Enabling registry addon (localhost:32000)...${NC}"
+echo -e "${CYAN}  -> Enabling registry addon (localhost:32000)...${NC}"
 sudo microk8s enable registry
 
-echo -e "${CYAN}  → Enabling storage addon...${NC}"
+echo -e "${CYAN}  -> Enabling storage addon...${NC}"
 sudo microk8s enable storage
 
-echo -e "${CYAN}  → Enabling hostpath-storage addon...${NC}"
+echo -e "${CYAN}  -> Enabling hostpath-storage addon...${NC}"
 sudo microk8s enable hostpath-storage
 
-echo -e "${CYAN}  → Enabling MetalLB addon (LoadBalancer support)...${NC}"
+echo -e "${CYAN}  -> Enabling MetalLB addon (LoadBalancer support)...${NC}"
 sudo microk8s enable metallb:127.0.0.1-127.0.0.10
 
 echo ""

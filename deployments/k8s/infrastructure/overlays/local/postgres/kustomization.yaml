@@ -4,15 +4,7 @@ kind: Kustomization
 namespace: application
 
 resources:
-  - ../../../base/postgres/auth-pg.yaml
-  - ../../../base/postgres/product-pg.yaml
-  - ../../../base/postgres/order-pg.yaml
-  - ../../../base/postgres/payment-pg.yaml
-  - ../../../base/postgres/cart-pg.yaml
-  - ../../../base/postgres/fulfillment-pg.yaml
-  - ../../../base/postgres/notification-pg.yaml
-  - ../../../base/postgres/search-pg.yaml
-  - ../../../base/postgres/chat-pg.yaml
+  - ../../../base/postgres
 
 patches:
   - target:

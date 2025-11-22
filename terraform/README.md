@@ -46,8 +46,8 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 **Architecture**:
 
 ```
-Frontend: GitHub → Cloudflare Pages → https://go.micro.commerce.discky.com
-Backend:  GKE → Traefik LoadBalancer → https://api.discky.com
+Frontend: GitHub -> Cloudflare Pages -> https://go.micro.commerce.discky.com
+Backend:  GKE -> Traefik LoadBalancer -> https://api.discky.com
 ```
 
 ## Prerequisites

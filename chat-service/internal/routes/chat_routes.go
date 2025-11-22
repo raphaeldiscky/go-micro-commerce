@@ -31,9 +31,9 @@ func SetupChatRoutes(
 	protected.GET("/users/online", h.GetOnlineUsers)
 
 	// NOTE: The following operations are handled via WebSocket messages on /v1/ws:
-	// - Send Message → WebSocket message type "chat"
-	// - Update Presence → WebSocket message type "presence"
-	// - Typing Indicator → WebSocket message type "typing"
-	// - Delivery Receipt → WebSocket message type "delivery_receipt"
-	// - Read Receipt → WebSocket message type "read_receipt"
+	// - Send Message -> WebSocket message type "chat"
+	// - Update Presence -> WebSocket message type "presence"
+	// - Typing Indicator -> WebSocket message type "typing"
+	// - Delivery Receipt -> WebSocket message type "delivery_receipt"
+	// - Read Receipt -> WebSocket message type "read_receipt"
 }

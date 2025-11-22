@@ -5,7 +5,7 @@ This guide walks you through deploying the React + Vite frontend to Cloudflare P
 ## Why Cloudflare Pages?
 
 ✅ **Free hosting**: Unlimited bandwidth and requests
-✅ **Automatic deployments**: Push to GitHub → auto-deploy
+✅ **Automatic deployments**: Push to GitHub -> auto-deploy
 ✅ **Global CDN**: 300+ edge locations worldwide
 ✅ **Built-in SPA routing**: No 404 redirect configuration needed
 ✅ **Preview deployments**: Every PR gets a preview URL
@@ -35,7 +35,7 @@ Note this IP address - you'll use it to configure Cloudflare DNS and environment
 
 1. **Log in to Cloudflare Dashboard**
    - Visit: https://dash.cloudflare.com/
-   - Navigate to: **Workers & Pages** → **Create application** → **Pages** → **Connect to Git**
+   - Navigate to: **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**
 
 2. **Connect GitHub Repository**
    - Click **Connect GitHub**
@@ -77,13 +77,13 @@ Note this IP address - you'll use it to configure Cloudflare DNS and environment
 
 1. **Add Custom Domain**
    - In Cloudflare Pages project settings
-   - Go to **Custom domains** → **Set up a custom domain**
+   - Go to **Custom domains** -> **Set up a custom domain**
    - Enter: `go.micro.commerce.discky.com`
    - Click **Continue**
 
 2. **DNS Configuration** (Automatic)
    - Cloudflare will automatically create a CNAME record
-   - CNAME: `go.micro.commerce` → `go-micro-commerce.pages.dev`
+   - CNAME: `go.micro.commerce` -> `go-micro-commerce.pages.dev`
    - SSL/TLS certificate is provisioned automatically
    - Wait 2-5 minutes for DNS propagation
 
@@ -123,7 +123,7 @@ Cloudflare Pages automatically creates preview deployments for:
 
 To configure different API URLs for previews:
 
-1. Go to **Settings** → **Environment variables**
+1. Go to **Settings** -> **Environment variables**
 2. Switch to **Preview** tab
 3. Add preview-specific variables:
    ```bash
@@ -153,7 +153,7 @@ Once configured, deployments happen automatically:
    - Runs: `cd frontend && pnpm install && pnpm build`
    - Compiles React + Vite application
 
-3. **Build succeeds → Deploy**
+3. **Build succeeds -> Deploy**
    - Deploys `frontend/dist` to global CDN
    - Available at: https://go.micro.commerce.discky.com
    - Previous version is kept for instant rollback
@@ -223,7 +223,7 @@ Create `frontend/public/_redirects` for custom redirects:
 
 By default, Cloudflare Pages watches the entire repository. To deploy only when frontend changes:
 
-1. Go to **Settings** → **Builds & deployments**
+1. Go to **Settings** -> **Builds & deployments**
 2. Under **Build watch paths**, add:
    ```
    frontend/**
@@ -235,7 +235,7 @@ This prevents deployments when only backend code changes.
 
 Enable deployments for specific branches:
 
-1. **Settings** → **Builds & deployments** → **Branch deployments**
+1. **Settings** -> **Builds & deployments** -> **Branch deployments**
 2. Enable: **All non-production branches**
 3. Each branch gets URL: `feature-name.go-micro-commerce.pages.dev`
 
@@ -245,7 +245,7 @@ If a deployment causes issues:
 
 1. Go to **Deployments** in Cloudflare Pages
 2. Find previous working deployment
-3. Click **...** → **Rollback to this deployment**
+3. Click **...** -> **Rollback to this deployment**
 4. Instant rollback (< 30 seconds)
 
 ## Cost and Limits

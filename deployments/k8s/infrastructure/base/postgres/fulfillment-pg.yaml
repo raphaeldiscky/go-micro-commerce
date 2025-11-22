@@ -8,6 +8,7 @@ metadata:
     component: database
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18
+  instances: 1
 
   bootstrap:
     initdb:
@@ -84,9 +85,3 @@ spec:
           replacement: "fulfillment"
         - sourceLabels: [namespace]
           targetLabel: k8s_namespace
-
-  backup:
-    barmanObjectStore:
-      destinationPath: ""
-      serverName: ""
-    retentionPolicy: "7d"

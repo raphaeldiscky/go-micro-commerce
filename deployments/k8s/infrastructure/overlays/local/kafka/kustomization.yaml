@@ -4,5 +4,4 @@ kind: Kustomization
 namespace: application
 
 resources:
-  - ../../../base/kafka/kafka-cluster.yaml
-  - ../../../base/kafka/kafka-ui.yaml
+  - ../../../base/kafka

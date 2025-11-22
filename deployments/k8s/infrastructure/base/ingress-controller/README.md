@@ -1,6 +1,6 @@
 # Local Development Approach
 
-- Kind: Use NodePort service with existing extraPortMappings (80→80, 443→443)
+- Kind: Use NodePort service with existing extraPortMappings (80->80, 443->443)
 - MicroK8s: Use LoadBalancer with MetalLB addon enabled
 - Tilt: Dynamically set Traefik service type based on detected cluster
 
@@ -9,7 +9,7 @@
 **Flow:**
 
 ```bash
-Browser → localhost:443 → Kind extraPortMapping → NodePort → Traefik → Services
+Browser -> localhost:443 -> Kind extraPortMapping -> NodePort -> Traefik -> Services
 ```
 
 ### ✅ What’s Good
@@ -35,7 +35,7 @@ Browser → localhost:443 → Kind extraPortMapping → NodePort → Traefik →
 **Flow:**
 
 ```bash
-Browser → 127.0.0.1:443 → MetalLB IP → LoadBalancer → Traefik → Services
+Browser -> 127.0.0.1:443 -> MetalLB IP -> LoadBalancer -> Traefik -> Services
 ```
 
 ### ✅ What’s Good
@@ -63,11 +63,11 @@ For **public internet-facing production**, you’d typically move to:
 
 ## 🏁 Summary
 
-| Environment                 | Flow                                 | Production-Ready? | Notes                                      |
-| --------------------------- | ------------------------------------ | ----------------- | ------------------------------------------ |
-| **Kind**                    | `localhost:443 → NodePort → Traefik` | ❌ No             | Great for local dev & CI                   |
-| **MicroK8s**                | `127.0.0.1:443 → MetalLB → Traefik`  | ✅ Partial        | Suitable for staging or on-prem production |
-| **Cloud K8s (GKE/EKS/AKS)** | `domain → Cloud LB → Traefik`        | ✅ Yes            | Fully production-grade setup               |
+| Environment                 | Flow                                   | Production-Ready? | Notes                                      |
+| --------------------------- | -------------------------------------- | ----------------- | ------------------------------------------ |
+| **Kind**                    | `localhost:443 -> NodePort -> Traefik` | ❌ No             | Great for local dev & CI                   |
+| **MicroK8s**                | `127.0.0.1:443 -> MetalLB -> Traefik`  | ✅ Partial        | Suitable for staging or on-prem production |
+| **Cloud K8s (GKE/EKS/AKS)** | `domain -> Cloud LB -> Traefik`        | ✅ Yes            | Fully production-grade setup               |
 
 ---
 
@@ -84,7 +84,7 @@ Traefik Ingress (go.micro.commerce)
    ↓
 API Gateway (local-api-gateway:8080)
    ↓
-API Gateway proxies → apollo-router.default.svc.cluster.local:80
+API Gateway proxies -> apollo-router.default.svc.cluster.local:80
    ↓
 Apollo Router (GraphQL Federation Gateway)
    ↓
