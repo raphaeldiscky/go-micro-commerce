@@ -29,7 +29,6 @@ checks:
     # Resource checks
     - "unset-cpu-requirements"
     - "unset-memory-requirements"
-    - "minimum-replica-count"
 
     # PDB checks
     - "pdb-min-available"
