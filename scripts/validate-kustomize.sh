@@ -81,18 +81,51 @@ print_summary() {
     fi
 }
 
+# Show usage
+show_usage() {
+    echo "Usage: $0 [PATH]"
+    echo ""
+    echo "Validate kustomize configurations"
+    echo ""
+    echo "ARGUMENTS:"
+    echo "  PATH    Optional path to search for kustomizations (default: deployments/k8s)"
+    echo ""
+    echo "EXAMPLES:"
+    echo "  $0                          # Validate all kustomizations"
+    echo "  $0 deployments/k8s          # Validate all (skip local secrets issues in CI)"
+    echo "  $0 deployments/k8s/workloads/overlays/prod  # Validate only prod workloads"
+    echo ""
+}
+
 # Main execution
 main() {
+    local search_path="${1:-deployments/k8s}"
+
+    # Handle help flag
+    if [ "$search_path" = "-h" ] || [ "$search_path" = "--help" ]; then
+        show_usage
+        exit 0
+    fi
+
+    # Validate path exists
+    if [ ! -d "$search_path" ]; then
+        print_error "Error: Path '$search_path' does not exist"
+        echo ""
+        show_usage
+        exit 1
+    fi
+
     check_kustomize
 
-    print_status "Discovering kustomization files..."
+    print_status "Discovering kustomization files in $search_path..."
     echo ""
 
-    # Find all kustomization.yaml files
+    # Find all kustomization.yaml files in the specified path
+    # Exclude local overlays by default (they require local secrets not available in CI)
     while IFS= read -r -d '' kustomization; do
         kustomization_dir=$(dirname "$kustomization")
         validate_kustomization "$kustomization_dir" || true
-    done < <(find deployments/k8s -name "kustomization.yaml" -print0 | sort -z)
+    done < <(find "$search_path" -path "*/overlays/local" -prune -o -name "kustomization.yaml" -print0 | sort -z)
 
     # Print summary and exit with appropriate code
     if print_summary; then
