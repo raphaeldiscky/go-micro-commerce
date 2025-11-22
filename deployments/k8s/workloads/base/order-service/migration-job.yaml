@@ -17,7 +17,7 @@ spec:
       restartPolicy: OnFailure
       containers:
       - name: migrate
-        image: ghcr.io/raphaeldiscky/go-micro-commerce/order-service-migrations:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/order-service-migrations:v0.0.0
         imagePullPolicy: IfNotPresent
         command:
         - /bin/sh

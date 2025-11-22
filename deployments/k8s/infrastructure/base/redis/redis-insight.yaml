@@ -34,6 +34,9 @@ spec:
         app: redis-insight
         component: redis-ui
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: redis-insight
           image: redis/redisinsight:2.70
@@ -48,6 +51,8 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "200m"
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: data
               mountPath: /db

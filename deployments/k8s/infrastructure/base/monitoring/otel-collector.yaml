@@ -122,9 +122,12 @@ spec:
         app: otel-collector
         component: monitoring
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
       containers:
         - name: otel-collector
-          image: otel/opentelemetry-collector-contrib:latest
+          image: otel/opentelemetry-collector-contrib:0.140.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: otlp-grpc
@@ -135,6 +138,9 @@ spec:
               protocol: TCP
             - name: metrics
               containerPort: 8889
+              protocol: TCP
+            - name: health-check
+              containerPort: 13133
               protocol: TCP
           args:
             - --config=/conf/otel-collector-config.yaml
@@ -148,6 +154,8 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          securityContext:
+            allowPrivilegeEscalation: false
           livenessProbe:
             httpGet:
               path: /
