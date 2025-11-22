@@ -128,13 +128,13 @@ validate_kustomization() {
     # Layer 3: Kube-linter Best Practices
     echo "  [3/3] Kube-linter best practices..."
     local kubelinter_output
-    if kubelinter_output=$(kube-linter lint "$temp_manifest" 2>&1); then
+    if kubelinter_output=$(kube-linter lint --config .kube-linter.yaml "$temp_manifest" 2>&1); then
         echo "  ✓ Kube-linter checks passed"
     else
-        print_warning "  ⚠ Kube-linter found issues"
+        print_error "  ✗ Kube-linter found issues"
         echo "$kubelinter_output" | sed 's/^/    /'
         failed_kubelinter+=("$relative_path")
-        # Don't mark as failed - linter warnings are informational
+        validation_failed=true
     fi
 
     if [ "$validation_failed" = false ]; then
