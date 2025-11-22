@@ -71,13 +71,13 @@ deployments/k8s/
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    1. Developer Push                             │
-│   git push → deployments/k8s/workloads/overlays/prod/            │
+│   git push -> deployments/k8s/workloads/overlays/prod/            │
 └────────────────────┬────────────────────────────────────────┘
                      │
                      ↓
 ┌─────────────────────────────────────────────────────────────┐
 │           2. ArgoCD Detects Changes (Auto-Sync)                  │
-│   Bootstrap ApplicationSet → Deploys infrastructure.yaml +       │
+│   Bootstrap ApplicationSet -> Deploys infrastructure.yaml +       │
 │                               workloads.yaml                     │
 └────────────────────┬────────────────────────────────────────┘
                      │
@@ -92,17 +92,17 @@ deployments/k8s/
 ┌─────────────────────────────────────────────────────────────┐
 │              4. ArgoCD Syncs to Cluster                          │
 │   Each discovered directory becomes an Application               │
-│   Kustomize builds manifests → kubectl apply                     │
+│   Kustomize builds manifests -> kubectl apply                     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Bootstrap Flow (Terraform → ArgoCD)
+### Bootstrap Flow (Terraform -> ArgoCD)
 
 1. **Terraform provisions** GKE cluster and installs ArgoCD
 2. **Terraform deploys bootstrap ApplicationSet** pointing to `apps/applicationsets/*.yaml`
 3. **Bootstrap ApplicationSet discovers**:
-   - `infrastructure.yaml` → Deploys all infrastructure components
-   - `workloads.yaml` → Deploys all production microservices
+   - `infrastructure.yaml` -> Deploys all infrastructure components
+   - `workloads.yaml` -> Deploys all production microservices
 4. **Applications auto-sync** on every git push
 
 ## Directory Structure Explained

@@ -150,7 +150,7 @@ argocd_tls_issuer        = "letsencrypt-prod"
 # -----------------------------------------------------------------------------
 # 1. Create GitHub Personal Access Token:
 #    - Go to: https://github.com/settings/tokens
-#    - Click: "Generate new token" → "Generate new token (classic)"
+#    - Click: "Generate new token" -> "Generate new token (classic)"
 #    - Scopes: Select "repo" (Full control of private repositories)
 #    - Generate and copy the token
 #
@@ -234,7 +234,7 @@ cloudflare_zone_id   = "your-cloudflare-zone-id"
 #    - Zone: Read
 # Zone Resources:
 #  - Include: discky.com
-# Zone ID: Get from Cloudflare Dashboard → Select domain → Copy Zone ID from right sidebar
+# Zone ID: Get from Cloudflare Dashboard -> Select domain -> Copy Zone ID from right sidebar
 
 # Domain Configuration
 domain_name         = "discky.com"

@@ -47,7 +47,7 @@ helm_resource(
     flags=[
         '--create-namespace',
         '--version=0.26.1',  # Chart version (installs operator v1.27.1)
-        '--values=deployments/k8s/infrastructure/base/operators/cloudnative-pg/operator-values.yaml',
+        '--values=deployments/helm/operators/cloudnative-pg/values.yaml',
     ],
     labels=['operators'],
     resource_deps=['kube-prometheus-stack'],
@@ -103,7 +103,7 @@ helm_resource(
     'redis-operator',
     'ot-helm/redis-operator',
     flags=[
-        '--values=deployments/k8s/infrastructure/base/operators/redis-operator/operator-values.yaml',
+        '--values=deployments/helm/operators/redis-operator/values.yaml',
     ],
     labels=['operators'],
     resource_deps=['kube-prometheus-stack'],  # Wait for Prometheus CRDs
@@ -150,7 +150,7 @@ helm_resource(
     'strimzi/strimzi-kafka-operator',
     namespace="default",
     flags=[
-        '--values=deployments/k8s/infrastructure/base/operators/strimzi-kafka/operator-values.yaml',
+        '--values=deployments/helm/operators/strimzi-kafka/values.yaml',
         '--version=0.48.0',
     ],
     labels=['operators'],
@@ -201,7 +201,7 @@ helm_resource(
     'kube-prometheus-stack',
     'prometheus-community/kube-prometheus-stack',
     flags=[
-        '--values=deployments/k8s/infrastructure/monitoring/prometheus-values.yaml',
+        '--values=deployments/helm/monitoring/kube-prometheus-stack/values.yaml',
         '--version=79.5.0',
     ],
     labels=['monitoring'],
@@ -217,7 +217,7 @@ helm_resource(
     'loki',
     'grafana/loki',
     flags=[
-        '--values=deployments/k8s/infrastructure/monitoring/loki-values.yaml',
+        '--values=deployments/helm/monitoring/loki/values.yaml',
         '--version=6.46.0',
     ],
     labels=['monitoring'],
@@ -229,7 +229,7 @@ helm_resource(
     'alloy',
     'grafana/alloy',
     flags=[
-        '--values=deployments/k8s/infrastructure/monitoring/alloy-values.yaml',
+        '--values=deployments/helm/monitoring/alloy/values.yaml',
         '--version=1.4.0'
     ],
     labels=['monitoring'],
@@ -241,7 +241,7 @@ helm_resource(
     'tempo',
     'grafana/tempo',
     flags=[
-        '--values=deployments/k8s/infrastructure/monitoring/tempo-values.yaml',
+        '--values=deployments/helm/monitoring/tempo/values.yaml',
         '--version=1.24.0',
     ],
     labels=['monitoring'],
@@ -277,7 +277,7 @@ k8s_resource(
 # MicroK8s: Uses LoadBalancer with MetalLB addon (can have multiple replicas)
 traefik_flags = [
     '--create-namespace',
-    '--values=deployments/k8s/infrastructure/base/ingress-controller/values.yaml',
+    '--values=deployments/helm/infrastructure/traefik/values.yaml',
     '--version=37.2.0',
 ]
 
@@ -342,7 +342,7 @@ helm_resource(
     flags=[
         '--create-namespace',
         '--version=2.7.0',
-        '--values=deployments/k8s/infrastructure/base/apollo-router/values.yaml',
+        '--values=deployments/helm/infrastructure/apollo-router/values.yaml',
         '--set', 'fullnameOverride=local-apollo-router',
     ],
     labels=['apps'],

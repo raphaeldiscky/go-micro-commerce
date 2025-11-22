@@ -26,7 +26,7 @@ type Hub struct {
 	instanceID         string
 	userChannelBuilder func(uuid.UUID) string     // Function to build channel name for a user
 	eventHandler       rediseventbus.EventHandler // Handler for cross-instance events
-	subscribedUsers    map[uuid.UUID]int          // userID → connection count (for subscription tracking)
+	subscribedUsers    map[uuid.UUID]int          // userID -> connection count (for subscription tracking)
 }
 
 // BroadcastRequest represents a request to broadcast a message.

@@ -302,7 +302,7 @@ type ChatHub struct {
     eventBus       eventbus.EventBus         // Redis pub/sub integration
     eventHandler   *event.ChatEventHandler   // Event routing
     instanceID     string                    // Unique instance identifier
-    activeChannels map[string]int            // Channel → connection count
+    activeChannels map[string]int            // Channel -> connection count
     channelMutex   sync.RWMutex              // Protects activeChannels
 }
 ```
@@ -464,7 +464,7 @@ The **EventBus** provides a high-level abstraction over Redis pub/sub.
 #### Architecture
 
 ```
-ChatHub → EventBus → Redis Publisher/Subscriber → Redis Server
+ChatHub -> EventBus -> Redis Publisher/Subscriber -> Redis Server
 ```
 
 #### Key Features
@@ -516,14 +516,14 @@ func (b *redisEventBus) handleRedisMessage(ctx context.Context, channel string, 
 **Without filtering**:
 
 ```
-Instance A → Redis → Instance A,B,C (all receive)
-Instance A processes its own event → infinite loop
+Instance A -> Redis -> Instance A,B,C (all receive)
+Instance A processes its own event -> infinite loop
 ```
 
 **With filtering**:
 
 ```
-Instance A → Redis → Instance A,B,C (all receive)
+Instance A -> Redis -> Instance A,B,C (all receive)
 Instance A skips (same instance ID)
 Instance B,C process event
 ```
@@ -650,16 +650,16 @@ The chat service supports **horizontal scaling** by running multiple instances b
 
 ```
 Instance A subscribes to 10,000 conversation channels
-→ High Redis memory usage
-→ Processes events for empty conversations
+-> High Redis memory usage
+-> Processes events for empty conversations
 ```
 
 **After Optimization**:
 
 ```
 Instance A subscribes to ~50 active conversation channels
-→ Low Redis memory usage
-→ Only processes relevant events
+-> Low Redis memory usage
+-> Only processes relevant events
 ```
 
 **Implementation**: See [JoinConversation/LeaveConversation](#dynamic-subscription-strategy) above.
@@ -772,8 +772,8 @@ func (h *ChatHub) Shutdown(ctx context.Context) error {
 #### 1. WebSocket Upgrade
 
 ```
-Client → GET /ws?token={jwt}
-Server → HTTP 101 Switching Protocols
+Client -> GET /ws?token={jwt}
+Server -> HTTP 101 Switching Protocols
 ```
 
 **Authentication**:
@@ -856,12 +856,12 @@ chatConn.Start(ctx)
 #### 7. Message Processing
 
 ```
-Client sends message →
-Read pump receives →
-Handler processes →
-Database saves message →
-Hub broadcasts to conversation →
-Redis publishes for other instances →
+Client sends message ->
+Read pump receives ->
+Handler processes ->
+Database saves message ->
+Hub broadcasts to conversation ->
+Redis publishes for other instances ->
 Write pump sends to local connections
 ```
 
@@ -889,7 +889,7 @@ Triggered by:
 1. Set isActive = false
 2. Close send channel (stops write pump)
 3. Close WebSocket connection (stops read pump)
-4. Read pump defers: Unregister → OnDisconnect
+4. Read pump defers: Unregister -> OnDisconnect
 ```
 
 #### 10. Unregister from Hub
@@ -984,35 +984,35 @@ Instance A:
 #### 1. Chat Message
 
 ```
-Flow: Save → Broadcast to conversation → Send delivery receipt to sender
+Flow: Save -> Broadcast to conversation -> Send delivery receipt to sender
 Content: { conversationID, text, messageType }
 ```
 
 #### 2. Typing Indicator
 
 ```
-Flow: Broadcast to conversation (exclude sender) → No database save
+Flow: Broadcast to conversation (exclude sender) -> No database save
 Content: { conversationID, isTyping }
 ```
 
 #### 3. Presence Update
 
 ```
-Flow: Broadcast to all connections → No database save
+Flow: Broadcast to all connections -> No database save
 Content: { userID, status, event }
 ```
 
 #### 4. Delivery Receipt
 
 ```
-Flow: Broadcast to conversation (exclude sender) → No database save
+Flow: Broadcast to conversation (exclude sender) -> No database save
 Content: { messageID, conversationID, recipientID, timestamp }
 ```
 
 #### 5. Read Receipt
 
 ```
-Flow: Broadcast to conversation (exclude sender) → Update database
+Flow: Broadcast to conversation (exclude sender) -> Update database
 Content: { messageID, conversationID, readerID, timestamp }
 ```
 
@@ -1066,7 +1066,7 @@ messageRepo.Create(ctx, messageEntity) // Save to DB
 
 // Broadcast to local connections
 hub.BroadcastToConversation(conversationID, message, userA)
-// → User B not connected to Instance 1, doesn't receive yet
+// -> User B not connected to Instance 1, doesn't receive yet
 ```
 
 **Step 2: Publish to Redis (Instance 1)**
@@ -1132,21 +1132,21 @@ func (h *ChatHub) broadcastToLocalConversation(conversationID, message, excludeU
 **Without Instance ID Filtering**:
 
 ```
-Instance 1 → Publish to Redis
-Redis → Broadcast to Instance 1, 2, 3
-Instance 1 → Process event → Broadcast locally → Publish to Redis
-Redis → Broadcast to Instance 1, 2, 3
-Instance 1 → Process event → ...INFINITE LOOP
+Instance 1 -> Publish to Redis
+Redis -> Broadcast to Instance 1, 2, 3
+Instance 1 -> Process event -> Broadcast locally -> Publish to Redis
+Redis -> Broadcast to Instance 1, 2, 3
+Instance 1 -> Process event -> ...INFINITE LOOP
 ```
 
 **With Instance ID Filtering**:
 
 ```
-Instance 1 → Publish to Redis with sourceInstanceID = "instance-1"
-Redis → Broadcast to Instance 1, 2, 3
-Instance 1 → Check sourceInstanceID == "instance-1" → SKIP
-Instance 2 → Check sourceInstanceID == "instance-2" → PROCESS
-Instance 3 → Check sourceInstanceID == "instance-3" → PROCESS
+Instance 1 -> Publish to Redis with sourceInstanceID = "instance-1"
+Redis -> Broadcast to Instance 1, 2, 3
+Instance 1 -> Check sourceInstanceID == "instance-1" -> SKIP
+Instance 2 -> Check sourceInstanceID == "instance-2" -> PROCESS
+Instance 3 -> Check sourceInstanceID == "instance-3" -> PROCESS
 ```
 
 **Implementation**:

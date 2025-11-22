@@ -346,7 +346,6 @@ tasks:
     cmds:
       - task: graphql
       - bash ./scripts/compose-supergraph.sh
-      - bash ./deployments/k8s/infrastructure/apollo-router/create-supergraph-configmap.sh
       - cd frontend && pnpm codegen
       - task: deps
       - task: lint
@@ -393,6 +392,22 @@ tasks:
   # ============================================================================
   # Kubernetes & Tilt Commands
   # ============================================================================
+
+  validate_manifests:
+    desc: Validate Kubernetes manifests
+    cmds:
+      - bash ./scripts/validate-manifests.sh
+
+  validate_charts:
+    desc: Validate Helm charts
+    cmds:
+      - bash ./scripts/validate-charts.sh
+
+  validate_k8s:
+    desc: Validate Kubernetes manifests and Helm charts
+    cmds:
+      - task: validate_manifests
+      - task: validate_charts
 
   k8s_kind_create_cluster:
     desc: Create Kind cluster for local development

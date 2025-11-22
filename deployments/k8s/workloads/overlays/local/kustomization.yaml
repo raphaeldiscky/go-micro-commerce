@@ -282,7 +282,7 @@ secretGenerator:
 
 # Image registry override for Tilt local development
 # Base uses GHCR images, but Tilt builds with simple names
-# This transforms ghcr.io/.../service → service (for Tilt's default_registry to work)
+# This transforms ghcr.io/.../service -> service (for Tilt's default_registry to work)
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway
     newName: api-gateway

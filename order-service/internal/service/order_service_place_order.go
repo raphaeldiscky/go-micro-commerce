@@ -25,8 +25,8 @@ import (
 )
 
 // PlaceOrder handles the synchronous order placement flow.
-// Flow: Get checkout → Validate → Reserve products → Calculate shipping →
-// Create payment intent → Create order → Publish event → Return order + payment data.
+// Flow: Get checkout -> Validate -> Reserve products -> Calculate shipping ->
+// Create payment intent -> Create order -> Publish event -> Return order + payment data.
 //
 //nolint:funlen,gocyclo,cyclop,govet,gocognit // TODO: refactor
 func (s *orderService) PlaceOrder(

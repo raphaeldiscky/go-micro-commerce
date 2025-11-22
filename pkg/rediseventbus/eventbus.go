@@ -17,7 +17,7 @@ type redisEventBus struct {
 	subscriber      redispkg.Subscriber
 	logger          logger.Logger
 	instanceID      string
-	subscriptions   map[string][]EventHandler // channel → handlers
+	subscriptions   map[string][]EventHandler // channel -> handlers
 	activeChannels  map[string]bool           // channels currently subscribed in Redis
 	mutex           sync.RWMutex
 	subscriberMutex sync.Mutex

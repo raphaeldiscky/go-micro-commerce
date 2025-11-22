@@ -21,9 +21,10 @@ configMapGenerator:
   - name: order-service-config
     behavior: merge
     literals:
+      - APP_ENVIRONMENT=production
       - ENV=production
       - LOG_LEVEL=info
 
 images:
-  - name: order-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/order-service
     newTag: latest

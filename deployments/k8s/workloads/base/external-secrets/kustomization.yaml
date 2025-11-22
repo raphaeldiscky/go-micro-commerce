@@ -12,6 +12,7 @@ resources:
   - grafana-external-secret.yaml
   - argocd-external-secret.yaml
   - ghcr-imagepull-secret.yaml
+  - ghcr-imagepull-secret-gateway.yaml
 
 labels:
   - pairs:

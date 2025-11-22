@@ -1,0 +1,79 @@
+name: graphql-federation
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/graph/schema/**/*.graphql'
+      - 'graphql-gateway/supergraph.yaml'
+      - 'deployments/k8s/infrastructure/base/apollo-router/supergraph.yaml'
+      - 'scripts/merge-graphql-schemas.sh'
+  push:
+    branches:
+      - main
+    paths:
+      - '**/graph/schema/**/*.graphql'
+      - 'graphql-gateway/supergraph.yaml'
+      - 'deployments/k8s/infrastructure/base/apollo-router/supergraph.yaml'
+      - 'scripts/merge-graphql-schemas.sh'
+
+jobs:
+  compose-supergraph:
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Rover CLI
+        run: |
+          curl -sSL https://rover.apollo.dev/nix/latest | sh
+          echo "$HOME/.rover/bin" >> $GITHUB_PATH
+
+      - name: Merge GraphQL schemas
+        run: bash scripts/merge-graphql-schemas.sh
+
+      - name: Compose supergraph schema (Development)
+        env:
+          APOLLO_ELV2_LICENSE: accept
+        run: |
+          cd graphql-gateway
+          rover supergraph compose --config supergraph.yaml > supergraph-schema.graphql
+
+      - name: Compose supergraph schema (Kubernetes)
+        env:
+          APOLLO_ELV2_LICENSE: accept
+        run: |
+          cd deployments/k8s/infrastructure/base/apollo-router
+          rover supergraph compose --config supergraph.yaml > supergraph-schema.graphql
+
+      - name: Detect schema changes
+        id: check_changes
+        run: |
+          if git diff --quiet graphql-gateway/supergraph-schema.graphql deployments/k8s/infrastructure/base/apollo-router/supergraph-schema.graphql; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push schema changes
+        if: steps.check_changes.outputs.changed == 'true' && github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add graphql-gateway/supergraph-schema.graphql
+          git add deployments/k8s/infrastructure/base/apollo-router/supergraph-schema.graphql
+          git commit -m "chore(graphql): update supergraph schemas (dev + k8s) [skip ci]"
+          git push
+
+      - name: Generate summary
+        if: always()
+        run: |
+          echo "## GraphQL Federation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Schema Changed**: ${{ steps.check_changes.outputs.changed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

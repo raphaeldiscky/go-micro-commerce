@@ -41,12 +41,12 @@ spec:
     accessControlMaxAge: 3600
     addVaryHeader: true
 ---
-# Security Headers Middleware
+# API Security Headers Middleware
 # Adds security headers to all API responses
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: security-headers
+  name: api-security-headers
   namespace: default
   labels:
     app.kubernetes.io/name: api-backend-ingress

@@ -51,14 +51,14 @@ npm install
 npx husky init
 echo "
 if git diff --cached --name-only --diff-filter=ACM | grep -qE '\.go$'; then
-  echo "Go files detected → running task check..."
+  echo "Go files detected -> running task check..."
   task check
 else
-  echo "No Go files detected → skipping task check"
+  echo "No Go files detected -> skipping task check"
 fi
 
 if git diff --cached --name-only --diff-filter=ACM | grep -q '^frontend/'; then
-  echo "frontend/ changes detected → running frontend lint..."
+  echo "frontend/ changes detected -> running frontend lint..."
   (
     cd frontend || exit 1
     npm run lint

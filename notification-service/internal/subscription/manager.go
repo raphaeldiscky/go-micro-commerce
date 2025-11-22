@@ -18,7 +18,7 @@ import (
 type Manager struct {
 	logger           logger.Logger
 	userSubs         map[uuid.UUID]*userSubscription
-	redisChannels    map[uuid.UUID]string // userID → Redis channel name
+	redisChannels    map[uuid.UUID]string // userID -> Redis channel name
 	mu               sync.RWMutex
 	EventBus         rediseventbus.EventBus
 	eventHandlerFunc rediseventbus.EventHandler

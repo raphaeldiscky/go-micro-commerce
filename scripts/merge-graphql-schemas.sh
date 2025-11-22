@@ -39,7 +39,7 @@ merge_schemas() {
     # Concatenate all .graphql files
     cat "$schema_dir"/*.graphql > "$output_file"
 
-    echo -e "${GREEN}✓${NC} $service → merged into $output_file"
+    echo -e "${GREEN}✓${NC} $service -> merged into $output_file"
 }
 
 # Merge schemas for each service
@@ -55,18 +55,18 @@ mkdir -p graphql-gateway/schemas
 for service in "${SERVICES[@]}"; do
   if [ -f "$service/graph/schema.graphqls" ]; then
     cp "$service/graph/schema.graphqls" "graphql-gateway/schemas/$service.graphqls"
-    echo -e "${GREEN}✓${NC} $service → graphql-gateway/schemas/$service.graphqls"
+    echo -e "${GREEN}✓${NC} $service -> graphql-gateway/schemas/$service.graphqls"
   fi
 done
 
 # Copy schemas to apollo-router k8s directory (for Kubernetes deployment)
 echo ""
 echo -e "${BLUE}Copying schemas to apollo-router k8s...${NC}"
-mkdir -p deployments/k8s/infrastructure/apollo-router/schemas
+mkdir -p deployments/k8s/infrastructure/base/apollo-router/schemas
 for service in "${SERVICES[@]}"; do
   if [ -f "$service/graph/schema.graphqls" ]; then
-    cp "$service/graph/schema.graphqls" "deployments/k8s/infrastructure/apollo-router/schemas/$service.graphqls"
-    echo -e "${GREEN}✓${NC} $service → deployments/k8s/infrastructure/apollo-router/schemas/$service.graphqls"
+    cp "$service/graph/schema.graphqls" "deployments/k8s/infrastructure/base/apollo-router/schemas/$service.graphqls"
+    echo -e "${GREEN}✓${NC} $service -> deployments/k8s/infrastructure/base/apollo-router/schemas/$service.graphqls"
   fi
 done
 

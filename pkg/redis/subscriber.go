@@ -17,11 +17,11 @@ type subscriber struct {
 	config         PubSubConfig
 	logger         logger.Logger
 	pubsub         *redis.PubSub            // For regular Subscribe/PSubscribe
-	shardedPubsubs map[string]*redis.PubSub // For SSubscribe: channel → dedicated pubsub
+	shardedPubsubs map[string]*redis.PubSub // For SSubscribe: channel -> dedicated pubsub
 	mu             sync.RWMutex
 	running        bool
 	shardedRunning map[string]bool           // track running state per sharded channel
-	handlers       map[string]MessageHandler // channel → handler mapping
+	handlers       map[string]MessageHandler // channel -> handler mapping
 }
 
 // NewSubscriber creates a new Redis subscriber.

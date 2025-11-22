@@ -250,7 +250,7 @@ sequenceDiagram
   Asynq->>OrderService: Trigger 24h expiration task
   OrderService->>PostgreSQL: Fetch order by ID
   alt Order status = PENDING_PAYMENT
-      OrderService->>PostgreSQL: Update order → EXPIRED
+      OrderService->>PostgreSQL: Update order -> EXPIRED
       OrderService->>Kafka: PUBLISH OrderExpired
       Kafka-->>OrderService: Ack
       OrderService-->>Asynq: Task completed

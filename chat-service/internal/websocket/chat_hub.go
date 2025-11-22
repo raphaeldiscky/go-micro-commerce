@@ -26,7 +26,7 @@ type ChatHub struct {
 	eventBus       rediseventbus.EventBus
 	eventHandler   *event.ChatEventHandler
 	instanceID     string
-	activeChannels map[string]int // channel → connection count
+	activeChannels map[string]int // channel -> connection count
 	channelMutex   sync.RWMutex
 }
 

@@ -82,7 +82,7 @@ Kubernetes workloads that consume the secrets:
 Secrets are injected securely at runtime via volume mounts or environment variables — never hardcoded.
 
 **Flow Summary**:  
-GCP Secret Manager → (via Workload Identity) → External Secrets Operator → Kubernetes Secrets → Application Pods
+GCP Secret Manager -> (via Workload Identity) -> External Secrets Operator -> Kubernetes Secrets -> Application Pods
 
 This architecture ensures secrets are never stored in code or version control, are centrally managed, and dynamically synced with minimal operational overhead.
 

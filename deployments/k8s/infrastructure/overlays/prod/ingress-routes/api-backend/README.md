@@ -12,11 +12,11 @@ Provides secure HTTPS access to backend services at `api.discky.com` with automa
 
 Single domain (`api.discky.com`) with path-based routing to multiple backend services:
 
-- **GraphQL Federation**: `/graph` → apollo-router:4000
+- **GraphQL Federation**: `/graph` -> apollo-router:4000
   - GraphQL queries and mutations: `https://api.discky.com/graph`
   - WebSocket subscriptions: `wss://api.discky.com/graph/subscriptions/ws`
   - SSE subscriptions: `https://api.discky.com/graph/subscriptions/sse`
-- **REST + gRPC (Connect-RPC)**: `/` → api-gateway:8080
+- **REST + gRPC (Connect-RPC)**: `/` -> api-gateway:8080
 
 ### TLS Certificate
 

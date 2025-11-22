@@ -9,7 +9,7 @@ metadata:
     # Traefik configuration
     traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
     # Apply middlewares for CORS and security headers (cross-namespace reference)
-    traefik.ingress.kubernetes.io/router.middlewares: "default-api-cors@kubernetescrd,default-security-headers@kubernetescrd"
+    traefik.ingress.kubernetes.io/router.middlewares: "default-api-cors@kubernetescrd,default-api-security-headers@kubernetescrd"
   labels:
     app.kubernetes.io/name: api-backend-ingress
     app.kubernetes.io/component: ingress
