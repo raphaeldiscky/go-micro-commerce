@@ -21,9 +21,10 @@ configMapGenerator:
   - name: notification-service-config
     behavior: merge
     literals:
+      - APP_ENVIRONMENT=production
       - ENV=production
       - LOG_LEVEL=info
 
 images:
-  - name: notification-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/notification-service
     newTag: latest

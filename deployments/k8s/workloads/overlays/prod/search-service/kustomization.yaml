@@ -21,9 +21,10 @@ configMapGenerator:
   - name: search-service-config
     behavior: merge
     literals:
+      - APP_ENVIRONMENT=production
       - ENV=production
       - LOG_LEVEL=info
 
 images:
-  - name: search-service
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/search-service
     newTag: latest

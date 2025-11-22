@@ -108,6 +108,7 @@ resource "google_container_node_pool" "stateful" {
     disk_size_gb = var.stateful_pool_disk_size_gb
     disk_type    = var.stateful_pool_disk_type
     image_type   = "COS_CONTAINERD"
+    spot         = true # Regular VMs for stateful reliability
 
     # Labels for workload scheduling
     labels = {
@@ -248,7 +249,7 @@ resource "google_container_node_pool" "monitoring" {
     disk_size_gb = var.monitoring_pool_disk_size_gb
     disk_type    = var.monitoring_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = false # Regular VMs for monitoring reliability
+    spot         = true # Regular VMs for monitoring reliability
 
     # Labels for workload scheduling
     labels = {
@@ -322,7 +323,7 @@ resource "google_container_node_pool" "control_plane" {
     disk_size_gb = var.control_plane_pool_disk_size_gb
     disk_type    = var.control_plane_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = false # Regular VMs for control plane reliability
+    spot         = true # Regular VMs for control plane reliability
 
     # Labels for workload scheduling
     labels = {
@@ -396,7 +397,7 @@ resource "google_container_node_pool" "gateway" {
     disk_size_gb = var.gateway_pool_disk_size_gb
     disk_type    = var.gateway_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = false # Regular VMs for gateway reliability
+    spot         = true # Regular VMs for gateway reliability
 
     # Labels for workload scheduling
     labels = {

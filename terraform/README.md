@@ -649,7 +649,6 @@ Show specific output:
 
 ```bash
 terraform output cluster_name
-terraform output cost_summary
 terraform output kubeconfig_command
 ```
 

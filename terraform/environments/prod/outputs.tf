@@ -85,11 +85,6 @@ output "gateway_pool_name" {
   value       = module.gke_cluster.gateway_pool_name
 }
 
-output "cost_summary" {
-  description = "Estimated monthly cost breakdown"
-  value       = module.gke_cluster.cost_summary
-}
-
 # ============================================================================
 # Kubernetes Operators
 # ============================================================================
@@ -272,7 +267,6 @@ output "deployment_summary" {
       cluster_name     = module.gke_cluster.cluster_name
       cluster_location = module.gke_cluster.cluster_location
       network_name     = module.gcp_network.network_name
-      cost_estimate    = module.gke_cluster.cost_summary
     }
     operators = {
       external_secrets = module.external_secrets_operator.status
