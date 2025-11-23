@@ -1,5 +1,5 @@
 # ---- Build Stage ----
-# Use the official Golang images to build the application.
+# Use the official Golang image to build the application.
 FROM golang:1.25.3-alpine AS builder
 
  # Set the working directory to match the repo structure
