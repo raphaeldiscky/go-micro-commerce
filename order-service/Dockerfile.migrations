@@ -1,5 +1,5 @@
 # This image contains only the golang-migrate CLI and migration SQL files
-# Used by Kubernetes Job to run database migration before app deployment
+# Used by k8s job to run database migration before app deployment
 
 FROM alpine:latest
 
