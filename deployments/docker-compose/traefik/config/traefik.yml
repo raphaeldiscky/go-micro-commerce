@@ -10,7 +10,6 @@ http:
       middlewares:
         - rate-limit
         - auth-headers
-
     # GraphQL Gateway
     graphql-gateway:
       rule: "Host(`graphql.localhost`)"
@@ -19,7 +18,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Auth Service (for testing/admin)
     auth-service:
       rule: "Host(`auth.localhost`)"
@@ -28,7 +26,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Product Service (for testing/admin)
     product-service:
       rule: "Host(`products.localhost`)"
@@ -37,7 +34,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Order Service (for testing/admin)
     order-service:
       rule: "Host(`orders.localhost`)"
@@ -46,7 +42,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Payment Service (for testing/admin)
     payment-service:
       rule: "Host(`payments.localhost`)"
@@ -55,7 +50,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Fulfillment Service (for testing/admin)
     fulfillment-service:
       rule: "Host(`fulfillments.localhost`)"
@@ -64,7 +58,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Notification Service (for testing/admin)
     notification-service:
       rule: "Host(`notifications.localhost`)"
@@ -73,7 +66,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Search Service (for testing/admin)
     search-service:
       rule: "Host(`searchs.localhost`)"
@@ -82,7 +74,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Chat Service (for testing/admin)
     chat-service:
       rule: "Host(`chats.localhost`)"
@@ -91,7 +82,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
     # Direct access to Admin Service (for testing/admin)
     cart-service:
       rule: "Host(`cart.localhost`)"
@@ -100,7 +90,6 @@ http:
         - web
       middlewares:
         - rate-limit
-
   services:
     api-gateway:
       loadBalancer:
@@ -112,7 +101,6 @@ http:
           timeout: 10s
           headers:
             Host: api-gateway
-
     graphql-gateway:
       loadBalancer:
         servers:
@@ -121,7 +109,6 @@ http:
           path: /health
           interval: 30s
           timeout: 10s
-
     auth-service:
       loadBalancer:
         servers:
@@ -132,7 +119,6 @@ http:
           timeout: 10s
           headers:
             Host: auth-service
-
     product-service:
       loadBalancer:
         servers:
@@ -143,7 +129,6 @@ http:
           timeout: 10s
           headers:
             Host: product-service
-
     order-service:
       loadBalancer:
         servers:
@@ -154,7 +139,6 @@ http:
           timeout: 10s
           headers:
             Host: order-service
-
     payment-service:
       loadBalancer:
         servers:
@@ -165,7 +149,6 @@ http:
           timeout: 10s
           headers:
             Host: payment-service
-
     fulfillment-service:
       loadBalancer:
         servers:
@@ -176,7 +159,6 @@ http:
           timeout: 10s
           headers:
             Host: fulfillment-service
-
     notification-service:
       loadBalancer:
         servers:
@@ -187,7 +169,6 @@ http:
           timeout: 10s
           headers:
             Host: notification-service
-
     search-service:
       loadBalancer:
         servers:
@@ -198,7 +179,6 @@ http:
           timeout: 10s
           headers:
             Host: search-service
-
     chat-service:
       loadBalancer:
         servers:
@@ -209,7 +189,6 @@ http:
           timeout: 10s
           headers:
             Host: chat-service
-
     cart-service:
       loadBalancer:
         servers:
@@ -220,13 +199,11 @@ http:
           timeout: 10s
           headers:
             Host: cart-service
-
   middlewares:
     rate-limit:
       rateLimit:
         burst: 100
         average: 10
-
     auth-headers:
       headers:
         customRequestHeaders:

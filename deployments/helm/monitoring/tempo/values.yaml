@@ -8,13 +8,10 @@ tempo:
   repository: grafana/tempo
   tag: 2.8.1
   pullPolicy: IfNotPresent
-
   # Single binary mode (default)
   multitenancyEnabled: false
-
   # Trace retention
   retention: 168h
-
   # Storage configuration
   storage:
     trace:
@@ -23,7 +20,6 @@ tempo:
         path: /var/tempo/traces
       wal:
         path: /var/tempo/wal
-
   # Receiver configurations
   receivers:
     jaeger:
@@ -40,7 +36,6 @@ tempo:
         grpc:
           endpoint: 0.0.0.0:4317
     opencensus:
-
 # Kubernetes resource limits (top-level, not under tempo)
 resources:
   requests:
@@ -49,16 +44,13 @@ resources:
   limits:
     memory: "512Mi"
     cpu: "300m"
-
 # Persistence for traces (top-level, not under tempo)
 persistence:
   enabled: true
   size: 5Gi
-
 # Service configuration (top-level, not under tempo)
 service:
   type: ClusterIP
-
 # ServiceMonitor for Prometheus metrics (top-level, not under tempo)
 serviceMonitor:
   enabled: true

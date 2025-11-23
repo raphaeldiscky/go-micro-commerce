@@ -10,7 +10,6 @@ labels:
   - pairs:
       environment: production
       app.kubernetes.io/managed-by: argocd
-
 # Production-specific patches can be added here
 # patches:
 #   - path: patch-ingress.yaml

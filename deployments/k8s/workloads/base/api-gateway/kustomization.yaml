@@ -7,11 +7,11 @@ metadata:
   name: api-gateway
 
 labels:
-- includeSelectors: true
-  pairs:
-    app.kubernetes.io/name: api-gateway
-    app.kubernetes.io/component: gateway
-    app.kubernetes.io/part-of: go-micro-commerce
+  - includeSelectors: true
+    pairs:
+      app.kubernetes.io/name: api-gateway
+      app.kubernetes.io/component: gateway
+      app.kubernetes.io/part-of: go-micro-commerce
 
 resources:
   - deployment.yaml

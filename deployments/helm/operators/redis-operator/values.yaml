@@ -9,28 +9,23 @@ redisOperator:
     repository: quay.io/opstree/redis-operator
     tag: v0.18.2
     pullPolicy: IfNotPresent
-
   # Resource limits for the operator
   resources:
     requests:
-      memory: "128Mi"
-      cpu: "100m"
+      memory: 128Mi
+      cpu: 100m
     limits:
-      memory: "256Mi"
-      cpu: "200m"
-
+      memory: 256Mi
+      cpu: 200m
   # Namespaces to watch (empty = all namespaces)
   watchNamespace: ""
-
   # Enable RBAC
   rbac:
     create: true
-
   # Service account
   serviceAccount:
     create: true
     name: redis-operator
-
 # Redis Exporter configuration (for Prometheus metrics)
 redisExporter:
   enabled: true
@@ -38,6 +33,5 @@ redisExporter:
     repository: quay.io/opstree/redis-exporter
     tag: v1.44.0
     pullPolicy: IfNotPresent
-
 # Note: CRDs are automatically installed by the Helm chart
 # No additional configuration needed

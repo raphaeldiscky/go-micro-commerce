@@ -21,7 +21,6 @@ services:
       resources:
         limits:
           memory: 500m
-
   postgres-product:
     image: postgres:18-alpine
     container_name: postgres-product
@@ -44,7 +43,6 @@ services:
       resources:
         limits:
           memory: 500m
-
   postgres-order:
     image: postgres:18-alpine
     container_name: postgres-order
@@ -67,7 +65,6 @@ services:
       resources:
         limits:
           memory: 500m
-
   postgres-payment:
     image: postgres:18-alpine
     container_name: postgres-payment
@@ -90,7 +87,6 @@ services:
       resources:
         limits:
           memory: 500m
-
   postgres-fulfillment:
     image: postgres:18-alpine
     container_name: postgres-fulfillment
@@ -113,7 +109,6 @@ services:
       resources:
         limits:
           memory: 500m
-
   postgres-notification:
     image: postgres:18-alpine
     container_name: postgres-notification
@@ -132,7 +127,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   postgres-search:
     image: postgres:18-alpine
     container_name: postgres-search
@@ -151,7 +145,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   postgres-chat:
     image: postgres:18-alpine
     container_name: postgres-chat
@@ -170,7 +163,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   postgres-cart:
     image: postgres:18-alpine
     container_name: postgres-cart
@@ -189,7 +181,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
 volumes:
   postgres_auth_data:
   postgres_product_data:
@@ -200,7 +191,6 @@ volumes:
   postgres_search_data:
   postgres_chat_data:
   postgres_cart_data:
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

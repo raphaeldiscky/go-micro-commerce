@@ -1,13 +1,11 @@
 name: service
-
 on:
   push:
     branches:
-      - "main"
+      - main
   pull_request:
     branches:
-      - "main"
-
+      - main
 jobs:
   detect-changes:
     runs-on: tenki-standard-autoscale
@@ -16,7 +14,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Use path filter to detect changes
         id: filter
         uses: dorny/paths-filter@v3
@@ -86,7 +83,6 @@ jobs:
               - 'proto/**'
               - 'go.mod'
               - 'go.sum'
-
       - name: Classify services as node or go
         id: classify
         run: |
@@ -101,7 +97,6 @@ jobs:
           })' <<< "$services")
 
           echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
-
   build-and-push:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.typed_services != '[]' }}
@@ -111,24 +106,20 @@ jobs:
       fail-fast: true
       matrix:
         include: ${{ fromJson(needs.detect-changes.outputs.typed_services) }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       # Node.js setup
       - name: Setup node.js
         if: matrix.type == 'node'
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Setup pnpm
         if: matrix.type == 'node'
         uses: pnpm/action-setup@v4
         with:
           version: 9
-
       - name: Cache pnpm modules
         if: matrix.type == 'node'
         uses: actions/cache@v4
@@ -137,18 +128,15 @@ jobs:
           key: ${{ runner.os }}-pnpm-${{ hashFiles(format('{0}/pnpm-lock.yaml', matrix.name)) }}
           restore-keys: |
             ${{ runner.os }}-pnpm-
-
       - name: Install node.js dependencies
         if: matrix.type == 'node'
         run: cd ${{ matrix.name }} && pnpm install
-
       # Go setup
       - name: Setup Go
         if: matrix.type == 'go'
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25.3"
-
+          go-version: 1.25.3
       - name: Cache Go modules
         if: matrix.type == 'go'
         uses: actions/cache@v4
@@ -160,7 +148,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-${{ matrix.name }}-
             ${{ runner.os }}-go-
-
       - name: Install Go Tools
         if: matrix.type == 'go'
         run: |
@@ -169,26 +156,20 @@ jobs:
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
           go install golang.org/x/tools/cmd/deadcode@latest
           go install golang.org/x/vuln/cmd/govulncheck@latest
-
       - name: Check deadcode for ${{ matrix.name }}
         if: matrix.type == 'go'
         run: bash scripts/deadcode.sh ${{ matrix.name }}
-
       # Run lint/format/test scripts (scripts should auto-handle Node vs Go)
       - name: Run linter for ${{ matrix.name }}
         run: bash scripts/lint.sh ${{ matrix.name }}
-
       - name: Run format check for ${{ matrix.name }}
         run: bash scripts/format.sh ${{ matrix.name }}
-
       - name: Run security vulnerability Scan for ${{ matrix.name }}
         if: matrix.type == 'go'
         run: bash scripts/security.sh ${{ matrix.name }}
-
       - name: Run tests for ${{ matrix.name }}
         if: matrix.type == 'go'
         run: bash scripts/test.sh ${{ matrix.name }}
-
       - name: Upload test coverage to Codecov
         if: matrix.type == 'go'
         uses: codecov/codecov-action@v4
@@ -197,7 +178,6 @@ jobs:
           flags: ${{ matrix.name }}
           name: ${{ matrix.name }}-coverage
           fail_ci_if_error: false
-
       - name: Upload coverage reports
         if: always() && matrix.type == 'go'
         uses: actions/upload-artifact@v4
@@ -206,7 +186,6 @@ jobs:
           path: |
             ./${{ matrix.name }}/coverage.out
             ./${{ matrix.name }}/coverage.html
-
       # Docker build & push
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -216,20 +195,17 @@ jobs:
           buildkitd-config-inline: |
             [registry."docker.io"]
               mirrors = []
-
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -240,7 +216,6 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         id: build
@@ -253,7 +228,6 @@ jobs:
           load: true # Load image locally for security scanning
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}:buildcache,mode=max
-
       # Build and push migration images for Go services
       - name: Check if migration Dockerfile exists
         if: matrix.type == 'go'
@@ -264,7 +238,6 @@ jobs:
           else
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
-
       - name: Extract metadata for Migration Docker image
         if: matrix.type == 'go' && steps.check_migrations.outputs.exists == 'true'
         id: meta_migrations
@@ -276,7 +249,6 @@ jobs:
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-
       - name: Build and push Migration Docker image
         if: matrix.type == 'go' && steps.check_migrations.outputs.exists == 'true'
         uses: docker/build-push-action@v6
@@ -288,7 +260,6 @@ jobs:
           labels: ${{ steps.meta_migrations.outputs.labels }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}-migrations:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}-migrations:buildcache,mode=max
-
       # - name: Run Trivy vulnerability scanner
       #   uses: aquasecurity/trivy-action@master
       #   with:
@@ -301,7 +272,6 @@ jobs:
       #   if: always()
       #   with:
       #     sarif_file: "trivy-results.sarif"
-
       - name: Generate job summary
         if: always()
         run: |

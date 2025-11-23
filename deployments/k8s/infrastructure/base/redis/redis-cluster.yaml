@@ -27,7 +27,6 @@ spec:
   kubernetesConfig:
     image: quay.io/opstree/redis:v8.2.2
     imagePullPolicy: IfNotPresent
-
     # Resource configuration per Redis pod
     resources:
       requests:
@@ -36,11 +35,9 @@ spec:
       limits:
         memory: "256Mi"
         cpu: "250m"
-
     # Service configuration
     service:
       type: ClusterIP
-
   # Storage configuration
   storage:
     volumeClaimTemplate:
@@ -51,15 +48,12 @@ spec:
         resources:
           requests:
             storage: 2Gi
-
   # Number of replicas per master (1 replica per master = 3 masters + 3 replicas = 6 nodes total)
   clusterReplicas: 1
-
   # Redis password authentication
   redisSecret:
     name: redis-secret
     key: password
-
   # Redis exporter for Prometheus metrics
   redisExporter:
     enabled: true
@@ -77,13 +71,11 @@ spec:
         value: "true"
       - name: REDIS_EXPORTER_LOG_FORMAT
         value: "json"
-
   # Security context
   securityContext:
     runAsUser: 1001
     runAsNonRoot: true
     fsGroup: 1001
-
   # Pod affinity rules (spread across nodes for HA)
   affinity:
     nodeAffinity:
@@ -105,33 +97,27 @@ spec:
                   values:
                     - redis-cluster
             topologyKey: kubernetes.io/hostname
-
   # Tolerations for stateful-pool
   tolerations:
     - key: workload-type
       operator: Equal
       value: stateful
       effect: NoSchedule
-
   # Priority class (optional)
   priorityClassName: ""
-
   # Service annotations for Prometheus scraping
   serviceAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9121"
     prometheus.io/path: "/metrics"
-
   # Pod labels
   podLabels:
     app: redis
     component: cache
-
   # Pod annotations
   podAnnotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9121"
-
 ---
 # Secret for Redis authentication
 apiVersion: v1

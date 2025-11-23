@@ -8,10 +8,10 @@ on:
       - "**/Dockerfile*"
       - "**/*.yaml"
       - "**/*.yml"
-      - ".sqlfluff"
-      - ".hadolint.yaml"
-      - ".yamllint.yaml"
-      - "scripts/**"
+      - .sqlfluff
+      - .hadolint.yaml
+      - .yamllint.yaml
+      - scripts/**
   push:
     branches: [main]
     paths:
@@ -19,10 +19,10 @@ on:
       - "**/Dockerfile*"
       - "**/*.yaml"
       - "**/*.yml"
-      - ".sqlfluff"
-      - ".hadolint.yaml"
-      - ".yamllint.yaml"
-      - "scripts/**"
+      - .sqlfluff
+      - .hadolint.yaml
+      - .yamllint.yaml
+      - scripts/**
 
 jobs:
   sqlfluff:

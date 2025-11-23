@@ -30,7 +30,7 @@ directives:
 
 # Autobind existing types
 autobind:
-  - "github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant"
+  - github.com/raphaeldiscky/go-micro-commerce/order-service/internal/constant
 
 models:
   UUID:

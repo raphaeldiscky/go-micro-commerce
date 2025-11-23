@@ -21,13 +21,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        ["CMD", "temporal", "workflow", "list", "--address", "temporal:7233"]
+      test: ["CMD", "temporal", "workflow", "list", "--address", "temporal:7233"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
-
   temporal-ui:
     container_name: temporal-ui
     image: temporalio/ui:latest
@@ -41,7 +39,6 @@ services:
       - temporal
     networks:
       - go-micro-commerce
-
   postgres-temporal:
     container_name: postgres-temporal
     image: postgres:18-alpine
@@ -61,10 +58,8 @@ services:
       retries: 5
     networks:
       - go-micro-commerce
-
 volumes:
   postgres_temporal_data:
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

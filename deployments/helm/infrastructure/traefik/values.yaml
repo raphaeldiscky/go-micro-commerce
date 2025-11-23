@@ -6,12 +6,10 @@ deployment:
   enabled: true
   kind: Deployment
   replicas: 3
-
 # Pod disruption budget for HA
 podDisruptionBudget:
   enabled: true
   minAvailable: 2
-
 # Resource limits
 resources:
   requests:
@@ -20,7 +18,6 @@ resources:
   limits:
     cpu: "1000m"
     memory: "1Gi"
-
 # Enable Prometheus metrics
 metrics:
   prometheus:
@@ -28,7 +25,6 @@ metrics:
     entryPoint: metrics
     service:
       enabled: true
-
 # Tracing with OpenTelemetry
 tracing:
   otlp:
@@ -38,26 +34,22 @@ tracing:
       endpoint: "otel-collector:4317"
     http:
       enabled: false
-
 # Logs
 logs:
   general:
     level: INFO
   access:
     enabled: true
-
 # Global arguments
 globalArguments:
   - "--global.checknewversion=false"
   - "--global.sendanonymoususage=false"
-
 # Additional arguments
 additionalArguments:
   - "--api.dashboard=true"
   - "--ping=true"
   - "--accesslog=true"
   - "--accesslog.format=json"
-
 # Ports configuration
 # Using hostPort to bind directly to node ports 80/443
 # This is required for Kind extraPortMappings to work correctly
@@ -80,7 +72,6 @@ ports:
     port: 9100
     exposedPort: 9100
     protocol: TCP
-
 # Service configuration
 # NodePort for Kind (with extraPortMappings), LoadBalancer for MicroK8s (with MetalLB)
 # Tiltfile overrides to LoadBalancer for MicroK8s
@@ -88,12 +79,10 @@ service:
   enabled: true
   type: NodePort
   annotations: {}
-
 # Ingress class
 ingressClass:
   enabled: true
   isDefaultClass: true
-
 # Providers
 providers:
   kubernetesIngress:
@@ -103,7 +92,6 @@ providers:
   kubernetesCRD:
     enabled: true
     allowCrossNamespace: true
-
 # TLS options
 tlsOptions:
   default:
@@ -112,7 +100,6 @@ tlsOptions:
       - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
       - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
       - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
-
 # Security headers middleware
 middleware:
   securityHeaders:
@@ -125,7 +112,6 @@ middleware:
       stsIncludeSubdomains: true
       stsPreload: true
       stsSeconds: 31536000
-
 # Affinity for HA deployment
 affinity:
   podAntiAffinity:
@@ -139,7 +125,6 @@ affinity:
                 values:
                   - traefik
           topologyKey: kubernetes.io/hostname
-
 # Health checks
 readinessProbe:
   failureThreshold: 3
@@ -147,7 +132,6 @@ readinessProbe:
   periodSeconds: 10
   successThreshold: 1
   timeoutSeconds: 5
-
 livenessProbe:
   failureThreshold: 3
   initialDelaySeconds: 10

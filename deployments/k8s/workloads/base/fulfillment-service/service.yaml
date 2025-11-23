@@ -10,8 +10,8 @@ spec:
   selector:
     app: fulfillment-service
   ports:
-  - name: http
-    port: 8085
-    targetPort: http
-    protocol: TCP
+    - name: http
+      port: 8085
+      targetPort: http
+      protocol: TCP
   sessionAffinity: None

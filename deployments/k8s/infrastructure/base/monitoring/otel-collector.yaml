@@ -76,7 +76,6 @@ data:
           receivers: [otlp]
           processors: [memory_limiter, batch]
           exporters: [otlphttp/loki, debug]
-
 ---
 apiVersion: v1
 kind: Service
@@ -102,7 +101,6 @@ spec:
       protocol: TCP
   selector:
     app: otel-collector
-
 ---
 apiVersion: apps/v1
 kind: Deployment

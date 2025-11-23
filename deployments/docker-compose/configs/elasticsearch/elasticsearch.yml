@@ -1,38 +1,29 @@
 cluster.name: "go-micro-commerce"
 node.name: "es-node-1"
-
 # Network settings
 network.host: 0.0.0.0
 http.port: 9200
 transport.port: 9300
-
 # Discovery settings for single node
 discovery.type: single-node
-
 # Security settings
 xpack.security.enabled: true
 xpack.security.authc.api_key.enabled: true
 xpack.security.http.ssl.enabled: false
 xpack.security.transport.ssl.enabled: false
-
 # Memory settings
 bootstrap.memory_lock: true
-
 # Index settings
 action.destructive_requires_name: false
-
 # Monitoring settings (removed deprecated xpack.monitoring.collection.enabled)
 
 # Machine learning settings (ES v9 feature)
 xpack.ml.enabled: true
-
 # Data stream settings (ES v9 enhancement)
 action.auto_create_index: true
-
 # Performance settings for ES v9
 indices.memory.index_buffer_size: 20%
 indices.memory.min_index_buffer_size: 96mb
-
 # Logging
 logger.root: INFO
 logger.org.elasticsearch: INFO

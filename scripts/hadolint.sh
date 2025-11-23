@@ -39,12 +39,16 @@ echo ""
 for dockerfile in $DOCKERFILES; do
     echo -n "  Linting ${dockerfile}... "
 
-    if hadolint --config .hadolint.yaml "$dockerfile" 2>&1; then
+    OUTPUT=$(hadolint --config .hadolint.yaml "$dockerfile" 2>&1)
+    EXIT_CODE=$?
+
+    if [ $EXIT_CODE -eq 0 ]; then
         echo -e "${GREEN}OK${NC}"
-        ((PASSED++))
+        PASSED=$((PASSED + 1))
     else
         echo -e "${RED}FAILED${NC}"
-        ((FAILED++))
+        echo "$OUTPUT"
+        FAILED=$((FAILED + 1))
         FAILED_FILES="${FAILED_FILES}\n  - ${dockerfile}"
     fi
 done

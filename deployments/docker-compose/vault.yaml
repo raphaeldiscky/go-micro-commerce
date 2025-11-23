@@ -35,7 +35,6 @@ networks:
   go-micro-commerce:
     name: go-micro-commerce
     external: true
-
 volumes:
   vault_data:
   vault_logs:

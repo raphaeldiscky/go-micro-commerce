@@ -32,7 +32,6 @@ spec:
                 name: local-api-gateway
                 port:
                   number: 8080
-
 ---
 # CORS Middleware for Local Development
 apiVersion: traefik.io/v1alpha1
@@ -78,7 +77,6 @@ spec:
     accessControlAllowCredentials: true
     accessControlMaxAge: 100
     addVaryHeader: true
-
 ---
 # Rate Limiting Middleware (relaxed for local development)
 apiVersion: traefik.io/v1alpha1
@@ -91,7 +89,6 @@ spec:
     average: 10000
     burst: 1000
     period: 1m
-
 ---
 # Security Headers Middleware
 apiVersion: traefik.io/v1alpha1

@@ -49,7 +49,6 @@ spec:
           operator: Equal
           value: stateful
           effect: NoSchedule
-
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
@@ -66,7 +65,6 @@ spec:
   kafka:
     version: "4.0.0" # Kafka 4.0.0 (matches Docker Compose, supported in Strimzi 0.48.0)
     metadataVersion: "4.0-IV0"
-
     # KRaft cluster ID (must match Docker Compose)
     # Note: This is set automatically by Strimzi, but we ensure consistency
 
@@ -84,7 +82,6 @@ spec:
         port: 9094
         type: nodeport
         tls: false
-
     # Kafka broker configuration (matching Docker Compose)
     config:
       # Replication settings (same as Docker Compose)
@@ -93,26 +90,21 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-
       # Topic settings
       auto.create.topics.enable: "true"
       num.partitions: 3
-
       # Consumer group settings
       group.initial.rebalance.delay.ms: 0
-
       # Log retention
       log.retention.hours: 168
       log.segment.bytes: 1073741824
       log.retention.check.interval.ms: 300000
-
       # Performance tuning for local dev
       num.network.threads: 3
       num.io.threads: 8
       socket.send.buffer.bytes: 102400
       socket.receive.buffer.bytes: 102400
       socket.request.max.bytes: 104857600
-
     # No separate storage (defined in KafkaNodePool)
 
     # Metrics configuration for Prometheus
@@ -122,7 +114,6 @@ spec:
         configMapKeyRef:
           name: kafka-metrics
           key: kafka-metrics-config.yml
-
   # Entity Operator for managing topics and users (optional)
   entityOperator:
     template:
@@ -157,7 +148,6 @@ spec:
         limits:
           memory: "256Mi"
           cpu: "200m"
-
 ---
 # ConfigMap for Kafka metrics (Prometheus JMX Exporter)
 apiVersion: v1

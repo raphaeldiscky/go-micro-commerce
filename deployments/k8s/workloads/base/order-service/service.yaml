@@ -10,8 +10,8 @@ spec:
   selector:
     app: order-service
   ports:
-  - name: http
-    port: 8083
-    targetPort: http
-    protocol: TCP
+    - name: http
+      port: 8083
+      targetPort: http
+      protocol: TCP
   sessionAffinity: None

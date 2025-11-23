@@ -16,37 +16,37 @@ spec:
     spec:
       restartPolicy: OnFailure
       containers:
-      - name: migrate
-        image: ghcr.io/raphaeldiscky/go-micro-commerce/chat-service-migrations:v0.0.0
-        imagePullPolicy: IfNotPresent
-        command:
-        - /bin/sh
-        - -c
-        - |
-          migrate -path=/migrations \
-            -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
-            up
-        env:
-        - name: DB_HOST
-          value: "chat-pg-rw.default.svc.cluster.local"
-        - name: DB_PORT
-          value: "5432"
-        - name: DB_NAME
-          value: "chat_db"
-        - name: DB_USER
-          valueFrom:
-            secretKeyRef:
-              name: chat-pg-app
-              key: username
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: chat-pg-app
-              key: password
-        resources:
-          requests:
-            cpu: 50m
-            memory: 64Mi
-          limits:
-            cpu: 200m
-            memory: 128Mi
+        - name: migrate
+          image: ghcr.io/raphaeldiscky/go-micro-commerce/chat-service-migrations:v0.0.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -c
+            - |
+              migrate -path=/migrations \
+                -database "postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=disable" \
+                up
+          env:
+            - name: DB_HOST
+              value: "chat-pg-rw.default.svc.cluster.local"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "chat_db"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: chat-pg-app
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: chat-pg-app
+                  key: password
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
