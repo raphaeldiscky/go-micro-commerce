@@ -9,6 +9,7 @@ ignore: |
   .git/
   **/charts/
   **/.terraform/
+  **/.golangci.yml
 
 rules:
   # Allow long lines for K8s manifests and base64 encoded values
