@@ -11,11 +11,13 @@ labels:
       environment: production
       app.kubernetes.io/managed-by: argocd
 
+components:
+  - ../_common
+
 patches:
   - path: patch-replicas.yaml
   - path: patch-resources.yaml
   - path: patch-hpa.yaml
-  - path: patch-image-pull-secrets.yaml
 
 configMapGenerator:
   - name: fulfillment-service-config
