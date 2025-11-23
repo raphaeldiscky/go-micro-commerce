@@ -274,6 +274,32 @@ jobs:
       #   if: always()
       #   with:
       #     sarif_file: "trivy-results.sarif"
+      - name: Update kustomization image tag
+        if: github.event_name != 'pull_request'
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          KUSTOMIZATION_PATH="deployments/k8s/workloads/overlays/prod/${{ matrix.name }}/kustomization.yaml"
+          if [ -f "$KUSTOMIZATION_PATH" ]; then
+            sed -i "s/newTag: .*/newTag: $SHORT_SHA/" "$KUSTOMIZATION_PATH"
+            echo "Updated ${{ matrix.name }} image tag to $SHORT_SHA"
+          fi
+
+      - name: Commit and push kustomization changes
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add deployments/k8s/workloads/overlays/prod/${{ matrix.name }}/kustomization.yaml
+          git diff --staged --quiet || git commit -m "chore(${{ matrix.name }}): update image tag to ${{ github.sha }}"
+
+          # Retry push with rebase to handle parallel job conflicts
+          for i in 1 2 3 4 5; do
+            git push && break
+            echo "Push failed, retrying with rebase (attempt $i)..."
+            git pull --rebase
+            sleep $((i * 2))
+          done
+
       - name: Generate job summary
         if: always()
         run: |
