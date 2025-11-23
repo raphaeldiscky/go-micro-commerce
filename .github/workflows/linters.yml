@@ -26,7 +26,6 @@ on:
 
 jobs:
   sqlfluff:
-    name: SQL Lint
     runs-on: tenki-standard-autoscale
     timeout-minutes: 10
     steps:
@@ -44,7 +43,6 @@ jobs:
         run: sqlfluff lint
 
   hadolint:
-    name: Dockerfile Lint
     runs-on: tenki-standard-autoscale
     timeout-minutes: 10
     steps:
@@ -57,7 +55,6 @@ jobs:
         run: bash ./scripts/hadolint.sh
 
   yamllint:
-    name: YAML Lint
     runs-on: tenki-standard-autoscale
     timeout-minutes: 10
     steps:
