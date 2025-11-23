@@ -1,0 +1,21 @@
+# Hadolint configuration
+# https://github.com/hadolint/hadolint
+
+# Globally ignored rules
+ignored:
+  # DL3007: Using latest is prone to errors if the image will ever update
+  # We use specific tags in production, latest is for development
+  - DL3007
+
+  # DL3018: Pin versions in apk add
+  # Alpine packages don't have reliable version pinning
+  - DL3018
+
+# Trusted registries for DL3026
+trustedRegistries:
+  - docker.io
+  - ghcr.io
+  - gcr.io
+
+# Failure threshold (error, warning, info, style, ignore, none)
+failure-threshold: warning

@@ -257,6 +257,16 @@ tasks:
     cmds:
       - sqlfluff lint
 
+  hadolint:
+    desc: Lint Dockerfiles with hadolint
+    cmds:
+      - bash ./scripts/hadolint.sh
+
+  yamllint:
+    desc: Lint YAML files with yamllint
+    cmds:
+      - bash ./scripts/yamllint.sh
+
   deadcode:
     desc: Check deadcode
     vars:

@@ -1,0 +1,75 @@
+name: linters
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "**/*.sql"
+      - "**/Dockerfile*"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - ".sqlfluff"
+      - ".hadolint.yaml"
+      - ".yamllint.yaml"
+      - "scripts/**"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.sql"
+      - "**/Dockerfile*"
+      - "**/*.yaml"
+      - "**/*.yml"
+      - ".sqlfluff"
+      - ".hadolint.yaml"
+      - ".yamllint.yaml"
+      - "scripts/**"
+
+jobs:
+  sqlfluff:
+    name: SQL Lint
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install SQLFluff
+        run: pip install sqlfluff
+
+      - name: Lint SQL
+        run: sqlfluff lint
+
+  hadolint:
+    name: Dockerfile Lint
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+
+      - name: Lint Dockerfiles
+        run: bash ./scripts/hadolint.sh
+
+  yamllint:
+    name: YAML Lint
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Lint YAML
+        run: bash ./scripts/yamllint.sh
