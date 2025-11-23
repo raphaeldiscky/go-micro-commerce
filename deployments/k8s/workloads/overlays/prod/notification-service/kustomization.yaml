@@ -27,4 +27,4 @@ configMapGenerator:
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/notification-service
-    newTag: latest
+    newTag: v0.0.0

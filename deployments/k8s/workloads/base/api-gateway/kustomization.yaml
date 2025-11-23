@@ -1,6 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: application
+
 metadata:
   name: api-gateway
 
@@ -19,6 +21,8 @@ resources:
   - serviceaccount.yaml
   - hpa.yaml
   - pdb.yaml
+  - networkpolicy.yaml
+  - ingress.yaml
 
 images:
   - name: api-gateway

@@ -1,6 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: application
+
 metadata:
   name: order-service
 
@@ -19,11 +21,12 @@ resources:
   - serviceaccount.yaml
   - hpa.yaml
   - pdb.yaml
+  - networkpolicy.yaml
 
 images:
   - name: order-service
     newName: order-service
-    newTag: latest
+    newTag: v0.0.0
   - name: order-service-migrations
     newName: order-service-migrations
-    newTag: latest
+    newTag: v0.0.0

@@ -18,6 +18,11 @@ configMapGenerator:
 
 resources:
   - configmap-rhai.yaml
+  - deployment.yaml
+  - service.yaml
+  - serviceaccount.yaml
+  - networkpolicy.yaml
+  - ingress.yaml
   # Note: Router configuration is inline in values.yaml (Helm chart)
   # Note: configmap-supergraph-schema is generated above via configMapGenerator
 

@@ -6,6 +6,9 @@ metadata:
     app: api-gateway
     tier: gateway
     version: v1
+    owner: raphaeldiscky
+  annotations:
+    email: raph.discky@gmail.com
 spec:
   replicas: 2
   strategy:
@@ -35,6 +38,11 @@ spec:
           operator: Equal
           value: gateway
           effect: NoSchedule
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      restartPolicy: Always
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000

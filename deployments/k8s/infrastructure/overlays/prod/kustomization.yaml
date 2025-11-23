@@ -17,11 +17,8 @@ resources:
   # Ingress Controller
   - ingress-controller
 
-  # Ingress Routes (Production TLS)
-  - ingress-routes
+  # Gateway Tier (API Gateway + Apollo Router + Ingress)
+  - gateway
 
   # Monitoring Stack
   - monitoring
-
-  # Apollo GraphQL Router
-  - apollo-router

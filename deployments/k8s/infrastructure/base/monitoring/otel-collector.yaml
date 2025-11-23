@@ -111,8 +111,16 @@ metadata:
   labels:
     app: otel-collector
     component: monitoring
+    owner: raphaeldiscky
+  annotations:
+    email: raph.discky@gmail.com
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: otel-collector
@@ -122,6 +130,12 @@ spec:
         app: otel-collector
         component: monitoring
     spec:
+      serviceAccountName: otel-collector
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      restartPolicy: Always
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001

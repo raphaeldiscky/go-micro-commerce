@@ -1,38 +1,11 @@
 checks:
-  # Exclude opinionated checks that don't fit our workflow
+  addAllBuiltIn: true
   exclude:
-    # Not all Go applications support read-only root filesystem
-    - "no-read-only-root-fs"
-    # Anti-affinity is managed at the infrastructure level
-    - "no-anti-affinity"
+    - "no-read-only-root-fs" # Not all Go applications support read-only root filesystem
+    - "no-anti-affinity" # Anti-affinity is managed at the infrastructure leveld
+    - "no-node-affinity" # Node-affinity is managed at the infrastructure level
+    - "minimum-three-replicas" # Minimum number of replicas is managed at the infrastructure level
+    - "hpa-minimum-three-replicas" # Minimum number of replicas is managed at the infrastructure level
+    - "read-secret-from-env-var" # Using ESO with secretKeyRef is acceptable
 
-  # Explicitly include important security and reliability checks
-  include:
-    # Security checks
-    - "latest-tag"
-    - "privileged-container"
-    - "run-as-non-root"
-    - "privilege-escalation-container"
-    - "sensitive-host-mounts"
-    - "host-network"
-    - "host-pid"
-    - "host-ipc"
-    - "env-var-secret"
-
-    # Reliability checks
-    - "dangling-service"
-    - "mismatching-selector"
-    - "duplicate-env-var"
-    - "env-var-secret"
-    - "deprecated-service-account-field"
-
-    # Resource checks
-    - "unset-cpu-requirements"
-    - "unset-memory-requirements"
-
-    # PDB checks
-    - "pdb-min-available"
-    - "pdb-unhealthy-pod-eviction-policy"
-
-# Custom object configuration
 customChecks: []

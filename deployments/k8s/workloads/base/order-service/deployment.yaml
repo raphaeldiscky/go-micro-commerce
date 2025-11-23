@@ -6,6 +6,9 @@ metadata:
     app: order-service
     tier: backend
     version: v1
+    owner: raphaeldiscky
+  annotations:
+    email: raph.discky@gmail.com
 spec:
   replicas: 2
   strategy:
@@ -35,6 +38,11 @@ spec:
           value: "true"
           operator: Equal
           effect: NoSchedule
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      restartPolicy: Always
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
