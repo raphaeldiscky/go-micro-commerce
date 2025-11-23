@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: apollo-router
+  labels:
+    app: apollo-router
+spec:
+  podSelector:
+    matchLabels:
+      app: apollo-router
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 4000
+        - protocol: TCP
+          port: 8088

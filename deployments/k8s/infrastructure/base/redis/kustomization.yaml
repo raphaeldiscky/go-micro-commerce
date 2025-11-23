@@ -1,6 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: redis
+
 resources:
   - redis-cluster.yaml
   - redis-insight.yaml
+  - redis-insight-serviceaccount.yaml
+  - redis-insight-networkpolicy.yaml

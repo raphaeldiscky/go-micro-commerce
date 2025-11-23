@@ -5,7 +5,8 @@ metadata:
   labels:
     app: payment-service
 spec:
-  minAvailable: 1
+  maxUnavailable: 1
+  unhealthyPodEvictionPolicy: AlwaysAllow
   selector:
     matchLabels:
       app: payment-service

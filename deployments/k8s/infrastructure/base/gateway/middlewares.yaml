@@ -1,18 +1,15 @@
 ---
-# CORS Middleware for Backend API
-# Allows frontend at go.micro.commerce.discky.com to access the API
+# CORS Middleware for Gateway API
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: api-cors
-  namespace: default
   labels:
-    app.kubernetes.io/name: api-backend-ingress
-    app.kubernetes.io/component: middleware
+    app: gateway
 spec:
   headers:
     accessControlAllowOriginList:
-      - "https://go.micro.commerce.discky.com"
+      - "https://yourdomain.com"
     accessControlAllowMethods:
       - "GET"
       - "POST"
@@ -28,12 +25,6 @@ spec:
       - "Origin"
       - "Access-Control-Request-Method"
       - "Access-Control-Request-Headers"
-      - "Connection"
-      - "Upgrade"
-      - "Sec-WebSocket-Protocol"
-      - "Sec-WebSocket-Extensions"
-      - "Sec-WebSocket-Key"
-      - "Sec-WebSocket-Version"
     accessControlExposeHeaders:
       - "Content-Length"
       - "Content-Type"
@@ -41,16 +32,13 @@ spec:
     accessControlMaxAge: 3600
     addVaryHeader: true
 ---
-# API Security Headers Middleware
-# Adds security headers to all API responses
+# Security Headers Middleware
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
   name: api-security-headers
-  namespace: default
   labels:
-    app.kubernetes.io/name: api-backend-ingress
-    app.kubernetes.io/component: middleware
+    app: gateway
 spec:
   headers:
     customResponseHeaders:

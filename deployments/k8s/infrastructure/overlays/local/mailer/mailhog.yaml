@@ -39,9 +39,12 @@ spec:
         app: mailhog
         component: dev-tools
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: mailhog
-          image: mailhog/mailhog:latest
+          image: mailhog/mailhog:v1.0.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: smtp
@@ -57,6 +60,8 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "100m"
+          securityContext:
+            allowPrivilegeEscalation: false
           livenessProbe:
             tcpSocket:
               port: 8025

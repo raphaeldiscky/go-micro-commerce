@@ -23,8 +23,16 @@ metadata:
   labels:
     app: redis-insight
     component: redis-ui
+    owner: raphaeldiscky
+  annotations:
+    email: raph.discky@gmail.com
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: redis-insight
@@ -34,6 +42,15 @@ spec:
         app: redis-insight
         component: redis-ui
     spec:
+      serviceAccountName: redis-insight
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: redis-insight
           image: redis/redisinsight:2.70
@@ -48,6 +65,8 @@ spec:
             limits:
               memory: "256Mi"
               cpu: "200m"
+          securityContext:
+            allowPrivilegeEscalation: false
           volumeMounts:
             - name: data
               mountPath: /db

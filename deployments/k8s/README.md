@@ -1,4 +1,4 @@
-# Kubernetes Deployments - Industry-Standard GitOps Structure
+# Kubernetes Deployments - GitOps
 
 This directory contains Kubernetes manifests for deploying the go-micro-commerce platform using **ArgoCD GitOps** with an industry-standard hybrid pattern.
 

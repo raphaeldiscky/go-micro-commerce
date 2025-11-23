@@ -36,8 +36,16 @@ metadata:
   labels:
     app: kafka-ui
     component: kafka-admin
+    owner: raphaeldiscky
+  annotations:
+    email: raph.discky@gmail.com
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: kafka-ui
@@ -47,10 +55,19 @@ spec:
         app: kafka-ui
         component: kafka-admin
     spec:
+      serviceAccountName: kafka-ui
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      restartPolicy: Always
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
       containers:
         - name: kafka-ui
-          image: provectuslabs/kafka-ui:latest
-          imagePullPolicy: Always
+          image: provectuslabs/kafka-ui:v0.7.2
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
@@ -64,6 +81,8 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          securityContext:
+            allowPrivilegeEscalation: false
           livenessProbe:
             httpGet:
               path: /actuator/health

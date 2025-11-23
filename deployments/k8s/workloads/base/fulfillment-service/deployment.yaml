@@ -6,6 +6,9 @@ metadata:
     app: fulfillment-service
     tier: backend
     version: v1
+    owner: raphaeldiscky
+  annotations:
+    email: raph.discky@gmail.com
 spec:
   replicas: 2
   strategy:
@@ -35,13 +38,18 @@ spec:
           value: "true"
           operator: Equal
           effect: NoSchedule
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+      restartPolicy: Always
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
         fsGroup: 1000
       containers:
       - name: fulfillment-service
-        image: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service:latest
+        image: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service:v0.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - name: http
