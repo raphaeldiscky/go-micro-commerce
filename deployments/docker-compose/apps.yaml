@@ -19,20 +19,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8081/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   product-service:
     build:
       context: ../..
@@ -53,20 +44,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8082/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   order-service:
     build:
       context: ../..
@@ -87,20 +69,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8083/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   payment-service:
     build:
       context: ../..
@@ -119,20 +92,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8084/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   fulfillment-service:
     build:
       context: ../..
@@ -151,20 +115,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8085/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   notification-service:
     build:
       context: ../..
@@ -183,20 +138,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8086/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
   api-gateway:
     build:
       context: ../..
@@ -213,20 +159,11 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost:8080/health",
-        ]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

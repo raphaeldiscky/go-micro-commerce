@@ -1,10 +1,10 @@
-#https://taskfile.dev/#/installation
-#https://github.com/go-task/task/issues/1115
-version: "3"
+# https://taskfile.dev/#/installation
+# https://github.com/go-task/task/issues/1115
+version: 3
 
 vars:
   GOOS: "{{default OS .GOOS}}"
-  DC_DIR: "deployments/docker-compose"
+  DC_DIR: deployments/docker-compose
   INFRA_DC_FILE: "{{.DC_DIR}}/infra.yaml"
   APPS_DC_FILE: "{{.DC_DIR}}/apps.yaml"
   GRAPHQL_GATEWAY_DC_FILE: "{{.DC_DIR}}/graphql-gateway.yaml"
@@ -250,12 +250,22 @@ tasks:
           echo "Running linters for {{.SERVICE}}..."
           bash ./scripts/lint.sh {{.SERVICE}}
         fi
-    deps: ["format"]
+    deps: [format]
 
   lint_sql:
     desc: Run SQL linters
     cmds:
       - sqlfluff lint
+
+  hadolint:
+    desc: Lint Dockerfiles with hadolint
+    cmds:
+      - bash ./scripts/hadolint.sh
+
+  yamllint:
+    desc: Lint YAML files with yamllint
+    cmds:
+      - bash ./scripts/yamllint.sh
 
   deadcode:
     desc: Check deadcode

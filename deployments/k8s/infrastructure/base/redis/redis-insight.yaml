@@ -14,7 +14,6 @@ spec:
       targetPort: 5540
   selector:
     app: redis-insight
-
 ---
 apiVersion: apps/v1
 kind: Deployment

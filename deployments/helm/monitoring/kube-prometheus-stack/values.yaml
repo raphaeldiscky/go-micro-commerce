@@ -5,11 +5,9 @@
 # Prometheus configuration
 prometheus:
   enabled: true
-
   prometheusSpec:
     retention: 7d
     retentionSize: "10GB"
-
     resources:
       requests:
         memory: "512Mi"
@@ -17,7 +15,6 @@ prometheus:
       limits:
         memory: "1Gi"
         cpu: "500m"
-
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -25,35 +22,27 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
-
     # Service monitors - automatically discover services
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
-
     # Additional scrape configs for custom metrics
     additionalScrapeConfigs: []
-
   service:
     type: ClusterIP
     port: 9090
-
 # Grafana configuration
 grafana:
   enabled: true
-
   adminPassword: "admin" # Change for production
-
   persistence:
     enabled: true
     size: 2Gi
-
   # Disable sidecar datasource auto-discovery to prevent conflicts with static datasources
   sidecar:
     datasources:
-      enabled: false  # Disable auto-discovery, use static datasources instead
+      enabled: false # Disable auto-discovery, use static datasources instead
     dashboards:
-      enabled: true   # Keep dashboard auto-discovery
-
+      enabled: true # Keep dashboard auto-discovery
   resources:
     requests:
       memory: "256Mi"
@@ -61,11 +50,9 @@ grafana:
     limits:
       memory: "512Mi"
       cpu: "300m"
-
   service:
     type: ClusterIP
     port: 80
-
   # Grafana data sources
   datasources:
     datasources.yaml:
@@ -86,15 +73,12 @@ grafana:
           url: http://tempo:3200
           access: proxy
           isDefault: false
-
   # Default dashboards
   defaultDashboardsEnabled: true
   defaultDashboardsTimezone: UTC
-
 # Alertmanager configuration
 alertmanager:
   enabled: true
-
   alertmanagerSpec:
     resources:
       requests:
@@ -103,7 +87,6 @@ alertmanager:
       limits:
         memory: "256Mi"
         cpu: "200m"
-
     storage:
       volumeClaimTemplate:
         spec:
@@ -111,32 +94,25 @@ alertmanager:
           resources:
             requests:
               storage: 2Gi
-
   service:
     type: ClusterIP
     port: 9093
-
 # Node Exporter (collects host metrics)
 nodeExporter:
   enabled: true
-
 # Kube State Metrics (collects Kubernetes object metrics)
 kubeStateMetrics:
   enabled: true
-
   nodeSelector:
     workload-type: monitoring
-
   tolerations:
     - key: "workload-type"
       operator: "Equal"
       value: "monitoring"
       effect: "NoSchedule"
-
 # Prometheus Operator
 prometheusOperator:
   enabled: true
-
   resources:
     requests:
       memory: "128Mi"
@@ -144,16 +120,13 @@ prometheusOperator:
     limits:
       memory: "256Mi"
       cpu: "200m"
-
   nodeSelector:
     workload-type: monitoring
-
   tolerations:
     - key: "workload-type"
       operator: "Equal"
       value: "monitoring"
       effect: "NoSchedule"
-
 # Default rules for Kubernetes monitoring
 defaultRules:
   create: true

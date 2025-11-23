@@ -6,7 +6,6 @@
 # When empty, operator watches its own namespace (default)
 # Avoids duplicate RoleBinding conflicts when operator is installed to default namespace
 watchNamespaces: []
-
 # Resource limits for the operator
 resources:
   requests:
@@ -15,26 +14,20 @@ resources:
   limits:
     memory: "512Mi"
     cpu: "500m"
-
 # Feature gates
 featureGates: ""
-
 # Operator logging
 logLevel: INFO
-
 # Generate network policies
-generateNetworkPolicy: false  # Disabled for local development
-
+generateNetworkPolicy: false # Disabled for local development
 # Enable CRD management
 createGlobalResources: true
-
 # Operator image (uses official Strimzi images from quay.io)
 image:
   registry: quay.io
   repository: strimzi
   name: operator
   # Tag is set by Helm chart version
-
 # Kafka bridge (optional, disable for minimal setup)
 kafkaBridge:
   enabled: false

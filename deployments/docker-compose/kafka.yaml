@@ -10,21 +10,18 @@ services:
       KAFKA_CFG_PROCESS_ROLES: controller,broker
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093
       KAFKA_KRAFT_CLUSTER_ID: abcdefghijklmnopqrstuv
-
       # Listeners
       KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092,EXTERNAL://localhost:9092
       KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-
       # Replication settings
       KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
       KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
       KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_CFG_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_CFG_MIN_IN_SYNC_REPLICAS: 2
-
       # Other settings
       KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: true
       KAFKA_CFG_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
@@ -36,15 +33,10 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
-        ]
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
       interval: 30s
       timeout: 10s
       retries: 5
-
   kafka-2:
     image: bitnami/kafka:4.0.0
     hostname: kafka-2
@@ -52,7 +44,7 @@ services:
     ports:
       - "9093:9094"
     environment:
-      <<: *kafka-env
+      !!merge <<: *kafka-env
       KAFKA_CFG_NODE_ID: 2
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092,EXTERNAL://localhost:9093
     volumes:
@@ -60,15 +52,10 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
-        ]
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
       interval: 30s
       timeout: 10s
       retries: 5
-
   kafka-3:
     image: bitnami/kafka:4.0.0
     hostname: kafka-3
@@ -76,7 +63,7 @@ services:
     ports:
       - "9094:9094"
     environment:
-      <<: *kafka-env
+      !!merge <<: *kafka-env
       KAFKA_CFG_NODE_ID: 3
       KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092,EXTERNAL://localhost:9094
     volumes:
@@ -84,15 +71,10 @@ services:
     networks:
       - go-micro-commerce
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "kafka-topics.sh --bootstrap-server localhost:9092 --list",
-        ]
+      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list"]
       interval: 30s
       timeout: 10s
       retries: 5
-
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -111,7 +93,6 @@ services:
     networks:
       - go-micro-commerce
     restart: unless-stopped
-
 volumes:
   kafka_1_data:
     driver: local
@@ -119,7 +100,6 @@ volumes:
     driver: local
   kafka_3_data:
     driver: local
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

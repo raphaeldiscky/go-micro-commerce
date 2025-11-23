@@ -9,12 +9,10 @@ metadata:
 spec:
   imageName: ghcr.io/cloudnative-pg/postgresql:18
   instances: 1
-
   bootstrap:
     initdb:
       database: product_db
       owner: product_user
-
   postgresql:
     parameters:
       max_connections: "100"
@@ -24,11 +22,9 @@ spec:
       log_statement: "ddl"
     pg_hba:
       - "host all all all scram-sha-256"
-
   monitoring:
     enabled: true
     disableDefaultQueries: false
-
     customQueries:
       - name: "table_sizes"
         query: |
@@ -48,7 +44,6 @@ spec:
           - size_bytes:
               usage: "GAUGE"
               description: "Total size of table including indexes in bytes"
-
       - name: "connection_stats"
         query: |
           SELECT
@@ -76,7 +71,6 @@ spec:
           - count:
               usage: "GAUGE"
               description: "Number of connections"
-
     podMonitor:
       enabled: true
       metricRelabelings:

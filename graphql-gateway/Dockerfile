@@ -8,6 +8,7 @@ RUN apk add --no-cache \
     ca-certificates
 
 # Install Rover CLI
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 RUN curl -sSL https://rover.apollo.dev/nix/latest | sh
 
 # Add Rover to PATH

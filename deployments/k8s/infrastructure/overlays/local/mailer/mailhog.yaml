@@ -19,7 +19,6 @@ spec:
       protocol: TCP
   selector:
     app: mailhog
-
 ---
 apiVersion: apps/v1
 kind: Deployment

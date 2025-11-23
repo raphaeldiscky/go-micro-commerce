@@ -1,20 +1,15 @@
 server.name: "kibana"
 server.host: "0.0.0.0"
 server.port: 5601
-
 # Elasticsearch settings
 elasticsearch.hosts: ["http://elasticsearch:9200"]
 elasticsearch.username: "kibana_system"
 elasticsearch.password: "kibana_password"
-
 # Logging
 logging.root.level: warn
-
 # Security settings - simplified for ES 9.x compatibility
 xpack.encryptedSavedObjects.encryptionKey: "a7a6311933d3503b89bc2dbc36572c33a6c10925682e591bffcab6911c06786d"
-
 # Performance settings
 server.maxPayloadBytes: 1048576
-
 # Development settings
 server.rewriteBasePath: false

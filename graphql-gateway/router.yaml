@@ -7,7 +7,6 @@ supergraph:
   introspection: true
   # Defer support for @defer directive
   defer_support: true
-
 # CORS configuration (v2 policy-based structure)
 cors:
   allow_credentials: true
@@ -35,11 +34,9 @@ cors:
         - apollographql-client-version
       expose_headers:
         - X-Request-ID
-
 # Rhai script for Set-Cookie header propagation
 rhai:
   main: /app/main.rhai
-
 # Header propagation to subgraphs
 headers:
   all:
@@ -119,13 +116,11 @@ headers:
         - propagate:
             named: "user-agent"
             rename: "X-User-Agent"
-
 # OpenTelemetry configuration
 telemetry:
   instrumentation:
     spans:
       mode: spec_compliant
-
   exporters:
     tracing:
       otlp:
@@ -142,13 +137,11 @@ telemetry:
         enabled: true
         listen: 0.0.0.0:9091
         path: /metrics
-
 # Health check endpoint
 health_check:
   enabled: true
   listen: 0.0.0.0:4088
   path: /health
-
 # Limits and timeouts
 traffic_shaping:
   router:
@@ -159,7 +152,6 @@ traffic_shaping:
   all:
     deduplicate_query: true
     timeout: 20s
-
 # Include subgraph errors for debugging (disable in production)
 include_subgraph_errors:
   all: true

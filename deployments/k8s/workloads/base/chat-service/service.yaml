@@ -10,12 +10,12 @@ spec:
   selector:
     app: chat-service
   ports:
-  - name: http
-    port: 8088
-    targetPort: http
-    protocol: TCP
-  - name: websocket
-    port: 9098
-    targetPort: websocket
-    protocol: TCP
+    - name: http
+      port: 8088
+      targetPort: http
+      protocol: TCP
+    - name: websocket
+      port: 9098
+      targetPort: websocket
+      protocol: TCP
   sessionAffinity: None

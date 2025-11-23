@@ -571,7 +571,10 @@ data:
           "pluginVersion": "8.0.0",
           "targets": [
             {
-              "expr": "rate(cnpg_pg_stat_database_blks_hit{service=~\"$service\", datname=~\"$database\"}[5m]) / (rate(cnpg_pg_stat_database_blks_hit{service=~\"$service\", datname=~\"$database\"}[5m]) + rate(cnpg_pg_stat_database_blks_read{service=~\"$service\", datname=~\"$database\"}[5m]))",
+              "expr": >-
+                rate(cnpg_pg_stat_database_blks_hit{service=~"$service", datname=~"$database"}[5m])
+                / (rate(cnpg_pg_stat_database_blks_hit{service=~"$service", datname=~"$database"}[5m])
+                + rate(cnpg_pg_stat_database_blks_read{service=~"$service", datname=~"$database"}[5m])),
               "legendFormat": "{{service}} - {{datname}}",
               "refId": "A"
             }

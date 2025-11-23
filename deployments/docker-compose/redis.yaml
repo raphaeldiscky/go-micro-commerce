@@ -5,8 +5,8 @@ services:
     image: "bitnami/redis-cluster:8.2.1"
     container_name: redis-1
     ports:
-      - "6379:6379" # Use the default port for the creator for easier access
-      - "16379:16379"
+      - 6379:6379 # Use the default port for the creator for easier access
+      - 16379:16379
     environment:
       - REDIS_PASSWORD=supersecret
       - REDIS_CLUSTER_REPLICAS=1
@@ -22,7 +22,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
-
   redis-2: &redis-node-common
     image: "bitnami/redis-cluster:8.2.1"
     container_name: redis-2
@@ -43,43 +42,38 @@ services:
       - "16380:16379"
     volumes:
       - redis_2_data:/bitnami/redis/data
-
   redis-3:
-    <<: *redis-node-common
+    !!merge <<: *redis-node-common
     container_name: redis-3
     ports:
       - "6381:6379"
       - "16381:16379"
     volumes:
       - redis_3_data:/bitnami/redis/data
-
   redis-4:
-    <<: *redis-node-common
+    !!merge <<: *redis-node-common
     container_name: redis-4
     ports:
       - "6382:6379"
       - "16382:16379"
     volumes:
       - redis_4_data:/bitnami/redis/data
-
   redis-5:
-    <<: *redis-node-common
+    !!merge <<: *redis-node-common
     container_name: redis-5
     ports:
       - "6383:6379"
       - "16383:16379"
     volumes:
       - redis_5_data:/bitnami/redis/data
-
   redis-6:
-    <<: *redis-node-common
+    !!merge <<: *redis-node-common
     container_name: redis-6
     ports:
       - "6384:6379"
       - "16384:16379"
     volumes:
       - redis_6_data:/bitnami/redis/data
-
   redis-insight:
     image: redis/redisinsight:2.70
     container_name: redis-insight
@@ -92,7 +86,6 @@ services:
     depends_on:
       redis-1:
         condition: service_healthy
-
 volumes:
   redis_1_data:
   redis_2_data:
@@ -101,7 +94,6 @@ volumes:
   redis_5_data:
   redis_6_data:
   redis_insight_data:
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

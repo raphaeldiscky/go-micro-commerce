@@ -12,17 +12,8 @@ services:
       - CONSUL_BIND_INTERFACE=eth0
       - CONSUL_CLIENT_INTERFACE=eth0
     command: >
-      consul agent
-      -server
-      -bootstrap-expect=1
-      -ui
-      -client=0.0.0.0
-      -bind=0.0.0.0
-      -data-dir=/consul/data
-      -enable-script-checks=true
-      -grpc-port=8502
-      -log-level=INFO
-      -enable-local-script-checks=true
+      consul agent -server -bootstrap-expect=1 -ui -client=0.0.0.0 -bind=0.0.0.0 -data-dir=/consul/data -enable-script-checks=true -grpc-port=8502 -log-level=INFO -enable-local-script-checks=true
+
     volumes:
       - consul_data:/consul/data
     networks:
@@ -32,7 +23,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
   # Enhanced Traefik as API Gateway with Consul integration
   traefik:
     image: traefik:v3.5.0
@@ -45,34 +35,27 @@ services:
       # API Configuration
       - --api.dashboard=true
       - --api.insecure=true
-
       # Ping endpoint for health checks
       - --ping=true
       - --ping.entryPoint=traefik
-
       # Entry Points
       - --entrypoints.web.address=:80
       - --entrypoints.websecure.address=:443
       - --entrypoints.traefik.address=:8080
-
       # Consul Catalog Provider
       - --providers.consulCatalog.endpoint.address=consul:8500
       - --providers.consulCatalog.exposedByDefault=false
       - --providers.consulCatalog.defaultRule=Host(`{{ .Name }}.localhost`)
-
       # File Provider for Static Configuration
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
-
       # Metrics
       - --metrics.prometheus=true
       - --metrics.prometheus.addEntryPointsLabels=true
       - --metrics.prometheus.addServicesLabels=true
-
       # Logs
       - --log.level=INFO
       - --accesslog=true
-
     volumes:
       - ./traefik/config:/etc/traefik/dynamic:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro # For Docker provider (optional)
@@ -90,10 +73,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.localhost`)"
       - "traefik.http.routers.traefik.service=api@internal"
-
 volumes:
   consul_data:
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

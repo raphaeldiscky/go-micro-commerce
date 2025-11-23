@@ -5,7 +5,6 @@
 # Deploy as DaemonSet to collect logs from all nodes
 alloy:
   mode: "daemonset"
-
   # Alloy configuration using River language
   configMap:
     create: true
@@ -84,7 +83,6 @@ alloy:
           url = "http://loki-gateway/loki/api/v1/push"
         }
       }
-
   # Resource limits for local development
   resources:
     requests:
@@ -93,41 +91,33 @@ alloy:
     limits:
       cpu: 200m
       memory: 256Mi
-
   # Mount host paths to access container logs
   mounts:
     varlog: true
     dockercontainers: false
-
   # Enable ServiceMonitor for Prometheus metrics
   serviceMonitor:
     enabled: true
-
   # Security context
   securityContext:
     privileged: false
     runAsUser: 0
     runAsGroup: 0
-
   # Tolerations to run on all nodes including monitoring-pool
   tolerations:
     - key: "workload-type"
       operator: "Equal"
       value: "monitoring"
       effect: "NoSchedule"
-
 # Controller configuration
 controller:
   type: "daemonset"
-
   # Host network access for log collection
   hostNetwork: false
   hostPID: false
-
 # Service account with proper RBAC
 rbac:
   create: true
-
 serviceAccount:
   create: true
   name: alloy

@@ -21,7 +21,6 @@ spec:
           annotations:
             summary: "PostgreSQL cluster {{ $labels.service }} is down"
             description: "PostgreSQL cluster {{ $labels.service }} has been down for more than 5 minutes."
-
         - alert: PostgreSQLInstanceDown
           expr: up{job="cnpg-cluster"} == 0
           for: 2m
@@ -31,7 +30,6 @@ spec:
           annotations:
             summary: "PostgreSQL instance {{ $labels.instance }} is down"
             description: "PostgreSQL instance {{ $labels.instance }} for service {{ $labels.service }} has been down for more than 2 minutes."
-
         # Connection Alerts
         - alert: PostgreSQLHighConnectionUsage
           expr: |
@@ -47,7 +45,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} connection usage is high"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} is using {{ $value | humanizePercentage }} of max connections."
-
         - alert: PostgreSQLConnectionLimitReached
           expr: |
             (
@@ -62,7 +59,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} is near connection limit"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} is using {{ $value | humanizePercentage }} of max connections. Immediate action required."
-
         # Replication Alerts
         - alert: PostgreSQLReplicationLagHigh
           expr: cnpg_pg_replication_lag > 10485760
@@ -73,7 +69,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }} replication lag is high"
             description: "PostgreSQL cluster {{ $labels.service }} has replication lag of {{ $value | humanize1024 }}B (>10MB) for more than 5 minutes."
-
         - alert: PostgreSQLReplicationLagCritical
           expr: cnpg_pg_replication_lag > 104857600
           for: 2m
@@ -83,7 +78,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }} replication lag is critical"
             description: "PostgreSQL cluster {{ $labels.service }} has replication lag of {{ $value | humanize1024 }}B (>100MB). Data loss risk."
-
         # Performance Alerts
         - alert: PostgreSQLCacheHitRatioLow
           expr: |
@@ -101,7 +95,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} cache hit ratio is low"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} has a cache hit ratio of {{ $value | humanizePercentage }} (<90%). Consider increasing shared_buffers."
-
         - alert: PostgreSQLHighDeadlockRate
           expr: rate(cnpg_pg_stat_database_deadlocks{datname!="template0",datname!="template1"}[5m]) > 0.1
           for: 5m
@@ -111,7 +104,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} has high deadlock rate"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} is experiencing {{ $value }} deadlocks per second."
-
         - alert: PostgreSQLHighRollbackRate
           expr: |
             rate(cnpg_pg_stat_database_xact_rollback{datname!="template0",datname!="template1"}[5m])
@@ -128,7 +120,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} has high rollback rate"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} has {{ $value | humanizePercentage }} transaction rollback rate."
-
         # Lock Alerts
         - alert: PostgreSQLTooManyLocks
           expr: sum(cnpg_pg_locks_count) by (service, datname) > 100
@@ -139,7 +130,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} has too many locks"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} has {{ $value }} active locks."
-
         # Storage Alerts
         - alert: PostgreSQLTableSizeGrowthHigh
           expr: |
@@ -155,7 +145,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }} table {{ $labels.tablename }} growing rapidly"
             description: "Table {{ $labels.tablename }} in {{ $labels.service }} has grown by {{ $value | humanizePercentage }} in the last hour."
-
         # WAL Alerts
         - alert: PostgreSQLWALGenerationRateHigh
           expr: rate(cnpg_pg_wal_lsn_diff[5m]) > 10485760
@@ -166,7 +155,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }} WAL generation rate is high"
             description: "PostgreSQL cluster {{ $labels.service }} is generating WAL at {{ $value | humanize1024 }}B/s (>10MB/s)."
-
         # Idle Connections Alert
         - alert: PostgreSQLTooManyIdleConnections
           expr: |
@@ -180,7 +168,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }}/{{ $labels.datname }} has many idle connections"
             description: "PostgreSQL database {{ $labels.service }}/{{ $labels.datname }} has {{ $value | humanizePercentage }} idle connections. Consider connection pooling."
-
         # Backup Alerts (for when backups are enabled)
         - alert: PostgreSQLBackupFailed
           expr: cnpg_pg_backup_last_backup_timestamp{status="failed"} > 0
@@ -191,7 +178,6 @@ spec:
           annotations:
             summary: "PostgreSQL {{ $labels.service }} backup failed"
             description: "PostgreSQL cluster {{ $labels.service }} last backup failed."
-
         - alert: PostgreSQLBackupStale
           expr: time() - cnpg_pg_backup_last_backup_timestamp{status="success"} > 86400
           for: 1h

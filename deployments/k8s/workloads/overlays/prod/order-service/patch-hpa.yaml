@@ -3,4 +3,4 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: order-service
 spec:
-  minReplicas: 1  # Reduced from 2 to fit quota constraints
+  minReplicas: 1 # Reduced from 2 to fit quota constraints

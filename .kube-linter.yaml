@@ -1,11 +1,11 @@
 checks:
   addAllBuiltIn: true
   exclude:
-    - "no-read-only-root-fs" # Not all Go applications support read-only root filesystem
-    - "no-anti-affinity" # Anti-affinity is managed at the infrastructure leveld
-    - "no-node-affinity" # Node-affinity is managed at the infrastructure level
-    - "minimum-three-replicas" # Minimum number of replicas is managed at the infrastructure level
-    - "hpa-minimum-three-replicas" # Minimum number of replicas is managed at the infrastructure level
-    - "read-secret-from-env-var" # Using ESO with secretKeyRef is acceptable
+    - no-read-only-root-fs # Not all Go applications support read-only root filesystem
+    - no-anti-affinity # Anti-affinity is managed at the infrastructure leveld
+    - no-node-affinity # Node-affinity is managed at the infrastructure level
+    - minimum-three-replicas # Minimum number of replicas is managed at the infrastructure level
+    - hpa-minimum-three-replicas # Minimum number of replicas is managed at the infrastructure level
+    - read-secret-from-env-var # Using ESO with secretKeyRef is acceptable
 
 customChecks: []

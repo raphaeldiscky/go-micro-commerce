@@ -22,7 +22,6 @@ services:
       otel-collector:
         condition: service_healthy
     restart: unless-stopped
-
   # Consul registration sidecar for graphql-gateway
   graphql-gateway-consul-sidecar:
     image: alpine:latest
@@ -45,7 +44,6 @@ services:
       consul:
         condition: service_healthy
     restart: unless-stopped
-
 networks:
   go-micro-commerce:
     name: go-micro-commerce

@@ -7,6 +7,7 @@ FROM alpine:latest
 RUN apk add --no-cache curl ca-certificates
 
 # Download and install golang-migrate CLI
+SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.0/migrate.linux-amd64.tar.gz | tar xvz && \
     mv migrate /usr/local/bin/migrate && \
     chmod +x /usr/local/bin/migrate

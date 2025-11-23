@@ -1,16 +1,14 @@
 # https://johanneskonings.dev/github/2021/02/28/github_automatic_releases_and-changelog/
 # https://tiagomichaelsousa.dev/articles/stop-writing-your-changelogs-manually
 name: release drafter
-
 on:
   push:
     branches:
-      - "main"
+      - main
 jobs:
   update-release-draft:
     name: Release drafter
     runs-on: ubuntu-latest
-
     permissions:
       contents: write
       pull-requests: read

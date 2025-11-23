@@ -10,8 +10,8 @@ spec:
   selector:
     app: cart-service
   ports:
-  - name: http
-    port: 8089
-    targetPort: http
-    protocol: TCP
+    - name: http
+      port: 8089
+      targetPort: http
+      protocol: TCP
   sessionAffinity: None

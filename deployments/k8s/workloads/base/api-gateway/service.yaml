@@ -10,8 +10,8 @@ spec:
   selector:
     app: api-gateway
   ports:
-  - name: http
-    port: 8080
-    targetPort: http
-    protocol: TCP
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
   sessionAffinity: None
