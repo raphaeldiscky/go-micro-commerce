@@ -36,8 +36,8 @@ jobs:
           python-version: "3.13"
           cache: pip
 
-      - name: Install SQLFluff
-        run: pip install sqlfluff
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Lint SQL
         run: sqlfluff lint
@@ -65,8 +65,8 @@ jobs:
           python-version: "3.13"
           cache: pip
 
-      - name: Install yamllint
-        run: pip install yamllint
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Lint YAML
         run: bash ./scripts/yamllint.sh
