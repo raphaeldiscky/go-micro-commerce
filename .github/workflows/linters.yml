@@ -25,52 +25,51 @@ on:
       - "scripts/**"
 
 jobs:
-  lint:
-    name: Run Linters
+  sqlfluff:
+    name: SQL Lint
     runs-on: tenki-standard-autoscale
     timeout-minutes: 10
-
-    strategy:
-      fail-fast: false
-      matrix:
-        linter: [sqlfluff, hadolint, yamllint]
-
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Python
-        if: matrix.linter == 'sqlfluff' || matrix.linter == 'yamllint'
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
           cache: pip
 
-      # Install SQLFluff
       - name: Install SQLFluff
-        if: matrix.linter == 'sqlfluff'
         run: pip install sqlfluff
 
-      # Run SQLFluff
       - name: Lint SQL
-        if: matrix.linter == 'sqlfluff'
         run: sqlfluff lint
 
-      # Install Hadolint
+  hadolint:
+    name: Dockerfile Lint
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
       - name: Install hadolint
-        if: matrix.linter == 'hadolint'
         uses: hadolint/hadolint-action@v3.1.0
 
-      # Run Hadolint
       - name: Lint Dockerfiles
-        if: matrix.linter == 'hadolint'
         run: bash ./scripts/hadolint.sh
 
-      # Install yamllint
+  yamllint:
+    name: YAML Lint
+    runs-on: tenki-standard-autoscale
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
       - name: Install yamllint
-        if: matrix.linter == 'yamllint'
         run: pip install yamllint
 
-      # Run YAMLLint
       - name: Lint YAML
-        if: matrix.linter == 'yamllint'
         run: bash ./scripts/yamllint.sh
