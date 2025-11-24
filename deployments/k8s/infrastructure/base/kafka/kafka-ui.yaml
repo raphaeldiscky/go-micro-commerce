@@ -59,6 +59,13 @@ spec:
           - name: ndots
             value: "2"
       restartPolicy: Always
+      nodeSelector:
+        workload-type: monitoring
+      tolerations:
+        - key: workload-type
+          operator: Equal
+          value: monitoring
+          effect: NoSchedule
       securityContext:
         runAsNonRoot: true
         runAsUser: 1000
