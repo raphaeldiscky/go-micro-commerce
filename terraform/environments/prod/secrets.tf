@@ -66,3 +66,37 @@ resource "google_secret_manager_secret_iam_member" "eso_github_token" {
 
   depends_on = [google_secret_manager_secret.github_token]
 }
+
+# ============================================================================
+# Notification Service Secrets
+# ============================================================================
+
+# SendGrid API Key
+resource "google_secret_manager_secret" "notification_sendgrid_api_key" {
+  project   = var.project_id
+  secret_id = "notification-service-sendgrid-api-key"
+
+  labels = {
+    environment = "production"
+    managed-by  = "terraform"
+    purpose     = "notification-service"
+  }
+
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "notification_sendgrid_api_key" {
+  secret      = google_secret_manager_secret.notification_sendgrid_api_key.id
+  secret_data = var.notification_sendgrid_api_key
+}
+
+resource "google_secret_manager_secret_iam_member" "eso_notification_sendgrid_api_key" {
+  project   = var.project_id
+  secret_id = google_secret_manager_secret.notification_sendgrid_api_key.secret_id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${var.eso_gcp_service_account_name}@${var.project_id}.iam.gserviceaccount.com"
+
+  depends_on = [google_secret_manager_secret.notification_sendgrid_api_key]
+}

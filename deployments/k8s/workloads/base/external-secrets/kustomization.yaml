@@ -5,8 +5,6 @@ resources:
   - auth-service-external-secret.yaml
   - payment-service-external-secret.yaml
   - notification-service-external-secret.yaml
-  - search-service-external-secret.yaml
-  - order-service-external-secret.yaml
   - redis-external-secret.yaml
   - chat-service-external-secret.yaml
   - grafana-external-secret.yaml

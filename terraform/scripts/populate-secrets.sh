@@ -174,6 +174,14 @@ create_secret "argocd-admin-password" "ArgoCD admin password" \
 
 echo
 
+# Notification Service - SendGrid
+print_info "Notification Service - SendGrid Configuration"
+print_info "Get your API key from: https://app.sendgrid.com/settings/api_keys"
+create_secret "notification-service-sendgrid-api-key" "SendGrid API key" \
+    "SendGrid API Key (starts with SG.)"
+
+echo
+
 # Summary
 print_info "========================================="
 print_info "  SETUP COMPLETE"

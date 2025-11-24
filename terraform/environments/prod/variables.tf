@@ -687,3 +687,14 @@ variable "github_token" {
   sensitive   = true
   default     = ""
 }
+
+# ============================================================================
+# Notification Service Secrets
+# ============================================================================
+
+variable "notification_sendgrid_api_key" {
+  description = "SendGrid API key for notification service"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
