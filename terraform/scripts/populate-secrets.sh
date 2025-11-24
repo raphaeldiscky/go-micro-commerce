@@ -174,6 +174,17 @@ create_secret "argocd-admin-password" "ArgoCD admin password" \
 
 echo
 
+# GitHub Container Registry
+print_info "GitHub Container Registry - Authentication"
+print_info "Create a Personal Access Token at: https://github.com/settings/tokens"
+print_info "Required scopes: read:packages"
+create_secret "github-container-registry-username" "GitHub username" \
+    "GitHub Username"
+create_secret "github-container-registry-token" "GitHub Personal Access Token" \
+    "GitHub PAT (starts with ghp_)"
+
+echo
+
 # Notification Service - SendGrid
 print_info "Notification Service - SendGrid Configuration"
 print_info "Get your API key from: https://app.sendgrid.com/settings/api_keys"
