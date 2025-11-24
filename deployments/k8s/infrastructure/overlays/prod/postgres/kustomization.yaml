@@ -14,7 +14,7 @@ patches:
     patch: |-
       - op: add
         path: /spec/instances
-        value: 3
+        value: 1
       - op: add
         path: /spec/storage
         value:
@@ -25,10 +25,10 @@ patches:
         value:
           requests:
             memory: "512Mi"
-            cpu: "250m"
+            cpu: "100m"
           limits:
             memory: "2Gi"
-            cpu: "1000m"
+            cpu: "500m"
       - op: add
         path: /spec/affinity
         value:

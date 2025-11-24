@@ -38,6 +38,10 @@ spec:
           value: "true"
           operator: Equal
           effect: NoSchedule
+        - key: workload-type
+          operator: Equal
+          value: stateless
+          effect: NoSchedule
       dnsConfig:
         options:
           - name: ndots
