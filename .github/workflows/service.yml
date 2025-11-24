@@ -83,10 +83,23 @@ jobs:
               - 'proto/**'
               - 'go.mod'
               - 'go.sum'
+      - name: Determine services to build
+        id: determine
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # On release tag: build ALL services
+            echo "Building all services for release tag ${{ github.ref_name }}"
+            all_services='["api-gateway","auth-service","product-service","order-service","payment-service","fulfillment-service","notification-service","search-service","chat-service","cart-service","graphql-gateway"]'
+            echo "services=$all_services" >> $GITHUB_OUTPUT
+          else
+            # On PR: use path filter results
+            echo "Using path filter for PR/branch"
+            echo "services=${{ steps.filter.outputs.changes }}" >> $GITHUB_OUTPUT
+          fi
       - name: Classify services as node or go
         id: classify
         run: |
-          changes='${{ steps.filter.outputs.changes }}'
+          changes='${{ steps.determine.outputs.services }}'
           echo "Raw changes: $changes"
 
           services=$(echo "$changes" | jq -c '.')
