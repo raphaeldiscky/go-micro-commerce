@@ -7,6 +7,11 @@ metadata:
 data:
   APP_LOGGER_LEVEL: "4"
   APP_TIMEOUT_SHUTDOWN: "10s"
+  # Database
+  POSTGRES_HOST: "fulfillment-pg-rw"
+  POSTGRES_PORT: "5432"
+  POSTGRES_USER: "postgres"
+  POSTGRES_DATABASE: "fulfillment_db"
   # Observability
   TRACING_URL: "otel-collector:4318"
   TRACING_SAMPLING_RATE: "0.1"
