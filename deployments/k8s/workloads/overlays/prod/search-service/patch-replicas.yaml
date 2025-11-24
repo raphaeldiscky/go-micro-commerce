@@ -1,8 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: search-service
-spec:
-  replicas: 0 # Scaled down to 0 to free up resources, use 3 replicas for HA
-  selector: {}
-  template: {}
