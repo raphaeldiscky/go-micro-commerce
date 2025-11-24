@@ -87,14 +87,21 @@ jobs:
         id: determine
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # On release tag: build ALL services
+            # On release tag: build ALL services using jq
             echo "Building all services for release tag ${{ github.ref_name }}"
-            services=$(cat <<'EOF'
-          ["api-gateway","auth-service","product-service","order-service",
-           "payment-service","fulfillment-service","notification-service",
-           "search-service","chat-service","cart-service","graphql-gateway"]
-          EOF
-            )
+            services=$(jq -n -c '[
+              "api-gateway",
+              "auth-service",
+              "product-service",
+              "order-service",
+              "payment-service",
+              "fulfillment-service",
+              "notification-service",
+              "search-service",
+              "chat-service",
+              "cart-service",
+              "graphql-gateway"
+            ]')
             echo "services=$services" >> $GITHUB_OUTPUT
           else
             # On PR: use path filter results
