@@ -67,10 +67,6 @@ resource "google_secret_manager_secret_iam_member" "eso_github_token" {
   depends_on = [google_secret_manager_secret.github_token]
 }
 
-# ============================================================================
-# Notification Service Secrets
-# ============================================================================
-
 # SendGrid API Key
 resource "google_secret_manager_secret" "notification_sendgrid_api_key" {
   project   = var.project_id
