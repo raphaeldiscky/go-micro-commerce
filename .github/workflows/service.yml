@@ -10,7 +10,7 @@ jobs:
   detect-changes:
     runs-on: tenki-standard-autoscale
     outputs:
-      typed_services: ${{ steps.classify.outputs.typed_services }}
+      typed_services: ${{ steps.determine.outputs.typed_services }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -83,19 +83,33 @@ jobs:
               - 'proto/**'
               - 'go.mod'
               - 'go.sum'
-      - name: Classify services as node or go
-        id: classify
+      - name: Determine and classify services
+        id: determine
         run: |
-          changes='${{ steps.filter.outputs.changes }}'
-          echo "Raw changes: $changes"
-
-          services=$(echo "$changes" | jq -c '.')
-          typed_services=$(jq -c 'map({
-            name: .,
-            type: (if (. == "graphql-gateway")
-                     then "node" else "go" end)
-          })' <<< "$services")
-
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # On release tag: build ALL services with types
+            echo "Building all services for release tag ${{ github.ref_name }}"
+            typed_services=$(jq -n -c '[
+              {name: "api-gateway", type: "go"},
+              {name: "auth-service", type: "go"},
+              {name: "product-service", type: "go"},
+              {name: "order-service", type: "go"},
+              {name: "payment-service", type: "go"},
+              {name: "fulfillment-service", type: "go"},
+              {name: "notification-service", type: "go"},
+              {name: "search-service", type: "go"},
+              {name: "chat-service", type: "go"},
+              {name: "cart-service", type: "go"},
+              {name: "graphql-gateway", type: "node"}
+            ]')
+          else
+            # On PR: classify from path filter
+            echo "Using path filter for PR/branch"
+            typed_services=$(echo '${{ steps.filter.outputs.changes }}' | jq -c 'map({
+              name: .,
+              type: (if . == "graphql-gateway" then "node" else "go" end)
+            })')
+          fi
           echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
   build-and-push:
     needs: detect-changes
