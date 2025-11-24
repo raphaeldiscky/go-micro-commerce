@@ -29,4 +29,4 @@ configMapGenerator:
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/product-service
-    newTag: 09ca390
+    newTag: 0295ea3
