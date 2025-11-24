@@ -285,7 +285,7 @@ jobs:
           fi
 
       - name: Commit and push kustomization changes
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && hashFiles(format('deployments/k8s/workloads/overlays/prod/{0}/kustomization.yaml', matrix.name)) != ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
