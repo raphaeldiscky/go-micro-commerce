@@ -12,6 +12,9 @@ data:
   POSTGRES_PORT: "5432"
   POSTGRES_USER: "postgres"
   POSTGRES_DATABASE: "notification_db"
+  # Mail
+  MAIL_PROVIDER: "sendgrid"
+  MAIL_FROM_EMAIL: "go-micro-commerce@discky.com"
   # Observability
   TRACING_URL: "otel-collector:4318"
   TRACING_SAMPLING_RATE: "0.1"

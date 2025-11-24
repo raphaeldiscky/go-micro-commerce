@@ -8,7 +8,7 @@ import (
 // Config holds all configuration for the application.
 type Config struct {
 	JWT        *JWTConfig
-	SMTP       *SMTPConfig
+	Mail       *MailConfig
 	GRPCClient *GRPCClientConfig
 	Kafka      *KafkaConfig
 	Asynq      *AsynqConfig
@@ -27,7 +27,7 @@ func NewConfig() (*Config, error) {
 
 	return &Config{
 		JWT:        initJWTConfig(),
-		SMTP:       initSMTPConfig(),
+		Mail:       initMailConfig(),
 		GRPCClient: initGRPCClientConfig("api"),
 		Kafka:      initKafkaConfig(),
 		Asynq:      initAsynqConfig(),

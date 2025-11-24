@@ -668,22 +668,3 @@ variable "master_ipv4_cidr_block" {
   type        = string
   default     = "10.13.0.0/28"
 }
-
-
-# ============================================================================
-# Secrets Configuration
-# ============================================================================
-
-variable "github_username" {
-  description = "GitHub username for container registry authentication"
-  type        = string
-  sensitive   = false
-  default     = ""
-}
-
-variable "github_token" {
-  description = "GitHub Personal Access Token for pulling private container images from GHCR (ghcr.io)"
-  type        = string
-  sensitive   = true
-  default     = ""
-}

@@ -9,7 +9,7 @@ type Config struct {
 	App            *AppConfig
 	HTTPServer     *HTTPServerConfig
 	SSEServer      *SSEServerConfig
-	SMTP           *SMTPConfig
+	Mail           *MailConfig
 	Kafka          *KafkaConfig
 	Postgres       *PostgresConfig
 	Redis          *RedisConfig
@@ -29,7 +29,7 @@ func LoadConfig() (*Config, error) {
 
 	cfg := &Config{
 		App:            initAppConfig(),
-		SMTP:           initSMTPConfig(),
+		Mail:           initMailConfig(),
 		HTTPServer:     initHTTPServerConfig(),
 		SSEServer:      initSSEServerConfig(),
 		Postgres:       initPostgresConfig(),

@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/mailutils"
 
 	pkgconfig "github.com/raphaeldiscky/go-micro-commerce/pkg/config"
 
@@ -19,11 +19,16 @@ func SetupInboxProcessor(
 	appLogger logger.Logger,
 	providers *Providers,
 ) *worker.InboxProcessor {
-	mailer := smtputils.NewMailer(&pkgconfig.SMTPConfig{
-		Host:  cfg.SMTP.Host,
-		Email: cfg.SMTP.Email,
-		Port:  cfg.SMTP.Port,
+	mailer, err := mailutils.NewMailer(&pkgconfig.MailConfig{
+		Provider:       cfg.Mail.Provider,
+		Host:           cfg.Mail.Host,
+		FromEmail:      cfg.Mail.FromEmail,
+		Port:           cfg.Mail.Port,
+		SendGridAPIKey: cfg.Mail.SendGridAPIKey,
 	})
+	if err != nil {
+		appLogger.Fatal("failed to create mailer", "error", err)
+	}
 	// Create template service with path to templates directory
 	templatesPath := filepath.Join("internal", "template")
 	emailService := service.NewEmailService(templatesPath, mailer)

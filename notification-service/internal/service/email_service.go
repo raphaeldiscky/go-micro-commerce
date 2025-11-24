@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/smtputils"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/mailutils"
 )
 
 // EmailService handles email template rendering and sending operations.
@@ -23,11 +23,11 @@ type EmailService interface {
 // emailService handles loading and rendering email templates.
 type emailService struct {
 	templatesPath string
-	mailer        smtputils.Mailer
+	mailer        mailutils.Mailer
 }
 
 // NewEmailService creates a new template service instance.
-func NewEmailService(templatesPath string, mailer smtputils.Mailer) EmailService {
+func NewEmailService(templatesPath string, mailer mailutils.Mailer) EmailService {
 	return &emailService{
 		templatesPath: templatesPath,
 		mailer:        mailer,
