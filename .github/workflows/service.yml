@@ -1,10 +1,8 @@
 name: service
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'v*'
+      - "v*" # Only trigger on release tags
   pull_request:
     branches:
       - main
@@ -214,10 +212,9 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/go-micro-commerce/${{ matrix.name }}
           tags: |
-            type=sha,prefix=
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         id: build
@@ -277,11 +274,11 @@ jobs:
       - name: Update kustomization image tag
         if: github.event_name != 'pull_request'
         run: |
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          VERSION=$(echo "${{ github.ref_name }}")
           KUSTOMIZATION_PATH="deployments/k8s/workloads/overlays/prod/${{ matrix.name }}/kustomization.yaml"
           if [ -f "$KUSTOMIZATION_PATH" ]; then
-            sed -i "s/newTag: .*/newTag: $SHORT_SHA/" "$KUSTOMIZATION_PATH"
-            echo "Updated ${{ matrix.name }} image tag to $SHORT_SHA"
+            sed -i "s/newTag: .*/newTag: $VERSION/" "$KUSTOMIZATION_PATH"
+            echo "Updated ${{ matrix.name }} image tag to $VERSION"
           fi
 
       - name: Commit and push kustomization changes
@@ -290,7 +287,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add deployments/k8s/workloads/overlays/prod/${{ matrix.name }}/kustomization.yaml
-          git diff --staged --quiet || git commit -m "chore(${{ matrix.name }}): update image tag to ${{ github.sha }}"
+          git diff --staged --quiet || git commit -m "chore(${{ matrix.name }}): update image tag to ${{ github.ref_name }}"
 
           # Retry push with rebase to handle parallel job conflicts
           for i in 1 2 3 4 5; do
