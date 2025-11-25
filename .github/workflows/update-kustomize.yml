@@ -46,11 +46,29 @@ jobs:
           echo "branch=chore/update-kustomize-$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
+      - name: Get previous release tag for comparison
+        id: prev_tag
+        run: |
+          CURRENT_TAG="${{ steps.version.outputs.tag }}"
+          echo "Current tag: $CURRENT_TAG"
+
+          # Get the previous tag for comparison (excluding the current tag)
+          PREV_TAG=$(git tag --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -n 1)
+
+          if [ -z "$PREV_TAG" ]; then
+            echo "No previous tag found, will compare against initial commit"
+            PREV_TAG=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          echo "base=$PREV_TAG" >> $GITHUB_OUTPUT
+          echo "Comparing $PREV_TAG...$CURRENT_TAG to detect changed services"
+
       - name: Detect changed services using path filter
         id: filter
         uses: dorny/paths-filter@v3
         with:
-          base: ${{ github.event.release.target_commitish || 'main' }}
+          base: ${{ steps.prev_tag.outputs.base }}
+          ref: ${{ steps.version.outputs.tag }}
           filters: |
             api-gateway:
               - 'api-gateway/**'
