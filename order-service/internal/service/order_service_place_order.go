@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/kafka"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/utils/echoutils"
+	"golang.org/x/sync/errgroup"
 
 	pkgdto "github.com/raphaeldiscky/go-micro-commerce/pkg/dto"
 
@@ -116,23 +117,91 @@ func (s *orderService) PlaceOrder(
 			paymentGateway = constant.PaymentGateway(*checkoutSession.PaymentGateway)
 		}
 
-		// Step 3: Fetch current products to get fresh versions and validate
-		s.logger.Infof("Fetching %d products for reservation", len(checkoutSession.Items))
-
-		// Extract product IDs from checkout session
+		// Extract product IDs from checkout session for parallel fetch
 		productIDs := make([]uuid.UUID, len(checkoutSession.Items))
 		for i, item := range checkoutSession.Items {
 			productIDs[i] = item.ProductID
 		}
 
-		// Fetch current products from product-service
-		products, errFetch := s.productClient.GetProducts(ctx, productIDs)
-		if errFetch != nil {
-			s.logger.Errorf("Failed to fetch products: %v", errFetch)
+		// Step 3 & 4: Fetch products AND calculate shipping IN PARALLEL
+		s.logger.Infof(
+			"Starting parallel operations: fetching %d products and calculating shipping",
+			len(productIDs),
+		)
 
-			return httperror.NewBadRequestError(
-				fmt.Sprintf("failed to fetch products: %v", errFetch),
+		var (
+			products     []entity.Product
+			shippingResp *dto.CalculateShippingResponse
+		)
+
+		g, gctx := errgroup.WithContext(ctx)
+
+		// Goroutine 1: Fetch current products from product-service
+		g.Go(func() error {
+			s.logger.Infof("Fetching products concurrently")
+
+			fetchedProducts, errFetch := s.productClient.GetProducts(gctx, productIDs)
+			if errFetch != nil {
+				s.logger.Errorf("Failed to fetch products: %v", errFetch)
+				return fmt.Errorf("failed to fetch products: %w", errFetch)
+			}
+
+			products = fetchedProducts
+			s.logger.Infof("Successfully fetched %d products", len(products))
+
+			return nil
+		})
+
+		// Goroutine 2: Calculate shipping cost concurrently
+		g.Go(func() error {
+			s.logger.Infof("Calculating shipping cost concurrently")
+
+			shippingReq := dto.CalculateShippingRequest{
+				Courier: dto.Courier{
+					CourierID: checkoutSession.Courier.CourierID,
+				},
+				Destination: dto.ToAddress{
+					City:        checkoutSession.Destination.City,
+					State:       checkoutSession.Destination.State,
+					PostalCode:  checkoutSession.Destination.PostalCode,
+					CountryCode: checkoutSession.Destination.CountryCode,
+				},
+				Origin: dto.FromAddress{
+					City:        checkoutSession.Origin.City,
+					State:       checkoutSession.Origin.State,
+					PostalCode:  checkoutSession.Origin.PostalCode,
+					CountryCode: checkoutSession.Origin.CountryCode,
+				},
+				Package: dto.Package{
+					WeightKG: checkoutSession.Package.WeightKG,
+					Length:   checkoutSession.Package.Length,
+					Width:    checkoutSession.Package.Width,
+					Height:   checkoutSession.Package.Height,
+					Unit:     checkoutSession.Package.Unit,
+				},
+				Currency: checkoutSession.Currency,
+			}
+
+			resp, errShipping := s.fulfillmentClient.CalculateShipping(gctx, shippingReq)
+			if errShipping != nil {
+				s.logger.Errorf("Failed to calculate shipping: %v", errShipping)
+				return fmt.Errorf("failed to calculate shipping: %w", errShipping)
+			}
+
+			shippingResp = resp
+			s.logger.Infof(
+				"Successfully calculated shipping: %s %s",
+				resp.Cost,
+				checkoutSession.Currency,
 			)
+
+			return nil
+		})
+
+		// Wait for both parallel operations to complete
+		if err = g.Wait(); err != nil {
+			s.logger.Errorf("Parallel operations failed: %v", err)
+			return httperror.NewBadRequestError(err.Error())
 		}
 
 		// Create product map for quick lookup
@@ -186,7 +255,7 @@ func (s *orderService) PlaceOrder(
 			}
 		}
 
-		// Reserve products with validated items and fresh versions
+		// Step 5: Reserve products with validated items and fresh versions (sequential after parallel ops)
 		s.logger.Infof("Reserving %d products with fresh versions", len(reservationItems))
 
 		reservedProducts, errn := s.productClient.ReserveProducts(
@@ -217,49 +286,6 @@ func (s *orderService) PlaceOrder(
 			}
 
 			orderItems[i] = *orderItem
-		}
-
-		// Step 4: Calculate shipping cost
-		s.logger.Infof("Calculating shipping cost with fulfillment-service")
-
-		shippingReq := dto.CalculateShippingRequest{
-			Courier: dto.Courier{
-				CourierID: checkoutSession.Courier.CourierID,
-			},
-			Destination: dto.ToAddress{
-				City:        checkoutSession.Destination.City,
-				State:       checkoutSession.Destination.State,
-				PostalCode:  checkoutSession.Destination.PostalCode,
-				CountryCode: checkoutSession.Destination.CountryCode,
-			},
-			Origin: dto.FromAddress{
-				City:        checkoutSession.Origin.City,
-				State:       checkoutSession.Origin.State,
-				PostalCode:  checkoutSession.Origin.PostalCode,
-				CountryCode: checkoutSession.Origin.CountryCode,
-			},
-			Package: dto.Package{
-				WeightKG: checkoutSession.Package.WeightKG,
-				Length:   checkoutSession.Package.Length,
-				Width:    checkoutSession.Package.Width,
-				Height:   checkoutSession.Package.Height,
-				Unit:     checkoutSession.Package.Unit,
-			},
-			Currency: checkoutSession.Currency,
-		}
-
-		shippingResp, errn := s.fulfillmentClient.CalculateShipping(ctx, shippingReq)
-		if errn != nil {
-			s.logger.Errorf("Failed to calculate shipping: %v", errn)
-			// Compensate: Release reserved products
-			err = s.compensateProductReservation(ctx, reservationItems)
-			if err != nil {
-				s.logger.Errorf("Failed to release reserved products: %v", err)
-			}
-
-			return httperror.NewBadRequestError(
-				fmt.Sprintf("failed to calculate shipping: %v", err),
-			)
 		}
 
 		// Step 5: Create order entity using NewOrder (calculates subtotal and totals)
