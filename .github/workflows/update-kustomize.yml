@@ -6,11 +6,11 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag (e.g., v0.1.1)'
+        description: "Release tag (e.g., v0.1.1)"
         required: true
         type: string
       dry_run:
-        description: 'Dry run (no PR creation)'
+        description: "Dry run (no PR creation)"
         required: false
         type: boolean
         default: false
@@ -311,12 +311,6 @@ jobs:
           done
 
           cat >> pr_body.md << EOF
-
-          ## Verification
-
-          - [x] All kustomization files updated to version $VERSION
-          - [x] YAML syntax validated
-          - [ ] ArgoCD sync will pick up these changes automatically
 
           ## Metadata
 
