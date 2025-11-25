@@ -249,8 +249,18 @@ jobs:
       - name: Push branch
         if: steps.update.outputs.has_changes == 'true' && inputs.dry_run != true
         run: |
-          echo "Pushing branch ${{ steps.version.outputs.branch }} to origin..."
-          git push origin ${{ steps.version.outputs.branch }}
+          BRANCH="${{ steps.version.outputs.branch }}"
+          echo "Pushing branch $BRANCH to origin..."
+
+          # Check if branch exists on remote
+          if git ls-remote --heads origin "$BRANCH" | grep -q "$BRANCH"; then
+            echo "Branch already exists on remote, force pushing with --force-with-lease"
+            git push origin "$BRANCH" --force-with-lease
+          else
+            echo "New branch, pushing normally"
+            git push origin "$BRANCH"
+          fi
+
           echo "Branch pushed successfully"
 
       - name: Check if PR already exists
@@ -321,14 +331,18 @@ jobs:
 
           # Create PR using GitHub CLI
           echo "Creating pull request..."
-          gh pr create \
+          PR_URL=$(gh pr create \
             --title "chore(k8s): update kustomization image tags to $VERSION" \
             --body-file pr_body.md \
             --base main \
-            --head ${{ steps.version.outputs.branch }} \
-            --label "chore" \
-            --label "k8s" \
-            --label "automated"
+            --head ${{ steps.version.outputs.branch }})
+
+          echo "Pull request created: $PR_URL"
+
+          # Try to add labels, but don't fail if they don't exist
+          echo "Attempting to add labels..."
+          gh pr edit "$PR_URL" --add-label "chore,k8s,automated" || \
+            echo "⚠ Could not add labels (labels may not exist in repository). PR created successfully without labels."
 
           echo "Pull request created successfully"
 
