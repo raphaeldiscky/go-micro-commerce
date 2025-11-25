@@ -86,30 +86,20 @@ jobs:
       - name: Determine and classify services
         id: determine
         run: |
+          # Always use path filter results for service detection
+          # This enables independent service versioning - only changed services are built
+          echo "Using path filter to detect changed services"
+          typed_services=$(echo '${{ steps.filter.outputs.changes }}' | jq -c 'map({
+            name: .,
+            type: (if . == "graphql-gateway" then "node" else "go" end)
+          })')
+
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # On release tag: build ALL services with types
-            echo "Building all services for release tag ${{ github.ref_name }}"
-            typed_services=$(jq -n -c '[
-              {name: "api-gateway", type: "go"},
-              {name: "auth-service", type: "go"},
-              {name: "product-service", type: "go"},
-              {name: "order-service", type: "go"},
-              {name: "payment-service", type: "go"},
-              {name: "fulfillment-service", type: "go"},
-              {name: "notification-service", type: "go"},
-              {name: "search-service", type: "go"},
-              {name: "chat-service", type: "go"},
-              {name: "cart-service", type: "go"},
-              {name: "graphql-gateway", type: "node"}
-            ]')
+            echo "Building changed services for release tag ${{ github.ref_name }}"
           else
-            # On PR: classify from path filter
-            echo "Using path filter for PR/branch"
-            typed_services=$(echo '${{ steps.filter.outputs.changes }}' | jq -c 'map({
-              name: .,
-              type: (if . == "graphql-gateway" then "node" else "go" end)
-            })')
+            echo "Building changed services for PR/branch"
           fi
+
           echo "typed_services=$typed_services" >> $GITHUB_OUTPUT
   build-and-push:
     needs: detect-changes
@@ -285,6 +275,10 @@ jobs:
       #   if: always()
       #   with:
       #     sarif_file: "trivy-results.sarif"
+
+      # Note: Kustomization updates are handled by the 'update-kustomize.yml' workflow
+      # which detects changed services using the same path filter and updates only those
+      # kustomization files. This enables independent service versioning.
 
       - name: Generate job summary
         if: always()

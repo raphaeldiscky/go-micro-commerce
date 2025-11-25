@@ -46,23 +46,81 @@ jobs:
           echo "branch=chore/update-kustomize-$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
+      - name: Detect changed services using path filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.release.target_commitish || 'main' }}
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            auth-service:
+              - 'auth-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            product-service:
+              - 'product-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            order-service:
+              - 'order-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            payment-service:
+              - 'payment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            fulfillment-service:
+              - 'fulfillment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            notification-service:
+              - 'notification-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            search-service:
+              - 'search-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            chat-service:
+              - 'chat-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            cart-service:
+              - 'cart-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+
       - name: Determine services to update
         id: services
         run: |
-          SERVICES=(
-            "api-gateway"
-            "auth-service"
-            "product-service"
-            "order-service"
-            "payment-service"
-            "fulfillment-service"
-            "notification-service"
-            "search-service"
-            "chat-service"
-            "cart-service"
-          )
-          echo "list=$(printf '%s\n' "${SERVICES[@]}" | jq -R . | jq -s -c .)" >> $GITHUB_OUTPUT
-          echo "Services to process: ${SERVICES[@]}"
+          CHANGED_SERVICES='${{ steps.filter.outputs.changes }}'
+          echo "list=$CHANGED_SERVICES" >> $GITHUB_OUTPUT
+
+          SERVICE_COUNT=$(echo "$CHANGED_SERVICES" | jq -r 'length')
+          echo "Detected $SERVICE_COUNT changed services: $(echo "$CHANGED_SERVICES" | jq -r 'join(", ")')"
 
       - name: Create feature branch
         run: |
