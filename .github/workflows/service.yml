@@ -2,7 +2,7 @@ name: service
 on:
   push:
     tags:
-      - "v*" # Only trigger on release tags
+      - "v*" # Trigger on release tags
   pull_request:
     branches:
       - main
