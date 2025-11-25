@@ -1,0 +1,376 @@
+name: Update Kustomization Files
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g., v0.1.1)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run (no PR creation)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  update-kustomizations:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ inputs.tag }}"
+          fi
+          echo "tag=$VERSION" >> $GITHUB_OUTPUT
+          echo "branch=chore/update-kustomize-$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Detect changed services using path filter
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          base: ${{ github.event.release.target_commitish || 'main' }}
+          filters: |
+            api-gateway:
+              - 'api-gateway/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            auth-service:
+              - 'auth-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            product-service:
+              - 'product-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            order-service:
+              - 'order-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            payment-service:
+              - 'payment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            fulfillment-service:
+              - 'fulfillment-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            notification-service:
+              - 'notification-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            search-service:
+              - 'search-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            chat-service:
+              - 'chat-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+            cart-service:
+              - 'cart-service/**'
+              - 'pkg/**'
+              - 'proto/**'
+              - 'go.mod'
+              - 'go.sum'
+
+      - name: Determine services to update
+        id: services
+        run: |
+          CHANGED_SERVICES='${{ steps.filter.outputs.changes }}'
+          echo "list=$CHANGED_SERVICES" >> $GITHUB_OUTPUT
+
+          SERVICE_COUNT=$(echo "$CHANGED_SERVICES" | jq -r 'length')
+          echo "Detected $SERVICE_COUNT changed services: $(echo "$CHANGED_SERVICES" | jq -r 'join(", ")')"
+
+      - name: Create feature branch
+        run: |
+          git checkout -b ${{ steps.version.outputs.branch }}
+          echo "Created branch: ${{ steps.version.outputs.branch }}"
+
+      - name: Update all kustomization files
+        id: update
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          SERVICES='${{ steps.services.outputs.list }}'
+          UPDATED_SERVICES=()
+
+          echo "Updating kustomization files for version $VERSION"
+          echo "Processing $(echo "$SERVICES" | jq -r 'length') services..."
+
+          while IFS= read -r service; do
+            KUSTOMIZATION_PATH="deployments/k8s/workloads/overlays/prod/$service/kustomization.yaml"
+
+            if [ -f "$KUSTOMIZATION_PATH" ]; then
+              echo "Processing $service..."
+
+              # Update the newTag field
+              sed -i "s/newTag: .*/newTag: $VERSION/" "$KUSTOMIZATION_PATH"
+
+              # Check if file was actually modified
+              if ! git diff --quiet "$KUSTOMIZATION_PATH"; then
+                echo "✓ Updated $service to $VERSION"
+                UPDATED_SERVICES+=("$service")
+              else
+                echo "- No changes needed for $service (already at $VERSION)"
+              fi
+            else
+              echo "⚠ Warning: Kustomization file not found for $service at $KUSTOMIZATION_PATH"
+            fi
+          done < <(echo "$SERVICES" | jq -r '.[]')
+
+          # Export results
+          if [ ${#UPDATED_SERVICES[@]} -eq 0 ]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "No kustomization files needed updating"
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "count=${#UPDATED_SERVICES[@]}" >> $GITHUB_OUTPUT
+            printf -v services_str '%s,' "${UPDATED_SERVICES[@]}"
+            echo "services=${services_str%,}" >> $GITHUB_OUTPUT
+            echo "Successfully updated ${#UPDATED_SERVICES[@]} services"
+          fi
+
+      - name: Validate YAML syntax
+        if: steps.update.outputs.has_changes == 'true'
+        run: |
+          echo "Installing yq for YAML validation..."
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+
+          echo "Validating YAML syntax for all updated files..."
+          SERVICES='${{ steps.services.outputs.list }}'
+          VALIDATION_FAILED=0
+
+          while IFS= read -r service; do
+            KUSTOMIZATION_PATH="deployments/k8s/workloads/overlays/prod/$service/kustomization.yaml"
+            if [ -f "$KUSTOMIZATION_PATH" ]; then
+              if yq eval '.' "$KUSTOMIZATION_PATH" > /dev/null 2>&1; then
+                echo "✓ Valid YAML: $service"
+              else
+                echo "✗ Invalid YAML: $service"
+                VALIDATION_FAILED=1
+              fi
+            fi
+          done < <(echo "$SERVICES" | jq -r '.[]')
+
+          if [ $VALIDATION_FAILED -eq 1 ]; then
+            echo "ERROR: YAML validation failed for one or more files"
+            exit 1
+          fi
+
+          echo "All YAML files are valid"
+
+      - name: Commit kustomization changes
+        if: steps.update.outputs.has_changes == 'true'
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          SERVICES="${{ steps.update.outputs.services }}"
+          COUNT="${{ steps.update.outputs.count }}"
+
+          # Stage all kustomization files
+          git add deployments/k8s/workloads/overlays/prod/*/kustomization.yaml
+
+          # Create consolidated commit message
+          cat > commit_msg.txt << EOF
+          chore(k8s): update kustomization image tags to $VERSION
+
+          Updated image tags for $COUNT services:
+          $(echo "$SERVICES" | tr ',' '\n' | sed 's/^/- /')
+
+          This is an automated update from the release workflow.
+
+          Release: $VERSION
+          Workflow: ${{ github.workflow }}
+          Run: ${{ github.run_id }}
+          EOF
+
+          # Perform commit
+          git commit -F commit_msg.txt
+          echo "Commit created successfully"
+
+      - name: Push branch
+        if: steps.update.outputs.has_changes == 'true' && inputs.dry_run != true
+        run: |
+          echo "Pushing branch ${{ steps.version.outputs.branch }} to origin..."
+          git push origin ${{ steps.version.outputs.branch }}
+          echo "Branch pushed successfully"
+
+      - name: Check if PR already exists
+        id: pr_check
+        if: steps.update.outputs.has_changes == 'true' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list \
+            --head ${{ steps.version.outputs.branch }} \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number' || echo "")
+
+          if [ -n "$EXISTING_PR" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "number=$EXISTING_PR" >> $GITHUB_OUTPUT
+            echo "Found existing PR #$EXISTING_PR"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No existing PR found"
+          fi
+
+      - name: Create Pull Request
+        if: steps.update.outputs.has_changes == 'true' && steps.pr_check.outputs.exists == 'false' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          SERVICES="${{ steps.update.outputs.services }}"
+          COUNT="${{ steps.update.outputs.count }}"
+
+          # Create PR body
+          cat > pr_body.md << EOF
+          ## Summary
+
+          Automated update of Kustomization image tags following the release of **$VERSION**.
+
+          ## Changes
+
+          Updated \`newTag\` field in kustomization files for **$COUNT** services:
+
+          EOF
+
+          echo "$SERVICES" | tr ',' '\n' | while read -r service; do
+            echo "- \`$service\`: deployments/k8s/workloads/overlays/prod/$service/kustomization.yaml" >> pr_body.md
+          done
+
+          cat >> pr_body.md << EOF
+
+          ## Verification
+
+          - [x] All kustomization files updated to version $VERSION
+          - [x] YAML syntax validated
+          - [ ] ArgoCD sync will pick up these changes automatically
+
+          ## Metadata
+
+          - **Release**: $VERSION
+          - **Workflow Run**: ${{ github.run_id }}
+          - **Triggered By**: ${{ github.actor }}
+
+          ---
+
+          *This PR was automatically generated by the [Update Kustomization Files](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) workflow.*
+          EOF
+
+          # Create PR using GitHub CLI
+          echo "Creating pull request..."
+          gh pr create \
+            --title "chore(k8s): update kustomization image tags to $VERSION" \
+            --body-file pr_body.md \
+            --base main \
+            --head ${{ steps.version.outputs.branch }} \
+            --label "chore" \
+            --label "k8s" \
+            --label "automated"
+
+          echo "Pull request created successfully"
+
+      - name: Update existing PR
+        if: steps.update.outputs.has_changes == 'true' && steps.pr_check.outputs.exists == 'true' && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "PR #${{ steps.pr_check.outputs.number }} already exists"
+          echo "Force pushing updates to branch ${{ steps.version.outputs.branch }}..."
+          git push origin ${{ steps.version.outputs.branch }} --force-with-lease
+
+          # Add comment to existing PR
+          gh pr comment ${{ steps.pr_check.outputs.number }} \
+            --body "Updated kustomization files via workflow run [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+          echo "Existing PR updated successfully"
+
+      - name: No changes detected
+        if: steps.update.outputs.has_changes == 'false'
+        run: |
+          echo "ℹ No kustomization files needed updating for ${{ steps.version.outputs.tag }}"
+          echo ""
+          echo "This might happen if:"
+          echo "  - All files are already at the target version"
+          echo "  - The release doesn't include any service updates"
+          echo "  - Services were manually updated already"
+
+      - name: Dry run summary
+        if: inputs.dry_run == true
+        run: |
+          echo "========================================"
+          echo "DRY RUN MODE - No PR created"
+          echo "========================================"
+          echo "Branch created: ${{ steps.version.outputs.branch }}"
+          echo "Changes detected: ${{ steps.update.outputs.has_changes }}"
+          if [ "${{ steps.update.outputs.has_changes }}" = "true" ]; then
+            echo "Services updated: ${{ steps.update.outputs.services }}"
+            echo "Update count: ${{ steps.update.outputs.count }}"
+          fi
+          echo "========================================"
+
+      - name: Generate job summary
+        if: always()
+        run: |
+          echo "## Kustomization Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ steps.version.outputs.branch }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Changes Detected**: ${{ steps.update.outputs.has_changes }}" >> $GITHUB_STEP_SUMMARY
+
+          if [ "${{ steps.update.outputs.has_changes }}" = "true" ]; then
+            echo "- **Services Updated**: ${{ steps.update.outputs.count }}" >> $GITHUB_STEP_SUMMARY
+            echo "- **Service List**: ${{ steps.update.outputs.services }}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "- **Mode**: Dry Run (no PR created)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.pr_check.outputs.exists }}" = "true" ]; then
+            echo "- **PR**: Updated existing PR #${{ steps.pr_check.outputs.number }}" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ steps.update.outputs.has_changes }}" = "true" ]; then
+            echo "- **PR**: New PR created" >> $GITHUB_STEP_SUMMARY
+          fi
