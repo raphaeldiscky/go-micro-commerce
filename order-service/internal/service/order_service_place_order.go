@@ -255,7 +255,7 @@ func (s *orderService) PlaceOrder(
 			}
 		}
 
-		// Step 5: Reserve products with validated items and fresh versions (sequential after parallel ops)
+		// Step 5: Reserve products with validated items and fresh versions
 		s.logger.Infof("Reserving %d products with fresh versions", len(reservationItems))
 
 		reservedProducts, errn := s.productClient.ReserveProducts(
@@ -288,7 +288,7 @@ func (s *orderService) PlaceOrder(
 			orderItems[i] = *orderItem
 		}
 
-		// Step 5: Create order entity using NewOrder (calculates subtotal and totals)
+		// Step 6: Create order entity using NewOrder (calculates subtotal and totals)
 		order, errn := entity.NewOrder(
 			req.CustomerID,
 			req.IdempotencyKey,
@@ -330,7 +330,7 @@ func (s *orderService) PlaceOrder(
 			return httperror.NewBadRequestError(fmt.Sprintf("failed to create order: %v", err))
 		}
 
-		// Step 6: Update shipping cost (recalculates total price)
+		// Step 7: Update shipping cost (recalculates total price)
 		if err = order.UpdateShippingCost(shippingResp.Cost); err != nil {
 			s.logger.Errorf("Failed to update shipping cost: %v", err)
 			// Compensate: Release reserved products
@@ -351,7 +351,7 @@ func (s *orderService) PlaceOrder(
 			order.TotalPrice,
 		)
 
-		// Step 7: Create payment intent synchronously
+		// Step 8: Create payment intent synchronously
 		s.logger.Infof(
 			"Creating payment intent for order with amount %s %s",
 			order.TotalPrice,
@@ -380,7 +380,7 @@ func (s *orderService) PlaceOrder(
 			)
 		}
 
-		// Step 8: Update order status to pending_payment
+		// Step 9: Update order status to pending_payment
 		if err = order.UpdateStatus(constant.OrderStatusPaymentPending); err != nil {
 			s.logger.Errorf("Failed to update order status: %v", err)
 			// Compensate: Release reserved products
@@ -394,7 +394,7 @@ func (s *orderService) PlaceOrder(
 			)
 		}
 
-		// Step 9: Save order to database
+		// Step 10: Save order to database
 		savedOrder, errn := orderRepo.Create(ctx, order)
 		if errn != nil {
 			s.logger.Errorf("Failed to save order: %v", errn)
@@ -409,7 +409,7 @@ func (s *orderService) PlaceOrder(
 
 		s.logger.Infof("Order created successfully: order_id=%s", savedOrder.ID)
 
-		// Step 9.5: Create saga state for post-payment workflow
+		// Step 11: Create saga state for post-payment workflow
 		// Store metadata that will be needed when payment succeeds
 		userAuth, errAuth := echoutils.GetUserAuthContexts(ctx)
 		if errAuth != nil {
@@ -452,7 +452,7 @@ func (s *orderService) PlaceOrder(
 			)
 		}
 
-		// Step 10: Publish OrderCreatedEvent via outbox
+		// Step 12: Publish OrderCreatedEvent via outbox
 		evt := producer.NewOrderLifecycleEvent(
 			savedOrder.ID,
 			savedOrder.CheckoutSessionID,
