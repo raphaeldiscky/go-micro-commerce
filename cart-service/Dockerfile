@@ -29,7 +29,7 @@ FROM alpine:latest
 # Create a non-root user and group for security.
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-# Set the working directory for the final image
+# Set the working directory for the final image.
 WORKDIR /app
 
 # Copy ONLY the compiled binary from the 'builder' stage.
