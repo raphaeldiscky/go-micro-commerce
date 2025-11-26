@@ -1,0 +1,98 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: shared-pg
+  namespace: application
+  labels:
+    app: shared-pg
+    component: database
+spec:
+  instances: 3 # High availability with 3 replicas
+  imageName: ghcr.io/cloudnative-pg/postgresql:18
+
+  storage:
+    size: 40Gi # 40GB for all 8 databases (saves 120GB from 8x20GB)
+    storageClass: standard
+
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1000m"
+
+  # Node affinity for stateful pool
+  affinity:
+    nodeSelector:
+      workload-type: stateful
+    tolerations:
+      - key: workload-type
+        operator: Equal
+        value: stateful
+        effect: NoSchedule
+
+  bootstrap:
+    initdb:
+      database: postgres
+      owner: postgres
+      postInitSQL:
+        # Create 8 databases (one per microservice)
+        - CREATE DATABASE auth_db;
+        - CREATE DATABASE cart_db;
+        - CREATE DATABASE order_db;
+        - CREATE DATABASE product_db;
+        - CREATE DATABASE payment_db;
+        - CREATE DATABASE fulfillment_db;
+        - CREATE DATABASE notification_db;
+        - CREATE DATABASE chat_db;
+
+        # Create dedicated users for each service
+        - CREATE USER auth_user WITH ENCRYPTED PASSWORD 'auth_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE auth_db TO auth_user;
+        - ALTER DATABASE auth_db OWNER TO auth_user;
+
+        - CREATE USER cart_user WITH ENCRYPTED PASSWORD 'cart_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE cart_db TO cart_user;
+        - ALTER DATABASE cart_db OWNER TO cart_user;
+
+        - CREATE USER order_user WITH ENCRYPTED PASSWORD 'order_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE order_db TO order_user;
+        - ALTER DATABASE order_db OWNER TO order_user;
+
+        - CREATE USER product_user WITH ENCRYPTED PASSWORD 'product_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE product_db TO product_user;
+        - ALTER DATABASE product_db OWNER TO product_user;
+
+        - CREATE USER payment_user WITH ENCRYPTED PASSWORD 'payment_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE payment_db TO payment_user;
+        - ALTER DATABASE payment_db OWNER TO payment_user;
+
+        - CREATE USER fulfillment_user WITH ENCRYPTED PASSWORD 'fulfillment_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE fulfillment_db TO fulfillment_user;
+        - ALTER DATABASE fulfillment_db OWNER TO fulfillment_user;
+
+        - CREATE USER notification_user WITH ENCRYPTED PASSWORD 'notification_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE notification_db TO notification_user;
+        - ALTER DATABASE notification_db OWNER TO notification_user;
+
+        - CREATE USER chat_user WITH ENCRYPTED PASSWORD 'chat_password_CHANGE_ME';
+        - GRANT ALL PRIVILEGES ON DATABASE chat_db TO chat_user;
+        - ALTER DATABASE chat_db OWNER TO chat_user;
+
+  # Monitoring configuration
+  monitoring:
+    enablePodMonitor: true
+    disableDefaultQueries: false
+
+  # Backup configuration (optional but recommended)
+  # backup:
+  #   barmanObjectStore:
+  #     destinationPath: "s3://your-bucket/backups"
+  #     s3Credentials:
+  #       accessKeyId:
+  #         name: backup-credentials
+  #         key: ACCESS_KEY_ID
+  #       secretAccessKey:
+  #         name: backup-credentials
+  #         key: SECRET_ACCESS_KEY

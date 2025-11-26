@@ -173,7 +173,7 @@ variable "enable_workload_identity" {
 
 # Control Plane Pool Variables (for operators, ArgoCD, ESO)
 variable "control_plane_pool_enabled" {
-  description = "Enable control plane node pool for operators and control plane components"
+  description = "Enable control plane node pool for operators and system components"
   type        = bool
   default     = true
 }

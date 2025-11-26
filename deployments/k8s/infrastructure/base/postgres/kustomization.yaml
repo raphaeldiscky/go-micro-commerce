@@ -2,11 +2,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - auth-pg.yaml
-  - cart-pg.yaml
-  - chat-pg.yaml
-  - fulfillment-pg.yaml
-  - notification-pg.yaml
-  - order-pg.yaml
-  - payment-pg.yaml
-  - product-pg.yaml
+  - shared-pg-cluster.yaml
