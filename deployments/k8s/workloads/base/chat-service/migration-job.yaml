@@ -28,7 +28,7 @@ spec:
                 up
           env:
             - name: DB_HOST
-              value: "chat-pg-rw.default.svc.cluster.local"
+              value: "shared-pg-rw.default.svc.cluster.local"
             - name: DB_PORT
               value: "5432"
             - name: DB_NAME

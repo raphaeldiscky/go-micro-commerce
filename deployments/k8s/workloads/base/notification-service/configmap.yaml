@@ -8,9 +8,9 @@ data:
   APP_LOGGER_LEVEL: "4"
   APP_TIMEOUT_SHUTDOWN: "10s"
   # Database
-  POSTGRES_HOST: "notification-pg-rw"
+  POSTGRES_HOST: "shared-pg-rw"
   POSTGRES_PORT: "5432"
-  POSTGRES_USER: "postgres"
+  POSTGRES_USER: "notification_user"
   POSTGRES_DATABASE: "notification_db"
   # Mail
   MAIL_PROVIDER: "sendgrid"

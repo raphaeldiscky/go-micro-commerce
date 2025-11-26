@@ -131,7 +131,7 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8081
-      - POSTGRES_HOST=auth-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=authshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=auth_db
       - POSTGRES_USER=auth_user
@@ -148,7 +148,7 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8082
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50052
-      - POSTGRES_HOST=product-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=productshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=product_db
       - POSTGRES_USER=product_user
@@ -163,7 +163,7 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8083
-      - POSTGRES_HOST=order-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=ordershared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=order_db
       - POSTGRES_USER=order_user
@@ -181,7 +181,7 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8084
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50054
-      - POSTGRES_HOST=payment-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=paymentshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=payment_db
       - POSTGRES_USER=payment_user
@@ -197,7 +197,7 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8085
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50055
-      - POSTGRES_HOST=cart-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=cartshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=cart_db
       - POSTGRES_USER=cart_user
@@ -214,7 +214,7 @@ configMapGenerator:
       - HTTP_SERVER_PORT=8086
       - GRPC_SERVER_HOST=0.0.0.0
       - GRPC_SERVER_PORT=50056
-      - POSTGRES_HOST=fulfillment-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=fulfillmentshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=fulfillment_db
       - POSTGRES_USER=fulfillment_user
@@ -228,7 +228,7 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8087
-      - POSTGRES_HOST=notification-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=notificationshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=notification_db
       - POSTGRES_USER=notification_user
@@ -244,7 +244,7 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8088
-      - POSTGRES_HOST=search-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=searchshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=search_db
       - POSTGRES_USER=search_user
@@ -257,7 +257,7 @@ configMapGenerator:
     literals:
       - HTTP_SERVER_HOST=0.0.0.0
       - HTTP_SERVER_PORT=8089
-      - POSTGRES_HOST=chat-pg-rw.application.svc.cluster.local
+      - POSTGRES_HOST=chatshared-pg-rw.application.svc.cluster.local
       - POSTGRES_PORT=5432
       - POSTGRES_DB=chat_db
       - POSTGRES_USER=chat_user

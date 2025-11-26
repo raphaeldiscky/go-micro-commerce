@@ -8,9 +8,9 @@ data:
   APP_LOGGER_LEVEL: "4"
   APP_TIMEOUT_SHUTDOWN: "10s"
   # Database
-  POSTGRES_HOST: "chat-pg-rw"
+  POSTGRES_HOST: "shared-pg-rw"
   POSTGRES_PORT: "5432"
-  POSTGRES_USER: "postgres"
+  POSTGRES_USER: "chat_user"
   POSTGRES_DATABASE: "chat_db"
   # Observability
   TRACING_URL: "otel-collector:4318"
