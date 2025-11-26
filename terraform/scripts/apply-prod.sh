@@ -70,13 +70,13 @@ fi
 
 # Get GKE credentials (if cluster exists)
 CLUSTER_NAME=$(grep -E '^cluster_name\s*=' terraform.tfvars | cut -d'"' -f2 || echo "")
-ZONE=$(grep -E '^zone\s*=' terraform.tfvars | cut -d'"' -f2 || echo "")
+REGION=$(grep -E '^region\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
 PROJECT_ID=$(grep -E '^project_id\s*=' terraform.tfvars | cut -d'"' -f2 || echo "")
 
-if [[ -n "$CLUSTER_NAME" ]] && [[ -n "$ZONE" ]] && [[ -n "$PROJECT_ID" ]]; then
-    if gcloud container clusters describe "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" &> /dev/null; then
+if [[ -n "$CLUSTER_NAME" ]] && [[ -n "$REGION" ]] && [[ -n "$PROJECT_ID" ]]; then
+    if gcloud container clusters describe "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" &> /dev/null; then
         log_info "Getting GKE credentials for existing cluster"
-        gcloud container clusters get-credentials "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID"
+        gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID"
     fi
 fi
 
@@ -97,8 +97,8 @@ echo ""
 log_info "Getting cluster credentials..."
 
 # Get fresh credentials after cluster creation
-if gcloud container clusters describe "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" &> /dev/null; then
-    gcloud container clusters get-credentials "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID"
+if gcloud container clusters describe "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" &> /dev/null; then
+    gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID"
 
     log_success "kubectl configured successfully"
     echo ""

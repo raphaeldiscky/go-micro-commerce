@@ -7,7 +7,7 @@ Enterprise-grade infrastructure as code for the Go Micro-Commerce platform on Go
 This Terraform configuration provisions a cost-optimized, production-ready GKE cluster with:
 
 - **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), control-plane (operators), and gateway (ingress) workloads
-- **Cost Optimization**: Spot VMs for microservices (~60% savings), cost-effective e2-small for control plane
+- **Cost Optimization**: Spot VMs for microservices (~60% savings)
 - **Complete Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
 - **Full Observability**: Prometheus, Grafana, Loki, Tempo, Alloy monitoring stack with dedicated pool
 - **GitOps Ready**: ArgoCD for application deployments on dedicated control plane pool

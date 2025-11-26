@@ -4,9 +4,9 @@
 # ============================================================================
 # GCP Project Configuration
 # ============================================================================
-project_id  = "your-gcp-project-id"  # REQUIRED: Update with your GCP project ID
-region      = "asia-southeast2"      # GCP region (Jakarta)
-zone        = "asia-southeast2-a"    # GCP zone for cluster
+project_id  = "go-micro-commerce"   # REQUIRED: Update with your GCP project ID
+region      = "asia-southeast2"     # GCP region (Jakarta)
+zone        = "asia-southeast2-a"   # GCP zone for cluster (remove this if want to have)
 environment = "prod"
 
 # ============================================================================
@@ -28,11 +28,6 @@ release_channel        = "REGULAR"                 # Release channel (RAPID, REG
 max_pods_per_node      = 110                       # Maximum pods per node
 enable_workload_identity = true                    # Enable Workload Identity for service accounts
 
-# Private cluster configuration (recommended for security and IP quota savings)
-enable_private_nodes     = true                    # Nodes use only private IPs (saves external IP quota)
-enable_private_endpoint  = false                   # Keep master public for kubectl access
-master_ipv4_cidr_block   = "10.13.0.0/28"         # Control plane CIDR (must be /28)
-
 # ============================================================================
 # Stateful Node Pool (Databases: PostgreSQL, Kafka, Redis)
 # Regular VMs for reliable performance
@@ -40,40 +35,40 @@ master_ipv4_cidr_block   = "10.13.0.0/28"         # Control plane CIDR (must be 
 stateful_pool_enabled      = true                 # Enable stateful node pool
 stateful_pool_node_count   = 3                    # Fixed node count (no autoscaling)
 stateful_pool_machine_type = "e2-medium"          # 1 vCPU, 4GB RAM
-stateful_pool_disk_size_gb = 40                   # 40GB balanced disk per node (3 nodes × 40GB = 120GB)
+stateful_pool_disk_size_gb = 35                   # 40GB balanced disk per node (3 nodes × 35GB = 105GB)
 stateful_pool_disk_type    = "pd-balanced"        # Balanced disk for cost efficiency, or use SSD (pd-ssd) for database performance
 
 # ============================================================================
 # Stateless Node Pool (Microservices)
 # Spot VMs with autoscaling for 60-91% cost savings
 # ============================================================================
-stateless_pool_enabled      = true              # Enable stateless node pool
-stateless_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
-stateless_pool_max_nodes    = 3                 # Maximum nodes (autoscaling)
-stateless_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM (Spot VM)
-stateless_pool_disk_size_gb = 20                # 20GB balanced disk per node (min 2 nodes × 20GB = 40GB)
-stateless_pool_disk_type    = "pd-balanced"     # Balanced disk for cost efficiency
+stateless_pool_enabled      = true             # Enable stateless node pool
+stateless_pool_min_nodes    = 1                # Minimum nodes (autoscaling)
+stateless_pool_max_nodes    = 1                # Maximum nodes (autoscaling)
+stateless_pool_machine_type = "e2-standard-2"  # 2 vCPU, 8GB RAM (Spot VM)
+stateless_pool_disk_size_gb = 25            # 25GB balanced disk per node (1 nodes × 25GB = 25GB)
+stateless_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 
 # ============================================================================
 # Monitoring Node Pool (Observability: Prometheus, Grafana, Loki, Tempo)
 # Regular VMs with autoscaling for reliability
 # ============================================================================
 monitoring_pool_enabled      = true             # Enable monitoring node pool
-monitoring_pool_min_nodes    = 1                # Minimum nodes (autoscaling)
-monitoring_pool_max_nodes    = 3                # Maximum nodes (autoscaling)
+monitoring_pool_min_nodes    = 2                # Minimum nodes (autoscaling)
+monitoring_pool_max_nodes    = 2                # Maximum nodes (autoscaling)
 monitoring_pool_machine_type = "e2-standard-2"  # 2 vCPU, 8GB RAM
-monitoring_pool_disk_size_gb = 20               # 20GB balanced disk per node  
+monitoring_pool_disk_size_gb = 25               # 25GB balanced disk per node (2 node × 25GB = 50GB)
 monitoring_pool_disk_type    = "pd-balanced"    # Balanced disk for cost efficiency
 
 # ============================================================================
 # Control Plane Node Pool (Operators: ArgoCD, ESO, CNPG, Strimzi, Redis)
-# Regular VMs with autoscaling for control plane reliability
+# Regular VMs with autoscaling for control plane
 # ============================================================================
 control_plane_pool_enabled      = true              # Enable control plane node pool
 control_plane_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
-control_plane_pool_max_nodes    = 1                 # Maximum nodes (no autoscaling, stay within 8 VM quota)
-control_plane_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM (enough for all ArgoCD pods on 1 node)
-control_plane_pool_disk_size_gb = 15                # 15GB balanced disk per node (min 1 node × 15GB = 15GB)
+control_plane_pool_max_nodes    = 1                 # Maximum nodes (autoscaling)
+control_plane_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM
+control_plane_pool_disk_size_gb = 20                # 20GB balanced disk per node (1 node × 20GB = 20GB)
 control_plane_pool_disk_type    = "pd-balanced"     # Balanced disk for cost efficiency
 
 # ============================================================================
@@ -82,9 +77,9 @@ control_plane_pool_disk_type    = "pd-balanced"     # Balanced disk for cost eff
 # ============================================================================
 gateway_pool_enabled      = true          # Enable gateway node pool
 gateway_pool_min_nodes    = 1             # Minimum nodes (autoscaling)
-gateway_pool_max_nodes    = 3             # Maximum nodes (autoscaling)
+gateway_pool_max_nodes    = 1             # Maximum nodes (autoscaling)
 gateway_pool_machine_type = "e2-medium"   # 1 vCPU, 4GB RAM
-gateway_pool_disk_size_gb = 15            # 15GB balanced disk per node (min 1 node × 15GB = 15GB)
+gateway_pool_disk_size_gb = 15            # 15GB balanced disk per node
 gateway_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 
 # ============================================================================
@@ -94,7 +89,7 @@ gateway_pool_disk_type    = "pd-balanced" # Balanced disk for cost efficiency
 # External Secrets Operator (syncs secrets from Google Secret Manager)
 eso_namespace                   = "external-secrets"
 eso_chart_version               = "1.0.0"
-eso_replicas                    = 1  # 1 replica is sufficient for testing/learning environments
+eso_replicas                    = 1  
 eso_gcp_service_account_name    = "external-secrets-operator"
 eso_k8s_service_account_name    = "external-secrets-sa"
 eso_create_cluster_secret_store = true
@@ -117,26 +112,26 @@ redis_watch_namespaces = [] # Empty = watch all namespaces
 # Monitoring Stack
 monitoring_namespace                = "monitoring"
 kube_prometheus_stack_chart_version = "79.5.0"
-grafana_admin_password              = "CHANGE_ME_STRONG_PASSWORD"  # Change this!
+grafana_admin_password              = ""                            # Change this!
 grafana_enable_ingress              = true                          # Enable HTTPS access via Traefik
-grafana_domain_name                 = "grafana.api.discky.com"     # Update this for your domain
+grafana_domain_name                 = "grafana.api.your_domain.com" # Update this for your domain
 grafana_tls_issuer                  = "letsencrypt-prod"
-prometheus_retention                = "30d"                        # 30 days retention (reduce to 15d if needed)
-prometheus_storage_size             = "4Gi"                        # 4Gi optimized for learning/testing (use 100Gi for production)
+prometheus_retention                = "30d"                         # 30 days retention
+prometheus_storage_size             = "4Gi"                         # 4Gi optimized for learning/testing
 loki_chart_version                  = "6.46.0"
-loki_storage_size                   = "2Gi"                        # 2Gi for log storage (use 50Gi for production)
+loki_storage_size                   = "2Gi"                         # 2Gi for log storage
 tempo_chart_version                 = "1.24.0"
-tempo_storage_size                  = "1Gi"                        # 1Gi for tracing data (use 30Gi for production)
+tempo_storage_size                  = "1Gi"                         # 1Gi for tracing data
 
 # ArgoCD
 argocd_namespace         = "argocd"
 argocd_chart_version     = "9.1.2"
-argocd_admin_password    = ""                                                   # Leave empty for auto-generated
-argocd_git_repo_url      = "git@github.com:raphaeldiscky/go-micro-commerce.git" # Update this!
+argocd_admin_password    = ""                                                       # Leave empty for auto-generated
+argocd_git_repo_url      = ""                                                       # Update this!
 argocd_git_repo_path     = "deployments/k8s"
-argocd_enable_bootstrap  = false                                                # Set to true after configuring git repo
-argocd_enable_ingress    = true                                                 # Enable HTTPS access via Traefik
-argocd_domain_name       = "argocd.api.discky.com"                              # Update this for your domain
+argocd_enable_bootstrap  = true                                                     # Set to true after configuring git repo
+argocd_enable_ingress    = true                                                     # Enable HTTPS access via Traefik
+argocd_domain_name       = "argocd.api.your_domain.com"                             # Update this for your domain
 argocd_tls_issuer        = "letsencrypt-prod"
 
 # ============================================================================
@@ -150,12 +145,12 @@ argocd_tls_issuer        = "letsencrypt-prod"
 # -----------------------------------------------------------------------------
 # 1. Create GitHub Personal Access Token:
 #    - Go to: https://github.com/settings/tokens
-#    - Click: "Generate new token" -> "Generate new token (classic)"
+#    - Click: "Generate new token" → "Generate new token (classic)"
 #    - Scopes: Select "repo" (Full control of private repositories)
 #    - Generate and copy the token
 #
 # 2. Update repository URL to HTTPS format:
-#    argocd_git_repo_url = "https://github.com/raphaeldiscky/go-micro-commerce.git"
+#    argocd_git_repo_url = "https://github.com/your_github/go-micro-commerce.git"
 #
 # 3. Set credentials via environment variable (RECOMMENDED):
 #    export TF_VAR_argocd_git_username="git"
@@ -168,23 +163,23 @@ argocd_tls_issuer        = "letsencrypt-prod"
 # Note: Update ApplicationSets to use HTTPS URLs in deployments/k8s/apps/applicationsets/*.yaml
 
 argocd_git_username = "git"  # Default username for HTTPS token auth
-# argocd_git_token  = ""     # or set via TF_VAR_argocd_git_token
+# argocd_git_token  = ""     # or set via TF_VAR_argocd_git_token 
 
 # -----------------------------------------------------------------------------
 # METHOD 2: SSH with Deploy Key (More Secure, Recommended for Production)
 # -----------------------------------------------------------------------------
 # 1. Generate SSH key pair:
-#    ssh-keygen -t ed25519 -C "argocd@discky.com" -f ~/.ssh/argocd-repo -N ""
+#    ssh-keygen -t ed25519 -C "argocd@your_domain.com" -f ~/.ssh/argocd-repo -N ""
 #
 # 2. Add public key to GitHub (Deploy Key - recommended):
-#    - Go to: https://github.com/raphaeldiscky/go-micro-commerce/settings/keys
+#    - Go to: https://github.com/your_github/go-micro-commerce/settings/keys
 #    - Click: "Add deploy key"
 #    - Title: "ArgoCD Production GKE"
 #    - Key: Paste contents of: cat ~/.ssh/argocd-repo.pub
 #    - Allow write access: NO (read-only is sufficient)
 #
 # 3. Repository URL is already in SSH format (see line 135 above):
-#    argocd_git_repo_url = "git@github.com:raphaeldiscky/go-micro-commerce.git"
+#    argocd_git_repo_url = "git@github.com:your_github/go-micro-commerce.git"
 #
 # 4. Set private key via environment variable (RECOMMENDED):
 #    export TF_VAR_argocd_git_ssh_private_key=$(cat ~/.ssh/argocd-repo)
@@ -193,54 +188,52 @@ argocd_git_username = "git"  # Default username for HTTPS token auth
 # 5. Update ApplicationSets to use SSH URLs:
 #    Edit: deployments/k8s/apps/applicationsets/infrastructure.yaml
 #    Edit: deployments/k8s/apps/applicationsets/workloads.yaml
-#    Change: repoURL: https://github.com/raphaeldiscky/go-micro-commerce.git
-#    To:     repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
+#    Change: repoURL: https://github.com/your_github/go-micro-commerce.git
+#    To:     repoURL: git@github.com:your_github/go-micro-commerce.git
 #
 # 6. Verify SSH connection works:
 #    ssh -T git@github.com -i ~/.ssh/argocd-repo
-#    # Expected: "Hi raphaeldiscky! You've successfully authenticated..."
+#    # Expected: "Hi your_github! You've successfully authenticated..."
 
-# argocd_git_ssh_private_key = ""  # or set via TF_VAR_argocd_git_ssh_private_key
-# See: terraform/ARGOCD_AUTHENTICATION.md for detailed setup guide
+argocd_git_ssh_private_key = ""  # or set via TF_VAR_argocd_git_ssh_private_key 
 
 # cert-manager (for automated TLS certificates)
 cert_manager_namespace                       = "cert-manager"
 cert_manager_chart_version                   = "v1.19.1"
 cert_manager_replicas                        = 1
 cert_manager_create_cluster_issuers          = true
-cert_manager_letsencrypt_email               = "your-email@example.com"         # Update this! Used for Let's Encrypt notifications
+cert_manager_letsencrypt_email               = ""         # Update this! Used for Let's Encrypt notifications
 cert_manager_letsencrypt_staging_issuer_name = "letsencrypt-staging"
 cert_manager_letsencrypt_prod_issuer_name    = "letsencrypt-prod"
 
 # Traefik Ingress Controller
 traefik_namespace        = "traefik"
 traefik_chart_version    = "37.3.0"
-traefik_replicas         = 1                  # 1 replica for testing/learning environments
+traefik_replicas         = 1                  # 1 replica for testing/learning 
 traefik_service_type     = "LoadBalancer"     # LoadBalancer for GKE
 traefik_enable_dashboard = true
 
 # ============================================================================
 # Cloudflare Configuration
 # ============================================================================
-# Note: Frontend (go.micro.commerce.discky.com) is deployed via Cloudflare Pages
+# Note: Frontend (go.micro.commerce.your_domain.com) is deployed via Cloudflare Pages
 #       This only configures DNS records for backend API
 
-cloudflare_api_token = "your-cloudflare-api-token"
-cloudflare_zone_id   = "your-cloudflare-zone-id"
+cloudflare_api_token = ""
+cloudflare_zone_id   = ""
 # API Token Permissions:
 # Permissions:
 #  Zone:
 #    - DNS: Edit
 #    - Zone: Read
 # Zone Resources:
-#  - Include: discky.com
-# Zone ID: Get from Cloudflare Dashboard -> Select domain -> Copy Zone ID from right sidebar
+#  - Include: your_domain.com
 
 # Domain Configuration
-domain_name         = "discky.com"
-api_subdomain       = "api"                         # Results in: api.discky.com
-enable_api_wildcard = false                         # Set true to create *.api.discky.com
+domain_name         = "your_domain.com"
+api_subdomain       = "api"                         # Results in: api.your_domain.com
+enable_api_wildcard = false                         # Set true to create *.api.your_domain.com
 enable_argocd_dns   = true                          # Create DNS record for ArgoCD
-argocd_subdomain    = "argocd.api"                  # Results in: argocd.api.discky.com
+argocd_subdomain    = "argocd.api"                  # Results in: argocd.api.your_domain.com
 enable_grafana_dns  = true                          # Create DNS record for Grafana
-grafana_subdomain   = "grafana.api"                 # Results in: grafana.api.discky.com
+grafana_subdomain   = "grafana.api"                 # Results in: grafana.api.your_domain.com

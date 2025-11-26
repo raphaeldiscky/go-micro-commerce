@@ -53,29 +53,29 @@ fi
 
 # Read cluster configuration from terraform.tfvars
 CLUSTER_NAME=$(grep -E '^cluster_name\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
-ZONE=$(grep -E '^zone\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
+REGION=$(grep -E '^region\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
 PROJECT_ID=$(grep -E '^project_id\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
 
-if [[ -z "$CLUSTER_NAME" ]] || [[ -z "$ZONE" ]] || [[ -z "$PROJECT_ID" ]]; then
+if [[ -z "$CLUSTER_NAME" ]] || [[ -z "$REGION" ]] || [[ -z "$PROJECT_ID" ]]; then
     log_error "Could not read cluster configuration from terraform.tfvars"
-    log_error "Required: cluster_name, zone, project_id"
+    log_error "Required: cluster_name, region, project_id"
     exit 1
 fi
 
 log_info "Cluster: $CLUSTER_NAME"
-log_info "Zone: $ZONE"
+log_info "Region: $REGION"
 log_info "Project: $PROJECT_ID"
 echo ""
 
 # Check if cluster exists
-if ! gcloud container clusters describe "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" &> /dev/null; then
-    log_error "Cluster '$CLUSTER_NAME' not found in zone '$ZONE'"
+if ! gcloud container clusters describe "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" &> /dev/null; then
+    log_error "Cluster '$CLUSTER_NAME' not found in region '$REGION'"
     log_warn "Cluster may not be created yet"
     exit 1
 fi
 
 # Get cluster status
-CLUSTER_STATUS=$(gcloud container clusters describe "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" --format="value(status)")
+CLUSTER_STATUS=$(gcloud container clusters describe "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" --format="value(status)")
 
 log_info "Cluster Status: $CLUSTER_STATUS"
 echo ""
@@ -83,17 +83,17 @@ echo ""
 # Get node pool information
 log_info "Node Pools:"
 echo ""
-gcloud container node-pools list --cluster="$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" \
+gcloud container node-pools list --cluster="$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" \
     --format="table(name,status,config.machineType,autoscaling.enabled,initialNodeCount)"
 echo ""
 
 # Get node counts
 STATEFUL_COUNT=$(gcloud container node-pools describe stateful-pool \
-    --cluster="$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" \
+    --cluster="$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" \
     --format="value(initialNodeCount)" 2>/dev/null || echo "0")
 
 STATELESS_COUNT=$(gcloud container node-pools describe stateless-pool \
-    --cluster="$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" \
+    --cluster="$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" \
     --format="value(initialNodeCount)" 2>/dev/null || echo "0")
 
 TOTAL_NODES=$((STATEFUL_COUNT + STATELESS_COUNT))
@@ -125,7 +125,7 @@ if command -v kubectl &> /dev/null && [[ $TOTAL_NODES -gt 0 ]]; then
     echo ""
     log_info "Fetching cluster credentials..."
 
-    if gcloud container clusters get-credentials "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" &> /dev/null; then
+    if gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" &> /dev/null; then
         echo ""
         log_info "Node Status:"
         kubectl get nodes -o wide 2>/dev/null || log_warn "Could not fetch node status"

@@ -5,7 +5,7 @@
 resource "google_container_cluster" "primary" {
   name     = var.cluster_name
   project  = var.project_id
-  location = var.zone
+  location = var.region
 
   # Network configuration
   network    = var.network_name
@@ -99,7 +99,8 @@ resource "google_container_node_pool" "stateful" {
   count      = var.stateful_pool_enabled ? 1 : 0
   name       = "stateful-pool"
   project    = var.project_id
-  location   = var.zone
+  location   = var.region
+  node_locations = [var.zone] 
   cluster    = google_container_cluster.primary.name
   node_count = var.stateful_pool_node_count
 
@@ -108,7 +109,7 @@ resource "google_container_node_pool" "stateful" {
     disk_size_gb = var.stateful_pool_disk_size_gb
     disk_type    = var.stateful_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = true # Regular VMs for stateful reliability
+    spot         = false # Regular VMs for stateful reliability
 
     # Labels for workload scheduling
     labels = {
@@ -166,7 +167,8 @@ resource "google_container_node_pool" "stateless" {
   count    = var.stateless_pool_enabled ? 1 : 0
   name     = "stateless-pool"
   project  = var.project_id
-  location = var.zone
+  location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -233,7 +235,8 @@ resource "google_container_node_pool" "monitoring" {
   count    = var.monitoring_pool_enabled ? 1 : 0
   name     = "monitoring-pool"
   project  = var.project_id
-  location = var.zone
+  location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -249,7 +252,7 @@ resource "google_container_node_pool" "monitoring" {
     disk_size_gb = var.monitoring_pool_disk_size_gb
     disk_type    = var.monitoring_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = true # Regular VMs for monitoring reliability
+    spot         = false # Regular VMs for monitoring reliability
 
     # Labels for workload scheduling
     labels = {
@@ -307,7 +310,8 @@ resource "google_container_node_pool" "control_plane" {
   count    = var.control_plane_pool_enabled ? 1 : 0
   name     = "control-plane-pool"
   project  = var.project_id
-  location = var.zone
+  location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -323,7 +327,7 @@ resource "google_container_node_pool" "control_plane" {
     disk_size_gb = var.control_plane_pool_disk_size_gb
     disk_type    = var.control_plane_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = true # Regular VMs for control plane reliability
+    spot         = false # Regular VMs for control plane reliability
 
     # Labels for workload scheduling
     labels = {
@@ -381,7 +385,8 @@ resource "google_container_node_pool" "gateway" {
   count    = var.gateway_pool_enabled ? 1 : 0
   name     = "gateway-pool"
   project  = var.project_id
-  location = var.zone
+  location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -397,7 +402,7 @@ resource "google_container_node_pool" "gateway" {
     disk_size_gb = var.gateway_pool_disk_size_gb
     disk_type    = var.gateway_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = true # Regular VMs for gateway reliability
+    spot         = false # Regular VMs for gateway reliability
 
     # Labels for workload scheduling
     labels = {

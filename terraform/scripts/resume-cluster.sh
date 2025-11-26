@@ -59,30 +59,30 @@ fi
 
 # Read cluster configuration from terraform.tfvars
 CLUSTER_NAME=$(grep -E '^cluster_name\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
-ZONE=$(grep -E '^zone\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
+REGION=$(grep -E '^region\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
 PROJECT_ID=$(grep -E '^project_id\s*=' "$ENV_DIR/terraform.tfvars" | cut -d'"' -f2 || echo "")
 
-if [[ -z "$CLUSTER_NAME" ]] || [[ -z "$ZONE" ]] || [[ -z "$PROJECT_ID" ]]; then
+if [[ -z "$CLUSTER_NAME" ]] || [[ -z "$REGION" ]] || [[ -z "$PROJECT_ID" ]]; then
     log_error "Could not read cluster configuration from terraform.tfvars"
-    log_error "Required: cluster_name, zone, project_id"
+    log_error "Required: cluster_name, region, project_id"
     exit 1
 fi
 
 log_info "Cluster: $CLUSTER_NAME"
-log_info "Zone: $ZONE"
+log_info "Region: $REGION"
 log_info "Project: $PROJECT_ID"
 echo ""
 
 # Check if cluster exists
-if ! gcloud container clusters describe "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" &> /dev/null; then
-    log_error "Cluster '$CLUSTER_NAME' not found in zone '$ZONE'"
+if ! gcloud container clusters describe "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" &> /dev/null; then
+    log_error "Cluster '$CLUSTER_NAME' not found in region '$REGION'"
     exit 1
 fi
 
 # Get current node pool sizes
 log_info "Current node pool status:"
 echo ""
-gcloud container node-pools list --cluster="$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" \
+gcloud container node-pools list --cluster="$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" \
     --format="table(name,status,config.machineType,autoscaling.enabled,initialNodeCount)"
 echo ""
 
@@ -94,7 +94,7 @@ log_info "Scaling stateful-pool to 3 nodes..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
     --node-pool stateful-pool \
     --num-nodes 3 \
-    --zone="$ZONE" \
+    --region="$REGION" \
     --project="$PROJECT_ID" \
     --quiet; then
     log_success "stateful-pool scaled to 3 nodes"
@@ -110,7 +110,7 @@ log_info "Scaling stateless-pool to 1 node..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
     --node-pool stateless-pool \
     --num-nodes 1 \
-    --zone="$ZONE" \
+    --region="$REGION" \
     --project="$PROJECT_ID" \
     --quiet; then
     log_success "stateless-pool scaled to 1 node"
@@ -126,7 +126,7 @@ log_info "Scaling monitoring-pool to 1 node..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
     --node-pool monitoring-pool \
     --num-nodes 1 \
-    --zone="$ZONE" \
+    --region="$REGION" \
     --project="$PROJECT_ID" \
     --quiet; then
     log_success "monitoring-pool scaled to 1 node"
@@ -142,7 +142,7 @@ log_info "Scaling control-plane-pool to 1 node..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
     --node-pool control-plane-pool \
     --num-nodes 1 \
-    --zone="$ZONE" \
+    --region="$REGION" \
     --project="$PROJECT_ID" \
     --quiet; then
     log_success "control-plane-pool scaled to 1 node"
@@ -161,13 +161,13 @@ log_info "Waiting for nodes to become ready..."
 echo ""
 
 # Get cluster credentials
-gcloud container clusters get-credentials "$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID"
+gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID"
 
 # Wait for nodes to be ready
 log_info "Checking node status..."
 RETRY_COUNT=0
 MAX_RETRIES=30
-EXPECTED_NODES=6  # 3 stateful + 1 stateless + 1 monitoring + 1 control-plane + 0 gateway
+EXPECTED_NODES=6  # 3 stateful + 1 stateless + 1 monitoring + 1 control plane + 0 gateway
 
 while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
     READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready " || echo "0")
@@ -198,7 +198,7 @@ echo ""
 # Show final status
 log_info "Final node pool status:"
 echo ""
-gcloud container node-pools list --cluster="$CLUSTER_NAME" --zone="$ZONE" --project="$PROJECT_ID" \
+gcloud container node-pools list --cluster="$CLUSTER_NAME" --region="$REGION" --project="$PROJECT_ID" \
     --format="table(name,status,config.machineType,autoscaling.enabled,initialNodeCount)"
 echo ""
 
