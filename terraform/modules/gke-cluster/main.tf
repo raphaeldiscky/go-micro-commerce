@@ -175,6 +175,7 @@ resource "google_container_node_pool" "stateless" {
   name     = "stateless-pool"
   project  = var.project_id
   location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -242,6 +243,7 @@ resource "google_container_node_pool" "monitoring" {
   name     = "monitoring-pool"
   project  = var.project_id
   location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -316,6 +318,7 @@ resource "google_container_node_pool" "control_plane" {
   name     = "control-plane-pool"
   project  = var.project_id
   location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
@@ -390,6 +393,7 @@ resource "google_container_node_pool" "gateway" {
   name     = "gateway-pool"
   project  = var.project_id
   location = var.region
+  node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
   cluster  = google_container_cluster.primary.name
 
   # Autoscaling configuration
