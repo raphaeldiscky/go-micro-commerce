@@ -65,7 +65,7 @@ cat <<EOF | kind create cluster --name "${CLUSTER_NAME}" --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
-  - role: system
+  - role: control-plane
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration

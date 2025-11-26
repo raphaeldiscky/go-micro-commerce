@@ -27,7 +27,7 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 | **Frontend Hosting**     | Cloudflare Pages (React + Vite)                           |
 | **Total Infrastructure** | -                                                         |
 
-**Total Disk Allocation**: 250GB (150GB stateful + 40GB stateless + 30GB monitoring + 15GB control-plane + 15GB gateway)
+**Total Disk Allocation**: 250GB (150GB stateful + 40GB stateless + 30GB monitoring + 15GB control plane + 15GB gateway)
 
 **Savings**: ~60% compared to using all regular (non-Spot) VMs
 
@@ -170,7 +170,7 @@ Provisions GKE cluster with 5-tier node pool architecture:
 
 - 1-2 × e2-small nodes (0.5 vCPU, 2GB RAM)
 - 15GB balanced persistent disk per node (15-30GB total)
-- Regular VMs for system reliability
+- Regular VMs for control plane reliability
 - Autoscaling for operator workloads
 - Taint: `workload-type=control-plane:NoSchedule`
 
@@ -186,7 +186,7 @@ Provisions GKE cluster with 5-tier node pool architecture:
 
 - **Private nodes enabled** (nodes have no external IPs)
 - **Cloud NAT** for outbound internet access
-- **Public system endpoint** (for kubectl access)
+- **Public control plane endpoint** (for kubectl access)
 - Workload Identity enabled
 - Shielded nodes enabled
 - Private Google access

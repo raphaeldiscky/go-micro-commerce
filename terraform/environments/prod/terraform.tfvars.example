@@ -67,7 +67,7 @@ monitoring_pool_disk_type    = "pd-balanced"    # Balanced disk for cost efficie
 
 # ============================================================================
 # Control Plane Node Pool (Operators: ArgoCD, ESO, CNPG, Strimzi, Redis)
-# Regular VMs with autoscaling for system reliability
+# Regular VMs with autoscaling for control plane
 # ============================================================================
 control_plane_pool_enabled      = true              # Enable control plane node pool
 control_plane_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
