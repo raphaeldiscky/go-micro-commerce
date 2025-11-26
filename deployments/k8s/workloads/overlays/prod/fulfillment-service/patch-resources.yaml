@@ -10,8 +10,8 @@ spec:
         - name: fulfillment-service
           resources:
             requests:
-              cpu: "150m"
+              cpu: "100m"
               memory: "256Mi"
             limits:
-              cpu: "300m"
+              cpu: "200m"
               memory: "512Mi"

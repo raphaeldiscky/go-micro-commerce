@@ -84,15 +84,14 @@ spec:
   monitoring:
     enablePodMonitor: true
     disableDefaultQueries: false
-
-  # Backup configuration (optional but recommended)
-  # backup:
-  #   barmanObjectStore:
-  #     destinationPath: "s3://your-bucket/backups"
-  #     s3Credentials:
-  #       accessKeyId:
-  #         name: backup-credentials
-  #         key: ACCESS_KEY_ID
-  #       secretAccessKey:
-  #         name: backup-credentials
-  #         key: SECRET_ACCESS_KEY
+# Backup configuration (optional but recommended)
+# backup:
+#  barmanObjectStore:
+#     destinationPath: "s3://your-bucket/backups"
+#     s3Credentials:
+#       accessKeyId:
+#         name: backup-credentials
+#         key: ACCESS_KEY_ID
+#       secretAccessKey:
+#         name: backup-credentials
+#         key: SECRET_ACCESS_KEY

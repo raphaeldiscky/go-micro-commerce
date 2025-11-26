@@ -82,7 +82,7 @@ variable "stateful_pool_machine_type" {
 variable "stateful_pool_disk_size_gb" {
   description = "Disk size in GB for stateful pool nodes"
   type        = number
-  default     = 100
+  default     = 25
 }
 
 variable "stateful_pool_disk_type" {
@@ -107,7 +107,7 @@ variable "stateless_pool_min_nodes" {
 variable "stateless_pool_max_nodes" {
   description = "Maximum nodes in stateless pool"
   type        = number
-  default     = 10
+  default     = 25
 }
 
 variable "stateless_pool_machine_type" {
@@ -119,7 +119,7 @@ variable "stateless_pool_machine_type" {
 variable "stateless_pool_disk_size_gb" {
   description = "Disk size in GB for stateless pool nodes"
   type        = number
-  default     = 30
+  default     = 25
 }
 
 variable "stateless_pool_disk_type" {
@@ -156,7 +156,7 @@ variable "monitoring_pool_machine_type" {
 variable "monitoring_pool_disk_size_gb" {
   description = "Disk size in GB for monitoring pool nodes"
   type        = number
-  default     = 30
+  default     = 25
 }
 
 variable "monitoring_pool_disk_type" {
@@ -199,7 +199,7 @@ variable "control_plane_pool_machine_type" {
 variable "control_plane_pool_disk_size_gb" {
   description = "Disk size in GB for control plane pool nodes"
   type        = number
-  default     = 30
+  default     = 20
 }
 
 variable "control_plane_pool_disk_type" {
@@ -236,7 +236,7 @@ variable "gateway_pool_machine_type" {
 variable "gateway_pool_disk_size_gb" {
   description = "Disk size in GB for gateway pool nodes"
   type        = number
-  default     = 30
+  default     = 20
 }
 
 variable "gateway_pool_disk_type" {

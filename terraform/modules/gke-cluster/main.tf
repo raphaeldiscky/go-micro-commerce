@@ -15,6 +15,13 @@ resource "google_container_cluster" "primary" {
   remove_default_node_pool = true
   initial_node_count       = 1
 
+  # Configure minimal disk for default pool (will be removed immediately)
+  node_config {
+    disk_size_gb = 15
+    disk_type    = "pd-standard"
+    machine_type = "e2-micro"
+  }
+
   # Kubernetes version and release channel
   min_master_version = var.kubernetes_version
   release_channel {
@@ -92,6 +99,17 @@ resource "google_container_cluster" "primary" {
 
   # Shielded nodes
   enable_shielded_nodes = true
+
+  # Lifecycle configuration
+  # Ignore changes to default pool settings after initial creation
+  # This prevents errors when terraform tries to update the removed default pool
+  lifecycle {
+    ignore_changes = [
+      node_config,
+      remove_default_node_pool,
+      initial_node_count,
+    ]
+  }
 }
 
 # Stateful Node Pool (for databases - PostgreSQL, Kafka, Redis)
