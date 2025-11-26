@@ -15,13 +15,6 @@ resource "google_container_cluster" "primary" {
   remove_default_node_pool = true
   initial_node_count       = 1
 
-  # Minimal config for temporary default node pool (deleted immediately)
-  node_config {
-    machine_type = "e2-micro"     # Smallest instance type
-    disk_size_gb = 15             # Minimal disk for GKE image (12GB minimum, using 15GB)
-    disk_type    = "pd-standard"  # Standard disk for cost
-  }
-
   # Kubernetes version and release channel
   min_master_version = var.kubernetes_version
   release_channel {
