@@ -71,38 +71,69 @@ spec:
         value: "true"
       - name: REDIS_EXPORTER_LOG_FORMAT
         value: "json"
-  # Security context
-  securityContext:
+  # Pod-level security context
+  podSecurityContext:
     runAsUser: 1001
     runAsNonRoot: true
     fsGroup: 1001
-  # Pod affinity rules (spread across nodes for HA)
-  affinity:
-    nodeAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-        nodeSelectorTerms:
-          - matchExpressions:
-              - key: workload-type
-                operator: In
-                values:
-                  - stateful
-    podAntiAffinity:
-      preferredDuringSchedulingIgnoredDuringExecution:
-        - weight: 100
-          podAffinityTerm:
-            labelSelector:
-              matchExpressions:
-                - key: app
+  # Leader-specific configuration
+  redisLeader:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: workload-type
                   operator: In
                   values:
-                    - redis-cluster
-            topologyKey: kubernetes.io/hostname
-  # Tolerations for stateful-pool
-  tolerations:
-    - key: workload-type
-      operator: Equal
-      value: stateful
-      effect: NoSchedule
+                    - stateful
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - redis-cluster
+              topologyKey: kubernetes.io/hostname
+    tolerations:
+      - key: workload-type
+        operator: Equal
+        value: stateful
+        effect: NoSchedule
+    nodeSelector:
+      workload-type: stateful
+  # Follower-specific configuration
+  redisFollower:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: workload-type
+                  operator: In
+                  values:
+                    - stateful
+      podAntiAffinity:
+        preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                  - key: app
+                    operator: In
+                    values:
+                      - redis-cluster
+              topologyKey: kubernetes.io/hostname
+    tolerations:
+      - key: workload-type
+        operator: Equal
+        value: stateful
+        effect: NoSchedule
+    nodeSelector:
+      workload-type: stateful
   # Priority class (optional)
   priorityClassName: ""
   # Service annotations for Prometheus scraping
