@@ -125,8 +125,7 @@ tempo_storage_size                  = "1Gi"                         # 1Gi for tr
 
 # ArgoCD
 argocd_namespace         = "argocd"
-argocd_chart_version     = "9.1.2"
-argocd_admin_password    = ""                                                       # Leave empty for auto-generated
+argocd_chart_version     = "9.1.2"                                                # Leave empty for auto-generated
 argocd_git_repo_url      = ""                                                       # Update this!
 argocd_git_repo_path     = "deployments/k8s"
 argocd_enable_bootstrap  = true                                                     # Set to true after configuring git repo

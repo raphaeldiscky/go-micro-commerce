@@ -23,6 +23,8 @@ kubeconfig-*
 *.crt
 secrets.yaml
 *.secret
+*/secrets/secrets.json
+jwt-key*
 
 # IDE and editor files
 .idea/

@@ -18,13 +18,6 @@ variable "chart_version" {
   default     = "9.1.2"
 }
 
-variable "admin_password" {
-  description = "Admin password for ArgoCD (leave empty for auto-generated)"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
 variable "git_repo_url" {
   description = "Git repository URL for application manifests"
   type        = string

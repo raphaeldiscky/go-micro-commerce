@@ -42,4 +42,4 @@ AGENTS.md
 **/graph/schema.graphqls
 
 **/archived
-docs/archived/*
+docs/archived/*terraform/scripts/secrets/secrets.json

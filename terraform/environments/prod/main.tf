@@ -185,7 +185,6 @@ module "argocd" {
   namespace           = var.argocd_namespace
   create_namespace    = true
   chart_version       = var.argocd_chart_version
-  admin_password      = var.argocd_admin_password
   git_repo_url        = var.argocd_git_repo_url
   git_repo_path       = var.argocd_git_repo_path
   enable_bootstrap    = var.argocd_enable_bootstrap
