@@ -9,6 +9,7 @@ resources:
   - chat-service-external-secret.yaml
   - grafana-external-secret.yaml
   - argocd-external-secret.yaml
+  - argocd-git-credentials-external-secret.yaml
   - ghcr-imagepull-secret.yaml
   - ghcr-imagepull-secret-gateway.yaml
 

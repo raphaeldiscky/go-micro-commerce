@@ -191,9 +191,6 @@ module "argocd" {
   enable_ingress      = var.argocd_enable_ingress
   domain_name         = var.argocd_domain_name
   tls_issuer          = var.argocd_tls_issuer
-  git_username        = var.argocd_git_username
-  git_token           = var.argocd_git_token
-  git_ssh_private_key = var.argocd_git_ssh_private_key
 
   depends_on = [module.monitoring, module.cert_manager]
 }
