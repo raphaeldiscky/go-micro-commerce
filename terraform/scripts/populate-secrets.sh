@@ -1,6 +1,6 @@
 #!/bin/bash
-# Populate Google Secret Manager with secrets for External Secrets Operator
-# This script creates all secrets required by the microservices platform
+# Populate Google Secret Manager with secrets from secrets.json
+# This script reads from secrets.json and creates all secrets in Google Secret Manager
 
 set -e
 
@@ -35,10 +35,27 @@ if ! command -v gcloud &> /dev/null; then
     exit 1
 fi
 
+# Check if jq is installed
+if ! command -v jq &> /dev/null; then
+    print_error "jq is not installed. Please install it first."
+    print_info "Visit: https://stedolan.github.io/jq/download/"
+    exit 1
+fi
+
 # Get project ID from terraform.tfvars or prompt
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="$SCRIPT_DIR/../environments/prod"
+SECRETS_DIR="$SCRIPT_DIR/secrets"
+SECRETS_FILE="$SECRETS_DIR/secrets.json"
 
+# Check if secrets.json exists
+if [ ! -f "$SECRETS_FILE" ]; then
+    print_error "secrets.json not found at $SECRETS_FILE"
+    print_info "Please create it using secrets.json.example as a template"
+    exit 1
+fi
+
+# Get project ID
 if [ -f "$TERRAFORM_DIR/terraform.tfvars" ]; then
     PROJECT_ID=$(grep -E '^project_id\s*=' "$TERRAFORM_DIR/terraform.tfvars" | cut -d'"' -f2 | tr -d ' ')
 fi
@@ -69,23 +86,23 @@ print_success "Authenticated with gcloud"
 print_info "Enabling Secret Manager API..."
 gcloud services enable secretmanager.googleapis.com --quiet
 
-# Function to create or update a secret
-create_secret() {
+# Function to read from JSON
+read_secret_from_json() {
+    local json_key="$1"
+    jq -r ".$json_key // empty" "$SECRETS_FILE"
+}
+
+# Function to create or update a secret from JSON
+create_secret_from_json() {
     local secret_name="$1"
-    local secret_description="$2"
-    local prompt_message="$3"
-    local is_file="${4:-false}"
+    local json_key="$2"
+    local is_file="${3:-false}"
 
     print_info "Processing secret: $secret_name"
 
     # Check if secret already exists
     if gcloud secrets describe "$secret_name" --project="$PROJECT_ID" &> /dev/null; then
-        print_warning "Secret '$secret_name' already exists. Do you want to update it? (y/N)"
-        read -r response
-        if [[ ! "$response" =~ ^[Yy]$ ]]; then
-            print_info "Skipping $secret_name"
-            return 0
-        fi
+        print_info "Updating existing secret: $secret_name"
     else
         # Create the secret
         gcloud secrets create "$secret_name" \
@@ -95,11 +112,19 @@ create_secret() {
         print_success "Created secret: $secret_name"
     fi
 
-    # Add secret version
-    print_info "$prompt_message"
-
+    # Get value from JSON and add secret version
     if [ "$is_file" = true ]; then
-        read -p "Enter file path: " file_path
+        file_path=$(read_secret_from_json "$json_key")
+        if [ -z "$file_path" ]; then
+            print_warning "No file path provided for $json_key in secrets.json. Skipping..."
+            return 0
+        fi
+
+        # Resolve relative paths relative to SECRETS_DIR
+        if [[ "$file_path" != /* ]]; then
+            file_path="$SECRETS_DIR/$file_path"
+        fi
+
         if [ ! -f "$file_path" ]; then
             print_error "File not found: $file_path"
             return 1
@@ -108,10 +133,9 @@ create_secret() {
             --data-file="$file_path" \
             --project="$PROJECT_ID" > /dev/null 2>&1
     else
-        read -s -p "Enter secret value (hidden): " secret_value
-        echo
+        secret_value=$(read_secret_from_json "$json_key")
         if [ -z "$secret_value" ]; then
-            print_warning "Empty value provided for $secret_name. Skipping..."
+            print_warning "No value found for $json_key in secrets.json. Skipping..."
             return 0
         fi
         echo -n "$secret_value" | gcloud secrets versions add "$secret_name" \
@@ -127,69 +151,52 @@ echo
 print_info "========================================="
 print_info "  Google Secret Manager Setup"
 print_info "  External Secrets Operator"
+print_info "  Loading from secrets.json"
 print_info "========================================="
 echo
 
 # Auth Service - JWT Keys
 print_info "Auth Service JWT Keys"
-print_info "Generate RSA keys using: ssh-keygen -t rsa -b 4096 -m PEM -f jwt-key"
-create_secret "auth-service-jwt-private-key" "Auth service JWT private key" \
-    "JWT Private Key (jwt-key)" true
-create_secret "jwt-public-key" "JWT public key for all services" \
-    "JWT Public Key (jwt-key.pub)" true
+create_secret_from_json "auth-service-jwt-private-key" "auth_service_jwt_private_key_file" true
+create_secret_from_json "jwt-public-key" "auth_service_jwt_public_key_file" true
 
 echo
 
 # Payment Service - Stripe Keys
 print_info "Payment Service - Stripe Keys"
-print_info "Get your keys from: https://dashboard.stripe.com/apikeys"
-create_secret "payment-service-stripe-secret-key" "Stripe secret key" \
-    "Stripe Secret Key (starts with sk_)"
-create_secret "payment-service-stripe-webhook-secret" "Stripe webhook secret" \
-    "Stripe Webhook Secret (starts with whsec_)"
+create_secret_from_json "payment-service-stripe-secret-key" "payment_stripe_secret_key"
+create_secret_from_json "payment-service-stripe-webhook-secret" "payment_stripe_webhook_secret"
 
 echo
 
 # Redis Cluster
 print_info "Redis Cluster Configuration"
-print_info "Generate a strong password using: openssl rand -base64 32"
-create_secret "redis-cluster-password" "Redis cluster password" \
-    "Redis Cluster Password"
+create_secret_from_json "redis-cluster-password" "redis_cluster_password"
 
 echo
 
 # Grafana
 print_info "Grafana Admin Password"
-print_info "Generate a strong password using: openssl rand -base64 20"
-create_secret "grafana-admin-password" "Grafana admin password" \
-    "Grafana Admin Password"
+create_secret_from_json "grafana-admin-password" "grafana_admin_password"
 
 echo
 
 # ArgoCD
 print_info "ArgoCD Admin Password"
-print_info "Generate a strong password using: openssl rand -base64 20"
-create_secret "argocd-admin-password" "ArgoCD admin password" \
-    "ArgoCD Admin Password"
+create_secret_from_json "argocd-admin-password" "argocd_admin_password"
 
 echo
 
 # GitHub Container Registry
 print_info "GitHub Container Registry - Authentication"
-print_info "Create a Personal Access Token at: https://github.com/settings/tokens"
-print_info "Required scopes: read:packages"
-create_secret "github-container-registry-username" "GitHub username" \
-    "GitHub Username"
-create_secret "github-container-registry-token" "GitHub Personal Access Token" \
-    "GitHub PAT (starts with ghp_)"
+create_secret_from_json "github-container-registry-username" "github_username"
+create_secret_from_json "github-container-registry-token" "github_token"
 
 echo
 
 # Notification Service - SendGrid
 print_info "Notification Service - SendGrid Configuration"
-print_info "Get your API key from: https://app.sendgrid.com/settings/api_keys"
-create_secret "notification-service-sendgrid-api-key" "SendGrid API key" \
-    "SendGrid API Key (starts with SG.)"
+create_secret_from_json "notification-service-sendgrid-api-key" "sendgrid_api_key"
 
 echo
 
@@ -202,15 +209,10 @@ echo
 print_success "All secrets have been populated in Google Secret Manager!"
 echo
 print_info "Next steps:"
-print_info "1. Apply Terraform configuration: ./terraform/scripts/apply-prod.sh"
-print_info "2. Verify External Secrets Operator: kubectl get externalsecrets -A"
-print_info "3. Check synced secrets: kubectl get secrets -A | grep external-secrets"
-echo
-print_info "To view secrets in Google Secret Manager:"
-print_info "  gcloud secrets list --project=$PROJECT_ID"
-echo
-print_info "To view a specific secret version:"
-print_info "  gcloud secrets versions access latest --secret=SECRET_NAME --project=$PROJECT_ID"
+print_info "1. Verify secrets: gcloud secrets list --project=$PROJECT_ID"
+print_info "2. Apply Terraform configuration: ./terraform/scripts/apply-prod.sh"
+print_info "3. Verify External Secrets Operator: kubectl get externalsecrets -A"
+print_info "4. Check synced secrets: kubectl get secrets -A | grep external-secrets"
 echo
 
 print_success "Done!"
