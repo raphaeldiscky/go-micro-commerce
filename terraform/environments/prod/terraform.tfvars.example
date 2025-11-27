@@ -134,67 +134,11 @@ argocd_domain_name       = "argocd.api.your_domain.com"                         
 argocd_tls_issuer        = "letsencrypt-prod"
 
 # ============================================================================
-# ArgoCD Git Repository Credentials (for private repositories)
+# ArgoCD Git Repository Credentials
 # ============================================================================
-# SECURITY: DO NOT commit actual credentials to git!
-# Choose ONE of the following authentication methods:
-
-# -----------------------------------------------------------------------------
-# METHOD 1: HTTPS with Personal Access Token (Simpler, Good for Testing)
-# -----------------------------------------------------------------------------
-# 1. Create GitHub Personal Access Token:
-#    - Go to: https://github.com/settings/tokens
-#    - Click: "Generate new token" → "Generate new token (classic)"
-#    - Scopes: Select "repo" (Full control of private repositories)
-#    - Generate and copy the token
-#
-# 2. Update repository URL to HTTPS format:
-#    argocd_git_repo_url = "https://github.com/your_github/go-micro-commerce.git"
-#
-# 3. Set credentials via environment variable (RECOMMENDED):
-#    export TF_VAR_argocd_git_username="git"
-#    export TF_VAR_argocd_git_token="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#    terraform apply
-#
-# 4. OR pass at runtime:
-#    terraform apply -var="argocd_git_token=ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-#
-# Note: Update ApplicationSets to use HTTPS URLs in deployments/k8s/apps/applicationsets/*.yaml
-
-argocd_git_username = "git"  # Default username for HTTPS token auth
-# argocd_git_token  = ""     # or set via TF_VAR_argocd_git_token 
-
-# -----------------------------------------------------------------------------
-# METHOD 2: SSH with Deploy Key (More Secure, Recommended for Production)
-# -----------------------------------------------------------------------------
-# 1. Generate SSH key pair:
-#    ssh-keygen -t ed25519 -C "argocd@your_domain.com" -f ~/.ssh/argocd-repo -N ""
-#
-# 2. Add public key to GitHub (Deploy Key - recommended):
-#    - Go to: https://github.com/your_github/go-micro-commerce/settings/keys
-#    - Click: "Add deploy key"
-#    - Title: "ArgoCD Production GKE"
-#    - Key: Paste contents of: cat ~/.ssh/argocd-repo.pub
-#    - Allow write access: NO (read-only is sufficient)
-#
-# 3. Repository URL is already in SSH format (see line 135 above):
-#    argocd_git_repo_url = "git@github.com:your_github/go-micro-commerce.git"
-#
-# 4. Set private key via environment variable (RECOMMENDED):
-#    export TF_VAR_argocd_git_ssh_private_key=$(cat ~/.ssh/argocd-repo)
-#    terraform apply
-#
-# 5. Update ApplicationSets to use SSH URLs:
-#    Edit: deployments/k8s/apps/applicationsets/infrastructure.yaml
-#    Edit: deployments/k8s/apps/applicationsets/workloads.yaml
-#    Change: repoURL: https://github.com/your_github/go-micro-commerce.git
-#    To:     repoURL: git@github.com:your_github/go-micro-commerce.git
-#
-# 6. Verify SSH connection works:
-#    ssh -T git@github.com -i ~/.ssh/argocd-repo
-#    # Expected: "Hi your_github! You've successfully authenticated..."
-
-argocd_git_ssh_private_key = ""  # or set via TF_VAR_argocd_git_ssh_private_key 
+# Git credentials are now managed via External Secrets Operator (ESO) + Google Secret Manager (GSM)
+# See: deployments/k8s/workloads/base/external-secrets/argocd-git-credentials-external-secret.yaml
+# To update credentials: terraform/scripts/populate-secrets.sh
 
 # cert-manager (for automated TLS certificates)
 cert_manager_namespace                       = "cert-manager"

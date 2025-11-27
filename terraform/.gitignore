@@ -25,6 +25,7 @@ secrets.yaml
 *.secret
 */secrets/secrets.json
 jwt-key*
+argocd-git-key*
 
 # IDE and editor files
 .idea/

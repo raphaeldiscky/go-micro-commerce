@@ -146,6 +146,80 @@ create_secret_from_json() {
     print_success "Added secret version for: $secret_name"
 }
 
+# Function to check and generate SSH/RSA keys if missing
+check_and_generate_keys() {
+    local key_type="$1"        # "jwt" or "argocd-git"
+    local key_name="$2"        # "jwt-key" or "argocd-git-key"
+    local description="$3"     # Human-readable description
+
+    local private_key="$SECRETS_DIR/$key_name"
+    local public_key="$SECRETS_DIR/$key_name.pub"
+
+    # Check if keys exist
+    if [ -f "$private_key" ] && [ -f "$public_key" ]; then
+        print_success "$description keys already exist"
+        return 0
+    fi
+
+    if [ -f "$private_key" ] || [ -f "$public_key" ]; then
+        print_warning "$description keys partially exist. Please check manually."
+        return 1
+    fi
+
+    # Keys don't exist - ask user
+    echo
+    print_warning "$description keys not found at:"
+    print_warning "  - $private_key"
+    print_warning "  - $public_key"
+    echo
+
+    read -p "Would you like to generate them now? (y/n): " generate_keys
+
+    if [[ "$generate_keys" =~ ^[Yy]$ ]]; then
+        print_info "Generating $description keys..."
+
+        if [ "$key_type" = "jwt" ]; then
+            # Generate RSA key pair for JWT (4096 bits for security)
+            ssh-keygen -t rsa -b 4096 -C "jwt-auth-service" -f "$private_key" -N "" -q
+        elif [ "$key_type" = "argocd-git" ]; then
+            # Generate Ed25519 key pair for Git SSH (modern, secure, fast)
+            ssh-keygen -t ed25519 -C "argocd-gke-production" -f "$private_key" -N "" -q
+        else
+            print_error "Unknown key type: $key_type"
+            return 1
+        fi
+
+        # Set correct permissions
+        chmod 600 "$private_key"
+        chmod 644 "$public_key"
+
+        print_success "$description keys generated successfully"
+        echo
+        print_info "Public key:"
+        cat "$public_key"
+        echo
+
+        if [ "$key_type" = "argocd-git" ]; then
+            print_warning "IMPORTANT: Add the public key above to GitHub Deploy Keys:"
+            print_warning "  https://github.com/raphaeldiscky/go-micro-commerce/settings/keys"
+        fi
+
+        return 0
+    else
+        echo
+        print_info "To generate keys manually, run:"
+        if [ "$key_type" = "jwt" ]; then
+            echo "  ssh-keygen -t rsa -b 4096 -C \"jwt-auth-service\" -f \"$private_key\" -N \"\""
+        elif [ "$key_type" = "argocd-git" ]; then
+            echo "  ssh-keygen -t ed25519 -C \"argocd-gke-production\" -f \"$private_key\" -N \"\""
+        fi
+        echo "  chmod 600 $private_key"
+        echo "  chmod 644 $public_key"
+        echo
+        return 1
+    fi
+}
+
 # Banner
 echo
 print_info "========================================="
@@ -155,10 +229,34 @@ print_info "  Loading from secrets.json"
 print_info "========================================="
 echo
 
+# Check and generate keys if needed
+print_info "========================================="
+print_info "  Checking Required Keys"
+print_info "========================================="
+echo
+
+# Check JWT keys
+check_and_generate_keys "jwt" "jwt-key" "Auth Service JWT"
+
+# Check ArgoCD Git keys
+check_and_generate_keys "argocd-git" "argocd-git-key" "ArgoCD Git SSH"
+
+echo
+print_info "========================================="
+print_info "  Uploading Secrets to GSM"
+print_info "========================================="
+echo
+
 # Auth Service - JWT Keys
 print_info "Auth Service JWT Keys"
 create_secret_from_json "auth-service-jwt-private-key" "auth_service_jwt_private_key_file" true
 create_secret_from_json "jwt-public-key" "auth_service_jwt_public_key_file" true
+
+echo
+
+# ArgoCD - Git Credentials
+print_info "ArgoCD Git Credentials"
+create_secret_from_json "argocd-git-ssh-private-key" "argocd_git_ssh_private_key_file" true
 
 echo
 

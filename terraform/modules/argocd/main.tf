@@ -392,36 +392,3 @@ resource "kubectl_manifest" "bootstrap_appset" {
 
   depends_on = [null_resource.wait_for_argocd_crd]
 }
-
-# Repository credentials for private Git repositories
-# This Secret allows ArgoCD to access private repositories
-resource "kubernetes_secret" "git_repo_credentials" {
-  count = var.git_repo_url != "" && (var.git_token != "" || var.git_ssh_private_key != "") ? 1 : 0
-
-  metadata {
-    name      = "git-repo-credentials"
-    namespace = var.namespace
-    labels = {
-      "argocd.argoproj.io/secret-type" = "repository"
-      "app.kubernetes.io/managed-by"   = "terraform"
-    }
-  }
-
-  data = merge(
-    {
-      type = var.git_ssh_private_key != "" ? "git" : "git"
-      url  = var.git_repo_url
-    },
-    # HTTPS authentication (token-based)
-    var.git_token != "" ? {
-      username = var.git_username != "" ? var.git_username : "git"
-      password = var.git_token
-    } : {},
-    # SSH authentication (key-based)
-    var.git_ssh_private_key != "" ? {
-      sshPrivateKey = var.git_ssh_private_key
-    } : {}
-  )
-
-  depends_on = [helm_release.argocd]
-}

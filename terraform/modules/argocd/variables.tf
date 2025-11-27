@@ -53,23 +53,3 @@ variable "tls_issuer" {
   type        = string
   default     = "letsencrypt-prod"
 }
-
-variable "git_username" {
-  description = "Git username for repository authentication (for HTTPS method)"
-  type        = string
-  default     = ""
-}
-
-variable "git_token" {
-  description = "Git token for repository authentication (for HTTPS method)"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "git_ssh_private_key" {
-  description = "SSH private key for repository authentication (for SSH method)"
-  type        = string
-  default     = ""
-  sensitive   = true
-}
