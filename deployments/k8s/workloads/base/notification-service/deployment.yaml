@@ -92,6 +92,16 @@ spec:
                 secretKeyRef:
                   name: notification-pg-app
                   key: password
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: password
+            - name: ASYNQ_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: password
           envFrom:
             - configMapRef:
                 name: notification-service-config

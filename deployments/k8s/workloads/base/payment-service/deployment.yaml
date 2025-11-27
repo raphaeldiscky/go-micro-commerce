@@ -89,6 +89,16 @@ spec:
                 secretKeyRef:
                   name: payment-pg-app
                   key: password
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: password
+            - name: ASYNQ_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-secret
+                  key: password
           envFrom:
             - configMapRef:
                 name: payment-service-config

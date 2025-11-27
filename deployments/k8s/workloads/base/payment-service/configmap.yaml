@@ -11,6 +11,9 @@ data:
   POSTGRES_HOST: "shared-pg-rw"
   POSTGRES_PORT: "5432"
   POSTGRES_DATABASE: "payment_db"
+  # Redis
+  REDIS_ADDRS: "redis-cluster-leader-0.redis-cluster-leader-headless:6379,redis-cluster-leader-1.redis-cluster-leader-headless:6379,redis-cluster-leader-2.redis-cluster-leader-headless:6379,redis-cluster-follower-0.redis-cluster-follower-headless:6379,redis-cluster-follower-1.redis-cluster-follower-headless:6379,redis-cluster-follower-2.redis-cluster-follower-headless:6379"
+  ASYNQ_REDIS_ADDRS: "redis-cluster-leader-0.redis-cluster-leader-headless:6379,redis-cluster-leader-1.redis-cluster-leader-headless:6379,redis-cluster-leader-2.redis-cluster-leader-headless:6379,redis-cluster-follower-0.redis-cluster-follower-headless:6379,redis-cluster-follower-1.redis-cluster-follower-headless:6379,redis-cluster-follower-2.redis-cluster-follower-headless:6379"
   # Observability
   TRACING_URL: "otel-collector:4318"
   TRACING_SAMPLING_RATE: "0.1"
