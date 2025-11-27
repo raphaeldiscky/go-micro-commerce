@@ -2,12 +2,20 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: cart-service-migration
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+    argocd.argoproj.io/sync-wave: "-1"
+    email: "raph.discky@gmail.com"
   labels:
     app: cart-service
     component: migration
     tier: infrastructure
+    owner: "raphaeldiscky"
 spec:
   backoffLimit: 3
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 300
   template:
     metadata:
       labels:
@@ -15,6 +23,16 @@ spec:
         component: migration
     spec:
       restartPolicy: OnFailure
+      serviceAccountName: cart-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        fsGroup: 65532
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "2"
+          - name: edns0
       containers:
         - name: migrate
           image: ghcr.io/raphaeldiscky/go-micro-commerce/cart-service-migrations:v0.0.0
@@ -43,6 +61,16 @@ spec:
                 secretKeyRef:
                   name: cart-pg-app
                   key: password
+          livenessProbe:
+            exec:
+              command: ["ls"]
+            initialDelaySeconds: 5
+            periodSeconds: 300
+          readinessProbe:
+            exec:
+              command: ["ls"]
+            initialDelaySeconds: 5
+            periodSeconds: 300
           resources:
             requests:
               cpu: 50m

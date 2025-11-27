@@ -26,3 +26,5 @@ patches:
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service
     newTag: 0.1.5
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service-migrations
+    newTag: 0.1.5

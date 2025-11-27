@@ -26,3 +26,5 @@ patches:
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/chat-service
     newTag: 0.1.5
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/chat-service-migrations
+    newTag: 0.1.5

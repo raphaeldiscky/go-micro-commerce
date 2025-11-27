@@ -22,6 +22,7 @@ resources:
   - hpa.yaml
   - pdb.yaml
   - networkpolicy.yaml
+  - migration-job.yaml
 
 images:
   - name: cart-service

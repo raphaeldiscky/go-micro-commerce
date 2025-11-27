@@ -26,3 +26,5 @@ patches:
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/order-service
     newTag: 0.1.8
+  - name: ghcr.io/raphaeldiscky/go-micro-commerce/order-service-migrations
+    newTag: 0.1.8

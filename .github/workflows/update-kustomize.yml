@@ -163,8 +163,8 @@ jobs:
             if [ -f "$KUSTOMIZATION_PATH" ]; then
               echo "Processing $service..."
 
-              # Update the newTag field
-              sed -i "s/newTag: .*/newTag: $VERSION_NO_V/" "$KUSTOMIZATION_PATH"
+              # Update all newTag fields (service and migration images)
+              sed -i "s/^\s*newTag: .*/    newTag: $VERSION_NO_V/" "$KUSTOMIZATION_PATH"
 
               # Check if file was actually modified
               if ! git diff --quiet "$KUSTOMIZATION_PATH"; then
