@@ -87,7 +87,7 @@ module "external_secrets_operator" {
 
   project_id       = var.project_id
   cluster_name     = module.gke_cluster.cluster_name
-  cluster_location = var.zone
+  cluster_location = var.region
   namespace        = var.eso_namespace
   create_namespace = true
   chart_version    = var.eso_chart_version

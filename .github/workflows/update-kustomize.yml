@@ -149,10 +149,12 @@ jobs:
         id: update
         run: |
           VERSION="${{ steps.version.outputs.tag }}"
+          # Strip 'v' prefix if present to match docker/metadata-action behavior
+          VERSION_NO_V="${VERSION#v}"
           SERVICES='${{ steps.services.outputs.list }}'
           UPDATED_SERVICES=()
 
-          echo "Updating kustomization files for version $VERSION"
+          echo "Updating kustomization files for version $VERSION_NO_V (from git tag: $VERSION)"
           echo "Processing $(echo "$SERVICES" | jq -r 'length') services..."
 
           while IFS= read -r service; do
@@ -162,14 +164,14 @@ jobs:
               echo "Processing $service..."
 
               # Update the newTag field
-              sed -i "s/newTag: .*/newTag: $VERSION/" "$KUSTOMIZATION_PATH"
+              sed -i "s/newTag: .*/newTag: $VERSION_NO_V/" "$KUSTOMIZATION_PATH"
 
               # Check if file was actually modified
               if ! git diff --quiet "$KUSTOMIZATION_PATH"; then
-                echo "✓ Updated $service to $VERSION"
+                echo "✓ Updated $service to $VERSION_NO_V"
                 UPDATED_SERVICES+=("$service")
               else
-                echo "- No changes needed for $service (already at $VERSION)"
+                echo "- No changes needed for $service (already at $VERSION_NO_V)"
               fi
             else
               echo "⚠ Warning: Kustomization file not found for $service at $KUSTOMIZATION_PATH"
