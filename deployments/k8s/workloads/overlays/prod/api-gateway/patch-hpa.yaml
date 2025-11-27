@@ -3,4 +3,9 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: api-gateway
 spec:
-  minReplicas: 1 # Reduced from 2 to fit quota constraints
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-gateway
+  maxReplicas: 1
+  minReplicas: 1

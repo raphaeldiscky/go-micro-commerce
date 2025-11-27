@@ -85,7 +85,7 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: product-pg-app
+                  name: shared-pg-app
                   key: password
           envFrom:
             - configMapRef:
