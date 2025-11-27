@@ -79,10 +79,15 @@ spec:
               value: "cart-service"
             - name: METRICS_ENABLED
               value: "true"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cart-pg-app
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: shared-pg-app
+                  name: cart-pg-app
                   key: password
           envFrom:
             - configMapRef:

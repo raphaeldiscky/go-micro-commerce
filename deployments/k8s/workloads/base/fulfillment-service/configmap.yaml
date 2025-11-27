@@ -10,7 +10,6 @@ data:
   # Database
   POSTGRES_HOST: "shared-pg-rw"
   POSTGRES_PORT: "5432"
-  POSTGRES_USER: "fulfillment_user"
   POSTGRES_DATABASE: "fulfillment_db"
   # Observability
   TRACING_URL: "otel-collector:4318"

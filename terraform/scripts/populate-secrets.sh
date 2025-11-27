@@ -298,6 +298,19 @@ create_secret_from_json "notification-service-sendgrid-api-key" "sendgrid_api_ke
 
 echo
 
+# PostgreSQL Service Passwords
+print_info "PostgreSQL Service Passwords"
+create_secret_from_json "auth-pg-password" "auth_pg_password"
+create_secret_from_json "cart-pg-password" "cart_pg_password"
+create_secret_from_json "chat-pg-password" "chat_pg_password"
+create_secret_from_json "fulfillment-pg-password" "fulfillment_pg_password"
+create_secret_from_json "notification-pg-password" "notification_pg_password"
+create_secret_from_json "order-pg-password" "order_pg_password"
+create_secret_from_json "payment-pg-password" "payment_pg_password"
+create_secret_from_json "product-pg-password" "product_pg_password"
+
+echo
+
 # Summary
 print_info "========================================="
 print_info "  SETUP COMPLETE"

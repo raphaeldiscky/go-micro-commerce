@@ -12,6 +12,15 @@ resources:
   - argocd-git-credentials-external-secret.yaml
   - ghcr-imagepull-secret.yaml
   - ghcr-imagepull-secret-gateway.yaml
+  # PostgreSQL service credentials
+  - auth-pg-external-secret.yaml
+  - cart-pg-external-secret.yaml
+  - chat-pg-external-secret.yaml
+  - fulfillment-pg-external-secret.yaml
+  - notification-pg-external-secret.yaml
+  - order-pg-external-secret.yaml
+  - payment-pg-external-secret.yaml
+  - product-pg-external-secret.yaml
 
 labels:
   - pairs:

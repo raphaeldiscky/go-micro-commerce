@@ -82,10 +82,15 @@ spec:
               value: "notification-service"
             - name: METRICS_ENABLED
               value: "true"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: notification-pg-app
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: shared-pg-app
+                  name: notification-pg-app
                   key: password
           envFrom:
             - configMapRef:

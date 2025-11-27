@@ -46,39 +46,77 @@ spec:
         - CREATE DATABASE fulfillment_db;
         - CREATE DATABASE notification_db;
         - CREATE DATABASE chat_db;
-
-        # Create dedicated users for each service
-        - CREATE USER auth_user WITH ENCRYPTED PASSWORD 'auth_password_CHANGE_ME';
+      postInitApplicationSQL:
+        # Grant privileges to service users (users created via managed.roles)
         - GRANT ALL PRIVILEGES ON DATABASE auth_db TO auth_user;
         - ALTER DATABASE auth_db OWNER TO auth_user;
-
-        - CREATE USER cart_user WITH ENCRYPTED PASSWORD 'cart_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE cart_db TO cart_user;
         - ALTER DATABASE cart_db OWNER TO cart_user;
-
-        - CREATE USER order_user WITH ENCRYPTED PASSWORD 'order_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE order_db TO order_user;
         - ALTER DATABASE order_db OWNER TO order_user;
-
-        - CREATE USER product_user WITH ENCRYPTED PASSWORD 'product_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE product_db TO product_user;
         - ALTER DATABASE product_db OWNER TO product_user;
-
-        - CREATE USER payment_user WITH ENCRYPTED PASSWORD 'payment_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE payment_db TO payment_user;
         - ALTER DATABASE payment_db OWNER TO payment_user;
-
-        - CREATE USER fulfillment_user WITH ENCRYPTED PASSWORD 'fulfillment_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE fulfillment_db TO fulfillment_user;
         - ALTER DATABASE fulfillment_db OWNER TO fulfillment_user;
-
-        - CREATE USER notification_user WITH ENCRYPTED PASSWORD 'notification_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE notification_db TO notification_user;
         - ALTER DATABASE notification_db OWNER TO notification_user;
-
-        - CREATE USER chat_user WITH ENCRYPTED PASSWORD 'chat_password_CHANGE_ME';
         - GRANT ALL PRIVILEGES ON DATABASE chat_db TO chat_user;
         - ALTER DATABASE chat_db OWNER TO chat_user;
+
+  # Managed roles - users created with passwords from Kubernetes secrets
+  # Secrets are synced from Google Secret Manager via ExternalSecrets Operator
+  managed:
+    roles:
+      - name: auth_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: auth-pg-app
+        connectionLimit: -1
+      - name: cart_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: cart-pg-app
+        connectionLimit: -1
+      - name: chat_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: chat-pg-app
+        connectionLimit: -1
+      - name: fulfillment_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: fulfillment-pg-app
+        connectionLimit: -1
+      - name: notification_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: notification-pg-app
+        connectionLimit: -1
+      - name: order_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: order-pg-app
+        connectionLimit: -1
+      - name: payment_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: payment-pg-app
+        connectionLimit: -1
+      - name: product_user
+        ensure: present
+        login: true
+        passwordSecret:
+          name: product-pg-app
+        connectionLimit: -1
 
   # Monitoring configuration
   monitoring:

@@ -10,7 +10,6 @@ data:
   # Database
   POSTGRES_HOST: "shared-pg-rw"
   POSTGRES_PORT: "5432"
-  POSTGRES_USER: "notification_user"
   POSTGRES_DATABASE: "notification_db"
   # Mail
   MAIL_PROVIDER: "sendgrid"
