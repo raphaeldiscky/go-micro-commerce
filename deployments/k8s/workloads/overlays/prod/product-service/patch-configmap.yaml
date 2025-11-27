@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: product-service-config
+data:
+  APP_ENVIRONMENT: "production"
+  ENV: "production"
+  LOG_LEVEL: "info"
+  REDIS_ADDRS: "redis-cluster-leader-0.redis-cluster-leader-headless:6379,redis-cluster-leader-1.redis-cluster-leader-headless:6379,redis-cluster-leader-2.redis-cluster-leader-headless:6379,redis-cluster-follower-0.redis-cluster-follower-headless:6379,redis-cluster-follower-1.redis-cluster-follower-headless:6379,redis-cluster-follower-2.redis-cluster-follower-headless:6379"
+  ASYNQ_REDIS_ADDRS: "redis-cluster-leader-0.redis-cluster-leader-headless:6379,redis-cluster-leader-1.redis-cluster-leader-headless:6379,redis-cluster-leader-2.redis-cluster-leader-headless:6379,redis-cluster-follower-0.redis-cluster-follower-headless:6379,redis-cluster-follower-1.redis-cluster-follower-headless:6379,redis-cluster-follower-2.redis-cluster-follower-headless:6379"

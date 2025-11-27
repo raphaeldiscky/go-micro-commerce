@@ -18,14 +18,10 @@ patches:
   - path: patch-replicas.yaml
   - path: patch-resources.yaml
   - path: patch-hpa.yaml
-
-configMapGenerator:
-  - name: fulfillment-service-config
-    behavior: merge
-    literals:
-      - APP_ENVIRONMENT=production
-      - ENV=production
-      - LOG_LEVEL=info
+  - path: patch-configmap.yaml
+    target:
+      kind: ConfigMap
+      name: fulfillment-service-config
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/fulfillment-service

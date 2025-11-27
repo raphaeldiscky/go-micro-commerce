@@ -18,14 +18,10 @@ patches:
   - path: patch-replicas.yaml
   - path: patch-resources.yaml
   - path: patch-hpa.yaml
-
-configMapGenerator:
-  - name: order-service-config
-    behavior: merge
-    literals:
-      - APP_ENVIRONMENT=production
-      - ENV=production
-      - LOG_LEVEL=info
+  - path: patch-configmap.yaml
+    target:
+      kind: ConfigMap
+      name: order-service-config
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/order-service
