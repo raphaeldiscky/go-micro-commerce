@@ -8,7 +8,7 @@ metadata:
     component: kafka-admin
 data:
   KAFKA_CLUSTERS_0_NAME: "kafka-kraft-cluster"
-  KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka-cluster-kafka-bootstrap.default.svc.cluster.local:9092"
+  KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092"
   DYNAMIC_CONFIG_ENABLED: "true"
 ---
 apiVersion: v1

@@ -9,3 +9,4 @@ data:
   JWT_PRIVATE_KEY_PATH: "/app/keys/private.pem"
   JWT_PUBLIC_KEY_PATH: "/app/keys/public.pem"
   JWT_ISSUER: "go-micro-commerce"
+  KAFKA_BROKERS: "kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092"

@@ -179,8 +179,11 @@ check_and_generate_keys() {
         print_info "Generating $description keys..."
 
         if [ "$key_type" = "jwt" ]; then
-            # Generate RSA key pair for JWT (4096 bits for security)
-            ssh-keygen -t rsa -b 4096 -C "jwt-auth-service" -f "$private_key" -N "" -q
+            # Generate RSA key pair for JWT in correct PEM formats
+            # Private key in PKCS#8 format
+            openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:4096 -out "$private_key"
+            # Public key in PEM/PKIX format
+            openssl rsa -in "$private_key" -pubout -out "$public_key"
         elif [ "$key_type" = "argocd-git" ]; then
             # Generate Ed25519 key pair for Git SSH (modern, secure, fast)
             ssh-keygen -t ed25519 -C "argocd-gke-production" -f "$private_key" -N "" -q
@@ -249,13 +252,14 @@ echo
 
 # JWT Keys
 print_info "JWT Keys - Centralized in Auth Service and fetch by other microservices via JWKS"
-print_warning "Make sure JWT public key in PEM format"
+print_warning "Make sure JWT public key in PEM format and private key in PKCS#8 format"
 create_secret_from_json "jwt-private-key" "jwt_private_key_file" true
 create_secret_from_json "jwt-public-key" "jwt_public_key_file" true
 echo
 
 # ArgoCD - Git Credentials
 print_info "ArgoCD Git Credentials"
+print_warning "Make sure keys in Ed25519 format"
 create_secret_from_json "argocd-git-ssh-private-key" "argocd_git_ssh_private_key_file" true
 
 echo
