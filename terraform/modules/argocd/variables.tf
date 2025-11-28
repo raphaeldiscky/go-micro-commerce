@@ -53,3 +53,9 @@ variable "tls_issuer" {
   type        = string
   default     = "letsencrypt-prod"
 }
+
+variable "cluster_secret_store_name" {
+  description = "Name of the ClusterSecretStore for External Secrets Operator"
+  type        = string
+  default     = "gcp-secret-manager"
+}

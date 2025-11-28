@@ -289,6 +289,90 @@ resource "helm_release" "argocd" {
   depends_on = [kubernetes_namespace.argocd]
 }
 
+# Wait for External Secrets CRDs to be available
+# Required before deploying ExternalSecret for ArgoCD Git credentials
+resource "null_resource" "wait_for_eso_crd" {
+  provisioner "local-exec" {
+    command = <<EOF
+      for i in {1..60}; do
+        if kubectl get crd externalsecrets.external-secrets.io 2>/dev/null; then
+          echo "External Secrets CRDs are ready"
+          exit 0
+        fi
+        echo "Waiting for External Secrets CRDs... ($i/60)"
+        sleep 5
+      done
+      echo "Timeout waiting for External Secrets CRDs"
+      exit 1
+    EOF
+  }
+
+  depends_on = [helm_release.argocd]
+}
+
+# Bootstrap ArgoCD Git Credentials
+# This ExternalSecret is deployed via Terraform to bootstrap ArgoCD's ability to sync from Git
+# Once ArgoCD is functional, it will take over management via the external-secrets Application
+resource "kubectl_manifest" "argocd_git_credentials" {
+  yaml_body = yamlencode({
+    apiVersion = "external-secrets.io/v1"
+    kind       = "ExternalSecret"
+    metadata = {
+      name      = "argocd-git-credentials"
+      namespace = var.namespace
+      labels = {
+        "app.kubernetes.io/name"       = "argocd"
+        "app.kubernetes.io/component"  = "repo-credentials"
+        "app.kubernetes.io/managed-by" = "terraform"
+        "app.kubernetes.io/part-of"    = "go-micro-commerce"
+        "environment"                  = "production"
+      }
+      annotations = {
+        "argocd.argoproj.io/sync-options" = "Prune=false"
+      }
+    }
+    spec = {
+      refreshInterval = "1h"
+      secretStoreRef = {
+        name = var.cluster_secret_store_name
+        kind = "ClusterSecretStore"
+      }
+      target = {
+        name           = "git-repo-credentials"
+        creationPolicy = "Owner"
+        deletionPolicy = "Retain"
+        template = {
+          type          = "Opaque"
+          engineVersion = "v2"
+          metadata = {
+            labels = {
+              "argocd.argoproj.io/secret-type" = "repository"
+            }
+          }
+          data = {
+            type          = "git"
+            url           = var.git_repo_url
+            sshPrivateKey = "{{ .sshPrivateKey }}"
+          }
+        }
+      }
+      data = [
+        {
+          secretKey = "sshPrivateKey"
+          remoteRef = {
+            key = "argocd-git-ssh-private-key"
+          }
+        }
+      ]
+    }
+  })
+
+  depends_on = [
+    null_resource.wait_for_eso_crd,
+    kubernetes_namespace.argocd
+  ]
+}
+
 # Wait for ArgoCD CRDs to be registered
 resource "null_resource" "wait_for_argocd_crd" {
   count = var.enable_bootstrap && var.git_repo_url != "" ? 1 : 0
@@ -389,5 +473,8 @@ resource "kubectl_manifest" "bootstrap_appset" {
     }
   })
 
-  depends_on = [null_resource.wait_for_argocd_crd]
+  depends_on = [
+    null_resource.wait_for_argocd_crd,
+    kubectl_manifest.argocd_git_credentials
+  ]
 }

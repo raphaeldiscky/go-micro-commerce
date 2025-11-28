@@ -182,17 +182,22 @@ module "cert_manager" {
 module "argocd" {
   source = "../../modules/argocd"
 
-  namespace           = var.argocd_namespace
-  create_namespace    = true
-  chart_version       = var.argocd_chart_version
-  git_repo_url        = var.argocd_git_repo_url
-  git_repo_path       = var.argocd_git_repo_path
-  enable_bootstrap    = var.argocd_enable_bootstrap
-  enable_ingress      = var.argocd_enable_ingress
-  domain_name         = var.argocd_domain_name
-  tls_issuer          = var.argocd_tls_issuer
+  namespace                 = var.argocd_namespace
+  create_namespace          = true
+  chart_version             = var.argocd_chart_version
+  git_repo_url              = var.argocd_git_repo_url
+  git_repo_path             = var.argocd_git_repo_path
+  enable_bootstrap          = var.argocd_enable_bootstrap
+  enable_ingress            = var.argocd_enable_ingress
+  domain_name               = var.argocd_domain_name
+  tls_issuer                = var.argocd_tls_issuer
+  cluster_secret_store_name = var.eso_cluster_secret_store_name
 
-  depends_on = [module.monitoring, module.cert_manager]
+  depends_on = [
+    module.monitoring,
+    module.cert_manager,
+    module.external_secrets_operator
+  ]
 }
 
 # Traefik Ingress Controller
