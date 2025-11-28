@@ -10,4 +10,8 @@ spec:
   selector:
     matchLabels:
       app: api-gateway
-      tier: backend
+    matchExpressions:
+      - key: component
+        operator: NotIn
+        values:
+          - migration

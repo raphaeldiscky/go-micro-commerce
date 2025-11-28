@@ -10,4 +10,8 @@ spec:
   selector:
     matchLabels:
       app: auth-service
-      tier: backend
+    matchExpressions:
+      - key: component
+        operator: NotIn
+        values:
+          - migration
