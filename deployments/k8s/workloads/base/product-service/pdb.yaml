@@ -10,3 +10,4 @@ spec:
   selector:
     matchLabels:
       app: product-service
+      tier: backend

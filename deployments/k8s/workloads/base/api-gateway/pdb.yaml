@@ -10,3 +10,4 @@ spec:
   selector:
     matchLabels:
       app: api-gateway
+      tier: backend

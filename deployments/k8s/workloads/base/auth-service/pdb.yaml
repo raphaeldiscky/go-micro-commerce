@@ -10,3 +10,4 @@ spec:
   selector:
     matchLabels:
       app: auth-service
+      tier: backend

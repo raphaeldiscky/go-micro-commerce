@@ -10,3 +10,4 @@ spec:
   selector:
     matchLabels:
       app: fulfillment-service
+      tier: backend

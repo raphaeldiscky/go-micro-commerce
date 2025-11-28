@@ -10,3 +10,4 @@ spec:
   selector:
     matchLabels:
       app: payment-service
+      tier: backend

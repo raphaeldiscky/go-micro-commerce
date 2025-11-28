@@ -10,3 +10,4 @@ spec:
   selector:
     matchLabels:
       app: chat-service
+      tier: backend
