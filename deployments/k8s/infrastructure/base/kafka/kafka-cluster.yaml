@@ -114,40 +114,7 @@ spec:
         configMapKeyRef:
           name: kafka-metrics
           key: kafka-metrics-config.yml
-  # Entity Operator for managing topics and users (optional)
-  entityOperator:
-    template:
-      pod:
-        affinity:
-          nodeAffinity:
-            requiredDuringSchedulingIgnoredDuringExecution:
-              nodeSelectorTerms:
-                - matchExpressions:
-                    - key: workload-type
-                      operator: In
-                      values:
-                        - stateful
-        tolerations:
-          - key: workload-type
-            operator: Equal
-            value: stateful
-            effect: NoSchedule
-    topicOperator:
-      resources:
-        requests:
-          memory: "128Mi"
-          cpu: "25m"
-        limits:
-          memory: "256Mi"
-          cpu: "200m"
-    userOperator:
-      resources:
-        requests:
-          memory: "128Mi"
-          cpu: "25m"
-        limits:
-          memory: "256Mi"
-          cpu: "200m"
+
 ---
 # ConfigMap for Kafka metrics (Prometheus JMX Exporter)
 apiVersion: v1
