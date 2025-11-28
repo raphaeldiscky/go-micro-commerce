@@ -1,0 +1,9 @@
+.env
+.env.*
+*.log
+.git
+.gitignore
+README.md
+*.md
+.air.toml
+tmp/
