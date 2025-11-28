@@ -17,7 +17,6 @@ resources:
   - ../../base/cart-service
   - ../../base/fulfillment-service
   - ../../base/notification-service
-  - ../../base/search-service
   - ../../base/chat-service
 
 # Local environment patches - minimal resources, single replicas
@@ -239,19 +238,6 @@ configMapGenerator:
       - SMTP_HOST=mailhog.default.svc.cluster.local
       - SMTP_PORT=1025
 
-  - name: search-service-config
-    behavior: merge
-    literals:
-      - HTTP_SERVER_HOST=0.0.0.0
-      - HTTP_SERVER_PORT=8088
-      - POSTGRES_HOST=searchshared-pg-rw.application.svc.cluster.local
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=search_db
-      - POSTGRES_USER=search_user
-      - POSTGRES_SSL_MODE=disable
-      - KAFKA_BROKERS=kafka-cluster-kafka-bootstrap.application.svc.cluster.local:9092
-      - CONSUL_ENABLED=false
-
   - name: chat-service-config
     behavior: merge
     literals:
@@ -302,8 +288,6 @@ images:
     newName: payment-service
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/product-service
     newName: product-service
-  - name: ghcr.io/raphaeldiscky/go-micro-commerce/search-service
-    newName: search-service
 
 labels:
   - includeSelectors: true

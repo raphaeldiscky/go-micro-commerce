@@ -27,8 +27,6 @@ spec:
             namespace: application
           - service: notification-service
             namespace: application
-          - service: search-service
-            namespace: application
           - service: chat-service
             namespace: application
           - service: external-secrets

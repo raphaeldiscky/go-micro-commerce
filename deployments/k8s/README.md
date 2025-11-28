@@ -49,8 +49,8 @@ deployments/k8s/
     │   ├── order-service/
     │   ├── payment-service/
     │   ├── product-service/
-    │   ├── search-service/
     │   └── external-secrets/
+    │
     └── overlays/                 # Environment-specific overrides
         ├── local/                # Local development (Tilt)
         │   └── kustomization.yaml # Single file, monolithic
