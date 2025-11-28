@@ -12,24 +12,19 @@ patches:
       group: postgresql.cnpg.io
       version: v1
     patch: |-
-      - op: add
+      - op: replace
         path: /spec/instances
         value: 1
-      - op: add
-        path: /spec/storage
-        value:
-          size: 20Gi
-          storageClass: standard
-      - op: add
+      - op: replace
         path: /spec/resources
         value:
           requests:
             memory: "512Mi"
-            cpu: "100m"
+            cpu: "200m"
           limits:
-            memory: "2Gi"
+            memory: "1Gi"
             cpu: "500m"
-      - op: add
+      - op: replace
         path: /spec/affinity
         value:
           nodeSelector:
