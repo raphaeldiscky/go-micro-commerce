@@ -247,10 +247,11 @@ print_info "  Uploading Secrets to GSM"
 print_info "========================================="
 echo
 
-# Auth Service - JWT Keys
-print_info "Auth Service JWT Keys"
-create_secret_from_json "auth-service-jwt-private-key" "auth_service_jwt_private_key_file" true
-
+# JWT Keys
+print_info "JWT Keys - Centralized in Auth Service and fetch by other microservices via JWKS"
+print_warning "Make sure JWT public key in PEM format"
+create_secret_from_json "jwt-private-key" "jwt_private_key_file" true
+create_secret_from_json "jwt-public-key" "jwt_public_key_file" true
 echo
 
 # ArgoCD - Git Credentials
