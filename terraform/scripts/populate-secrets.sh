@@ -250,7 +250,6 @@ echo
 # Auth Service - JWT Keys
 print_info "Auth Service JWT Keys"
 create_secret_from_json "auth-service-jwt-private-key" "auth_service_jwt_private_key_file" true
-create_secret_from_json "jwt-public-key" "auth_service_jwt_public_key_file" true
 
 echo
 

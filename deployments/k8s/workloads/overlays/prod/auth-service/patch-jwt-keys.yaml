@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      volumes:
+        - name: jwt-private-key
+          secret:
+            secretName: auth-service-jwt-keys
+            items:
+              - key: private-key.pem
+                path: private.pem
+      containers:
+        - name: auth-service
+          volumeMounts:
+            - name: jwt-private-key
+              mountPath: /app/keys
+              readOnly: true

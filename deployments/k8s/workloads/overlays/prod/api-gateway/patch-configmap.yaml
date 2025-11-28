@@ -6,3 +6,6 @@ data:
   APP_ENVIRONMENT: "production"
   ENV: "production"
   LOG_LEVEL: "info"
+  JWT_JWKS_ENDPOINT: "http://auth-service.application.svc.cluster.local:8080/.well-known/jwks.json"
+  JWT_ISSUER: "go-micro-commerce"
+  JWT_USE_JWKS: "true"

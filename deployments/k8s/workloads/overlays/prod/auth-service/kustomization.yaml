@@ -22,6 +22,10 @@ patches:
     target:
       kind: ConfigMap
       name: auth-service-config
+  - path: patch-jwt-keys.yaml
+    target:
+      kind: Deployment
+      name: auth-service
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service

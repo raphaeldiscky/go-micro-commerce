@@ -8,3 +8,6 @@ data:
   LOG_LEVEL: "info"
   REDIS_ADDRS: "redis-cluster-leader-0.redis-cluster-leader-headless:6379,redis-cluster-leader-1.redis-cluster-leader-headless:6379,redis-cluster-leader-2.redis-cluster-leader-headless:6379,redis-cluster-follower-0.redis-cluster-follower-headless:6379,redis-cluster-follower-1.redis-cluster-follower-headless:6379,redis-cluster-follower-2.redis-cluster-follower-headless:6379"
   ASYNQ_REDIS_ADDRS: "redis-cluster-leader-0.redis-cluster-leader-headless:6379,redis-cluster-leader-1.redis-cluster-leader-headless:6379,redis-cluster-leader-2.redis-cluster-leader-headless:6379,redis-cluster-follower-0.redis-cluster-follower-headless:6379,redis-cluster-follower-1.redis-cluster-follower-headless:6379,redis-cluster-follower-2.redis-cluster-follower-headless:6379"
+  JWT_JWKS_ENDPOINT: "http://auth-service.application.svc.cluster.local:8080/.well-known/jwks.json"
+  JWT_ISSUER: "go-micro-commerce"
+  JWT_USE_JWKS: "true"
