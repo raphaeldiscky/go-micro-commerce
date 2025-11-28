@@ -333,12 +333,11 @@ resource "kubectl_manifest" "bootstrap_appset" {
       goTemplateOptions = ["missingkey=error"]
       generators = [
         {
-          git = {
-            repoURL  = var.git_repo_url
-            revision = "HEAD"
-            files = [
+          list = {
+            elements = [
               {
-                path = "${var.git_repo_path}/apps/applicationsets/*.yaml"
+                name = "applicationsets"
+                path = "${var.git_repo_path}/apps/applicationsets"
               }
             ]
           }
@@ -346,7 +345,7 @@ resource "kubectl_manifest" "bootstrap_appset" {
       ]
       template = {
         metadata = {
-          name = "appset-{{.path.filenameNormalized}}"
+          name = "{{.name}}"
           labels = {
             "app.kubernetes.io/managed-by" = "argocd"
             "app.kubernetes.io/component"  = "applicationset"
@@ -357,7 +356,7 @@ resource "kubectl_manifest" "bootstrap_appset" {
           source = {
             repoURL        = var.git_repo_url
             targetRevision = "HEAD"
-            path           = "{{.path.path}}"
+            path           = "{{.path}}"
             directory = {
               recurse = false
             }
