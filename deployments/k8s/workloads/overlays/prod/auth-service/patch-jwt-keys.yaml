@@ -18,6 +18,8 @@ spec:
             items:
               - key: private-key.pem
                 path: private.pem
+              - key: public-key.pem
+                path: public.pem
       containers:
         - name: auth-service
           volumeMounts:
