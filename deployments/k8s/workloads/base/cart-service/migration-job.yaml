@@ -3,8 +3,6 @@ kind: Job
 metadata:
   name: cart-service-migration
   annotations:
-    argocd.argoproj.io/hook: Sync
-    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
     argocd.argoproj.io/sync-wave: "-1"
     email: "raph.discky@gmail.com"
   labels:
