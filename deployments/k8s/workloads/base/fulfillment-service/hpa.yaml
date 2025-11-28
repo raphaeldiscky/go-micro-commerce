@@ -2,6 +2,8 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: fulfillment-service
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app: fulfillment-service
 spec:

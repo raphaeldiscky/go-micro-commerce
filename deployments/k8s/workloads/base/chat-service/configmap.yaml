@@ -2,6 +2,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: chat-service-config
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
   labels:
     app: chat-service
 data:

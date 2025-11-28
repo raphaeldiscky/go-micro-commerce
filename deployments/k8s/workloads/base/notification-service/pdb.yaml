@@ -2,6 +2,8 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: notification-service
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
   labels:
     app: notification-service
 spec:
