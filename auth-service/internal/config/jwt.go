@@ -8,16 +8,19 @@ import (
 
 // JWTConfig holds JWT configuration.
 type JWTConfig struct {
-	PrivateKeyPath string        `mapstructure:"JWT_PRIVATE_KEY_PATH"`
-	PublicKeyPath  string        `mapstructure:"JWT_PUBLIC_KEY_PATH"`
-	ExpirationTime time.Duration `mapstructure:"JWT_EXPIRATION_TIME"`
-	RefreshTime    time.Duration `mapstructure:"JWT_REFRESH_TIME"`
-	Issuer         string        `mapstructure:"JWT_ISSUER"`
-	TokenLookup    string        `mapstructure:"JWT_TOKEN_LOOKUP"`
-	AuthScheme     string        `mapstructure:"JWT_AUTH_SCHEME"`
-	SigningMethod  string        `mapstructure:"JWT_SIGNING_METHOD"`
-	ContextKey     string        `mapstructure:"JWT_CONTEXT_KEY"`
-	AllowedAlgs    []string      `mapstructure:"JWT_ALLOWED_ALGS"`
+	PrivateKeyPath      string        `mapstructure:"JWT_PRIVATE_KEY_PATH"`
+	PublicKeyPath       string        `mapstructure:"JWT_PUBLIC_KEY_PATH"`
+	JWKSUrl             string        `mapstructure:"JWKS_URL"`
+	JWKSCacheTTL        time.Duration `mapstructure:"JWKS_CACHE_TTL"`
+	JWKSRefreshInterval time.Duration `mapstructure:"JWKS_REFRESH_INTERVAL"`
+	ExpirationTime      time.Duration `mapstructure:"JWT_EXPIRATION_TIME"`
+	RefreshTime         time.Duration `mapstructure:"JWT_REFRESH_TIME"`
+	Issuer              string        `mapstructure:"JWT_ISSUER"`
+	TokenLookup         string        `mapstructure:"JWT_TOKEN_LOOKUP"`
+	AuthScheme          string        `mapstructure:"JWT_AUTH_SCHEME"`
+	SigningMethod       string        `mapstructure:"JWT_SIGNING_METHOD"`
+	ContextKey          string        `mapstructure:"JWT_CONTEXT_KEY"`
+	AllowedAlgs         []string      `mapstructure:"JWT_ALLOWED_ALGS"`
 }
 
 // initJWTConfig initializes the JWT configuration from environment variables.
@@ -25,6 +28,8 @@ func initJWTConfig() *JWTConfig {
 	// Set defaults
 	viper.SetDefault("JWT_PRIVATE_KEY_PATH", "./keys/private.pem")
 	viper.SetDefault("JWT_PUBLIC_KEY_PATH", "./keys/public.pem")
+	viper.SetDefault("JWKS_CACHE_TTL", "1h")
+	viper.SetDefault("JWKS_REFRESH_INTERVAL", "15m")
 	viper.SetDefault("JWT_EXPIRATION_TIME", "24h")
 	viper.SetDefault("JWT_REFRESH_TIME", "72h")
 	viper.SetDefault("JWT_ISSUER", "auth-service")

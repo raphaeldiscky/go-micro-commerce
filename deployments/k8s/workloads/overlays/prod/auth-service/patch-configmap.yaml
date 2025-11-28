@@ -7,6 +7,5 @@ data:
   ENV: "production"
   LOG_LEVEL: "info"
   JWT_PRIVATE_KEY_PATH: "/app/keys/private.pem"
-  JWT_JWKS_ENDPOINT: "http://auth-service.application.svc.cluster.local:8080/.well-known/jwks.json"
+  JWKS_URL: "http://auth-service.application.svc.cluster.local:8080/.well-known/jwks.json"
   JWT_ISSUER: "go-micro-commerce"
-  JWT_USE_JWKS: "true"
