@@ -12,7 +12,7 @@ labels:
       app.kubernetes.io/managed-by: argocd
 
 components:
-  - ../_common
+  - ../common
 
 patches:
   - path: patch-replicas.yaml
