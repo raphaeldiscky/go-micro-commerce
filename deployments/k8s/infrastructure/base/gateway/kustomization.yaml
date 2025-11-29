@@ -7,8 +7,8 @@ namespace: gateway
 resources:
   # Apollo Router - GraphQL Federation Gateway
   - ../apollo-router
-  # API Gateway - REST API Gateway
-  - ../../../workloads/base/api-gateway
+  # API Gateway - Custom REST API Gateway
+  - ../api-gateway
   # Combined ingress for unified API endpoint
   - ingress.yaml
   - middlewares.yaml
