@@ -1,8 +1,0 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: api-gateway
-spec:
-  replicas: 1 # Reduced to 1 to fit stateless-pool capacity quota, use 3 replicas for HA
-  selector: {}
-  template: {}
