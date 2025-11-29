@@ -1,0 +1,25 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: graphql
+
+components:
+  - ../_common
+
+resources:
+  - ../../../base/graphql
+
+labels:
+  - pairs:
+      environment: production
+      app.kubernetes.io/managed-by: argocd
+
+patches:
+  - path: patch-httproute.yaml
+    target:
+      kind: HTTPRoute
+      name: graphql-route
+
+images:
+  - name: ghcr.io/apollographql/router
+    newTag: v2.7.0

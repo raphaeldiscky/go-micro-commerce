@@ -1,0 +1,20 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: graphql-route
+  labels:
+    app: apollo-router
+spec:
+  parentRefs:
+    - name: shared-gateway
+      namespace: traefik
+  hostnames:
+    - api.yourdomain.com
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /graph
+      backendRefs:
+        - name: apollo-router
+          port: 4000

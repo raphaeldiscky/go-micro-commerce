@@ -12,6 +12,7 @@ resources:
   - argocd-git-credentials-external-secret.yaml
   - ghcr-imagepull-secret.yaml
   - ghcr-imagepull-secret-gateway.yaml
+  - ghcr-imagepull-secret-graphql.yaml
   # PostgreSQL service credentials
   - auth-pg-external-secret.yaml
   - cart-pg-external-secret.yaml
