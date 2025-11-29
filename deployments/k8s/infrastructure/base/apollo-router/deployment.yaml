@@ -42,6 +42,15 @@ spec:
         - name: apollo-router
           image: ghcr.io/apollographql/router:v1.52.0
           imagePullPolicy: IfNotPresent
+          args:
+            - --hot-reload
+            - --supergraph
+            - /config/supergraph-schema.graphql
+          env:
+            - name: APOLLO_ELV2_LICENSE
+              value: "accept"
+            - name: APOLLO_ROUTER_LOG
+              value: "info"
           ports:
             - name: http
               containerPort: 4000
@@ -70,3 +79,19 @@ spec:
               port: 8088
             initialDelaySeconds: 10
             periodSeconds: 5
+          volumeMounts:
+            - name: supergraph-schema
+              mountPath: /config/supergraph-schema.graphql
+              subPath: supergraph-schema.graphql
+              readOnly: true
+            - name: rhai-script
+              mountPath: /config/main.rhai
+              subPath: main.rhai
+              readOnly: true
+      volumes:
+        - name: supergraph-schema
+          configMap:
+            name: apollo-supergraph-schema
+        - name: rhai-script
+          configMap:
+            name: apollo-router-rhai
