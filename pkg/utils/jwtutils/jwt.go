@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -67,6 +68,7 @@ func NewJWTUtils(cfg *config.JWTConfig, logger logger.Logger) JWT {
 
 	// Priority 1: Try JWKS if URL is provided
 	if cfg.JWKSUrl != "" {
+		logger.Info("Initializing JWKS fetcher", "url", cfg.JWKSUrl)
 		jwksFetcher = jwks.NewFetcher(
 			cfg.JWKSUrl,
 			cfg.JWKSCacheTTL,
@@ -76,21 +78,32 @@ func NewJWTUtils(cfg *config.JWTConfig, logger logger.Logger) JWT {
 
 		// Try to get initial key from JWKS
 		key, err := jwksFetcher.GetPublicKey()
-		if err == nil {
+		if err != nil {
+			logger.Warn("Failed to fetch JWKS on startup, will retry", "error", err.Error())
+			// Don't panic - JWKS might be temporarily unavailable
+			// The fetcher will retry on first token validation
+		} else {
 			publicKey = key
 			useJWKS = true
+
+			logger.Info("Successfully loaded public key from JWKS")
 		}
-		// If JWKS fails, fall through to file-based keys
 	}
 
 	// Priority 2: File-based keys (fallback or when JWKS not configured)
 	if !useJWKS && cfg.PublicKeyPath != "" {
+		logger.Info("Loading public key from file", "path", cfg.PublicKeyPath)
+
 		var err error
 
 		publicKey, err = loadPublicKey(cfg.PublicKeyPath)
 		if err != nil {
-			panic("failed to load public key: " + err.Error())
+			panic(
+				fmt.Sprintf("failed to load public key from file '%s': %v", cfg.PublicKeyPath, err),
+			)
 		}
+
+		logger.Info("Successfully loaded public key from file")
 	}
 
 	// Load RSA private key only if path is provided (required for signing)

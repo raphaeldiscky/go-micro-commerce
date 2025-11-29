@@ -23,10 +23,18 @@ type ConnectionConfig struct {
 
 // initConnectionConfig initializes the connection configuration from environment variables.
 func initConnectionConfig() *ConnectionConfig {
-	// Set defaults
+	// Explicitly bind JWKS environment variables
+	if err := viper.BindEnv("CONN_JWKS_URL"); err != nil {
+		panic(err)
+	}
+
+	if err := viper.BindEnv("CONN_PUBLIC_KEY_PATH"); err != nil {
+		panic(err)
+	}
+
+	// Set defaults for non-critical fields
 	viper.SetDefault("CONN_JWKS_CACHE_TTL", "1h")
 	viper.SetDefault("CONN_JWKS_REFRESH_INTERVAL", "15m")
-	viper.SetDefault("CONN_PUBLIC_KEY_PATH", "./keys/public.pem")
 	viper.SetDefault("CONN_DEFAULT_NODE_ADDRESS", "ws://localhost:9098")
 	viper.SetDefault("CONN_MAX_CONNECTIONS", constant.ConnMaxConnections)
 	viper.SetDefault("CONN_CONSUL_ADDRESS", "localhost:8500")
