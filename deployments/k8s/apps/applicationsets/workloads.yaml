@@ -9,10 +9,6 @@ spec:
   generators:
     - list:
         elements:
-          # Gateway namespace workloads
-          - service: api-gateway
-            namespace: gateway
-          # Application namespace workloads
           - service: auth-service
             namespace: application
           - service: product-service
