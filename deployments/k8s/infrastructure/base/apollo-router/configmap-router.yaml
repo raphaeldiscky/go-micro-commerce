@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: apollo-router-config
+  labels:
+    app: apollo-router
+    app.kubernetes.io/component: graphql-gateway
+    app.kubernetes.io/name: apollo-router
+    app.kubernetes.io/part-of: gateway-tier
+data:
+  router.yaml: |
+    # Configure listen addresses for Kubernetes
+    supergraph:
+      listen: 0.0.0.0:4000
+
+    health_check:
+      listen: 0.0.0.0:8088
+      enabled: true
+      path: /health

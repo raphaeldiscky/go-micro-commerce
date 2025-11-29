@@ -46,6 +46,8 @@ spec:
             - --hot-reload
             - --supergraph
             - /config/supergraph-schema.graphql
+            - --config
+            - /config/router.yaml
           env:
             - name: APOLLO_ELV2_LICENSE
               value: "accept"
@@ -88,6 +90,10 @@ spec:
               mountPath: /config/main.rhai
               subPath: main.rhai
               readOnly: true
+            - name: router-config
+              mountPath: /config/router.yaml
+              subPath: router.yaml
+              readOnly: true
       volumes:
         - name: supergraph-schema
           configMap:
@@ -95,3 +101,6 @@ spec:
         - name: rhai-script
           configMap:
             name: apollo-router-rhai
+        - name: router-config
+          configMap:
+            name: apollo-router-config

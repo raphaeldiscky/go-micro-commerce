@@ -18,6 +18,7 @@ configMapGenerator:
 
 resources:
   - configmap-rhai.yaml
+  - configmap-router.yaml
   - deployment.yaml
   - service.yaml
   - serviceaccount.yaml
