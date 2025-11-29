@@ -10,6 +10,13 @@ labels:
   - pairs:
       environment: production
       app.kubernetes.io/managed-by: argocd
-# Production-specific patches can be added here
-# patches:
-#   - path: patch-ingress.yaml
+
+patches:
+  - path: patch-ingress.yaml
+    target:
+      kind: Ingress
+      name: gateway-ingress
+  - path: patch-middlewares.yaml
+    target:
+      kind: Middleware
+      name: api-cors
