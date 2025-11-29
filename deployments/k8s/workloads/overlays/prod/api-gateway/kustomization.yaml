@@ -25,4 +25,4 @@ patches:
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway
-    newTag: 0.1.12
+    newTag: 0.1.13
