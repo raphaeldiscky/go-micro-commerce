@@ -12,12 +12,12 @@ Client (HTTPS)
 api.discky.com
     ↓
 ┌─────────────────────────────────────────────────┐
-│ Traefik Gateway Controller (traefik namespace)  │
-│                                                  │
-│ Gateway: shared-gateway                         │
-│ - HTTPS Listener: *.discky.com:443             │
-│ - HTTP Listener: *.discky.com:80               │
-│ - Allows routes from all namespaces            │
+│ Traefik Gateway Controller (traefik namespace)      │
+│                                                     │
+│ Gateway: shared-gateway                             │
+│ - HTTPS Listener: *.discky.com:443                  │
+│ - HTTP Listener: *.discky.com:80                    │
+│ - Allows routes from all namespaces                 │
 └─────────────────────────────────────────────────┘
     ↓
     ├─── HTTPRoute (gateway namespace) ───► API Gateway
