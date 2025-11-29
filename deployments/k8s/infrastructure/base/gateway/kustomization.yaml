@@ -3,14 +3,13 @@ kind: Kustomization
 
 namespace: gateway
 
-# Gateway tier combines REST API Gateway and GraphQL Apollo Router
+# Gateway tier - REST API Gateway with Gateway API routing
 resources:
-  # Apollo Router - GraphQL Federation Gateway
-  - ../apollo-router
   # API Gateway - Custom REST API Gateway
   - ../api-gateway
-  # Combined ingress for unified API endpoint
-  - ingress.yaml
+  # HTTPRoute for Gateway API routing
+  - httproute.yaml
+  # Traefik middlewares (CORS, security headers)
   - middlewares.yaml
 
 labels:

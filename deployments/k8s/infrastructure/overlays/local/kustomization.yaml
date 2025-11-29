@@ -20,8 +20,11 @@ resources:
   # Monitoring Stack
   - monitoring
 
-  # Apollo GraphQL Router
-  - apollo-router
+  # API Gateway (REST)
+  - api-gateway
+
+  # GraphQL Gateway (Apollo Router)
+  - graphql
 
   # Mailer (MailHog for local dev)
   - mailer

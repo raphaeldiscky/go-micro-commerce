@@ -5,3 +5,5 @@ namespace: traefik
 
 resources:
   - ingress.yaml
+  - gatewayclass.yaml
+  - gateway.yaml

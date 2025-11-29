@@ -15,10 +15,14 @@ labels:
       app.kubernetes.io/managed-by: argocd
 
 patches:
-  - path: patch-ingress.yaml
+  - path: patch-configmap.yaml
     target:
-      kind: Ingress
-      name: gateway-ingress
+      kind: ConfigMap
+      name: api-gateway-config
+  - path: patch-httproute.yaml
+    target:
+      kind: HTTPRoute
+      name: api-gateway-route
   - path: patch-middlewares.yaml
     target:
       kind: Middleware
@@ -27,5 +31,3 @@ patches:
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway
     newTag: 0.1.13
-  - name: ghcr.io/apollographql/router
-    newTag: v2.7.0
