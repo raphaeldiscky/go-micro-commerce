@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+# Common patches applied to all infrastructure services in prod overlay
+patches:
+  - target:
+      kind: Deployment
+    patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: placeholder
+      spec:
+        template:
+          spec:
+            imagePullSecrets:
+              - name: ghcr-secret

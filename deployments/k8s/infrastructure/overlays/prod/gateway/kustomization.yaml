@@ -3,6 +3,9 @@ kind: Kustomization
 
 namespace: gateway
 
+components:
+  - ../_common
+
 resources:
   - ../../../base/gateway
 
