@@ -105,6 +105,8 @@ spec:
           envFrom:
             - configMapRef:
                 name: notification-service-config
+            - secretRef:
+                name: notification-service-secrets
           resources:
             requests:
               cpu: 100m
