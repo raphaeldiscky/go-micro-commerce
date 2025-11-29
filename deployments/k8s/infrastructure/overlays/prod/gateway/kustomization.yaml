@@ -26,6 +26,6 @@ patches:
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/api-gateway
-    newTag: v0.1.13
+    newTag: 0.1.13
   - name: ghcr.io/apollographql/router
     newTag: v2.7.0
