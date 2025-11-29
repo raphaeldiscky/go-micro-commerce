@@ -24,7 +24,16 @@ type JWTConfig struct {
 
 // initJWTConfig initializes the JWT configuration.
 func initJWTConfig() *JWTConfig {
-	viper.SetDefault("JWT_PUBLIC_KEY_PATH", "./keys/public.pem")
+	// Explicitly bind JWKS environment variables
+	if err := viper.BindEnv("JWKS_URL"); err != nil {
+		panic(err)
+	}
+
+	if err := viper.BindEnv("JWT_PUBLIC_KEY_PATH"); err != nil {
+		panic(err)
+	}
+
+	// Only set defaults for non-critical fields
 	viper.SetDefault("JWKS_CACHE_TTL", "1h")
 	viper.SetDefault("JWKS_REFRESH_INTERVAL", "15m")
 	viper.SetDefault("JWT_EXPIRATION_TIME", "24h")
