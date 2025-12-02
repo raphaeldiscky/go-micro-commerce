@@ -47,7 +47,9 @@ spec:
         - CREATE DATABASE notification_db;
         - CREATE DATABASE chat_db;
       postInitApplicationSQL:
-        # Grant privileges to service users (users created via managed.roles)
+        # ============================================
+        # DATABASE LEVEL PRIVILEGES
+        # ============================================
         - GRANT ALL PRIVILEGES ON DATABASE auth_db TO auth_user;
         - ALTER DATABASE auth_db OWNER TO auth_user;
         - GRANT ALL PRIVILEGES ON DATABASE cart_db TO cart_user;
@@ -64,6 +66,99 @@ spec:
         - ALTER DATABASE notification_db OWNER TO notification_user;
         - GRANT ALL PRIVILEGES ON DATABASE chat_db TO chat_user;
         - ALTER DATABASE chat_db OWNER TO chat_user;
+
+        # ============================================
+        # SCHEMA LEVEL PRIVILEGES (PostgreSQL 15+)
+        # Required for migrations to create tables
+        # ============================================
+
+        # Auth Service Schema Permissions
+        - \c auth_db;
+        - GRANT USAGE ON SCHEMA public TO auth_user;
+        - GRANT CREATE ON SCHEMA public TO auth_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO auth_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO auth_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO auth_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO auth_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO auth_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO auth_user;
+
+        # Cart Service Schema Permissions
+        - \c cart_db;
+        - GRANT USAGE ON SCHEMA public TO cart_user;
+        - GRANT CREATE ON SCHEMA public TO cart_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cart_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO cart_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO cart_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO cart_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO cart_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO cart_user;
+
+        # Chat Service Schema Permissions
+        - \c chat_db;
+        - GRANT USAGE ON SCHEMA public TO chat_user;
+        - GRANT CREATE ON SCHEMA public TO chat_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO chat_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO chat_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO chat_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO chat_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO chat_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO chat_user;
+
+        # Fulfillment Service Schema Permissions
+        - \c fulfillment_db;
+        - GRANT USAGE ON SCHEMA public TO fulfillment_user;
+        - GRANT CREATE ON SCHEMA public TO fulfillment_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO fulfillment_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO fulfillment_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO fulfillment_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO fulfillment_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO fulfillment_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO fulfillment_user;
+
+        # Notification Service Schema Permissions
+        - \c notification_db;
+        - GRANT USAGE ON SCHEMA public TO notification_user;
+        - GRANT CREATE ON SCHEMA public TO notification_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO notification_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO notification_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO notification_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO notification_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO notification_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO notification_user;
+
+        # Order Service Schema Permissions
+        - \c order_db;
+        - GRANT USAGE ON SCHEMA public TO order_user;
+        - GRANT CREATE ON SCHEMA public TO order_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO order_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO order_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO order_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO order_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO order_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO order_user;
+
+        # Payment Service Schema Permissions
+        - \c payment_db;
+        - GRANT USAGE ON SCHEMA public TO payment_user;
+        - GRANT CREATE ON SCHEMA public TO payment_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO payment_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO payment_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO payment_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO payment_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO payment_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO payment_user;
+
+        # Product Service Schema Permissions
+        - \c product_db;
+        - GRANT USAGE ON SCHEMA public TO product_user;
+        - GRANT CREATE ON SCHEMA public TO product_user;
+        - GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO product_user;
+        - GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO product_user;
+        - GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public TO product_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON TABLES TO product_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON SEQUENCES TO product_user;
+        - ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL PRIVILEGES ON FUNCTIONS TO product_user;
 
   # Managed roles - users created with passwords from Kubernetes secrets
   # Secrets are synced from Google Secret Manager via ExternalSecrets Operator
