@@ -10,10 +10,10 @@ metadata:
 spec:
   gatewayClassName: traefik
   listeners:
-    - name: https
+    - name: https-api
       protocol: HTTPS
       port: 443
-      hostname: "*.yourdomain.com"
+      hostname: "api.yourdomain.com"
       allowedRoutes:
         namespaces:
           from: All
@@ -21,6 +21,18 @@ spec:
         mode: Terminate
         certificateRefs:
           - name: api-tls-cert
+            namespace: traefik
+    - name: https-dashboard
+      protocol: HTTPS
+      port: 443
+      hostname: "traefik.yourdomain.com"
+      allowedRoutes:
+        namespaces:
+          from: All
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: traefik-dashboard-tls-cert
             namespace: traefik
     - name: http
       protocol: HTTP

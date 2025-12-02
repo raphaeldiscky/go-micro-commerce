@@ -281,11 +281,20 @@ echo
 print_info "Grafana Admin Password"
 create_secret_from_json "grafana-admin-password" "grafana_admin_password"
 
+echo 
+
+
 echo
 
 # ArgoCD
 print_info "ArgoCD Admin Password"
 create_secret_from_json "argocd-admin-password" "argocd_admin_password"
+
+echo
+
+# Traefik Dashboard
+print_info "Traefik Dashboard Authentication"
+create_secret_from_json "traefik-dashboard-password" "traefik_dashboard_password"
 
 echo
 
