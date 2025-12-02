@@ -39,7 +39,7 @@ spec:
         argocd.argoproj.io/manifest-generate-paths: "deployments/k8s/workloads/overlays/prod/{{.service}}"
         notifications.argoproj.io/subscribe.on-sync-succeeded.slack: gitops-notifications
     spec:
-      project: default
+      project: applications
       source:
         repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
         targetRevision: main

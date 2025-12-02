@@ -1,0 +1,84 @@
+# ArgoCD AppProject for Application workloads
+# Manages microservices: auth, product, order, payment, cart, etc.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: applications
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Application workloads (microservices)
+
+  # Source repositories allowed for this project
+  sourceRepos:
+    - "git@github.com:raphaeldiscky/go-micro-commerce.git"
+
+  # Destination clusters and namespaces - restricted to application namespace only
+  destinations:
+    - namespace: application
+      server: https://kubernetes.default.svc
+
+  # No cluster-scoped resources for applications
+  clusterResourceWhitelist: []
+
+  # Namespace-scoped resources that applications can manage
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: apps
+      kind: ReplicaSet
+    - group: batch
+      kind: Job
+    - group: batch
+      kind: CronJob
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: external-secrets.io
+      kind: ExternalSecret
+
+  # Deny certain resources for safety
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+    - group: rbac.authorization.k8s.io
+      kind: Role
+    - group: rbac.authorization.k8s.io
+      kind: RoleBinding
+
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+
+  # Roles within this project
+  roles:
+    - name: applications-admin
+      description: Full access to application workloads
+      policies:
+        - p, proj:applications:applications-admin, applications, *, applications/*, allow
+      groups:
+        - applications-admins
+    - name: applications-viewer
+      description: Read-only access to application workloads
+      policies:
+        - p, proj:applications:applications-viewer, applications, get, applications/*, allow
+      groups:
+        - applications-viewers
