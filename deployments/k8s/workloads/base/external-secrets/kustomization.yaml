@@ -13,6 +13,7 @@ resources:
   - ghcr-imagepull-secret.yaml
   - ghcr-imagepull-secret-gateway.yaml
   - ghcr-imagepull-secret-graphql.yaml
+  - traefik-dashboard-external-secret.yaml
   # PostgreSQL service credentials
   - auth-pg-external-secret.yaml
   - cart-pg-external-secret.yaml

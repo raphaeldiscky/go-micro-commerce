@@ -8,3 +8,7 @@ resources:
   - gatewayclass.yaml
   - gateway.yaml
   - certificate.yaml
+  - dashboard-service.yaml
+  - dashboard-certificate.yaml
+  - dashboard-middleware.yaml
+  - dashboard-httproute.yaml

@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: dashboard-auth
+  namespace: traefik
+  labels:
+    app: traefik
+    app.kubernetes.io/name: traefik-dashboard-auth
+    app.kubernetes.io/component: middleware
+spec:
+  basicAuth:
+    secret: traefik-dashboard-auth
+    realm: "Traefik Dashboard"
+    removeHeader: true
