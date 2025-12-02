@@ -7,3 +7,4 @@ resources:
   - ingress.yaml
   - gatewayclass.yaml
   - gateway.yaml
+  - certificate.yaml

@@ -20,8 +20,8 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: gateway-tls
-            namespace: gateway
+          - name: wildcard-tls-cert
+            namespace: traefik
     - name: http
       protocol: HTTP
       port: 80
