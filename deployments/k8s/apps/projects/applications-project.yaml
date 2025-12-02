@@ -14,9 +14,10 @@ spec:
   sourceRepos:
     - "git@github.com:raphaeldiscky/go-micro-commerce.git"
 
-  # Destination clusters and namespaces - restricted to application namespace only
+  # Destination clusters and namespaces
   destinations:
-    - namespace: application
+    # Allow all namespaces (required for cluster-scoped resources)
+    - namespace: "*"
       server: https://kubernetes.default.svc
 
   # No cluster-scoped resources for applications
