@@ -95,6 +95,7 @@ resource "helm_release" "traefik" {
       additionalArguments = [
         "--providers.kubernetesingress.ingressclass=traefik",
         "--providers.kubernetescrd",
+        "--providers.kubernetesgateway",
       ]
 
       # Security

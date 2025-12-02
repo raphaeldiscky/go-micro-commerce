@@ -92,6 +92,8 @@ providers:
   kubernetesCRD:
     enabled: true
     allowCrossNamespace: true
+  kubernetesGateway:
+    enabled: true
 # TLS options
 tlsOptions:
   default:
