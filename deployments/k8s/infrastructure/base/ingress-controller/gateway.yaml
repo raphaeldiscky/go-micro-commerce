@@ -20,7 +20,7 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          - name: wildcard-tls-cert
+          - name: api-tls-cert
             namespace: traefik
     - name: http
       protocol: HTTP

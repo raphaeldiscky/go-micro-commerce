@@ -1,15 +1,15 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: wildcard-tls-cert
+  name: api-tls-cert
   namespace: traefik
   labels:
     app: traefik
-    app.kubernetes.io/name: wildcard-tls-cert
+    app.kubernetes.io/name: api-tls-cert
     app.kubernetes.io/component: certificate
 spec:
   # Certificate for api.discky.com
-  secretName: wildcard-tls-cert
+  secretName: api-tls-cert
   issuerRef:
     name: letsencrypt-prod
     kind: ClusterIssuer
