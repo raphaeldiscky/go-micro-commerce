@@ -22,7 +22,7 @@ spec:
       annotations:
         argocd.argoproj.io/manifest-generate-paths: "{{.path.path}}"
     spec:
-      project: default
+      project: infrastructure
       source:
         repoURL: git@github.com:raphaeldiscky/go-micro-commerce.git
         targetRevision: main

@@ -1,0 +1,96 @@
+# ArgoCD AppProject for Infrastructure components
+# Manages platform services: databases, message queues, monitoring, ingress
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: infrastructure
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: Infrastructure components (databases, queues, monitoring, ingress)
+
+  # Source repositories allowed for this project
+  sourceRepos:
+    - "git@github.com:raphaeldiscky/go-micro-commerce.git"
+
+  # Destination clusters and namespaces
+  destinations:
+    # Ingress controller namespace
+    - namespace: traefik
+      server: https://kubernetes.default.svc
+    # Monitoring stack namespace
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    # Kafka namespace
+    - namespace: kafka
+      server: https://kubernetes.default.svc
+    # Redis namespace
+    - namespace: redis
+      server: https://kubernetes.default.svc
+    # PostgreSQL namespace
+    - namespace: postgres
+      server: https://kubernetes.default.svc
+    # Gateway namespace
+    - namespace: gateway
+      server: https://kubernetes.default.svc
+    # GraphQL namespace
+    - namespace: graphql
+      server: https://kubernetes.default.svc
+    # Application namespace (for shared infrastructure)
+    - namespace: application
+      server: https://kubernetes.default.svc
+    # ArgoCD namespace (for ApplicationSets)
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+
+  # Cluster-scoped resources that this project can manage
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: gateway.networking.k8s.io
+      kind: GatewayClass
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+    - group: cert-manager.io
+      kind: ClusterIssuer
+    - group: external-secrets.io
+      kind: ClusterSecretStore
+
+  # Namespace-scoped resources that this project can manage
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+
+  # Deny certain resources for safety
+  namespaceResourceBlacklist:
+    - group: ""
+      kind: ResourceQuota
+    - group: ""
+      kind: LimitRange
+
+  # Orphaned resources monitoring
+  orphanedResources:
+    warn: true
+
+  # Sync windows (optional - restrict when syncs can happen)
+  # syncWindows: []
+
+  # Roles within this project
+  roles:
+    - name: infrastructure-admin
+      description: Full access to infrastructure applications
+      policies:
+        - p, proj:infrastructure:infrastructure-admin, applications, *, infrastructure/*, allow
+      groups:
+        - infrastructure-admins

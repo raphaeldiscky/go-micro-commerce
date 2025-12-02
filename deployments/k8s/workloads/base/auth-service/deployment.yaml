@@ -115,6 +115,12 @@ spec:
             periodSeconds: 5
             timeoutSeconds: 3
             failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 10
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false

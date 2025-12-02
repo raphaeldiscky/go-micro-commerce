@@ -35,18 +35,33 @@ variable "subnet_cidr" {
   description = "CIDR range for the primary subnet"
   type        = string
   default     = "10.0.0.0/20"
+
+  validation {
+    condition     = can(cidrhost(var.subnet_cidr, 0))
+    error_message = "subnet_cidr must be a valid CIDR range (e.g., 10.0.0.0/20)"
+  }
 }
 
 variable "pods_cidr" {
   description = "Secondary CIDR range for GKE pods"
   type        = string
   default     = "10.4.0.0/14"
+
+  validation {
+    condition     = can(cidrhost(var.pods_cidr, 0))
+    error_message = "pods_cidr must be a valid CIDR range (e.g., 10.4.0.0/14)"
+  }
 }
 
 variable "services_cidr" {
   description = "Secondary CIDR range for GKE services"
   type        = string
   default     = "10.8.0.0/20"
+
+  validation {
+    condition     = can(cidrhost(var.services_cidr, 0))
+    error_message = "services_cidr must be a valid CIDR range (e.g., 10.8.0.0/20)"
+  }
 }
 
 variable "enable_flow_logs" {
@@ -72,6 +87,11 @@ variable "kubernetes_version" {
   description = "Kubernetes version"
   type        = string
   default     = "1.33"
+
+  validation {
+    condition     = can(regex("^[0-9]+\\.[0-9]+$", var.kubernetes_version))
+    error_message = "kubernetes_version must be in format 'X.Y' (e.g., 1.33)"
+  }
 }
 
 variable "release_channel" {
@@ -609,6 +629,11 @@ variable "domain_name" {
   description = "Domain name managed in Cloudflare"
   type        = string
   default     = "discky.com"
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]*\\.[a-z]{2,}$", var.domain_name))
+    error_message = "domain_name must be a valid domain name (e.g., example.com)"
+  }
 }
 
 variable "api_subdomain" {
@@ -679,4 +704,9 @@ variable "master_ipv4_cidr_block" {
   description = "CIDR block for the Kubernetes master (must be /28, cannot overlap with VPC ranges)"
   type        = string
   default     = "10.13.0.0/28"
+
+  validation {
+    condition     = can(cidrhost(var.master_ipv4_cidr_block, 0)) && can(regex("/28$", var.master_ipv4_cidr_block))
+    error_message = "master_ipv4_cidr_block must be a valid /28 CIDR range (e.g., 10.13.0.0/28)"
+  }
 }

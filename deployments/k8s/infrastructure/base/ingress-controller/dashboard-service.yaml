@@ -7,6 +7,9 @@ metadata:
     app: traefik
     app.kubernetes.io/name: traefik-dashboard
     app.kubernetes.io/component: dashboard
+  annotations:
+    # Traefik pods deployed via Helm/Terraform, not visible to kube-linter static analysis
+    ignore-check.kube-linter.io/dangling-service: "Traefik pods deployed via Helm"
 spec:
   type: ClusterIP
   ports:
@@ -16,4 +19,4 @@ spec:
       protocol: TCP
   selector:
     app.kubernetes.io/name: traefik
-    app.kubernetes.io/instance: traefik-traefik
+    app.kubernetes.io/instance: traefik

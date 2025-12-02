@@ -420,8 +420,14 @@ resource "kubectl_manifest" "bootstrap_appset" {
           list = {
             elements = [
               {
-                name = "applicationsets"
-                path = "${var.git_repo_path}/apps/applicationsets"
+                name      = "argocd-projects"
+                path      = "${var.git_repo_path}/apps/projects"
+                syncWave  = "-1"
+              },
+              {
+                name      = "applicationsets"
+                path      = "${var.git_repo_path}/apps/applicationsets"
+                syncWave  = "0"
               }
             ]
           }
@@ -433,6 +439,9 @@ resource "kubectl_manifest" "bootstrap_appset" {
           labels = {
             "app.kubernetes.io/managed-by" = "argocd"
             "app.kubernetes.io/component"  = "applicationset"
+          }
+          annotations = {
+            "argocd.argoproj.io/sync-wave" = "{{.syncWave}}"
           }
         }
         spec = {
