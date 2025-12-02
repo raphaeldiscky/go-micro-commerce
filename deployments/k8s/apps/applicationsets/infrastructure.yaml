@@ -12,6 +12,9 @@ spec:
         revision: main
         directories:
           - path: deployments/k8s/infrastructure/overlays/prod/*
+          # Exclude Kustomize Components (not standalone deployable apps)
+          - path: deployments/k8s/infrastructure/overlays/prod/common
+            exclude: true
   template:
     metadata:
       name: "infra-{{.path.basename}}"
