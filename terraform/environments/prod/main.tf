@@ -233,6 +233,8 @@ module "cloudflare_dns" {
   argocd_subdomain    = var.argocd_subdomain
   enable_grafana_dns  = var.enable_grafana_dns
   grafana_subdomain   = var.grafana_subdomain
+  enable_traefik_dns  = var.enable_traefik_dns
+  traefik_subdomain   = var.traefik_subdomain
   traefik_ip          = module.traefik.load_balancer_ip
 
   depends_on = [module.traefik]

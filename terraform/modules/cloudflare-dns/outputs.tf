@@ -65,6 +65,21 @@ output "grafana_url" {
   value       = var.enable_grafana_dns ? "https://${cloudflare_dns_record.grafana[0].name}" : null
 }
 
+output "traefik_record_id" {
+  description = "The ID of the Traefik DNS record (if enabled)"
+  value       = var.enable_traefik_dns ? cloudflare_dns_record.traefik[0].id : null
+}
+
+output "traefik_record_hostname" {
+  description = "The full hostname of Traefik (if enabled)"
+  value       = var.enable_traefik_dns ? cloudflare_dns_record.traefik[0].name : null
+}
+
+output "traefik_url" {
+  description = "The full HTTPS URL for Traefik dashboard (if enabled)"
+  value       = var.enable_traefik_dns ? "https://${cloudflare_dns_record.traefik[0].name}" : null
+}
+
 output "dns_records" {
   description = "Summary of all created DNS records"
   value = {
@@ -93,6 +108,13 @@ output "dns_records" {
       content  = cloudflare_dns_record.grafana[0].content
       proxied  = cloudflare_dns_record.grafana[0].proxied
       url      = "https://${cloudflare_dns_record.grafana[0].name}"
+    } : null
+    traefik = var.enable_traefik_dns ? {
+      hostname = cloudflare_dns_record.traefik[0].name
+      type     = cloudflare_dns_record.traefik[0].type
+      content  = cloudflare_dns_record.traefik[0].content
+      proxied  = cloudflare_dns_record.traefik[0].proxied
+      url      = "https://${cloudflare_dns_record.traefik[0].name}"
     } : null
   }
 }

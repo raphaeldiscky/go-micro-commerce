@@ -647,6 +647,18 @@ variable "grafana_subdomain" {
   default     = "grafana.api"
 }
 
+variable "enable_traefik_dns" {
+  description = "Enable DNS record for Traefik dashboard UI"
+  type        = bool
+  default     = true
+}
+
+variable "traefik_subdomain" {
+  description = "Full subdomain for Traefik dashboard (e.g., traefik)"
+  type        = string
+  default     = "traefik"
+}
+
 # ============================================================================
 # Private Cluster Configuration
 # ============================================================================

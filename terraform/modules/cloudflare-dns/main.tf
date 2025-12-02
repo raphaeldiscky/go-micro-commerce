@@ -55,3 +55,17 @@ resource "cloudflare_dns_record" "grafana" {
   proxied = false  # Gray cloud - direct to origin (no CDN)
   comment = "Grafana monitoring UI in GKE cluster"
 }
+
+# Traefik Dashboard A record (DNS only, no proxy)
+# Points directly to Traefik LoadBalancer in GKE
+resource "cloudflare_dns_record" "traefik" {
+  count = var.enable_traefik_dns ? 1 : 0
+
+  zone_id = var.cloudflare_zone_id
+  name    = var.traefik_subdomain
+  type    = "A"
+  content = var.traefik_ip
+  ttl     = 300  # 5 minutes TTL
+  proxied = false  # Gray cloud - direct to origin (no CDN)
+  comment = "Traefik dashboard UI in GKE cluster"
+}

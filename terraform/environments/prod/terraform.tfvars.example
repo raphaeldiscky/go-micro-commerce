@@ -180,3 +180,5 @@ enable_argocd_dns   = true                          # Create DNS record for Argo
 argocd_subdomain    = "argocd.api"                  # Results in: argocd.api.your_domain.com
 enable_grafana_dns  = true                          # Create DNS record for Grafana
 grafana_subdomain   = "grafana.api"                 # Results in: grafana.api.your_domain.com
+enable_traefik_dns  = true                          # Create DNS record for Traefik dashboard
+traefik_subdomain   = "traefik"                     # Results in: traefik.your_domain.com
