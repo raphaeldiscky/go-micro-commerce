@@ -6,3 +6,4 @@ data:
   APP_ENVIRONMENT: "production"
   ENV: "production"
   LOG_LEVEL: "info"
+  JWKS_URL: "http://auth-service.application.svc.cluster.local:8081/.well-known/jwks.json"
