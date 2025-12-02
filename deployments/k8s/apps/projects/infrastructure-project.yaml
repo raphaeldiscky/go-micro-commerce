@@ -15,33 +15,10 @@ spec:
     - "git@github.com:raphaeldiscky/go-micro-commerce.git"
 
   # Destination clusters and namespaces
+  # Wildcard allows all namespaces including cluster-scoped resources
+  # Security is enforced via clusterResourceWhitelist and namespaceResourceWhitelist
   destinations:
-    # Ingress controller namespace
-    - namespace: traefik
-      server: https://kubernetes.default.svc
-    # Monitoring stack namespace
-    - namespace: monitoring
-      server: https://kubernetes.default.svc
-    # Kafka namespace
-    - namespace: kafka
-      server: https://kubernetes.default.svc
-    # Redis namespace
-    - namespace: redis
-      server: https://kubernetes.default.svc
-    # PostgreSQL namespace
-    - namespace: postgres
-      server: https://kubernetes.default.svc
-    # Gateway namespace
-    - namespace: gateway
-      server: https://kubernetes.default.svc
-    # GraphQL namespace
-    - namespace: graphql
-      server: https://kubernetes.default.svc
-    # Application namespace (for shared infrastructure)
-    - namespace: application
-      server: https://kubernetes.default.svc
-    # ArgoCD namespace (for ApplicationSets)
-    - namespace: argocd
+    - namespace: "*"
       server: https://kubernetes.default.svc
 
   # Cluster-scoped resources that this project can manage
