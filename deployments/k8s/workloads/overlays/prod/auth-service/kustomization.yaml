@@ -29,6 +29,6 @@ patches:
 
 images:
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service
-    newTag: 0.1.13
+    newTag: 0.1.14
   - name: ghcr.io/raphaeldiscky/go-micro-commerce/auth-service-migrations
-    newTag: 0.1.13
+    newTag: 0.1.14
