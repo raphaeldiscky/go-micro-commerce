@@ -10,9 +10,7 @@ import (
 
 // SetupCheckoutSessionRoutes sets up all checkout session routes.
 func SetupCheckoutSessionRoutes(e *echo.Echo, h *handler.CheckoutSessionHandler) {
-	v1 := e.Group("/v1/checkout")
-
-	protected := v1.Group("")
+	protected := e.Group("/checkout")
 	protected.Use(middleware.AuthMiddleware)
 	protected.POST("", h.CreateCheckoutSession)
 	protected.GET("/:sessionID", h.GetCheckoutSessionByID)

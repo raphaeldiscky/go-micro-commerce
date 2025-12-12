@@ -10,9 +10,7 @@ import (
 
 // SetupOrderRoutes sets up all order routes.
 func SetupOrderRoutes(e *echo.Echo, h *handler.OrderHandler) {
-	v1 := e.Group("/v1")
-
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 	protected.POST("/place-order", h.PlaceOrder)
 	protected.POST("/saga", h.CreateOrderWithSaga)

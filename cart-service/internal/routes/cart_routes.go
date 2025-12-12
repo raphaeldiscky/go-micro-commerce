@@ -10,9 +10,7 @@ import (
 
 // SetupCartRoutes sets up all cart routes.
 func SetupCartRoutes(e *echo.Echo, h *handler.CartHandler) {
-	v1 := e.Group("/v1")
-
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
 	// User cart operations

@@ -10,9 +10,7 @@ import (
 
 // SetupProductRoutes sets up all product routes.
 func SetupProductRoutes(e *echo.Echo, h *handler.ProductHandler) {
-	v1 := e.Group("/v1")
-
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 	protected.GET("", h.ListProducts)
 	protected.GET("/:productID", h.GetProduct)

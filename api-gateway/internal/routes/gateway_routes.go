@@ -10,36 +10,39 @@ import (
 )
 
 // SetupGatewayRoutes sets up the API gateway routes.
+// API versioning is centrally managed here with /v1 prefix.
 func SetupGatewayRoutes(
 	e *echo.Echo,
 	tel *telemetry.Telemetry,
 	gw *gateway.Gateway,
 	h *middleware.AuthMiddleware,
 ) {
-	_ = tel // Unused parameter for now, kept for consistency
-	// Debug endpoint to check service discovery
+	_ = tel
+
+	// Debug endpoint to check service discovery (no versioning)
 	e.GET("/debug/services", gw.DebugServices())
-	// Public routes
-	public := e.Group("")
-	public.GET("/auths/health", gw.ProxyToService("auth-service", "/health"))
-	public.GET("/products/health", gw.ProxyToService("product-service", "/health"))
-	public.GET("/orders/health", gw.ProxyToService("order-service", "/health"))
-	public.GET("/notifications/health", gw.ProxyToService("notification-service", "/health"))
-	public.GET("/fulfillments/health", gw.ProxyToService("fulfillment-service", "/health"))
-	public.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
-	public.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
-	public.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
-	public.GET("/carts/health", gw.ProxyToService("cart-service", "/health"))
-	public.GET(
+
+	// Health check routes (no versioning - infrastructure endpoints)
+	health := e.Group("")
+	health.GET("/auth/health", gw.ProxyToService("auth-service", "/health"))
+	health.GET("/products/health", gw.ProxyToService("product-service", "/health"))
+	health.GET("/orders/health", gw.ProxyToService("order-service", "/health"))
+	health.GET("/notifications/health", gw.ProxyToService("notification-service", "/health"))
+	health.GET("/fulfillments/health", gw.ProxyToService("fulfillment-service", "/health"))
+	health.GET("/payments/health", gw.ProxyToService("payment-service", "/health"))
+	health.GET("/searchs/health", gw.ProxyToService("search-service", "/health"))
+	health.GET("/chats/health", gw.ProxyToService("chat-service", "/health"))
+	health.GET("/carts/health", gw.ProxyToService("cart-service", "/health"))
+	health.GET(
 		"/chats/ws/health",
 		gw.ProxyToService("chat-service-ws", "/ws/health"),
 	) // use native websocket, not GraphQL subscriptions
-	public.GET(
+	health.GET(
 		"/notifications/sse/health",
 		gw.ProxyToService("notification-service-sse", "/sse/health"),
 	)
 
-	// GraphQL Federation Gateway (with optional auth - validates JWT if present)
+	// GraphQL Federation Gateway (no versioning - GraphQL has its own schema versioning)
 	// This allows both authenticated and unauthenticated queries to work
 	optionalAuth := e.Group("")
 	optionalAuth.Use(h.OptionalAuthorization())
@@ -66,31 +69,41 @@ func SetupGatewayRoutes(
 		gw.ProxySSE("notification-service-sse", "/graph/subscriptions/sse"),
 	)
 
-	public.POST("/auth/v1/login", gw.ProxyToService("auth-service", "/v1/login"))
-	public.POST("/auth/v1/register", gw.ProxyToService("auth-service", "/v1/register"))
-	public.POST("/auth/v1/refresh-token", gw.ProxyToService("auth-service", "/v1/refresh-token"))
-	public.POST("/auth/v1/logout", gw.ProxyToService("auth-service", "/v1/logout"))
-	public.POST("/auth/v1/verify", gw.ProxyToService("auth-service", "/v1/verify"))
-	public.POST(
-		"/auth/v1/resend-verification",
-		gw.ProxyToService("auth-service", "/v1/resend-verification"),
-	)
+	// gRPC/ConnectRPC routes (no versioning - uses protobuf service naming)
+	grpcProtected := e.Group("")
+	grpcProtected.Use(h.Authorization())
+	grpcProtected.Any("/product.v1.ProductService/*", gw.ProxyToConnectRPC("product-service-grpc"))
 
-	// Protected routes
-	protected := e.Group("")
-	protected.Use(h.Authorization())
-	protected.Any("/products/*", gw.ProxyToService("product-service", ""))
-	protected.Any("/product.v1.ProductService/*", gw.ProxyToConnectRPC("product-service-grpc"))
-	protected.Any("/auth/*", gw.ProxyToService("auth-service", ""))
-	protected.Any("/orders/*", gw.ProxyToService("order-service", ""))
-	protected.GET(
+	// SSE debug routes (no versioning - protocol-level endpoint)
+	sseProtected := e.Group("")
+	sseProtected.Use(h.Authorization())
+	sseProtected.GET(
 		"/notifications/sse/debug/subscriptions",
 		gw.ProxyToService("notification-service-sse", "/sse/debug/subscriptions"),
 	)
-	protected.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
-	protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
-	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
-	protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
-	protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
-	protected.Any("/carts/*", gw.ProxyToService("cart-service", ""))
+
+	// Public auth routes (no authentication required)
+	v1Public := e.Group("/v1")
+	v1Public.POST("/auth/login", gw.ProxyToService("auth-service", "/login"))
+	v1Public.POST("/auth/register", gw.ProxyToService("auth-service", "/register"))
+	v1Public.POST("/auth/refresh-token", gw.ProxyToService("auth-service", "/refresh-token"))
+	v1Public.POST("/auth/logout", gw.ProxyToService("auth-service", "/logout"))
+	v1Public.POST("/auth/verify", gw.ProxyToService("auth-service", "/verify"))
+	v1Public.POST(
+		"/auth/resend-verification",
+		gw.ProxyToService("auth-service", "/resend-verification"),
+	)
+
+	// Protected API v1 routes (authentication required)
+	v1Protected := e.Group("/v1")
+	v1Protected.Use(h.Authorization())
+	v1Protected.Any("/products/*", gw.ProxyToService("product-service", ""))
+	v1Protected.Any("/auth/*", gw.ProxyToService("auth-service", ""))
+	v1Protected.Any("/orders/*", gw.ProxyToService("order-service", ""))
+	v1Protected.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
+	v1Protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
+	v1Protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
+	v1Protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
+	v1Protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
+	v1Protected.Any("/carts/*", gw.ProxyToService("cart-service", ""))
 }
