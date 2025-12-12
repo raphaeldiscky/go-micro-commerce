@@ -1,6 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/payment-service
 
-go 1.25.3
+go 1.25.5
 
 require (
 	connectrpc.com/connect v1.19.1
