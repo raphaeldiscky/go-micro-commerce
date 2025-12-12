@@ -26,7 +26,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 		Quantity: 20,
 	}
 
-	resp, err := s.makeRequest("POST", "/v1", createReq)
+	resp, err := s.makeRequest("POST", "", createReq)
 	s.Require().NoError(err)
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
@@ -104,7 +104,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 		Quantity: 20,
 	}
 
-	resp, err := s.makeRequest("POST", "/v1", createReq)
+	resp, err := s.makeRequest("POST", "", createReq)
 	s.Require().NoError(err)
 
 	defer func() {

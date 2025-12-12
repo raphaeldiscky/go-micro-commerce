@@ -26,7 +26,7 @@ func (s *ProductListTestSuite) TestGetProducts() {
 	}
 
 	for _, product := range products {
-		resp, err := s.makeRequest("POST", "/v1", product)
+		resp, err := s.makeRequest("POST", "", product)
 		s.Require().NoError(err)
 		s.Equal(http.StatusCreated, resp.StatusCode)
 
@@ -36,7 +36,7 @@ func (s *ProductListTestSuite) TestGetProducts() {
 	}
 
 	// Test getting all products with default pagination
-	resp, err := s.makeRequest("GET", "/v1", nil)
+	resp, err := s.makeRequest("GET", "", nil)
 	s.Require().NoError(err)
 
 	defer func() {
@@ -65,7 +65,7 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 			Price:    decimal.NewFromFloat(float64(i * 10)),
 			Quantity: int64(i * 5),
 		}
-		resp, err := s.makeRequest("POST", "/v1", product)
+		resp, err := s.makeRequest("POST", "", product)
 		s.Require().NoError(err)
 		s.Equal(http.StatusCreated, resp.StatusCode)
 
@@ -75,7 +75,7 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 	}
 
 	// First page - get first 2 items
-	resp, err := s.makeRequest("GET", "/v1?limit=2", nil)
+	resp, err := s.makeRequest("GET", "?limit=2", nil)
 	s.Require().NoError(err)
 
 	var firstPage dto.WebResponse[[]productDto.ProductResponse, dto.CursorPagination]
@@ -96,7 +96,7 @@ func (s *ProductListTestSuite) TestGetProductsWithPagination() {
 
 	// Second page - use cursor from first page
 	nextCursor := firstPage.Pagination.NextCursor
-	resp2, err := s.makeRequest("GET", fmt.Sprintf("/v1?limit=2&next_cursor=%s", nextCursor), nil)
+	resp2, err := s.makeRequest("GET", fmt.Sprintf("?limit=2&next_cursor=%s", nextCursor), nil)
 	s.Require().NoError(err)
 
 	defer func() {

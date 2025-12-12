@@ -15,7 +15,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Need full history to find previous tags
+          fetch-depth: 0 # Need full history to find previous tags
 
       - name: Get previous release tag for comparison
         id: prev_tag
@@ -160,7 +160,7 @@ jobs:
         if: matrix.type == 'go'
         uses: actions/setup-go@v5
         with:
-          go-version: 1.25.3
+          go-version: 1.25.5
       - name: Cache Go modules
         if: matrix.type == 'go'
         uses: actions/cache@v4

@@ -26,7 +26,7 @@ func (s *ProductGetTestSuite) TestGetProduct() {
 		Quantity: 50,
 	}
 
-	resp, err := s.makeRequest("POST", "/v1", createReq)
+	resp, err := s.makeRequest("POST", "", createReq)
 	s.Require().NoError(err)
 
 	defer func() {

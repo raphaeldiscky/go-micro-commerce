@@ -25,7 +25,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 		Quantity: 100,
 	}
 
-	resp, err := s.makeRequest("POST", "/v1", createReq)
+	resp, err := s.makeRequest("POST", "", createReq)
 	s.Require().NoError(err)
 
 	defer func() {
