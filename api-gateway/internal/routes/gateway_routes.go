@@ -10,7 +10,6 @@ import (
 )
 
 // SetupGatewayRoutes sets up the API gateway routes.
-// API versioning is centrally managed here with /v1 prefix.
 func SetupGatewayRoutes(
 	e *echo.Echo,
 	tel *telemetry.Telemetry,
@@ -83,27 +82,27 @@ func SetupGatewayRoutes(
 	)
 
 	// Public auth routes (no authentication required)
-	v1Public := e.Group("/v1")
-	v1Public.POST("/auth/login", gw.ProxyToService("auth-service", "/login"))
-	v1Public.POST("/auth/register", gw.ProxyToService("auth-service", "/register"))
-	v1Public.POST("/auth/refresh-token", gw.ProxyToService("auth-service", "/refresh-token"))
-	v1Public.POST("/auth/logout", gw.ProxyToService("auth-service", "/logout"))
-	v1Public.POST("/auth/verify", gw.ProxyToService("auth-service", "/verify"))
-	v1Public.POST(
+	public := e.Group("")
+	public.POST("/auth/login", gw.ProxyToService("auth-service", "/login"))
+	public.POST("/auth/register", gw.ProxyToService("auth-service", "/register"))
+	public.POST("/auth/refresh-token", gw.ProxyToService("auth-service", "/refresh-token"))
+	public.POST("/auth/logout", gw.ProxyToService("auth-service", "/logout"))
+	public.POST("/auth/verify", gw.ProxyToService("auth-service", "/verify"))
+	public.POST(
 		"/auth/resend-verification",
 		gw.ProxyToService("auth-service", "/resend-verification"),
 	)
 
-	// Protected API v1 routes (authentication required)
-	v1Protected := e.Group("/v1")
-	v1Protected.Use(h.Authorization())
-	v1Protected.Any("/products/*", gw.ProxyToService("product-service", ""))
-	v1Protected.Any("/auth/*", gw.ProxyToService("auth-service", ""))
-	v1Protected.Any("/orders/*", gw.ProxyToService("order-service", ""))
-	v1Protected.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
-	v1Protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
-	v1Protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
-	v1Protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
-	v1Protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
-	v1Protected.Any("/carts/*", gw.ProxyToService("cart-service", ""))
+	// Protected API routes (authentication required)
+	protected := e.Group("")
+	protected.Use(h.Authorization())
+	protected.Any("/products/*", gw.ProxyToService("product-service", ""))
+	protected.Any("/auth/*", gw.ProxyToService("auth-service", ""))
+	protected.Any("/orders/*", gw.ProxyToService("order-service", ""))
+	protected.Any("/notifications/*", gw.ProxyToService("notification-service", ""))
+	protected.Any("/fulfillments/*", gw.ProxyToService("fulfillment-service", ""))
+	protected.Any("/payments/*", gw.ProxyToService("payment-service", ""))
+	protected.Any("/searchs/*", gw.ProxyToService("search-service", ""))
+	protected.Any("/chats/*", gw.ProxyToService("chat-service", ""))
+	protected.Any("/carts/*", gw.ProxyToService("cart-service", ""))
 }
