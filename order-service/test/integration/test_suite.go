@@ -56,7 +56,7 @@ func (s *TestSuite) SetupSuite() {
 
 	// Setup simple HTTP server with basic endpoints for testing
 	mux := http.NewServeMux()
-	mux.HandleFunc("/v1/saga", s.mockSagaEndpoint)
+	mux.HandleFunc("/saga", s.mockSagaEndpoint)
 	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 

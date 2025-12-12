@@ -42,7 +42,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 	productID := createResponse.Data.ID
 
 	// --- Read ---
-	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", productID), nil)
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/%s", productID), nil)
 	s.Require().NoError(err)
 
 	defer func() {
@@ -68,7 +68,7 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 		Quantity: 150,
 	}
 
-	resp, err = s.makeRequest("PUT", fmt.Sprintf("/v1/%s", productID), updateReq)
+	resp, err = s.makeRequest("PUT", fmt.Sprintf("/%s", productID), updateReq)
 	s.Require().NoError(err)
 
 	defer func() {
@@ -87,12 +87,12 @@ func (s *ProductWorkflowTestSuite) TestCRUDWorkflow() {
 	s.Equal(int64(150), updateResponse.Data.Quantity)
 
 	// --- Delete ---
-	resp, err = s.makeRequest("DELETE", fmt.Sprintf("/v1/%s", productID), nil)
+	resp, err = s.makeRequest("DELETE", fmt.Sprintf("/%s", productID), nil)
 	s.Require().NoError(err)
 	s.Equal(http.StatusOK, resp.StatusCode)
 
 	// --- Confirm Deletion ---
-	resp, err = s.makeRequest("GET", fmt.Sprintf("/v1/%s", productID), nil)
+	resp, err = s.makeRequest("GET", fmt.Sprintf("/%s", productID), nil)
 	s.Require().NoError(err)
 	s.Equal(http.StatusNotFound, resp.StatusCode)
 
