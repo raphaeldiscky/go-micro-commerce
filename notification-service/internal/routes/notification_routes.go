@@ -13,24 +13,23 @@ func SetupNotificationRoutes(
 	e *echo.Echo,
 	notificationHandler *handler.NotificationHandler,
 ) {
-	v1 := e.Group("/v1")
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
-	// GET /v1 - List notifications with cursor pagination
+	// GET / - List notifications with cursor pagination
 	protected.GET("", notificationHandler.ListNotifications)
-	// GET /v1/unread - List unread notifications with cursor pagination
+	// GET /unread - List unread notifications with cursor pagination
 	protected.GET("/unread", notificationHandler.ListUnreadNotifications)
-	// GET /v1/unread/count - Get unread count
+	// GET /unread/count - Get unread count
 	protected.GET("/unread/count", notificationHandler.GetUnreadCount)
-	// PUT /v1/read-all - Mark all as read
+	// PUT /read-all - Mark all as read
 	protected.PUT("/read-all", notificationHandler.MarkAllAsRead)
-	// GET /v1/:notificationID - Get single notification
+	// GET /:notificationID - Get single notification
 	protected.GET("/:notificationID", notificationHandler.GetNotification)
-	// PUT /v1/:notificationID/read - Mark as read
+	// PUT /:notificationID/read - Mark as read
 	protected.PUT("/:notificationID/read", notificationHandler.MarkAsRead)
 
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)
-	// POST /v1 - Create system notification
+	// POST / - Create system notification
 	admin.POST("", notificationHandler.CreateSystemNotification)
 }

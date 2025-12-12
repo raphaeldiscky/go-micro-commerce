@@ -26,7 +26,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 		Quantity: 20,
 	}
 
-	resp, err := s.makeRequest("POST", "/v1", createReq)
+	resp, err := s.makeRequest("POST", "", createReq)
 	s.Require().NoError(err)
 
 	s.Equal(http.StatusCreated, resp.StatusCode)
@@ -51,7 +51,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProduct() {
 
 	resp, err = s.makeRequest(
 		"PUT",
-		fmt.Sprintf("/v1/%s", createResponse.Data.ID),
+		fmt.Sprintf("/%s", createResponse.Data.ID),
 		updateReq,
 	)
 	s.Require().NoError(err)
@@ -85,7 +85,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProductNotFound() {
 
 	resp, err := s.makeRequest(
 		"PUT",
-		fmt.Sprintf("/v1/%s", nonExistentID),
+		fmt.Sprintf("/%s", nonExistentID),
 		updateReq,
 	)
 	s.Require().NoError(err)
@@ -104,7 +104,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 		Quantity: 20,
 	}
 
-	resp, err := s.makeRequest("POST", "/v1", createReq)
+	resp, err := s.makeRequest("POST", "", createReq)
 	s.Require().NoError(err)
 
 	defer func() {
@@ -152,7 +152,7 @@ func (s *ProductUpdateTestSuite) TestUpdateProductValidation() {
 		s.Run(tc.name, func() {
 			resp, err = s.makeRequest(
 				"PUT",
-				fmt.Sprintf("/v1/%s", createResponse.Data.ID),
+				fmt.Sprintf("/%s", createResponse.Data.ID),
 				tc.request,
 			)
 			s.Require().NoError(err)

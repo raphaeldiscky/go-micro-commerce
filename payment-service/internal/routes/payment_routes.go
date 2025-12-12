@@ -10,9 +10,7 @@ import (
 
 // SetupPaymentRoutes sets up all payment routes.
 func SetupPaymentRoutes(e *echo.Echo, h *handler.PaymentHandler) {
-	v1 := e.Group("/v1")
-
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
 	// Process a payment

@@ -9,9 +9,7 @@ import (
 
 // SetupFulfillmentRoutes sets up all fulfillment routes.
 func SetupFulfillmentRoutes(e *echo.Echo, h *handler.FulfillmentHandler) {
-	v1 := e.Group("/v1")
-
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
 	protected.POST("/shipping-rates", h.CalculateShippingRates)

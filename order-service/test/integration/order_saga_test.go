@@ -34,7 +34,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSaga() {
 	}
 
 	// Make request to saga endpoint
-	resp, err := s.makeRequest("POST", "/v1/saga", createReq)
+	resp, err := s.makeRequest("POST", "/saga", createReq)
 	s.Require().NoError(err)
 
 	defer func() {
@@ -66,7 +66,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaInvalidRequest() {
 	}
 
 	// Make request to saga endpoint
-	resp, err := s.makeRequest("POST", "/v1/saga", createReq)
+	resp, err := s.makeRequest("POST", "/saga", createReq)
 	s.Require().NoError(err)
 
 	defer func() {
@@ -92,7 +92,7 @@ func (s *OrderSagaTestSuite) TestCreateOrderWithSagaAuthentication() {
 	}
 
 	// Make request without authentication headers
-	resp, err := s.makeRequestWithoutAuth("POST", "/v1/saga", createReq)
+	resp, err := s.makeRequestWithoutAuth("POST", "/saga", createReq)
 	s.Require().NoError(err)
 
 	defer func() {

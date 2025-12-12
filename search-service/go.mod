@@ -1,6 +1,6 @@
 module github.com/raphaeldiscky/go-micro-commerce/search-service
 
-go 1.25.3
+go 1.25.5
 
 require (
 	github.com/bytedance/sonic v1.14.2

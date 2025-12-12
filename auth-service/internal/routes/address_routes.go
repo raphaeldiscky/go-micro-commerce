@@ -11,11 +11,8 @@ import (
 // SetupAddressRoutes sets up all address routes.
 // All routes are protected and require authentication.
 func SetupAddressRoutes(e *echo.Echo, h *handler.AddressHandler) {
-	// API versioning
-	v1 := e.Group("/v1")
-
 	// Address routes (all protected - user must be authenticated)
-	protected := v1.Group("/users/addresses")
+	protected := e.Group("/users/addresses")
 	protected.Use(middleware.AuthMiddleware)
 
 	// Create new address

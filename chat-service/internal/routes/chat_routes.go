@@ -13,8 +13,7 @@ func SetupChatRoutes(
 	h *handler.ChatHandler,
 	connHandler *handler.ConnectionHandler,
 ) {
-	v1 := e.Group("/v1")
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 
 	// Connection management routes
@@ -30,7 +29,7 @@ func SetupChatRoutes(
 	protected.GET("/:conversationID/participants", h.GetParticipants)
 	protected.GET("/users/online", h.GetOnlineUsers)
 
-	// NOTE: The following operations are handled via WebSocket messages on /v1/ws:
+	// NOTE: The following operations are handled via WebSocket messages on /ws:
 	// - Send Message -> WebSocket message type "chat"
 	// - Update Presence -> WebSocket message type "presence"
 	// - Typing Indicator -> WebSocket message type "typing"

@@ -13,11 +13,8 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler, jwksHandler *handler.
 	// JWKS endpoint (must be at root path for standard compliance)
 	e.GET("/.well-known/jwks.json", jwksHandler.GetJWKS)
 
-	// API versioning
-	v1 := e.Group("/v1")
-
 	// Public routes (no authentication required)
-	public := v1.Group("")
+	public := e.Group("")
 	public.POST("/register", h.Register)
 	public.POST("/login", h.Login)
 	public.POST("/refresh-token", h.RefreshToken)
@@ -26,7 +23,7 @@ func SetupAuthRoutes(e *echo.Echo, h *handler.AuthHandler, jwksHandler *handler.
 	public.POST("/resend-verification", h.ResendVerification)
 
 	// User routes (protected)
-	protected := v1.Group("/users")
+	protected := e.Group("/users")
 	protected.Use(middleware.AuthMiddleware)
 	protected.GET("/whoami", h.GetLoggedInUser)
 	protected.PUT("", h.UpdateLoggedInUser)

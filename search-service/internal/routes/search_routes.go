@@ -9,9 +9,7 @@ import (
 
 // SetupSearchRoutes sets up search-related routes.
 func SetupSearchRoutes(e *echo.Echo, searchHandler *handler.SearchHandler) {
-	v1 := e.Group("/v1")
-
-	public := v1.Group("")
+	public := e.Group("")
 	// Product search and management
 	public.GET("/products", searchHandler.SearchProducts)
 	public.GET("/product/:id", searchHandler.GetProduct)
@@ -20,7 +18,7 @@ func SetupSearchRoutes(e *echo.Echo, searchHandler *handler.SearchHandler) {
 	public.GET("/autocomplete", searchHandler.AutoComplete)
 	public.GET("/suggestions", searchHandler.GetSuggestions)
 
-	protected := v1.Group("")
+	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)
