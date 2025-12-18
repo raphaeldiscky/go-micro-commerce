@@ -7,5 +7,6 @@ checks:
     - minimum-three-replicas # Minimum number of replicas is managed at the infrastructure level
     - hpa-minimum-three-replicas # Minimum number of replicas is managed at the infrastructure level
     - read-secret-from-env-var # Using ESO with secretKeyRef is acceptable
+    - env-value-from # Secrets managed separately via ExternalSecrets Operator
 
 customChecks: []
