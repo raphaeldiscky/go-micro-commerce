@@ -10,10 +10,10 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/constant"
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/mq"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/routes"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/service"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/oapi/handler"
 )
 
 // SetupFulfillment initializes the order-related routes and services.
@@ -55,7 +55,7 @@ func SetupFulfillment(
 		providers.CourierClient,
 	)
 	providers.FulfillmentService = fulfillmentService
-	fulfillmentHandler := handler.NewFulfillmentHandler(fulfillmentService)
+	apiHandler := handler.NewHandler(fulfillmentService)
 
-	routes.SetupFulfillmentRoutes(e, fulfillmentHandler)
+	routes.SetupFulfillmentRoutes(e, apiHandler)
 }

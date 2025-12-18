@@ -14,6 +14,7 @@ require (
 	github.com/jackc/pgtype v1.14.4
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/labstack/echo/v4 v4.13.4
+	github.com/oapi-codegen/runtime v1.1.2
 	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20251030045016-43bf4d7f66c8
 	github.com/raphaeldiscky/go-micro-commerce/proto v0.0.0-20251030045016-43bf4d7f66c8
 	github.com/shopspring/decimal v1.4.0
@@ -31,6 +32,7 @@ replace github.com/raphaeldiscky/go-micro-commerce/proto => ../proto
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.10-20250912141014-52f32327d4b0.1 // indirect
 	github.com/99designs/gqlgen v0.17.81 // indirect
+	github.com/apapsch/go-jsonmerge/v2 v2.0.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/bytedance/gopkg v0.1.3 // indirect
 	github.com/bytedance/sonic/loader v0.4.0 // indirect
@@ -83,6 +85,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/redis/go-redis/v9 v9.16.0 // indirect
+	github.com/rogpeppe/go-internal v1.12.0 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect

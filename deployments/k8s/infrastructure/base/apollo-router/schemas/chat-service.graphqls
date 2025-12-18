@@ -1,0 +1,324 @@
+# Online status for users
+type OnlineStatus {
+  isOnline: Boolean!
+  lastSeen: Time
+}
+
+# Chat connection response for WebSocket node selection
+type ChatConnection {
+  nodeAddress: String!
+  userId: UUID!
+  userType: String!
+}
+
+# Connection queries
+extend type Query {
+  # Get online users
+  onlineUsers: [User!]! @requiresAuth
+}
+
+# Connection mutations
+extend type Mutation {
+  # Request WebSocket connection (returns node address for load balancing)
+  requestChatConnection: ChatConnection! @requiresAuth
+}
+# Conversation entity (owned by chat-service)
+type Conversation @key(fields: "id") {
+  id: UUID!
+  subject: String
+  status: ConversationStatus!
+  priority: Int!
+  participants: [Participant!]!
+  participantCount: Int!
+  messages(limit: Int = 50, offset: Int = 0): MessageConnection!
+  createdAt: Time!
+  updatedAt: Time!
+  endedAt: Time
+}
+
+# Conversation status enum
+enum ConversationStatus {
+  WAITING
+  ACTIVE
+  ENDED
+}
+
+# Conversation input types
+input CreateConversationInput {
+  subject: String
+  priority: Int!
+  initialMessage: String
+}
+
+# Conversation queries
+extend type Query {
+  # Get single conversation
+  conversation(id: UUID!): Conversation @requiresAuth
+
+  # Get user's conversations
+  conversations: [Conversation!]! @requiresAuth
+
+  # Admin: Get waiting conversations
+  waitingConversations: [Conversation!]!
+    @requiresAuth
+    @requiresRole(role: ADMIN)
+}
+
+# Conversation mutations
+extend type Mutation {
+  # Create new conversation
+  createConversation(input: CreateConversationInput!): Conversation!
+    @requiresAuth
+
+  # End conversation (admin only)
+  endConversation(conversationId: UUID!): Conversation!
+    @requiresAuth
+    @requiresRole(role: ADMIN)
+
+  # Assign conversation to admin
+  assignConversationToAdmin(
+    conversationId: UUID!
+    adminId: UUID!
+  ): Conversation! @requiresAuth @requiresRole(role: ADMIN)
+}
+# Message entity (owned by chat-service)
+type Message @key(fields: "id") {
+  id: UUID!
+  conversationId: UUID!
+  conversation: Conversation!
+  senderId: UUID
+  sender: User
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
+# Message type enum
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+# Cursor-based pagination for messages
+type MessageConnection {
+  edges: [MessageEdge!]!
+  pageInfo: PageInfo!
+}
+
+type MessageEdge {
+  cursor: String!
+  node: Message!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Message input types
+input SendMessageInput {
+  conversationId: UUID!
+  content: String!
+  messageType: MessageType = TEXT
+  replyToId: UUID
+}
+
+input SendDeliveryReceiptInput {
+  messageId: UUID!
+  conversationId: UUID!
+}
+
+input SendReadReceiptInput {
+  messageId: UUID!
+  conversationId: UUID!
+}
+
+# Message queries
+extend type Query {
+  # Get messages for a conversation with cursor-based pagination
+  conversationMessages(
+    conversationId: UUID!
+    first: Int
+    after: String
+    last: Int
+    before: String
+  ): MessageConnection! @requiresAuth
+}
+
+# Message mutations
+extend type Mutation {
+  # Send a new message
+  sendMessage(input: SendMessageInput!): Message! @requiresAuth
+
+  # Send delivery receipt for a message
+  sendDeliveryReceipt(input: SendDeliveryReceiptInput!): DeliveryReceipt!
+    @requiresAuth
+
+  # Send read receipt for a message
+  sendReadReceipt(input: SendReadReceiptInput!): ReadReceipt! @requiresAuth
+}
+# Participant entity (owned by chat-service)
+type Participant {
+  id: UUID!
+  conversationId: UUID!
+  conversation: Conversation!
+  userId: UUID!
+  user: User!
+  userType: UserType!
+  role: ParticipantRole!
+  joinedAt: Time!
+  leftAt: Time
+  isActive: Boolean!
+}
+
+# User type enum
+enum UserType {
+  USER
+  ADMIN
+}
+
+# Participant role enum
+enum ParticipantRole {
+  MEMBER
+  OWNER
+  MODERATOR
+}
+
+# Participant input types
+input JoinConversationInput {
+  conversationId: UUID!
+  role: ParticipantRole!
+}
+
+# Participant queries
+extend type Query {
+  # Get participants of a conversation
+  conversationParticipants(conversationId: UUID!): [Participant!]! @requiresAuth
+}
+
+# Participant mutations
+extend type Mutation {
+  # Join conversation
+  joinConversation(input: JoinConversationInput!): Participant! @requiresAuth
+
+  # Leave conversation
+  leaveConversation(conversationId: UUID!): Boolean! @requiresAuth
+}
+# Scalars
+scalar Time
+scalar UUID
+
+# Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
+directive @requiresAuth on FIELD_DEFINITION | OBJECT
+directive @requiresRole(role: Role!) on FIELD_DEFINITION | OBJECT
+
+# Role enum for authorization
+enum Role {
+  ADMIN
+  USER
+}
+
+# Note: Apollo Federation directives (@key, @external, etc.) are automatically
+# included by gqlgen when federation is enabled in gqlgen.yml
+
+# Extend User entity from auth-service (we reference it but don't own it)
+extend type User @key(fields: "id") {
+  id: UUID! @external
+  conversations: [Conversation!]!
+  onlineStatus: OnlineStatus
+}
+
+# Root query and mutation types
+type Query
+type Mutation
+# Real-time subscription types for chat events
+
+# Subscription root type
+type Subscription {
+  # Subscribe to conversation events (messages, typing, receipts)
+  conversationEvents(conversationId: UUID!): ConversationEvent! @requiresAuth
+
+  # Subscribe to user-specific events (presence updates)
+  userEvents: UserEvent! @requiresAuth
+}
+
+# Union type for conversation events
+union ConversationEvent =
+  | NewMessage
+  | TypingIndicator
+  | DeliveryReceipt
+  | ReadReceipt
+
+# Union type for user events
+union UserEvent = PresenceUpdate
+
+# New message event
+type NewMessage {
+  id: UUID!
+  conversationId: UUID!
+  senderId: UUID!
+  content: String!
+  messageType: MessageType!
+  isSystem: Boolean!
+  createdAt: Time!
+}
+
+# Typing indicator event
+type TypingIndicator {
+  userId: UUID!
+  conversationId: UUID!
+  isTyping: Boolean!
+  timestamp: Time!
+}
+
+# Delivery receipt event
+type DeliveryReceipt {
+  messageId: UUID!
+  conversationId: UUID!
+  recipientId: UUID!
+  deliveredAt: Time!
+}
+
+# Read receipt event
+type ReadReceipt {
+  messageId: UUID!
+  conversationId: UUID!
+  readerId: UUID!
+  readAt: Time!
+}
+
+# Presence update event
+type PresenceUpdate {
+  userId: UUID!
+  status: PresenceStatus!
+  lastSeen: Time
+}
+
+# Presence status enum
+enum PresenceStatus {
+  ONLINE
+  AWAY
+  BUSY
+  OFFLINE
+}
+
+# Typing indicator input
+input TypingIndicatorInput {
+  conversationId: UUID!
+  isTyping: Boolean!
+}
+
+# Presence and typing mutations
+extend type Mutation {
+  # Update user presence status
+  updatePresence(status: PresenceStatus!): PresenceUpdate! @requiresAuth
+
+  # Send typing indicator
+  sendTypingIndicator(input: TypingIndicatorInput!): TypingIndicator!
+    @requiresAuth
+}

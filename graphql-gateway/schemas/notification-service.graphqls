@@ -1,0 +1,152 @@
+# PushNotification type enum
+enum PushNotificationType {
+  NEW_MESSAGE
+  NEW_PRODUCT
+  ORDER_UPDATE
+  ORDER_CONFIRMED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+  ORDER_CANCELLED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  PAYMENT_TIMEOUT
+  SYSTEM_ALERT
+}
+
+# Notification entity
+type Notification {
+  id: UUID!
+  userId: UUID!
+  type: PushNotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  readAt: Time
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Unread count response
+type UnreadCount {
+  count: Int!
+}
+
+# Tab counts for notification drawer
+type TabCounts {
+  all: Int!
+  unread: Int!
+  read: Int!
+}
+
+# Notification connection for cursor-based pagination
+type NotificationConnection {
+  edges: [NotificationEdge!]!
+  pageInfo: PageInfo!
+}
+
+# Notification edge
+type NotificationEdge {
+  node: Notification!
+  cursor: String!
+}
+
+# Page info for cursor pagination
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Notification queries
+extend type Query {
+  # List all notifications with cursor pagination
+  listNotifications(limit: Int!, cursor: String): NotificationConnection!
+    @requiresAuth
+
+  # List unread notifications with cursor pagination
+  listUnreadNotifications(limit: Int!, cursor: String): NotificationConnection!
+    @requiresAuth
+
+  # Get unread notification count
+  getUnreadCount: UnreadCount! @requiresAuth
+
+  # Get notification counts for all tabs
+  getTabCounts: TabCounts! @requiresAuth
+}
+
+# Notification mutations
+extend type Mutation {
+  # Mark a notification as read
+  markAsRead(id: UUID!): Notification! @requiresAuth
+
+  # Mark all notifications as read
+  markAllAsRead: Boolean! @requiresAuth
+}
+# Scalars
+scalar Time
+scalar UUID
+
+# Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
+directive @requiresAuth on FIELD_DEFINITION | OBJECT
+directive @requiresRole(role: Role!) on FIELD_DEFINITION | OBJECT
+
+# Role enum for authorization
+enum Role {
+  ADMIN
+  USER
+}
+
+# Note: Apollo Federation directives (@key, @external, etc.) are automatically
+# included by gqlgen when federation is enabled in gqlgen.yml
+
+# Extend User entity from auth-service (we reference it but don't own it)
+extend type User @key(fields: "id") {
+  id: UUID! @external
+  notifications: [Notification!]!
+  unreadCount: Int!
+}
+
+# Root query, mutation, and subscription types
+type Query
+type Mutation
+type Subscription
+# Real-time subscription types for notification events
+
+# Subscription root type
+extend type Subscription {
+  # Subscribe to notification events for the authenticated user
+  notificationEvents: NotificationEvent! @requiresAuth
+}
+
+# Union type for notification events
+union NotificationEvent =
+  | NewNotification
+  | NotificationRead
+  | NotificationDeleted
+
+# New notification event (real-time delivery)
+type NewNotification {
+  id: UUID!
+  userId: UUID!
+  type: PushNotificationType!
+  title: String!
+  message: String!
+  metadata: String
+  isRead: Boolean!
+  createdAt: Time!
+}
+
+# Notification read event
+type NotificationRead {
+  id: UUID!
+  userId: UUID!
+  readAt: Time!
+}
+
+# Notification deleted event
+type NotificationDeleted {
+  id: UUID!
+  userId: UUID!
+}

@@ -3,19 +3,24 @@ package routes
 import (
 	"github.com/labstack/echo/v4"
 
-	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/handler"
 	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/internal/middleware"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/oapi"
+	"github.com/raphaeldiscky/go-micro-commerce/fulfillment-service/oapi/handler"
 )
 
-// SetupFulfillmentRoutes sets up all fulfillment routes.
-func SetupFulfillmentRoutes(e *echo.Echo, h *handler.FulfillmentHandler) {
+// SetupFulfillmentRoutes registers API routes with middleware.
+// Note: Health check is handled by AppHandler in app_routes.go.
+func SetupFulfillmentRoutes(e *echo.Echo, h *handler.Handler) {
+	wrapper := oapi.ServerInterfaceWrapper{Handler: h}
+
+	// Protected routes (require authentication)
 	protected := e.Group("")
 	protected.Use(middleware.AuthMiddleware)
+	protected.POST("/shipping-rates", wrapper.CalculateShippingRates)
 
-	protected.POST("/shipping-rates", h.CalculateShippingRates)
-	// Get fulfillment by order ID
+	// Admin routes (require admin role)
 	admin := protected.Group("")
 	admin.Use(middleware.RequireAdminRole)
-	admin.GET("/order/:orderID", h.GetFulfillmentByOrderID)
-	admin.PATCH("/order/:orderID/status", h.UpdateFulfillmentStatusByOrderID)
+	admin.GET("/order/:orderID", wrapper.GetFulfillmentByOrderID)
+	admin.PATCH("/order/:orderID/status", wrapper.UpdateFulfillmentStatus)
 }

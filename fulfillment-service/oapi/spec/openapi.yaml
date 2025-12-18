@@ -1,0 +1,282 @@
+openapi: 3.0.3
+info:
+  title: Fulfillment Service API
+  description: REST API for fulfillment operations including shipping rates and order fulfillment management.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8086
+    description: Development server
+
+tags:
+  - name: Shipping
+    description: Shipping rate calculation
+  - name: Fulfillment
+    description: Fulfillment management (Admin)
+
+paths:
+  /shipping-rates:
+    post:
+      operationId: calculateShippingRates
+      tags: [Shipping]
+      summary: Calculate shipping rates
+      security:
+        - GatewayAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateShippingRatesRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShippingRatesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /order/{orderID}:
+    get:
+      operationId: getFulfillmentByOrderID
+      tags: [Fulfillment]
+      summary: Get fulfillment by order ID
+      security:
+        - GatewayAuth: []
+        - AdminRole: []
+      parameters:
+        - $ref: '#/components/parameters/OrderID'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FulfillmentDataResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /order/{orderID}/status:
+    patch:
+      operationId: updateFulfillmentStatus
+      tags: [Fulfillment]
+      summary: Update fulfillment status
+      security:
+        - GatewayAuth: []
+        - AdminRole: []
+      parameters:
+        - $ref: '#/components/parameters/OrderID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFulfillmentStatusRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FulfillmentDataResponse'
+
+components:
+  parameters:
+    OrderID:
+      name: orderID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+  securitySchemes:
+    GatewayAuth:
+      type: apiKey
+      in: header
+      name: X-User-ID
+      description: User ID header injected by API Gateway
+    AdminRole:
+      type: apiKey
+      in: header
+      name: X-Roles
+      description: User roles header (must contain 'admin')
+
+  schemas:
+    CalculateShippingRatesRequest:
+      type: object
+      required: [currency, courier_id, destination, origin, package]
+      properties:
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          example: "USD"
+        courier_id:
+          $ref: '#/components/schemas/CourierID'
+        destination:
+          $ref: '#/components/schemas/Address'
+        origin:
+          $ref: '#/components/schemas/Address'
+        package:
+          $ref: '#/components/schemas/Package'
+
+    UpdateFulfillmentStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: '#/components/schemas/FulfillmentStatus'
+
+    ShippingRatesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ShippingRate'
+        message:
+          type: string
+
+    FulfillmentDataResponse:
+      type: object
+      properties:
+        data:
+          $ref: '#/components/schemas/Fulfillment'
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+    ShippingRate:
+      type: object
+      properties:
+        courier_id:
+          $ref: '#/components/schemas/CourierID'
+        courier_service_name:
+          type: string
+        shipping_cost:
+          type: string
+        currency:
+          type: string
+        estimated_delivery:
+          type: string
+          format: date-time
+        transit_days:
+          type: integer
+
+    Fulfillment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/FulfillmentStatus'
+        tracking_number:
+          type: string
+        courier_id:
+          $ref: '#/components/schemas/CourierID'
+        shipping_label_url:
+          type: string
+        shipping_cost:
+          type: string
+        currency:
+          type: string
+        origin:
+          $ref: '#/components/schemas/Address'
+        destination:
+          $ref: '#/components/schemas/Address'
+        package:
+          $ref: '#/components/schemas/Package'
+        estimated_delivery_at:
+          type: string
+          format: date-time
+        actual_delivery_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Address:
+      type: object
+      required: [city, state, postal_code, country_code]
+      properties:
+        city:
+          type: string
+        state:
+          type: string
+        postal_code:
+          type: string
+        country_code:
+          type: string
+          minLength: 2
+          maxLength: 2
+
+    Package:
+      type: object
+      required: [weight_kg, width, height, length, unit]
+      properties:
+        weight_kg:
+          type: string
+        width:
+          type: string
+        height:
+          type: string
+        length:
+          type: string
+        unit:
+          type: string
+          enum: [cm, inch]
+
+    FulfillmentStatus:
+      type: string
+      enum: [pending, processing, shipped, in_transit, delivered, canceled, returned]
+
+    CourierID:
+      type: string
+      enum: [jne, jt, pos, sicepat]
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
