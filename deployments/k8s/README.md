@@ -7,61 +7,70 @@ This directory contains Kubernetes manifests for deploying the go-micro-commerce
 ```
 deployments/k8s/
 ├── apps/                          # ArgoCD Application definitions
-│   └── applicationsets/           # ApplicationSet generators
-│       ├── infrastructure.yaml    # Auto-discovers infrastructure/overlays/prod/*
-│       └── workloads.yaml         # Auto-discovers workloads/overlays/prod/*
+│   ├── applicationsets/           # ApplicationSet generators
+│   │   ├── infrastructure.yaml    # Auto-discovers infrastructure/overlays/prod/*
+│   │   └── workloads.yaml         # Auto-discovers workloads/overlays/prod/*
+│   └── projects/                  # ArgoCD Project definitions (RBAC)
+│       ├── applications-project.yaml
+│       └── infrastructure-project.yaml
 ├── infrastructure/                # Platform services (base + overlays)
-│   ├── base/                     # Base infrastructure configs
-│   │   ├── operators/            # Kubernetes operators (Helm values)
-│   │   │   ├── cloudnative-pg/   # PostgreSQL operator
-│   │   │   ├── strimzi-kafka/    # Kafka operator
-│   │   │   └── redis-operator/   # Redis operator
-│   │   ├── postgres/             # PostgreSQL Cluster CRDs (9 databases)
-│   │   ├── kafka/                # Kafka CRDs
-│   │   ├── redis/                # Redis CRDs
-│   │   ├── ingress-controller/   # Traefik ingress controller
-│   │   ├── ingress-routes/       # (local-specific, in overlays)
-│   │   ├── monitoring/           # Prometheus, Grafana, Tempo, Loki
+│   ├── base/
+│   │   ├── api-gateway/          # API Gateway service
 │   │   ├── apollo-router/        # GraphQL federation gateway
-│   │   ├── mailer/               # Mail service (MailHog local, SMTP prod)
-│   │   └── namespaces/           # Namespace definitions
+│   │   ├── gateway/              # API Gateway HTTPRoute and middlewares
+│   │   ├── graphql/              # GraphQL HTTPRoute with ReferenceGrant
+│   │   ├── ingress-controller/   # Traefik with Kubernetes Gateway API
+│   │   │   ├── gatewayclass.yaml # GatewayClass (Traefik controller)
+│   │   │   └── gateway.yaml      # Shared Gateway for HTTPS traffic
+│   │   ├── kafka/                # Kafka CRDs
+│   │   ├── monitoring/           # Prometheus, Grafana, Tempo, Loki, Alloy
+│   │   ├── namespaces/           # Namespace definitions
+│   │   ├── postgres/             # PostgreSQL Cluster CRDs (9 databases)
+│   │   └── redis/                # Redis CRDs
 │   └── overlays/
 │       ├── local/                # Local dev (Tilt/Minikube)
-│       │   ├── postgres/         # 1 replica, low resources
-│       │   ├── kafka/            # Single broker
-│       │   ├── redis/            # Minimal config
+│       │   ├── api-gateway/      # Local API Gateway config
+│       │   ├── graphql/          # Local GraphQL config
 │       │   ├── ingress-routes/   # Local ingress (*.localhost)
+│       │   ├── kafka/            # Single broker
+│       │   ├── mailer/           # MailHog for local testing
 │       │   ├── monitoring/       # Dev monitoring stack
-│       │   ├── apollo-router/    # Local GraphQL router
-│       │   └── mailer/           # MailHog for local testing
+│       │   ├── postgres/         # 1 replica, low resources
+│       │   └── redis/            # Minimal config
 │       └── prod/                 # Production (ArgoCD/GKE)
-│           ├── postgres/         # 3 replicas, HA config
+│           ├── api-gateway/      # Production API Gateway
+│           ├── common/           # Shared Kustomize component
+│           ├── graphql/          # Production GraphQL config
+│           ├── ingress-controller/
 │           ├── kafka/            # Multi-broker cluster
-│           └── ... (all components)
+│           ├── monitoring/       # Production monitoring
+│           ├── namespaces/       # Production namespaces
+│           ├── postgres/         # 3 replicas, HA config
+│           └── redis/            # Production Redis
 └── workloads/                    # Microservices (base + overlays)
     ├── base/                     # Base configurations (environment-agnostic)
-    │   ├── api-gateway/
     │   ├── auth-service/
     │   ├── cart-service/
     │   ├── chat-service/
+    │   ├── external-secrets/     # External Secrets Operator configs
     │   ├── fulfillment-service/
     │   ├── notification-service/
     │   ├── order-service/
     │   ├── payment-service/
-    │   ├── product-service/
-    │   └── external-secrets/
-    │
-    └── overlays/                 # Environment-specific overrides
-        ├── local/                # Local development (Tilt)
-        │   └── kustomization.yaml # Single file, monolithic
-        └── prod/                 # Production (ArgoCD/GKE)
-            ├── api-gateway/
+    │   └── product-service/
+    └── overlays/                   # Environment-specific overrides
+        ├── local/                  # Local development (Tilt)
+        │   ├── kustomization.yaml  # Single file, monolithic
+        │   └── secrets/            # TLS and JWT keys
+        └── prod/                   # Production (ArgoCD/GKE)
+            ├── auth-service/
             │   ├── kustomization.yaml
             │   ├── patch-replicas.yaml        # 3 replicas
             │   ├── patch-resources.yaml       # Higher limits
             │   ├── patch-hpa.yaml             # Autoscaling
             │   └── patch-image-pull-secrets.yaml
-            └── ... (all 10 services, modular)
+            ├── common/           # Shared Kustomize component
+            └── ... (all 9 services, modular)
 ```
 
 ## GitOps Workflow
@@ -70,28 +79,28 @@ deployments/k8s/
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    1. Developer Push                             │
+│                    1. Developer Push                              │
 │   git push -> deployments/k8s/workloads/overlays/prod/            │
 └────────────────────┬────────────────────────────────────────┘
-                     │
-                     ↓
+                       │
+                       ↓
 ┌─────────────────────────────────────────────────────────────┐
-│           2. ArgoCD Detects Changes (Auto-Sync)                  │
+│           2. ArgoCD Detects Changes (Auto-Sync)                   │
 │   Bootstrap ApplicationSet -> Deploys infrastructure.yaml +       │
-│                               workloads.yaml                     │
+│                               workloads.yaml                      │
 └────────────────────┬────────────────────────────────────────┘
-                     │
-                     ↓
+                       │
+                       ↓
 ┌─────────────────────────────────────────────────────────────┐
-│           3. ApplicationSets Generate Applications               │
-│   - infrastructure.yaml: Discovers infrastructure/overlays/prod/*│
-│   - workloads.yaml: Discovers workloads/overlays/prod/*          │
+│           3. ApplicationSets Generate Applications                │
+│   - infrastructure.yaml: Discovers infrastructure/overlays/prod/* │
+│   - workloads.yaml: Discovers workloads/overlays/prod/*           │
 └────────────────────┬────────────────────────────────────────┘
-                     │
-                     ↓
+                       │
+                       ↓
 ┌─────────────────────────────────────────────────────────────┐
-│              4. ArgoCD Syncs to Cluster                          │
-│   Each discovered directory becomes an Application               │
+│              4. ArgoCD Syncs to Cluster                           │
+│   Each discovered directory becomes an Application                │
 │   Kustomize builds manifests -> kubectl apply                     │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -126,17 +135,40 @@ Contains infrastructure and platform components using **base + overlays pattern*
   - Local: Tilt with `kustomize('infrastructure/overlays/local')`
   - Production: ArgoCD `infrastructure.yaml` ApplicationSet
 
-**Why base + overlays?** Infrastructure varies between local (1 replica, low resources) and production (3+ replicas, HA). Operators via Helm, CRDs via Kustomize.
+**Why base + overlays?** Infrastructure varies between local (1 replica, low resources) and production (3+ replicas, HA). Operators are deployed via Helm, CRDs via Kustomize.
 
-#### `/infrastructure/base/operators/` - Kubernetes Operators
+#### `/apps/projects/` - ArgoCD Project Definitions
 
-Operators are **controller software** that manage custom resources. See `infrastructure/base/operators/README.md` for details.
+Contains ArgoCD Project manifests that define RBAC boundaries for applications:
 
-- **cloudnative-pg**: Manages PostgreSQL Cluster CRDs
-- **strimzi-kafka**: Manages Kafka/KafkaNodePool CRDs
-- **redis-operator**: Manages RedisCluster CRDs
+- **applications-project.yaml**: RBAC for workload applications (microservices)
+- **infrastructure-project.yaml**: RBAC for infrastructure applications (databases, monitoring)
 
-**Deployment**: Operators installed via Helm (Tilt/Terraform), values in `operator-values.yaml`
+**Purpose**: Projects provide namespace isolation and permission boundaries for ArgoCD-managed resources.
+
+#### Kubernetes Operators
+
+Operators are **controller software** that manage custom resources. They are installed via:
+
+- **Terraform**: Production deployment with Helm charts
+- **Tilt**: Local development with Helm charts
+
+The operators manage CRDs defined in `infrastructure/base/`:
+
+- **CloudNativePG**: Manages PostgreSQL Cluster CRDs in `postgres/`
+- **Strimzi Kafka**: Manages Kafka/KafkaNodePool CRDs in `kafka/`
+- **Redis Operator**: Manages RedisCluster CRDs in `redis/`
+
+#### `/infrastructure/base/ingress-controller/` - Kubernetes Gateway API
+
+Traffic routing uses the **Kubernetes Gateway API** (CNCF standard) with Traefik as the gateway controller:
+
+- **GatewayClass**: Defines Traefik as the controller (`traefik.io/gateway-controller`)
+- **Gateway**: Shared entry point with HTTPS listeners for `api.discky.com`
+- **HTTPRoute**: Path-based routing to services (API Gateway at `/`, GraphQL at `/graph`)
+- **ReferenceGrant**: Explicit cross-namespace routing security
+
+**Traffic Flow**: `Client → Gateway → HTTPRoute → Service`
 
 ### `/workloads/` - Microservices
 
@@ -160,13 +192,13 @@ Contains application workloads using **base + overlays pattern**:
 - **Environments**:
   - `local/`: Local development (Tilt/Minikube, lower resources)
     - Single monolithic `kustomization.yaml` file
-    - Namespace: `application` and `gateway`
+    - Namespaces: `application` and `gateway`
   - `prod/`: Production (ArgoCD/GKE, higher replicas, more resources)
     - Modular structure (one directory per service)
-    - Namespace: `application` and `gateway`
+    - Namespaces: `application` and `gateway`
     - Patches: replicas, resources, HPA, image pull secrets
 
-**Why overlays?** Microservices vary between environments (replicas, resources, namespaces). Maintains DRY while allowing environment-specific configs.
+**Why overlays?** Microservices vary between environments (replicas, resources, namespaces). This pattern maintains DRY while allowing environment-specific configs.
 
 ## Local Development with Tilt
 
@@ -178,7 +210,6 @@ Tilt orchestrates local Kubernetes development using Kustomize overlays:
 
 ### Local Characteristics
 
-- **Single replicas**: All databases and services run with 1 replica
 - **Low resources**: Minimal CPU/memory requests for laptop development
 - **MailHog**: Local SMTP server at `http://localhost:8025`
 - **Local ingress**: Services accessible at `*.localhost`
@@ -406,10 +437,10 @@ argocd app get product-service
 
 ### Infrastructure & Operators
 
-- Operators (Helm) in `base/operators/*/operator-values.yaml`
-- CRDs (Kustomize) in `base/{postgres,kafka,redis}/`
-- Environment patches in `overlays/{local,prod}/`
-- See `infrastructure/base/operators/README.md` for operator vs CRD details
+- Operators installed via Helm (Terraform for prod, Tilt for local)
+- CRDs (Kustomize) in `infrastructure/base/{postgres,kafka,redis}/`
+- Environment patches in `infrastructure/overlays/{local,prod}/`
+- ArgoCD Projects in `apps/projects/` for RBAC boundaries
 
 ## Troubleshooting
 
@@ -449,7 +480,7 @@ argocd app sync api-gateway --force
 
 ```bash
 # Test kustomize build locally
-cd deployments/k8s/workloads/overlays/prod/api-gateway/
+cd deployments/k8s/workloads/overlays/prod/auth-service/
 kustomize build .
 
 # Common issues:
@@ -467,9 +498,9 @@ kustomize build .
 
 ## Support
 
-- **ArgoCD UI**: https://argocd.api.discky.com
-- **Grafana Dashboards**: https://grafana.api.discky.com
-- **Kubernetes Docs**: https://kubernetes.io/docs/
+- **ArgoCD UI**: <https://argocd.api.discky.com>
+- **Grafana Dashboards**: <https://grafana.api.discky.com>
+- **Kubernetes Docs**: <https://kubernetes.io/docs/>
 
 ---
 

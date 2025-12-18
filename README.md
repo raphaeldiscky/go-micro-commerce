@@ -6,46 +6,46 @@ This application is primarily intended for exploring technical concepts. My goal
 
 ## Features :sparkles:
 
-- `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for message broadcasting, and `Asynq` for distributed task queues
+- `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for real-time message broadcasting, and `Asynq` for distributed task scheduling (order and cart services)
 - `Clean Architecture` (entity, repository, service, handler) with `Domain-Driven Design (DDD)` principles across all services
-- Each microservice have own its dedicated `Postgres` database instance.
+- Each microservice has its own dedicated `PostgreSQL` database instance
 - 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
-- Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`)
+- Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
 - Two local development options:
-  - Simple `Docker Compose` setup for ease of development
-  - Run on `Kubernetes Cluster` with `Tilt + (Kind or MicroK8s)` for hot reload and a more production-like environment.
-- `Traefik` as ingress controller / entry point from the outside wold into cluster
-- `API Gateway` as application-level gateway, manages internal API requests.
+  - `Docker Compose` setup for rapid development (infrastructure + 7 core services)
+  - `Kubernetes Cluster` with `Tilt + (Kind or MicroK8s)` for hot reload in a production-like environment with all 11 services
+- `Kubernetes Gateway API` with `Traefik` as gateway controller for production-grade traffic routing
 - CI pipeline using `GitHub Actions` to automate build, test, and push images to a registry
+- `GitOps` with `ArgoCD` for declarative, pull-based continuous deployment
+- Infrastructure as Code with `Terraform` for GKE cluster provisioning on GCP
 - `Kubernetes` for robust, scalable container orchestration in production environments
-- `GitOps-based deployments` for K8s apps using `Argo CD`
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
-- Unified APIs with `GraphQL Federation` for type-safe client-server communication
+- Unified REST `API Gateway` and `GraphQL Federation` for type-safe client-server communication
 - Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
 - Database Management with schema migrations handled by `golang-migrate`
 - Validation using `go-playground/validator` for input sanitization
 - Order creation is implemented using two saga orchestration options:
-  - A custom `Postgres-based saga` implementation
+  - A custom `PostgreSQL-based saga` implementation
   - A managed workflow service engine using `Temporal`
 - Implemented `message inbox pattern` for idempotent event consumption and `transactional outbox pattern` for publishing domain events
 - `Server-Sent Events (SSE)` for real-time push notification delivery in the notification-service.
 - `WebSocket` support in the chat-service for bi-directional communication.
-- Use [bytedance/sonic](https://github.com/bytedance/sonic) instead of standard go library for serde, it offers up to 5x faster unmarshalling and significant marshaling improvements, as demonstrated in this [benchmark](https://github.com/centralci/go-benchmarks/tree/b647c45272c7dc371fd4337cb3b6546356d967d1/json)
+- Uses [bytedance/sonic](https://github.com/bytedance/sonic) instead of the standard Go library for serialization/deserialization, offering up to 5x faster unmarshalling and significant marshaling performance improvements, as demonstrated in this [benchmark](https://github.com/centralci/go-benchmarks/tree/b647c45272c7dc371fd4337cb3b6546356d967d1/json)
 
 ## Technology Stack 🛠️
 
 - **[labstack/echo](https://github.com/labstack/echo)** - high performance, minimalist go web framework
-- **[jackc/pgx/v5](https://github.com/jackc/pgx)** - postgres driver and toolkit for Go
+- **[jackc/pgx/v5](https://github.com/jackc/pgx)** - PostgreSQL driver and toolkit for Go
 - **[ibm/sarama](https://github.com/IBM/sarama)** - go library for Apache Kafka
 - **[redis/go-redis](https://github.com/redis/go-redis)** - redis go client for cache and Pub/Sub
 - **[bsm/redislock](https://github.com/bsm/redislock)** - distributed locking implementation using Redis
-- **[elastic/go-elasticsearch](https://github.com/elastic/go-elasticsearch)** - official go client for elasticsearch
+- **[elastic/go-elasticsearch](https://github.com/elastic/go-elasticsearch)** - official Go client for Elasticsearch
 - **[hibiken/asynq](https://github.com/hibiken/asynq)** - simple, reliable, and efficient distributed task queue in Go using Redis
-- **[google.golang.org/protobuf](https://github.com/protocolbuffers/protobuf-go)** - profobuf for go
+- **[google.golang.org/protobuf](https://github.com/protocolbuffers/protobuf-go)** - Protocol Buffers for Go
 - **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC framework
 - **[bufbuild/buf](https://github.com/bufbuild/buf)** - linter, formatter, generator for protobuf
-- **[99designs/glqgen](https://github.com/99designs/gqlgen)** - go generate based graphql server library
+- **[99designs/gqlgen](https://github.com/99designs/gqlgen)** - Go code generation-based GraphQL server library
 - **[bytedance/sonic](https://github.com/bytedance/sonic)** - a blazingly fast JSON serializing & deserializing library
 - **[stretchr/testify](https://github.com/stretchr/testify)** - testing toolkit
 - **[testcontainers/testcontainers-go](https://github.com/testcontainers/testcontainers-go)** - testcontainers for go
@@ -61,16 +61,17 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[sony/gobreaker](https://github.com/sony/gobreaker)** - circuit breaker implemented in go
 - **[prometheus/client_golang](https://github.com/prometheus/client_golang)** - prometheus instrumentation lib for go apps
 - **[opentelemetry-go](https://github.com/open-telemetry/opentelemetry-go)** - opentelemetry go API and SDK
+- **[grafana/alloy](https://github.com/grafana/alloy)** - vendor-agnostic OpenTelemetry Collector distribution for telemetry data collection and forwarding
 - **[shopspring/decimal](https://github.com/shopspring/decimal)** - precision fixed-point decimal numbers in go
 - **[google/uuid](https://github.com/google/uuid)** - go package for UUIDs
 
 ## Architecture Overview 🏗️
 
-The system follows a microservices architecture where each service represents an independent business domain. Services communicate through a combination of synchronous gRPC calls and asynchronous event-driven patterns. Data consistency across distributed transactions is ensured through Saga patterns, with support for both custom implementations and `Temporal`-managed workflows.
+The system follows a microservices architecture where each service represents an independent business domain. Services communicate through both synchronous gRPC calls and asynchronous event-driven patterns. Data consistency across distributed transactions is maintained using Saga orchestration patterns, with support for both custom PostgreSQL-based implementations and Temporal-managed workflows.
 
 ### 1. Authentication Service
 
-Handles user identity, authentication, and session management with secure token-based authentication.
+Manages user identity, authentication, and session lifecycle with secure token-based authentication.
 
 ```mermaid
 sequenceDiagram
@@ -112,7 +113,7 @@ sequenceDiagram
 
 ### 2. Product Service
 
-Manages product catalog, inventory, and pricing.
+Manages the product catalog, inventory tracking, and pricing.
 
 ```mermaid
 sequenceDiagram
@@ -159,7 +160,7 @@ sequenceDiagram
 
 ### 3. Order Service
 
-Orchestrates complex order workflows using hybrid synchronous and asynchronous communication patterns.
+Orchestrates complex order workflows using a hybrid approach combining synchronous and asynchronous communication patterns.
 
 **Order Lifecycle Overview**:
 
@@ -270,13 +271,13 @@ sequenceDiagram
 **Key Features**:
 
 - Distributed locking with Redis for operation idempotency
-- Dual saga implementation (custom `Postgres`-based and `Tempora`l-managed)
+- Dual saga implementation (custom PostgreSQL-based and Temporal-managed)
 - Automated payment reminders and order expiration
 - Support for order modifications and cancellations
 
 ### 4. Fulfillment Service
 
-Manages order fulfillment, shipping, and delivery tracking.
+Manages order fulfillment operations, shipping coordination, and delivery tracking.
 
 ```mermaid
 sequenceDiagram
@@ -334,20 +335,20 @@ sequenceDiagram
 - Payment processing and transaction management
 - Multiple payment gateway integrations
 - Webhook handling for payment status updates
-- Refund and dispute management
+- Refund processing and dispute management
 
 **Entities**: `payments`, `outbox_events`, `inbox_events`
 
 **Key Features**:
 
-- Payment gateway factory pattern supporting Stripe and other gateways.
+- Payment gateway factory pattern supporting Stripe and additional payment providers
 - Idempotent payment processing with idempotency keys
 - Secure webhook verification and handling
 - Comprehensive payment analytics and reporting
 
 ### 6. Notification Service
 
-Processes and delivers notifications across multiple channels.
+Processes and delivers notifications across multiple communication channels.
 
 ```mermaid
 sequenceDiagram
@@ -384,7 +385,7 @@ sequenceDiagram
 
 ### 7. Chat Service
 
-Provides real-time customer support and communication capabilities.
+Provides real-time customer support and bi-directional communication capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -420,7 +421,7 @@ sequenceDiagram
 
 ### 8. Cart Service
 
-Manages shopping cart functionality and checkout session preparation.
+Manages shopping cart lifecycle and checkout session preparation.
 
 ```mermaid
 sequenceDiagram
@@ -460,7 +461,7 @@ sequenceDiagram
 
 ### 9. Search Service
 
-Provides full-text search and advanced filtering capabilities.
+Provides full-text search functionality and advanced filtering capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -540,7 +541,7 @@ sequenceDiagram
 
 ### 11. GraphQL Gateway
 
-Provides a federated GraphQL interface for unified data querying.
+Provides a federated GraphQL interface for unified data access and querying.
 
 ```mermaid
 sequenceDiagram
@@ -572,7 +573,7 @@ sequenceDiagram
 
 ### 12. Observability Stack
 
-Comprehensive monitoring, tracing, and logging for system visibility.
+Comprehensive monitoring, distributed tracing, and centralized logging for end-to-end system observability.
 
 ```mermaid
 graph TD
@@ -582,10 +583,11 @@ graph TD
   B --> E[Logs]
   C --> F[Prometheus]
   D --> G[Tempo]
-  E --> H[Loki]
-  F --> I[Grafana]
-  G --> I
-  H --> I
+  E --> H[Alloy]
+  H --> I[Loki]
+  F --> J[Grafana]
+  G --> J
+  I --> J
 ```
 
 **Responsibilities**:
@@ -599,12 +601,13 @@ graph TD
 
 - **Prometheus** - Real-time metrics collection with service-level indicators
 - **Tempo** - End-to-end distributed tracing across service boundaries
+- **Alloy** - Vendor-agnostic telemetry collector deployed as DaemonSet for Kubernetes log aggregation
 - **Loki** - Centralized logging with structured labels and efficient storage
 - **Grafana** - Unified dashboards for metrics, traces, and logs correlation
 
 ### 13. Frontend Application
 
-Modern React-based user interface with real-time capabilities.
+Modern React-based user interface with real-time communication capabilities.
 
 ```mermaid
 sequenceDiagram
@@ -633,3 +636,83 @@ sequenceDiagram
 - TypeScript for type safety and developer experience
 - Real-time updates for chat, notifications, and order status
 - Performance optimization with code splitting and lazy loading
+
+### 14. Production Deployment
+
+The production environment uses a two-phase deployment strategy combining Infrastructure as Code (IaC) with GitOps.
+
+#### Infrastructure Provisioning (Terraform)
+
+Terraform provisions the complete GKE cluster infrastructure:
+
+```text
+terraform/
+├── modules/                    # Reusable infrastructure modules
+│   ├── gcp-network/            # VPC, subnets, Cloud NAT
+│   ├── gke-cluster/            # 5-tier node pool architecture
+│   ├── cloudnative-pg-operator/
+│   ├── strimzi-kafka-operator/
+│   ├── redis-operator/
+│   ├── monitoring/             # Prometheus, Grafana, Loki, Tempo, Alloy
+│   ├── argocd/                 # GitOps controller
+│   └── traefik/                # Ingress controller
+└── environments/prod/          # Production configuration
+```
+
+**Key Features**:
+
+- 5-tier node pool architecture (stateful, stateless, monitoring, control-plane, gateway)
+- Spot VMs for stateless workloads (~60% cost savings)
+- Automated TLS with cert-manager and Let's Encrypt
+- External Secrets Operator for GCP Secret Manager integration
+
+**See**: [`terraform/README.md`](./terraform/README.md) for complete infrastructure setup.
+
+#### Application Deployment (GitOps)
+
+ArgoCD manages application deployments using Kustomize overlays:
+
+```text
+deployments/k8s/
+├── apps/applicationsets/      # ArgoCD ApplicationSet definitions
+├── infrastructure/            # Platform services (databases, monitoring)
+│   ├── base/                  # Environment-agnostic configs
+│   └── overlays/prod/         # Production-specific patches
+└── workloads/                 # Microservices
+    ├── base/                  # Shared configurations
+    └── overlays/prod/         # Production replicas, resources, HPA
+```
+
+**Deployment Flow**:
+
+1. Developer pushes to `main` branch
+2. ArgoCD detects changes and syncs to cluster
+3. Kustomize builds manifests with production overlays
+4. Applications deployed with HA configuration
+
+**See**: [`deployments/k8s/README.md`](./deployments/k8s/README.md) for GitOps workflow details.
+
+#### Frontend Deployment (Cloudflare Pages)
+
+**Note**: The frontend application is deployed separately from the Kubernetes infrastructure via Cloudflare Pages for optimal cost and performance:
+
+**Deployment Architecture**:
+
+```text
+GitHub (main branch) → Cloudflare Pages → Global CDN (300+ locations)
+```
+
+**Benefits**:
+
+- Zero infrastructure cost (Cloudflare Pages free tier)
+- Global edge network with sub-50ms latency worldwide
+- Automatic deployments on git push
+- Preview deployments for every pull request
+- Built-in SPA routing and asset optimization
+- Automatic HTTPS with Cloudflare certificates
+
+**Configuration**: See `terraform/modules/cloudflare-pages/` for IaC setup
+
+**Domain**: Frontend served from Cloudflare-managed domain, backend APIs from GKE cluster
+
+This separation allows the backend microservices to scale independently while keeping the static frontend optimally distributed at the edge.

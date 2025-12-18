@@ -7,7 +7,7 @@ Enterprise-grade infrastructure as code for the Go Micro-Commerce platform on Go
 This Terraform configuration provisions a cost-optimized, production-ready GKE cluster with:
 
 - **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), control-plane (operators), and gateway (ingress) workloads
-- **Cost Optimization**: Spot VMs for microservices (~60% savings)
+- **Cost Optimization**: Right-sized node pools for learning/testing environments
 - **Complete Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
 - **Full Observability**: Prometheus, Grafana, Loki, Tempo, Alloy monitoring stack with dedicated pool
 - **GitOps Ready**: ArgoCD for application deployments on dedicated control plane pool
@@ -15,21 +15,19 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 
 ### Cost Breakdown
 
-**Note**: Optimized for learning/testing with 250GB total disk limit in asia-southeast2-a zone.
+**Note**: Optimized for learning/testing with 190GB total disk allocation in asia-southeast2 region.
 
-| Component                | Configuration                                             |
-| ------------------------ | --------------------------------------------------------- |
-| **Stateful Pool**        | 3 × e2-standard-2 (regular VMs, 50GB balanced)            |
-| **Stateless Pool**       | 2-10 × e2-medium (Spot VMs, 20GB balanced, autoscaling)   |
-| **Monitoring Pool**      | 1-3 × e2-medium (regular VMs, 30GB balanced, autoscaling) |
-| **Control Plane Pool**   | 1-2 × e2-small (regular VMs, 15GB balanced, autoscaling)  |
-| **Gateway Pool**         | 1-3 × e2-medium (regular VMs, 15GB balanced, autoscaling) |
-| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                           |
-| **Total Infrastructure** | -                                                         |
+| Component                | Configuration                                  |
+| ------------------------ | ---------------------------------------------- |
+| **Stateful Pool**        | 3 × e2-medium (regular VMs, 30GB balanced)     |
+| **Stateless Pool**       | 2 × e2-standard-2 (regular VMs, 20GB balanced) |
+| **Monitoring Pool**      | 1 × e2-standard-2 (regular VMs, 25GB balanced) |
+| **Control Plane Pool**   | 1 × e2-standard-2 (regular VMs, 20GB balanced) |
+| **Gateway Pool**         | 1 × e2-medium (regular VMs, 15GB balanced)     |
+| **Frontend Hosting**     | Cloudflare Pages (React + Vite)                |
+| **Total Infrastructure** | -                                              |
 
-**Total Disk Allocation**: 250GB (150GB stateful + 40GB stateless + 30GB monitoring + 15GB control plane + 15GB gateway)
-
-**Savings**: ~60% compared to using all regular (non-Spot) VMs
+**Total Disk Allocation**: 190GB (90GB stateful + 40GB stateless + 25GB monitoring + 20GB control plane + 15GB gateway)
 
 ## Frontend Deployment
 
@@ -103,7 +101,7 @@ terraform/
 │   ├── strimzi-kafka-operator/       # Kafka operator (KRaft mode)
 │   ├── redis-operator/               # Redis operator
 │   ├── cert-manager/                 # Automated TLS certificate management
-│   ├── monitoring/                   # Prometheus, Grafana, Loki, Tempo
+│   ├── monitoring/                   # Prometheus, Grafana, Loki, Tempo, Alloy
 │   ├── argocd/                       # GitOps controller
 │   ├── traefik/                      # Ingress controller
 │   ├── cloudflare-dns/               # DNS records management
@@ -114,7 +112,10 @@ terraform/
 │       ├── variables.tf              # Variable definitions
 │       ├── outputs.tf                # Output definitions
 │       ├── providers.tf              # Provider configuration
-│       ├── backend.hcl               # Backend configuration
+│       ├── backend.tf                # Backend configuration
+│       ├── backend.hcl               # Backend config values
+│       ├── versions.tf               # Provider versions
+│       ├── secrets.tf                # Secret definitions
 │       ├── terraform.tfvars.example  # Example configuration
 │       └── terraform.tfvars          # Your actual config (gitignored)
 ├── shared/                           # Shared configurations
@@ -124,7 +125,10 @@ terraform/
     ├── init-backend.sh               # Initialize GCS backend
     ├── plan-prod.sh                  # Plan infrastructure changes
     ├── apply-prod.sh                 # Apply infrastructure
-    └── destroy-prod.sh               # Destroy infrastructure
+    ├── cluster-status.sh             # Check cluster status
+    ├── pause-cluster.sh              # Pause cluster to save costs
+    ├── resume-cluster.sh             # Resume paused cluster
+    └── populate-secrets.sh           # Populate secrets in GSM
 ```
 
 ## Infrastructure Components
@@ -144,42 +148,42 @@ Provisions GKE cluster with 5-tier node pool architecture:
 
 **Stateful Pool** (Databases: PostgreSQL, Kafka, Redis)
 
-- 3 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
-- 50GB balanced persistent disk per node (150GB total)
+- 3 × e2-medium nodes (1 vCPU, 4GB RAM)
+- 30GB balanced persistent disk per node (90GB total)
 - Regular VMs for reliability
 - Fixed node count (no autoscaling)
 - Taint: `workload-type=stateful:NoSchedule`
 
 **Stateless Pool** (Microservices)
 
-- 2-10 × e2-medium nodes (1 vCPU, 4GB RAM)
-- 20GB balanced persistent disk per node (40-200GB total)
-- **Spot VMs** for 60-91% cost savings
-- Autoscaling based on workload
-- Taint: `cloud.google.com/gke-spot=true:NoSchedule`
+- 2 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
+- 20GB balanced persistent disk per node (40GB total)
+- Regular VMs for reliability
+- Autoscaling capable (min/max nodes configurable)
+- Taint: `workload-type=stateless:NoSchedule`
 
 **Monitoring Pool** (Observability: Prometheus, Grafana, Loki, Tempo, Alloy)
 
-- 1-3 × e2-medium nodes (1 vCPU, 4GB RAM)
-- 30GB balanced persistent disk per node (30-90GB total)
+- 1 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
+- 25GB balanced persistent disk per node (25GB total)
 - Regular VMs for monitoring reliability
-- Autoscaling based on metrics load
+- Autoscaling capable (min/max nodes configurable)
 - Taint: `workload-type=monitoring:NoSchedule`
 
 **Control Plane Pool** (Operators, ArgoCD, ESO)
 
-- 1-2 × e2-small nodes (0.5 vCPU, 2GB RAM)
-- 15GB balanced persistent disk per node (15-30GB total)
+- 1 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
+- 20GB balanced persistent disk per node (20GB total)
 - Regular VMs for control plane reliability
-- Autoscaling for operator workloads
+- Autoscaling capable (min/max nodes configurable)
 - Taint: `workload-type=control-plane:NoSchedule`
 
 **Gateway Pool** (Traefik, Apollo Router, API Gateway)
 
-- 1-3 × e2-medium nodes (1 vCPU, 4GB RAM)
-- 15GB balanced persistent disk per node (15-45GB total)
+- 1 × e2-medium nodes (1 vCPU, 4GB RAM)
+- 15GB balanced persistent disk per node (15GB total)
 - Regular VMs for gateway reliability
-- Autoscaling based on traffic
+- Autoscaling capable (min/max nodes configurable)
 - Taint: `workload-type=gateway:NoSchedule`
 
 **Security Features**
@@ -255,6 +259,7 @@ Provisions GKE cluster with 5-tier node pool architecture:
 - LoadBalancer service type
 - Dashboard enabled with Prometheus metrics
 - TLS termination for all ingress routes
+- **Kubernetes Gateway API** provider with RBAC for GatewayClass, Gateway, HTTPRoute, and ReferenceGrant resources
 
 ## Deployment Workflow
 
@@ -278,9 +283,10 @@ Provisions GKE cluster with 5-tier node pool architecture:
    # REQUIRED: Update with your GCP project ID
    project_id = "your-gcp-project-id"
 
-   # Optional: Customize region/zone (default: asia-southeast2)
+   # Optional: Customize region (default: asia-southeast2)
+   # Note: Cluster uses regional deployment. Zone is optional for specific workloads.
    region = "asia-southeast2"
-   zone   = "asia-southeast2-a"
+   zone   = "asia-southeast2-a"  # Optional: Remove for multi-AZ
 
    # Optional: Customize cluster configuration
    cluster_name = "go-micro-commerce-prod"
@@ -327,7 +333,7 @@ This will:
 2. Provision GKE cluster with 5-tier node pool architecture
 3. Install External Secrets Operator with Google Secret Manager integration
 4. Install all operators (PostgreSQL, Kafka, Redis)
-5. Deploy monitoring stack (Prometheus, Grafana, Loki, Tempo)
+5. Deploy monitoring stack (Prometheus, Grafana, Loki, Tempo, Alloy)
 6. Install ArgoCD and Traefik
 7. Configure kubectl with cluster credentials
 8. Set up Cloudflare DNS for backend API
@@ -337,7 +343,7 @@ This will:
 **If failed**:
 
 ```bash
-gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a --project=go-micro-commerce
+gcloud container clusters get-credentials go-micro-commerce-prod --region=asia-southeast2 --project=go-micro-commerce
 ./terraform/scripts/apply-prod.sh
 ```
 
@@ -360,7 +366,7 @@ After successful deployment:
 
 3. Check node pools:
    ```bash
-   gcloud container node-pools list --cluster=go-micro-commerce-prod --zone=asia-southeast2-a
+   gcloud container node-pools list --cluster=go-micro-commerce-prod --region=asia-southeast2
    ```
 
 ### Step 6: Access Platform Services
@@ -507,14 +513,14 @@ spec:
 
 ### Stateless Workloads (Microservices)
 
-To schedule on the stateless pool (Spot VMs):
+To schedule on the stateless pool:
 
 ```yaml
 spec:
   tolerations:
-    - key: "cloud.google.com/gke-spot"
+    - key: "workload-type"
       operator: "Equal"
-      value: "true"
+      value: "stateless"
       effect: "NoSchedule"
   nodeSelector:
     workload-type: "stateless"
@@ -669,14 +675,40 @@ terraform output kubeconfig_command
 **WARNING**: This will delete all infrastructure!
 
 ```bash
-./terraform/scripts/destroy-prod.sh
+cd terraform/environments/prod
+terraform destroy
 ```
 
-The script includes safety checks:
+Terraform destroy includes safety checks:
 
 - Requires typing "yes" to confirm
-- Requires typing the cluster name to confirm
-- 3-second countdown before destruction
+- Shows all resources to be destroyed before confirmation
+
+### Cluster Management Scripts
+
+**Check Cluster Status**
+
+```bash
+./terraform/scripts/cluster-status.sh
+```
+
+Shows node pool status, pod distribution, and resource utilization.
+
+**Pause Cluster (Cost Savings)**
+
+```bash
+./terraform/scripts/pause-cluster.sh
+```
+
+Scales down node pools to zero to save costs during non-usage periods.
+
+**Resume Cluster**
+
+```bash
+./terraform/scripts/resume-cluster.sh
+```
+
+Restores node pools to their configured sizes.
 
 ## Troubleshooting
 
@@ -711,15 +743,7 @@ kubectl get nodes
 If not configured, get credentials:
 
 ```bash
-gcloud container clusters get-credentials go-micro-commerce-prod --zone=asia-southeast2-a
-```
-
-### Issue: Spot VMs are preempted frequently
-
-**Solution**: Adjust autoscaling settings in `terraform.tfvars`:
-
-```hcl
-stateless_pool_min_nodes = 3  # Increase minimum nodes
+gcloud container clusters get-credentials go-micro-commerce-prod --region=asia-southeast2
 ```
 
 ### Issue: Node pool runs out of capacity
@@ -763,8 +787,8 @@ stateless_pool_min_nodes = 3  # Increase minimum nodes
 ## Cost Optimization Tips
 
 1. **Right-size node pools**: Monitor actual resource usage and adjust machine types
-2. **Use Spot VMs**: Already configured for stateless pool (60% savings)
-3. **Enable autoscaling**: Already configured for stateless pool
+2. **Enable Spot VMs**: Configure stateless pool with Spot VMs for 60-91% savings
+3. **Enable autoscaling**: Configure min/max nodes based on workload patterns
 4. **Set resource requests/limits**: Ensures efficient pod packing
 5. **Use committed use discounts**: For predictable workloads (stateful pool)
 
@@ -774,7 +798,6 @@ stateless_pool_min_nodes = 3  # Increase minimum nodes
 
 - **Node utilization**: CPU, memory, disk usage
 - **Pod status**: Restarts, failures, pending
-- **Spot VM preemptions**: Track preemption rate
 - **Cost tracking**: Use GCP cost management tools
 
 ### Access Monitoring
