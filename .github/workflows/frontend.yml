@@ -14,7 +14,7 @@ on:
       - graphql-gateway/supergraph-schema.graphql
 jobs:
   build:
-    runs-on: tenki-standard-autoscale
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:

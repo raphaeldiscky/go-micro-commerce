@@ -18,7 +18,7 @@ on:
       - scripts/merge-graphql-schemas.sh
 jobs:
   compose-supergraph:
-    runs-on: tenki-standard-autoscale
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - name: Checkout code
