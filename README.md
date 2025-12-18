@@ -46,6 +46,8 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[connectrpc/connect-go](https://github.com/connectrpc/connect-go)** - protobuf RPC framework
 - **[bufbuild/buf](https://github.com/bufbuild/buf)** - linter, formatter, generator for protobuf
 - **[99designs/gqlgen](https://github.com/99designs/gqlgen)** - Go code generation-based GraphQL server library
+- **[apollographql/router](https://github.com/apollographql/router)** - routing runtime for Apollo Federation
+- **[oapi-codegen](https://github.com/oapi-codegen/oapi-codegen)** - generate Go client and server boilerplate from OpenAPI 3 specifications
 - **[bytedance/sonic](https://github.com/bytedance/sonic)** - a blazingly fast JSON serializing & deserializing library
 - **[stretchr/testify](https://github.com/stretchr/testify)** - testing toolkit
 - **[testcontainers/testcontainers-go](https://github.com/testcontainers/testcontainers-go)** - testcontainers for go
