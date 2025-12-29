@@ -1,0 +1,155 @@
+# Address entity
+type Address {
+  id: UUID!
+  userId: UUID!
+  receiverName: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String
+  postalCode: String!
+  countryCode: String!
+  latitude: Float
+  longitude: Float
+  isDefault: Boolean!
+  note: String
+  fullAddress: String!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Input type for creating a new address
+input CreateAddressInput {
+  receiverName: String!
+  addressLine1: String!
+  addressLine2: String
+  city: String!
+  state: String
+  postalCode: String!
+  countryCode: String!
+  latitude: Float
+  longitude: Float
+  isDefault: Boolean!
+  note: String
+}
+
+# Input type for updating an existing address
+input UpdateAddressInput {
+  receiverName: String
+  addressLine1: String
+  addressLine2: String
+  city: String
+  state: String
+  postalCode: String
+  countryCode: String
+  latitude: Float
+  longitude: Float
+  note: String
+}
+
+# Address connection for cursor-based pagination
+type AddressConnection {
+  edges: [AddressEdge!]!
+  pageInfo: PageInfo!
+}
+
+# Address edge
+type AddressEdge {
+  node: Address!
+  cursor: String!
+}
+
+# Page info for cursor pagination
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Address queries
+extend type Query {
+  # List all addresses for the authenticated user with cursor pagination
+  listAddresses(limit: Int!, cursor: String): AddressConnection! @requiresAuth
+
+  # Get a specific address by ID
+  getAddress(id: UUID!): Address! @requiresAuth
+
+  # Get the default address for the authenticated user
+  getDefaultAddress: Address! @requiresAuth
+}
+
+# Address mutations
+extend type Mutation {
+  # Create a new address
+  createAddress(input: CreateAddressInput!): Address! @requiresAuth
+
+  # Update an existing address
+  updateAddress(id: UUID!, input: UpdateAddressInput!): Address! @requiresAuth
+
+  # Delete an address
+  deleteAddress(id: UUID!): Boolean! @requiresAuth
+
+  # Set an address as the default
+  setDefaultAddress(id: UUID!): Address! @requiresAuth
+}
+# Scalars
+scalar Time
+scalar UUID
+
+# Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
+directive @requiresAuth on FIELD_DEFINITION | OBJECT
+directive @requiresRole(role: Role!) on FIELD_DEFINITION | OBJECT
+
+# Role enum for authorization
+enum Role {
+  ADMIN
+  USER
+}
+
+# Root query and mutation types
+type Query
+type Mutation
+# User entity - owned by auth-service
+type User @key(fields: "id") {
+  id: UUID!
+  email: String!
+  firstName: String!
+  lastName: String!
+  isActive: Boolean!
+  roles: [String!]!
+  emailVerified: Boolean!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+input RegisterUserInput {
+  email: String!
+  password: String!
+  username: String!
+  firstName: String!
+  lastName: String!
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+type AuthPayload {
+  token: String!
+  refreshToken: String!
+  user: User!
+}
+
+extend type Query {
+  me: User @requiresAuth
+  user(id: UUID!): User @requiresAuth
+}
+
+extend type Mutation {
+  register(input: RegisterUserInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  refreshToken: AuthPayload!
+  logout: Boolean! @requiresAuth
+}

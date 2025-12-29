@@ -1,0 +1,227 @@
+# OrderStatus enum
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  PAYMENT_PENDING
+  PAYMENT_EXPIRED
+  PAID
+  COMPLETED
+  SHIPPED
+  DELIVERED
+  CANCELED
+  FAILED
+}
+
+# PaymentGateway enum
+enum PaymentGateway {
+  STRIPE
+}
+
+# Payment type reference from payment-service (Federation)
+type Payment @key(fields: "orderId") {
+  orderId: UUID!
+}
+
+# Courier type
+type Courier {
+  courierId: String!
+}
+
+# Package type
+type Package {
+  weightKg: Decimal!
+  length: Decimal!
+  height: Decimal!
+  width: Decimal!
+  unit: String!
+}
+
+# Origin address type
+type Origin {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Destination address type
+type Destination {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Order entity
+type Order {
+  id: UUID!
+  idempotencyKey: UUID!
+  checkoutSessionId: UUID!
+  customerId: UUID!
+  status: OrderStatus!
+  currency: String!
+  paymentGateway: PaymentGateway!
+  courier: Courier!
+  package: Package!
+  origin: Origin!
+  destination: Destination!
+  shippingCost: Decimal!
+  subtotal: Decimal!
+  totalPrice: Decimal!
+  totalTax: Decimal!
+  totalDiscount: Decimal!
+  items: [OrderItem!]!
+  payment: Payment # Payment details from payment-service (includes clientSecret and expiresAt)
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# OrderItem entity
+type OrderItem {
+  id: UUID!
+  orderId: UUID!
+  productId: UUID!
+  productName: String!
+  quantity: Int!
+  unitPrice: Decimal!
+  totalPrice: Decimal!
+  taxRate: Decimal!
+  totalTax: Decimal!
+  totalDiscount: Decimal!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Order connection for cursor-based pagination
+type OrderConnection {
+  edges: [OrderEdge!]!
+  pageInfo: PageInfo!
+}
+
+# Order edge
+type OrderEdge {
+  node: Order!
+  cursor: String!
+}
+
+# Page info for cursor pagination
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Input type for creating order items
+input CreateOrderItemInput {
+  productId: UUID!
+  quantity: Int!
+}
+
+# Input type for shipping dimensions
+input DimensionsInput {
+  length: Decimal!
+  height: Decimal!
+  width: Decimal!
+  unit: String!
+}
+
+# Input type for from address
+input FromAddressInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Input type for to address
+input ToAddressInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Input type for shipping
+input ShippingInput {
+  carrierId: String!
+  fromAddress: FromAddressInput!
+  toAddress: ToAddressInput!
+  weightKg: Decimal!
+  dimensions: DimensionsInput!
+}
+
+# Input type for creating a new order
+input CreateOrderInput {
+  idempotencyKey: UUID!
+  items: [CreateOrderItemInput!]!
+  shipping: ShippingInput!
+  paymentGateway: PaymentGateway!
+  currency: String!
+}
+
+# Input type for placing an order from checkout session
+input PlaceOrderInput {
+  checkoutSessionId: UUID!
+  idempotencyKey: UUID!
+}
+
+# Payment metadata for frontend payment processing
+type PaymentMetadata {
+  paymentId: UUID!
+  paymentGateway: PaymentGateway!
+  gatewayTransactionId: String!
+  gatewayMetadata: Any!
+  amount: Decimal!
+  currency: String!
+}
+
+# Response payload for placeOrder mutation
+type PlaceOrderPayload {
+  order: Order!
+  paymentMetadata: PaymentMetadata!
+}
+
+# Order queries
+extend type Query {
+  # List all orders with cursor pagination (admin only)
+  listOrders(limit: Int!, cursor: String): OrderConnection!
+    @requiresRole(role: ADMIN)
+
+  # List authenticated user's orders with cursor pagination
+  listMyOrders(limit: Int!, cursor: String): OrderConnection! @requiresAuth
+
+  # Get order by ID (authenticated user's orders only)
+  getOrderById(id: UUID!): Order! @requiresAuth
+}
+
+# Order mutations
+extend type Mutation {
+  # Create a new order using saga workflow
+  createOrder(input: CreateOrderInput!): Order! @requiresAuth
+
+  # Place order from checkout session with payment intent creation
+  placeOrder(input: PlaceOrderInput!): PlaceOrderPayload! @requiresAuth
+}
+# Scalars
+scalar Time
+scalar UUID
+scalar Decimal
+scalar Any
+
+# Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
+directive @requiresAuth on FIELD_DEFINITION | OBJECT
+directive @requiresRole(role: Role!) on FIELD_DEFINITION | OBJECT
+
+# Role enum for authorization
+enum Role {
+  ADMIN
+  USER
+}
+
+# Note: Apollo Federation directives (@key, @external, etc.) are automatically
+# included by gqlgen when federation is enabled in gqlgen.yml
+
+# Root query, mutation, and subscription types
+type Query
+type Mutation

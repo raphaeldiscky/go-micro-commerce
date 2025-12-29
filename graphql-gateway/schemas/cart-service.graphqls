@@ -1,0 +1,216 @@
+# CheckoutSessionStatus enum
+enum CheckoutSessionStatus {
+  PENDING
+  ORDER_PLACED
+  CANCELED
+}
+
+# CartStatus enum
+enum CartStatus {
+  ACTIVE
+  CHECKED_OUT
+  ARCHIVED
+}
+
+# Cart entity
+type Cart {
+  id: UUID!
+  customerId: UUID!
+  status: CartStatus!
+  items: [CartItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# CartItem entity
+type CartItem {
+  id: UUID!
+  cartId: UUID!
+  productId: UUID!
+  quantity: Int!
+  selectedForCheckout: Boolean!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# Input type for adding cart item
+input AddCartItemInput {
+  productId: UUID!
+  quantity: Int!
+}
+
+# Input type for updating cart item quantity
+input UpdateCartItemQuantityInput {
+  quantity: Int!
+}
+
+# Input type for selecting item for checkout
+input SelectItemForCheckoutInput {
+  selected: Boolean!
+}
+
+# Cart queries
+extend type Query {
+  # Get authenticated user's cart
+  getMyCart: Cart @requiresAuth
+}
+
+# Cart mutations
+extend type Mutation {
+  # Add item to authenticated user's cart
+  addItemToCart(input: AddCartItemInput!): Cart! @requiresAuth
+
+  # Remove item from authenticated user's cart
+  removeItemFromCart(itemId: UUID!): Cart! @requiresAuth
+
+  # Update item quantity in authenticated user's cart
+  updateItemQuantity(itemId: UUID!, input: UpdateCartItemQuantityInput!): Cart!
+    @requiresAuth
+
+  # Select or deselect item for checkout
+  selectItemForCheckout(
+    itemId: UUID!
+    input: SelectItemForCheckoutInput!
+  ): Cart! @requiresAuth
+}
+# Courier entity
+type Courier {
+  courierId: String!
+}
+
+# Origin entity
+type Origin {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Destination entity
+type Destination {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Package entity
+type Package {
+  weightKg: Decimal!
+  width: Decimal!
+  height: Decimal!
+  length: Decimal!
+  unit: String!
+}
+
+# CheckoutSession entity
+type CheckoutSession {
+  id: UUID!
+  idempotencyKey: UUID!
+  customerId: UUID!
+  courier: Courier!
+  destination: Destination!
+  origin: Origin!
+  package: Package!
+  status: CheckoutSessionStatus!
+  paymentGateway: String
+  currency: String!
+  items: [CheckoutSessionItem!]!
+  createdAt: Time!
+  updatedAt: Time!
+}
+
+# CheckoutSessionItem entity
+type CheckoutSessionItem {
+  id: UUID!
+  productId: UUID!
+  productName: String!
+  quantity: Int!
+  unitPrice: Decimal!
+}
+
+# Input type for creating checkout session
+input CreateCheckoutSessionInput {
+  idempotencyKey: UUID!
+  cartId: UUID!
+}
+
+# Input type for courier
+input CourierInput {
+  courierId: String!
+}
+
+# Input type for origin
+input OriginInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Input type for destination
+input DestinationInput {
+  city: String!
+  state: String!
+  postalCode: String!
+  countryCode: String!
+}
+
+# Input type for package
+input PackageInput {
+  weightKg: Decimal!
+  width: Decimal!
+  height: Decimal!
+  length: Decimal!
+  unit: String!
+}
+
+# Input type for updating checkout session
+input UpdateCheckoutSessionInput {
+  courier: CourierInput
+  destination: DestinationInput
+  origin: OriginInput
+  package: PackageInput
+  paymentGateway: String
+}
+
+extend type Query {
+  # Get checkout session by ID
+  getCheckoutSession(id: UUID!): CheckoutSession @requiresAuth
+}
+
+extend type Mutation {
+  # Create checkout session from authenticated user's cart
+  createCheckoutSession(input: CreateCheckoutSessionInput!): CheckoutSession!
+    @requiresAuth
+
+  # Update checkout session with address, carrier, or payment gateway
+  updateCheckoutSession(
+    sessionId: UUID!
+    input: UpdateCheckoutSessionInput!
+  ): CheckoutSession! @requiresAuth
+
+  # Cancel checkout session
+  cancelCheckoutSession(sessionId: UUID!): CheckoutSession! @requiresAuth
+}
+# Scalars
+scalar Time
+scalar UUID
+scalar Decimal
+
+# Custom directives for authorization (prefixed to avoid Apollo Federation conflicts)
+directive @requiresAuth on FIELD_DEFINITION | OBJECT
+directive @requiresRole(role: Role!) on FIELD_DEFINITION | OBJECT
+
+# Role enum for authorization
+enum Role {
+  ADMIN
+  USER
+}
+
+# Note: Apollo Federation directives (@key, @external, etc.) are automatically
+# included by gqlgen when federation is enabled in gqlgen.yml
+
+# Root query, mutation, and subscription types
+type Query
+type Mutation
