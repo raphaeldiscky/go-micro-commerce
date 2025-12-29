@@ -1,16 +1,10 @@
 import { Badge } from '@/components/ui/badge'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PATH_ROOT } from '@/constants'
 import type { FileRoutesByPath } from '@tanstack/react-router'
 import { createFileRoute } from '@tanstack/react-router'
 import {
-  ArrowLeftRight,
+  Bell,
   Building,
   CreditCard,
   ExternalLink,
@@ -20,10 +14,12 @@ import {
   MessageCircle,
   Package,
   Radio,
+  Rocket,
   RotateCw,
   Search,
+  ShoppingCart,
+  Truck,
   Wrench,
-  Zap,
 } from 'lucide-react'
 
 export const Route = createFileRoute(
@@ -36,219 +32,236 @@ function ServicesPage() {
   const services = [
     {
       description:
-        'Central entry point for all client requests with comprehensive traffic management',
+        'Unified entry point with rate limiting, circuit breaker, and JWT validation',
       details:
-        'Handles all incoming requests and routes them to appropriate microservices. Provides cross-cutting concerns like authentication, logging, and monitoring.',
+        'Routes requests to microservices with cross-cutting concerns like authentication, rate limiting, and circuit breaker patterns for fault tolerance.',
       features: [
-        'Load Balancing',
         'Rate Limiting',
+        'Circuit Breaker',
+        'JWT Validation',
         'Service Discovery',
         'Request Routing',
-        'Circuit Breaker',
-        'Monitoring',
+        'CORS Management',
       ],
       icon: ExternalLink,
       name: 'API Gateway',
-      patterns: ['Gateway Pattern', 'Circuit Breaker', 'Service Discovery'],
-      port: ':8080',
-      technologies: ['Traefik', 'Consul', 'Go'],
+      patterns: [
+        'Circuit Breaker',
+        'Rate Limiting',
+        'Proxy',
+        'Service Discovery',
+      ],
+      technologies: ['Go', 'Traefik'],
     },
     {
       description:
-        'JWT-based authentication and authorization with role management',
+        'JWT RS256 authentication with refresh token rotation and email verification',
       details:
-        'Manages user authentication, authorization, and access control across all services. Implements secure password handling and token-based authentication.',
+        'Secure authentication using asymmetric RS256 algorithm with short-lived access tokens and automatic refresh token rotation.',
       features: [
-        'JWT Authentication',
-        'User Registration',
-        'Role-based Access Control',
-        'Token Refresh',
+        'RS256 JWT',
+        'Refresh Token Rotation',
+        'Email Verification',
         'Session Management',
+        'Rate Limiting',
         'Password Security',
       ],
       icon: Lock,
       name: 'Auth Service',
-      patterns: ['JWT Pattern', 'Repository Pattern', 'Clean Architecture'],
-      port: ':8081',
-      technologies: ['Go', 'PostgreSQL', 'JWT', 'bcrypt'],
+      patterns: ['Clean Architecture', 'JWT Bearer'],
+      technologies: ['Go', 'PostgreSQL', 'JWT', 'Bcrypt'],
     },
     {
       description:
-        'Product catalog management with both REST and gRPC interfaces',
+        'Catalog management with gRPC, optimistic locking, and Redis caching',
       details:
-        'Handles product catalog operations with dual API support. Integrates with search service for enhanced product discovery.',
+        'Product CRUD with version-based optimistic locking to prevent lost updates. Cache-aside pattern with Redis for high-read performance.',
       features: [
-        'Product CRUD',
         'gRPC API',
-        'Inventory Tracking',
-        'Category Management',
+        'Optimistic Locking',
+        'Redis Cache',
+        'Stock Reservation',
         'Search Integration',
         'Price Management',
       ],
       icon: Package,
       name: 'Product Service',
-      patterns: ['Domain-Driven Design', 'gRPC Pattern', 'Repository Pattern'],
-      port: ':8082',
-      technologies: ['Go', 'PostgreSQL', 'gRPC', 'Protocol Buffers'],
+      patterns: ['Clean Architecture', 'Cache-Aside', 'Optimistic Lock'],
+      technologies: ['Go', 'PostgreSQL', 'gRPC', 'Redis'],
     },
     {
       description:
-        'Complex order processing with saga orchestration and workflow management',
+        'Saga orchestration with dual implementation: PostgreSQL and Temporal',
       details:
-        'Orchestrates complex order workflows using saga patterns. Manages distributed transactions with compensation logic for failure scenarios.',
+        'Complex order workflows with both custom PostgreSQL-based saga and Temporal-managed workflows. Asynq for payment reminders and expiration.',
       features: [
-        'Order Management',
         'Saga Orchestration',
         'Temporal Workflows',
+        'Asynq Scheduling',
         'Compensation Logic',
-        'State Management',
-        'Event Sourcing',
+        'Order Expiration',
+        'Payment Reminders',
       ],
       icon: FileText,
       name: 'Order Service',
       patterns: [
-        'Saga Pattern',
-        'Event Sourcing',
-        'Temporal Workflows',
-        'CQRS',
+        'Clean Architecture',
+        'Saga Orchestration',
+        'Outbox',
+        'Compensation',
       ],
-      port: ':8083',
-      technologies: ['Go', 'PostgreSQL', 'Temporal', 'Kafka'],
+      technologies: ['Go', 'PostgreSQL', 'Temporal', 'Kafka', 'Asynq'],
     },
     {
       description:
-        'Secure payment processing with transaction management and fraud prevention',
+        'Stripe integration with idempotent webhooks and secure processing',
       details:
-        'Handles secure payment processing with multiple payment methods. Implements fraud detection and comprehensive transaction management.',
+        'Payment gateway factory pattern supporting Stripe. Idempotent processing with keys and secure webhook verification.',
       features: [
-        'Payment Processing',
-        'Transaction History',
-        'Refund Management',
-        'Fraud Detection',
-        'Payment Methods',
-        'Webhooks',
+        'Stripe Gateway',
+        'Idempotent Webhooks',
+        'Refund Processing',
+        'Payment Analytics',
+        'Secure Verification',
+        'Multi-currency',
       ],
       icon: CreditCard,
       name: 'Payment Service',
-      patterns: ['Payment Gateway Pattern', 'Idempotency', 'Retry Pattern'],
-      port: ':8084',
-      technologies: ['Go', 'PostgreSQL', 'Stripe API', 'Redis'],
+      patterns: ['Factory', 'Idempotent Receiver', 'Outbox', 'Inbox'],
+      technologies: ['Go', 'PostgreSQL', 'Stripe', 'Kafka'],
     },
     {
       description:
-        'Inventory management and order fulfillment with shipping integration',
+        'Shipping coordination with cost calculation and delivery tracking',
       details:
-        'Manages inventory levels and fulfillment processes. Coordinates with shipping providers and maintains real-time stock information.',
+        'Manages fulfillment lifecycle from order confirmation to delivery. Calculates shipping costs and coordinates with providers.',
       features: [
-        'Inventory Management',
-        'Order Fulfillment',
-        'Shipping Integration',
-        'Stock Tracking',
-        'Warehouse Management',
-        'Delivery Updates',
+        'Shipping Cost',
+        'Delivery Tracking',
+        'Status Updates',
+        'Provider Integration',
+        'ETA Calculation',
+        'Fulfillment Status',
       ],
-      icon: Package,
+      icon: Truck,
       name: 'Fulfillment Service',
-      patterns: ['Event-Driven Architecture', 'Saga Pattern', 'Domain Events'],
-      port: ':8085',
-      technologies: ['Go', 'PostgreSQL', 'Redis', 'Kafka'],
+      patterns: ['Clean Architecture', 'Outbox', 'Inbox'],
+      technologies: ['Go', 'PostgreSQL', 'Kafka', 'gRPC'],
     },
     {
       description:
-        'Real-time messaging with WebSocket connections and message persistence',
+        'Multi-channel delivery via SSE, email, and SMS with templates',
       details:
-        'Provides real-time communication capabilities with persistent message storage. Supports multiple concurrent connections and room-based messaging.',
+        'Real-time push notifications with Server-Sent Events. Async email processing and SMS support with template management.',
       features: [
-        'WebSocket Support',
-        'Real-time Messaging',
-        'Multi-user Rooms',
+        'SSE Push',
+        'Email Delivery',
+        'SMS Support',
+        'Template Engine',
+        'Delivery Tracking',
+        'Redis Pub/Sub',
+      ],
+      icon: Bell,
+      name: 'Notification Service',
+      patterns: ['Clean Architecture', 'Pub/Sub', 'Template Method', 'Inbox'],
+      technologies: ['Go', 'PostgreSQL', 'Kafka', 'Redis', 'SMTP'],
+    },
+    {
+      description:
+        'Real-time messaging via WebSocket with Redis Pub/Sub broadcasting',
+      details:
+        'Bi-directional WebSocket communication with Redis Pub/Sub for cross-instance message broadcasting. Supports typing indicators and presence.',
+      features: [
+        'WebSocket',
+        'Redis Pub/Sub',
+        'Typing Indicators',
+        'Online Status',
         'Message History',
-        'Connection Management',
-        'Scalable Architecture',
+        'Group Chats',
       ],
       icon: MessageCircle,
       name: 'Chat Service',
-      patterns: ['WebSocket Pattern', 'Pub/Sub', 'Connection Pooling'],
-      port: ':9098',
-      technologies: ['Go', 'WebSocket', 'Redis', 'PostgreSQL'],
-    },
-    {
-      description: 'Event-driven notifications with multiple delivery channels',
-      details:
-        'Handles all system notifications across multiple channels. Processes events from other services to trigger appropriate notifications.',
-      features: [
-        'Email Notifications',
-        'Push Notifications',
-        'SMS Support',
-        'Template Management',
-        'Delivery Tracking',
-        'Event-driven Triggers',
-      ],
-      icon: Mail,
-      name: 'Notification Service',
-      patterns: [
-        'Event-Driven Architecture',
-        'Template Pattern',
-        'Observer Pattern',
-      ],
-      port: ':8086',
-      technologies: ['Go', 'Kafka', 'SMTP', 'Redis'],
+      patterns: ['Clean Architecture', 'Pub/Sub'],
+      technologies: ['Go', 'PostgreSQL', 'WebSocket', 'Redis'],
     },
     {
       description:
-        'Advanced search capabilities with Elasticsearch integration',
+        'Full-text search with Elasticsearch indexing and faceted filters',
       details:
-        'Provides powerful search capabilities with Elasticsearch. Includes features like auto-completion, faceted search, and search analytics.',
+        'Real-time document indexing via Kafka events. Advanced full-text search with fuzzy matching, faceted filters, and relevance scoring.',
       features: [
-        'Full-text Search',
-        'Elasticsearch Integration',
-        'Search Analytics',
+        'Elasticsearch',
+        'Fuzzy Search',
+        'Faceted Filters',
         'Auto-suggestions',
-        'Faceted Search',
-        'Search Indexing',
+        'Relevance Scoring',
+        'Real-time Indexing',
       ],
       icon: Search,
       name: 'Search Service',
-      patterns: ['Search Pattern', 'Indexing Strategy', 'Caching Pattern'],
-      port: ':8087',
-      technologies: ['Go', 'Elasticsearch', 'Redis'],
+      patterns: ['Clean Architecture', 'Inbox'],
+      technologies: ['Go', 'Elasticsearch', 'Kafka', 'Redis'],
+    },
+    {
+      description:
+        'Shopping cart with checkout sessions and Asynq task scheduling',
+      details:
+        'Cart lifecycle management with checkout session generation. Promotional code validation and Asynq for cart abandonment recovery.',
+      features: [
+        'Cart Management',
+        'Checkout Sessions',
+        'Promo Codes',
+        'Cart Abandonment',
+        'gRPC API',
+        'Asynq Tasks',
+      ],
+      icon: ShoppingCart,
+      name: 'Cart Service',
+      patterns: ['Clean Architecture', 'Outbox'],
+      technologies: ['Go', 'PostgreSQL', 'Redis', 'Asynq', 'gRPC'],
+    },
+    {
+      description:
+        'Apollo Federation for unified GraphQL schema with subscriptions',
+      details:
+        'GraphQL gateway using Apollo Router for schema federation. Supports queries, mutations, and real-time subscriptions.',
+      features: [
+        'Apollo Router',
+        'Schema Federation',
+        'Subscriptions',
+        'Type-safe API',
+        'JWT Auth',
+        'Query Planning',
+      ],
+      icon: Mail,
+      name: 'GraphQL Gateway',
+      patterns: ['Federation', 'API Gateway'],
+      technologies: ['Apollo Router', 'GraphQL', 'gqlgen'],
     },
   ]
 
   const architecturalPatterns = [
     {
       description:
-        'Strategic design approach focusing on core domain and domain logic',
+        'Bounded contexts with clean architecture and layered design',
       icon: Building,
-      name: 'Domain-Driven Design (DDD)',
+      name: 'Domain-Driven Design',
     },
     {
-      description:
-        'Loosely coupled architecture using events for communication',
+      description: 'Kafka KRaft cluster with outbox pattern and DLQ handling',
       icon: Radio,
       name: 'Event-Driven Architecture',
     },
     {
-      description: 'Manages distributed transactions across multiple services',
+      description:
+        'Dual implementation with PostgreSQL-based and Temporal workflows',
       icon: RotateCw,
-      name: 'Saga Pattern',
+      name: 'Saga Orchestration',
     },
     {
-      description:
-        'Command Query Responsibility Segregation for scalable data access',
-      icon: ArrowLeftRight,
-      name: 'CQRS',
-    },
-    {
-      description: 'Prevents cascade failures in distributed systems',
-      icon: Zap,
-      name: 'Circuit Breaker',
-    },
-    {
-      description:
-        'Single entry point for managing microservices communication',
-      icon: ExternalLink,
-      name: 'API Gateway',
+      description: 'ArgoCD with Kustomize for declarative deployments',
+      icon: Rocket,
+      name: 'GitOps',
     },
   ]
 
@@ -262,9 +275,8 @@ function ServicesPage() {
             Microservices Architecture
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-            A comprehensive e-commerce platform built with Go microservices,
-            showcasing modern distributed systems patterns, event-driven
-            architecture, and advanced orchestration techniques.
+            11 Go microservices with saga orchestration, Kafka KRaft, Temporal
+            workflows, and production-grade Kubernetes deployment.
           </p>
         </div>
 
@@ -307,18 +319,9 @@ function ServicesPage() {
                 key={service.name}
               >
                 <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <service.icon className="h-8 w-8" />
-                      <div>
-                        <CardTitle className="text-xl">
-                          {service.name}
-                        </CardTitle>
-                        <CardDescription className="text-sm font-mono text-blue-600 dark:text-blue-400">
-                          {service.port}
-                        </CardDescription>
-                      </div>
-                    </div>
+                  <div className="flex items-center space-x-3">
+                    <service.icon className="h-8 w-8" />
+                    <CardTitle className="text-xl">{service.name}</CardTitle>
                   </div>
                   <p className="text-gray-600 dark:text-gray-300 mt-2">
                     {service.description}
@@ -393,20 +396,19 @@ function ServicesPage() {
                 Infrastructure & Deployment
               </h3>
               <p className="text-gray-700 dark:text-gray-300 mb-4">
-                All services are containerized with Docker and orchestrated
-                using Docker Compose for local development. The architecture
-                supports Kubernetes deployment with proper service discovery,
-                load balancing, and observability.
+                Production deployment on GKE with Terraform IaC, GitOps via
+                ArgoCD, and LGTM observability stack. Frontend deployed on
+                Cloudflare Pages for global edge distribution.
               </p>
               <div className="flex flex-wrap justify-center gap-2">
-                <Badge variant="outline">Docker</Badge>
-                <Badge variant="outline">Docker Compose</Badge>
                 <Badge variant="outline">Kubernetes</Badge>
-                <Badge variant="outline">Consul</Badge>
-                <Badge variant="outline">Traefik</Badge>
-                <Badge variant="outline">OpenTelemetry</Badge>
-                <Badge variant="outline">Prometheus</Badge>
-                <Badge variant="outline">Grafana</Badge>
+                <Badge variant="outline">Terraform</Badge>
+                <Badge variant="outline">ArgoCD</Badge>
+                <Badge variant="outline">Kafka KRaft</Badge>
+                <Badge variant="outline">Redis Cluster</Badge>
+                <Badge variant="outline">Temporal</Badge>
+                <Badge variant="outline">LGTM Stack</Badge>
+                <Badge variant="outline">Cloudflare Pages</Badge>
               </div>
             </CardContent>
           </Card>
