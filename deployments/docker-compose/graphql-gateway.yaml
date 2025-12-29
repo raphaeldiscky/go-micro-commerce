@@ -33,7 +33,7 @@ services:
       - go-micro-commerce
     environment:
       - CONSUL_HTTP_ADDR=consul:8500
-      - SERVICE_NAME=graphql-gateway
+      - SERVICE_NAME=apollo-router
       - SERVICE_ID=graphql-gateway-localhost-4000
       - SERVICE_ADDRESS=localhost
       - SERVICE_PORT=4000

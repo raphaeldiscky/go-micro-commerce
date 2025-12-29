@@ -151,7 +151,21 @@ traffic_shaping:
       interval: 1s
   all:
     deduplicate_query: true
-    timeout: 20s
+    timeout: 5s
+  # Per-subgraph configuration for graceful degradation
+  subgraphs:
+    auth-service:
+      timeout: 10s
+    chat-service:
+      timeout: 5s
+    notification-service:
+      timeout: 5s
+    order-service:
+      timeout: 5s
+    cart-service:
+      timeout: 5s
+    payment-service:
+      timeout: 5s
 # Include subgraph errors for debugging (disable in production)
 include_subgraph_errors:
   all: true

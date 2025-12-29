@@ -119,47 +119,23 @@ function HomePage() {
           </div>
 
           <Card className="p-8 max-w-5xl mx-auto">
-            <div className="grid gap-8 md:grid-cols-2">
-              <div>
-                <div className="grid gap-3 grid-cols-2">
-                  {TECHNOLOGIES.slice(0, 4).map((tech) => (
-                    <div
-                      className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      key={tech.name}
-                    >
-                      <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
-                      <div>
-                        <h4 className="text-sm font-medium text-foreground">
-                          {tech.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {tech.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {TECHNOLOGIES.map((tech) => (
+                <div
+                  className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                  key={tech.name}
+                >
+                  <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
+                  <div>
+                    <h4 className="text-sm font-medium text-foreground">
+                      {tech.name}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {tech.description}
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <div className="grid gap-3 grid-cols-2">
-                  {TECHNOLOGIES.slice(4, 8).map((tech) => (
-                    <div
-                      className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      key={tech.name}
-                    >
-                      <tech.icon className="h-8 w-8 text-foreground flex-shrink-0" />
-                      <div>
-                        <h4 className="text-sm font-medium text-foreground">
-                          {tech.name}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          {tech.description}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              ))}
             </div>
           </Card>
         </div>
