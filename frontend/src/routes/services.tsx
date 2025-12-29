@@ -51,7 +51,7 @@ function ServicesPage() {
         'Proxy',
         'Service Discovery',
       ],
-      technologies: ['Go', 'Traefik'],
+      technologies: ['Go', 'Traefik', 'Kubernetes Gateway API'],
     },
     {
       description:
@@ -69,7 +69,7 @@ function ServicesPage() {
       icon: Lock,
       name: 'Auth Service',
       patterns: ['Clean Architecture', 'JWT Bearer'],
-      technologies: ['Go', 'PostgreSQL', 'JWT', 'Bcrypt'],
+      technologies: ['Go', 'PostgreSQL', 'JWT', 'JWKS', 'Bcrypt'],
     },
     {
       description:
@@ -108,6 +108,7 @@ function ServicesPage() {
         'Clean Architecture',
         'Saga Orchestration',
         'Outbox',
+        'Idempotent Receiver',
         'Compensation',
       ],
       technologies: ['Go', 'PostgreSQL', 'Temporal', 'Kafka', 'Asynq'],
@@ -127,7 +128,13 @@ function ServicesPage() {
       ],
       icon: CreditCard,
       name: 'Payment Service',
-      patterns: ['Factory', 'Idempotent Receiver', 'Outbox', 'Inbox'],
+      patterns: [
+        'Clean Architecture',
+        'Factory',
+        'Idempotent Receiver',
+        'Outbox',
+        'Inbox',
+      ],
       technologies: ['Go', 'PostgreSQL', 'Stripe', 'Kafka'],
     },
     {
@@ -248,13 +255,14 @@ function ServicesPage() {
       name: 'Domain-Driven Design',
     },
     {
-      description: 'Kafka KRaft cluster with outbox pattern and DLQ handling',
+      description:
+        'Kafka KRaft cluster with outbox/inbox pattern and DLQ handling',
       icon: Radio,
       name: 'Event-Driven Architecture',
     },
     {
       description:
-        'Dual implementation with PostgreSQL-based and Temporal workflows',
+        'Dual implementation options with PostgreSQL-based and Temporal workflows',
       icon: RotateCw,
       name: 'Saga Orchestration',
     },
