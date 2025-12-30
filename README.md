@@ -21,8 +21,9 @@ This application is primarily intended for exploring technical concepts. My goal
 - Infrastructure as Code with `Terraform` for GKE cluster provisioning on GCP
 - `Kubernetes` for robust, scalable container orchestration in production environments
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
-- Unified REST `API Gateway` and `GraphQL Federation` for type-safe client-server communication
-- Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
+- Implemented `GraphQL Federation` and `REST Gateways` to provide a type-safe, unified interface for complex microservices
+- Implmeneted API-first development standards using `OpenAPI 3` to automate documentation and client generation
+- Internal communication via synchronous `gRPC calls` for microservices to interact with each other
 - Database Management with schema migrations handled by `golang-migrate`
 - Validation using `go-playground/validator` for input sanitization
 - Order creation is implemented using two saga orchestration options:
