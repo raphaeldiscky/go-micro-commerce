@@ -2,11 +2,11 @@
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.25.5-blue.svg)](https://golang.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This application is primarily intended for exploring technical concepts. My goal is to experiment with different technologies, software architecture designs, and all the essential components involved in building distributed systems in Golang.
+This application is primarily intended for exploring technical concepts. My goal is to experiment with different technologies, software architecture designs, and all the essential components involved in building distributed systems in Golang, simulating.
 
 ## Features :sparkles:
 
-- `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for real-time message broadcasting, and `Asynq` for distributed task scheduling (order and cart services)
+- Hybrid communication model utilizing `gRPC` for high-performance, synchronous inter-service calls alongside an `Event-Driven Architecture (EDA)` with `Apache Kafka` for persistent event streaming, `Redis Pub/Sub` for real-time broadcasting, and `Asynq` for distributed task scheduling
 - `Clean Architecture` (entity, repository, service, handler) with `Domain-Driven Design (DDD)` principles across all services
 - Each microservice has its own dedicated `PostgreSQL` database instance
 - 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
@@ -22,8 +22,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - `Kubernetes` for robust, scalable container orchestration in production environments
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
 - Implemented `GraphQL Federation` and `REST Gateways` to provide a type-safe, unified interface for complex microservices
-- Implmeneted API-first development standards using `OpenAPI 3` to automate documentation and client generation
-- Internal communication via synchronous `gRPC calls` for microservices to interact with each other
+- Implemented API-first development standards using `OpenAPI 3` to automate documentation and client generation
 - Database Management with schema migrations handled by `golang-migrate`
 - Validation using `go-playground/validator` for input sanitization
 - Order creation is implemented using two saga orchestration options:
