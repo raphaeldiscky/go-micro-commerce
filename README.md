@@ -2,16 +2,16 @@
 
 [![Go Version](https://img.shields.io/badge/go-%3E%3D1.25.5-blue.svg)](https://golang.org/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-This application is primarily intended for exploring technical concepts. My goal is to experiment with different technologies, software architecture designs, and all the essential components involved in building distributed systems in Golang.
+This application is primarily intended for exploring technical concepts. My goal is to experiment with different technologies, software architecture designs, and all the essential components involved in building distributed systems in Golang, simulating.
 
 ## Features :sparkles:
 
-- `Event-driven architecture` using `Kafka` for event streaming, `Redis PubSub` for real-time message broadcasting, and `Asynq` for distributed task scheduling (order and cart services)
+- Hybrid communication model utilizing `gRPC` for high-performance, synchronous inter-service calls alongside an `Event-Driven Architecture (EDA)` with `Apache Kafka` for persistent event streaming, `Redis Pub/Sub` for real-time broadcasting, and `Asynq` for distributed task scheduling
 - `Clean Architecture` (entity, repository, service, handler) with `Domain-Driven Design (DDD)` principles across all services
 - Each microservice has its own dedicated `PostgreSQL` database instance
 - 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
-- Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
+- Unified observability pipeline using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
 - Two local development options:
   - `Docker Compose` setup for rapid development (infrastructure + 7 core services)
   - `Kubernetes Cluster` with `Tilt + (Kind or MicroK8s)` for hot reload in a production-like environment with all 11 services
@@ -21,8 +21,8 @@ This application is primarily intended for exploring technical concepts. My goal
 - Infrastructure as Code with `Terraform` for GKE cluster provisioning on GCP
 - `Kubernetes` for robust, scalable container orchestration in production environments
 - Secure authentication implemented via `JWT` with `RS256` asymmetric algorithm and refresh token rotation
-- Unified REST `API Gateway` and `GraphQL Federation` for type-safe client-server communication
-- Internal communication via synchronous `gRPC calls` for microservices to interact with each other.
+- Implemented `GraphQL Federation` and `REST Gateways` to provide a type-safe, unified interface for complex microservices
+- Implemented API-first development standards using `OpenAPI 3` to automate documentation and client generation
 - Database Management with schema migrations handled by `golang-migrate`
 - Validation using `go-playground/validator` for input sanitization
 - Order creation is implemented using two saga orchestration options:
@@ -663,7 +663,7 @@ terraform/
 
 **Key Features**:
 
-- 5-tier node pool architecture (stateful, stateless, monitoring, control-plane, gateway)
+- 5-tier node pool architecture (stateful, stateless, monitoring, infra, gateway)
 - Spot VMs for stateless workloads (~60% cost savings)
 - Automated TLS with cert-manager and Let's Encrypt
 - External Secrets Operator for GCP Secret Manager integration

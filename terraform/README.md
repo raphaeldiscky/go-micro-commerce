@@ -1,33 +1,31 @@
 # Terraform Infrastructure
 
-Enterprise-grade infrastructure as code for the Go Micro-Commerce platform on Google Cloud Platform (GCP).
-
 ## Overview
 
 This Terraform configuration provisions a cost-optimized, production-ready GKE cluster with:
 
-- **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), control-plane (operators), and gateway (ingress) workloads
+- **5-Tier Node Pool Architecture**: Dedicated pools for stateful (databases), stateless (microservices), monitoring (observability), infra (operators), and gateway (ingress) workloads
 - **Cost Optimization**: Right-sized node pools for learning/testing environments
-- **Complete Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
+- **Complete OSS Operator Stack**: CloudNative PostgreSQL, Strimzi Kafka, Redis Operator
 - **Full Observability**: Prometheus, Grafana, Loki, Tempo, Alloy monitoring stack with dedicated pool
-- **GitOps Ready**: ArgoCD for application deployments on dedicated control plane pool
+- **GitOps Ready**: ArgoCD for application deployments on dedicated infra pool
 - **Production Ingress**: Traefik ingress controller with dedicated gateway pool
 
 ### Cost Breakdown
 
-**Note**: Optimized for learning/testing with 190GB total disk allocation in asia-southeast2 region.
+**Note**: This configuration is optimized for learning and testing environments with limited resources, ensuring that the total disk allocation does not exceed 250GB in the asia-southeast2 region.
 
 | Component                | Configuration                                  |
 | ------------------------ | ---------------------------------------------- |
 | **Stateful Pool**        | 3 × e2-medium (regular VMs, 30GB balanced)     |
 | **Stateless Pool**       | 2 × e2-standard-2 (regular VMs, 20GB balanced) |
 | **Monitoring Pool**      | 1 × e2-standard-2 (regular VMs, 25GB balanced) |
-| **Control Plane Pool**   | 1 × e2-standard-2 (regular VMs, 20GB balanced) |
+| **Infra Pool**           | 1 × e2-standard-2 (regular VMs, 20GB balanced) |
 | **Gateway Pool**         | 1 × e2-medium (regular VMs, 15GB balanced)     |
 | **Frontend Hosting**     | Cloudflare Pages (React + Vite)                |
 | **Total Infrastructure** | -                                              |
 
-**Total Disk Allocation**: 190GB (90GB stateful + 40GB stateless + 25GB monitoring + 20GB control plane + 15GB gateway)
+**Total Disk Allocation**: 190GB (90GB stateful + 40GB stateless + 25GB monitoring + 20GB infra + 15GB gateway)
 
 ## Frontend Deployment
 
@@ -170,13 +168,13 @@ Provisions GKE cluster with 5-tier node pool architecture:
 - Autoscaling capable (min/max nodes configurable)
 - Taint: `workload-type=monitoring:NoSchedule`
 
-**Control Plane Pool** (Operators, ArgoCD, ESO)
+**Infra Pool** (Operators, ArgoCD, ESO)
 
 - 1 × e2-standard-2 nodes (2 vCPU, 8GB RAM)
 - 20GB balanced persistent disk per node (20GB total)
-- Regular VMs for control plane reliability
+- Regular VMs for infra reliability
 - Autoscaling capable (min/max nodes configurable)
-- Taint: `workload-type=control-plane:NoSchedule`
+- Taint: `workload-type=infra:NoSchedule`
 
 **Gateway Pool** (Traefik, Apollo Router, API Gateway)
 
@@ -190,7 +188,7 @@ Provisions GKE cluster with 5-tier node pool architecture:
 
 - **Private nodes enabled** (nodes have no external IPs)
 - **Cloud NAT** for outbound internet access
-- **Public control plane endpoint** (for kubectl access)
+- **Public infra endpoint** (for kubectl access)
 - Workload Identity enabled
 - Shielded nodes enabled
 - Private Google access
@@ -541,19 +539,19 @@ spec:
     workload-type: "monitoring"
 ```
 
-### Control Plane Workloads (Operators, ArgoCD, ESO)
+### Infra Workloads (Operators, ArgoCD, ESO)
 
-To schedule on the control plane pool:
+To schedule on the infra pool:
 
 ```yaml
 spec:
   tolerations:
     - key: "workload-type"
       operator: "Equal"
-      value: "control-plane"
+      value: "infra"
       effect: "NoSchedule"
   nodeSelector:
-    workload-type: "control-plane"
+    workload-type: "infra"
 ```
 
 ### Gateway Workloads (Traefik, Apollo Router, API Gateway)
@@ -599,8 +597,6 @@ cat ~/.ssh/argocd-repo.pub
 # Set private key for Terraform
 export TF_VAR_argocd_git_ssh_private_key=$(cat ~/.ssh/argocd-repo)
 ```
-
-**📖 See [ARGOCD_AUTHENTICATION.md](./ARGOCD_AUTHENTICATION.md) for detailed setup instructions.**
 
 ### 2. Update ArgoCD Configuration
 

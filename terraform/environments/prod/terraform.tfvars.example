@@ -61,15 +61,15 @@ monitoring_pool_disk_size_gb = 25               # 25GB balanced disk per node (2
 monitoring_pool_disk_type    = "pd-balanced"    # Balanced disk for cost efficiency
 
 # ============================================================================
-# Control Plane Node Pool (Operators: ArgoCD, ESO, CNPG, Strimzi, Redis)
-# Regular VMs with autoscaling for control plane
+# Infra Node Pool (Operators: ArgoCD, ESO, CNPG, Strimzi, Redis)
+# Regular VMs with autoscaling for infra
 # ============================================================================
-control_plane_pool_enabled      = true              # Enable control plane node pool
-control_plane_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
-control_plane_pool_max_nodes    = 1                 # Maximum nodes (autoscaling)
-control_plane_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM
-control_plane_pool_disk_size_gb = 20                # 20GB balanced disk per node (1 node × 20GB = 20GB)
-control_plane_pool_disk_type    = "pd-balanced"     # Balanced disk for cost efficiency
+infra_pool_enabled      = true              # Enable infra node pool
+infra_pool_min_nodes    = 1                 # Minimum nodes (autoscaling)
+infra_pool_max_nodes    = 1                 # Maximum nodes (autoscaling)
+infra_pool_machine_type = "e2-standard-2"   # 2 vCPU, 8GB RAM
+infra_pool_disk_size_gb = 20                # 20GB balanced disk per node (1 node × 20GB = 20GB)
+infra_pool_disk_type    = "pd-balanced"     # Balanced disk for cost efficiency
 
 # ============================================================================
 # Gateway Node Pool (Ingress: Traefik, Apollo Router, API Gateway)

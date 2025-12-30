@@ -46,15 +46,15 @@ resource "helm_release" "argocd" {
           }
         }
 
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -107,15 +107,15 @@ resource "helm_release" "argocd" {
             memory = "1Gi"
           }
         }
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -140,15 +140,15 @@ resource "helm_release" "argocd" {
             memory = "96Mi"    # Reduced from 128Mi
           }
         }
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -173,15 +173,15 @@ resource "helm_release" "argocd" {
             memory = "96Mi"    # Reduced from 128Mi
           }
         }
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -200,15 +200,15 @@ resource "helm_release" "argocd" {
             memory = "64Mi"
           }
         }
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -227,15 +227,15 @@ resource "helm_release" "argocd" {
             memory = "128Mi"
           }
         }
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -254,15 +254,15 @@ resource "helm_release" "argocd" {
             memory = "64Mi"
           }
         }
-        # Node affinity for control plane pool
+        # Node affinity for infra pool
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]

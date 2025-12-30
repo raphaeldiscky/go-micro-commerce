@@ -171,39 +171,39 @@ variable "enable_workload_identity" {
   default     = true
 }
 
-# Control Plane Pool Variables (for operators, ArgoCD, ESO)
-variable "control_plane_pool_enabled" {
-  description = "Enable control plane node pool for operators and control plane components"
+# Infra Pool Variables (for operators, ArgoCD, ESO)
+variable "infra_pool_enabled" {
+  description = "Enable infra node pool for operators and infra components"
   type        = bool
   default     = true
 }
 
-variable "control_plane_pool_min_nodes" {
-  description = "Minimum nodes in control plane pool"
+variable "infra_pool_min_nodes" {
+  description = "Minimum nodes in infra pool"
   type        = number
   default     = 1
 }
 
-variable "control_plane_pool_max_nodes" {
-  description = "Maximum nodes in control plane pool"
+variable "infra_pool_max_nodes" {
+  description = "Maximum nodes in infra pool"
   type        = number
   default     = 2
 }
 
-variable "control_plane_pool_machine_type" {
-  description = "Machine type for control plane pool"
+variable "infra_pool_machine_type" {
+  description = "Machine type for infra pool"
   type        = string
   default     = "e2-small"
 }
 
-variable "control_plane_pool_disk_size_gb" {
-  description = "Disk size in GB for control plane pool nodes"
+variable "infra_pool_disk_size_gb" {
+  description = "Disk size in GB for infra pool nodes"
   type        = number
   default     = 20
 }
 
-variable "control_plane_pool_disk_type" {
-  description = "Disk type for control plane pool nodes"
+variable "infra_pool_disk_type" {
+  description = "Disk type for infra pool nodes"
   type        = string
   default     = "pd-balanced"
 }

@@ -4,7 +4,7 @@ Operators extend Kubernetes functionality by managing custom resources.
 
 ## Operators vs Custom Resources
 
-### Operator (Control Plane) - The Manager
+### Operator (Infra Pool) - The Manager
 
 The operator is **controller software** that watches and manages resources.
 
@@ -40,20 +40,20 @@ operators/
 
 ```
 ┌─────────────────────────────────────┐
-│  Operator (Control Plane)          │
-│  Installed once via Helm            │
-│  Location: operators/*/values.yaml │
+│  Operator                               │
+│  Installed once via Helm                │
+│  Location: operators/*/values.yaml      │
 └─────────────────────────────────────┘
            ↓ Watches & Manages ↓
 ┌─────────────────────────────────────┐
-│  Custom Resources (Data Plane)     │
-│  Deployed via Kustomize             │
-│  Location: {postgres,kafka,redis}/ │
+│  Custom Resources (Data Plane)          │
+│  Deployed via Kustomize                 │
+│  Location: {postgres,kafka,redis}/      │
 └─────────────────────────────────────┘
            ↓ Creates & Manages ↓
 ┌─────────────────────────────────────┐
-│  Actual Workloads                   │
-│  PostgreSQL pods, Kafka brokers, etc│
+│  Actual Workloads                       │
+│  PostgreSQL pods, Kafka brokers, etc    │
 └─────────────────────────────────────┘
 ```
 

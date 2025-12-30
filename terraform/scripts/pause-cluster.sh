@@ -143,17 +143,17 @@ fi
 
 echo ""
 
-# Scale control-plane-pool to 0
-log_info "Scaling control-plane-pool to 0 nodes..."
+# Scale infra-pool to 0
+log_info "Scaling infra-pool to 0 nodes..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
-    --node-pool control-plane-pool \
+    --node-pool infra-pool \
     --num-nodes 0 \
     --region="$REGION" \
     --project="$PROJECT_ID" \
     --quiet; then
-    log_success "control-plane-pool scaled to 0"
+    log_success "infra-pool scaled to 0"
 else
-    log_error "Failed to scale control-plane-pool"
+    log_error "Failed to scale infra-pool"
     exit 1
 fi
 

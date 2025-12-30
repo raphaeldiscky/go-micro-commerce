@@ -52,16 +52,16 @@ resource "helm_release" "cert_manager" {
         }
       }
 
-      # Node affinity for control plane pool
+      # Node affinity for infra pool
       nodeSelector = {
-        workload-type = "control-plane"
+        workload-type = "infra"
       }
 
       tolerations = [
         {
           key      = "workload-type"
           operator = "Equal"
-          value    = "control-plane"
+          value    = "infra"
           effect   = "NoSchedule"
         }
       ]
@@ -80,13 +80,13 @@ resource "helm_release" "cert_manager" {
           }
         }
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
@@ -106,13 +106,13 @@ resource "helm_release" "cert_manager" {
           }
         }
         nodeSelector = {
-          workload-type = "control-plane"
+          workload-type = "infra"
         }
         tolerations = [
           {
             key      = "workload-type"
             operator = "Equal"
-            value    = "control-plane"
+            value    = "infra"
             effect   = "NoSchedule"
           }
         ]
