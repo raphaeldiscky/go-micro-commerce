@@ -11,7 +11,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - Each microservice has its own dedicated `PostgreSQL` database instance
 - 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
-- Central instrumentation using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
+- Unified observability pipeline using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
 - Two local development options:
   - `Docker Compose` setup for rapid development (infrastructure + 7 core services)
   - `Kubernetes Cluster` with `Tilt + (Kind or MicroK8s)` for hot reload in a production-like environment with all 11 services
