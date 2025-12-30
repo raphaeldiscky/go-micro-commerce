@@ -121,7 +121,7 @@ deployments/k8s/
 Contains **ApplicationSet** manifests that define auto-discovery patterns:
 
 - **Purpose**: Meta-layer that generates ArgoCD Applications
-- **Pattern**: Industry-standard GitOps infra pool
+- **Pattern**: Industry-standard GitOps structure
 - **Managed by**: Terraform bootstrap ApplicationSet
 
 ### `/infrastructure/` - Platform Services
