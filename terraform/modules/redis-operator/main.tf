@@ -45,16 +45,16 @@ resource "helm_release" "redis_operator" {
         }
       }
 
-      # Node affinity for control plane pool
+      # Node affinity for infra pool
       nodeSelector = {
-        workload-type = "control-plane"
+        workload-type = "infra"
       }
 
       tolerations = [
         {
           key      = "workload-type"
           operator = "Equal"
-          value    = "control-plane"
+          value    = "infra"
           effect   = "NoSchedule"
         }
       ]

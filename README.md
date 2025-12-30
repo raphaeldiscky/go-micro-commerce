@@ -663,7 +663,7 @@ terraform/
 
 **Key Features**:
 
-- 5-tier node pool architecture (stateful, stateless, monitoring, control-plane, gateway)
+- 5-tier node pool architecture (stateful, stateless, monitoring, infra, gateway)
 - Spot VMs for stateless workloads (~60% cost savings)
 - Automated TLS with cert-manager and Let's Encrypt
 - External Secrets Operator for GCP Secret Manager integration

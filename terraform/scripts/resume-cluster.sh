@@ -137,17 +137,17 @@ fi
 
 echo ""
 
-# Scale control-plane-pool to 1 node (minimum for autoscaling)
-log_info "Scaling control-plane-pool to 1 node..."
+# Scale infra-pool to 1 node (minimum for autoscaling)
+log_info "Scaling infra-pool to 1 node..."
 if gcloud container clusters resize "$CLUSTER_NAME" \
-    --node-pool control-plane-pool \
+    --node-pool infra-pool \
     --num-nodes 1 \
     --region="$REGION" \
     --project="$PROJECT_ID" \
     --quiet; then
-    log_success "control-plane-pool scaled to 1 node"
+    log_success "infra-pool scaled to 1 node"
 else
-    log_error "Failed to scale control-plane-pool"
+    log_error "Failed to scale infra-pool"
     exit 1
 fi
 
@@ -167,7 +167,7 @@ gcloud container clusters get-credentials "$CLUSTER_NAME" --region="$REGION" --p
 log_info "Checking node status..."
 RETRY_COUNT=0
 MAX_RETRIES=30
-EXPECTED_NODES=6  # 3 stateful + 1 stateless + 1 monitoring + 1 control plane + 0 gateway
+EXPECTED_NODES=6  # 3 stateful + 1 stateless + 1 monitoring + 1 infra + 0 gateway
 
 while [[ $RETRY_COUNT -lt $MAX_RETRIES ]]; do
     READY_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c " Ready " || echo "0")

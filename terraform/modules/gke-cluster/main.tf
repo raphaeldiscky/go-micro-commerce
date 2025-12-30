@@ -94,7 +94,7 @@ resource "google_container_cluster" "primary" {
   private_cluster_config {
     enable_private_nodes    = var.enable_private_nodes    # Nodes get only private IPs (no external IPs)
     enable_private_endpoint = var.enable_private_endpoint # Keep master public for kubectl access
-    master_ipv4_cidr_block  = var.master_ipv4_cidr_block  # /28 CIDR for control plane
+    master_ipv4_cidr_block  = var.master_ipv4_cidr_block  # /28 CIDR for infra
   }
 
   # Shielded nodes
@@ -323,10 +323,10 @@ resource "google_container_node_pool" "monitoring" {
   }
 }
 
-# Control Plane Node Pool (for operators, ArgoCD, ESO)
-resource "google_container_node_pool" "control_plane" {
-  count    = var.control_plane_pool_enabled ? 1 : 0
-  name     = "control-plane-pool"
+# Infra Node Pool (for operators, ArgoCD, ESO)
+resource "google_container_node_pool" "infra_pool" {
+  count    = var.infra_pool_enabled ? 1 : 0
+  name     = "infra-pool"
   project  = var.project_id
   location = var.region
   node_locations = [var.zone]  # Keep all nodes in zone-a to fit CPU quota
@@ -334,29 +334,29 @@ resource "google_container_node_pool" "control_plane" {
 
   # Autoscaling configuration
   autoscaling {
-    min_node_count = var.control_plane_pool_min_nodes
-    max_node_count = var.control_plane_pool_max_nodes
+    min_node_count = var.infra_pool_min_nodes
+    max_node_count = var.infra_pool_max_nodes
   }
 
-  initial_node_count = var.control_plane_pool_min_nodes
+  initial_node_count = var.infra_pool_min_nodes
 
   node_config {
-    machine_type = var.control_plane_pool_machine_type
-    disk_size_gb = var.control_plane_pool_disk_size_gb
-    disk_type    = var.control_plane_pool_disk_type
+    machine_type = var.infra_pool_machine_type
+    disk_size_gb = var.infra_pool_disk_size_gb
+    disk_type    = var.infra_pool_disk_type
     image_type   = "COS_CONTAINERD"
-    spot         = false # Regular VMs for control plane reliability
+    spot         = false # Regular VMs for infra reliability
 
     # Labels for workload scheduling
     labels = {
-      workload-type = "control-plane"
+      workload-type = "infra"
       pool-type     = "regular"
     }
 
-    # Taint to ensure only control plane workloads run here
+    # Taint to ensure only infra workloads run here
     taint {
       key    = "workload-type"
-      value  = "control-plane"
+      value  = "infra"
       effect = "NO_SCHEDULE"
     }
 

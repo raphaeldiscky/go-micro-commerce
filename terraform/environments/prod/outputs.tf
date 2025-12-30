@@ -75,9 +75,9 @@ output "monitoring_pool_name" {
   value       = module.gke_cluster.monitoring_pool_name
 }
 
-output "control_plane_pool_name" {
-  description = "Control plane node pool name (operators, ArgoCD, ESO)"
-  value       = module.gke_cluster.control_plane_pool_name
+output "infra_pool_name" {
+  description = "Infra node pool name (operators, ArgoCD, ESO)"
+  value       = module.gke_cluster.infra_pool_name
 }
 
 output "gateway_pool_name" {

@@ -1,6 +1,6 @@
 # Kubernetes Deployments - GitOps
 
-This directory contains Kubernetes manifests for deploying the go-micro-commerce platform using **ArgoCD GitOps** with an industry-standard hybrid pattern.
+This directory contains Kubernetes manifests for deploying the go-micro-commerce platform using **ArgoCD GitOps**.
 
 ## Architecture Overview
 
@@ -121,7 +121,7 @@ deployments/k8s/
 Contains **ApplicationSet** manifests that define auto-discovery patterns:
 
 - **Purpose**: Meta-layer that generates ArgoCD Applications
-- **Pattern**: Industry-standard GitOps control plane
+- **Pattern**: Industry-standard GitOps infra pool
 - **Managed by**: Terraform bootstrap ApplicationSet
 
 ### `/infrastructure/` - Platform Services

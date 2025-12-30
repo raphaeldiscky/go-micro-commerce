@@ -46,16 +46,16 @@ resource "helm_release" "cloudnative_pg" {
         }
       }
 
-      # Node affinity for control plane pool
+      # Node affinity for infra pool
       nodeSelector = {
-        workload-type = "control-plane"
+        workload-type = "infra"
       }
 
       tolerations = [
         {
           key      = "workload-type"
           operator = "Equal"
-          value    = "control-plane"
+          value    = "infra"
           effect   = "NoSchedule"
         }
       ]

@@ -52,9 +52,9 @@ output "monitoring_pool_name" {
   value       = var.monitoring_pool_enabled ? google_container_node_pool.monitoring[0].name : null
 }
 
-output "control_plane_pool_name" {
-  description = "The name of the control plane node pool"
-  value       = var.control_plane_pool_enabled ? google_container_node_pool.control_plane[0].name : null
+output "infra_pool_name" {
+  description = "The name of the infra node pool"
+  value       = var.infra_pool_enabled ? google_container_node_pool.infra_pool[0].name : null
 }
 
 output "gateway_pool_name" {

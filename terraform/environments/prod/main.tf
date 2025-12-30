@@ -55,13 +55,13 @@ module "gke_cluster" {
   monitoring_pool_disk_size_gb = var.monitoring_pool_disk_size_gb
   monitoring_pool_disk_type    = var.monitoring_pool_disk_type
 
-  # Control plane pool (operators, ArgoCD, ESO)
-  control_plane_pool_enabled      = var.control_plane_pool_enabled
-  control_plane_pool_min_nodes    = var.control_plane_pool_min_nodes
-  control_plane_pool_max_nodes    = var.control_plane_pool_max_nodes
-  control_plane_pool_machine_type = var.control_plane_pool_machine_type
-  control_plane_pool_disk_size_gb = var.control_plane_pool_disk_size_gb
-  control_plane_pool_disk_type    = var.control_plane_pool_disk_type
+  # Infra pool (operators, ArgoCD, ESO)
+  infra_pool_enabled      = var.infra_pool_enabled
+  infra_pool_min_nodes    = var.infra_pool_min_nodes
+  infra_pool_max_nodes    = var.infra_pool_max_nodes
+  infra_pool_machine_type = var.infra_pool_machine_type
+  infra_pool_disk_size_gb = var.infra_pool_disk_size_gb
+  infra_pool_disk_type    = var.infra_pool_disk_type
 
   # Gateway pool (Traefik, Apollo Router, API Gateway)
   gateway_pool_enabled      = var.gateway_pool_enabled
