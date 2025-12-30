@@ -13,7 +13,7 @@ This Terraform configuration provisions a cost-optimized, production-ready GKE c
 
 ### Cost Breakdown
 
-**Important**: This configuration is optimized for learning and testing environments within the region quota (limited disk size and VMs) of max 250GB total disk allocation in the asia-southeast2 region.
+**Note**: This configuration is optimized for learning and testing environments with limited resources, ensuring that the total disk allocation does not exceed 250GB in the asia-southeast2 region.
 
 | Component                | Configuration                                  |
 | ------------------------ | ---------------------------------------------- |
