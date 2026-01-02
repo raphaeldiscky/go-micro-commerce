@@ -13,7 +13,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
 - Unified observability pipeline using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
 - Two local development options:
-  - `Docker Compose` setup for rapid development (infrastructure + 7 core services)
+  - `Docker Compose` setup for rapid development (infrastructure + microservices)
   - `Kubernetes Cluster` with `Tilt + (Kind or MicroK8s)` for hot reload in a production-like environment with all services
 - `Kubernetes Gateway API` with `Traefik` as gateway controller for production-grade traffic routing
 - CI pipeline using `GitHub Actions` to automate build, test, and push images to a registry
