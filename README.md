@@ -9,7 +9,7 @@ This application is primarily intended for exploring technical concepts. My goal
 - Hybrid communication model utilizing `gRPC` for high-performance, synchronous inter-service calls alongside an `Event-Driven Architecture (EDA)` with `Apache Kafka` for persistent event streaming, `Redis Pub/Sub` for real-time broadcasting, and `Asynq` for distributed task scheduling
 - `Clean Architecture` (entity, repository, service, handler) with `Domain-Driven Design (DDD)` principles across all services
 - Each microservice has its own dedicated `PostgreSQL` database instance
-- 3-node `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
+- 3-broker `Kafka Cluster` running on `KRaft mode` (ZooKeeper-free)
 - 6-node `Redis Cluster` (3 masters + 3 replicas)
 - Unified observability pipeline using `OpenTelemetry` combined with LGTM stack (`Loki, Grafana, Tempo, Prometheus`) and `Alloy` as telemetry collector
 - Two local development options:
