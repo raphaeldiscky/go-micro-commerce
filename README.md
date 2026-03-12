@@ -67,6 +67,86 @@ This application is primarily intended for exploring technical concepts. My goal
 - **[shopspring/decimal](https://github.com/shopspring/decimal)** - precision fixed-point decimal numbers in go
 - **[google/uuid](https://github.com/google/uuid)** - go package for UUIDs
 
+## Production Deployment
+
+The production environment uses a two-phase deployment strategy combining Infrastructure as Code (IaC) with GitOps.
+
+#### Infrastructure Provisioning (Terraform)
+
+Terraform provisions the complete GKE cluster infrastructure:
+
+```text
+terraform/
+├── modules/                    # Reusable infrastructure modules
+│   ├── gcp-network/            # VPC, subnets, Cloud NAT
+│   ├── gke-cluster/            # 5-tier node pool architecture
+│   ├── cloudnative-pg-operator/
+│   ├── strimzi-kafka-operator/
+│   ├── redis-operator/
+│   ├── monitoring/             # Prometheus, Grafana, Loki, Tempo, Alloy
+│   ├── argocd/                 # GitOps controller
+│   └── traefik/                # Ingress controller
+└── environments/prod/          # Production configuration
+```
+
+**Key Features**:
+
+- 5-tier node pool architecture (stateful, stateless, monitoring, infra, gateway)
+- Spot VMs for stateless workloads (~60% cost savings)
+- Automated TLS with cert-manager and Let's Encrypt
+- External Secrets Operator for GCP Secret Manager integration
+
+**See**: [`terraform/README.md`](./terraform/README.md) for complete infrastructure setup.
+
+#### Application Deployment (GitOps)
+
+ArgoCD manages application deployments using Kustomize overlays:
+
+```text
+deployments/k8s/
+├── apps/applicationsets/      # ArgoCD ApplicationSet definitions
+├── infrastructure/            # Platform services (databases, monitoring)
+│   ├── base/                  # Environment-agnostic configs
+│   └── overlays/prod/         # Production-specific patches
+└── workloads/                 # Microservices
+    ├── base/                  # Shared configurations
+    └── overlays/prod/         # Production replicas, resources, HPA
+```
+
+**Deployment Flow**:
+
+1. Developer pushes to `main` branch
+2. ArgoCD detects changes and syncs to cluster
+3. Kustomize builds manifests with production overlays
+4. Applications deployed with HA configuration
+
+**See**: [`deployments/k8s/README.md`](./deployments/k8s/README.md) for GitOps workflow details.
+
+#### Frontend Deployment (Cloudflare Pages)
+
+**Note**: The frontend application is deployed separately from the Kubernetes infrastructure via Cloudflare Pages for optimal cost and performance:
+
+**Deployment Architecture**:
+
+```text
+GitHub (main branch) → Cloudflare Pages → Global CDN (300+ locations)
+```
+
+**Benefits**:
+
+- Zero infrastructure cost (Cloudflare Pages free tier)
+- Global edge network with sub-50ms latency worldwide
+- Automatic deployments on git push
+- Preview deployments for every pull request
+- Built-in SPA routing and asset optimization
+- Automatic HTTPS with Cloudflare certificates
+
+**Configuration**: See `terraform/modules/cloudflare-pages/` for IaC setup
+
+**Domain**: Frontend served from Cloudflare-managed domain, backend APIs from GKE cluster
+
+This separation allows the backend microservices to scale independently while keeping the static frontend optimally distributed at the edge.
+
 ## Architecture Overview 🏗️
 
 The system follows a microservices architecture where each service represents an independent business domain. Services communicate through both synchronous gRPC calls and asynchronous event-driven patterns. Data consistency across distributed transactions is maintained using Saga orchestration patterns, with support for both custom PostgreSQL-based implementations and Temporal-managed workflows.
@@ -638,83 +718,3 @@ sequenceDiagram
 - TypeScript for type safety and developer experience
 - Real-time updates for chat, notifications, and order status
 - Performance optimization with code splitting and lazy loading
-
-### 14. Production Deployment
-
-The production environment uses a two-phase deployment strategy combining Infrastructure as Code (IaC) with GitOps.
-
-#### Infrastructure Provisioning (Terraform)
-
-Terraform provisions the complete GKE cluster infrastructure:
-
-```text
-terraform/
-├── modules/                    # Reusable infrastructure modules
-│   ├── gcp-network/            # VPC, subnets, Cloud NAT
-│   ├── gke-cluster/            # 5-tier node pool architecture
-│   ├── cloudnative-pg-operator/
-│   ├── strimzi-kafka-operator/
-│   ├── redis-operator/
-│   ├── monitoring/             # Prometheus, Grafana, Loki, Tempo, Alloy
-│   ├── argocd/                 # GitOps controller
-│   └── traefik/                # Ingress controller
-└── environments/prod/          # Production configuration
-```
-
-**Key Features**:
-
-- 5-tier node pool architecture (stateful, stateless, monitoring, infra, gateway)
-- Spot VMs for stateless workloads (~60% cost savings)
-- Automated TLS with cert-manager and Let's Encrypt
-- External Secrets Operator for GCP Secret Manager integration
-
-**See**: [`terraform/README.md`](./terraform/README.md) for complete infrastructure setup.
-
-#### Application Deployment (GitOps)
-
-ArgoCD manages application deployments using Kustomize overlays:
-
-```text
-deployments/k8s/
-├── apps/applicationsets/      # ArgoCD ApplicationSet definitions
-├── infrastructure/            # Platform services (databases, monitoring)
-│   ├── base/                  # Environment-agnostic configs
-│   └── overlays/prod/         # Production-specific patches
-└── workloads/                 # Microservices
-    ├── base/                  # Shared configurations
-    └── overlays/prod/         # Production replicas, resources, HPA
-```
-
-**Deployment Flow**:
-
-1. Developer pushes to `main` branch
-2. ArgoCD detects changes and syncs to cluster
-3. Kustomize builds manifests with production overlays
-4. Applications deployed with HA configuration
-
-**See**: [`deployments/k8s/README.md`](./deployments/k8s/README.md) for GitOps workflow details.
-
-#### Frontend Deployment (Cloudflare Pages)
-
-**Note**: The frontend application is deployed separately from the Kubernetes infrastructure via Cloudflare Pages for optimal cost and performance:
-
-**Deployment Architecture**:
-
-```text
-GitHub (main branch) → Cloudflare Pages → Global CDN (300+ locations)
-```
-
-**Benefits**:
-
-- Zero infrastructure cost (Cloudflare Pages free tier)
-- Global edge network with sub-50ms latency worldwide
-- Automatic deployments on git push
-- Preview deployments for every pull request
-- Built-in SPA routing and asset optimization
-- Automatic HTTPS with Cloudflare certificates
-
-**Configuration**: See `terraform/modules/cloudflare-pages/` for IaC setup
-
-**Domain**: Frontend served from Cloudflare-managed domain, backend APIs from GKE cluster
-
-This separation allows the backend microservices to scale independently while keeping the static frontend optimally distributed at the edge.
