@@ -47,24 +47,16 @@ fi
 # install node.js tools
 npm install
 
-# add husky hooks
-npx husky init
-echo "
-if git diff --cached --name-only --diff-filter=ACM | grep -qE '\.go$'; then
-  echo "Go files detected -> running task check..."
-  task check
-else
-  echo "No Go files detected -> skipping task check"
+# install lefthook (git hooks manager) if missing — pinned via @vX.Y.Z
+if ! command -v lefthook >/dev/null 2>&1; then
+  if command -v go >/dev/null 2>&1; then
+    go install github.com/evilmartians/lefthook/v2@v2.1.8
+  else
+    echo "go not found on PATH; skipping lefthook install (git hooks will NOT be wired)"
+  fi
 fi
 
-if git diff --cached --name-only --diff-filter=ACM | grep -q '^frontend/'; then
-  echo "frontend/ changes detected -> running frontend lint..."
-  (
-    cd frontend || exit 1
-    npm run lint
-  )
+# wire git hooks via lefthook (config lives in lefthook.yml)
+if command -v lefthook >/dev/null 2>&1; then
+  lefthook install
 fi
-
-git add -A .
-" > .husky/pre-commit
-echo "npx --no-install commitlint --edit \$1" > .husky/commit-msg
