@@ -1,0 +1,25 @@
+pre-commit:
+  commands:
+    check-and-lint:
+      run: |
+        if git diff --cached --name-only --diff-filter=ACM | grep -qE '\.go$'; then
+          echo Go files detected → running task check...
+          task check
+        else
+          echo No Go files detected → skipping task check
+        fi
+
+        if git diff --cached --name-only --diff-filter=ACM | grep -q '^frontend/'; then
+          echo frontend/ changes detected → running frontend lint...
+          (
+            cd frontend || exit 1
+            npm run lint
+          )
+        fi
+
+        git add -A .
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx --no-install commitlint --edit {1}
