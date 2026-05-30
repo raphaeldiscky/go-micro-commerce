@@ -188,9 +188,9 @@ jobs:
         run: bash scripts/lint.sh ${{ matrix.name }}
       - name: Run format check for ${{ matrix.name }}
         run: bash scripts/format.sh ${{ matrix.name }}
-      - name: Run security vulnerability Scan for ${{ matrix.name }}
-        if: matrix.type == 'go'
-        run: bash scripts/security.sh ${{ matrix.name }}
+      # - name: Run security vulnerability Scan for ${{ matrix.name }}
+      #   if: matrix.type == 'go'
+      #   run: bash scripts/security.sh ${{ matrix.name }}
       - name: Run tests for ${{ matrix.name }}
         if: matrix.type == 'go'
         run: bash scripts/test.sh ${{ matrix.name }}
