@@ -7,9 +7,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/spf13/cobra"
 
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-commerce/auth-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/server"
 )
 
 // httpRunner wraps the HTTP server as a Runner.
@@ -36,7 +36,6 @@ func (r *httpRunner) Name() string {
 
 // Start starts the HTTP server.
 func (r *httpRunner) Start(ctx context.Context) error {
-	// Start server in goroutine
 	errChan := make(chan error, 1)
 
 	go func() {
@@ -45,7 +44,6 @@ func (r *httpRunner) Start(ctx context.Context) error {
 		}
 	}()
 
-	// Wait for context cancellation or server error
 	select {
 	case <-ctx.Done():
 		return nil // Context canceled, normal shutdown
@@ -59,9 +57,9 @@ func (r *httpRunner) Shutdown(ctx context.Context) error {
 	return r.server.Shutdown(ctx)
 }
 
-// newServeCmd runs the HTTP API role.
-func newServeCmd() *cobra.Command {
-	return roleCmd("serve", "Run the HTTP API server", func(app *appContext) ([]Runner, func()) {
+// newAPICmd runs the HTTP API role.
+func newAPICmd() *cobra.Command {
+	return roleCmd("api", "Run the HTTP API server", func(app *appContext) ([]Runner, func()) {
 		runner := newHTTPRunner(app.ctx, app.cfg, app.logger, app.providers)
 
 		return []Runner{runner}, registerConsulHTTP(app.cfg, app.logger)

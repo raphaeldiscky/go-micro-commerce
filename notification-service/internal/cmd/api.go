@@ -7,9 +7,9 @@ import (
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
 	"github.com/spf13/cobra"
 
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/server"
 )
 
 // httpRunner wraps the HTTP server as a Runner.
@@ -19,13 +19,12 @@ type httpRunner struct {
 
 // newHTTPRunner creates a new HTTP runner.
 func newHTTPRunner(
-	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
 	providers *provider.Providers,
 ) *httpRunner {
 	return &httpRunner{
-		server: server.NewHTTPServer(ctx, cfg, appLogger, providers),
+		server: server.NewHTTPServer(cfg, appLogger, providers),
 	}
 }
 
@@ -57,10 +56,10 @@ func (r *httpRunner) Shutdown(ctx context.Context) error {
 	return r.server.Shutdown(ctx)
 }
 
-// newServeCmd runs the HTTP API role.
-func newServeCmd() *cobra.Command {
-	return roleCmd("serve", "Run the HTTP API server", func(app *appContext) ([]Runner, func()) {
-		runner := newHTTPRunner(app.ctx, app.cfg, app.logger, app.providers)
+// newAPICmd runs the HTTP API role.
+func newAPICmd() *cobra.Command {
+	return roleCmd("api", "Run the HTTP API server", func(app *appContext) ([]Runner, func()) {
+		runner := newHTTPRunner(app.cfg, app.logger, app.providers)
 
 		return []Runner{runner}, registerConsulHTTP(app.cfg, app.logger)
 	})

@@ -13,12 +13,9 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	root.AddCommand(
-		newServeCmd(),
-		newKafkaConsumerCmd(),
-		newOutboxCmd(),
+		newAPICmd(),
+		newWorkerCmd(),
 		newSchedulerCmd(),
-		newTemporalCmd(),
-		newAsynqCmd(),
 		newAllCmd(),
 	)
 

@@ -1,6 +1,6 @@
 // Package cmd hosts the cobra subcommands for the cart-service binary.
-// Each subcommand maps to one deployable role (serve, grpc, kafka-consumer,
-// outbox, asynq); the "all" command runs every role in a single process for
+// Each subcommand maps to one coarse deployable role (api, grpc, worker);
+// the "all" command runs every role in a single process for
 // single-deployment setups.
 package cmd
 

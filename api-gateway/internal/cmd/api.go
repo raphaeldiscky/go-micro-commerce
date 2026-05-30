@@ -5,11 +5,13 @@ import (
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/consul"
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
+	"github.com/raphaeldiscky/go-micro-commerce/pkg/telemetry"
 	"github.com/spf13/cobra"
 
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/config"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/provider"
-	"github.com/raphaeldiscky/go-micro-commerce/chat-service/internal/server"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/config"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/gateway"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/provider"
+	"github.com/raphaeldiscky/go-micro-commerce/api-gateway/internal/server"
 )
 
 // httpRunner wraps the HTTP server as a Runner.
@@ -19,13 +21,14 @@ type httpRunner struct {
 
 // newHTTPRunner creates a new HTTP runner.
 func newHTTPRunner(
-	ctx context.Context,
 	cfg *config.Config,
 	appLogger logger.Logger,
+	tel *telemetry.Telemetry,
 	providers *provider.Providers,
+	gw *gateway.Gateway,
 ) *httpRunner {
 	return &httpRunner{
-		server: server.NewHTTPServer(ctx, cfg, appLogger, providers),
+		server: server.NewHTTPServer(cfg, appLogger, tel, providers, gw),
 	}
 }
 
@@ -57,26 +60,32 @@ func (r *httpRunner) Shutdown(ctx context.Context) error {
 	return r.server.Shutdown(ctx)
 }
 
-// newServeCmd runs the HTTP API role.
-func newServeCmd() *cobra.Command {
-	return roleCmd("serve", "Run the HTTP API server", func(app *appContext) ([]Runner, func()) {
-		runner := newHTTPRunner(app.ctx, app.cfg, app.logger, app.providers)
+// newAPICmd runs the HTTP API role.
+func newAPICmd() *cobra.Command {
+	return roleCmd("api", "Run the HTTP API server", func(app *appContext) ([]Runner, func()) {
+		runner := newHTTPRunner(app.cfg, app.logger, app.telemetry, app.providers, app.gateway)
 
 		return []Runner{runner}, registerConsulHTTP(app.cfg, app.logger)
 	})
 }
 
 // registerConsulHTTP registers the HTTP service with Consul and returns a
-// deregister cleanup func. It is a no-op when Consul is disabled.
+// deregister cleanup func. It is a no-op when Consul service discovery is
+// disabled.
 func registerConsulHTTP(cfg *config.Config, appLogger logger.Logger) func() {
-	if !cfg.Consul.Enabled {
-		appLogger.Infof("Consul service discovery is disabled")
+	if cfg.ServiceDiscovery.Type != consulDiscoveryName {
+		appLogger.Info("Consul service registration is disabled")
 
 		return func() {}
 	}
 
-	consulClient, err := consul.NewServiceRegistration(cfg.Consul.Address, appLogger)
+	consulClient, err := consul.NewServiceRegistration(
+		cfg.ServiceDiscovery.ConsulAddress,
+		appLogger,
+	)
 	if err != nil {
+		appLogger.Errorf("Failed to create Consul client: %v", err)
+
 		return func() {}
 	}
 
@@ -85,8 +94,12 @@ func registerConsulHTTP(cfg *config.Config, appLogger logger.Logger) func() {
 		cfg.HTTPServer.Host,
 		cfg.HTTPServer.Port,
 	); err != nil {
+		appLogger.Errorf("Failed to register with Consul: %v", err)
+
 		return func() {}
 	}
+
+	appLogger.Infof("Successfully registered %s with Consul", cfg.App.Name)
 
 	return func() {
 		if deregErr := consulClient.Deregister(); deregErr != nil {

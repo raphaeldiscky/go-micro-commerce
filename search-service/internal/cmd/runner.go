@@ -1,7 +1,6 @@
 // Package cmd hosts the cobra subcommands for the search-service binary.
-// Each subcommand maps to one deployable role (serve, kafka-consumer, inbox);
-// the "all" command runs every role in a single process for single-deployment
-// setups.
+// Each subcommand maps to one coarse deployment role (api, worker); the "all"
+// command runs every role in a single process for single-deployment setups.
 package cmd
 
 import (

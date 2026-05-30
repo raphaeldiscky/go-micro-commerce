@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/spf13/cobra"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/provider"
@@ -59,13 +58,4 @@ func (r *outboxPublisherRunner) Shutdown(_ context.Context) error {
 	r.logger.Info("Outbox publisher stopped successfully")
 
 	return nil
-}
-
-// newOutboxCmd runs the outbox publisher role.
-func newOutboxCmd() *cobra.Command {
-	return roleCmd("outbox", "Run the outbox publisher", func(app *appContext) ([]Runner, func()) {
-		runner := newOutboxPublisherRunner(app.ctx, app.cfg, app.logger, app.providers)
-
-		return []Runner{runner}, nil
-	})
 }

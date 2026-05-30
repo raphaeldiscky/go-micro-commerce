@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/spf13/cobra"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/provider"
@@ -65,26 +64,4 @@ func (r *asynqRunner) Shutdown(_ context.Context) error {
 	r.logger.Info("Asynq worker stopped successfully")
 
 	return nil
-}
-
-// newAsynqCmd runs the asynq worker role.
-func newAsynqCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "asynq",
-		Short: "Run the asynq task worker",
-		RunE: func(cmd *cobra.Command, _ []string) error {
-			app, err := bootstrap(cmd.Context())
-			if err != nil {
-				return err
-			}
-			defer app.stop()
-
-			runner, err := newAsynqRunner(app.cfg, app.logger, app.providers)
-			if err != nil {
-				return err
-			}
-
-			return newManager(app.cfg, app.logger).run(app.ctx, runner)
-		},
-	}
 }

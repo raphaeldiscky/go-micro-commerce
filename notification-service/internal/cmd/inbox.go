@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/spf13/cobra"
 
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/notification-service/internal/provider"
@@ -53,17 +52,4 @@ func (r *inboxProcessorRunner) Start(ctx context.Context) error {
 // Shutdown gracefully shuts down the inbox processor.
 func (r *inboxProcessorRunner) Shutdown(ctx context.Context) error {
 	return r.consumer.Shutdown(ctx)
-}
-
-// newInboxCmd runs the inbox processor role.
-func newInboxCmd() *cobra.Command {
-	return roleCmd(
-		"inbox",
-		"Run the inbox processor",
-		func(app *appContext) ([]Runner, func()) {
-			runner := newInboxProcessorRunner(app.cfg, app.logger, app.providers)
-
-			return []Runner{runner}, nil
-		},
-	)
 }

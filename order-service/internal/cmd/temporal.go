@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/spf13/cobra"
 	"go.temporal.io/sdk/worker"
 
 	"github.com/raphaeldiscky/go-micro-commerce/order-service/internal/client"
@@ -64,13 +63,4 @@ func (r *temporalRunner) Shutdown(_ context.Context) error {
 	r.logger.Info("Temporal worker shutdown completed")
 
 	return nil
-}
-
-// newTemporalCmd runs the Temporal worker role.
-func newTemporalCmd() *cobra.Command {
-	return roleCmd("temporal", "Run the Temporal worker", func(app *appContext) ([]Runner, func()) {
-		runner := newTemporalRunner(app.logger, app.providers)
-
-		return []Runner{runner}, nil
-	})
 }

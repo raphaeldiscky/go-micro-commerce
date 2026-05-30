@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/raphaeldiscky/go-micro-commerce/pkg/logger"
-	"github.com/spf13/cobra"
 
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/config"
 	"github.com/raphaeldiscky/go-micro-commerce/cart-service/internal/provider"
@@ -53,17 +52,4 @@ func (r *kafkaConsumerRunner) Start(ctx context.Context) error {
 // Shutdown gracefully shuts down the Kafka consumer.
 func (r *kafkaConsumerRunner) Shutdown(ctx context.Context) error {
 	return r.consumer.Shutdown(ctx)
-}
-
-// newKafkaConsumerCmd runs the Kafka consumer role.
-func newKafkaConsumerCmd() *cobra.Command {
-	return roleCmd(
-		"kafka-consumer",
-		"Run the Kafka event consumer",
-		func(app *appContext) ([]Runner, func()) {
-			runner := newKafkaConsumerRunner(app.cfg, app.logger, app.providers)
-
-			return []Runner{runner}, nil
-		},
-	)
 }
