@@ -20,7 +20,7 @@ RUN go mod download
 COPY cart-service/ ./
 
 # Build the Go application.
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/cart-service
 
 # ---- Final Stage ----
 # Start from a minimal base image for the final container.
@@ -43,4 +43,4 @@ USER appuser
 
 # The ENTRYPOINT is the command that will be run when the container starts.
 ENTRYPOINT ["./main"]
-CMD ["serve-all"]
+CMD ["all"]
