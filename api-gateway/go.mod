@@ -11,7 +11,7 @@ require (
 	github.com/sony/gobreaker v1.0.0
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
-	golang.org/x/time v0.14.0
+	golang.org/x/time v0.15.0
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
