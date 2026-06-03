@@ -23,7 +23,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.31
 	go.temporal.io/sdk v1.37.0
 	golang.org/x/sync v0.17.0
-	golang.org/x/time v0.14.0
+	golang.org/x/time v0.15.0
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg

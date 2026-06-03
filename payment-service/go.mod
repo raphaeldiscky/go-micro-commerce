@@ -24,7 +24,7 @@ require (
 	github.com/stripe/stripe-go/v83 v83.1.0
 	github.com/vektah/gqlparser/v2 v2.5.31
 	golang.org/x/net v0.46.0
-	golang.org/x/time v0.14.0
+	golang.org/x/time v0.15.0
 	google.golang.org/protobuf v1.36.10
 )
 

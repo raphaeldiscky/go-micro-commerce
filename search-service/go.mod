@@ -10,7 +10,7 @@ require (
 	github.com/raphaeldiscky/go-micro-commerce/pkg v0.0.0-20251030045016-43bf4d7f66c8
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	golang.org/x/time v0.14.0
+	golang.org/x/time v0.15.0
 )
 
 replace github.com/raphaeldiscky/go-micro-commerce/pkg => ../pkg
