@@ -91,7 +91,7 @@ require (
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
 	github.com/redis/go-redis/v9 v9.16.0 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/rs/zerolog v1.34.0 // indirect
+	github.com/rs/zerolog v1.35.1 // indirect
 	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
